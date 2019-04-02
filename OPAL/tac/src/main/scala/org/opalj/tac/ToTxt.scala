@@ -43,7 +43,7 @@ object ToTxt {
             case FloatConst(_, value)          ⇒ value.toString+"f"
             case DoubleConst(_, value)         ⇒ value.toString+"d"
             case ClassConst(_, value)          ⇒ value.toJava+".class"
-            case StringConst(_, value)         ⇒ s""""$value""""
+            case StringConst(_, value)         ⇒ s""""${value.replace("\\", "\\\\")}""""
             case MethodHandleConst(_, value)   ⇒ s"""MethodHandle("${value.toJava}")"""
             case MethodTypeConst(_, value)     ⇒ s"""MethodType("${value.toJava}")"""
             case NullExpr(_)                   ⇒ "null"

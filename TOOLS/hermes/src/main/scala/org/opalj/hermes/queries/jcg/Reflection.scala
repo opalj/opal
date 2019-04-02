@@ -24,7 +24,7 @@ import org.opalj.br.instructions.LoadClass
 import org.opalj.br.instructions.LoadClass_W
 import org.opalj.ai.domain.l1.ArrayValues
 import org.opalj.tac.TACode
-import org.opalj.tac.DefaultTACAIKey
+import org.opalj.tac.LazyTACUsingAIKey
 import org.opalj.tac.Assignment
 import org.opalj.tac.Stmt
 import org.opalj.tac.DUVar
@@ -117,7 +117,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         implicit val p: SomeProject = project
 
         implicit val tacai: Method ⇒ TACode[TACMethodParameter, V] =
-            project.get(DefaultTACAIKey)
+            project.get(LazyTACUsingAIKey)
 
         for {
             (classFile, source) ← project.projectClassFilesWithSources

@@ -11,6 +11,27 @@ import org.opalj.fpcf.ExplicitlyNamedProperty
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.instructions.ACONST_NULL
+import org.opalj.br.instructions.ALOAD
+import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.ALOAD_1
+import org.opalj.br.instructions.ALOAD_2
+import org.opalj.br.instructions.ALOAD_3
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.ATHROW
+import org.opalj.br.instructions.BIPUSH
+import org.opalj.br.instructions.DLOAD
+import org.opalj.br.instructions.FLOAD
+import org.opalj.br.instructions.GETSTATIC
+import org.opalj.br.instructions.ILOAD
+import org.opalj.br.instructions.Instruction
+import org.opalj.br.instructions.LDC
+import org.opalj.br.instructions.LDC2_W
+import org.opalj.br.instructions.LDC_W
+import org.opalj.br.instructions.LLOAD
+import org.opalj.br.instructions.SIPUSH
 
 sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
 
@@ -187,7 +208,90 @@ object EscapeProperty extends EscapePropertyMetaInformation {
 
     final val Name = "opalj.EscapeProperty"
 
-    final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(Name, AtMost(NoEscape))
+    final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(
+        Name,
+        AtMost(NoEscape),
+        fastTrack _
+    )
+
+    private[this] def escapesViaReturnOrThrow(instruction: Instruction): Option[EscapeProperty] = {
+        instruction.opcode match {
+            case ARETURN.opcode ⇒ Some(EscapeViaReturn)
+            case ATHROW.opcode  ⇒ Some(EscapeViaAbnormalReturn)
+            case _              ⇒ throw new IllegalArgumentException()
+        }
+    }
+
+    def fastTrack(ps: PropertyStore, e: Entity): Option[EscapeProperty] = e match {
+        case fp @ VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isDefined ⇒
+            val parameterIndex = fp.parameterIndex
+            if (parameterIndex >= 0 && dm.descriptor.parameterType(parameterIndex).isBaseType)
+                Some(NoEscape)
+            else {
+                val m = dm.definedMethod
+                val code = dm.definedMethod.body.get
+                code.codeSize match {
+                    case 1 ⇒
+                        Some(NoEscape)
+                    case 2 ⇒
+                        if (m.descriptor.returnType.isBaseType) {
+                            Some(NoEscape)
+                        } else {
+                            code.instructions(0).opcode match {
+                                case ACONST_NULL.opcode ⇒
+                                    Some(NoEscape)
+
+                                case ALOAD_0.opcode ⇒
+                                    if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 0) == parameterIndex)
+                                        escapesViaReturnOrThrow(code.instructions(1))
+                                    else
+                                        Some(NoEscape)
+
+                                case ALOAD_1.opcode ⇒
+                                    if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 1) == parameterIndex)
+                                        escapesViaReturnOrThrow(code.instructions(1))
+                                    else
+                                        Some(NoEscape)
+                                case ALOAD_2.opcode ⇒
+                                    if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 2) == parameterIndex)
+                                        escapesViaReturnOrThrow(code.instructions(1))
+                                    else
+                                        Some(NoEscape)
+                                case ALOAD_3.opcode ⇒
+                                    if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 3) == parameterIndex)
+                                        escapesViaReturnOrThrow(code.instructions(1))
+                                    else
+                                        Some(NoEscape)
+                            }
+                        }
+                    case 3 ⇒
+                        code.instructions(0).opcode match {
+                            case BIPUSH.opcode | ILOAD.opcode | FLOAD.opcode |
+                                LLOAD.opcode | DLOAD.opcode | LDC.opcode ⇒
+                                Some(NoEscape)
+                            case ALOAD.opcode ⇒
+                                val index = code.instructions(0).asInstanceOf[ALOAD].lvIndex
+                                if (registerIndexToParameterIndex(m.isStatic, m.descriptor, index) == parameterIndex)
+                                    escapesViaReturnOrThrow(code.instructions(2))
+                                else
+                                    Some(NoEscape)
+                            case _ ⇒ None
+                        }
+                    case 4 ⇒
+                        code.instructions(0).opcode match {
+                            case LDC_W.opcode | LDC2_W.opcode | SIPUSH.opcode | GETSTATIC.opcode ⇒
+                                Some(NoEscape)
+                            case _ ⇒ None
+                        }
+
+                    case _ ⇒
+                        None
+                }
+
+            }
+        case _ ⇒
+            None
+    }
 
 }
 

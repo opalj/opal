@@ -20,44 +20,20 @@ import org.opalj.br.fpcf.properties.Purity.NotCompileTimePure
 import org.opalj.br.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.br.fpcf.properties.Purity.PureFlags
 import org.opalj.br.fpcf.properties.Purity.SideEffectFreeFlags
-import org.opalj.br.instructions.AALOAD
-import org.opalj.br.instructions.AASTORE
-import org.opalj.br.instructions.ARETURN
-import org.opalj.br.instructions.ARRAYLENGTH
-import org.opalj.br.instructions.BALOAD
-import org.opalj.br.instructions.BASTORE
-import org.opalj.br.instructions.CALOAD
-import org.opalj.br.instructions.CASTORE
-import org.opalj.br.instructions.DALOAD
-import org.opalj.br.instructions.DASTORE
-import org.opalj.br.instructions.DRETURN
-import org.opalj.br.instructions.FALOAD
-import org.opalj.br.instructions.FASTORE
-import org.opalj.br.instructions.FRETURN
-import org.opalj.br.instructions.GETFIELD
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.IALOAD
-import org.opalj.br.instructions.IASTORE
-import org.opalj.br.instructions.IF_ACMPEQ
-import org.opalj.br.instructions.IF_ACMPNE
-import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.instructions.INVOKEINTERFACE
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.br.instructions.INVOKEVIRTUAL
-import org.opalj.br.instructions.IRETURN
-import org.opalj.br.instructions.LALOAD
-import org.opalj.br.instructions.LASTORE
-import org.opalj.br.instructions.LRETURN
-import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.instructions.MONITORENTER
-import org.opalj.br.instructions.MONITOREXIT
-import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.instructions.PUTFIELD
+import org.opalj.br.instructions.PrimitiveLDC
+import org.opalj.br.instructions.SIPUSH
+import org.opalj.br.instructions.BIPUSH
+import org.opalj.br.instructions.LDC
+import org.opalj.br.instructions.LDC_W
+import org.opalj.br.instructions.LDC2_W
+import org.opalj.br.instructions.ALOAD
+import org.opalj.br.instructions.ANEWARRAY
+import org.opalj.br.instructions.DLOAD
+import org.opalj.br.instructions.FLOAD
+import org.opalj.br.instructions.ILOAD
+import org.opalj.br.instructions.LLOAD
+import org.opalj.br.instructions.NEWARRAY
 import org.opalj.br.instructions.PUTSTATIC
-import org.opalj.br.instructions.RETURN
-import org.opalj.br.instructions.SALOAD
-import org.opalj.br.instructions.SASTORE
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -220,6 +196,96 @@ sealed abstract class Purity
 }
 
 object Purity extends PurityPropertyMetaInformation {
+
+    def fastTrack(ps: PropertyStore, dm: DeclaredMethod): Option[Purity] = {
+        if (!dm.hasSingleDefinedMethod)
+            Some(ImpureByLackOfInformation)
+        else if (dm.definedMethod.classFile.thisType ne dm.declaringClassType)
+            None
+        else {
+            val method = dm.definedMethod
+            val body = method.body
+            if (body.isEmpty)
+                Some(ImpureByAnalysis)
+            else
+                fastTrackForConcreteMethod(dm.definedMethod)
+        }
+    }
+
+    def fastTrackForConcreteMethod(method: Method): Option[Purity] = {
+        if (method.isSynchronized && method.isStatic) {
+            // Synchronized static methods are impure because locking of the associated monitor is
+            // observable globally
+            return Some(ImpureByAnalysis);
+        }
+
+        val code = method.body.get
+        val instructions = code.instructions
+        code.codeSize match {
+            // In the following cases, we can distinguish a number of patterns,
+            // which are definitively always pure:
+
+            case 1 | 2 ⇒
+                // A method with this size can't throw a _new_ exception or have a control-flow
+                // statement. Given that the method has to return a value/throw a value the
+                // only preceding instruction could be load or const instruction.
+                Some(CompileTimePure);
+
+            case 3 ⇒
+                val firstInstruction = instructions(0)
+                firstInstruction.opcode match {
+                    case LDC.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
+                        Some(CompileTimePure);
+                    case BIPUSH.opcode |
+                        ILOAD.opcode | FLOAD.opcode | ALOAD.opcode |
+                        LLOAD.opcode | DLOAD.opcode ⇒
+                        Some(CompileTimePure);
+                    case _ ⇒
+                        // The patterns handled above are:
+                        //      LoadPrimitveConstant - return
+                        //      BIPUSH - return
+                        //      (I|A|L|D|F)LOAD - (I|A|L|D|F)return
+                        // The patterns not handled above are (e.g):
+                        //      (Frequent)  LoadClass|LoadMethodType|LoadMethodHandle - return
+                        //      (Very rare) ALOAD_1, ARRAYLENGTH, IRETURN
+                        None
+                }
+
+            case 4 ⇒
+                val secondInstruction = instructions(1)
+                if (secondInstruction != null && secondInstruction.opcode == NEWARRAY.opcode)
+                    Some(CompileTimePure)
+                else {
+                    val firstInstruction = instructions(0)
+                    firstInstruction.opcode match {
+                        case LDC_W.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
+                            Some(CompileTimePure)
+                        case LDC2_W.opcode | SIPUSH.opcode ⇒
+                            Some(CompileTimePure)
+                        case _ ⇒
+                            None
+                    }
+                }
+
+            case 5 ⇒
+                val secondInstruction = instructions(1)
+                if (secondInstruction != null) {
+                    secondInstruction.opcode match {
+                        case ANEWARRAY.opcode ⇒
+                            Some(CompileTimePure)
+                        case PUTSTATIC.opcode ⇒
+                            Some(ImpureByAnalysis)
+                        case _ ⇒
+                            None
+                    }
+                } else
+                    None
+
+            case _ ⇒
+                None
+        }
+    }
+
     /**
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
@@ -227,76 +293,7 @@ object Purity extends PurityPropertyMetaInformation {
     final val key = PropertyKey.create[DeclaredMethod, Purity](
         "Purity",
         ImpureByLackOfInformation,
-        fastTrackPropertyComputation = (ps: PropertyStore, dm: DeclaredMethod) ⇒ {
-            if (!dm.hasSingleDefinedMethod) Some(ImpureByLackOfInformation)
-            else if (dm.definedMethod.classFile.thisType ne dm.declaringClassType) None
-            else {
-                val method = dm.definedMethod
-                val declaringClassType = method.classFile.thisType
-                val methodDescriptor = method.descriptor
-                val methodName = method.name
-                val body = method.body
-
-                val isImpure = body.isEmpty || method.isSynchronized && method.isStatic
-
-                val isPure =
-                    !isImpure && !method.isSynchronized && !method.returnType.isReferenceType &&
-                        body.get.instructions.forall { instruction ⇒
-                            (instruction ne null) && ((instruction.opcode: @switch) match {
-                                case INVOKESPECIAL.opcode | INVOKESTATIC.opcode ⇒ instruction match {
-
-                                    case MethodInvocationInstruction(`declaringClassType`, _, `methodName`, `methodDescriptor`) ⇒
-                                        // We have a self-recursive call; such calls do not influence
-                                        // the computation of the method's purity and are ignored.
-                                        // Let's continue with the evaluation of the next instruction.
-                                        true
-
-                                    case mii: NonVirtualMethodInvocationInstruction ⇒ false
-                                }
-
-                                case GETSTATIC.opcode | GETFIELD.opcode |
-                                    PUTFIELD.opcode | PUTSTATIC.opcode |
-                                    AALOAD.opcode | AASTORE.opcode |
-                                    BALOAD.opcode | BASTORE.opcode |
-                                    CALOAD.opcode | CASTORE.opcode |
-                                    SALOAD.opcode | SASTORE.opcode |
-                                    IALOAD.opcode | IASTORE.opcode |
-                                    LALOAD.opcode | LASTORE.opcode |
-                                    DALOAD.opcode | DASTORE.opcode |
-                                    FALOAD.opcode | FASTORE.opcode |
-                                    ARRAYLENGTH.opcode |
-                                    MONITORENTER.opcode | MONITOREXIT.opcode |
-                                    INVOKEDYNAMIC.opcode |
-                                    INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
-                                    false
-
-                                case ARETURN.opcode |
-                                    IRETURN.opcode | FRETURN.opcode | DRETURN.opcode | LRETURN.opcode |
-                                    RETURN.opcode ⇒
-                                    // if we have a monitor instruction the method is impure anyway..
-                                    // hence, we can ignore the monitor related implicit exception
-                                    true
-
-                                // Reference comparisons may have different results for structurally equal values
-                                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
-                                    false
-
-                                case _ ⇒
-                                    // All other instructions (IFs, Load/Stores, Arith., etc.) are pure
-                                    // as long as no implicit exceptions are raised.
-                                    // Remember that NEW/NEWARRAY/etc. may raise OutOfMemoryExceptions.
-                                    instruction.jvmExceptions.isEmpty
-                                // JVM Exceptions reify the stack and, hence, make the method impure as
-                                // the calling context is now an explicit part of the method's result.
-                                //Impure
-                            })
-                        }
-
-                if (isImpure) Some(ImpureByAnalysis)
-                else if (isPure) Some(CompileTimePure)
-                else None
-            }
-        }
+        fastTrackPropertyComputation = fastTrack _
     )
 
     final val NotCompileTimePure = 0x1

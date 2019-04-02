@@ -6,7 +6,7 @@ package analyses
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * `ProjecInformationKey` objects are used to get/associate some
+ * `ProjectInformationKey` objects are used to get/associate some
  * (immutable) information with a project that should be computed on demand.
  * For example, imagine that you write an analysis that requires – as a foundation –
  * the project's call graph. In this case, to get the call graph it is sufficient

@@ -484,7 +484,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         callees: Callees
     )(implicit state: State): Unit = {
         callees.callees(pc).foreach { callee ⇒
-            checkLocalityOfReturn(propertyStore(callee, ReturnValueFreshness.key), data)
+            if (callee.descriptor.returnType.isReferenceType)
+                checkLocalityOfReturn(propertyStore(callee, ReturnValueFreshness.key), data)
         }
     }
 

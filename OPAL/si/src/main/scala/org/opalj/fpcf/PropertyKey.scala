@@ -240,8 +240,10 @@ object PropertyKey {
         val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
         if (fastTrackPropertyComputation == null)
             None
-        else
+        else {
+            ps.incrementFastTrackPropertyComputationsCounter()
             fastTrackPropertyComputation(ps, e).asInstanceOf[Option[P]]
+        }
     }
 
     /**

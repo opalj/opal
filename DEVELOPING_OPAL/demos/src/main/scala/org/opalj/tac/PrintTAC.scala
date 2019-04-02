@@ -14,7 +14,7 @@ object PrintTAC {
 
     def main(args: Array[String]): Unit = {
         val p = Project(new java.io.File(args(0)))
-        val tacProvider = p.get(SimpleTACAIKey) // TAC = Three-address code...
+        val tacProvider = p.get(LazyDetachedTACAIKey) // TAC = Three-address code...
         for {
             cf ← p.allProjectClassFiles
             m ← cf.methods

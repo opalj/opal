@@ -10,7 +10,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC[@specialized(Int, Float) T]
+sealed trait LDC[@specialized(Int, Float) T]
     extends LoadConstantInstruction[T]
     with InstructionMetaInformation {
 
@@ -29,10 +29,13 @@ sealed abstract class LDC[@specialized(Int, Float) T]
     }
 }
 
+/** A load constant instruction which never fails. */
+sealed abstract class PrimitiveLDC[@specialized(Int, Float) T] extends LDC[T]
+
 /**
  * @note To match [[LoadInt]] and [[LoadInt_W]] instructions you can use [[LDCInt]].
  */
-final case class LoadInt(value: Int) extends LDC[Int] {
+final case class LoadInt(value: Int) extends PrimitiveLDC[Int] {
 
     final def computationalType = ComputationalTypeInt
 
@@ -41,7 +44,7 @@ final case class LoadInt(value: Int) extends LDC[Int] {
 /**
  * @note To match [[LoadFloat]] and [[LoadFloat_W]] instructions you can use [[LDCFloat]].
  */
-final case class LoadFloat(value: Float) extends LDC[Float] {
+final case class LoadFloat(value: Float) extends PrimitiveLDC[Float] {
 
     final def computationalType = ComputationalTypeFloat
 
@@ -95,7 +98,7 @@ final case class LoadMethodType(value: MethodDescriptor) extends LDC[MethodDescr
 /**
  * @note To match [[LoadString]] and [[LoadString_W]] instructions you can use [[LDCString]].
  */
-final case class LoadString(value: String) extends LDC[String] {
+final case class LoadString(value: String) extends PrimitiveLDC[String] {
 
     final def computationalType = ComputationalTypeReference
 

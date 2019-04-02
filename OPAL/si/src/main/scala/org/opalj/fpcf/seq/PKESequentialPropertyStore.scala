@@ -68,7 +68,7 @@ final class PKESequentialPropertyStore private (
     override def fallbacksUsedForComputedPropertiesCount: Int = {
         fallbacksUsedForComputedPropertiesCounter
     }
-    override def incrementFallbacksUsedForComputedPropertiesCounter(): Unit = {
+    override private[fpcf] def incrementFallbacksUsedForComputedPropertiesCounter(): Unit = {
         fallbacksUsedForComputedPropertiesCounter += 1
     }
 
@@ -77,9 +77,15 @@ final class PKESequentialPropertyStore private (
 
     private[this] var fastTrackPropertiesCounter = 0
     override def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
+    override private[fpcf] def incrementFastTrackPropertiesCounter(): Unit = {
+        fastTrackPropertiesCounter += 1
+    }
 
     private[this] var fastTrackPropertyComputationsCounter = 0
     override def fastTrackPropertyComputationsCount: Int = fastTrackPropertyComputationsCounter
+    override private[fpcf] def incrementFastTrackPropertyComputationsCounter(): Unit = {
+        fastTrackPropertyComputationsCounter += 1
+    }
 
     // --------------------------------------------------------------------------------------------
     //
@@ -105,8 +111,13 @@ final class PKESequentialPropertyStore private (
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
+    private[this] final val DefaultQueueId = 0
+
     // The list of scheduled computations
-    private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    //private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] var tasks: Array[ArrayDeque[QualifiedTask]] = {
+        Array.fill(10)(new ArrayDeque(50000))
+    }
 
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
@@ -300,7 +311,7 @@ final class PKESequentialPropertyStore private (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasks.addLast(new PropertyComputationTask(this, e, pc))
+        tasks(DefaultQueueId).addLast(new PropertyComputationTask(this, e, pc))
     }
 
     override def doScheduleEagerComputationForEntity[E <: Entity](
@@ -309,7 +320,7 @@ final class PKESequentialPropertyStore private (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasks.addLast(new PropertyComputationTask(this, e, pc))
+        tasks(DefaultQueueId).addLast(new PropertyComputationTask(this, e, pc))
     }
 
     private[this] def removeDependerFromDependees(dependerEPK: SomeEPK): Unit = {
@@ -368,6 +379,12 @@ final class PKESequentialPropertyStore private (
         }
         if (notificationRequired) {
             val isFinal = eps.isFinal
+            val queueId =
+                if (eps.hasUBP && eps.ub.isOrderedProperty)
+                    eps.ub.asOrderedProperty.bottomness
+                else
+                    DefaultQueueId
+
             dependers(pkId).get(e).foreach { dependersOfEPK ⇒
                 dependersOfEPK foreach { cHint ⇒
                     val (dependerEPK, (c, hint)) = cHint
@@ -380,11 +397,11 @@ final class PKESequentialPropertyStore private (
                                     new OnUpdateComputationTask(this, eps.toEPK, c)
                                 }
                             if (delayHandlingOfDependerNotification)
-                                tasks.addLast(t)
+                                tasks(queueId).addLast(t)
                             else
-                                tasks.addFirst(t)
+                                tasks(queueId).addFirst(t)
                         } else { // we have a very cheap property computation
-                            tasks.addFirst(new HandleResultTask(this, c(eps)))
+                            tasks(queueId).addFirst(new HandleResultTask(this, c(eps)))
                         }
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
@@ -461,15 +478,15 @@ final class PKESequentialPropertyStore private (
                     val dependeeFinalP = currentDependee.asFinal
                     val t = OnFinalUpdateComputationTask(this, dependeeFinalP, c)
                     if (dependeeUpdateHandling.delayHandlingOfFinalDependeeUpdates)
-                        tasks.addLast(t)
+                        tasks(DefaultQueueId).addLast(t)
                     else
-                        tasks.addFirst(t)
+                        tasks(DefaultQueueId).addFirst(t)
                 } else {
                     val t = OnUpdateComputationTask(this, processedDependee.toEPK, c)
                     if (dependeeUpdateHandling.delayHandlingOfNonFinalDependeeUpdates)
-                        tasks.addLast(t)
+                        tasks(DefaultQueueId).addLast(t)
                     else
-                        tasks.addFirst(t)
+                        tasks(DefaultQueueId).addFirst(t)
                 }
                 false
             } else {
@@ -516,7 +533,7 @@ final class PKESequentialPropertyStore private (
                         case r ⇒
                             // Actually this shouldn't happen, though it is not a problem!
                             scheduledOnUpdateComputationsCounter += 1
-                            tasks.addLast(HandleResultTask(store, r))
+                            tasks(DefaultQueueId).addLast(HandleResultTask(store, r))
                             // The last comparable result still needs to be stored,
                             // but obviously, no further relevant computations need to be
                             // carried.
@@ -616,7 +633,7 @@ final class PKESequentialPropertyStore private (
         }
     }
 
-    override def isIdle: Boolean = tasks.size == 0
+    override def isIdle: Boolean = tasks.forall(_.size == 0)
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
@@ -638,12 +655,28 @@ final class PKESequentialPropertyStore private (
         do {
             continueComputation = false
 
-            while (!tasks.isEmpty) {
+            /*while (!tasks.isEmpty)) {
                 val task = tasks.pollFirst()
                 if (doTerminate) throw new InterruptedException()
                 task.apply()
-            }
-            assert(tasks.isEmpty)
+                assert(tasks.isEmpty)
+            }*/
+            var foundTask = false
+            do {
+                if (doTerminate) throw new InterruptedException()
+                foundTask = false
+                var queueId = 0
+                while (queueId < 10 && !foundTask) {
+                    val task = tasks(queueId).pollFirst()
+                    if (task != null) {
+                        foundTask = true
+                        task.apply()
+                    } else {
+                        queueId += 1
+                    }
+                }
+            } while (foundTask)
+
             quiescenceCounter += 1
             if (debug) {
                 trace("analysis progress", s"reached quiescence $quiescenceCounter")
@@ -750,11 +783,11 @@ final class PKESequentialPropertyStore private (
                 }
                 subPhaseId += 1
             }
-            if (debug && continueComputation && !tasks.isEmpty) {
+            if (debug && continueComputation && !tasks.forall(_.isEmpty)) {
                 trace(
                     "analysis progress",
                     s"finalization of sub phase $subPhaseId of "+
-                        s"${subPhaseFinalizationOrder.length} led to ${tasks.size} updates "
+                        s"${subPhaseFinalizationOrder.length} led to ${tasks.map(_.size()).sum} updates "
                 )
             }
         } while (continueComputation)

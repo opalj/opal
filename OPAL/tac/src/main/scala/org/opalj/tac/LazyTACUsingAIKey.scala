@@ -21,7 +21,7 @@ import org.opalj.value.ValueInformation
  *          pass in `this` object.
  * @author Michael Eichberg
  */
-object DefaultTACAIKey extends TACAIKey {
+object LazyTACUsingAIKey extends TACAIKey[Nothing] {
 
     /**
      * The TACAI code is created using the results of the abstract interpretation
