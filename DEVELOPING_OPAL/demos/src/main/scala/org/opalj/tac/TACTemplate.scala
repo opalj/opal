@@ -108,8 +108,8 @@ object TACTemplate {
             SimpleAIKey,
             (m: Method) ⇒ constructor.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
         )
-        p.get(SimpleAIKey) // used by the DefaultTACAIKey
-        val tac = p.get(DefaultTACAIKey)
+        p.get(SimpleAIKey) // used by the LazyTACUsingAIKey
+        val tac = p.get(LazyTACUsingAIKey)
 
         // 5.
         // Perform analysis

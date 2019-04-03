@@ -3,12 +3,15 @@ package org.opalj
 package tac
 
 import scala.collection.concurrent.TrieMap
+
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.ai.BaseAI
 import org.opalj.value.ValueInformation
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.Domain
 
 /**
  * ''Key'' to get the 3-address based code of a method computed using the configured
@@ -22,7 +25,7 @@ import org.opalj.value.ValueInformation
  *
  * @author Michael Eichberg
  */
-object SimpleTACAIKey extends TACAIKey {
+object LazyDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse] {
 
     /**
      * TACAI code has no special prerequisites.
@@ -30,13 +33,11 @@ object SimpleTACAIKey extends TACAIKey {
     override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
-     * Returns an object which computes and caches the 3-address code of a method when required.
+     * Returns an factory which computes and caches the 3-address code of a method when required.
      *
      * All methods belonging to a project are converted using the same `domainFactory`. Hence,
-     * the `domainFactory` needs to be set before compute is called/this key is passed to a
-     * specific project. If multiple projects are instead concurrently, external synchronization
-     * is necessary (e.g., on the ProjectInformationKey) to ensure that each project is
-     * instantiated using the desired domain.
+     * the `domainFactory` needs to be set (using `setProjectInformationKeyInitializationData`)
+     * before compute is called/this key is passed to a specific project.
      */
     override protected def compute(
         project: SomeProject
@@ -52,7 +53,7 @@ object SimpleTACAIKey extends TACAIKey {
             val aiResult = BaseAI(m, domain)
             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
             // well... the following cast safe is safe, because the underlying
-            // datastructure is actually, conceptually immutable
+            // data-structure is actually, conceptually immutable
             val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
             taCode.detach
             taCodes.put(m, taCode)
@@ -71,7 +72,6 @@ object SimpleTACAIKey extends TACAIKey {
                         case None         ⇒ computeAndCacheTAC(m)
                     }
                 }
-
         }
     }
 }

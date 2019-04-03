@@ -700,11 +700,11 @@ final class Code private (
      * Iterates over all instructions with the given opcode and calls the given function `f` for every instruction.
      */
     @inline final def iterate[U](
-        instuctionType: InstructionMetaInformation
+        instructionType: InstructionMetaInformation
     )(
         f: ( /*pc:*/ Int, Instruction) ⇒ U
     ): Unit = {
-        val opcode = instuctionType.opcode
+        val opcode = instructionType.opcode
         val instructionsLength = instructions.length
         var pc = 0
         while (pc < instructionsLength) {

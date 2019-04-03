@@ -50,7 +50,7 @@ object TACAItoGraphs extends DefaultOneStepAnalysis {
         val pathName = folder.getAbsoluteFile + File.separator
 
         val aiResults = theProject.get(SimpleAIKey)
-        val tacs = theProject.get(DefaultTACAIKey)
+        val tacs = theProject.get(LazyTACUsingAIKey)
 
         theProject.parForeachMethodWithBody() { mi ⇒
             val m = mi.method

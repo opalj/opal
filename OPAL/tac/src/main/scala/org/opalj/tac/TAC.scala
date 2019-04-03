@@ -189,7 +189,9 @@ object TAC {
                 ehs.map(methodsAsTAC.append)
                 if (printCFG) {
                     if (doOpen) {
-                        Console.println("wrote cfg to: "+writeAndOpen(cfg, m.toJava, ".cfg.gv"))
+                        Console.println(
+                            "wrote cfg to: "+writeAndOpen(cfg, m.toJava, ".cfg.gv")
+                        )
                     } else {
                         methodsAsTAC.append("\n/* - CFG")
                         methodsAsTAC.append(cfg)
