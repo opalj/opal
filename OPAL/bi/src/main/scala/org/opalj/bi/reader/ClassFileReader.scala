@@ -707,8 +707,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     }
 
     /**
-     * Goes over all files in parallel find in a specific folder and calls back the given
-     * function which has to be thread-safe!
+     * Goes over all files in parallel and calls back the given function which has to be thread-safe!
      */
     def processClassFiles(
         files:              Traversable[File],
