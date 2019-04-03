@@ -19,7 +19,6 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalE
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEUB
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
@@ -329,9 +328,14 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     ): ProperPropertyComputationResult = {
         (eps: @unchecked) match {
             //TODO nichts tun, wenn nur Null-Fact zurückgegeben wird
-            case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked)     ⇒ handleCallUpdate(e)
+            case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒ handleCallUpdate(e)
 
-            case InterimEUB(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒ handleCallUpdate(e)
+            case interimEUBP @ InterimEUBP(e: (DeclaredMethod, IFDSFact) @unchecked, ub: IFDSProperty[IFDSFact]) ⇒
+                if (ub.flows.values.filter(!_.isInstanceOf[AbstractIFDSNullFact]).isEmpty)
+                    // Do not re-analyze the caller if we only get the null fact.
+                    // Update the pendingIfdsDependee entry to the new interim result.
+                    state.pendingIfdsDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
+                else handleCallUpdate(e)
 
             //TODO Do we need a FinalEP or is a FinalE sufficient?
             case FinalEP(m: Method, _: TACAI) ⇒
