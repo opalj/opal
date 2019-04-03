@@ -31,15 +31,21 @@ case class FlowFact(flow: Seq[Method]) extends Fact {
 }
 
 /**
+ * An analysis that checks, if the return value of a `source` method can flow to the parameter of a
+ * `sink` method.
  *
- * @param project
+ * @param project The project, that is analyzed
  * @author Mario Trageser
  */
 class TaintAnalysis private (implicit val project: SomeProject) extends AbstractIFDSAnalysis[Fact] {
 
     override val propertyKey: IFDSPropertyMetaInformation[Fact] = Taint
 
-    val entryPoints: Map[DeclaredMethod, Fact] = Map(
+    /**
+     * The analysis starts at the TaintAnalysisTestClass.
+     * TODO Make the entry points variable
+     */
+    override val entryPoints: Map[DeclaredMethod, Fact] = Map(
         p.allProjectClassFiles
             .filter(classFile ⇒
                 classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
@@ -53,6 +59,9 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
         new Taint(result)
     }
 
+    /**
+     * If a variable gets assigned a tainted value, the variable will be tainted.
+     */
     override def normalFlow(statement: Statement, succ: Statement, in: Set[Fact]): Set[Fact] =
         statement.stmt.astID match {
             case Assignment.ASTID ⇒
@@ -169,7 +178,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      *
      * @param expr The variable expression.
      * @param in The current data flow facts.
-     * @return
+     * @return True, if the expression could be tainted
      */
     def isTainted(expr: Expr[V], in: Set[Fact]): Boolean = {
         expr.isVar && in.exists {
@@ -239,6 +248,13 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
         }
     }
 
+    /**
+     * Taints an actual parameter, if the corresponding formal parameter was tainted in the callee.
+     * If the callee's return value was tainted and it is assigned to a variable in the callee,
+     * the variable will be tainted.
+     * If a FlowFact held in the callee, this method will be appended to a new FlowFact,
+     * which holds at this method.
+     */
     override def returnFlow(
         statement: Statement,
         callee:    DeclaredMethod,
@@ -315,11 +331,23 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
         (if (isStaticMethod) -1 else -2) - index
 }
 
+object TaintAnalysis extends IFDSAnalysis[Fact] {
+
+    override def init(p: SomeProject, ps: PropertyStore) = new TaintAnalysis()(p)
+
+    override def property: IFDSPropertyMetaInformation[Fact] = Taint
+}
+
+/**
+ * The IFDSProperty for this analysis.
+ *
+ * @param flows Maps a statement to the facts, which hold at the statement.
+ */
 class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
 
     override type Self = Taint
 
-    def key: PropertyKey[Taint] = Taint.key
+    override def key: PropertyKey[Taint] = Taint.key
 }
 
 object Taint extends IFDSPropertyMetaInformation[Fact] {
@@ -329,13 +357,9 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
     val key: PropertyKey[Taint] = PropertyKey.create("Taint", new Taint(Map.empty))
 }
 
-object TaintAnalysis extends IFDSAnalysis[Fact] {
-
-    override def init(p: SomeProject, ps: PropertyStore) = new TaintAnalysis()(p)
-
-    override def property: IFDSPropertyMetaInformation[Fact] = Taint
-}
-
+/**
+ * Runs the TaintAnalysis for TaintAnalysisTestClass.
+ */
 object TaintAnalysisRunner {
 
     def main(args: Array[String]): Unit = {
