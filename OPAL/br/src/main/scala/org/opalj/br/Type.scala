@@ -137,7 +137,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
      * The number of operand stack slots/registers required to store
      * a single value of this type. In case of `VoidType` `0` is returned.
      */
-    def operandSize: Int = computationalType.operandSize.toInt
+    def operandSize: Int
 
     @throws[ClassCastException]("if this type is not a reference type")
     def asReferenceType: ReferenceType = {
@@ -371,6 +371,8 @@ sealed abstract class ReferenceType extends FieldType {
 
     final override def computationalType: ComputationalType = ComputationalTypeReference
 
+    final override def operandSize: Int = 1
+
     /**
      * Returns the most precise object type that represents this reference type. In
      * case of an `ArrayType`, the `ObjectType` of `java.lang.Object` is returned;
@@ -525,6 +527,8 @@ sealed trait CTIntType extends Type {
 
     final override def computationalType: ComputationalType = ComputationalTypeInt
 
+    final override def operandSize: Int = 1
+
 }
 
 /**
@@ -663,6 +667,8 @@ sealed abstract class DoubleType private () extends NumericType {
 
     final override def computationalType: ComputationalType = ComputationalTypeDouble
 
+    final override def operandSize: Int = 2
+
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 7
@@ -723,6 +729,8 @@ sealed abstract class FloatType private () extends NumericType {
     final override def isFloatType: Boolean = true
 
     final override def computationalType: ComputationalType = ComputationalTypeFloat
+
+    final override def operandSize: Int = 1
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -883,6 +891,8 @@ sealed abstract class LongType private () extends NumericType {
     final override def isLongType: Boolean = true
 
     final override def computationalType: ComputationalType = ComputationalTypeLong
+
+    final override def operandSize: Int = 2
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
