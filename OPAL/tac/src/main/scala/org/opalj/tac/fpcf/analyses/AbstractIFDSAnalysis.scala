@@ -217,9 +217,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      *        calleeWithUpdateFact If this parameter is present, `calleeWithUpdate` will only be analyzed with this fact
      *                             instead of the facts returned by `callFlow`.
      *                             Can only be present if `calleeWithUpdate` is present.
-     *
-     * TODO calleeWithUpdate always has one element
-     * TODO Make a tuple of the last three queue elements
      */
     def process(
         worklist: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Method], Option[IFDSFact])]
@@ -240,7 +237,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 if (successor.isExitNode) {
                     // Handle recursive calls
                     if ((nextOut.getOrElse(successor, Set.empty) -- oldOut.getOrElse(successor, Set.empty)).nonEmpty)
-                        //TODO We re-analyze every bb with a call site. Wouldn't the bbs with recursive calls be sufficient?
                         handleCallUpdate(state.source)
                 } else {
                     val succ =
@@ -258,9 +254,10 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     val oldIn = state.incomingFacts.getOrElse(succ, Set.empty)
                     val newIn = nextIn -- oldIn
                     state.incomingFacts = state.incomingFacts.updated(succ, oldIn ++ nextIn)
-                    // Only process the successors with new facts
-                    //TODO What happens, if we have no incoming facts for the successor, but the successor would create new facts?
-                    //TODO In this case, the new facts would never be found!
+                    /*
+                     * Only process the successor with new facts.
+                     * It is analyzed at least one time because of the null fact.
+                     */
                     if (newIn.nonEmpty) {
                         worklist.enqueue((succ, newIn, None, None, None))
                     }
@@ -284,7 +281,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     /**
      * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
      * statement to that ExitNode.
-     * TODO Why don't we have those facts on the exit node itself?
      */
     def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[IFDSFact]] =
         node.predecessors.collect {
@@ -299,20 +295,19 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * If the analysis is waiting for the TAC or IFDS property of another method, an interim result will be returned.
      */
     def createResult()(implicit state: State): ProperPropertyComputationResult = {
-        //TODO directly call createPropertyValue
-        val result = mergeMaps(
+        val propertyValue = createPropertyValue(mergeMaps(
             collectResult(state.cfg.normalReturnNode),
             collectResult(state.cfg.abnormalReturnNode)
-        )
+        ))
 
         val dependees = state.pendingIfdsDependees.values ++ state.pendingTacDependees.values
 
         if (dependees.isEmpty) {
-            Result(state.source, createPropertyValue(result))
+            Result(state.source, propertyValue)
         } else {
             InterimResult.forUB(
                 state.source,
-                createPropertyValue(result),
+                propertyValue,
                 dependees,
                 propertyHasBeenComputed,
                 DefaultPropertyComputation
