@@ -3,9 +3,8 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
+
 import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.immutable.IntArraySetBuilder
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Method
@@ -81,7 +80,7 @@ object TACAI {
         while (i < parametersCount) {
             aiVOToTACVo(-aiVO - 1) = tacVO
             tacVO -= 1
-            aiVO -= parameterTypes(i).computationalType.operandSize
+            aiVO -= parameterTypes(i).operandSize
             i += 1
         }
 
@@ -181,8 +180,11 @@ object TACAI {
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
                 (aiVOs: IntTrieSet) ⇒
-                    aiVOs.map { aiVO ⇒
-                        if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0) aiVO else aiVO - 1
+                    aiVOs map { aiVO ⇒
+                        if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0)
+                            aiVO
+                        else
+                            aiVO - 1
                     }
             } else {
                 // => we create an array which contains the mapping information
@@ -204,7 +206,7 @@ object TACAI {
 
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
-        // basically a mapping from a UseSite(PC) to a DefSite
+        // Basically a mapping from a UseSite(PC) to a DefSite.
         val obsoleteUseSites = new RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]]
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
@@ -236,12 +238,16 @@ object TACAI {
         // the slot of an empty load/store statement.
         var addedHandlerStmts: IntTrieSet = IntTrieSet.empty
 
+        /*
         val handlerPCs: IntArraySet = {
             val ehs = code.exceptionHandlers
             val handlerPCs = new IntArraySetBuilder(ehs.length)
             ehs.foreach(eh ⇒ handlerPCs += eh.handlerPC)
-            handlerPCs.result
+            handlerPCs.result()
         }
+        */
+        val handlerPCs: Array[Boolean] = new Array(codeSize)
+        code.exceptionHandlers.foreach(eh ⇒ handlerPCs(eh.handlerPC) = true)
 
         var pc: Int = 0
         var index: Int = 0
@@ -260,7 +266,8 @@ object TACAI {
             // a jump target, the new "caught exception" becomes the target, however,
             // given that this instruction has no special side effects, this is not
             // problematic.
-            val addExceptionHandlerInitializer = handlerPCs.contains(pc)
+            //val addExceptionHandlerInitializer = handlerPCs.contains(pc)
+            val addExceptionHandlerInitializer = handlerPCs(pc)
 
             def addStmt(stmt: Stmt[DUVar[aiResult.domain.DomainValue]]): Unit = {
                 if (cfg.bb(pc).startPC != pc && statements(index - 1).astID == Nop.ASTID) {
