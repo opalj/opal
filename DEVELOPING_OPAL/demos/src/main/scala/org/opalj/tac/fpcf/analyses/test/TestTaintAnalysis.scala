@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
-trait Fact
+trait Fact extends AbstractIFDSFact
 case class Variable(index: Int) extends Fact
 case class ArrayElement(index: Int, element: Int) extends Fact
 //case class StaticField(classType: ObjectType, fieldName: String) extends Fact
@@ -40,6 +40,7 @@ case class FlowFact(flow: ListSet[Method]) extends Fact {
         r
     }
 }
+case class NullFact() extends Fact with AbstractIFDSNullFact
 
 /**
  * A simple IFDS taint analysis.

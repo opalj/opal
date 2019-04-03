@@ -17,8 +17,8 @@ import org.opalj.tac._
 import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation}
 import org.opalj.util.PerformanceEvaluation.time
 
-trait Fact
-case class NullFact() extends Fact
+trait Fact extends AbstractIFDSFact
+case class NullFact() extends Fact with AbstractIFDSNullFact
 case class Variable(index: Int) extends Fact
 case class ArrayElement(index: Int, element: Int) extends Fact
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
@@ -52,7 +52,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
             .flatMap(classFile ⇒ classFile.methods)
             .filter(method ⇒ method.name == "run")
             .map(method ⇒ declaredMethods(method))
-            .head -> null
+            .head -> NullFact()
     )
 
     override def createPropertyValue(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
