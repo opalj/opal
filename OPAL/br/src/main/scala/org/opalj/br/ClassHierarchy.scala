@@ -2695,7 +2695,6 @@ object ClassHierarchy {
 
     private[this] implicit val classHierarchyEC: ExecutionContext = SharedExecutionContext
 
-
     final val JustObject: UIDSet[ObjectType] = new UIDSet1(ObjectType.Object)
 
     /**
