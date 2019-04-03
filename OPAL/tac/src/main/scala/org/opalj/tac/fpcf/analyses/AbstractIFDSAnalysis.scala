@@ -112,7 +112,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      */
     final protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    //TODO Where do we put values into this map?
     val entryPoints: Map[DeclaredMethod, IFDSFact]
 
     /**
@@ -223,7 +222,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * TODO Make a tuple of the last three queue elements
      */
     def process(
-        worklist: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Set[Method]], Option[IFDSFact])]
+        worklist: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Method], Option[IFDSFact])]
     )(
         implicit
         state: State
@@ -369,7 +368,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         bb:                    BasicBlock,
         sources:               Set[IFDSFact],
         calleeWithUpdateIndex: Option[Int], //TODO IntOption
-        calleeWithUpdate:      Option[Set[Method]],
+        calleeWithUpdate:      Option[Method],
         calleeWithUpdateFact:  Option[IFDSFact]
     )(
         implicit
@@ -392,7 +391,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             val stmt = state.code(index)
             val statement = Statement(state.method, stmt, index, state.code, state.cfg)
             val calleesO =
-                if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate else getCallees(stmt)
+                if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate.map(Set(_)) else getCallees(stmt)
             val calleeFact = if (calleeWithUpdateIndex.contains(index)) calleeWithUpdateFact else None
             (statement, calleesO, calleeFact)
         }
@@ -536,10 +535,10 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      */
     def handleCallUpdate(method: Method)(implicit state: State): Unit = {
         val blocks = state.pendingTacCallSites(method)
-        val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Set[Method]], Option[IFDSFact])] =
+        val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Method], Option[IFDSFact])] =
             mutable.Queue.empty
         for ((block, callSite) ← blocks)
-            queue.enqueue((block, state.incomingFacts(block), Some(callSite), Some(Set(method)), None))
+            queue.enqueue((block, state.incomingFacts(block), Some(callSite), Some(method), None))
         process(queue)
     }
 
@@ -552,7 +551,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      */
     def handleCallUpdate(e: (DeclaredMethod, IFDSFact))(implicit state: State): Unit = {
         val blocks = state.pendingIfdsCallSites(e)
-        val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Set[Method]], Option[IFDSFact])] =
+        val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Method], Option[IFDSFact])] =
             mutable.Queue.empty
         for ((block, callSite) ← blocks)
             queue.enqueue(
@@ -560,7 +559,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     block,
                     state.incomingFacts(block),
                     Some(callSite),
-                    Some(Set(e._1.definedMethod)),
+                    Some(e._1.definedMethod),
                     Some(e._2)
                 )
             )
