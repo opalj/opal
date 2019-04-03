@@ -199,7 +199,7 @@ final class ConcurrentTasks[T](
     }
 
     /**
-     * Blocks the calling thread until all sbumitted tasks as well as those tasks
+     * Blocks the calling thread until all submitted tasks as well as those tasks
      * that are created while processing tasks have been processed.
      *
      * '''`join` must not be called by a thread that actually executes a task!'''
