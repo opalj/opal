@@ -235,8 +235,10 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             for (successor ← bb.successors) {
                 if (successor.isExitNode) {
                     // Handle recursive calls
-                    if ((nextOut.getOrElse(successor, Set.empty) -- oldOut.getOrElse(successor, Set.empty)).nonEmpty)
-                        handleCallUpdate(state.source)
+                    if ((nextOut.getOrElse(successor, Set.empty) -- oldOut.getOrElse(successor, Set.empty)).nonEmpty) {
+                        val source = state.source
+                        reAnalyzeCalls(state.pendingIfdsCallSites(source), source._1.definedMethod, Some(source._2))
+                    }
                 } else {
                     val succ =
                         (if (successor.isBasicBlock) {
@@ -327,17 +329,17 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         state: State
     ): ProperPropertyComputationResult = {
         (eps: @unchecked) match {
-            case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒ handleCallUpdate(e)
+            case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒ reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
 
             case interimEUBP @ InterimEUBP(e: (DeclaredMethod, IFDSFact) @unchecked, ub: IFDSProperty[IFDSFact]) ⇒
                 if (ub.flows.values.filter(!_.isInstanceOf[AbstractIFDSNullFact]).isEmpty)
                     // Do not re-analyze the caller if we only get the null fact.
                     // Update the pendingIfdsDependee entry to the new interim result.
                     state.pendingIfdsDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
-                else handleCallUpdate(e)
+                else reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
 
             case FinalE(m: Method) ⇒
-                handleCallUpdate(m)
+                reAnalyzeCalls(state.pendingTacCallSites(m), m, None)
                 state.pendingTacCallSites -= m
                 state.pendingTacDependees -= m
 
@@ -497,40 +499,23 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     }
 
     /**
-     * Re-analyzes all basic blocks contained in pendingTacCallSites for some method.
+     * Re-analyzes some call sites with respect to one specific callee.
      *
-     * @param method The method, for which all pending TAC call sites will be re-analyzed.
-     *
-     * TODO One handleCallUpdate should be sufficient
+     * @param callSites The call sites, which are analyzed.
+     * @param method The analyzed receiver of the calls.
+     * @param fact If defined, `method` will only be analyzed for this fact.
      */
-    def handleCallUpdate(method: Method)(implicit state: State): Unit = {
-        val blocks = state.pendingTacCallSites(method)
+    def reAnalyzeCalls(callSites: Set[(BasicBlock, Int)], method: Method, fact: Option[IFDSFact])(implicit state: State): Unit = {
         val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Method], Option[IFDSFact])] =
             mutable.Queue.empty
-        for ((block, callSite) ← blocks)
-            queue.enqueue((block, state.incomingFacts(block), Some(callSite), Some(method), None))
-        process(queue)
-    }
-
-    /**
-     * Re-analyzes all basic blocks contained in pendingIfdsCallSites for some method-fact-pair.
-     *
-     * @param e The method-fact-pair, for which all pending IFDS call sites will be re-analyzed.
-     *
-     * TODO One handleCallUpdate should be sufficient
-     */
-    def handleCallUpdate(e: (DeclaredMethod, IFDSFact))(implicit state: State): Unit = {
-        val blocks = state.pendingIfdsCallSites(e)
-        val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Method], Option[IFDSFact])] =
-            mutable.Queue.empty
-        for ((block, callSite) ← blocks)
+        for ((block, callSite) ← callSites)
             queue.enqueue(
                 (
                     block,
                     state.incomingFacts(block),
                     Some(callSite),
-                    Some(e._1.definedMethod),
-                    Some(e._2)
+                    Some(method),
+                    fact
                 )
             )
         process(queue)
@@ -557,8 +542,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         var summaryEdges: Map[CFGNode, Set[IFDSFact]] = Map.empty
 
         // If calleeWithUpdateFact is not present, this means that the basic block already has been analyzed with the `in` facts.
-        // TODO Is this correct? Can it happen that there is a new input fact AND an update for a method at the same time?
-        // TODO Is it always the case that a call is at the end of a basic block?
         if (calleeWithUpdateFact.isEmpty)
             for (successor ← callBB.successors) {
                 summaryEdges += successor → callToReturnFlow(call, firstStatement(successor), in)
@@ -628,10 +611,9 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     /*
                     * If new exit facts were discovered for the callee-fact-pair, all call sites depending on this pair have to
                     * be re-evaluated. oldValue is undefined if the callee-fact pair has not been queried before or returned a FinalEP.
-                    * TODO Can we remove a call site from pendingIfdsCallSites safely when we got a FinalEP? -> I think so
                     */
                     if (oldValue.isDefined && oldExitFacts != exitFacts) {
-                        handleCallUpdate(e)
+                        reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
                     }
                 }
             }
