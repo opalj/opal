@@ -682,7 +682,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
 
     /**
      * Gets the first statement of a BasicBlock or the first statement of the handler BasicBlock of
-     * a CatchNode.
+     * a CatchNode. Returns null for Exit nodes.
      */
     @tailrec
     private def firstStatement(node: CFGNode)(implicit state: State): Statement = {
@@ -692,7 +692,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         } else if (node.isCatchNode) {
             firstStatement(node.successors.head)
         } else
-            null //TODO Throw an exception?
+            null
     }
 
     /**
@@ -776,7 +776,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
  *
  * @param method The analyzed method.
  * @param stmt The TAC statement.
- * @param index The index of the Statement in the code. TODO Isn't that redundant?
+ * @param index The index of the Statement in the code.
  * @param code The method's TAC code.
  * @param cfg The method's CFG.
  */
