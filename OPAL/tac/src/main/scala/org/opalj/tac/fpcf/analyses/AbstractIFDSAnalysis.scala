@@ -589,29 +589,22 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[IFDSFact]] ⇒
                             /*
-                            * Add the call site to `pendingIfdsCallSites` and `pendingIfdsDependees` and
-                            * continue with the facts in the interim result for now. When the analysis for the
-                            * callee finishes, the analysis for this call site will be triggered again.
-                            */
-                            val newDependee =
-                                state.pendingIfdsCallSites.getOrElse(e, Set.empty) + ((callBB, call.index))
-                            state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
-                            state.pendingIfdsDependees += e → callFlows
+                             * Add the call site to `pendingIfdsCallSites` and `pendingIfdsDependees` and
+                             * continue with the facts in the interim result for now. When the analysis for the
+                             * callee finishes, the analysis for this call site will be triggered again.
+                             */
+                            addDependee(e, callFlows, callBB, call.index)
                             ep.ub.flows
-                        // TODO Can we merge both cases to one case?
                         case _ ⇒
-                            val newDependee =
-                                state.pendingIfdsCallSites.getOrElse(e, Set.empty) + ((callBB, call.index))
-                            state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
-                            state.pendingIfdsDependees += e → callFlows
+                            addDependee(e, callFlows, callBB, call.index)
                             Map.empty
                     }
                     // Only process new facts that are not in `oldExitFacts`
                     allNewExitFacts = mergeMaps(allNewExitFacts, mapDifference(exitFacts, oldExitFacts))
                     /*
-                    * If new exit facts were discovered for the callee-fact-pair, all call sites depending on this pair have to
-                    * be re-evaluated. oldValue is undefined if the callee-fact pair has not been queried before or returned a FinalEP.
-                    */
+                     * If new exit facts were discovered for the callee-fact-pair, all call sites depending on this pair have to
+                     * be re-evaluated. oldValue is undefined if the callee-fact pair has not been queried before or returned a FinalEP.
+                     */
                     if (oldValue.isDefined && oldExitFacts != exitFacts) {
                         reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
                     }
@@ -637,6 +630,20 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             }
         }
         summaryEdges
+    }
+
+    /**
+     * Adds a method-fact-pair as to the IFDS call sites and dependees.
+     *
+     * @param entity The method-fact-pair.
+     * @param calleeProperty The property, that was returned for `entity`.
+     * @param callBB The basic block of the call site.
+     * @param callIndex The index of the call site.
+     */
+    def addDependee(entity: (DeclaredMethod, IFDSFact), calleeProperty: EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]], callBB: BasicBlock, callIndex: Int)(implicit state: State): Unit = {
+        val callSites = state.pendingIfdsCallSites
+        state.pendingIfdsCallSites = callSites.updated(entity, callSites.getOrElse(entity, Set.empty) + ((callBB, callIndex)))
+        state.pendingIfdsDependees += entity → calleeProperty
     }
 
     /**
