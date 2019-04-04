@@ -99,10 +99,7 @@ object ToTxt {
         }
     }
 
-    @inline final def toTxtStmt[V <: Var[V]](
-        stmt:      Stmt[V],
-        includePC: Boolean
-    ): String = {
+    @inline final def toTxtStmt[V <: Var[V]](stmt: Stmt[V], includePC: Boolean): String = {
         val pc = if (includePC) s"/*pc=${stmt.pc}:*/" else ""
         stmt.astID match {
             case Return.ASTID ⇒ s"$pc return"
@@ -202,18 +199,18 @@ object ToTxt {
             s"$index:$javaLikeStmt"
     }
 
-    final def stmtsToTxtStmt[V <: Var[V]](
-        stmts:     Array[Stmt[V]],
-        includePC: Boolean
-    ): String = {
-        stmts.zipWithIndex.map { stmtWithIndex ⇒
+    final def stmtsToTxtStmt[V <: Var[V]](stmts: Array[Stmt[V]], includePC: Boolean): String = {
+        stmts.iterator.zipWithIndex.map { stmtWithIndex ⇒
             val (stmt, index) = stmtWithIndex
             qualify(index, toTxtStmt(stmt, includePC), indented = false)
         }.mkString("\n")
     }
 
     def apply[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): Seq[String] = {
-        apply(tac.params, tac.stmts, tac.cfg, false, true, false)
+        apply(
+            tac.params, tac.stmts, tac.cfg,
+            skipParams = false, indented = true, includePC = false
+        )
     }
 
     /**
