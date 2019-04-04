@@ -650,8 +650,7 @@ class Project[Source] private (
         if (classFilesCount == 0)
             return ;
 
-        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, classFilesCount)
-        parForeachArrayElement(classFiles, parallelizationLevel, isInterrupted)(f)
+        parForeachArrayElement(classFiles, NumberOfThreadsForCPUBoundTasks, isInterrupted)(f)
     }
 
     def parForeachProjectClassFile[T](

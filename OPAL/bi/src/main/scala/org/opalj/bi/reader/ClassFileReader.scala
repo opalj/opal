@@ -24,6 +24,7 @@ import java.util.jar.JarEntry
 
 import scala.util.control.ControlThrowable
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
@@ -36,8 +37,9 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.control.fillArrayOfInt
 import org.opalj.io.process
 
-import org.opalj.concurrent.OPALExecutionContextTaskSupport
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
+import org.opalj.concurrent.BoundedExecutionContext
+import org.opalj.concurrent.parForeachSeqElement
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.RefArray
 import org.opalj.concurrent.Tasks
@@ -511,7 +513,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         }
                     }
                 }
-            }(org.opalj.concurrent.OPALExecutionContext)
+            }(org.opalj.concurrent.OPALHTBoundedExecutionContext)
             futureIndex += 1
         }
         while ({ futureIndex -= 1; futureIndex } >= 0) {
@@ -611,8 +613,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             else if (filename.endsWith(".class")) processClassFile(file)
             else Nil
         } else if (file.isDirectory) {
-            var jarFiles = List.empty[File]
-            var classFiles = List.empty[File]
+            val jarFiles = ArrayBuffer.empty[File]
+            val classFiles = ArrayBuffer.empty[File]
             def collectFiles(files: Array[File]): Unit = {
                 if (files eq null)
                     return ;
@@ -621,8 +623,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                     val filename = file.getName
                     if (file.isFile) {
                         if (file.length() == 0) Nil
-                        else if (isClassFileRepository(filename, None)) jarFiles ::= file
-                        else if (filename.endsWith(".class")) classFiles ::= file
+                        else if (isClassFileRepository(filename, None)) jarFiles += file
+                        else if (filename.endsWith(".class")) classFiles += file
                     } else if (file.isDirectory) {
                         collectFiles(file.listFiles())
                     } else {
@@ -642,9 +644,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             // 2.1 load - in parallel - all ".class" files
             if (classFiles.nonEmpty) {
                 val theClassFiles = new ConcurrentLinkedQueue[(ClassFile, URL)]
-                val parClassFiles = classFiles.par
-                parClassFiles.tasksupport = OPALExecutionContextTaskSupport
-                parClassFiles foreach { classFile ⇒
+                parForeachSeqElement(classFiles, NumberOfThreadsForIOBoundTasks) { classFile ⇒
                     theClassFiles.addAll(processClassFile(classFile, exceptionHandler).asJava)
                 }
                 allClassFiles ++= theClassFiles.asScala
@@ -715,7 +715,6 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         classFileProcessor: ((ClassFile, URL)) ⇒ Unit,
         exceptionHandler:   ExceptionHandler          = defaultExceptionHandler
     ): Unit = {
-        implicit val ec = org.opalj.concurrent.ExecutionContextN(NumberOfThreadsForIOBoundTasks)
         val ts = Tasks[File] { (tasks: Tasks[File], file: File) ⇒
             if (file.isFile && file.length() > 0) {
                 val filename = file.getName
@@ -734,7 +733,15 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                 progressReporter(file)
                 file.listFiles().foreach(tasks.submit)
             }
-        }
+        }(
+            // We need a fresh/privately owned execution context with a fixed number of threads
+            // to avoid that – if the processor also uses the fixed size pool –
+            // we potentially run out of threads!
+            BoundedExecutionContext(
+                "ClassFileReader.processClassFiles",
+                NumberOfThreadsForIOBoundTasks
+            )
+        )
         files.foreach(ts.submit)
         ts.join()
     }

@@ -10,7 +10,7 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.opalj.bi.TestResources
-import org.opalj.concurrent.OPALExecutionContextTaskSupport
+import org.opalj.concurrent.OPALHTBoundedExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.Seconds
 
@@ -83,7 +83,7 @@ class DisassemblerSmokeTest extends FunSpec with Matchers {
                         (for { (packageName, classFiles) ← classFilesGroupedByPackage } yield {
                             val transformationCounter = new AtomicInteger(0)
                             val parClassFiles = classFiles.par
-                            parClassFiles.tasksupport = OPALExecutionContextTaskSupport
+                            parClassFiles.tasksupport = OPALHTBoundedExecutionContextTaskSupport
                             PerformanceEvaluation.time {
                                 (
                                     for { (classFile, url) ← parClassFiles } yield {

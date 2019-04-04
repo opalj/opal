@@ -27,7 +27,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.concurrent.SharedExecutionContext
+import org.opalj.concurrent.OPALUnboundedExecutionContext
 import org.opalj.collection.RefIterator
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.Chain.CompleteEmptyChain
@@ -2693,7 +2693,7 @@ class ClassHierarchy private (
  */
 object ClassHierarchy {
 
-    private[this] implicit val classHierarchyEC: ExecutionContext = SharedExecutionContext
+    private[this] implicit val classHierarchyEC: ExecutionContext = OPALUnboundedExecutionContext
 
     final val JustObject: UIDSet[ObjectType] = new UIDSet1(ObjectType.Object)
 
