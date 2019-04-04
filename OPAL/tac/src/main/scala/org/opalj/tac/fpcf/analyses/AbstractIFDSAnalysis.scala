@@ -327,7 +327,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         state: State
     ): ProperPropertyComputationResult = {
         (eps: @unchecked) match {
-            //TODO nichts tun, wenn nur Null-Fact zurückgegeben wird
             case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒ handleCallUpdate(e)
 
             case interimEUBP @ InterimEUBP(e: (DeclaredMethod, IFDSFact) @unchecked, ub: IFDSProperty[IFDSFact]) ⇒
@@ -337,8 +336,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     state.pendingIfdsDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
                 else handleCallUpdate(e)
 
-            //TODO Do we need a FinalEP or is a FinalE sufficient?
-            case FinalEP(m: Method, _: TACAI) ⇒
+            case FinalE(m: Method) ⇒
                 handleCallUpdate(m)
                 state.pendingTacCallSites -= m
                 state.pendingTacDependees -= m
@@ -366,7 +364,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     def analyzeBasicBlock(
         bb:                    BasicBlock,
         sources:               Set[IFDSFact],
-        calleeWithUpdateIndex: Option[Int], //TODO IntOption
+        calleeWithUpdateIndex: Option[Int],
         calleeWithUpdate:      Option[Method],
         calleeWithUpdateFact:  Option[IFDSFact]
     )(
@@ -425,7 +423,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             }
 
         // Propagate the null fact.
-        // TODO At which point do we add the null fact initially?
         result = result.map(result ⇒ result._1 → (propagateNullFact(sources, result._2)))
         result
     }
