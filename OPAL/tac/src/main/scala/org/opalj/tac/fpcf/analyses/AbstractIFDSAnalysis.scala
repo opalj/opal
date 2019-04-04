@@ -464,19 +464,19 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     stmt.asVirtualMethodCall.resolveCallTargets(state.declaringClass).filter(_.body.isDefined)
                 )
 
-            //TODO One method for Assignment and Expression
-            case Assignment.ASTID ⇒
-                expr(stmt).astID match {
+            case Assignment.ASTID | ExprStmt.ASTID ⇒
+                val expression = expr(stmt)
+                expression.astID match {
 
                     case StaticFunctionCall.ASTID ⇒
                         Some(
-                            stmt.asAssignment.expr.asStaticFunctionCall.resolveCallTarget.toSet
+                            expression.asStaticFunctionCall.resolveCallTarget.toSet
                                 .filter(_.body.isDefined)
                         )
 
                     case NonVirtualFunctionCall.ASTID ⇒
                         Some(
-                            stmt.asAssignment.expr.asNonVirtualFunctionCall
+                            expression.asNonVirtualFunctionCall
                                 .resolveCallTarget(state.declaringClass)
                                 .toSet
                                 .filter(_.body.isDefined)
@@ -484,37 +484,11 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
 
                     case VirtualFunctionCall.ASTID ⇒
                         Some(
-                            stmt.asAssignment.expr.asVirtualFunctionCall
+                            expression.asVirtualFunctionCall
                                 .resolveCallTargets(state.declaringClass)
                                 .filter(_.body.isDefined)
                         )
 
-                    case _ ⇒ None
-                }
-
-            case ExprStmt.ASTID ⇒
-                expr(stmt).astID match {
-
-                    case StaticFunctionCall.ASTID ⇒
-                        Some(
-                            stmt.asExprStmt.expr.asStaticFunctionCall.resolveCallTarget.toSet
-                                .filter(_.body.isDefined)
-                        )
-
-                    case NonVirtualFunctionCall.ASTID ⇒
-                        Some(
-                            stmt.asExprStmt.expr.asNonVirtualFunctionCall
-                                .resolveCallTarget(state.declaringClass)
-                                .toSet
-                                .filter(_.body.isDefined)
-                        )
-
-                    case VirtualFunctionCall.ASTID ⇒
-                        Some(
-                            stmt.asExprStmt.expr.asVirtualFunctionCall
-                                .resolveCallTargets(state.declaringClass)
-                                .filter(_.body.isDefined)
-                        )
                     case _ ⇒ None
                 }
 
