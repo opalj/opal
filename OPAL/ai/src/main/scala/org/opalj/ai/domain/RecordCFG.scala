@@ -597,18 +597,16 @@ trait RecordCFG
             this
         ) {
                 val predecessors = new Array[IntTrieSet](regularSuccessors.length)
-                for {
-                    pc ← code.programCounters
-                    successorPC ← allSuccessorsOf(pc)
-                } {
-                    val oldPredecessorsOfSuccessor = predecessors(successorPC)
-                    predecessors(successorPC) =
-                        if (oldPredecessorsOfSuccessor eq null) {
-                            IntTrieSet1(pc)
-                        } else {
-                            oldPredecessorsOfSuccessor + pc
-                        }
-
+                code.foreachPC { pc ⇒
+                    foreachSuccessorOf(pc) { successorPC ⇒
+                        val oldPredecessorsOfSuccessor = predecessors(successorPC)
+                        predecessors(successorPC) =
+                            if (oldPredecessorsOfSuccessor eq null) {
+                                IntTrieSet1(pc)
+                            } else {
+                                oldPredecessorsOfSuccessor + pc
+                            }
+                    }
                 }
                 predecessors
             }
