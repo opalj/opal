@@ -564,12 +564,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                                 callees.forall { callee ⇒
                                     checkPurityOfMethod(
                                         callee,
-                                        p.indirectCallReceiver(pc, callee).map( receiver ⇒
-                                            uVarForDefSites(receiver, state.pcToIndex)
-                                        ).orNull +:
-                                        p.indirectCallParameters(pc, callee).map { paramO ⇒
-                                            paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
-                                        }
+                                        p.indirectCallReceiver(pc, callee).map(receiver ⇒
+                                            uVarForDefSites(receiver, state.pcToIndex)).orNull +:
+                                            p.indirectCallParameters(pc, callee).map { paramO ⇒
+                                                paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
+                                            }
                                     )
                                 }
                         }

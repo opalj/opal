@@ -813,15 +813,15 @@ object NonVirtualMethodCall {
 }
 
 case class VirtualMethodCall[+V <: Var[V]](
-    pc:             Int,
-    declaringClass: ReferenceType,
-    isInterface:    Boolean,
-    name:           String,
-    descriptor:     MethodDescriptor,
-    receiver:       Expr[V],
-    params:         Seq[Expr[V]]
+        pc:             Int,
+        declaringClass: ReferenceType,
+        isInterface:    Boolean,
+        name:           String,
+        descriptor:     MethodDescriptor,
+        receiver:       Expr[V],
+        params:         Seq[Expr[V]]
 ) extends InstanceMethodCall[V]
-        with VirtualCall[V] {
+    with VirtualCall[V] {
 
     final override def asVirtualMethodCall: this.type = this
     final override def isVirtualMethodCall: Boolean = true
