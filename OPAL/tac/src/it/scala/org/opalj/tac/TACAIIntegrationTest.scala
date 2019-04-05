@@ -7,6 +7,7 @@ import org.scalatest.Matchers
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
+import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -29,25 +30,28 @@ import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 class TACAIIntegrationTest extends FunSpec with Matchers {
 
     def checkProject(
-        project:       SomeProject,
-        domainFactory: (SomeProject, Method) ⇒ Domain with RecordDefUse
+        project:               SomeProject,
+        domainFactory:         (SomeProject, Method) ⇒ Domain with RecordDefUse,
+        performanceEvaluation: PerformanceEvaluation
     ): Unit = {
+        import performanceEvaluation.time
         if (Thread.currentThread().isInterrupted) return ;
 
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val ch = project.classHierarchy
-        for {
-            cf ← project.allProjectClassFiles.par
-            if !Thread.currentThread().isInterrupted
-            m ← cf.methods
-            body ← m.body
-        } {
-            val aiResult = BaseAI(m, domainFactory(project, m))
+        project.parForeachMethodWithBody() { mi ⇒
+            val m = mi.method
+            val body = m.body.get
+            val aiResult = time('ai) { BaseAI(m, domainFactory(project, m)) }
             try {
 
-                val TACode(params, tacAICode, _, cfg, _, _) = TACAI(m, ch, aiResult)(List.empty)
-                ToTxt(params, tacAICode, cfg, false, true, true)
+                val TACode(params, tacAICode, _, cfg, _, _) = time('tacode) {
+                    TACAI(m, ch, aiResult, false)(List.empty)
+                }
+                time('totxt) {
+                    ToTxt(params, tacAICode, cfg, false, true, true)
+                }
 
                 // Some additional consistency tests...
 
@@ -80,7 +84,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
                     println(
                         body.exceptionHandlers.mkString("Exception Handlers:\n\t", "\n\t", "\n")
                     )
-                    errors ::= ((project.source(cf)+":"+methodSignature, e))
+                    errors ::= ((project.source(m.classFile)+":"+methodSignature, e))
                 }
             }
         }
@@ -116,29 +120,33 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
 
     describe(s"creating the 3-address code") {
 
+        def computeTACAIForAllDomains(initialProject: SomeProject): Unit = {
+            var p = initialProject
+            domainFactories foreach { domainInformation ⇒
+                val performanceEvaluation = new PerformanceEvaluation()
+                val (domainName, domainFactory) = domainInformation
+                time {
+                    checkProject(p, domainFactory, performanceEvaluation)
+                } { t ⇒
+                    val aiTime = performanceEvaluation.getTime('ai).toSeconds
+                    val tacodeTime = performanceEvaluation.getTime('tacode).toSeconds
+                    val totxtTime = performanceEvaluation.getTime('totxt).toSeconds
+                    val details = s"(ai=$aiTime; taCode=$tacodeTime; toTxt=$totxtTime )"
+                    info(s"using $domainName the conversion took ${t.toSeconds} – $details")
+                }
+                p = p.recreate()
+            }
+        }
+
         TestSupport.allBIProjects() foreach { biProject ⇒
             val (name, projectFactory) = biProject
             it(s"for $name") {
-                var p = projectFactory()
-                domainFactories foreach { domainInformation ⇒
-                    val (domainName, domainFactory) = domainInformation
-                    time {
-                        checkProject(p, domainFactory)
-                    } { t ⇒ info(s"using $domainName the conversion took ${t.toSeconds}") }
-                    p = p.recreate()
-                }
+                computeTACAIForAllDomains(projectFactory())
             }
         }
 
         it(s"for the (current) JDK") {
-            var p = TestSupport.createJREProject()
-            domainFactories foreach { domainInformation ⇒
-                val (domainName, domainFactory) = domainInformation
-                time {
-                    checkProject(p, domainFactory)
-                } { t ⇒ info(s"using $domainName the conversion took ${t.toSeconds}") }
-                p = p.recreate()
-            }
+            computeTACAIForAllDomains(TestSupport.createJREProject())
         }
 
     }

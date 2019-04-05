@@ -14,13 +14,9 @@ import org.opalj.collection.immutable.Chain
  *
  * @author Michael Eichberg
  */
-class AnalysisScenario[A](ps: PropertyStore) {
+class AnalysisScenario[A](val ps: PropertyStore) {
 
     private[this] var scheduleComputed: Boolean = false
-
-    //
-    // COMPUATION SPECIFICATION RELATED INFORMATION
-    //
 
     private[this] var allCS: Set[ComputationSpecification[A]] = Set.empty
 
@@ -30,10 +26,6 @@ class AnalysisScenario[A](ps: PropertyStore) {
     private[this] var lazilyDerivedProperties: Set[PropertyBounds] = Set.empty
 
     private[this] var initializationData: Map[ComputationSpecification[A], Any] = Map.empty
-
-    //
-    // PROPERTIES (CAN ONLY BE COMPUTED ONCE ALL COMPUTATION SPECIFICATIONS ARE REGISTERED!)
-    //
 
     private[this] var usedProperties: Set[PropertyBounds] = Set.empty
 
@@ -126,7 +118,7 @@ class AnalysisScenario[A](ps: PropertyStore) {
                 }
             }
         }
-        // let's handle the case that multiple analyses derives a property collaboratively
+        // let's handle the case that multiple analyses derive a property collaboratively
         derivedBy.valuesIterator.filter(_.size > 1) foreach { css ⇒
             val cssIt = css.iterator
             val headCS = cssIt.next()
@@ -270,7 +262,7 @@ class AnalysisScenario[A](ps: PropertyStore) {
 
         // 2. assign analyses to different batches if an analysis can only process
         //    final properties (unless it is a transformer, the latter have special paths and
-        //    constraints and can always be scheduled)
+        //    constraints and can always be scheduled in the same batch!)
 
         // TODO ....
 

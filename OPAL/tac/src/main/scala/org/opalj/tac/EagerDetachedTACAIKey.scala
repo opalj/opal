@@ -53,7 +53,7 @@ object EagerDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUs
             val m = mi.method
             val domain = domainFactory(m)
             val aiResult = BaseAI(m, domain)
-            val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
+            val code = TACAI(project, m, aiResult)
             // well... the following cast safe is safe, because the underlying
             // data-structure is actually, conceptually immutable
             val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]

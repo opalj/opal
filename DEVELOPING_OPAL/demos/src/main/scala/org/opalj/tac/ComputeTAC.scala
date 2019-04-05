@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac
 
+import java.io.File
+
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
@@ -16,8 +18,14 @@ import org.opalj.ai.domain.RecordDefUse
 object ComputeTAC {
 
     def main(args: Array[String]): Unit = {
+        val rootFolder =
+            if (args.isEmpty)
+                org.opalj.bytecode.JRELibraryFolder
+            else
+                new File(args(0))
+
         val tacProvider = time {
-            val p = Project(org.opalj.bytecode.JRELibraryFolder)
+            val p = Project(rootFolder)
             p.updateProjectInformationKeyInitializationData(
                 EagerDetachedTACAIKey,
                 (oldFactory: Option[Method ⇒ Domain with RecordDefUse]) ⇒ {

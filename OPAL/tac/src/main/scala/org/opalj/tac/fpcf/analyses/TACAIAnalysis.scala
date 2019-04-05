@@ -24,7 +24,7 @@ object TACAIAnalysis {
         p: SomeProject
     ): TheTACAI = {
         val typedAIResult = aiResult.asInstanceOf[AIResult { val domain: Domain with RecordDefUse }]
-        val taCode = TACAIFactory(m, p.classHierarchy, typedAIResult)(Nil)
+        val taCode = TACAIFactory(p, m, typedAIResult)
         val theTACode = if (detachFromAIResult) taCode.detach else taCode
         val tacaiProperty = TheTACAI(
             // the following cast is safe - see TACode for details

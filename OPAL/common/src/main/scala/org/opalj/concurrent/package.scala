@@ -3,13 +3,15 @@ package org
 package opalj
 
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.util.control.ControlThrowable
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.error
@@ -24,9 +26,9 @@ import org.opalj.log.OPALLogger.info
  */
 package object concurrent {
 
-    private implicit def logContext = GlobalLogContext
+    private implicit def logContext: GlobalLogContext.type = GlobalLogContext
 
-    final val defaultIsInterrupted = () ⇒ Thread.currentThread.isInterrupted()
+    final val defaultIsInterrupted = () ⇒ Thread.currentThread.isInterrupted
 
     final def handleUncaughtException(t: Throwable): Unit = {
         error("internal", "uncaught exception", t)
@@ -34,6 +36,25 @@ package object concurrent {
 
     final def handleUncaughtException(t: Thread, e: Throwable): Unit = {
         error("internal", s"uncaught exception (Thread=${t.getName})", e)
+    }
+
+    final val OPALUnboundedThreadPool: ExecutorService = {
+        val nextID = new AtomicLong(0L)
+        Executors.newCachedThreadPool(
+            new ThreadFactory {
+                def newThread(r: Runnable): Thread = {
+                    val name = s"[global] opalj.ThreadPool - Thread "+nextID.incrementAndGet()
+                    val t = new Thread(r, name)
+                    t.setDaemon(true)
+                    t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
+                    t
+                }
+            }
+        )
+    }
+
+    final val OPALUnboundedExecutionContext: ExecutionContext = {
+        ExecutionContext.fromExecutorService(OPALUnboundedThreadPool)
     }
 
     //
@@ -107,48 +128,52 @@ package object concurrent {
                 handleUncaughtException(e)
             } catch {
                 case t: Throwable ⇒
-                    // we shouldn't use the OPALLogger here to ensure that we can report
-                    // Problems related to the logger
-                    Console.err.println("Fatal internal error when reporting errors:")
+                    // We shouldn't use the OPALLogger here to ensure that we can report
+                    // Problems related to the logger!
+                    Console.err.println("[fatal] internal error when reporting errors: ")
                     t.printStackTrace(Console.err)
             }
         }
     }
 
-    def ThreadPoolN(n: Int): OPALThreadPoolExecutor = {
-        val group = new ThreadGroup(s"org.opalj.ThreadPool ${System.nanoTime()}")
-        val tp = new OPALThreadPoolExecutor(n, group)
+    def BoundedThreadPool(name: String, n: Int): OPALBoundedThreadPoolExecutor = {
+        val groupName = s"[$name/${System.nanoTime().toHexString.drop(4)}] opalj.ThreadPool[N=$n]"
+        val group = new ThreadGroup(groupName)
+        val tp = new OPALBoundedThreadPoolExecutor(n, group)
         tp.allowCoreThreadTimeOut(true)
         tp.prestartAllCoreThreads()
         tp
     }
 
-    def ExecutionContextN(n: Int): ExecutionContext = {
-        ExecutionContext.fromExecutorService(ThreadPoolN(n))
+    def BoundedExecutionContext(name: String, n: Int): ExecutionContext = {
+        ExecutionContext.fromExecutorService(BoundedThreadPool(name, n))
     }
 
     /**
-     * Returns the singleton instance of the global `ThreadPool` used throughout OPAL.
+     * Thread pool which supports at most `NumberOfThreadsForIOBoundTasks` tasks.
+     *
+     * @note This thread pool must not be shutdown.
      */
-    final val ThreadPool = ThreadPoolN(NumberOfThreadsForIOBoundTasks)
+    final val OPALHTBoundedThreadPool = BoundedThreadPool("global", NumberOfThreadsForIOBoundTasks)
 
     //
     // STEP 4
     //
+
     /**
      * The ExecutionContext used by OPAL.
      *
-     * This `ExecutionContext` must not be shutdown.
+     * @note This `ExecutionContext` must not be shutdown.
      */
-    implicit final val OPALExecutionContext: ExecutionContext = {
-        ExecutionContext.fromExecutorService(ThreadPool)
+    implicit final val OPALHTBoundedExecutionContext: ExecutionContext = {
+        ExecutionContext.fromExecutorService(OPALHTBoundedThreadPool)
     }
 
     //
     // STEP 5
     //
-    final val OPALExecutionContextTaskSupport: ExecutionContextTaskSupport = {
-        new ExecutionContextTaskSupport(OPALExecutionContext) {
+    final val OPALHTBoundedExecutionContextTaskSupport: ExecutionContextTaskSupport = {
+        new ExecutionContextTaskSupport(OPALHTBoundedExecutionContext) {
             override def parallelismLevel: Int = NumberOfThreadsForCPUBoundTasks
         }
     }
@@ -177,90 +202,102 @@ package object concurrent {
      *         the thrown exception stores all other exceptions (`getSuppressed`)
      */
     @throws[ConcurrentExceptions]("the set of concurrently thrown suppressed exceptions ")
-    def parForeachArrayElement[T, U](
+    final def parForeachArrayElement[T, U](
         data:                 Array[T],
         parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks,
-        isInterrupted:        () ⇒ Boolean = () ⇒ Thread.currentThread().isInterrupted()
+        isInterrupted:        () ⇒ Boolean = defaultIsInterrupted
     )(
         f: Function[T, U]
     ): Unit = {
+        parForeachSeqElement(data, parallelizationLevel, isInterrupted)(f)
+    }
 
-        if (parallelizationLevel == 1) {
-            var exceptions: ConcurrentExceptions = null
-            def addSuppressed(throwable: Throwable): Unit = {
-                if (exceptions == null) exceptions = new ConcurrentExceptions
-                exceptions.addSuppressed(throwable)
-            }
-            data forall { e ⇒
-                try {
-                    f(e)
-                } catch {
-                    case ct: ControlThrowable ⇒
-                        val t = new Throwable("unsupported non-local return", ct)
-                        addSuppressed(t)
+    /**
+     * Execute the given function `f` in parallel for each element of the given indexed seq.
+     * After processing an element it is checked whether the computation should be
+     * aborted.
+     *
+     * In general – but also at most – `parallelizationLevel` many threads will be used
+     * to process the elements. The core idea is that each thread processes an element
+     * and after that grabs the next element from the array. Hence, this handles
+     * situations gracefully where the effort necessary to analyze a specific element
+     * varies widely.
+     *
+     * @note   The given function `f` must not make use of non-local returns; such returns
+     *         will be caught and reported later.
+     *
+     * @note   The OPALExecutionContext is used for getting the necessary threads.
+     *
+     * @throws ConcurrentExceptions if any exception occurs;
+     *         the thrown exception stores all other exceptions (`getSuppressed`)
+     */
+    @throws[ConcurrentExceptions]("the set of concurrently thrown suppressed exceptions ")
+    final def parForeachSeqElement[T, U](
+        data:                 IndexedSeq[T],
+        parallelizationLevel: Int           = NumberOfThreadsForCPUBoundTasks,
+        isInterrupted:        () ⇒ Boolean  = defaultIsInterrupted
+    )(
+        f: Function[T, U]
+    ): Unit = {
+        val dataLength = data.length
 
-                    case t: Throwable ⇒
-                        addSuppressed(t)
-                }
-                !isInterrupted()
-            }
-            if (exceptions != null)
-                throw exceptions;
-            else
-                return ;
-        }
+        if (dataLength == 0)
+            return ;
 
-        val max = data.length
         val index = new AtomicInteger(0)
-        val futures = new Array[Future[Unit]](parallelizationLevel)
         var exceptions: ConcurrentExceptions = null
         def addSuppressed(throwable: Throwable): Unit = index.synchronized {
             if (exceptions == null) exceptions = new ConcurrentExceptions
             exceptions.addSuppressed(throwable)
         }
 
-        // Start parallel execution
-        try {
-            {
-                var t = 0
-                while (t < parallelizationLevel) {
-                    futures(t) = Future[Unit] {
-                        var i: Int = -1
-                        while ({ i = index.getAndIncrement; i } < max && !isInterrupted()) {
-                            val e = data(i)
-                            try {
-                                f(e)
-                            } catch {
-                                case ct: ControlThrowable ⇒
-                                    val t = new Throwable("unsupported non-local return", ct)
-                                    addSuppressed(t)
+        def analyzeArrayElements(): Unit = {
+            var i: Int = -1
+            while ({ i = index.getAndIncrement; i } < dataLength && !isInterrupted()) {
+                try {
+                    f(data(i))
+                } catch {
+                    case ct: ControlThrowable ⇒
+                        val t = new Throwable("unsupported non-local return", ct)
+                        addSuppressed(t)
+                    case t: Throwable ⇒
+                        addSuppressed(t)
+                }
+            }
+        }
 
-                                case t: Throwable ⇒
-                                    addSuppressed(t)
-                            }
+        if (parallelizationLevel == 1 || dataLength == 1) {
+            analyzeArrayElements()
+        } else {
+            ///
+            // HANDLE CASE WHERE WE HAVE EFFECTIVE PARALLELIZATION (LEVEL > 1)
+            //
+
+            // Start parallel execution
+            val maxThreads = Math.min(parallelizationLevel, dataLength)
+            val latch = new CountDownLatch(maxThreads)
+            val pool = OPALUnboundedThreadPool
+            try {
+                var t = 0
+                while (t < maxThreads) {
+                    pool.execute { () ⇒
+                        try {
+                            analyzeArrayElements()
+                        } finally {
+                            latch.countDown()
                         }
                     }
                     t += 1
                 }
+                latch.await()
+            } catch {
+                case t: Throwable ⇒ addSuppressed(t) // <= actually, we should never get here...
             }
-            // Await completion
-            {
-                var t = 0
-                while (t < parallelizationLevel) {
-                    val future = futures(t)
-                    Await.ready(future, Duration.Inf).value.get match {
-                        case scala.util.Failure(exception) ⇒ addSuppressed(exception)
-                        case _                             ⇒ // OK
-                    }
-                    t += 1
-                }
-            }
-        } catch {
-            case t: Throwable ⇒ addSuppressed(t) // <= actually, we should never get here...
         }
         if (exceptions != null) {
             throw exceptions;
         }
+
     }
 
 }

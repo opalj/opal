@@ -3,9 +3,8 @@ package org.opalj
 package tac
 
 import scala.annotation.switch
+
 import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.immutable.IntArraySetBuilder
-import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.br.Method
@@ -81,7 +80,7 @@ object TACAI {
         while (i < parametersCount) {
             aiVOToTACVo(-aiVO - 1) = tacVO
             tacVO -= 1
-            aiVO -= parameterTypes(i).computationalType.operandSize
+            aiVO -= parameterTypes(i).operandSize
             i += 1
         }
 
@@ -97,7 +96,17 @@ object TACAI {
         domain: Domain with RecordDefUse = new DefaultDomainWithCFGAndDefUse(project, method)
     ): TACode[TACMethodParameter, DUVar[domain.DomainValue]] = {
         val aiResult = BaseAI(method, domain)
-        TACAI(method, project.classHierarchy, aiResult)(Nil)
+        TACAI(project, method, aiResult)
+    }
+
+    def apply(
+        project:  SomeProject,
+        method:   Method,
+        aiResult: AIResult { val domain: Domain with RecordDefUse }
+    ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
+        val config = project.config
+        val propagateConstants = config.getBoolean("org.opalj.tacai.performConstantPropagation")
+        TACAI(method, project.classHierarchy, aiResult, propagateConstants)(Nil)
     }
 
     /**
@@ -111,9 +120,10 @@ object TACAI {
      * @return  The array with the generated statements.
      */
     def apply(
-        method:         Method,
-        classHierarchy: ClassHierarchy,
-        aiResult:       AIResult { val domain: Domain with RecordDefUse }
+        method:             Method,
+        classHierarchy:     ClassHierarchy,
+        aiResult:           AIResult { val domain: Domain with RecordDefUse },
+        propagateConstants: Boolean
     )(
         optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue]]]
     ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
@@ -181,8 +191,11 @@ object TACAI {
             } else if (isStatic && simpleRemapping) {
                 // => we have to subtract -1 from origins related to parameters
                 (aiVOs: IntTrieSet) ⇒
-                    aiVOs.map { aiVO ⇒
-                        if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0) aiVO else aiVO - 1
+                    aiVOs map { aiVO ⇒
+                        if (aiVO >= 0 || aiVO <= ImmediateVMExceptionsOriginOffset)
+                            aiVO
+                        else
+                            aiVO - 1
                     }
             } else {
                 // => we create an array which contains the mapping information
@@ -192,10 +205,11 @@ object TACAI {
                         IntTrieSet.empty
                     } else {
                         aiVOs map { aiVO ⇒
-                            if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0)
+                            if (aiVO >= 0 || aiVO <= ImmediateVMExceptionsOriginOffset) {
                                 aiVO
-                            else
+                            } else {
                                 aiVOToTACVo(-aiVO - 1)
+                            }
                         }
                     }
                 }
@@ -204,10 +218,13 @@ object TACAI {
 
         // The list of bytecode instructions which were killed (=>NOP), and for which we now
         // have to clear the usages.
-        // basically a mapping from a UseSite(PC) to a DefSite
+        // Basically a mapping from a UseSite(PC) to a DefSite.
         val obsoleteUseSites = new RefAppendChain[PCAndAnyRef[IntTrieSet /*DefSites*/ ]]
 
         def killOperandBasedUsages(useSitePC: Int, valuesCount: Int): Unit = {
+            if (valuesCount == 0)
+                return ;
+
             // The value(s) is (are) not used and the expression is side effect free;
             // we now have to kill the usages to avoid "wrong" links.
             // E.g.,
@@ -216,15 +233,14 @@ object TACAI {
             // now the def-site x would point to the use-site x+1, but this
             // site is removed and - therefore - this link from x to x+1 has to
             // be removed.
-            if (valuesCount > 0) {
-                var origins = normalizeParameterOrigins(domain.operandOrigin(useSitePC, 0))
-                var i = 1
-                while (i < valuesCount) {
-                    origins ++= normalizeParameterOrigins(domain.operandOrigin(useSitePC, i))
-                    i += 1
-                }
-                obsoleteUseSites.append(new PCAndAnyRef(useSitePC, origins))
+            import domain.operandOrigin
+            var origins = normalizeParameterOrigins(operandOrigin(useSitePC, 0))
+            var i = 1
+            while (i < valuesCount) {
+                origins ++= normalizeParameterOrigins(operandOrigin(useSitePC, i))
+                i += 1
             }
+            obsoleteUseSites.append(new PCAndAnyRef(useSitePC, origins))
         }
 
         def killRegisterBasedUsages(useSitePC: Int, index: Int): Unit = {
@@ -236,12 +252,16 @@ object TACAI {
         // the slot of an empty load/store statement.
         var addedHandlerStmts: IntTrieSet = IntTrieSet.empty
 
+        /*
         val handlerPCs: IntArraySet = {
             val ehs = code.exceptionHandlers
             val handlerPCs = new IntArraySetBuilder(ehs.length)
             ehs.foreach(eh ⇒ handlerPCs += eh.handlerPC)
-            handlerPCs.result
+            handlerPCs.result()
         }
+        */
+        val handlerPCs: Array[Boolean] = new Array(codeSize)
+        code.exceptionHandlers.foreach(eh ⇒ handlerPCs(eh.handlerPC) = true)
 
         var pc: Int = 0
         var index: Int = 0
@@ -260,7 +280,8 @@ object TACAI {
             // a jump target, the new "caught exception" becomes the target, however,
             // given that this instruction has no special side effects, this is not
             // problematic.
-            val addExceptionHandlerInitializer = handlerPCs.contains(pc)
+            //val addExceptionHandlerInitializer = handlerPCs.contains(pc)
+            val addExceptionHandlerInitializer = handlerPCs(pc)
 
             def addStmt(stmt: Stmt[DUVar[aiResult.domain.DomainValue]]): Unit = {
                 if (cfg.bb(pc).startPC != pc && statements(index - 1).astID == Nop.ASTID) {
@@ -409,7 +430,20 @@ object TACAI {
             }
 
             @inline def newArray(arrayType: ArrayType): Unit = {
-                val count = operandUse(0)
+                // TODO move code for constant propagation directly to operandUse to enable transparent constant propagation everywhere! After that, the code should be: val count = operandUse(0); val newArray...
+                val countUVar = operandUse(0)
+                val countDV = countUVar.value.asPrimitiveValue
+                val count =
+                    if (propagateConstants && countDV.constantValue.isDefined) {
+                        killOperandBasedUsages(pc, 1)
+                        // We have to use the pc of the current newArray instruction and cannot
+                        // use the pc of a def site because, if we have multiple def-sites,
+                        // the information would become incomplete; using this approach it seems
+                        // as if the constant was defined as a parameter.
+                        IntConst(pc, countDV.asConstantInteger)
+                    } else {
+                        countUVar
+                    }
                 val newArray = NewArray(pc, List(count), arrayType)
                 addInitLocalValStmt(pc, operandsArray(nextPC).head, newArray)
             }
@@ -840,7 +874,6 @@ object TACAI {
                     val tableSwitch = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
-                    // IMPROVE Use IntIntPair
                     val npairs = tableSwitch.jumpOffsets.map[IntIntPair] { jo ⇒
                         val caseTarget = pc + jo
                         val npair = IntIntPair(caseValue, caseTarget)
@@ -943,7 +976,8 @@ object TACAI {
                     val Assignment(pc, v @ DVar(_, useSites), expr) = statements(defSiteIndex)
                     val newUseSites = useSites - useSite
                     if (newUseSites.nonEmpty) {
-                        statements(defSiteIndex) = Assignment(pc, v.copy(useSites = newUseSites), expr)
+                        val newAssignment = Assignment(pc, v.copy(useSites = newUseSites), expr)
+                        statements(defSiteIndex) = newAssignment
                     } else if (expr.isSideEffectFree) {
                         val instruction = instructions(defSite)
                         instruction match {

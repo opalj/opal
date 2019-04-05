@@ -14,6 +14,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Await.{result ⇒ await}
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration.Inf
+import scala.concurrent.ExecutionContext
 import scala.io.BufferedSource
 
 import it.unimi.dsi.fastutil.ints.Int2IntArrayMap
@@ -26,6 +27,7 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.concurrent.OPALUnboundedExecutionContext
 import org.opalj.collection.RefIterator
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.Chain.CompleteEmptyChain
@@ -2691,14 +2693,7 @@ class ClassHierarchy private (
  */
 object ClassHierarchy {
 
-    private[this] implicit val classHierarchyEC: scala.concurrent.ExecutionContext = {
-        // BOTH:
-        //  - scala.concurrent.ExecutionContext.Implicits.global, and
-        //  - OPALThreadPoolExecutor
-        // cannot be used here - in both cases it may happen that we run out of threads when
-        // we implicitly have to initialize the "DefaultClassHierarchy"
-        org.opalj.concurrent.ExecutionContextN(4)
-    }
+    private[this] implicit val classHierarchyEC: ExecutionContext = OPALUnboundedExecutionContext
 
     final val JustObject: UIDSet[ObjectType] = new UIDSet1(ObjectType.Object)
 

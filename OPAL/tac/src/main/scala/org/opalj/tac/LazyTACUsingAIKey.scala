@@ -48,7 +48,7 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
 
         (m: Method) ⇒ taCodes.getOrElseUpdate(m, {
             val aiResult = aiResults(m)
-            val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
+            val code = TACAI(project, m, aiResult)
             // well... the following cast is safe, because the underlying
             // data structure is actually (at least conceptually) immutable
             code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]

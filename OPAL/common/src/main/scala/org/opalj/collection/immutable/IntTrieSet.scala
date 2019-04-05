@@ -338,14 +338,16 @@ private[immutable] final class IntTrieSet2 private[immutable] (
         val newI1 = f(i1)
         val i2 = this.i2
         val newI2 = f(i2)
-        if (newI1 != i1 || newI2 != i2)
-            IntTrieSet(newI1, newI2)
-        else
+        if (newI1 == newI2)
+            IntTrieSet1(newI1)
+        else if ((newI1 == i1 && newI2 == i2) || (newI1 == i2 && newI2 == i1))
             this
+        else
+            IntTrieSet.from(newI1, newI2)
     }
     override def map(map: Array[Int]): IntTrieSet = {
-        val newI1 = map(i1)
-        val newI2 = map(i2)
+        val newI1 = map(this.i1)
+        val newI2 = map(this.i2)
         if (newI1 == newI2)
             IntTrieSet1(newI1)
         else if ((newI1 == i1 && newI2 == i2) || (newI1 == i2 && newI2 == i1))

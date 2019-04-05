@@ -67,6 +67,7 @@ object TAC {
             "[-cfg] (print control-flow graph)\n"+
             "[-open] (the generated representations will be written to disk and opened)\n"+
             "[-toString] (uses the \"toString\" method to print the object graph)\n"+
+            "[-performConstantPropagation] (performs constant propagation)\n"+
             "Example:\n\tjava …TAC -cp /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
     }
 
@@ -82,6 +83,7 @@ object TAC {
         var toString: Boolean = false
         var domainName: Option[String] = None
         var printCFG: Boolean = false
+        var performConstantPropagation: Boolean = false
 
         // PARSING PARAMETERS
         var i = 0
@@ -106,15 +108,16 @@ object TAC {
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
-                case "-JDK"      ⇒ cp ::= JRELibraryFolder.toString
-                case "-cp"       ⇒ cp ::= readNextArg()
-                case "-libcp"    ⇒ libcp ::= readNextArg()
-                case "-cfg"      ⇒ printCFG = true
-                case "-open"     ⇒ doOpen = true
-                case "-class"    ⇒ className = Some(readNextArg())
-                case "-method"   ⇒ methodSignature = Some(readNextArg())
-                case "-toString" ⇒ toString = true
-                case unknown     ⇒ handleError(s"unknown parameter: $unknown")
+                case "-JDK"                        ⇒ cp ::= JRELibraryFolder.toString
+                case "-cp"                         ⇒ cp ::= readNextArg()
+                case "-libcp"                      ⇒ libcp ::= readNextArg()
+                case "-cfg"                        ⇒ printCFG = true
+                case "-open"                       ⇒ doOpen = true
+                case "-class"                      ⇒ className = Some(readNextArg())
+                case "-method"                     ⇒ methodSignature = Some(readNextArg())
+                case "-toString"                   ⇒ toString = true
+                case "-performConstantPropagation" ⇒ performConstantPropagation = true
+                case unknown                       ⇒ handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
@@ -169,8 +172,9 @@ object TAC {
                         }
                         // val d = new domain.l0.BaseDomainWithDefUse(project, classFile, method)
                         val aiResult = BaseAI(m, d)
+                        val classHierarchy = project.classHierarchy
                         val tac @ TACode(params, code, _, cfg, ehs, _) =
-                            TACAI(m, project.classHierarchy, aiResult)(Nil)
+                            TACAI(m, classHierarchy, aiResult, performConstantPropagation)(Nil)
                         if (toString) Console.out.println(m.toJava(tac.toString))
 
                         (

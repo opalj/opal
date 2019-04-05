@@ -27,7 +27,7 @@ object LocalPointsTo {
         // ... perform the data-flow analysis
         val aiResult = BaseAI(m, new PrimitiveTACAIDomain(ch, m))
         // now, we can transform the bytecode to three-address code
-        val tac = TACAI(m, ch, aiResult)(Nil /* no tac based optimizations*/ )
+        val tac = TACAI(m, ch, aiResult, propagateConstants = true)(Nil /* no optimizations */ )
 
         // Let's print the three address code to get a better feeling for it...
         // Please note, "pc" in the output refers to the program counter of the original
