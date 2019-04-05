@@ -742,6 +742,19 @@ final class Code private (
     }
 
     /**
+     * Iterates over all instructions and calls the given function `f`
+     * for every instruction.
+     */
+    @inline final def foreachPC[U](f: PC ⇒ U): Unit = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            f(pc)
+            pc = pcOfNextInstruction(pc)
+        }
+    }
+
+    /**
      * Iterates over all instructions until an instruction is found that matches
      * the given predicate.
      */

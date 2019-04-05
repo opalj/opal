@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 @RunWith(classOf[JUnitRunner])
 class TasksTest extends FunSpec with Matchers {
 
-    final val ThreadPool = ThreadPoolN(128)
+    final val ThreadPool = BoundedThreadPool("tasks test", 128)
     implicit final val TestExecutionContext = ExecutionContext.fromExecutorService(ThreadPool)
 
     describe("the Tasks control abstraction") {

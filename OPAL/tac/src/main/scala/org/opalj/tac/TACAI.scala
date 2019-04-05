@@ -181,7 +181,7 @@ object TACAI {
                 // => we have to subtract -1 from origins related to parameters
                 (aiVOs: IntTrieSet) ⇒
                     aiVOs map { aiVO ⇒
-                        if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0)
+                        if (aiVO >= 0 || aiVO <= ImmediateVMExceptionsOriginOffset)
                             aiVO
                         else
                             aiVO - 1
@@ -194,10 +194,11 @@ object TACAI {
                         IntTrieSet.empty
                     } else {
                         aiVOs map { aiVO ⇒
-                            if (aiVO <= ImmediateVMExceptionsOriginOffset || aiVO >= 0)
+                            if (aiVO >= 0 || aiVO <= ImmediateVMExceptionsOriginOffset) {
                                 aiVO
-                            else
+                            } else {
                                 aiVOToTACVo(-aiVO - 1)
+                            }
                         }
                     }
                 }

@@ -120,7 +120,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
 
     describe(s"creating the 3-address code") {
 
-        def computeTACAIForAllDomains(initialProject : SomeProject) : Unit = {
+        def computeTACAIForAllDomains(initialProject: SomeProject): Unit = {
             var p = initialProject
             domainFactories foreach { domainInformation ⇒
                 val performanceEvaluation = new PerformanceEvaluation()

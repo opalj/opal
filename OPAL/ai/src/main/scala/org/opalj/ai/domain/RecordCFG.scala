@@ -597,18 +597,16 @@ trait RecordCFG
             this
         ) {
                 val predecessors = new Array[IntTrieSet](regularSuccessors.length)
-                for {
-                    pc ← code.programCounters
-                    successorPC ← allSuccessorsOf(pc)
-                } {
-                    val oldPredecessorsOfSuccessor = predecessors(successorPC)
-                    predecessors(successorPC) =
-                        if (oldPredecessorsOfSuccessor eq null) {
-                            IntTrieSet1(pc)
-                        } else {
-                            oldPredecessorsOfSuccessor + pc
-                        }
-
+                code.foreachPC { pc ⇒
+                    foreachSuccessorOf(pc) { successorPC ⇒
+                        val oldPredecessorsOfSuccessor = predecessors(successorPC)
+                        predecessors(successorPC) =
+                            if (oldPredecessorsOfSuccessor eq null) {
+                                IntTrieSet1(pc)
+                            } else {
+                                oldPredecessorsOfSuccessor + pc
+                            }
+                    }
                 }
                 predecessors
             }
@@ -676,7 +674,7 @@ trait RecordCFG
      * Returns the first instructions of the infinite loops of the current method. An infinite loop
      * is a set of instructions that does not have a connection to any instruction outside of
      * the loop (closed strongly connected component).
-     * I.e., whatever path is taken, all remaining paths will eventualy include the loop header
+     * I.e., whatever path is taken, all remaining paths will eventually include the loop header
      * instruction.
      * The very vast majority of methods does not have infinite loops.
      */

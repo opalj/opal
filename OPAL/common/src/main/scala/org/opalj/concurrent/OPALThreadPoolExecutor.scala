@@ -19,20 +19,20 @@ import java.util.concurrent.atomic.AtomicLong
  *
  * @author Michael Eichberg
  */
-class OPALThreadPoolExecutor(
+class OPALBoundedThreadPoolExecutor(
         n:         Int,
         val group: ThreadGroup
 ) extends ThreadPoolExecutor(
     n, n,
-    60L, TimeUnit.SECONDS, // this is a fixed size pool
-    new LinkedBlockingQueue[Runnable](),
+    60L, TimeUnit.SECONDS,
+    new LinkedBlockingQueue[Runnable](), // this is a fixed size pool
     new ThreadFactory {
 
         val nextID = new AtomicLong(0L)
 
         def newThread(r: Runnable): Thread = {
             val id = s"${nextID.incrementAndGet()}"
-            val name = s"org.opalj.ThreadPool[N=$n]-Thread $id"
+            val name = group.getName + s" - Thread $id"
             val t = new Thread(group, r, name)
             // we are using demon threads to make sure that these
             // threads never prevent the JVM from regular termination
