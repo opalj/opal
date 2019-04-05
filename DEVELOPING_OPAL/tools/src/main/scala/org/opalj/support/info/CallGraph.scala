@@ -112,7 +112,7 @@ object CallGraph extends DefaultOneStepAnalysis {
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
         val cg = cgAlgorithm.get match {
-            case "CHA" ⇒ project.get(CHACallGraphKey(isLibrary.get))
+            case "CHA" ⇒ project.get(CHACallGraphKey)
             case "RTA" ⇒ project.get(RTACallGraphKey(isLibrary.get))
         }
 
@@ -141,7 +141,7 @@ object CallGraph extends DefaultOneStepAnalysis {
                     println(s"Callers of ${m.toJava}:")
                     println(ps(m, CallersProperty.key).ub.callers.map {
                         case (caller, pc, isDirect) ⇒
-                            s"${caller.toJava}, $pc${if(!isDirect) ", indirect" else ""}"
+                            s"${caller.toJava}, $pc${if (!isDirect) ", indirect" else ""}"
                     }.mkString("\t", "\n\t", "\n"))
                 }
             }

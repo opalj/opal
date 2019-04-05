@@ -24,29 +24,17 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
 
 /**
  * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on the class hierarchy (CHA).
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
- * @param isLibrary
- *      should the [[org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis]] be scheduled?
- *
- *      Note, that initial instantiated types ([[InitialInstantiatedTypesKey]]) and entry points
- *      ([[InitialEntryPointsKey]]) can be configured before hand.
- *      Furthermore, you can configure the analysis mode (Library or Application) in the configuration
- *      of these keys.
- *
- *
  *
  * @author Florian Kuebler
  *
  */
-case class CHACallGraphKey(
-        isLibrary: Boolean
-) extends ProjectInformationKey[CallGraph, Nothing] {
+object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     override protected def requirements: ProjectInformationKeys = {
         Seq(
@@ -75,9 +63,6 @@ case class CHACallGraphKey(
         var analyses: List[ComputationSpecification[FPCFAnalysis]] =
             List(CHACallGraphAnalysisScheduler, LazyTACAIProvider)
 
-        if (isLibrary)
-            analyses ::= EagerLibraryEntryPointsAnalysis
-
         analyses ++= registeredModules
 
         manager.runAll(analyses)
@@ -93,10 +78,10 @@ case class CHACallGraphKey(
             Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
         } catch {
             case sre: ScalaReflectionException ⇒
-                error("RTA call graph", "cannot find analysis scheduler", sre)
+                error("CHA call graph", "cannot find analysis scheduler", sre)
                 None
             case cce: ClassCastException ⇒
-                error("RTA call graph", "analysis scheduler class is invalid", cce)
+                error("CHA call graph", "analysis scheduler class is invalid", cce)
                 None
         }
     }

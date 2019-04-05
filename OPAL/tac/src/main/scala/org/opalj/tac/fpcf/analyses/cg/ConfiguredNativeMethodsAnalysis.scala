@@ -46,11 +46,11 @@ class ConfiguredNativeMethodsAnalysis private[analyses] (
 ) extends FPCFAnalysis {
 
     private case class NativeMethodData(
-        cf:                String,
-        m:                 String,
-        desc:              String,
-        instantiatedTypes: Option[Seq[String]],
-        reachableMethods:  Option[Seq[ReachableMethod]]
+            cf:                String,
+            m:                 String,
+            desc:              String,
+            instantiatedTypes: Option[Seq[String]],
+            reachableMethods:  Option[Seq[ReachableMethod]]
     )
 
     private case class ReachableMethod(cf: String, m: String, desc: String)
