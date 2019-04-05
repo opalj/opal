@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ExecutorService
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.parallel.ExecutionContextTaskSupport
 import scala.util.control.ControlThrowable
@@ -37,7 +39,18 @@ package object concurrent {
     }
 
     final val OPALUnboundedThreadPool: ExecutorService = {
-        Executors.newCachedThreadPool()
+        val nextID = new AtomicLong(0L)
+        Executors.newCachedThreadPool(
+            new ThreadFactory {
+                def newThread(r: Runnable): Thread = {
+                    val name = s"[global] opalj.ThreadPool - Thread "+nextID.incrementAndGet()
+                    val t = new Thread(r, name)
+                    t.setDaemon(true)
+                    t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
+                    t
+                }
+            }
+        )
     }
 
     final val OPALUnboundedExecutionContext: ExecutionContext = {
@@ -124,7 +137,7 @@ package object concurrent {
     }
 
     def BoundedThreadPool(name: String, n: Int): OPALBoundedThreadPoolExecutor = {
-        val groupName = s"[$name/${System.nanoTime().toHexString.drop(4)}] org.opalj.ThreadPool[N=$n]"
+        val groupName = s"[$name/${System.nanoTime().toHexString.drop(4)}] opalj.ThreadPool[N=$n]"
         val group = new ThreadGroup(groupName)
         val tp = new OPALBoundedThreadPoolExecutor(n, group)
         tp.allowCoreThreadTimeOut(true)
