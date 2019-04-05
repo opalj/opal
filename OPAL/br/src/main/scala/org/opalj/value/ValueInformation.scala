@@ -916,6 +916,7 @@ trait IsClassValue
     ): Answer = {
         supertype.id match {
             case ObjectType.ObjectId
+                | ObjectType.ClassId
                 | ObjectType.SerializableId
                 | AnnotatedElement.id
                 | Type.id
