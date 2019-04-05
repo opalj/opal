@@ -134,6 +134,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param pendingTacDependees Maps methods called by the analyzed `method` to
      *                            the intermediate result of their three address code analysis.#
      *                            Only contains methods, for which this analysis is waiting for a result.
+     * @param allDelendees Contains the entries of `pendingIfdsDependees` and `pendingTacDependees`.
      * @param pendingTacCallSites Maps methods called by the analyzed `method`
      *                            to the basic block and statement index of the call site(s) of the analyzed method.
      * @param incomingFacts Maps each basic block to the data flow facts valid at its first statement.
@@ -148,6 +149,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             var pendingIfdsCallSites: Map[(DeclaredMethod, IFDSFact), Set[(BasicBlock, Int)]],
             var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]] = Map.empty,
             var pendingTacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                          = Map.empty,
+            var allDependees:         Map[Any, SomeEOptionP]                                                                        = Map.empty,
             var pendingTacCallSites:  Map[Method, Set[(BasicBlock, Int)]]                                                           = Map.empty,
             var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                = Map.empty,
             var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                  = Map.empty
@@ -285,7 +287,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      */
     def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[IFDSFact]] =
         node.predecessors.collect {
-            case bb: BasicBlock if state.outgoingFacts.contains(bb) && state.outgoingFacts(bb).contains(node) ⇒
+            case bb: BasicBlock if state.outgoingFacts.get(bb).flatMap(_.get(node)).isDefined ⇒
                 val index = bb.endPC
                 Statement(state.method, state.code(index), index, state.code, state.cfg) → state
                     .outgoingFacts(bb)(node)
@@ -301,15 +303,13 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             collectResult(state.cfg.abnormalReturnNode)
         ))
 
-        val dependees = state.pendingIfdsDependees.values ++ state.pendingTacDependees.values
-
-        if (dependees.isEmpty) {
+        if (state.allDependees.isEmpty) {
             Result(state.source, propertyValue)
         } else {
             InterimResult.forUB(
                 state.source,
                 propertyValue,
-                dependees,
+                state.allDependees.values,
                 propertyHasBeenComputed,
                 DefaultPropertyComputation
             )
@@ -332,16 +332,18 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒ reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
 
             case interimEUBP @ InterimEUBP(e: (DeclaredMethod, IFDSFact) @unchecked, ub: IFDSProperty[IFDSFact]) ⇒
-                if (ub.flows.values.filter(!_.isInstanceOf[AbstractIFDSNullFact]).isEmpty)
+                if (ub.flows.values.filter(!_.isInstanceOf[AbstractIFDSNullFact]).isEmpty) {
                     // Do not re-analyze the caller if we only get the null fact.
                     // Update the pendingIfdsDependee entry to the new interim result.
                     state.pendingIfdsDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
-                else reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
+                    state.allDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
+                } else reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
 
             case FinalE(m: Method) ⇒
                 reAnalyzeCalls(state.pendingTacCallSites(m), m, None)
                 state.pendingTacCallSites -= m
                 state.pendingTacDependees -= m
+                state.allDependees -= m
 
             case InterimUBP(_: TACAI) ⇒ throw new UnknownError("Can not handle intermediate TAC")
         }
@@ -586,6 +588,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                                 state.pendingIfdsCallSites.getOrElse(e, Set.empty) - ((callBB, call.index))
                             state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
                             state.pendingIfdsDependees -= e
+                            state.allDependees -= e
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[IFDSFact]] ⇒
                             /*
@@ -644,6 +647,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         val callSites = state.pendingIfdsCallSites
         state.pendingIfdsCallSites = callSites.updated(entity, callSites.getOrElse(entity, Set.empty) + ((callBB, callIndex)))
         state.pendingIfdsDependees += entity → calleeProperty
+        state.allDependees += entity → calleeProperty
     }
 
     /**
@@ -722,6 +726,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
 
                 case epk: EPK[Method, TACAI] ⇒
                     state.pendingTacDependees += method → epk
+                    state.allDependees += method → epk
                     state.pendingTacCallSites += method →
                         (state.pendingTacCallSites.getOrElse(method, Set.empty) + ((callingBlock, callIndex)))
                     return Set.empty;
