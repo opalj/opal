@@ -134,7 +134,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param pendingTacDependees Maps methods called by the analyzed `method` to
      *                            the intermediate result of their three address code analysis.#
      *                            Only contains methods, for which this analysis is waiting for a result.
-     * @param allDelendees Contains the entries of `pendingIfdsDependees` and `pendingTacDependees`.
+     * @param allDependees Contains the entries of `pendingIfdsDependees` and `pendingTacDependees`.
      * @param pendingTacCallSites Maps methods called by the analyzed `method`
      *                            to the basic block and statement index of the call site(s) of the analyzed method.
      * @param incomingFacts Maps each basic block to the data flow facts valid at its first statement.
