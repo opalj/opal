@@ -313,7 +313,7 @@ object ToTxt {
         aiResult:       Option[AIResult { val domain: Domain with RecordDefUse }] = None
     ): String = {
         aiResult.map { aiResult ⇒
-            val taCode = TACAI(method, classHierarchy, aiResult)(Nil)
+            val taCode = TACAI(method, classHierarchy, aiResult, propagateConstants = true)(Nil)
             ToTxt(taCode.params, taCode.stmts, taCode.cfg, skipParams = false, true, true)
         }.getOrElse {
             val taCode = TACNaive(method, classHierarchy, List(SimplePropagation))

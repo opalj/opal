@@ -47,7 +47,7 @@ class TACAIIntegrationTest extends FunSpec with Matchers {
             try {
 
                 val TACode(params, tacAICode, _, cfg, _, _) = time('tacode) {
-                    TACAI(m, ch, aiResult)(List.empty)
+                    TACAI(m, ch, aiResult, false)(List.empty)
                 }
                 time('totxt) {
                     ToTxt(params, tacAICode, cfg, false, true, true)
