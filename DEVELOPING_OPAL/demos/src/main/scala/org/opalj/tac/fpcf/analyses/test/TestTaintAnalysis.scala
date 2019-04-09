@@ -376,7 +376,7 @@ object TestTaintAnalysisRunner {
         if (args.contains("--help")) {
             println("Potential parameters:")
             println(" -seq to use the SequentialPropertyStore")
-            println(" -l1 to use the l2 domain instead of the default l1 domain")
+            println(" -l2 to use the l2 domain instead of the default l1 domain")
             println(" -delay for a three seconds delay before the taint flow analysis is started")
         }
 
@@ -423,6 +423,7 @@ object TestTaintAnalysisRunner {
 
         val (_, analyses) =
             time {
+                p.recreate()
                 manager.runAll(LazyTACAIProvider, TestTaintAnalysis)
             } { t ⇒ println(s"Time for taint-flow analysis: ${t.toSeconds}") }
         val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head

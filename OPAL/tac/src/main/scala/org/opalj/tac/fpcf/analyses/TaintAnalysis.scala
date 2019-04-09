@@ -1,21 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses
 
-import java.io.File
-
-import org.opalj.ai.domain.l1
-import org.opalj.ai.domain.l2
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.{DeclaredMethod, Method, ObjectType}
-import org.opalj.br.analyses.{Project, SomeProject}
-import org.opalj.br.fpcf.{FPCFAnalysesManagerKey, PropertyStoreKey}
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.fpcf.{PropertyKey, PropertyStore, PropertyStoreContext}
-import org.opalj.log.LogContext
+import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.{PropertyKey, PropertyStore}
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac._
 import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation}
-import org.opalj.util.PerformanceEvaluation.time
 
 trait Fact extends AbstractIFDSFact
 case class NullFact() extends Fact with AbstractIFDSNullFact
@@ -45,15 +36,11 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      * The analysis starts at the TaintAnalysisTestClass.
      * TODO Make the entry points variable
      */
-    override val entryPoints: Map[DeclaredMethod, Fact] = Map(
-        p.allProjectClassFiles
-            .filter(classFile ⇒
-                classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
-            .flatMap(classFile ⇒ classFile.methods)
-            .filter(method ⇒ method.name == "run")
-            .map(method ⇒ declaredMethods(method))
-            .head -> NullFact()
-    )
+    override val entryPoints: Map[DeclaredMethod, Fact] = p.allProjectClassFiles.filter(classFile ⇒
+        classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
+        .flatMap(classFile ⇒ classFile.methods)
+        .filter(method ⇒ method.isPublic)
+        .map(method ⇒ declaredMethods(method) → NullFact()).toMap
 
     override def createPropertyValue(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
         new Taint(result)
@@ -264,7 +251,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
     ): Set[Fact] = {
 
         /**
-         * Checks whether the cllee's formal parameter is of a reference type.
+         * Checks whether the callee's formal parameter is of a reference type.
          */
         def isRefTypeParam(index: Int): Boolean =
             if (index == -1) true
@@ -355,71 +342,4 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
     override type Self = Taint
 
     val key: PropertyKey[Taint] = PropertyKey.create("Taint", new Taint(Map.empty))
-}
-
-/**
- * Runs the TaintAnalysis for TaintAnalysisTestClass.
- */
-object TaintAnalysisRunner {
-
-    def main(args: Array[String]): Unit = {
-        if (args.contains("--help")) {
-            println("Potential parameters:")
-            println(" -seq to use the SequentialPropertyStore")
-            println(" -l2 to use the l2 domain instead of the default l1 domain")
-            println(" -delay for a three seconds delay before the taint flow analysis is started")
-        }
-        val p = Project(
-            new File(
-                "DEVELOPING_OPAL/validate/target/scala-2.12/test-classes/org/opalj/fpcf/fixtures/taint/TaintAnalysisTest.class"
-            )
-        )
-        p.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                implicit val lg: LogContext = p.logContext
-                PropertyStore.updateDebug(false)
-                if (args.contains("-seq"))
-                    PKESequentialPropertyStore.apply(context: _*)
-                else
-                    ???
-            }
-        )
-        val requirement =
-            if (args.contains("-l2")) classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
-            else classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
-        p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒
-                (i match {
-                    case None               ⇒ Set(requirement)
-                    case Some(requirements) ⇒ requirements + requirement
-                }): Set[Class[_ <: AnyRef]]
-        )
-        val ps = p.get(PropertyStoreKey)
-        val manager = p.get(FPCFAnalysesManagerKey)
-        if (args.contains("-delay")) {
-            Thread.sleep(3000)
-        }
-        val (_, analyses) =
-            time {
-                manager.runAll(LazyTACAIProvider, TaintAnalysis)
-            } { t ⇒
-                println(s"Time for taint-flow analysis: ${t.toSeconds}")
-            }
-        for {
-            e ← analyses.collect { case (_, a: TaintAnalysis) ⇒ a.entryPoints }.head
-            fact ← ps(e, TaintAnalysis.property.key).ub
-                .asInstanceOf[IFDSProperty[Fact]]
-                .flows
-                .values
-                .flatten
-                .toSet[Fact]
-        } {
-            fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                case _              ⇒
-            }
-        }
-    }
 }
