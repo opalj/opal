@@ -289,7 +289,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         node.predecessors.collect {
             case bb: BasicBlock if state.outgoingFacts.get(bb).flatMap(_.get(node)).isDefined ⇒
                 val index = bb.endPC
-                Statement(state.method, state.code(index), index, state.code, state.cfg) → state
+                Statement(state.method, bb, state.code(index), index, state.code, state.cfg) → state
                     .outgoingFacts(bb)(node)
         }.toMap
 
@@ -390,7 +390,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             index: Int
         ): (Statement, Option[SomeSet[Method]], Option[IFDSFact]) = {
             val stmt = state.code(index)
-            val statement = Statement(state.method, stmt, index, state.code, state.cfg)
+            val statement = Statement(state.method, bb, stmt, index, state.code, state.cfg)
             val calleesO =
                 if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate.map(Set(_)) else getCallees(stmt)
             val calleeFact = if (calleeWithUpdateIndex.contains(index)) calleeWithUpdateFact else None
@@ -405,7 +405,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             val (statement, calleesO, calleeFact) = collectInformation(index)
             flows = if (calleesO.isEmpty) {
                 val successor =
-                    Statement(state.method, state.code(index + 1), index + 1, state.code, state.cfg)
+                    Statement(state.method, bb, state.code(index + 1), index + 1, state.code, state.cfg)
                 normalFlow(statement, successor, flows)
             } else
                 // Inside a basic block, we only have one successor --> Take the head
@@ -415,7 +415,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
 
         // Analyze the last statement for each possible successor statement.
         val (statement, calleesO, callFact) = collectInformation(bb.endPC)
-        var result =
+        var result: Map[CFGNode, Set[IFDSFact]] =
             if (calleesO.isEmpty) {
                 var result: Map[CFGNode, Set[IFDSFact]] = Map.empty
                 for (node ← bb.successors) {
@@ -423,7 +423,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 }
                 result
             } else {
-                handleCall(bb, statement, calleesO.get, flows, callFact)
+                handleCall(bb, statement, calleesO.get, flows, callFact).map(entry ⇒ entry._1.node → entry._2)
             }
 
         // Propagate the null fact.
@@ -531,7 +531,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param callees The methods possibly invoked by the call.
      * @param in The DataFlowFacts valid before the call statement.
      * @param calleeWithUpdateFact If present, the callees will only be analyzed with this fact instead of the facts returned by callFlow.
-     * @return A map, mapping from each return node to the exit-to-return-facts.
+     * @return A map, mapping from each successor statement to the exit-to-return-facts.
      */
     def handleCall(
         callBB:               BasicBlock,
@@ -539,14 +539,15 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         callees:              SomeSet[Method],
         in:                   Set[IFDSFact],
         calleeWithUpdateFact: Option[IFDSFact]
-    )(implicit state: State): Map[CFGNode, Set[IFDSFact]] = {
+    )(implicit state: State): Map[Statement, Set[IFDSFact]] = {
+        val successors = successorStatements(call, callBB)
         // DataFlowFacts valid on the CFG edge to each successor after the call
-        var summaryEdges: Map[CFGNode, Set[IFDSFact]] = Map.empty
+        var summaryEdges: Map[Statement, Set[IFDSFact]] = Map.empty
 
         // If calleeWithUpdateFact is not present, this means that the basic block already has been analyzed with the `in` facts.
         if (calleeWithUpdateFact.isEmpty)
-            for (successor ← callBB.successors) {
-                summaryEdges += successor → callToReturnFlow(call, firstStatement(successor), in)
+            for (successor ← successors) {
+                summaryEdges += successor → callToReturnFlow(call, successor, in)
             }
 
         for (calledMethod ← callees) {
@@ -618,23 +619,37 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             // TODO We do not distinguish exceptions and normal return nodes!
             val calleeExitStatements = getExits(calledMethod, callBB, call.index)
             for {
-                //TODO Was, wenn die Methode den Basic Block nicht beendet?
-                successorBlock ← callBB.successors
+                successor ← successors
                 exitStatement ← calleeExitStatements
             } {
-                val successorStatement = firstStatement(successorBlock)
-                val oldSummaryEdges = summaryEdges.getOrElse(successorBlock, Set.empty[IFDSFact])
+                val oldSummaryEdges = summaryEdges.getOrElse(successor, Set.empty[IFDSFact])
                 val exitToReturnFacts = returnFlow(
                     call,
                     callee,
                     exitStatement,
-                    successorStatement,
+                    successor,
                     allNewExitFacts.getOrElse(exitStatement, Set.empty)
                 )
-                summaryEdges += successorBlock → (oldSummaryEdges ++ exitToReturnFacts)
+                summaryEdges += successor → (oldSummaryEdges ++ exitToReturnFacts)
             }
         }
         summaryEdges
+    }
+
+    /**
+     * Determines the successor statements for one source statement.
+     *
+     * @param statement The source statement.
+     * @param basicBlock The basic block containing the source statement.
+     * @return All successor statements.
+     */
+    def successorStatements(statement: Statement, basicBlock: BasicBlock)(implicit state: State): Set[Statement] = {
+        val index = statement.index
+        if (index == basicBlock.endPC) for (successorBlock ← basicBlock.successors) yield firstStatement(successorBlock)
+        else {
+            val nextIndex = index + 1
+            Set(Statement(statement.method, basicBlock, statement.code(nextIndex), nextIndex, statement.code, statement.cfg))
+        }
     }
 
     /**
@@ -694,11 +709,12 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     private def firstStatement(node: CFGNode)(implicit state: State): Statement = {
         if (node.isBasicBlock) {
             val index = node.asBasicBlock.startPC
-            Statement(state.method, state.code(index), index, state.code, state.cfg)
+            Statement(state.method, node, state.code(index), index, state.code, state.cfg)
         } else if (node.isCatchNode) {
             firstStatement(node.successors.head)
-        } else
-            null
+        } else if(node.isExitNode) {
+            Statement(state.method, node, null, 0, state.code, state.cfg)
+        } else throw new IllegalArgumentException(s"Unknown node type: $node")
     }
 
     /**
@@ -742,7 +758,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 _ ⇒ {
                     (cfg.abnormalReturnNode.predecessors ++ cfg.normalReturnNode.predecessors).map { block ⇒
                         val endPC = block.asBasicBlock.endPC
-                        Statement(method, code(endPC), endPC, code, cfg)
+                        Statement(method, block.asBasicBlock, code(endPC), endPC, code, cfg)
                     }
                 }
             )
@@ -781,7 +797,8 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
 /**
  * A statement that is passed to the concrete analysis.
  *
- * @param method The analyzed method.
+ * @param method The method containing the statement.
+ * @param node The basic block containing the statement.
  * @param stmt The TAC statement.
  * @param index The index of the Statement in the code.
  * @param code The method's TAC code.
@@ -789,6 +806,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
  */
 case class Statement(
         method: Method,
+        node: CFGNode,
         stmt:   Stmt[V],
         index:  Int,
         code:   Array[Stmt[V]],
