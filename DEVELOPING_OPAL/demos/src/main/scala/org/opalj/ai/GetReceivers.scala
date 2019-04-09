@@ -11,7 +11,10 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.NEW
 import org.opalj.br.Method
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.domain.Origin
+import org.opalj.ai.domain.RecordDefUse
+import org.opalj.ai.fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement
 
 /**
  * Extracts the information about receivers of method calls.
@@ -24,30 +27,42 @@ object GetReceivers extends DefaultOneStepAnalysis {
 
     override def description: String = "Provides information about a method call's receiver."
 
+    var usePropertyStore: Boolean = true
+
     override def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
 
-        p.updateProjectInformationKeyInitializationData(
-            org.opalj.ai.common.SimpleAIKey,
-            (_: Option[_]) ⇒ { (m: Method) ⇒
-                // new org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
-                new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+        val performAI: (Method) ⇒ AIResult { val domain: Domain with RecordDefUse } =
+            if (usePropertyStore) {
+                val analysesManager = p.get(FPCFAnalysesManagerKey)
+                analysesManager.runAll(
+                    org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
+                    org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
+                )
+                (m: Method) ⇒ {
+                    BaseAI(m, new L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement(p, m))
+                }
+            } else {
+                p.updateProjectInformationKeyInitializationData(
+                    org.opalj.ai.common.SimpleAIKey,
+                    (_: Option[_]) ⇒ { (m: Method) ⇒
+                        // new org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
+                        new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+                    }
+                )
+                p.get(org.opalj.ai.common.SimpleAIKey)
             }
-        )
-        org.opalj.ai.common.SimpleAIKey
-
-        val ai = p.get(org.opalj.ai.common.SimpleAIKey)
 
         val counts: mutable.Map[String, Int] = mutable.Map.empty.withDefaultValue(0)
 
         p.parForeachMethodWithBody() { mi ⇒
             val m = mi.method
+            lazy val aiResult = performAI(m).asInstanceOf[AIResult { val domain: Domain with Origin }]
             for {
                 PCAndInstruction(pc, i) ← m.body.get
                 if i.isMethodInvocationInstruction
                 invocationInstruction = i.asMethodInvocationInstruction
                 if invocationInstruction.isVirtualMethodCall
                 if invocationInstruction.methodDescriptor.returnType.isObjectType
-                aiResult = ai(m).asInstanceOf[AIResult { val domain: Domain with Origin }]
                 receiverPosition = invocationInstruction.methodDescriptor.parametersCount
                 operands = aiResult.operandsArray(pc)
                 if operands != null
