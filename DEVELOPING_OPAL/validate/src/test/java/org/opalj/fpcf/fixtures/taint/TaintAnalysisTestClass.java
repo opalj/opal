@@ -8,37 +8,12 @@ import org.opalj.fpcf.properties.taint.FlowPath;
  */
 public class TaintAnalysisTestClass {
 
-    public static void main(String[] args) {
-        new TaintAnalysisTestClass().run();
-    }
-
-    public void run() {
-        callChainsAreConsidered();
-        returnEdgesFromInstanceMethodsArePresent();
-        returnEdgesFromPrivateMethodsArePresent();
-        multiplePathsAreConsidered_1();
-        multiplePathsAreConsidered_2();
-        summaryEdgesOfRecursiveFunctionsAreComputedCorrectly();
-        codeInCatchNodesIsConsidered();
-        binaryExpressionsPropagateTaints();
-        unaryExpressionsPropagateTaints();
-        arrayLengthPropagatesTaints();
-        singleArrayIndicesAreTainted_1();
-        wholeArrayTaintedIfIndexUnknown();
-        arrayElementTaintsArePropagatedToCallee_1();
-        arrayElementTaintsArePropagatedBack_1();
-        callerParameterIsTaintedIfCalleeTaintsFormalParameter();
-        singleArrayIndicesAreTainted_2();
-        taintDisappearsWhenReassigning();
-        arrayElementTaintsArePropagatedToCallee_2();
-        arrayElementTaintsArePropagatedBack_2();
-    }
-
     @FlowPath({"callChainsAreConsidered", "passToSink"})
     public void callChainsAreConsidered() {
         int i = source();
         passToSink(i);
     }
+
     @FlowPath({"returnEdgesFromInstanceMethodsArePresent"})
     public void returnEdgesFromInstanceMethodsArePresent() {
         int i = callSourceNonStatic();
@@ -169,6 +144,18 @@ public class TaintAnalysisTestClass {
         sink(arr[0]);
     }
 
+    //TODO Does not work, because the TAC's exit statements do not have any predecessors in this case.
+    /*@FlowPath({"doesNotReturn", "callerParameterIsTaintedIfCalleeTaintsFormalParameter", "passFirstArrayElementToSink"})
+    public void doesNotReturn() {
+        while(true) {
+            try {
+                callerParameterIsTaintedIfCalleeTaintsFormalParameter();
+            }catch (Throwable t) {
+                //does nothing by purpose
+            }
+        }
+    }*/
+
     public int callSourceNonStatic() {
         return source();
     }
@@ -203,6 +190,11 @@ public class TaintAnalysisTestClass {
 
     public static void sink(int i) {
         System.out.println(i);
+    }
+
+    //If it throws an exception, it is only an arithmetic exception.
+    public static int divide(int i, int j) {
+        return i / j;
     }
 
 }

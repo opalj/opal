@@ -376,7 +376,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         state: State
     ): Map[CFGNode, Set[IFDSFact]] = {
 
-        /**
+        /*
          * Collects information about a TAC statement
          *
          * @param index The index of the TAC statement
@@ -615,8 +615,10 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             }
 
             // Map facts valid on each exit statement of the callee back to the caller
+            // TODO We do not distinguish exceptions and normal return nodes!
             val calleeExitStatements = getExits(calledMethod, callBB, call.index)
             for {
+                //TODO Was, wenn die Methode den Basic Block nicht beendet?
                 successorBlock ← callBB.successors
                 exitStatement ← calleeExitStatements
             } {
