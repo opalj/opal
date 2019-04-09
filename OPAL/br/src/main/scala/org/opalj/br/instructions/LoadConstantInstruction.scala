@@ -15,6 +15,8 @@ abstract class LoadConstantInstruction[T]
     with ConstantLengthInstruction
     with NoLabels {
 
+    override def isLoadConstantInstruction: Boolean = true
+
     /**
      * The value that is put onto the stack.
      */
