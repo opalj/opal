@@ -39,6 +39,37 @@ public class TaintAnalysisTestClass {
         indirectPassToSink(i);
     }
 
+    @FlowPath({"ifEdgesAreConsidered"})
+    public void ifEdgesAreConsidered() {
+        int i;
+        if(Math.random() < .5) {
+            i = source();
+        } else {
+            i = 0;
+        }
+        sink(i);
+    }
+
+    @FlowPath({"elseEdgesAreConsidered"})
+    public void elseEdgesAreConsidered() {
+        int i;
+        if(Math.random() < .5) {
+            i = 0;
+        } else {
+            i = source();
+        }
+        sink(i);
+    }
+
+    @FlowPath({"forLoopsAreConsidered"})
+    public void forLoopsAreConsidered() {
+        int[] arr = new int[2];
+        for(int i = 0; i < arr.length; i++) {
+            sink(arr[0]);
+            arr[i] = source();
+        }
+    }
+
     @FlowPath({"summaryEdgesOfRecursiveFunctionsAreComputedCorrectly"})
     public void summaryEdgesOfRecursiveFunctionsAreComputedCorrectly() {
         sink(recursion(0));
@@ -54,6 +85,18 @@ public class TaintAnalysisTestClass {
         try {
             throw new RuntimeException();
         } catch(RuntimeException e) {
+            sink(i);
+        }
+    }
+
+    @FlowPath({"codeInFinallyNodesIsConsidered"})
+    public void codeInFinallyNodesIsConsidered() {
+        int i = 1;
+        try {
+            throw new RuntimeException();
+        } catch(RuntimeException e) {
+            i = source();
+        } finally {
             sink(i);
         }
     }
