@@ -127,7 +127,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         method:    Method,
         dependees: EOptionPSet[Entity, Property]
     ): ProperPropertyComputationResult = {
-        dependees.updateAll() // <= doesn't hurt if dependees is emnpty
+        dependees.updateAll() // <= doesn't hurt if dependees is empty
 
         val domain = new MethodReturnValuesAnalysisDomain(ai, method, dependees)
         val aiResult = ai(method, domain) // the state is implicitly accumulated in the domain

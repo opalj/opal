@@ -27,6 +27,7 @@ trait InstructionLike {
     def mnemonic: String
 
     def isControlTransferInstruction: Boolean = false
+    def isLoadConstantInstruction: Boolean = false
     def isReturnInstruction: Boolean = false
     def isMonitorInstruction: Boolean = false
     def isAthrow: Boolean = false
