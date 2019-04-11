@@ -416,7 +416,6 @@ object TestTaintAnalysisRunner {
         }
 
         val ps = p.get(PropertyStoreKey)
-        val manager = p.get(FPCFAnalysesManagerKey)
 
         if (args.contains("-delay")) {
             println("Sleeping for three seconds.")
@@ -424,10 +423,13 @@ object TestTaintAnalysisRunner {
         }
 
         val (_, analyses) =
-            time {
-                p.recreate()
-                manager.runAll(LazyTACAIProvider, TestTaintAnalysis)
-            } { t ⇒ println(s"Time for taint-flow analysis: ${t.toSeconds}") }
+            time(2, 25, 10, {
+                val project = p.recreate()
+                project.get(FPCFAnalysesManagerKey).runAll(LazyTACAIProvider, TestTaintAnalysis)
+            })({ (t, times) ⇒
+                val average = times.map(_.toSeconds.timeSpan).sum / times.length
+                println(s"average time for taint-flow analysis: ${average}")
+            })
         val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
         for {
             e ← entryPoints
