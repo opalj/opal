@@ -22,6 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArrayStack
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.OpenHashMap
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
@@ -49,6 +50,7 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
@@ -1145,6 +1147,26 @@ object Project {
                     }.getOrElse("<None>")
 
                 m.body.get iterate { (pc: Int, instruction: Instruction) ⇒
+
+                    def validateReceiverTypeKind(
+                        invoke: NonVirtualMethodInvocationInstruction
+                    ): Boolean = {
+                        val typeIsInterface = isInterface(invoke.declaringClass.asObjectType)
+                        if (typeIsInterface.isYesOrNo && typeIsInterface.isYes != invoke.isInterfaceCall) {
+                            val ex = InconsistentProjectException(
+                                s"the type of the declaring class of the target method of the invokes call in "+
+                                    m.toJava(s"pc=$pc; $invoke - $disclaimer")+
+                                    " is inconsistent; it is expected to be "+
+                                    (if (invoke.isInterfaceCall) "an interface" else "a class"),
+                                Error
+                            )
+                            addException(ex)
+                            false
+                        } else {
+                            true
+                        }
+                    }
+
                     try {
                         (instruction.opcode: @switch) match {
 
@@ -1161,38 +1183,41 @@ object Project {
 
                             case INVOKESTATIC.opcode ⇒
                                 val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
-                                project.staticCall(invokestatic) match {
-                                    case _: Success[_] ⇒ /*OK*/
-                                    case Empty         ⇒ /*OK - partial project*/
-                                    case Failure ⇒
-                                        val ex = InconsistentProjectException(
-                                            s"target method of invokestatic call in "+
-                                                m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
-                                                " cannot be resolved; supertype information is complete="+
-                                                completeSupertypeInformation+
-                                                "; missing supertype class file: "+missingSupertypeClassFile,
-                                            Error
-                                        )
-                                        addException(ex)
+                                if (validateReceiverTypeKind(invokestatic)) {
+                                    project.staticCall(invokestatic) match {
+                                        case _: Success[_] ⇒ /*OK*/
+                                        case Empty         ⇒ /*OK - partial project*/
+                                        case Failure ⇒
+                                            val ex = InconsistentProjectException(
+                                                s"target method of invokestatic call in "+
+                                                    m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
+                                                    " cannot be resolved; supertype information is complete="+
+                                                    completeSupertypeInformation+
+                                                    "; missing supertype class file: "+missingSupertypeClassFile,
+                                                Error
+                                            )
+                                            addException(ex)
+                                    }
                                 }
 
                             case INVOKESPECIAL.opcode ⇒
                                 val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                                project.specialCall(cf.thisType, invokespecial) match {
-                                    case _: Success[_] ⇒ /*OK*/
-                                    case Empty         ⇒ /*OK - partial project*/
-                                    case Failure ⇒
-                                        val ex = InconsistentProjectException(
-                                            s"target method of invokespecial call in "+
-                                                m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
-                                                " cannot be resolved; supertype information is complete="+
-                                                completeSupertypeInformation+
-                                                "; missing supertype class file: "+missingSupertypeClassFile,
-                                            Error
-                                        )
-                                        addException(ex)
+                                if (validateReceiverTypeKind(invokespecial)) {
+                                    project.specialCall(cf.thisType, invokespecial) match {
+                                        case _: Success[_] ⇒ /*OK*/
+                                        case Empty         ⇒ /*OK - partial project*/
+                                        case Failure ⇒
+                                            val ex = InconsistentProjectException(
+                                                s"target method of invokespecial call in "+
+                                                    m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
+                                                    " cannot be resolved; supertype information is complete="+
+                                                    completeSupertypeInformation+
+                                                    "; missing supertype class file: "+missingSupertypeClassFile,
+                                                Error
+                                            )
+                                            addException(ex)
+                                    }
                                 }
-
                             case _ ⇒ // Nothing special is checked (so far)
                         }
                     } catch {
