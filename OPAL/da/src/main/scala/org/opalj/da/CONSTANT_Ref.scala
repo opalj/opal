@@ -34,8 +34,9 @@ trait CONSTANT_Ref extends Constant_Pool_Entry {
             )
         </div>
 
-    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+    def asInstructionParameter(classType: Option[String])(implicit cp: Constant_Pool): NodeSeq = {
         <span class="ref">
+            { if (classType.isDefined) <span>{ classType.get }&nbsp;</span> else NodeSeq.Empty }
             { asJavaReferenceType(class_index).asSpan("") }
             <span>{{ { cp(name_and_type_index).asInstructionParameter } }}</span>
         </span>
