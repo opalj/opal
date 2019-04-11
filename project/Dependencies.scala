@@ -14,11 +14,11 @@ object Dependencies {
         val scalatest = "3.0.7"
         val scalacheck = "1.14.0"
 
-        val scalaxml = "1.1.1"
+        val scalaxml = "1.2.0"
         val playjson = "2.7.2"
         val ficus = "1.4.5"
         val commonstext = "1.6"
-        val scalaparsercombinators = "1.1.1"
+        val scalaparsercombinators = "1.1.2"
 
         val scalafx = "8.0.181-R13"
         val controlsfx = "8.40.14"
