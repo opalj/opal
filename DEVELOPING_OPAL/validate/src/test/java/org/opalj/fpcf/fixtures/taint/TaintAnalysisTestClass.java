@@ -187,7 +187,7 @@ public class TaintAnalysisTestClass {
         sink(arr[0]);
     }
 
-    //TODO Does not work, because the TAC's exit statements do not have any predecessors in this case.
+    //Does not work, because the TAC's exit statements do not have any predecessors in this case.
     /*@FlowPath({"doesNotReturn", "callerParameterIsTaintedIfCalleeTaintsFormalParameter", "passFirstArrayElementToSink"})
     public void doesNotReturn() {
         while(true) {
@@ -197,6 +197,18 @@ public class TaintAnalysisTestClass {
                 //does nothing by purpose
             }
         }
+    }*/
+
+    //Does not work, because we do not know which exceptions cannot be thrown.
+    /*@FlowPath({})
+    public void onlyThrowableExceptionsAreConsidered() {
+        int i = 0;
+        try {
+            divide(1, i);
+        } catch(IllegalArgumentException e) {
+            i = source();
+        }
+        sink(i);
     }*/
 
     public int callSourceNonStatic() {
