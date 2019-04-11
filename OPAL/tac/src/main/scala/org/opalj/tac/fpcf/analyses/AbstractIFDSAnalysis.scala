@@ -7,8 +7,6 @@ package analyses
 import scala.annotation.switch
 import scala.annotation.tailrec
 
-import java.util.concurrent.ConcurrentHashMap
-
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.mutable
 
@@ -112,11 +110,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     final protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     val entryPoints: Map[DeclaredMethod, IFDSFact]
-
-    /**
-     * Remembers the results of getExits.
-     */
-    val exits: ConcurrentHashMap[Method, Set[Statement]] = new ConcurrentHashMap
 
     /**
      * The state of the analysis. For each method and source fact, there is a separate state.
@@ -615,10 +608,9 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
 
             // Map facts valid on each exit statement of the callee back to the caller
             // TODO We do not distinguish exceptions and normal return nodes!
-            val calleeExitStatements = getExits(calledMethod, callBB, call.index)
             for {
                 successor ← successors
-                exitStatement ← calleeExitStatements
+                exitStatement ← allNewExitFacts.values
             } {
                 val oldSummaryEdges = summaryEdges.getOrElse(successor, Set.empty[IFDSFact])
                 val exitToReturnFacts = returnFlow(
@@ -713,55 +705,6 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         } else if (node.isExitNode) {
             Statement(state.method, node, null, 0, state.code, state.cfg)
         } else throw new IllegalArgumentException(s"Unknown node type: $node")
-    }
-
-    /**
-     * Retrieves all exit statements of a called method for a specific call site. If the TAC of that method is not
-     * present yet, it will be added to `pendingTacDependees` and `pendingTacCallSites`.
-     *
-     * @param method The method, for which the exit statements will be retrieved.
-     * @param callingBlock The basic block, in which the method is called.
-     * @param callIndex The index if the `callingBlock`, where the method is called.
-     * @return All possible exit nodes.
-     */
-    def getExits(
-        method:       Method,
-        callingBlock: BasicBlock,
-        callIndex:    Int
-    )(
-        implicit
-        state: State
-    ): Set[Statement] = {
-        // The results of this method are stores in `exits`.
-        val result = exits.get(method)
-        if (result == null) {
-            val (code, cfg) = propertyStore(method, TACAI.key) match {
-
-                case FinalP(TheTACAI(tac)) ⇒
-                    (tac.stmts, tac.cfg)
-
-                case epk: EPK[Method, TACAI] ⇒
-                    state.pendingTacDependees += method → epk
-                    state.allDependees += method → epk
-                    state.pendingTacCallSites += method →
-                        (state.pendingTacCallSites.getOrElse(method, Set.empty) + ((callingBlock, callIndex)))
-                    return Set.empty;
-
-                case tac ⇒
-                    throw new UnknownError(s"can't handle intermediate TACs ($tac)")
-            }
-
-            exits.computeIfAbsent(
-                method,
-                _ ⇒ {
-                    (cfg.abnormalReturnNode.predecessors ++ cfg.normalReturnNode.predecessors).map { block ⇒
-                        val endPC = block.asBasicBlock.endPC
-                        Statement(method, block.asBasicBlock, code(endPC), endPC, code, cfg)
-                    }
-                }
-            )
-        } else
-            result
     }
 
     /**
