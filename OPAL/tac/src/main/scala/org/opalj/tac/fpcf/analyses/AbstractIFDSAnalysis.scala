@@ -610,7 +610,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             // TODO We do not distinguish exceptions and normal return nodes!
             for {
                 successor ← successors
-                exitStatement ← allNewExitFacts.values
+                exitStatement ← allNewExitFacts.keys
             } {
                 val oldSummaryEdges = summaryEdges.getOrElse(successor, Set.empty[IFDSFact])
                 val exitToReturnFacts = returnFlow(
