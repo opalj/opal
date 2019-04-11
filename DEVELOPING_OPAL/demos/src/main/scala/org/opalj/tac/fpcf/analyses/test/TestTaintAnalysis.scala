@@ -6,6 +6,8 @@ package analyses
 package test
 
 import scala.collection.immutable.ListSet
+import scala.collection.Map
+
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray

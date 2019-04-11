@@ -4,6 +4,8 @@ package tac
 package fpcf
 package properties
 
+import scala.collection.Map
+
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.value.KnownTypedValue

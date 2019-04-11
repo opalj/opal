@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.mutable
+import scala.collection.Map
 
 import org.opalj.fpcf.CheapPropertyComputation
 import org.opalj.fpcf.DefaultPropertyComputation
@@ -228,7 +229,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         while (worklist.nonEmpty) {
             val (bb, in, calleeWithUpdateIndex, calleeWithUpdate, calleeWithUpdateFact) =
                 worklist.dequeue()
-            val oldOut = state.outgoingFacts.getOrElse(bb, Map.empty)
+            val oldOut = state.outgoingFacts.getOrElse(bb, Map.empty[CFGNode, Set[IFDSFact]])
             val nextOut =
                 analyzeBasicBlock(bb, in, calleeWithUpdateIndex, calleeWithUpdate, calleeWithUpdateFact)
             val allOut = mergeMaps(oldOut, nextOut)
@@ -282,13 +283,17 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * Gets, for an ExitNode of the CFG, the DataFlowFacts valid on each CFG edge from a
      * statement to that ExitNode.
      */
-    def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[IFDSFact]] =
-        node.predecessors.collect {
+    def collectResult(node: CFGNode)(implicit state: State): Map[Statement, Set[IFDSFact]] = {
+        val result = scala.collection.mutable.Map.empty[Statement, Set[IFDSFact]]
+        node.predecessors.foreach {
             case bb: BasicBlock if state.outgoingFacts.get(bb).flatMap(_.get(node)).isDefined ⇒
                 val index = bb.endPC
-                Statement(state.method, bb, state.code(index), index, state.code, state.cfg) → state
-                    .outgoingFacts(bb)(node)
-        }.toMap
+                result.put(Statement(state.method, bb, state.code(index), index, state.code, state.cfg), state
+                    .outgoingFacts(bb)(node))
+            case _ ⇒
+        }
+        result
+    }
 
     /**
      * Creates the analysis result from the current state.
