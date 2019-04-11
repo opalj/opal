@@ -1,8 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses
 
-import scala.collection.Map
-
 import org.opalj.br.{DeclaredMethod, Method, ObjectType}
 import org.opalj.br.analyses.SomeProject
 import org.opalj.fpcf.{PropertyKey, PropertyStore}
