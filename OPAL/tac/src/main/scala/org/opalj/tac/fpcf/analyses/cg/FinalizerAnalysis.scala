@@ -17,6 +17,7 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
@@ -143,6 +144,8 @@ object TriggeredFinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisSch
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
 
+    override def triggeredBy: PropertyKey[InstantiatedTypes] = InstantiatedTypes.key
+
     override def derivesCollaboratively: Set[PropertyBounds] = Set(
         PropertyBounds.ub(VMReachableFinalizers),
         PropertyBounds.ub(CallersProperty)
@@ -152,7 +155,7 @@ object TriggeredFinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisSch
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FinalizerAnalysis = {
         val analysis = new FinalizerAnalysis(p)
-        ps.registerTriggeredComputation(InstantiatedTypes.key, analysis.analyze)
+        ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis
     }
 }

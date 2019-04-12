@@ -17,6 +17,7 @@ import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
@@ -220,13 +221,15 @@ object TriggeredLoadedClassesAnalysis extends BasicFPCFTriggeredAnalysisSchedule
         TACAI
     )
 
+    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(LoadedClasses)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LoadedClassesAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.handleCaller)
+        ps.registerTriggeredComputation(triggeredBy, analysis.handleCaller)
         analysis
     }
 
