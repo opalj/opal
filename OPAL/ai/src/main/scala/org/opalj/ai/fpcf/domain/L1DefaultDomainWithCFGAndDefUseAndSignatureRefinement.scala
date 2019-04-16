@@ -22,7 +22,7 @@ class L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement[Source](
     with RefinedTypeLevelInvokeInstructions {
 
     // We specify that we are able to only handle final properties to avoid that users
-    // of this domain have to worry
+    // of this domain have to worry about intermediate updates.
     final val UsedPropertiesBound: SinglePropertiesBoundType = FinalProperties
 
 }

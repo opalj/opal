@@ -14,6 +14,7 @@ import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
@@ -190,11 +191,13 @@ object TriggeredSystemPropertiesAnalysis extends BasicFPCFTriggeredAnalysisSched
         PropertyBounds.ub(TACAI)
     )
 
+    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
     ): TriggeredSystemPropertiesAnalysis = {
         val analysis = new TriggeredSystemPropertiesAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis
     }
 

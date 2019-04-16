@@ -2,6 +2,8 @@
 package org.opalj
 package da
 
+import scala.xml.NodeSeq
+
 import org.opalj.bi.ConstantPoolTag
 
 /**
@@ -13,4 +15,8 @@ case class CONSTANT_Fieldref_info(
 ) extends CONSTANT_Ref {
 
     override def Constant_Type_Value: ConstantPoolTag = bi.ConstantPoolTags.CONSTANT_Fieldref
+
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+        super.asInstructionParameter(None)
+    }
 }

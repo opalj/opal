@@ -58,3 +58,16 @@ trait LogMessage {
         }.mkString("\n")
     }
 }
+
+object LogMessage {
+
+    def plainInfo(info: String): LogMessage = new LogMessage {
+        override def level: Level = Info
+        override def category: Option[String] = None
+        override def message: String = info
+        override def toConsoleOutput(ansiColored: Boolean): String = {
+            info
+        }
+    }
+
+}

@@ -7,13 +7,15 @@ import java.net.URL
 import java.io.File
 
 import scala.util.control.ControlThrowable
+
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
+
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.log.Info
+import org.opalj.log.LogMessage
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -240,7 +242,7 @@ trait AnalysisExecutor {
         OPALLogger.info("info", "executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
         val result = analysis.analyze(project, args2, ProgressManagement.None)
-        OPALLogger.log(Info(result.toConsoleString))
+        OPALLogger.log(LogMessage.plainInfo(result.toConsoleString))
     }
 
     protected def handleParsingExceptions(

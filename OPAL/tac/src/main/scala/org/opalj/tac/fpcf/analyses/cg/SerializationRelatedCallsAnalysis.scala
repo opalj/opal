@@ -18,6 +18,7 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
@@ -486,6 +487,8 @@ object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFTriggeredAnal
         TACAI
     )
 
+    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
         CallersProperty,
         InstantiatedTypes
@@ -497,7 +500,7 @@ object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFTriggeredAnal
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new SerializationRelatedCallsAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis
     }
 

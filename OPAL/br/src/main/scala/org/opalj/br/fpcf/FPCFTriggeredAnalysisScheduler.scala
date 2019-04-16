@@ -5,6 +5,7 @@ package fpcf
 
 import org.opalj.fpcf.ComputationType
 import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.TriggeredComputation
 import org.opalj.br.analyses.SomeProject
@@ -28,6 +29,11 @@ trait FPCFTriggeredAnalysisScheduler extends FPCFAnalysisScheduler {
     final override def schedule(ps: PropertyStore, i: InitializationData): FPCFAnalysis = {
         register(ps.context(classOf[SomeProject]), ps, i)
     }
+
+    /**
+     * Specifies the kind of the properties that will trigger the analysis to be registered.
+     */
+    def triggeredBy: PropertyKind
 
     final def register(project: SomeProject, i: InitializationData): FPCFAnalysis = {
         register(project, project.get(PropertyStoreKey), i)

@@ -40,6 +40,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -721,6 +722,8 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
         TACAI
     )
 
+    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(CallersProperty)
 
     override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(StandardInvokeCallees)
@@ -757,7 +760,7 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): RTACallGraphAnalysis = {
         val analysis = new RTACallGraphAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis
     }
 

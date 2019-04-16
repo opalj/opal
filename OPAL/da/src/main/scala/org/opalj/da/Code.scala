@@ -364,7 +364,7 @@ case class Code(instructions: Array[Byte]) {
                     val c = in.readUnsignedShort()
                     val signature = cp(c).asInstructionParameter
                     <span>
-                        <span class="instruction invokespecial">invokestatic  </span>
+                        <span class="instruction invokestatic">invokestatic  </span>
                         { signature }
                     </span>
                 case 182 ⇒
