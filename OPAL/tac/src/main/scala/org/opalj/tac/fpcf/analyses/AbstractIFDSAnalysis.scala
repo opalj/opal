@@ -4,7 +4,6 @@ package tac
 package fpcf
 package analyses
 
-import scala.annotation.switch
 import scala.annotation.tailrec
 
 import scala.collection.{Set ⇒ SomeSet}
@@ -29,7 +28,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
@@ -39,6 +37,9 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
@@ -107,9 +108,13 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     /**
      * All declared methods in the project.
      */
-    final protected[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    final protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     val entryPoints: Map[DeclaredMethod, IFDSFact]
+
+    val tacDependencyId = 0
+
+    val ifdsDependencyId = 1
 
     /**
      * The state of the analysis. For each method and source fact, there is a separate state.
@@ -124,12 +129,11 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param pendingIfdsDependees Maps methods called by the analyzed `method` together with their input facts
      *                             to the intermediate result of their IFDS analysis.
      *                             Only contains method-fact-pairs, for which this analysis is waiting for a result.
-     * @param pendingTacDependees Maps methods called by the analyzed `method` to
-     *                            the intermediate result of their three address code analysis.#
-     *                            Only contains methods, for which this analysis is waiting for a result.
-     * @param allDependees Contains the entries of `pendingIfdsDependees` and `pendingTacDependees`.
-     * @param pendingTacCallSites Maps methods called by the analyzed `method`
-     *                            to the basic block and statement index of the call site(s) of the analyzed method.
+     * @param allDependees If this analysis is waiting for the final result of a property,
+     *                     this map contains a (dependencyId, property) pair mapping to its current result.
+     * @param pendingTacCallSites All basic blocks containing method calls, for which the analysis is still waiting for the call graph result.
+     * @param pendingCgCallSites All call sites in the analyzed `method`, for which not all callees were retrieved.
+     * @param cgDependency If present, the analysis is waiting for the `method`'s call graph.
      * @param incomingFacts Maps each basic block to the data flow facts valid at its first statement.
      * @param outgoingFacts Maps each basic block to the data flow facts valid at the edges to its successors.
      */
@@ -141,9 +145,10 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             val cfg:                  CFG[Stmt[V], TACStmts[V]],
             var pendingIfdsCallSites: Map[(DeclaredMethod, IFDSFact), Set[(BasicBlock, Int)]],
             var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]] = Map.empty,
-            var pendingTacDependees:  Map[Method, EOptionP[Method, TACAI]]                                                          = Map.empty,
-            var allDependees:         Map[Any, SomeEOptionP]                                                                        = Map.empty,
             var pendingTacCallSites:  Map[Method, Set[(BasicBlock, Int)]]                                                           = Map.empty,
+            var pendingCgCallSites:   Set[BasicBlock]                                                                               = Set.empty,
+            var allDependees:         Map[(Int, Any), SomeEOptionP]                                                                 = Map.empty,
+            var cgDependency:         Option[SomeEOptionP]                                                                          = None,
             var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                = Map.empty,
             var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                  = Map.empty
     )
@@ -293,13 +298,16 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             collectResult(state.cfg.abnormalReturnNode)
         ))
 
-        if (state.allDependees.isEmpty) {
+        var allDependees: Set[SomeEOptionP] = state.allDependees.values.toSet
+        if (state.cgDependency.isDefined) allDependees += state.cgDependency.get
+
+        if (allDependees.isEmpty) {
             Result(state.source, propertyValue)
         } else {
             InterimResult.forUB(
                 state.source,
                 propertyValue,
-                state.allDependees.values,
+                allDependees,
                 propertyHasBeenComputed,
                 DefaultPropertyComputation
             )
@@ -309,7 +317,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     /**
      * Called, when some property, this analysis depends on, has been computed.
      * If there is a new (interim) result for an IFDS property
-     * If there is a final TAC result, the method will be removed from `pendingTacCallSites` and `pendingTacDependees`.
+     * If there is a final TAC result, the method will be removed from `pendingTacCallSites` and `allDependees`.
      *
      * @param eps The computed property store value.
      * @return The new (interim) result of the analysis.
@@ -326,16 +334,21 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     // Do not re-analyze the caller if we only get the null fact.
                     // Update the pendingIfdsDependee entry to the new interim result.
                     state.pendingIfdsDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
-                    state.allDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
+                    state.allDependees += (ifdsDependencyId, e) → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
                 } else reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
 
             case FinalE(m: Method) ⇒
                 reAnalyzeCalls(state.pendingTacCallSites(m), m, None)
                 state.pendingTacCallSites -= m
-                state.pendingTacDependees -= m
-                state.allDependees -= m
+                state.allDependees -= ((tacDependencyId, m))
 
             case InterimUBP(_: TACAI) ⇒ throw new UnknownError("Can not handle intermediate TAC")
+
+            case FinalEP(_: DefinedMethod, _: Callees) ⇒
+                reAnalyzeBBs(state.pendingCgCallSites)
+
+            case InterimEUBP(_: DefinedMethod, _: Callees) ⇒
+                reAnalyzeBBs(state.pendingCgCallSites)
         }
 
         createResult()
@@ -383,7 +396,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             val stmt = state.code(index)
             val statement = Statement(state.method, bb, stmt, index, state.code, state.cfg)
             val calleesO =
-                if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate.map(Set(_)) else getCallees(stmt)
+                if (calleeWithUpdateIndex.contains(index)) calleeWithUpdate.map(Set(_)) else getCalleesIfCallStatement(bb, index)
             val calleeFact = if (calleeWithUpdateIndex.contains(index)) calleeWithUpdateFact else None
             (statement, calleesO, calleeFact)
         }
@@ -437,58 +450,66 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     /**
      * Gets the set of all methods possibly called at some statement.
      *
-     * @param stmt The statement
-     * @return A set of methods possibly called by `stmt` or None, if `stmt` does not contain a method call.
+     * @param bb The basic block containing the statement.
+     * @param index The statement index.
+     * @return A set of methods possibly called at the statement index. or None, if the statement does not contain a call.
      */
-    def getCallees(stmt: Stmt[V])(implicit state: State): Option[SomeSet[Method]] = {
-        (stmt.astID: @switch) match {
-
-            case StaticMethodCall.ASTID ⇒
-                Some(stmt.asStaticMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined))
-
-            case NonVirtualMethodCall.ASTID ⇒
-                Some(
-                    stmt.asNonVirtualMethodCall
-                        .resolveCallTarget(state.declaringClass)
-                        .toSet
-                        .filter(_.body.isDefined)
-                )
-
-            case VirtualMethodCall.ASTID ⇒
-                Some(
-                    stmt.asVirtualMethodCall.resolveCallTargets(state.declaringClass).filter(_.body.isDefined)
-                )
-
-            case Assignment.ASTID | ExprStmt.ASTID ⇒
-                val expression = expr(stmt)
-                expression.astID match {
-
-                    case StaticFunctionCall.ASTID ⇒
-                        Some(
-                            expression.asStaticFunctionCall.resolveCallTarget.toSet
-                                .filter(_.body.isDefined)
-                        )
-
-                    case NonVirtualFunctionCall.ASTID ⇒
-                        Some(
-                            expression.asNonVirtualFunctionCall
-                                .resolveCallTarget(state.declaringClass)
-                                .toSet
-                                .filter(_.body.isDefined)
-                        )
-
-                    case VirtualFunctionCall.ASTID ⇒
-                        Some(
-                            expression.asVirtualFunctionCall
-                                .resolveCallTargets(state.declaringClass)
-                                .filter(_.body.isDefined)
-                        )
-
-                    case _ ⇒ None
-                }
-
+    def getCalleesIfCallStatement(bb: BasicBlock, index: Int)(implicit state: State): Option[SomeSet[Method]] = {
+        val statement = state.code(index)
+        val pc = statement.pc
+        statement.astID match {
+            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒ Some(getCallees(bb, pc))
+            case Assignment.ASTID | ExprStmt.ASTID ⇒ expr(statement).astID match {
+                case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒ Some(getCallees(bb, pc))
+                case _ ⇒ None
+            }
             case _ ⇒ None
         }
+    }
+
+    /**
+     * Gets the set of all methods possibly called at some call statement.
+     *
+     * @param bb The basic block containing the call.
+     * @param pc The call's program counter.
+     * @return A set of methods possibly called at the statement index.
+     */
+    def getCallees(bb: BasicBlock, pc: Int)(implicit state: State): SomeSet[Method] = {
+        val declaredMethod = declaredMethods(state.method)
+        val ep = propertyStore(declaredMethod, Callees.key)
+        ep match {
+            case FinalEP(_, p) ⇒
+                state.cgDependency = None
+                state.pendingCgCallSites -= bb
+                collectMethods(p.callees(pc))
+            case InterimEUBP(_, p) ⇒
+                state.cgDependency = Some(ep)
+                state.pendingCgCallSites += bb
+                collectMethods(p.callees(pc))
+            case _ ⇒
+                state.cgDependency = Some(ep)
+                state.pendingCgCallSites += bb
+                Set.empty
+        }
+    }
+
+    def collectMethods(declaredMethods: Iterator[DeclaredMethod]): SomeSet[Method] = {
+        val result = scala.collection.mutable.Set.empty[Method]
+        declaredMethods.filter(declaredMethod ⇒ declaredMethod.hasSingleDefinedMethod || declaredMethod.hasMultipleDefinedMethods).foreach(declaredMethod ⇒
+            declaredMethod.foreachDefinedMethod(defineMethod ⇒ result.add(defineMethod)))
+        result
+    }
+
+    /**
+     * Re-analyzes a set of basic blocks.
+     *
+     * @param blocks The basic blocks, that will be re-analyzed.
+     */
+    def reAnalyzeBBs(blocks: Set[BasicBlock])(implicit state: State): Unit = {
+        val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Method], Option[IFDSFact])] = mutable.Queue.empty
+        for (bb ← blocks)
+            queue.enqueue((bb, state.incomingFacts(bb), None, None, None))
+        process(queue)
     }
 
     /**
@@ -501,12 +522,12 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     def reAnalyzeCalls(callSites: Set[(BasicBlock, Int)], method: Method, fact: Option[IFDSFact])(implicit state: State): Unit = {
         val queue: mutable.Queue[(BasicBlock, Set[IFDSFact], Option[Int], Option[Method], Option[IFDSFact])] =
             mutable.Queue.empty
-        for ((block, callSite) ← callSites)
+        for ((block, index) ← callSites)
             queue.enqueue(
                 (
                     block,
                     state.incomingFacts(block),
-                    Some(callSite),
+                    Some(index),
                     Some(method),
                     fact
                 )
@@ -580,11 +601,11 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                                 state.pendingIfdsCallSites.getOrElse(e, Set.empty) - ((callBB, call.index))
                             state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
                             state.pendingIfdsDependees -= e
-                            state.allDependees -= e
+                            state.allDependees -= ((ifdsDependencyId, e))
                             ep.p.flows
                         case ep: InterimEUBP[_, IFDSProperty[IFDSFact]] ⇒
                             /*
-                             * Add the call site to `pendingIfdsCallSites` and `pendingIfdsDependees` and
+                             * Add the call site to `pendingIfdsCallSites`, `pendingIfdsDependees` and `allDependees`  and
                              * continue with the facts in the interim result for now. When the analysis for the
                              * callee finishes, the analysis for this call site will be triggered again.
                              */
@@ -654,7 +675,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         val callSites = state.pendingIfdsCallSites
         state.pendingIfdsCallSites = callSites.updated(entity, callSites.getOrElse(entity, Set.empty) + ((callBB, callIndex)))
         state.pendingIfdsDependees += entity → calleeProperty
-        state.allDependees += entity → calleeProperty
+        state.allDependees += (ifdsDependencyId, entity) → calleeProperty
     }
 
     /**
@@ -795,11 +816,13 @@ abstract class IFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFLazyAnalys
         analysis: AbstractIFDSAnalysis[IFDSFact]
     ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(property.key, analysis.performAnalysis)
-        for (e ← analysis.entryPoints) { ps.force(e, analysis.propertyKey.key) }
         analysis
     }
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {
+        val ifdsAnalysis = analysis.asInstanceOf[AbstractIFDSAnalysis[IFDSFact]]
+        for (e ← ifdsAnalysis.entryPoints) { ps.force(e, ifdsAnalysis.propertyKey.key) }
+    }
 
     override def afterPhaseCompletion(
         p:        SomeProject,

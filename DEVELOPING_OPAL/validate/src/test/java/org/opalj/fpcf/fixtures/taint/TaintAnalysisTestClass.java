@@ -219,7 +219,7 @@ public class TaintAnalysisTestClass {
         return source();
     }
 
-    public void passToSink(int i) {
+    public static void passToSink(int i) {
         sink(i);
     }
 
