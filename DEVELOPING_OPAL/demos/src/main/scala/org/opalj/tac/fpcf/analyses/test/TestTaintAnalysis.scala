@@ -6,6 +6,7 @@ package analyses
 package test
 
 import scala.collection.immutable.ListSet
+
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
@@ -20,10 +21,16 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.l2
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
+import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
@@ -339,6 +346,27 @@ class TestTaintAnalysis private (
         }
     }
 
+    /**
+     *
+     */
+    override def nativeCall(statement: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
+        val call = asCall(statement.stmt)
+        if (call.name == "forName" && (call.declaringClass eq ObjectType.Class) &&
+            call.descriptor.parameterTypes == RefArray(ObjectType.String)) {
+            if (in.exists {
+                case Variable(index) ⇒
+                    asCall(statement.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
+                case _ ⇒ false
+            }) {
+                /*if (entryPoints.contains(declaredMethods(stmt.method))) {
+                    println(s"flow: "+stmt.method.toJava)
+                    in
+                } else*/
+                in ++ Set(FlowFact(ListSet(statement.method)))
+            } else in
+        } else in
+    }
+
     val entryPoints: Map[DeclaredMethod, Fact] = (for {
         m ← p.allMethodsWithBody
         if (m.isPublic || m.isProtected) && (m.descriptor.returnType == ObjectType.Object || m.descriptor.returnType == ObjectType.Class)
@@ -417,7 +445,11 @@ object TestTaintAnalysisRunner {
         val (_, analyses) =
             time(2, 25, 10, {
                 val project = p.recreate()
-                project.get(FPCFAnalysesManagerKey).runAll(LazyTACAIProvider, TestTaintAnalysis)
+                project.get(FPCFAnalysesManagerKey).runAll(LazyTACAIProvider, TestTaintAnalysis, RTACallGraphAnalysisScheduler,
+                    EagerLibraryEntryPointsAnalysis,
+                    LazyL0BaseAIAnalysis,
+                    TriggeredInstantiatedTypesAnalysis,
+                    LazyCalleesAnalysis(Set(StandardInvokeCallees)))
             })({ (t, times) ⇒
                 val average = times.map(_.toSeconds.timeSpan).sum / times.length
                 println(s"average time for taint-flow analysis: ${average}")

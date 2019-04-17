@@ -33,7 +33,8 @@ class TaintAnalysisTest extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
+            AIDomainFactoryKey
+        )(
             (_: Option[Set[Class[_ <: AnyRef]]]) ⇒
                 Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
         )

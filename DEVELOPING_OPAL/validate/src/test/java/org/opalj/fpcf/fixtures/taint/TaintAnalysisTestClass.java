@@ -187,6 +187,20 @@ public class TaintAnalysisTestClass {
         sink(arr[0]);
     }
 
+    @FlowPath({})
+    public void nativeMethodsCanBeHandeled() {
+        int i = source();
+        int j = nativeMethod(0);
+        sink(j);
+    }
+
+    @FlowPath({"returnValueOfNativeMethodIsTainted"})
+    public void returnValueOfNativeMethodIsTainted() {
+        int i = source();
+        int j = nativeMethod(i);
+        sink(j);
+    }
+
     //Does not work, because the TAC's exit statements do not have any predecessors in this case.
     /*@FlowPath({"doesNotReturn", "callerParameterIsTaintedIfCalleeTaintsFormalParameter", "passFirstArrayElementToSink"})
     public void doesNotReturn() {
@@ -239,17 +253,19 @@ public class TaintAnalysisTestClass {
         arr[0] = source();
     }
 
+    //If it throws an exception, it is only an arithmetic exception.
+    public static int divide(int i, int j) {
+        return i / j;
+    }
+
+    public native int nativeMethod(int i);
+
     public static int source() {
         return 1;
     }
 
     public static void sink(int i) {
         System.out.println(i);
-    }
-
-    //If it throws an exception, it is only an arithmetic exception.
-    public static int divide(int i, int j) {
-        return i / j;
     }
 
 }

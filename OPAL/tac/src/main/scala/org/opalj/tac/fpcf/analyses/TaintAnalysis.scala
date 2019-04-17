@@ -316,6 +316,28 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      */
     def switchParamAndVariableIndex(index: Int, isStaticMethod: Boolean): Int =
         (if (isStaticMethod) -1 else -2) - index
+
+    /**
+     * If a parameter is tainted, the result will also be tainted.
+     * We assume that the callee does not call the source method.
+     */
+    override def nativeCall(statement: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
+        val allParams = asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params
+        if (statement.stmt.astID == Assignment.ASTID && in.find {
+            case Variable(index) ⇒
+                allParams.zipWithIndex.find {
+                    case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
+                    case _                                                   ⇒ false
+                }.isDefined
+            case ArrayElement(index, taintedIndex) ⇒
+                allParams.zipWithIndex.find {
+                    case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
+                    case _                                                   ⇒ false
+                }.isDefined
+            case _ ⇒ false
+        }.isDefined) in + Variable(statement.index)
+        else in
+    }
 }
 
 object TaintAnalysis extends IFDSAnalysis[Fact] {

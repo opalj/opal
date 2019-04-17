@@ -78,12 +78,12 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                         factory = projectFactory
                         p = projectFactory()
 
-                        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey){
-                                case None ⇒
-                                    Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                                case Some(requirements) ⇒
-                                    requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
-                            }
+                        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                            case None ⇒
+                                Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                            case Some(requirements) ⇒
+                                requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                        }
                     } else {
                         // Recreate project keeping all ProjectInformationKeys other than the
                         // PropertyStore as we are interested only in FPCF analysis results.
