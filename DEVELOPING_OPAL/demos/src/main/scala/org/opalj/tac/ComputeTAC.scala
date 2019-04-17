@@ -6,8 +6,6 @@ import java.io.File
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project
 import org.opalj.br.Method
-import org.opalj.ai.Domain
-import org.opalj.ai.domain.RecordDefUse
 
 /**
  * Shows how to get the 3-address code in the most efficient manner if it is required for
@@ -26,13 +24,10 @@ object ComputeTAC {
 
         val tacProvider = time {
             val p = Project(rootFolder)
-            p.updateProjectInformationKeyInitializationData(
-                EagerDetachedTACAIKey,
-                (oldFactory: Option[Method ⇒ Domain with RecordDefUse]) ⇒ {
-                    if (oldFactory.isDefined) throw new IllegalStateException();
-                    (m: Method) ⇒ new org.opalj.ai.domain.l0.PrimitiveTACAIDomain(p, m)
-                }
-            )
+            p.updateProjectInformationKeyInitializationData(EagerDetachedTACAIKey) { oldFactory ⇒
+                if (oldFactory.isDefined) throw new IllegalStateException();
+                (m: Method) ⇒ new org.opalj.ai.domain.l0.PrimitiveTACAIDomain(p, m)
+            }
             p.get(EagerDetachedTACAIKey)
         } { t ⇒
             println("Loading the project and computing the tac for all methods took: "+t.toSeconds)

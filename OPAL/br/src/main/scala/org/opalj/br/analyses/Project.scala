@@ -479,7 +479,8 @@ class Project[Source] private (
      * @note    Initialization data is discarded once the key is used.
      */
     def updateProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
-        key:  ProjectInformationKey[T, I],
+        key: ProjectInformationKey[T, I]
+    )(
         info: Option[I] ⇒ I
     ): I = {
         projectInformationKeyInitializationData.compute(

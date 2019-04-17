@@ -396,21 +396,15 @@ object TestTaintAnalysisRunner {
             }
         )
         if (args.contains("-l2")) {
-            p.updateProjectInformationKeyInitializationData(
-                AIDomainFactoryKey,
-                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                    case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
-                    case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
-                }): Set[Class[_ <: AnyRef]]
-            )
+            p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+                case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+            }
         } else {
-            p.updateProjectInformationKeyInitializationData(
-                AIDomainFactoryKey,
-                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                    case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                    case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
-                }): Set[Class[_ <: AnyRef]]
-            )
+            p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+            }
         }
 
         val ps = p.get(PropertyStoreKey)

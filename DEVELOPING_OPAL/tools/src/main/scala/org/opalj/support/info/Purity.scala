@@ -220,13 +220,10 @@ object Purity {
             )
         } { t ⇒ projectTime = t.toSeconds }
 
-        project.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(domain)
-                case Some(requirements) ⇒ requirements + domain
-            }): Set[Class[_ <: AnyRef]]
-        )
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               ⇒ Set(domain)
+            case Some(requirements) ⇒ requirements + domain
+        }
 
         PropertyStore.updateDebug(debug)
         val ps = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }

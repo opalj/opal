@@ -22,13 +22,10 @@ trait TACAIInitializer extends FPCFAnalysisScheduler {
     override def init(p: SomeProject, ps: PropertyStore): Null = {
         // To compute the TAC, we (at least) need def-use information; hence, we state
         // this as a requirement.
-        p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(classOf[RecordDefUse])
-                case Some(requirements) ⇒ requirements + classOf[RecordDefUse]
-            }): Set[Class[_ <: AnyRef]]
-        )
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               ⇒ Set(classOf[RecordDefUse])
+            case Some(requirements) ⇒ requirements + classOf[RecordDefUse]
+        }
         null
     }
 

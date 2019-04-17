@@ -41,13 +41,10 @@ class EscapeAnalysisTests extends PropertiesTest {
     override def init(p: Project[URL]): Unit = {
         val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 
-        p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(performInvocationsDomain)
-                case Some(requirements) ⇒ requirements + performInvocationsDomain
-            }): Set[Class[_ <: AnyRef]]
-        )
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               ⇒ Set(performInvocationsDomain)
+            case Some(requirements) ⇒ requirements + performInvocationsDomain
+        }
     }
 
     describe("no analysis is scheduled") {
