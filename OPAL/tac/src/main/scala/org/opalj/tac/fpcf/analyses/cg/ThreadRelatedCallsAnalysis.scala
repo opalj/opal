@@ -19,6 +19,7 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
@@ -456,18 +457,21 @@ object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFTriggeredAnalysisSch
         PropertyBounds.ub(TACAI)
     )
 
+    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+
     override def derivesCollaboratively: Set[PropertyBounds] = Set(
         PropertyBounds.ub(CallersProperty)
     )
 
-    override def derivesEagerly: Set[PropertyBounds] =
+    override def derivesEagerly: Set[PropertyBounds] = {
         Set(PropertyBounds.ub(ThreadRelatedIncompleteCallSites))
+    }
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
     ): ThreadRelatedCallsAnalysis = {
         val analysis = new ThreadRelatedCallsAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis
     }
 }

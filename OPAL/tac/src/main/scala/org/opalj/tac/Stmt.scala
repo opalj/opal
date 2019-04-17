@@ -55,6 +55,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asRet: Ret = throw new ClassCastException();
     def asJSR: JSR = throw new ClassCastException();
     def asSwitch: Switch[V] = throw new ClassCastException();
+    def asAssignmentLike: AssignmentLikeStmt[V] = throw new ClassCastException();
     def asAssignment: Assignment[V] = throw new ClassCastException();
     def asReturnValue: ReturnValue[V] = throw new ClassCastException();
     def asReturn: Return = throw new ClassCastException();
@@ -320,7 +321,27 @@ object Switch {
     final val ASTID = 4
 }
 
-case class Assignment[+V <: Var[V]](pc: Int, targetVar: V, expr: Expr[V]) extends Stmt[V] {
+sealed abstract class AssignmentLikeStmt[+V <: Var[V]] extends Stmt[V] {
+    def expr: Expr[V]
+    final override def asAssignmentLike: AssignmentLikeStmt[V] = this
+}
+
+object AssignmentLikeStmt {
+
+    def unapply[V <: Var[V]](stmt: Stmt[V]): Option[(PC, Expr[V])] = {
+        stmt match {
+            case s: AssignmentLikeStmt[V] ⇒ Some((s.pc, s.expr))
+            case _                        ⇒ None
+        }
+    }
+
+}
+
+case class Assignment[+V <: Var[V]](
+        pc:        Int,
+        targetVar: V,
+        expr:      Expr[V]
+) extends AssignmentLikeStmt[V] {
 
     final override def asAssignment: this.type = this
     final override def astID: Int = Assignment.ASTID
@@ -951,7 +972,7 @@ case class InvokedynamicMethodCall[+V <: Var[V]](
 object InvokedynamicMethodCall { final val ASTID = 18 }
 
 /** An expression where the value is not further used. */
-case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
+case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends AssignmentLikeStmt[V] {
 
     final override def asExprStmt: this.type = this
     final override def astID: Int = ExprStmt.ASTID

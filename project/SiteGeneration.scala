@@ -10,177 +10,177 @@ import sbt.Keys.TaskStreams
  */
 object SiteGeneration {
 
-    def generateSite(
-        sourceDirectory: File,
-        resourceManaged: File,
-        streams:         TaskStreams,
-        disassemblerJAR: File,
-        projectSerializerJAR: File
-    ): File = {
+  def generateSite(
+      sourceDirectory: File,
+      resourceManaged: File,
+      streams: TaskStreams,
+      disassemblerJAR: File,
+      projectSerializerJAR: File
+  ): File = {
 
-        // NOTE: Currently we keep all pages in memory during the transformation process... but, this
-        // should nevertheless work for a very long time!
+    // NOTE: Currently we keep all pages in memory during the transformation process... but, this
+    // should nevertheless work for a very long time!
 
-        val sourceFolder = sourceDirectory / "site"
-        val targetFolder = resourceManaged / "site"
-        val s: TaskStreams = streams
-        val log = s.log
+    val sourceFolder = sourceDirectory / "site"
+    val targetFolder = resourceManaged / "site"
+    val s: TaskStreams = streams
+    val log = s.log
 
-        val siteGenerationNecessary =
-            !targetFolder.exists ||
-                (sourceFolder ** "*").get.exists { sourceFile ⇒
-                    if (sourceFile.newerThan(targetFolder) && !sourceFile.isHidden) {
-                        log.info(
-                            s"At least $sourceFile was updated: "+
-                                s"${sourceFile.lastModified} > ${targetFolder.lastModified}"+
-                                s"(current time: ${System.currentTimeMillis})"
-                        )
-                        true
-                    } else {
-                        false
-                    }
-                }
-
-        // 0.1. generate OPALDisassembler.
-        val disassemblerJARTarget = targetFolder / "artifacts" / disassemblerJAR.getName
-        IO.copyFile(disassemblerJAR, disassemblerJARTarget)
-        log.info("Copied bytecode disassembler to: "+disassemblerJARTarget)
-        // 0.2. generate ProjectSerializer
-        val projectSerializerJARTarget = targetFolder / "artifacts" / projectSerializerJAR.getName
-        IO.copyFile(projectSerializerJAR, projectSerializerJARTarget)
-        log.info("Copied project serializer to: "+projectSerializerJARTarget)
-
-        if (siteGenerationNecessary) {
-            log.info("Generating site using: "+sourceFolder / "site.conf")
-
-            import java.io.File
-            import java.nio.charset.Charset
-            import java.nio.file.Files
-            import scala.collection.JavaConverters._
-            import scala.io.Source.fromFile
-            import com.typesafe.config.ConfigFactory
-            import com.vladsch.flexmark.ast.Node
-            import com.vladsch.flexmark.html.HtmlRenderer
-            import com.vladsch.flexmark.parser.Parser
-            import com.vladsch.flexmark.util.options.MutableDataSet
-            import org.fusesource.scalate.TemplateEngine
-
-            import java.util.Arrays;
-
-            // 1. read config
-            val config = ConfigFactory.parseFile(sourceFolder / "site.conf")
-
-            // 2.1 copy folders
-            for { folder ← config.getStringList("folders").asScala } {
-                IO.copyDirectory(
-                    sourceFolder / folder,
-                    targetFolder / folder
-                )
-            }
-
-            for { resource ← config.getStringList("resources").asScala } {
-                IO.copyFile(
-                    sourceFolder / resource,
-                    targetFolder / resource
-                )
-            }
-
-            // 2.3 pre-process pages
-            val mdParserOptions = new MutableDataSet()
-            val mdParser = Parser.builder(mdParserOptions).build()
-            val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build()
-            val pages = for (page ← config.getAnyRefList("pages").asScala) yield {
-                page match {
-                    case pageConfig: java.util.Map[_, _] ⇒
-                        val sourceFileName = pageConfig.get("source").toString
-                        val sourceFile = sourceFolder / sourceFileName
-                        val sourceContent = fromFile(sourceFile).getLines.mkString("\n")
-                        // 2.3.1 process each page:
-                        val (baseFileName, htmlContent) =
-                            if (sourceFileName.endsWith(".md")) {
-                                val mdDocument = mdParser.parse(sourceContent)
-                                (
-                                    sourceFileName.substring(0, sourceFileName.length - 3),
-                                    mdToHTMLRenderer.render(mdDocument)
-                                )
-                            } else if (sourceFileName.endsWith(".snippet.html")) {
-                                (
-                                    sourceFileName.substring(0, sourceFileName.length - 13),
-                                    sourceContent
-                                )
-                            } else {
-                                val message = "unsupported content file: "+sourceFileName
-                                throw new RuntimeException(message)
-                            }
-
-                        // 2.3.2 copy page specific page resources (optional):
-                        pageConfig.get("resources") match {
-                            case resources: java.util.List[_] ⇒
-                                for { resource ← resources.asScala } {
-                                    IO.copyFile(
-                                        sourceFolder / resource.toString,
-                                        targetFolder / resource.toString
-                                    )
-                                }
-
-                            case null ⇒ /* OK - resources are optional */
-
-                            case c ⇒
-                                val message = "unsupported resource configuration: "+c
-                                throw new RuntimeException(message)
-                        }
-                        (
-                            /* name without extension */ baseFileName,
-                            /* the File object */ sourceFile,
-                            /* the title */ pageConfig.get("title").toString,
-                            /* the content */ htmlContent.toString,
-                            /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false)
-                        )
-
-                    case sectionTitle: String ⇒
-                        // the entry in the site.conf was "just" a titel of some subsection
-                        (
-                            null,
-                            null,
-                            sectionTitle,
-                            null,
-                            false
-                        )
-
-                    case _ ⇒
-                        throw new RuntimeException("unsupported page configuration: "+page)
-                }
-            }
-            val toc /*Traversable[(String,String)]*/ = pages.map { page ⇒
-                val (baseFileName, _, title, _, _) = page
-                (baseFileName, title)
-            }
-
-            // 2.4 create HTML pages
-            val engine = new TemplateEngine
-            val defaultTemplate = sourceFolder / "default.template.html.ssp"
-            for {
-                (baseFileName, sourceFile, title, html, useBanner) ← pages
-                if baseFileName ne null
-            } {
-                val htmlFile = targetFolder / (baseFileName+".html")
-                val completePage = engine.layout(
-                    defaultTemplate.toString,
-                    Map(
-                        "title" → title,
-                        "content" → html,
-                        "toc" → toc,
-                        "useBanner" → useBanner
-                    )
-                )
-                Files.write(htmlFile.toPath, completePage.getBytes(Charset.forName("UTF8")))
-                log.info(s"Converted $sourceFile to $htmlFile using $defaultTemplate")
-            }
+    val siteGenerationNecessary =
+      !targetFolder.exists ||
+        (sourceFolder ** "*").get.exists { sourceFile ⇒
+          if (sourceFile.newerThan(targetFolder) && !sourceFile.isHidden) {
+            log.info(
+              s"At least $sourceFile was updated: " +
+                s"${sourceFile.lastModified} > ${targetFolder.lastModified}" +
+                s"(current time: ${System.currentTimeMillis})"
+            )
+            true
+          } else {
+            false
+          }
         }
 
-        targetFolder.setLastModified(System.currentTimeMillis())
+    // 0.1. generate OPALDisassembler.
+    val disassemblerJARTarget = targetFolder / "artifacts" / disassemblerJAR.getName
+    IO.copyFile(disassemblerJAR, disassemblerJARTarget)
+    log.info("Copied bytecode disassembler to: " + disassemblerJARTarget)
+    // 0.2. generate ProjectSerializer
+    val projectSerializerJARTarget = targetFolder / "artifacts" / projectSerializerJAR.getName
+    IO.copyFile(projectSerializerJAR, projectSerializerJARTarget)
+    log.info("Copied project serializer to: " + projectSerializerJARTarget)
 
-        // (End)
-        targetFolder
+    if (siteGenerationNecessary) {
+      log.info("Generating site using: " + sourceFolder / "site.conf")
+
+      import java.io.File
+      import java.nio.charset.Charset
+      import java.nio.file.Files
+      import scala.collection.JavaConverters._
+      import scala.io.Source.fromFile
+      import com.typesafe.config.ConfigFactory
+      import com.vladsch.flexmark.ast.Node
+      import com.vladsch.flexmark.html.HtmlRenderer
+      import com.vladsch.flexmark.parser.Parser
+      import com.vladsch.flexmark.util.options.MutableDataSet
+      import org.fusesource.scalate.TemplateEngine
+
+      import java.util.Arrays;
+
+      // 1. read config
+      val config = ConfigFactory.parseFile(sourceFolder / "site.conf")
+
+      // 2.1 copy folders
+      for { folder ← config.getStringList("folders").asScala } {
+        IO.copyDirectory(
+          sourceFolder / folder,
+          targetFolder / folder
+        )
+      }
+
+      for { resource ← config.getStringList("resources").asScala } {
+        IO.copyFile(
+          sourceFolder / resource,
+          targetFolder / resource
+        )
+      }
+
+      // 2.3 pre-process pages
+      val mdParserOptions = new MutableDataSet()
+      val mdParser = Parser.builder(mdParserOptions).build()
+      val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build()
+      val pages = for (page ← config.getAnyRefList("pages").asScala) yield {
+        page match {
+          case pageConfig: java.util.Map[_, _] ⇒
+            val sourceFileName = pageConfig.get("source").toString
+            val sourceFile = sourceFolder / sourceFileName
+            val sourceContent = fromFile(sourceFile).getLines.mkString("\n")
+            // 2.3.1 process each page:
+            val (baseFileName, htmlContent) =
+              if (sourceFileName.endsWith(".md")) {
+                val mdDocument = mdParser.parse(sourceContent)
+                (
+                  sourceFileName.substring(0, sourceFileName.length - 3),
+                  mdToHTMLRenderer.render(mdDocument)
+                )
+              } else if (sourceFileName.endsWith(".snippet.html")) {
+                (
+                  sourceFileName.substring(0, sourceFileName.length - 13),
+                  sourceContent
+                )
+              } else {
+                val message = "unsupported content file: " + sourceFileName
+                throw new RuntimeException(message)
+              }
+
+            // 2.3.2 copy page specific page resources (optional):
+            pageConfig.get("resources") match {
+              case resources: java.util.List[_] ⇒
+                for { resource ← resources.asScala } {
+                  IO.copyFile(
+                    sourceFolder / resource.toString,
+                    targetFolder / resource.toString
+                  )
+                }
+
+              case null ⇒ /* OK - resources are optional */
+
+              case c ⇒
+                val message = "unsupported resource configuration: " + c
+                throw new RuntimeException(message)
+            }
+            (
+              /* name without extension */ baseFileName,
+              /* the file object */ sourceFile,
+              /* the title */ pageConfig.get("title").toString,
+              /* the content */ htmlContent.toString,
+              /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false)
+            )
+
+          case sectionTitle: String ⇒
+            // the entry in the site.conf was "just" a titel of some subsection
+            (
+              null,
+              null,
+              sectionTitle,
+              null,
+              false
+            )
+
+          case _ ⇒
+            throw new RuntimeException("unsupported page configuration: " + page)
+        }
+      }
+      val toc /*Traversable[(String,String)]*/ = pages.map { page ⇒
+        val (baseFileName, _, title, _, _) = page
+        (baseFileName, title)
+      }
+
+      // 2.4 create HTML pages
+      val engine = new TemplateEngine
+      val defaultTemplate = sourceFolder / "default.template.html.ssp"
+      for {
+        (baseFileName, sourceFile, title, html, useBanner) ← pages
+        if baseFileName ne null
+      } {
+        val htmlFile = targetFolder / (baseFileName + ".html")
+        val completePage = engine.layout(
+          defaultTemplate.toString,
+          Map(
+            "title" → title,
+            "content" → html,
+            "toc" → toc,
+            "useBanner" → useBanner
+          )
+        )
+        Files.write(htmlFile.toPath, completePage.getBytes(Charset.forName("UTF8")))
+        log.info(s"Converted $sourceFile to $htmlFile using $defaultTemplate")
+      }
     }
+
+    targetFolder.setLastModified(System.currentTimeMillis())
+
+    // (End)
+    targetFolder
+  }
 }

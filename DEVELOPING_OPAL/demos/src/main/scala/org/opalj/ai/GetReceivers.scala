@@ -42,13 +42,9 @@ object GetReceivers extends DefaultOneStepAnalysis {
                     BaseAI(m, new L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement(p, m))
                 }
             } else {
-                p.updateProjectInformationKeyInitializationData(
-                    org.opalj.ai.common.SimpleAIKey,
-                    (_: Option[_]) ⇒ { (m: Method) ⇒
-                        // new org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
-                        new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
-                    }
-                )
+                p.updateProjectInformationKeyInitializationData(org.opalj.ai.common.SimpleAIKey) { // new org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
+                _ ⇒ (m: Method) ⇒ new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+                }
                 p.get(org.opalj.ai.common.SimpleAIKey)
             }
 

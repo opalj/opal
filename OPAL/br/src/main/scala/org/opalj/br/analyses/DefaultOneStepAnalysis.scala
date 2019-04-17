@@ -3,6 +3,8 @@ package org.opalj
 package br
 package analyses
 
+import scala.language.implicitConversions
+
 import java.net.URL
 
 /**
@@ -14,6 +16,8 @@ import java.net.URL
 abstract class DefaultOneStepAnalysis
     extends AnalysisExecutor
     with OneStepAnalysis[URL, ReportableAnalysisResult] {
+
+    implicit def String2BasicReport(report: String): BasicReport = BasicReport(report)
 
     final override val analysis: DefaultOneStepAnalysis = this
 

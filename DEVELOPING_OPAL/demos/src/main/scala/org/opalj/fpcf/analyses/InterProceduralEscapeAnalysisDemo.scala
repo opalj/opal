@@ -74,13 +74,10 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         val propertyStore = time {
             val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 
-            project.updateProjectInformationKeyInitializationData(
-                AIDomainFactoryKey,
-                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                    case None               ⇒ Set(performInvocationsDomain)
-                    case Some(requirements) ⇒ requirements + performInvocationsDomain
-                }): Set[Class[_ <: AnyRef]]
-            )
+            project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                case None               ⇒ Set(performInvocationsDomain)
+                case Some(requirements) ⇒ requirements + performInvocationsDomain
+            }
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
 

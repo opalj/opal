@@ -1,1 +1,1 @@
-scalacOptions ++= Seq( "-unchecked", "-deprecation" )
+scalacOptions ++= Seq("-unchecked", "-deprecation")

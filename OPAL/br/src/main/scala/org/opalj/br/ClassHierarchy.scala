@@ -2818,6 +2818,12 @@ object ClassHierarchy {
 
         val ObjectId = ObjectType.Object.id
 
+        // Collects those classes which declare to implement a specific interface, but which
+        // is actually a regular class.
+        var classesWithBrokenInterfaceInheritance: Map[ObjectType, UIDSet[ObjectType]] = {
+            Map.empty.withDefaultValue(UIDSet.empty)
+        }
+
         /*
          * Extends the class hierarchy.
          */
@@ -2891,6 +2897,11 @@ object ClassHierarchy {
                     val message = s"the class file ${objectType.toJava} defines a "+
                         s"super interface ${knownTypesMap(aSuperinterfaceTypeId).toJava} "+
                         "which is actually a regular class file"
+                    classesWithBrokenInterfaceInheritance +=
+                        ((
+                            objectType,
+                            classesWithBrokenInterfaceInheritance(objectType) + aSuperinterfaceType
+                        ))
                     OPALLogger.error("project configuration - class hierarchy", message)
                 }
                 if (isInterfaceType) {
@@ -2904,13 +2915,13 @@ object ClassHierarchy {
             }
         }
 
-        // Analyzes the given class file and extend the current class hierarchy.
+        // Analyzes the given class files and extends the current class hierarchy.
         val processedClassType: Array[Boolean] = new Array[Boolean](objectTypesCount)
         classFiles.seq foreach { classFile ⇒
             if (!classFile.isModuleDeclaration) {
-                // we always keep the FIRST class file which defines a type this is inline
-                // with the behavior of the project which prioritizes a project class file
-                // over library class files
+                // We always keep the FIRST class file which defines a type this is inline
+                // with the behavior of the class Project which prioritizes a project class file
+                // over library class files.
                 val classType = classFile.thisType
                 if (!processedClassType(classType.id)) {
                     processedClassType(classType.id) = true
@@ -3225,9 +3236,12 @@ object ClassHierarchy {
                     supertypes(supertypeId) match {
                         case null ⇒
                             // It may happen that we we will never have complete information about a
-                            // superinterface type, because we have an imcomplete project.
+                            // superinterface type, because we have an incomplete project OR
+                            // that the class hierarchy is totally broken in the sense that
+                            // the super interface types are actually class types.
                             // In that case, we just ignore it...
-                            superinterfaceTypesMap(supertypeId) eq null
+                            superinterfaceTypesMap(supertypeId) == null ||
+                                classesWithBrokenInterfaceInheritance(t).containsId(supertypeId)
                         case supertypes ⇒
                             allSuperSuperinterfaceTypes ++= supertypes.interfaceTypes
                             allSupertypes ++= supertypes.allTypes

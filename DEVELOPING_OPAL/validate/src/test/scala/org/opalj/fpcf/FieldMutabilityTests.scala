@@ -40,11 +40,9 @@ import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
 class FieldMutabilityTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (_: Option[Set[Class[_ <: AnyRef]]]) ⇒
-                Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
-        )
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            _ ⇒ Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+        }
     }
 
     describe("no analysis is scheduled") {

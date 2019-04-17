@@ -54,11 +54,9 @@ class FieldLocalityTests extends PropertiesTest {
     )
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (_: Option[Set[Class[_ <: AnyRef]]]) ⇒
-                Set(classOf[DefaultDomainWithCFGAndDefUse[URL]]): Set[Class[_ <: AnyRef]]
-        )
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            _ ⇒ Set(classOf[DefaultDomainWithCFGAndDefUse[URL]])
+        }
     }
 
     describe("field locality analysis is executed") {

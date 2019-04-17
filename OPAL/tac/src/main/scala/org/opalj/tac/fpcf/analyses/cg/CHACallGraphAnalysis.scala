@@ -30,6 +30,7 @@ import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -193,12 +194,15 @@ class CHACallGraphAnalysis private[analyses] (
 }
 
 object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(CallersProperty),
         PropertyBounds.ub(TACAI)
     )
+
+    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
 
     override def derivesEagerly: Set[PropertyBounds] = Set(
         PropertyBounds.ub(StandardInvokeCallees)
@@ -240,7 +244,7 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): CHACallGraphAnalysis = {
         val analysis = new CHACallGraphAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis
     }
 
