@@ -12,12 +12,20 @@ sbtPlugin := true
 publishMavenStyle := false
 
 scalacOptions in ThisBuild ++= Seq(
-    "-deprecation", "-feature", "-unchecked",
-    "-Xlint", "-Xfuture", "-Xfatal-warnings",
-    "-Ywarn-numeric-widen", "-Ywarn-nullary-unit", "-Ywarn-nullary-override",
-    // 2.12.4 enable: "-Ywarn-unused:imports,privates,locals,implicits",
-    // 2.12.4 enable: "-Ywarn-infer-any", 
-    "-Ywarn-dead-code" , "-Ywarn-inaccessible", "-Ywarn-adapted-args"
+  "-deprecation",
+  "-feature",
+  "-unchecked",
+  "-Xlint",
+  "-Xfuture",
+  "-Xfatal-warnings",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-nullary-unit",
+  "-Ywarn-nullary-override",
+  // 2.12.4 enable: "-Ywarn-unused:imports,privates,locals,implicits",
+  // 2.12.4 enable: "-Ywarn-infer-any",
+  "-Ywarn-dead-code",
+  "-Ywarn-inaccessible",
+  "-Ywarn-adapted-args"
 )
 
 // The version of Eclipse JDT compiler library needs to stay fixed for use within OPAL!
