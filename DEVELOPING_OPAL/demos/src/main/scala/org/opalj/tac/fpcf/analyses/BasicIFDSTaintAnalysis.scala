@@ -367,9 +367,9 @@ class TestTaintAnalysis private (
                     println(s"flow: "+stmt.method.toJava)
                     in
                 } else*/
-                in ++ Set(FlowFact(ListSet(statement.method)))
-            } else in
-        } else in
+                Set(FlowFact(ListSet(statement.method)))
+            } else Set.empty
+        } else Set.empty
     }
 
     val entryPoints: Map[DeclaredMethod, Fact] = (for {

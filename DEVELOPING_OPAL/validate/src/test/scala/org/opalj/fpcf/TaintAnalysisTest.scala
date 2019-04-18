@@ -45,7 +45,7 @@ class TaintAnalysisTest extends PropertiesTest {
         val project = testContext.project
         val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {
-            case (methods, entityString, annotations) ⇒ ((declaredMethods(methods), NullFact()), entityString, annotations)
+            case (methods, entityString, annotations) ⇒ ((declaredMethods(methods), NullFact), entityString, annotations)
         }
         testContext.propertyStore.shutdown()
         validateProperties(testContext, eas, Set(FlowPath.PROPERTY_VALIDATOR_KEY))

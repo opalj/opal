@@ -13,7 +13,7 @@ import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 trait Fact extends AbstractIFDSFact
-case class NullFact() extends Fact with AbstractIFDSNullFact
+case object NullFact extends Fact with AbstractIFDSNullFact
 case class Variable(index: Int) extends Fact
 case class ArrayElement(index: Int, element: Int) extends Fact
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
@@ -44,7 +44,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
         .flatMap(classFile ⇒ classFile.methods)
         .filter(method ⇒ method.isPublic)
-        .map(method ⇒ declaredMethods(method) → NullFact()).toMap
+        .map(method ⇒ declaredMethods(method) → NullFact).toMap
 
     override def createPropertyValue(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
         new Taint(result)
@@ -53,7 +53,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
     /**
      * If a variable gets assigned a tainted value, the variable will be tainted.
      */
-    override def normalFlow(statement: Statement, succ: Statement, in: Set[Fact]): Set[Fact] =
+    override def normalFlow(statement: Statement, successor: Statement, in: Set[Fact]): Set[Fact] =
         statement.stmt.astID match {
             case Assignment.ASTID ⇒
                 handleAssignment(statement, in)
@@ -184,8 +184,8 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      * Propagates tainted parameters to the callee. If a call to the sink method with a tainted parameter is detected, no
      * call-to-start edges will be created.
      */
-    override def callFlow(statement: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
-        val allParams = asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params
+    override def callFlow(call: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
+        val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
         // Do not analyze the internals of source and sink.
         if (callee.name == "source" || callee.name == "sink") {
             Set.empty
@@ -216,21 +216,21 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      * Propagates the taints. If the sink method was called with a tainted parameter, a FlowFact will be created to track
      * the call chain back.
      */
-    override def callToReturnFlow(statement: Statement, succ: Statement, in: Set[Fact]): Set[Fact] = {
-        val call = asCall(statement.stmt)
+    override def callToReturnFlow(call: Statement, successor: Statement, in: Set[Fact]): Set[Fact] = {
+        val callStatement = asCall(call.stmt)
         // Taint assigned variable, if source was called
-        if (call.name == "source") statement.stmt.astID match {
-            case Assignment.ASTID ⇒ in + Variable(statement.index)
+        if (callStatement.name == "source") call.stmt.astID match {
+            case Assignment.ASTID ⇒ in + Variable(call.index)
             case _                ⇒ in
         }
         // Create a flow fact, if sink was called with a tainted parameter
-        else if (call.name == "sink") {
+        else if (callStatement.name == "sink") {
             if (in.exists {
                 case Variable(index) ⇒
-                    asCall(statement.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
+                    asCall(call.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             }) {
-                in ++ Set(FlowFact(Seq(statement.method)))
+                in ++ Set(FlowFact(Seq(call.method)))
             } else {
                 in
             }
@@ -247,10 +247,10 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      * which holds at this method.
      */
     override def returnFlow(
-        statement: Statement,
+        call:      Statement,
         callee:    DeclaredMethod,
         exit:      Statement,
-        succ:      Statement,
+        successor: Statement,
         in:        Set[Fact]
     ): Set[Fact] = {
 
@@ -265,7 +265,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
                     .isReferenceType
             }
 
-        val allParams = (asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params).toSeq
+        val allParams = (asCall(call.stmt).receiverOption ++ asCall(call.stmt).params).toSeq
         var flows: Set[Fact] = Set.empty
         for (fact ← in) {
             fact match {
@@ -290,21 +290,21 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
 
                 // Track the call chain to the sink back
                 case FlowFact(flow) ⇒
-                    flows += FlowFact(statement.method +: flow)
+                    flows += FlowFact(call.method +: flow)
                 case _ ⇒
             }
         }
 
         // Propagate taints of the return value
-        if (exit.stmt.astID == ReturnValue.ASTID && statement.stmt.astID == Assignment.ASTID) {
+        if (exit.stmt.astID == ReturnValue.ASTID && call.stmt.astID == Assignment.ASTID) {
             val returnValue = exit.stmt.asReturnValue.expr.asVar
             flows ++= in.collect {
                 case Variable(index) if returnValue.definedBy.contains(index) ⇒
-                    Variable(statement.index)
+                    Variable(call.index)
                 case ArrayElement(index, taintedIndex) if returnValue.definedBy.contains(index) ⇒
-                    ArrayElement(statement.index, taintedIndex)
+                    ArrayElement(call.index, taintedIndex)
                 case InstanceField(index, declClass, taintedField) if returnValue.definedBy.contains(index) ⇒
-                    InstanceField(statement.index, declClass, taintedField)
+                    InstanceField(call.index, declClass, taintedField)
             }
         }
 
@@ -327,20 +327,20 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      */
     override def nativeCall(statement: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
         val allParams = asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params
-        if (statement.stmt.astID == Assignment.ASTID && in.find {
+        if (statement.stmt.astID == Assignment.ASTID && in.exists {
             case Variable(index) ⇒
-                allParams.zipWithIndex.find {
+                allParams.zipWithIndex.exists {
                     case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
                     case _                                                   ⇒ false
-                }.isDefined
-            case ArrayElement(index, taintedIndex) ⇒
-                allParams.zipWithIndex.find {
+                }
+            case ArrayElement(index, _) ⇒
+                allParams.zipWithIndex.exists {
                     case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
                     case _                                                   ⇒ false
-                }.isDefined
+                }
             case _ ⇒ false
-        }.isDefined) in + Variable(statement.index)
-        else in
+        }) Set(Variable(statement.index))
+        else Set.empty
     }
 }
 
