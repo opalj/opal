@@ -201,6 +201,28 @@ public class TaintAnalysisTestClass {
         sink(j);
     }
 
+    @FlowPath({"analysisUsesCallGraph_1"})
+    public void analysisUsesCallGraph_1() {
+        A a = new B();
+        sink(a.get());
+    }
+
+    @FlowPath({})
+    public void analysisUsesCallGraph_2() {
+        A a = new C();
+        sink(a.get());
+    }
+
+    @FlowPath({"analysisUsesCallGraph_3"})
+    public void analysisUsesCallGraph_3() {
+        A a;
+        if(Math.random() < .5)
+            a = new B();
+        else
+            a = new C();
+        sink(a.get());
+    }
+
     //Does not work, because the TAC's exit statements do not have any predecessors in this case.
     /*@FlowPath({"doesNotReturn", "callerParameterIsTaintedIfCalleeTaintsFormalParameter", "passFirstArrayElementToSink"})
     public void doesNotReturn() {
@@ -268,4 +290,22 @@ public class TaintAnalysisTestClass {
         System.out.println(i);
     }
 
+}
+
+abstract class A {
+    abstract int get();
+}
+
+class B extends A {
+    @Override
+    int get() {
+        return TaintAnalysisTestClass.source();
+    }
+}
+
+class C extends A {
+    @Override
+    int get() {
+        return 0;
+    }
 }
