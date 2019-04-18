@@ -1,12 +1,16 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses
 
-import org.opalj.br.{DeclaredMethod, Method, ObjectType}
+import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.fpcf.{PropertyKey, PropertyStore}
-import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac._
-import org.opalj.tac.fpcf.properties.{IFDSProperty, IFDSPropertyMetaInformation}
+import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
+import org.opalj.tac.fpcf.properties.IFDSProperty
+import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 trait Fact extends AbstractIFDSFact
 case class NullFact() extends Fact with AbstractIFDSNullFact

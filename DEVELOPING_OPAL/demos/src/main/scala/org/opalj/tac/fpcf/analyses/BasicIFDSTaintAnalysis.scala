@@ -1,11 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package tac
-package fpcf
-package analyses
-package test
+package org.opalj.tac.fpcf.analyses
 
 import scala.collection.immutable.ListSet
+
+import org.opalj.bytecode
 
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
@@ -33,6 +31,13 @@ import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.tac.ArrayLoad
+import org.opalj.tac.ArrayStore
+import org.opalj.tac.Assignment
+import org.opalj.tac.Expr
+import org.opalj.tac.ReturnValue
+import org.opalj.tac.Stmt
+import org.opalj.tac.Var
 
 trait Fact extends AbstractIFDSFact
 case class Variable(index: Int) extends Fact
@@ -347,7 +352,7 @@ class TestTaintAnalysis private (
     }
 
     /**
-     *
+     * If forName is called, we add a FlowFact.
      */
     override def nativeCall(statement: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
         val call = asCall(statement.stmt)
@@ -398,7 +403,7 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
     )
 }
 
-object TestTaintAnalysisRunner {
+object BasicIFDSTaintAnalysisRunnter {
 
     def main(args: Array[String]): Unit = {
         if (args.contains("--help")) {
