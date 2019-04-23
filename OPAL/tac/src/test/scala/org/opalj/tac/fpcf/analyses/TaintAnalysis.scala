@@ -186,12 +186,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      */
     override def callFlow(call: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
         val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
-        // Do not analyze the internals of source and sink.
-        if (callee.name == "source" || callee.name == "sink") {
-            Set.empty
-        } else {
             in.collect {
-
                 // Taint formal parameter if actual parameter is tainted
                 case Variable(index) ⇒
                     allParams.zipWithIndex.collect {
@@ -209,7 +204,6 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
                             )
                     }
             }.flatten
-        }
     }
 
     /**
@@ -218,13 +212,12 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      */
     override def callToReturnFlow(call: Statement, successor: Statement, in: Set[Fact]): Set[Fact] = {
         val callStatement = asCall(call.stmt)
-        // Taint assigned variable, if source was called
-        if (callStatement.name == "source") call.stmt.astID match {
-            case Assignment.ASTID ⇒ in + Variable(call.index)
-            case _                ⇒ in
-        }
-        // Create a flow fact, if sink was called with a tainted parameter
-        else if (callStatement.name == "sink") {
+        /*
+         * Create a flow fact, if sink was called with a tainted parameter.
+         * This is done in callToReturnFlow, because it may be the case that the callee never terminates.
+         * In this case, returnFlow would never be called and no FlowFact would be created.
+         */
+        if (callStatement.name == "sink") {
             if (in.exists {
                 case Variable(index) ⇒
                     asCall(call.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
@@ -265,7 +258,8 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
                     .isReferenceType
             }
 
-        val allParams = (asCall(call.stmt).receiverOption ++ asCall(call.stmt).params).toSeq
+        val callStatement = asCall(call.stmt)
+        val allParams = (callStatement.receiverOption ++ callStatement.params).toSeq
         var flows: Set[Fact] = Set.empty
         for (fact ← in) {
             fact match {
@@ -305,6 +299,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
                     ArrayElement(call.index, taintedIndex)
                 case InstanceField(index, declClass, taintedField) if returnValue.definedBy.contains(index) ⇒
                     InstanceField(call.index, declClass, taintedField)
+                case NullFact if callStatement.name == "source" ⇒ Variable(call.index)
             }
         }
 

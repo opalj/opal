@@ -52,7 +52,7 @@ case class FlowFact(flow: ListSet[Method]) extends Fact {
         r
     }
 }
-case class NullFact() extends Fact with AbstractIFDSNullFact
+case object NullFact extends Fact with AbstractIFDSNullFact
 
 /**
  * A simple IFDS taint analysis.
@@ -192,24 +192,22 @@ class TestTaintAnalysis private (
         in:     Set[Fact]
     ): Set[Fact] = {
         val allParams = asCall(stmt.stmt).receiverOption ++ asCall(stmt.stmt).params
-        if (callee.name == "sink") {
+        if (callee.name == "sink")
             if (in.exists {
                 case Variable(index) ⇒
                     allParams.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             })
                 println(s"Found flow: $stmt")
-            Set.empty
-        } else if (callee.name == "forName" && (callee.declaringClassType eq ObjectType.Class) &&
-            callee.descriptor.parameterTypes == RefArray(ObjectType.String)) {
+        if (callee.name == "forName" && (callee.declaringClassType eq ObjectType.Class) &&
+            callee.descriptor.parameterTypes == RefArray(ObjectType.String))
             if (in.exists {
                 case Variable(index) ⇒
                     asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             })
                 println(s"Found flow: $stmt")
-            Set.empty
-        } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
+        if ((callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object)) {
             in.collect {
                 case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
@@ -355,21 +353,21 @@ class TestTaintAnalysis private (
      * If forName is called, we add a FlowFact.
      */
     override def nativeCall(statement: Statement, callee: DeclaredMethod, successor: Statement, in: Set[Fact]): Set[Fact] = {
-        val call = asCall(statement.stmt)
-        if (call.name == "forName" && (call.declaringClass eq ObjectType.Class) &&
-            call.descriptor.parameterTypes == RefArray(ObjectType.String)) {
-            if (in.exists {
-                case Variable(index) ⇒
-                    asCall(statement.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
-                case _ ⇒ false
-            }) {
-                /*if (entryPoints.contains(declaredMethods(stmt.method))) {
-                    println(s"flow: "+stmt.method.toJava)
-                    in
-                } else*/
-                Set(FlowFact(ListSet(statement.method)))
-            } else Set.empty
-        } else Set.empty
+        val allParams = asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params
+        if (statement.stmt.astID == Assignment.ASTID && in.exists {
+            case Variable(index) ⇒
+                allParams.zipWithIndex.exists {
+                    case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
+                    case _                                                   ⇒ false
+                }
+            case ArrayElement(index, _) ⇒
+                allParams.zipWithIndex.exists {
+                    case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
+                    case _                                                   ⇒ false
+                }
+            case _ ⇒ false
+        }) Set(Variable(statement.index))
+        else Set.empty
     }
 
     val entryPoints: Map[DeclaredMethod, Fact] = (for {

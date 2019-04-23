@@ -586,7 +586,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         // If calleeWithUpdateFact is present, this means that the basic block already has been analyzed with the `in` facts.
         if (calleeWithUpdateFact.isEmpty)
             for (successor ← successors) {
-                summaryEdges += successor → callToReturnFlow(call, successor, in)
+                summaryEdges += successor → propagateNullFact(in, callToReturnFlow(call, successor, in))
             }
 
         for (calledMethod ← callees) {
