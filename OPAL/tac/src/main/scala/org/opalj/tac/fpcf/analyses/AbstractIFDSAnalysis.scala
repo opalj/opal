@@ -143,10 +143,11 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      *
      * @param call The statement, which invoked the call.
      * @param callee The method, called by `call`.
+     * @param successor The statement, which will be executed after the call.
      * @param in Some facts valid before the `call`.
      * @return The facts valid after the call, excluding the call-to-return flow.
      */
-    def nativeCall(call: Statement, callee: DeclaredMethod, in: Set[IFDSFact]): Set[IFDSFact]
+    def nativeCall(call: Statement, callee: DeclaredMethod, successor: Statement, in: Set[IFDSFact]): Set[IFDSFact]
 
     /**
      * All declared methods in the project.
@@ -594,7 +595,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 // We cannot analyze native methods. Let the concrete analysis decide what to do.
                 for {
                     successor ← successors
-                } summaryEdges += successor → (summaryEdges(successor) ++ nativeCall(call, callee, in))
+                } summaryEdges += successor → (summaryEdges(successor) ++ nativeCall(call, callee, successor, in))
             } else {
                 val callToStart =
                     if (calleeWithUpdateFact.isDefined) calleeWithUpdateFact.toSet

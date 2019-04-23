@@ -325,7 +325,7 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      * If a parameter is tainted, the result will also be tainted.
      * We assume that the callee does not call the source method.
      */
-    override def nativeCall(statement: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
+    override def nativeCall(statement: Statement, callee: DeclaredMethod, successor: Statement, in: Set[Fact]): Set[Fact] = {
         val allParams = asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params
         if (statement.stmt.astID == Assignment.ASTID && in.exists {
             case Variable(index) ⇒

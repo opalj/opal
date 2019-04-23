@@ -354,7 +354,7 @@ class TestTaintAnalysis private (
     /**
      * If forName is called, we add a FlowFact.
      */
-    override def nativeCall(statement: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
+    override def nativeCall(statement: Statement, callee: DeclaredMethod, successor: Statement, in: Set[Fact]): Set[Fact] = {
         val call = asCall(statement.stmt)
         if (call.name == "forName" && (call.declaringClass eq ObjectType.Class) &&
             call.descriptor.parameterTypes == RefArray(ObjectType.String)) {
