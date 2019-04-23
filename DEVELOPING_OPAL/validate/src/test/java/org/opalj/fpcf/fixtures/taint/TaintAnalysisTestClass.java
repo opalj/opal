@@ -70,6 +70,13 @@ public class TaintAnalysisTestClass {
         }
     }
 
+    @FlowPath("returnOfIdentityFunctionIsConsidered")
+    public void returnOfIdentityFunctionIsConsidered() {
+        int i = source();
+        int j = identity(i);
+        sink(j);
+    }
+
     @FlowPath({"summaryEdgesOfRecursiveFunctionsAreComputedCorrectly"})
     public void summaryEdgesOfRecursiveFunctionsAreComputedCorrectly() {
         sink(recursion(0));
@@ -223,18 +230,6 @@ public class TaintAnalysisTestClass {
         sink(a.get());
     }
 
-    //Does not work, because the TAC's exit statements do not have any predecessors in this case.
-    /*@FlowPath({"doesNotReturn", "callerParameterIsTaintedIfCalleeTaintsFormalParameter", "passFirstArrayElementToSink"})
-    public void doesNotReturn() {
-        while(true) {
-            try {
-                callerParameterIsTaintedIfCalleeTaintsFormalParameter();
-            }catch (Throwable t) {
-                //does nothing by purpose
-            }
-        }
-    }*/
-
     //Does not work, because we do not know which exceptions cannot be thrown.
     /*@FlowPath({})
     public void onlyThrowableExceptionsAreConsidered() {
@@ -245,6 +240,16 @@ public class TaintAnalysisTestClass {
             i = source();
         }
         sink(i);
+    }*/
+
+    //Does not work, because the analysis does not know that there is only one iteration.
+    /*@FlowPath({})
+    public void iterationCountIsConsidered() {
+        int[] arr = new int[2];
+        for(int i = 0; i < 1; i++) {
+            sink(arr[0]);
+            arr[i] = source();
+        }
     }*/
 
     public int callSourceNonStatic() {
@@ -281,6 +286,8 @@ public class TaintAnalysisTestClass {
     }
 
     public native int nativeMethod(int i);
+
+    public int identity(int i) {return i;}
 
     public static int source() {
         return 1;
