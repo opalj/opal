@@ -14,6 +14,7 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
@@ -44,6 +45,7 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
@@ -63,6 +65,27 @@ class PointsToState private (
 
     val _dependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
 
+    var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
+
+    def callees(ps: PropertyStore): Callees = {
+        val calleesProperty = if (_calleesDependee.isDefined) {
+
+            _calleesDependee.get
+        } else {
+            val calleesProperty = ps(method, Callees.key)
+            _calleesDependee = Some(calleesProperty)
+            calleesProperty
+        }
+
+        if (calleesProperty.isEPK)
+            NoCallees
+        else calleesProperty.ub
+    }
+
+    def updateCalleesDependee(newCallees: EPS[DeclaredMethod, Callees]): Unit = {
+        _calleesDependee = Some(newCallees)
+    }
+
     def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
         assert(_tacDependee.isDefined)
         assert(_tacDependee.get.ub.tac.isDefined)
@@ -70,11 +93,13 @@ class PointsToState private (
     }
 
     def dependees: Iterable[EOptionP[Entity, Property]] = {
-        _tacDependee.filterNot(_.isFinal) ++ _dependees.values
+        _tacDependee.filterNot(_.isFinal) ++ _dependees.values ++ _calleesDependee.filter(_.isRefinable)
     }
 
     def hasOpenDependees: Boolean = {
-        !_tacDependee.forall(_.isFinal) || _dependees.nonEmpty
+        !_tacDependee.forall(_.isFinal) ||
+            _dependees.nonEmpty ||
+            (_calleesDependee.isDefined && _calleesDependee.get.isRefinable)
     }
 
     def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
@@ -161,7 +186,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
         }
     }
 
-    def c(state: PointsToState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+    private[this] def c(state: PointsToState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
             state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
             processMethod(state)
@@ -181,6 +206,12 @@ class AndersenStylePointsToAnalysis private[analyses] (
             }
 
             returnResult(state)
+
+        case UBP(callees: Callees) ⇒
+            // todo get new calls for all pcs
+            //returnResult(state)
+            state.updateCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
+            processMethod(state)
     }
 
     @inline private[this] def toEntity(
@@ -195,7 +226,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
     // todo: rename
     // IMPROVE: use local information, if possible
-    def handleEOptP(
+    @inline private[this] def handleEOptP(
         e: Entity, pointsToSetEOptP: EOptionP[Entity, PointsTo]
     )(implicit state: PointsToState): UIDSet[ObjectType] = {
         pointsToSetEOptP match {
@@ -210,7 +241,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
     }
 
     // todo: rename
-    def handleDefSites(e: Entity, defSites: IntTrieSet)(implicit state: PointsToState): Unit = {
+    @inline private[this] def handleDefSites(e: Entity, defSites: IntTrieSet)(implicit state: PointsToState): Unit = {
         var pointsToSet = UIDSet.empty[ObjectType]
         for (defSite ← defSites) {
             pointsToSet ++=
@@ -221,9 +252,16 @@ class AndersenStylePointsToAnalysis private[analyses] (
         state.pointsToSets(e) = pointsToSet
     }
 
-    def processMethod(implicit state: PointsToState): ProperPropertyComputationResult = {
-        val calleesEOptP = ps(state.method, Callees.key)
-        val callees = calleesEOptP.ub
+    @inline private[this] def isArrayOfObjectType(value: DUVar[ValueInformation]): Boolean = {
+        val lub = value.value.asReferenceValue.leastUpperType
+        lub.isDefined && lub.get.isArrayType
+    }
+
+    @inline private[this] def getArrayBaseObjectType(value: DUVar[ValueInformation]): ObjectType = {
+        value.value.asReferenceValue.leastUpperType.get.asArrayType.elementType.asObjectType
+    }
+
+    private[this] def processMethod(implicit state: PointsToState): ProperPropertyComputationResult = {
         val tac = state.tac
         val method = state.method.definedMethod
 
@@ -232,29 +270,30 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 val defSite = definitionSites(method, pc)
                 state.pointsToSets(defSite) = UIDSet(t)
 
+            // that case should not happen
             case Assignment(pc, targetVar, UVar(_, defSites)) if targetVar.value.isReferenceValue ⇒
                 val defSiteObject = definitionSites(method, pc)
                 handleDefSites(defSiteObject, defSites)
 
             case Assignment(pc, targetVar, GetField(_, declaringClass, name, fieldType, _)) if targetVar.value.isReferenceValue ⇒
                 val defSiteObject = definitionSites(method, pc)
-                // todo: we assert that the field exists
+                // todo: handle the case that the field does not exists
                 val field = p.resolveFieldReference(declaringClass, name, fieldType).get
                 state.pointsToSets(defSiteObject) = handleEOptP(defSiteObject, ps(field, PointsTo.key))
 
             case Assignment(pc, targetVar, GetStatic(_, declaringClass, name, fieldType)) if targetVar.value.isReferenceValue ⇒
                 val defSiteObject = definitionSites(method, pc)
-                // todo: we assert that the field exists
+                // todo: handle the case that the field does not exists
                 val field = p.resolveFieldReference(declaringClass, name, fieldType).get
                 state.pointsToSets(defSiteObject) = handleEOptP(defSiteObject, ps(field, PointsTo.key))
 
-            case Assignment(pc, targetVar, ArrayLoad(_, _, arrayRef)) if targetVar.value.isReferenceValue ⇒
+            case Assignment(pc, _, ArrayLoad(_, _, arrayRef)) if isArrayOfObjectType(arrayRef.asVar) ⇒
                 val defSiteObject = definitionSites(method, pc)
-                val arrayBaseType = ObjectType.Object // todo: arrayRef.asVar.value.asReferenceValue.upperTypeBound
+                val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
                 state.pointsToSets(defSiteObject) = handleEOptP(defSiteObject, ps(arrayBaseType, PointsTo.key))
 
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
-                val targets = callees.callees(pc)
+                val targets = state.callees(ps).callees(pc)
                 val defSiteObject = definitionSites(method, pc)
 
                 if (targetVar.value.isReferenceValue) {
@@ -263,7 +302,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                         pointsToSet ++= handleEOptP(defSiteObject, ps(target, PointsTo.key))
                     }
 
-                    state.pointsToSets(defSiteObject, pointsToSet)
+                    state.pointsToSets(defSiteObject) = pointsToSet
                 }
 
                 for (target ← targets) {
@@ -286,8 +325,8 @@ class AndersenStylePointsToAnalysis private[analyses] (
             case Assignment(_, targetVar, _) if targetVar.value.isReferenceValue ⇒
                 throw new IllegalArgumentException(s"unexpected assignment: $stmt")
 
-            case call: Call[DUVar[ValueInformation]] ⇒
-                val targets = callees.callees(call.pc)
+            case call: Call[_] ⇒
+                val targets = state.callees(ps).callees(call.pc)
                 for (target ← targets) {
                     val fps = formalParameters(target)
 
@@ -295,19 +334,18 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     // handle receiver for non static methods
                     if (receiverOpt.isDefined) {
                         val fp = fps(0)
-                        handleDefSites(fp, receiverOpt.get.asVar.definedBy)
+                        handleDefSites(fp, receiverOpt.get.asVar.asInstanceOf[DUVar[ValueInformation]].definedBy)
                     }
 
                     // handle params
                     for (i ← 0 until target.descriptor.parametersCount) {
                         val fp = fps(i + 1)
-                        handleDefSites(fp, call.params(i).asVar.definedBy)
+                        handleDefSites(fp, call.params(i).asVar.asInstanceOf[DUVar[ValueInformation]].definedBy)
                     }
                 }
 
-            // todo we need the base type of the array
-            case ArrayStore(_, _, _, value @ UVar(_, defSites)) if value.value.isReferenceValue ⇒
-                val arrayBaseType = ObjectType.Object // todo: value.asVar.value.asReferenceValue.upperTypeBound
+            case ArrayStore(_, arrayRef, _, UVar(_, defSites)) if isArrayOfObjectType(arrayRef.asVar) ⇒
+                val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
 
                 var pointsToSet = UIDSet.empty[ObjectType]
                 for (defSite ← defSites) {
@@ -350,7 +388,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
         returnResult
     }
 
-    def returnResult(implicit state: PointsToState): ProperPropertyComputationResult = {
+    @inline private[this] def returnResult(implicit state: PointsToState): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
 
         if (state.hasOpenDependees) results += InterimPartialResult(state.dependees, c(state))
@@ -359,7 +397,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
             val isFinal = !state._dependerToDependees.contains(e)
             results += PartialResult[Entity, PointsTo](e, PointsTo.key, {
                 case _: EPK[Entity, PointsTo] if isFinal ⇒
-                    Some(FinalP(e, PointsTo(pointsToSet)))
+                    Some(FinalEP(e, PointsTo(pointsToSet)))
 
                 case _: EPK[Entity, PointsTo] ⇒
                     Some(InterimEUBP(e, PointsTo(pointsToSet)))
@@ -369,7 +407,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     val newPointsTo = ub.updated(pointsToSet)
                     if (newPointsTo.numElements != ub.numElements)
                         if (isFinal)
-                            Some(FinalP(e, newPointsTo))
+                            Some(FinalEP(e, newPointsTo))
                         else
                             Some(InterimEUBP(e, newPointsTo))
                     else
