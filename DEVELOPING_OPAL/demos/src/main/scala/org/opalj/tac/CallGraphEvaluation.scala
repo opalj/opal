@@ -114,7 +114,7 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
 
         val cg = algorithm.get match {
             case "RTA" ⇒ p.get(RTACallGraphKey(false))
-            case "CHA" ⇒ p.get(CHACallGraphKey(false))
+            case "CHA" ⇒ p.get(CHACallGraphKey)
         }
 
         val time = System.currentTimeMillis() - start
