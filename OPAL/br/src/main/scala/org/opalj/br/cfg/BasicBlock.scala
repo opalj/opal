@@ -13,6 +13,7 @@ import org.opalj.br.Code
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
+// IMPROVE Create specialized implementations of BasicBlock for those with an in-degree of one or none and those with an out-degree of one
 class BasicBlock(
         val startPC:             Int, // <= determines this basic blocks' hash value!
         private[cfg] var _endPC: Int = Int.MinValue
