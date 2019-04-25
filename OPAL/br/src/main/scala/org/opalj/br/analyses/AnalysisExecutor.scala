@@ -154,7 +154,7 @@ trait AnalysisExecutor {
                 sys.exit(2)
         }
 
-        OPALLogger.info("project configuration", s"the classpath is ${cp.mkString}")
+        OPALLogger.info("project configuration", s"the classpath is ${cp.mkString(";")}")
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
             showError("Nothing to analyze.")
