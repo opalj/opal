@@ -14,8 +14,11 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisScheduler
 //import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 //import org.opalj.tac.fpcf.analyses.TACAITransformer
 
@@ -115,6 +118,10 @@ object CallGraph extends DefaultOneStepAnalysis {
             case "CHA" ⇒ project.get(CHACallGraphKey)
             case "RTA" ⇒ project.get(RTACallGraphKey(isLibrary.get))
         }
+
+        val manager = project.get(FPCFAnalysesManagerKey)
+        manager.runAll(AndersenStylePointsToAnalysisScheduler)
+        println(ps.entities(PointsTo.key).size)
 
         val reachableMethods = cg.reachableMethods().toTraversable
 
