@@ -68,8 +68,10 @@ class State private[cg] (
     // maps a defsite to the callsites for which it is being used
     // this is only done if the defsite is used within a call and its points-to set is not final
     private[this] val _defSitesToCallSites: mutable.Map[Entity, Set[CallSiteT]] = mutable.Map.empty
+    private[this] val _callSiteToDefSites: mutable.Map[CallSiteT, Set[Entity]] = mutable.Map.empty
 
     // maps a defsite to its result in the property store for the points-to set
+    // todo: add accessor methods
     private[cg] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
 
     private[cg] def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
@@ -86,7 +88,7 @@ class State private[cg] (
     }
 
     private[cg] def typesForCallSite(callSite: CallSiteT): IntTrieSet = {
-        _virtualCallSites.getOrElse(callSite, IntTrieSet.empty) // todo: should use apply
+        _virtualCallSites(callSite) //, IntTrieSet.empty) // todo: should use apply
     }
 
     private[cg] def initialPotentialTypesOfCallSite(
@@ -102,6 +104,14 @@ class State private[cg] (
         val typesLeft = _virtualCallSites(callSite) - instantiatedType.id
         if (typesLeft.isEmpty) {
             _virtualCallSites -= callSite
+            for (defSite ← _callSiteToDefSites(callSite)) {
+                val newCallSites = _defSitesToCallSites(defSite) - callSite
+                if (newCallSites.isEmpty)
+                    removePointsToDependency(defSite)
+                else
+                    _defSitesToCallSites(defSite) = newCallSites
+            }
+            _callSiteToDefSites.remove(callSite)
             // todo here we shold also remove all dependencies for this call-site
         } else {
             _virtualCallSites(callSite) = typesLeft
@@ -117,17 +127,28 @@ class State private[cg] (
         callSite: CallSiteT, pointsToSetEOptP: EOptionP[Entity, PointsTo]
     ): Unit = {
         val defSite = pointsToSetEOptP.e
-        assert((!_defSitesToCallSites.contains(defSite) && !_pointsToDependees.contains(defSite)) ||
-            !_defSitesToCallSites(defSite).contains(callSite))
+        assert((!_defSitesToCallSites.contains(defSite) && !_callSiteToDefSites.contains(callSite) && !_pointsToDependees.contains(defSite)) ||
+            (!_defSitesToCallSites(defSite).contains(callSite) && !_callSiteToDefSites(callSite).contains(defSite)))
         _pointsToDependees(defSite) = pointsToSetEOptP
-        val old = _defSitesToCallSites.getOrElse(defSite, Set.empty)
-        _defSitesToCallSites(defSite) = old + callSite
+        val oldCallSites = _defSitesToCallSites.getOrElse(defSite, Set.empty)
+        _defSitesToCallSites(defSite) = oldCallSites + callSite
+
+        val oldDefSites = _callSiteToDefSites.getOrElse(callSite, Set.empty)
+        _callSiteToDefSites(callSite) = oldDefSites + defSite
     }
 
     private[cg] def removePointsToDependency(defSite: Entity): Unit = {
         assert(_pointsToDependees.contains(defSite))
         assert(_defSitesToCallSites.contains(defSite))
         _pointsToDependees.remove(defSite)
+        for (callSite ← _defSitesToCallSites(defSite)) {
+            val newDefSites = _callSiteToDefSites(callSite) - defSite
+            if (newDefSites.isEmpty) {
+                _callSiteToDefSites.remove(callSite)
+            } else {
+                _callSiteToDefSites(callSite) = newDefSites
+            }
+        }
         _defSitesToCallSites.remove(defSite)
     }
 
@@ -143,7 +164,7 @@ class State private[cg] (
     }
 
     private[cg] def callSitesForDefSite(defSite: Entity): Traversable[CallSiteT] = {
-        _defSitesToCallSites(defSite)
+        _defSitesToCallSites.getOrElse(defSite, Traversable.empty) // todo: ensure this is required
     }
 
 }
@@ -558,9 +579,10 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
                 val calls = new DirectCalls()
 
                 for (callSite ← relevantCallSites) {
+                    val oldEOptP = state._pointsToDependees(eps.e)
+                    val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
                     val typesLeft = state.typesForCallSite(callSite)
-                    // todo only look at new types 
-                    for (newType ← ub.types) {
+                    for (newType ← ub.getNewTypes(seenTypes)) {
                         if (typesLeft.contains(newType.id)) {
                             state.removeTypeForCallSite(callSite, newType)
                             val (pc, name, descriptor, declaredType) = callSite
