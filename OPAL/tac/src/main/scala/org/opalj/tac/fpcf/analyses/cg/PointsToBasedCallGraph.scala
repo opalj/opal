@@ -13,6 +13,7 @@ import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -31,6 +32,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.fpcf.UBPS
 import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsSArrayValue
@@ -52,13 +54,14 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class State private[cg] (
-        private[cg] val method:   DefinedMethod,
+        private[cg] val method:         DefinedMethod,
         private[this] var _tacDependee: EOptionP[Method, TACAI]
 ) {
-
     // maps a definition site to the ids of the potential (not yet resolved) objecttypes
     private[this] val _virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = mutable.Map.empty
 
@@ -67,7 +70,7 @@ class State private[cg] (
     private[this] val _defSitesToCallSites: mutable.Map[Entity, Set[CallSiteT]] = mutable.Map.empty
 
     // maps a defsite to its result in the property store for the points-to set
-    private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
+    private[cg] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
 
     private[cg] def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
         assert(_tacDependee.ub.tac.isDefined)
@@ -83,7 +86,7 @@ class State private[cg] (
     }
 
     private[cg] def typesForCallSite(callSite: CallSiteT): IntTrieSet = {
-        _virtualCallSites(callSite)
+        _virtualCallSites.getOrElse(callSite, IntTrieSet.empty) // todo: should use apply
     }
 
     private[cg] def initialPotentialTypesOfCallSite(
@@ -99,9 +102,33 @@ class State private[cg] (
         val typesLeft = _virtualCallSites(callSite) - instantiatedType.id
         if (typesLeft.isEmpty) {
             _virtualCallSites -= callSite
+            // todo here we shold also remove all dependencies for this call-site
         } else {
             _virtualCallSites(callSite) = typesLeft
         }
+    }
+
+    private[cg] def updatePointsToDependency(eps: EPS[Entity, PointsTo]): Unit = {
+        assert(_pointsToDependees.contains(eps.e))
+        _pointsToDependees(eps.e) = eps
+    }
+
+    private[cg] def addPointsToDependency(
+        callSite: CallSiteT, pointsToSetEOptP: EOptionP[Entity, PointsTo]
+    ): Unit = {
+        val defSite = pointsToSetEOptP.e
+        assert((!_defSitesToCallSites.contains(defSite) && !_pointsToDependees.contains(defSite)) ||
+            !_defSitesToCallSites(defSite).contains(callSite))
+        _pointsToDependees(defSite) = pointsToSetEOptP
+        val old = _defSitesToCallSites.getOrElse(defSite, Set.empty)
+        _defSitesToCallSites(defSite) = old + callSite
+    }
+
+    private[cg] def removePointsToDependency(defSite: Entity): Unit = {
+        assert(_pointsToDependees.contains(defSite))
+        assert(_defSitesToCallSites.contains(defSite))
+        _pointsToDependees.remove(defSite)
+        _defSitesToCallSites.remove(defSite)
     }
 
     private[cg] def hasOpenDependencies: Boolean = {
@@ -122,8 +149,8 @@ class State private[cg] (
 }
 
 class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
-    //private[this] val definitionSites = p.get(DefinitionSitesKey)
-    //private[this] val formalParameters = p.get(VirtualFormalParametersKey)
+    private[this] val definitionSites = p.get(DefinitionSitesKey)
+    private[this] val formalParameters = p.get(VirtualFormalParametersKey)
     private[this] val declaredMethods = p.get(DeclaredMethodsKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
@@ -364,55 +391,143 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
                         calleesAndCallers
                     )
                 } else {
-                    val potentialTypes = classHierarchy.allSubtypesForeachIterator(
-                        ov.theUpperTypeBound, reflexive = true
+
+                    def potentialTypes(ov: IsSObjectValue): ForeachRefIterator[ObjectType] = {
+                        classHierarchy.allSubtypesForeachIterator(
+                            ov.theUpperTypeBound, reflexive = true
+                        ).filter { subtype ⇒
+                            val cfOption = project.classFile(subtype)
+                            cfOption.isDefined && {
+                                val cf = cfOption.get
+                                !cf.isInterfaceDeclaration && !cf.isAbstract
+                            }
+                        }
+                    }
+
+                    val callSite = (pc, call.name, call.descriptor, call.declaringClass)
+                    val pointsToSet = handleDefSites(callSite, call.receiver.asVar.definedBy)
+
+                    for (newType ← potentialTypes(ov).filter(pointsToSet.contains)) {
+                        val tgtR = project.instanceCall(
+                            callerType,
+                            newType,
+                            call.name,
+                            call.descriptor
+                        )
+                        handleCall(
+                            caller,
+                            call.name,
+                            call.descriptor,
+                            call.declaringClass,
+                            pc,
+                            tgtR,
+                            calleesAndCallers
+                        )
+                    }
+
+                    // add all the types that are not yet available at this call site to the state
+                    state.initialPotentialTypesOfCallSite(callSite, potentialTypes(ov).filter(t ⇒ !pointsToSet.contains(t)))
+                }
+
+            case mv: IsMObjectValue ⇒
+                def potentialTypes(mv: IsMObjectValue): ForeachRefIterator[ObjectType] = {
+                    val typeBounds = mv.upperTypeBound
+                    val remainingTypeBounds = typeBounds.tail
+                    val firstTypeBound = typeBounds.head
+                    val potentialTypes = ch.allSubtypesForeachIterator(
+                        firstTypeBound, reflexive = true
                     ).filter { subtype ⇒
                         val cfOption = project.classFile(subtype)
                         cfOption.isDefined && {
                             val cf = cfOption.get
-                            !cf.isInterfaceDeclaration && !cf.isAbstract
+                            !cf.isInterfaceDeclaration && !cf.isAbstract &&
+                                remainingTypeBounds.forall { supertype ⇒
+                                    ch.isSubtypeOf(subtype, supertype)
+                                }
                         }
                     }
+                    potentialTypes
+                }
 
-                    call.receiver.asVar.definedBy.foreach { defSite ⇒
-                        //val p2s = UIDSet(ObjectType.Object) // todo retrieve actual points-to-set
-                        // todo: intersect potentialTypes and p2s
-                        // todo: add calls for all types in the intersection
-                        // todo: remove types in p2s from potentialTypes
-                        // todo: later on we want get notified whenever p2s changes
-                    }
+                val callSite = (pc, call.name, call.descriptor, call.declaringClass)
+                val pointsToSet = handleDefSites(callSite, call.receiver.asVar.definedBy)
 
-                    // add all the types that are not yet available at this call site to the state
-                    state.initialPotentialTypesOfCallSite(
-                        (pc, call.name, call.descriptor, call.declaringClass),
-                        potentialTypes
+                for (newType ← potentialTypes(mv).filter(pointsToSet.contains)) {
+                    val tgtR = project.instanceCall(
+                        callerType,
+                        newType,
+                        call.name,
+                        call.descriptor
                     )
-
+                    handleCall(
+                        caller,
+                        call.name,
+                        call.descriptor,
+                        call.declaringClass,
+                        pc,
+                        tgtR,
+                        calleesAndCallers
+                    )
                 }
 
-            case mv: IsMObjectValue ⇒
-                val typeBounds = mv.upperTypeBound
-                val remainingTypeBounds = typeBounds.tail
-                val firstTypeBound = typeBounds.head
-                val potentialTypes = ch.allSubtypesForeachIterator(
-                    firstTypeBound, reflexive = true
-                ).filter { subtype ⇒
-                    val cfOption = project.classFile(subtype)
-                    cfOption.isDefined && {
-                        val cf = cfOption.get
-                        !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                            remainingTypeBounds.forall { supertype ⇒
-                                ch.isSubtypeOf(subtype, supertype)
-                            }
-                    }
-                }
+                // add all the types that are not yet available at this call site to the state
+                state.initialPotentialTypesOfCallSite(callSite, potentialTypes(mv).filter(t ⇒ !pointsToSet.contains(t)))
 
-              println(potentialTypes)
-
-            // todo: handle imprecise call
             case _: IsNullValue ⇒
             // for now, we ignore the implicit calls to NullPointerException.<init>
         }
+    }
+
+    @inline private[this] def toEntity(
+        defSite: Int
+    )(implicit state: State): Entity = {
+        if (defSite < 0) {
+            formalParameters.apply(state.method)(-1 - defSite)
+        } else {
+            definitionSites(state.method.definedMethod, state.tac.stmts(defSite).pc)
+        }
+    }
+
+    @inline private[this] def handleEOptP(
+        callSite: CallSiteT, dependeeDefSite: Int
+    )(implicit state: State): UIDSet[ObjectType] = {
+        if (ai.isImplicitOrExternalException(dependeeDefSite)) {
+            // todo -  we need to get the actual exception type here
+            UIDSet(ObjectType.Exception)
+        } else {
+            handleEOptP(callSite, toEntity(dependeeDefSite))
+        }
+    }
+
+    // todo: rename
+    // IMPROVE: use local information, if possible
+    @inline private[this] def handleEOptP(
+        callSite: CallSiteT, dependee: Entity
+    )(implicit state: State): UIDSet[ObjectType] = {
+        // IMPROVE: do not add a dependency twice
+        val pointsToSetEOptP = state._pointsToDependees.getOrElse(dependee, ps(dependee, PointsTo.key))
+        pointsToSetEOptP match {
+            case UBPS(pointsTo, isFinal) ⇒
+                if (!isFinal) state.addPointsToDependency(callSite, pointsToSetEOptP)
+                pointsTo.types
+
+            case _: EPK[Entity, PointsTo] ⇒
+                state.addPointsToDependency(callSite, pointsToSetEOptP)
+                UIDSet.empty
+        }
+    }
+
+    // todo: rename
+    @inline private[this] def handleDefSites(
+        callSite: CallSiteT, defSites: IntTrieSet
+    )(implicit state: State): UIDSet[ObjectType] = {
+        var pointsToSet = UIDSet.empty[ObjectType]
+        for (defSite ← defSites) {
+            pointsToSet ++=
+                handleEOptP(callSite, defSite)
+
+        }
+        pointsToSet
     }
 
     private[this] def returnResult(
@@ -446,18 +561,27 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
                     val typesLeft = state.typesForCallSite(callSite)
                     // todo only look at new types 
                     for (newType ← ub.types) {
-                        if (typesLeft.contains(newType.id)){
+                        if (typesLeft.contains(newType.id)) {
                             state.removeTypeForCallSite(callSite, newType)
-                            // todo add call to this type
+                            val (pc, name, descriptor, declaredType) = callSite
+                            val tgtR = project.instanceCall(
+                                state.method.declaringClassType.asObjectType,
+                                newType,
+                                name,
+                                descriptor
+                            )
+                            handleCall(
+                                state.method, name, descriptor, declaredType, pc, tgtR, calls
+                            )
                         }
 
                     }
                 }
 
                 if (isFinal) {
-                    // todo remove dependency
+                    state.removePointsToDependency(e)
                 } else {
-                    // todo update dependency
+                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsTo]])
                 }
                 returnResult(calls)(state)
         }

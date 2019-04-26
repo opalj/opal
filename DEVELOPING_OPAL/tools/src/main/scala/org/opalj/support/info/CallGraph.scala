@@ -14,9 +14,10 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.CHACallGraphKey
+import org.opalj.tac.cg.PointsToCallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisScheduler
 //import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
@@ -51,7 +52,7 @@ object CallGraph extends DefaultOneStepAnalysis {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-mode=app|library]"+"[-algorithm=CHA|RTA]"+"[-callers=method]"+"[-callees=method]"
+        "[-mode=app|library]"+"[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"
     }
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
@@ -79,7 +80,7 @@ object CallGraph extends DefaultOneStepAnalysis {
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
         val modeRegex = "-mode=(app|library)".r
-        val algorithmRegex = "-algorithm=(CHA|RTA)".r
+        val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
 
         parameters.foreach {
             case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
@@ -115,12 +116,16 @@ object CallGraph extends DefaultOneStepAnalysis {
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
         val cg = cgAlgorithm.get match {
-            case "CHA" ⇒ project.get(CHACallGraphKey)
-            case "RTA" ⇒ project.get(RTACallGraphKey(isLibrary.get))
+            case "CHA"      ⇒ project.get(CHACallGraphKey)
+            case "RTA"      ⇒ project.get(RTACallGraphKey(isLibrary.get))
+            case "PointsTo" ⇒ project.get(PointsToCallGraphKey)
         }
 
-        val manager = project.get(FPCFAnalysesManagerKey)
-        manager.runAll(AndersenStylePointsToAnalysisScheduler)
+        if (cgAlgorithm.get != "PointsTo") {
+            val manager = project.get(FPCFAnalysesManagerKey)
+            manager.runAll(AndersenStylePointsToAnalysisScheduler)
+        }
+
         println(ps.entities(PointsTo.key).size)
 
         val reachableMethods = cg.reachableMethods().toTraversable
