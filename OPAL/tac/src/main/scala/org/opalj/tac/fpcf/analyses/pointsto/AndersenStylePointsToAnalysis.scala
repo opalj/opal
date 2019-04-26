@@ -419,41 +419,26 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
             case ArrayStore(_, arrayRef, _, UVar(_, defSites)) if isArrayOfObjectType(arrayRef.asVar) ⇒
                 val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
-
-                var pointsToSet = UIDSet.empty[ObjectType]
-                for (defSite ← defSites) {
-                    pointsToSet ++=
-                        handleEOptP(arrayBaseType, defSite)
-
-                }
-
-                state.setOrUpdatePointsToSet(arrayBaseType, pointsToSet)
+                handleDefSites(arrayBaseType, defSites)
 
             case PutField(_, declaringClass, name, fieldType, _, UVar(_, defSites)) if fieldType.isObjectType ⇒
-                val field = p.resolveFieldReference(declaringClass, name, fieldType).get
-                var pointsToSet = UIDSet.empty[ObjectType]
-                for (defSite ← defSites) {
-                    pointsToSet ++=
-                        handleEOptP(field, defSite)
+                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
+                if (fieldOpt.isDefined)
+                    handleDefSites(fieldOpt.get, defSites)
+                else {
+                    // todo: field does not exists
                 }
-                state.setOrUpdatePointsToSet(field, pointsToSet)
 
             case PutStatic(_, declaringClass, name, fieldType, UVar(_, defSites)) if fieldType.isObjectType ⇒
-                val field = p.resolveFieldReference(declaringClass, name, fieldType).get
-                var pointsToSet = UIDSet.empty[ObjectType]
-                for (defSite ← defSites) {
-                    pointsToSet ++=
-                        handleEOptP(field, defSite)
+                val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
+                if (fieldOpt.isDefined)
+                    handleDefSites(fieldOpt.get, defSites)
+                else {
+                    // todo: field does not exists
                 }
-                state.setOrUpdatePointsToSet(field, pointsToSet)
 
             case ReturnValue(_, value @ UVar(_, defSites)) if value.value.isReferenceValue ⇒
-                var pointsToSet = UIDSet.empty[ObjectType]
-                for (defSite ← defSites) {
-                    pointsToSet ++=
-                        handleEOptP(state.method, defSite)
-                }
-                state.setOrUpdatePointsToSet(state.method, pointsToSet)
+                handleDefSites(state.method, defSites)
 
             case _ ⇒
         }
