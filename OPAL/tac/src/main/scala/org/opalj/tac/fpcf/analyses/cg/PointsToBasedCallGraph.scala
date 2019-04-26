@@ -58,7 +58,10 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
-class State private[cg] (
+/**
+ * Represents the state of a points-to based call graph analysis, while analyzing a certain method.
+ */
+class P2CGState private[cg] (
         private[cg] val method:         DefinedMethod,
         private[this] var _tacDependee: EOptionP[Method, TACAI]
 ) {
@@ -72,7 +75,7 @@ class State private[cg] (
 
     // maps a defsite to its result in the property store for the points-to set
     // todo: add accessor methods
-    private[cg] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
+    private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
 
     private[cg] def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
         assert(_tacDependee.ub.tac.isDefined)
@@ -116,6 +119,16 @@ class State private[cg] (
         } else {
             _virtualCallSites(callSite) = typesLeft
         }
+    }
+
+    private[cg] def getOrRetrievePointsToEPS(
+        dependee: Entity, ps: PropertyStore
+    ): EOptionP[Entity, PointsTo] = {
+        _pointsToDependees.getOrElse(dependee, ps(dependee, PointsTo.key))
+    }
+
+    private[cg] def getPointsToEPS(dependee: Entity): EOptionP[Entity, PointsTo] = {
+        _pointsToDependees(dependee)
     }
 
     private[cg] def updatePointsToDependency(eps: EPS[Entity, PointsTo]): Unit = {
@@ -169,6 +182,13 @@ class State private[cg] (
 
 }
 
+/**
+ * Uses the [[PointsTo]] of [[org.opalj.tac.common.DefinitionSite]] and
+ * [[org.opalj.br.analyses.VirtualFormalParameter]]s in order to determine the targets of virtual
+ * method calls.
+ *
+ * @author Florian Kuebler
+ */
 class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
     private[this] val definitionSites = p.get(DefinitionSitesKey)
     private[this] val formalParameters = p.get(VirtualFormalParametersKey)
@@ -205,7 +225,7 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
 
         val tacEP = propertyStore(method, TACAI.key)
 
-        val state = new State(declaredMethod.asDefinedMethod, tacEP)
+        val state = new P2CGState(declaredMethod.asDefinedMethod, tacEP)
 
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
             processMethod(state, new DirectCalls())
@@ -215,11 +235,15 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
     }
 
     private[this] def processMethod(
-        state: State, calls: DirectCalls
+        state: P2CGState, calls: DirectCalls
     ): ProperPropertyComputationResult = {
         val tac = state.tac
         val method = state.method
 
+        // iterate over all call stmts and add calls whenever possible.
+        // for non-virtual calls, calls can be added directly.
+        // for virtual calls, we first ask the AI result, for more precise information.
+        // if the information  is not precise enough, we query the points-to set
         tac.stmts.foreach {
             case stmt @ StaticFunctionCallStatement(call) ⇒
                 handleCall(
@@ -295,10 +319,6 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
         returnResult(calls)(state)
     }
 
-    /**
-     * For a call at `pc` and the set of `targets` (determined by CHA), add corresponding
-     * edges for all targets.
-     */
     private[this] def handleCall(
         caller:             DefinedMethod,
         callName:           String,
@@ -370,7 +390,7 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
-    )(implicit state: State): Unit = {
+    )(implicit state: P2CGState): Unit = {
         val callerType = caller.definedMethod.classFile.thisType
 
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
@@ -428,6 +448,7 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
                     val callSite = (pc, call.name, call.descriptor, call.declaringClass)
                     val pointsToSet = handleDefSites(callSite, call.receiver.asVar.definedBy)
 
+                    // for each type that is possible and part of the points to set, we add the call
                     for (newType ← potentialTypes(ov).filter(pointsToSet.contains)) {
                         val tgtR = project.instanceCall(
                             callerType,
@@ -499,9 +520,11 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
         }
     }
 
+    // todo: the next four methods are basically copy&paste of the points-to analysis -> refactor
+
     @inline private[this] def toEntity(
         defSite: Int
-    )(implicit state: State): Entity = {
+    )(implicit state: P2CGState): Entity = {
         if (defSite < 0) {
             formalParameters.apply(state.method)(-1 - defSite)
         } else {
@@ -511,7 +534,7 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
 
     @inline private[this] def handleEOptP(
         callSite: CallSiteT, dependeeDefSite: Int
-    )(implicit state: State): UIDSet[ObjectType] = {
+    )(implicit state: P2CGState): UIDSet[ObjectType] = {
         if (ai.isImplicitOrExternalException(dependeeDefSite)) {
             // todo -  we need to get the actual exception type here
             UIDSet(ObjectType.Exception)
@@ -521,12 +544,10 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
     }
 
     // todo: rename
-    // IMPROVE: use local information, if possible
     @inline private[this] def handleEOptP(
         callSite: CallSiteT, dependee: Entity
-    )(implicit state: State): UIDSet[ObjectType] = {
-        // IMPROVE: do not add a dependency twice
-        val pointsToSetEOptP = state._pointsToDependees.getOrElse(dependee, ps(dependee, PointsTo.key))
+    )(implicit state: P2CGState): UIDSet[ObjectType] = {
+        val pointsToSetEOptP = state.getOrRetrievePointsToEPS(dependee, ps)
         pointsToSetEOptP match {
             case UBPS(pointsTo, isFinal) ⇒
                 if (!isFinal) state.addPointsToDependency(callSite, pointsToSetEOptP)
@@ -541,7 +562,7 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
     // todo: rename
     @inline private[this] def handleDefSites(
         callSite: CallSiteT, defSites: IntTrieSet
-    )(implicit state: State): UIDSet[ObjectType] = {
+    )(implicit state: P2CGState): UIDSet[ObjectType] = {
         var pointsToSet = UIDSet.empty[ObjectType]
         for (defSite ← defSites) {
             pointsToSet ++=
@@ -553,9 +574,10 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
 
     private[this] def returnResult(
         calleesAndCallers: DirectCalls
-    )(implicit state: State): ProperPropertyComputationResult = {
+    )(implicit state: P2CGState): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.method)
 
+        // if there are no virtual call-sites left, we can simply return the result
         if (state.virtualCallSites.isEmpty || !state.hasOpenDependencies)
             Results(results)
         else Results(
@@ -564,7 +586,7 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
         )
     }
 
-    private[this] def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = {
+    private[this] def c(state: P2CGState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
@@ -576,10 +598,11 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
             case EUBPS(e, ub: PointsTo, isFinal) ⇒
                 val relevantCallSites = state.callSitesForDefSite(e)
 
+                // ensures, that we only add new calls
                 val calls = new DirectCalls()
 
                 for (callSite ← relevantCallSites) {
-                    val oldEOptP = state._pointsToDependees(eps.e)
+                    val oldEOptP = state.getPointsToEPS(eps.e)
                     val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
                     val typesLeft = state.typesForCallSite(callSite)
                     for (newType ← ub.getNewTypes(seenTypes)) {
