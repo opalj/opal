@@ -14,7 +14,6 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
@@ -143,6 +142,10 @@ class PointsToState private (
         }
     }
 
+    def clearPointsToSet(): Unit = {
+        _pointsToSets.clear()
+    }
+
     def dependersOf(dependee: Entity): Traversable[Entity] = _dependeeToDependers(dependee)
 
     def hasDependees(potentialDepender: Entity): Boolean =
@@ -206,6 +209,8 @@ class AndersenStylePointsToAnalysis private[analyses] (
     }
 
     private[this] def c(state: PointsToState)(eps: SomeEPS): ProperPropertyComputationResult = {
+        if (state.method.name == "id")
+            println()
         eps match {
             case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
@@ -360,7 +365,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     state.setOrUpdatePointsToSet(defSiteObject, pointsToSet)
                 }
 
-                for (target ← targets) {
+                for (target ← state.callees(ps).callees(pc)) {
                     val fps = formalParameters(target)
 
                     if (fps != null) {
@@ -461,12 +466,12 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
         if (state.hasOpenDependees) results += InterimPartialResult(state.dependees, c(state))
 
-        // todo we should clear the pointsToSets afterwards
         for ((e, pointsToSet) ← state._pointsToSets) {
-            val isFinal = !state.hasDependees(e)
+            // todo: ensure isFinal is set correctly
+            //val isFinal = e.isInstanceOf[DefinitionSite] && !state.hasDependees(e)
             results += PartialResult[Entity, PointsTo](e, PointsTo.key, {
-                case _: EPK[Entity, PointsTo] if isFinal ⇒
-                    Some(FinalEP(e, PointsTo(pointsToSet)))
+                //case _: EPK[Entity, PointsTo] if isFinal ⇒
+                //    Some(FinalEP(e, PointsTo(pointsToSet)))
 
                 case _: EPK[Entity, PointsTo] ⇒
                     Some(InterimEUBP(e, PointsTo(pointsToSet)))
@@ -475,14 +480,17 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     // IMPROVE: only process new Types
                     val newPointsTo = ub.updated(pointsToSet)
                     if (newPointsTo.numElements != ub.numElements)
-                        if (isFinal)
-                            Some(FinalEP(e, newPointsTo))
-                        else
-                            Some(InterimEUBP(e, newPointsTo))
+                        //if (isFinal)
+                        //    Some(FinalEP(e, newPointsTo))
+                        //else
+                        Some(InterimEUBP(e, newPointsTo))
                     else
                         None
             })
         }
+
+        // todo: ensure this is correct
+        state.clearPointsToSet()
 
         Results(results)
     }
