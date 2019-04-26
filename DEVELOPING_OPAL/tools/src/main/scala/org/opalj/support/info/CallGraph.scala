@@ -3,6 +3,7 @@ package org.opalj
 package support
 package info
 
+import java.io.File
 import java.net.URL
 
 import org.opalj.fpcf.PropertyStore
@@ -16,6 +17,7 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.PointsToCallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -52,7 +54,7 @@ object CallGraph extends DefaultOneStepAnalysis {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-mode=app|library]"+"[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"
+        "[-mode=app|library]"+"[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"
     }
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
@@ -61,7 +63,8 @@ object CallGraph extends DefaultOneStepAnalysis {
                 !p.startsWith("-callers=") &&
                     !p.startsWith("-callees=") &&
                     !p.startsWith("-mode=") &&
-                    !p.startsWith("-algorithm=")
+                    !p.startsWith("-algorithm=") &&
+                    !p.startsWith("-writeCG=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
@@ -76,11 +79,13 @@ object CallGraph extends DefaultOneStepAnalysis {
         var callersSigs: List[String] = Nil
         var isLibrary: Option[Boolean] = None
         var cgAlgorithm: Option[String] = None
+        var cgFile: Option[String] = None
 
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
         val modeRegex = "-mode=(app|library)".r
         val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
+        val writeCGRegex = "-writeCG=(.*)".r
 
         parameters.foreach {
             case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
@@ -97,6 +102,10 @@ object CallGraph extends DefaultOneStepAnalysis {
                 if (cgAlgorithm.isEmpty)
                     cgAlgorithm = Some(algo)
                 else throw new IllegalArgumentException("-algorithm was set twice")
+            case writeCGRegex(fileName) ⇒
+                if (cgFile.isEmpty)
+                    cgFile = Some(fileName)
+                else throw new IllegalArgumentException("-writeCG was set twice")
 
         }
 
@@ -157,6 +166,10 @@ object CallGraph extends DefaultOneStepAnalysis {
                     }.mkString("\t", "\n\t", "\n"))
                 }
             }
+        }
+
+        if (cgFile.nonEmpty) {
+            CallGraphSerializer.writeCG(cg, new File(cgFile.get))
         }
 
         val message =
