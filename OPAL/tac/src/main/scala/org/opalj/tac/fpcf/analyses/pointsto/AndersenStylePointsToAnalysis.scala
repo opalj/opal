@@ -209,8 +209,6 @@ class AndersenStylePointsToAnalysis private[analyses] (
     }
 
     private[this] def c(state: PointsToState)(eps: SomeEPS): ProperPropertyComputationResult = {
-        if (state.method.name == "id")
-            println()
         eps match {
             case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
