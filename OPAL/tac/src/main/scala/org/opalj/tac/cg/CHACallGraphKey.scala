@@ -70,7 +70,9 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         new CallGraph()
     }
 
-    private[this] def resolveAnalysisRunner(fqn: String)(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
+    private[this] def resolveAnalysisRunner(
+        fqn: String
+    )(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {
             val module = mirror.staticModule(fqn)
