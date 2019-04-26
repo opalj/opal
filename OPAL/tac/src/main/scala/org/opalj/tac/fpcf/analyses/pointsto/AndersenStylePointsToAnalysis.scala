@@ -49,14 +49,15 @@ import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
+/**
+ * Encapsulates the state of the analysis, analyzing a certain method.
+ */
 class PointsToState private (
         private[pointsto] val method:   DefinedMethod,
         private[this] var _tacDependee: Option[EOptionP[Method, TACAI]]
 ) {
 
-    /*private[this]*/ val _pointsToSets: mutable.Map[Entity, UIDSet[ObjectType]] = mutable.Map.empty
-
-    //val localPointsToSets: mutable.Map[DefinitionSite, UIDSet[ObjectType]] = mutable.Map.empty
+    private[this] val _pointsToSets: mutable.Map[Entity, UIDSet[ObjectType]] = mutable.Map.empty
 
     // todo document
     // if we get an update for e: we have to update all points-to sets for the entities in map(e)
@@ -65,11 +66,11 @@ class PointsToState private (
     private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[Entity]] = mutable.Map.empty
 
     // todo accessor methods
-    private[pointsto] val _dependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
+    private[this] val _dependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
 
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
-    def callees(ps: PropertyStore): Callees = {
+    private[pointsto] def callees(ps: PropertyStore): Callees = {
         val calleesProperty = if (_calleesDependee.isDefined) {
 
             _calleesDependee.get
@@ -84,38 +85,38 @@ class PointsToState private (
         else calleesProperty.ub
     }
 
-    def updateCalleesDependee(newCallees: EPS[DeclaredMethod, Callees]): Unit = {
+    private[pointsto] def updateCalleesDependee(newCallees: EPS[DeclaredMethod, Callees]): Unit = {
         _calleesDependee = Some(newCallees)
     }
 
-    def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
+    private[pointsto] def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
         assert(_tacDependee.isDefined)
         assert(_tacDependee.get.ub.tac.isDefined)
         _tacDependee.get.ub.tac.get
     }
 
-    def dependees: Iterable[EOptionP[Entity, Property]] = {
+    private[pointsto] def dependees: Traversable[EOptionP[Entity, Property]] = {
         _tacDependee.filterNot(_.isFinal) ++ _dependees.values ++ _calleesDependee.filter(_.isRefinable)
     }
 
-    def hasOpenDependees: Boolean = {
+    private[pointsto] def hasOpenDependees: Boolean = {
         !_tacDependee.forall(_.isFinal) ||
             _dependees.nonEmpty ||
             (_calleesDependee.isDefined && _calleesDependee.get.isRefinable)
     }
 
-    def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
+    private[pointsto] def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
         _tacDependee = Some(tacDependee)
     }
 
-    def addPointsToDependency(depender: Entity, dependee: EOptionP[Entity, PointsTo]): Unit = {
+    private[pointsto] def addPointsToDependency(depender: Entity, dependee: EOptionP[Entity, PointsTo]): Unit = {
         _dependeeToDependers.getOrElseUpdate(dependee.e, mutable.Set.empty).add(depender)
         _dependerToDependees.getOrElseUpdate(depender, mutable.Set.empty).add(dependee.e)
         _dependees(dependee.e) = dependee
         assert(_dependees.contains(dependee.e) && _dependeeToDependers.contains(dependee.e))
     }
 
-    def removeDependee(eps: SomeEPS): Unit = {
+    private[pointsto] def removePointsToDependee(eps: EPS[Entity, PointsTo]): Unit = {
         val dependee = eps.e
         assert(_dependees.contains(dependee))
         _dependees.remove(dependee)
@@ -129,11 +130,17 @@ class PointsToState private (
         }
     }
 
-    def updatePointsToDependee(eps: EOptionP[Entity, PointsTo]): Unit = {
+    private[pointsto] def updatePointsToDependee(eps: EOptionP[Entity, PointsTo]): Unit = {
         _dependees(eps.e) = eps
     }
 
-    def setOrUpdatePointsToSet(e: Entity, p2s: UIDSet[ObjectType]): Unit = {
+    private[pointsto] def getOrRetrievePointsToEPS(
+        dependee: Entity, ps: PropertyStore
+    ): EOptionP[Entity, PointsTo] = {
+        _dependees.getOrElse(dependee, ps(dependee, PointsTo.key))
+    }
+
+    private[pointsto] def setOrUpdatePointsToSet(e: Entity, p2s: UIDSet[ObjectType]): Unit = {
         if (_pointsToSets.contains(e)) {
             val newPointsToSet = _pointsToSets(e) ++ p2s
             _pointsToSets(e) = newPointsToSet
@@ -142,13 +149,17 @@ class PointsToState private (
         }
     }
 
-    def clearPointsToSet(): Unit = {
+    private[pointsto] def clearPointsToSet(): Unit = {
         _pointsToSets.clear()
     }
 
-    def dependersOf(dependee: Entity): Traversable[Entity] = _dependeeToDependers(dependee)
+    private[pointsto] def pointsToSets: Iterator[(Entity, UIDSet[ObjectType])] = {
+        _pointsToSets.iterator
+    }
 
-    def hasDependees(potentialDepender: Entity): Boolean =
+    private[pointsto] def dependersOf(dependee: Entity): Traversable[Entity] = _dependeeToDependers(dependee)
+
+    private[pointsto] def hasDependees(potentialDepender: Entity): Boolean =
         _dependerToDependees.contains(potentialDepender)
 }
 
@@ -161,6 +172,20 @@ object PointsToState {
     }
 }
 
+/**
+ * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
+ * The analysis is field-based, array-based and context-insensitive.
+ *
+ * Points-to sets may be attached to the following entities:
+ *  - [[org.opalj.tac.common.DefinitionSite]] for local variables.
+ *  - [[org.opalj.br.Field]] for fields (either static of instance)
+ *  - [[org.opalj.br.DeclaredMethod]] for the points-to set of the return values.
+ *  - [[org.opalj.br.analyses.VirtualFormalParameter]] for the parameters of a method.
+ *  - [[org.opalj.br.ObjectType]] for the element type of an array.
+ *
+ *
+ * @author Florian Kuebler
+ */
 class AndersenStylePointsToAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
@@ -206,105 +231,6 @@ class AndersenStylePointsToAnalysis private[analyses] (
         } else {
             InterimPartialResult(Some(tacEP), c(state))
         }
-    }
-
-    private[this] def c(state: PointsToState)(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
-                state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
-                processMethod(state)
-
-            case UBP(_: TACAI) ⇒
-                InterimPartialResult(Some(eps), c(state))
-
-            case UBPS(pointsTo: PointsTo, isFinal) ⇒
-                for (depender ← state.dependersOf(eps.e)) {
-                    state.setOrUpdatePointsToSet(depender, pointsTo.types)
-                }
-
-                if (isFinal)
-                    state.removeDependee(eps)
-                else
-                    state.updatePointsToDependee(eps.asInstanceOf[EPS[Entity, PointsTo]])
-
-                returnResult(state)
-
-            case UBP(callees: Callees) ⇒
-                // todo get new calls for all pcs
-                //returnResult(state)
-                state.updateCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
-                processMethod(state)
-        }
-    }
-
-    @inline private[this] def toEntity(
-        defSite: Int
-    )(implicit state: PointsToState): Entity = {
-        if (defSite < 0) {
-            formalParameters.apply(state.method)(-1 - defSite)
-        } else {
-            definitionSites(state.method.definedMethod, state.tac.stmts(defSite).pc)
-        }
-    }
-
-    @inline private[this] def handleEOptP(
-        depender: Entity, dependeeDefSite: Int
-    )(implicit state: PointsToState): UIDSet[ObjectType] = {
-        if (ai.isImplicitOrExternalException(dependeeDefSite)) {
-            // todo -  we need to get the actual exception type here
-            UIDSet(ObjectType.Exception)
-        } else {
-            handleEOptP(depender, toEntity(dependeeDefSite))
-        }
-    }
-
-    // todo: rename
-    // IMPROVE: use local information, if possible
-    // todo: we should only retrieve a dependency once per analysis
-    @inline private[this] def handleEOptP(
-        depender: Entity, dependee: Entity
-    )(implicit state: PointsToState): UIDSet[ObjectType] = {
-        // IMPROVE: do not add a dependency twice
-        val pointsToSetEOptP = state._dependees.getOrElse(dependee, ps(dependee, PointsTo.key))
-        pointsToSetEOptP match {
-            case UBPS(pointsTo, isFinal) ⇒
-                if (!isFinal) state.addPointsToDependency(depender, pointsToSetEOptP)
-                pointsTo.types
-
-            case _: EPK[Entity, PointsTo] ⇒
-                state.addPointsToDependency(depender, pointsToSetEOptP)
-                UIDSet.empty
-        }
-    }
-
-    // todo: rename
-    @inline private[this] def handleDefSites(e: Entity, defSites: IntTrieSet)(implicit state: PointsToState): Unit = {
-        var pointsToSet = UIDSet.empty[ObjectType]
-        for (defSite ← defSites) {
-            pointsToSet ++=
-                handleEOptP(e, defSite)
-
-        }
-
-        state.setOrUpdatePointsToSet(e, pointsToSet)
-    }
-
-    @inline private[this] def isArrayType(value: DUVar[ValueInformation]): Boolean = {
-        value.value.isReferenceValue && {
-            val lub = value.value.asReferenceValue.leastUpperType
-            lub.isDefined && lub.get.isArrayType
-        }
-    }
-
-    @inline private[this] def isArrayOfObjectType(value: DUVar[ValueInformation]): Boolean = {
-        value.value.isReferenceValue && {
-            val lub = value.value.asReferenceValue.leastUpperType
-            lub.isDefined && lub.get.isArrayType && lub.get.asArrayType.elementType.isObjectType
-        }
-    }
-
-    @inline private[this] def getArrayBaseObjectType(value: DUVar[ValueInformation]): ObjectType = {
-        value.value.asReferenceValue.leastUpperType.get.asArrayType.elementType.asObjectType
     }
 
     private[this] def processMethod(implicit state: PointsToState): ProperPropertyComputationResult = {
@@ -444,12 +370,49 @@ class AndersenStylePointsToAnalysis private[analyses] (
         returnResult
     }
 
+    /**
+     * The continuation function. It handles updates for the methods tac, callees and for points-to
+     * sets.
+     */
+    private[this] def c(state: PointsToState)(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
+                state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
+                processMethod(state)
+
+            case UBP(_: TACAI) ⇒
+                InterimPartialResult(Some(eps), c(state))
+
+            case UBPS(pointsTo: PointsTo, isFinal) ⇒
+                for (depender ← state.dependersOf(eps.e)) {
+                    state.setOrUpdatePointsToSet(depender, pointsTo.types)
+                }
+
+                if (isFinal)
+                    state.removePointsToDependee(eps.asInstanceOf[EPS[Entity, PointsTo]])
+                else
+                    state.updatePointsToDependee(eps.asInstanceOf[EPS[Entity, PointsTo]])
+
+                returnResult(state)
+
+            case UBP(callees: Callees) ⇒
+                // todo get new calls for all pcs
+                //returnResult(state)
+
+                state.updateCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
+                processMethod(state)
+        }
+    }
+
+    /**
+     * Constructs the [[PropertyComputationResult]] associated with the state.
+     */
     @inline private[this] def returnResult(implicit state: PointsToState): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
 
         if (state.hasOpenDependees) results += InterimPartialResult(state.dependees, c(state))
 
-        for ((e, pointsToSet) ← state._pointsToSets) {
+        for ((e, pointsToSet) ← state.pointsToSets) {
             // todo: ensure isFinal is set correctly
             //val isFinal = e.isInstanceOf[DefinitionSite] && !state.hasDependees(e)
             results += PartialResult[Entity, PointsTo](e, PointsTo.key, {
@@ -472,10 +435,76 @@ class AndersenStylePointsToAnalysis private[analyses] (
             })
         }
 
-        // todo: ensure this is correct
         state.clearPointsToSet()
 
         Results(results)
+    }
+
+    @inline private[this] def toEntity(
+        defSite: Int
+    )(implicit state: PointsToState): Entity = {
+        if (defSite < 0) {
+            formalParameters.apply(state.method)(-1 - defSite)
+        } else {
+            definitionSites(state.method.definedMethod, state.tac.stmts(defSite).pc)
+        }
+    }
+
+    @inline private[this] def handleEOptP(
+        depender: Entity, dependeeDefSite: Int
+    )(implicit state: PointsToState): UIDSet[ObjectType] = {
+        if (ai.isImplicitOrExternalException(dependeeDefSite)) {
+            // todo -  we need to get the actual exception type here
+            UIDSet(ObjectType.Exception)
+        } else {
+            handleEOptP(depender, toEntity(dependeeDefSite))
+        }
+    }
+
+    // todo: rename
+    @inline private[this] def handleEOptP(
+        depender: Entity, dependee: Entity
+    )(implicit state: PointsToState): UIDSet[ObjectType] = {
+        val pointsToSetEOptP = state.getOrRetrievePointsToEPS(dependee, ps)
+        pointsToSetEOptP match {
+            case UBPS(pointsTo, isFinal) ⇒
+                if (!isFinal) state.addPointsToDependency(depender, pointsToSetEOptP)
+                pointsTo.types
+
+            case _: EPK[Entity, PointsTo] ⇒
+                state.addPointsToDependency(depender, pointsToSetEOptP)
+                UIDSet.empty
+        }
+    }
+
+    // todo: rename
+    @inline private[this] def handleDefSites(e: Entity, defSites: IntTrieSet)(implicit state: PointsToState): Unit = {
+        var pointsToSet = UIDSet.empty[ObjectType]
+        for (defSite ← defSites) {
+            pointsToSet ++=
+                handleEOptP(e, defSite)
+
+        }
+
+        state.setOrUpdatePointsToSet(e, pointsToSet)
+    }
+
+    @inline private[this] def isArrayType(value: DUVar[ValueInformation]): Boolean = {
+        value.value.isReferenceValue && {
+            val lub = value.value.asReferenceValue.leastUpperType
+            lub.isDefined && lub.get.isArrayType
+        }
+    }
+
+    @inline private[this] def isArrayOfObjectType(value: DUVar[ValueInformation]): Boolean = {
+        value.value.isReferenceValue && {
+            val lub = value.value.asReferenceValue.leastUpperType
+            lub.isDefined && lub.get.isArrayType && lub.get.asArrayType.elementType.isObjectType
+        }
+    }
+
+    @inline private[this] def getArrayBaseObjectType(value: DUVar[ValueInformation]): ObjectType = {
+        value.value.asReferenceValue.leastUpperType.get.asArrayType.elementType.asObjectType
     }
 }
 
