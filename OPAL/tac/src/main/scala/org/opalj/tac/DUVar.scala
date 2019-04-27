@@ -252,6 +252,13 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 
     override def hashCode(): Int = Var.ASTID * 1171 - 113 + defSites.hashCode
 
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: UVar[_] ⇒ this.defSites == that.defSites
+            case _             ⇒ false
+        }
+    }
+
     override def toString: String = {
         s"UVar(defSites=${defSites.mkString("{", ",", "}")},value=$value)"
     }

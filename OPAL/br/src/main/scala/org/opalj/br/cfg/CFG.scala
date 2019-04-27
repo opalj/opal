@@ -3,6 +3,8 @@ package org.opalj
 package br
 package cfg
 
+import scala.reflect.ClassTag
+
 import java.util.Arrays
 
 import scala.collection.{Set ⇒ SomeSet}
@@ -12,6 +14,7 @@ import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.FixedSizedHashIDMap
+import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.graphs.DefaultMutableNode
 import org.opalj.graphs.Node
 
@@ -140,6 +143,102 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     }
 
     /**
+     * Computes the maximum fix point.
+     */
+    final def mfp[Facts >: Null <: AnyRef: ClassTag](
+        seed: Facts,
+        kill: (Facts, I) ⇒ Facts,
+        gen:  (Facts, I, Boolean /*true=completes successfully; false=throws exception*/ ) ⇒ Facts,
+        join: (Facts, Facts) ⇒ Facts // left facts are the "previous" facts; _has to return the left facts_ if the facts haven't changed!
+    ): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
+
+        implicit val logContext = GlobalLogContext
+
+        val instructions = code.instructions
+        val codeSize = instructions.length
+
+        val iFacts = new Array[Facts](codeSize) // facts "before" before instruction evaluation
+        iFacts(0) = seed
+        var normalReturnFacts: Facts = null
+        var abnormalReturnFacts: Facts = null
+
+        val workList = new IntArrayStack(Math.min(codeSize, 10))
+        workList.push(0)
+
+        while (workList.nonEmpty) {
+            val pc = workList.pop
+            val instruction = instructions(pc)
+
+            val factsAfterKill = kill(iFacts(pc), instruction)
+
+            var newFactsNoException: Facts = null
+            var newFactsException: Facts = null
+            foreachLogicalSuccessor(pc) {
+                case CFG.NormalReturnId ⇒
+                    if (newFactsNoException == null) {
+                        newFactsNoException = gen(factsAfterKill, instruction, true)
+                    }
+                    normalReturnFacts =
+                        if (normalReturnFacts == null) {
+                            newFactsNoException
+                        } else {
+                            join(normalReturnFacts, newFactsNoException)
+                        }
+
+                case CFG.AbnormalReturnId ⇒
+                    if (newFactsException == null) {
+                        newFactsException = gen(factsAfterKill, instruction, false)
+                    }
+                    abnormalReturnFacts =
+                        if (abnormalReturnFacts == null) {
+                            newFactsException
+                        } else {
+                            join(abnormalReturnFacts, newFactsException)
+                        }
+
+                case succPC ⇒
+                    var effectiveSuccPC = succPC
+                    val newFacts =
+                        if (succPC < 0) {
+                            if (newFactsException == null) {
+                                newFactsException = gen(factsAfterKill, instruction, false)
+                            }
+                            effectiveSuccPC = -effectiveSuccPC
+                            newFactsException
+                        } else {
+                            if (newFactsNoException == null) {
+                                newFactsNoException = gen(factsAfterKill, instruction, true)
+                            }
+                            newFactsNoException
+                        }
+                    val succPCFacts = iFacts(effectiveSuccPC)
+                    if (succPCFacts == null) {
+                        if (CFG.TraceDFSolver) {
+                            info("progress - df solver", s"[initial] $pc -> $succPC: $newFacts")
+                        }
+                        iFacts(effectiveSuccPC) = newFacts
+                        workList += effectiveSuccPC
+                    } else {
+                        val newSuccPCFacts = join(succPCFacts, newFacts)
+                        if (newSuccPCFacts ne succPCFacts) {
+                            if (CFG.TraceDFSolver) {
+                                info("progress - df solver", s"[update] $pc -> $succPC: $succPCFacts -> $newSuccPCFacts")
+                            }
+                            iFacts(effectiveSuccPC) = newSuccPCFacts
+                            workList += effectiveSuccPC
+                        } else {
+                            if (CFG.TraceDFSolver) {
+                                info("progress - df solver", s"[no update] $pc -> $succPC: $succPCFacts -> $newSuccPCFacts")
+                            }
+                        }
+                    }
+            }
+        }
+
+        (iFacts, normalReturnFacts, abnormalReturnFacts)
+    }
+
+    /**
      * The basic block associated with the very first instruction.
      */
     final def startBlock: BasicBlock = basicBlocks(0)
@@ -223,13 +322,13 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * instruction. (E.g., relevant in case of a switch where multiple cases are handled in the
      * same way.)
      */
-    def foreachSuccessor(pc: Int)(f: Int ⇒ Unit): Unit = {
+    def foreachSuccessor(pc: Int)(f: PC ⇒ Unit): Unit = {
         val bb = this.bb(pc)
         if (bb.endPC > pc) {
             // it must be - w.r.t. the code array - the next instruction
             f(code.pcOfNextInstruction(pc))
         } else {
-            // the set of successor can be (at the same time) a RegularBB or an ExitNode
+            // the set of successors can be (at the same time) a RegularBB or an ExitNode
             var visited = IntTrieSet.empty
             bb.successors foreach { bb ⇒
                 val nextPC =
@@ -241,6 +340,50 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                     f(nextPC)
                 }
                 // else if (bb.isExitNode)... is not relevant
+            }
+        }
+    }
+
+    /**
+     * Iterates over the direct successors of the instruction with the given pc and calls the given
+     * function `f` for each successor. `f` is guaranteed to be called only once for each successor
+     * instruction. (E.g., relevant in case of a switch where multiple cases are handled in the
+     * same way.)
+     * The value passed to f will either be:
+     *  - the pc of an instruction
+     *  - the value `CFG.AbnormalReturnId` (`Int.MinValue`) in case the evaluation of the
+     *    instruction with the PC throws an exception that leads to an abnormal return
+     *  - the value `CFG.NormalReturnId` (`Int.MaxValue`) in case the evaluation of the
+     *    (return) instruction leads to
+     *    a normal return.
+     *  - `-(pc)` if the evaluation leads to an exception that is handled
+     */
+    def foreachLogicalSuccessor(pc: Int)(f: Int ⇒ Unit): Unit = {
+        val bb = this.bb(pc)
+        if (bb.endPC > pc) {
+            // it must be - w.r.t. the code array - the next instruction
+            f(code.pcOfNextInstruction(pc))
+        } else {
+            // the set of successors can be (at the same time) a RegularBB, a CatchBB or an ExitNode
+            var visited = IntTrieSet.empty
+            bb.successors foreach {
+                case bb: BasicBlock ⇒
+                    val nextPC = bb.startPC
+                    if (!visited.contains(nextPC)) {
+                        visited += nextPC
+                        f(nextPC)
+                    }
+                case cn: CatchNode ⇒
+                    val nextPC = cn.handlerPC
+                    if (!visited.contains(nextPC)) {
+                        visited += nextPC
+                        f(-nextPC)
+                    }
+                case en: ExitNode ⇒
+                    if (en.normalReturn)
+                        f(CFG.NormalReturnId)
+                    else
+                        f(CFG.AbnormalReturnId)
             }
         }
     }
@@ -542,6 +685,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
+    final val NormalReturnId = Int.MaxValue
+    final val AbnormalReturnId = Int.MinValue
+
     final val ValidateKey = "org.opalj.br.cfg.CFG.Validate"
 
     private[this] var validate: Boolean = {
@@ -565,4 +711,11 @@ object CFG {
             }
     }
 
+    final val TraceDFSolverKey = "org.opalj.br.cfg.CFG.DF.Solver.Trace"
+
+    final val TraceDFSolver: Boolean = {
+        val traceDFSolver = BaseConfig.getBoolean(TraceDFSolverKey)
+        info("OPAL", s"$TraceDFSolverKey: $traceDFSolver")(GlobalLogContext)
+        traceDFSolver
+    }
 }
