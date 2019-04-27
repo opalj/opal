@@ -210,7 +210,7 @@ trait AnalysisExecutor {
         }
 
         if (args4.nonEmpty)
-            OPALLogger.info("project configuration", "analysis specific paramters: "+args4.mkString(","))
+            OPALLogger.info("project configuration", "analysis specific parameters: "+args4.mkString(","))
         val issues = checkAnalysisSpecificParameters(args4)
         if (issues.nonEmpty) {
             issues.foreach { i ⇒ OPALLogger.error("project configuration", i) }
