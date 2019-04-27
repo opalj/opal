@@ -63,9 +63,8 @@ trait AnalysisExecutor {
     def analysisSpecificParametersDescription: String = ""
 
     /**
-     * Checks if the (additional) parameters are understood by
-     * the analysis. If an error is found, a list of issues is returned and the analysis
-     * will not be executed.
+     * Checks if the (additional) parameters are understood by the analysis.
+     * If an error is found, a list of issues is returned and the analysis will not be executed.
      *
      * This method '''must be''' overridden if the analysis defines additional
      * parameters. A method that overrides this method should `return` the list of
