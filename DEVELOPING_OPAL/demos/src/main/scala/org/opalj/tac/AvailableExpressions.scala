@@ -5,18 +5,19 @@ package tac
 import java.net.URL
 
 import org.opalj.log.OPALLogger.info
+import org.opalj.value._
 import org.opalj.br._
 import org.opalj.br.cfg._
 import org.opalj.br.analyses._
 
 /**
- * Computes the available expressions.
+ * Computes the available arithmetic binary expressions for a specified method.
  *
  * @author Michael Eichberg
  */
 object AvailableExpressions extends DefaultOneStepAnalysis {
 
-    override def description: String = "Computes Available Expressions per Statement"
+    override def description: String = "Computes the available arithmetic expressions."
 
     override def analysisSpecificParametersDescription: String = {
         "-class=<fully qualified name of the class>\n"+
@@ -41,74 +42,90 @@ object AvailableExpressions extends DefaultOneStepAnalysis {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
         implicit val logContext = p.logContext
-        val className = params.find(param ⇒ param.startsWith("-class=")).get.substring(7).replace('.', '/')
-        val methodSignature = params.find(param ⇒ param.startsWith("-method=")).get.substring(8)
+
+        // Find the class that we want to analyze.
+        // (Left as an exercise: error handling...)
+        val className = params.find(_.startsWith("-class=")).get.substring(7).replace('.', '/')
+        val methodSignature = params.find(_.startsWith("-method=")).get.substring(8)
         info("progress", s"trying to find: $className{ $methodSignature }")
 
-        val cf = p.classFile(ObjectType(className)).get
-        val m = cf.methods.find(m ⇒ m.signatureToJava(false).contains(methodSignature)).get
+        val cf = p.classFile(ObjectType(className)) match {
+            case Some(cf) ⇒ cf
+            case None     ⇒ return s"Class $className could not be found!";
+        }
+        val m = cf.methods.find(_.signatureToJava(false).contains(methodSignature)) match {
+            case Some(m) ⇒ m
+            case None    ⇒ return s"Method $methodSignature could not be found!";
+        }
         info("progress", s"analyzing: ${m.toJava}")
+
+        // Run analysis
+        renderResult(analyzeMethod(p, m))
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    //
+    // The implementation of the "Available Expressions Analysis"
+    //
+    // ---------------------------------------------------------------------------------------------
+
+    final type TACAICode = TACode[TACMethodParameter, DUVar[ValueInformation]]
+    final type Result = (TACAICode, Array[Facts], Facts, Facts)
+    final type Fact = (BinaryArithmeticOperator, Expr[_], Expr[_])
+    final type Facts = Set[Fact]
+
+    def analyzeMethod(p: Project[URL], m: Method): Result = {
+
+        // 2. Get the SSA-like three-address code.
+        //    (Using the naive three-address code wouldn't be useful given that all
+        //    operands based variables are always immediately redefined! )
         val tacaiKey = p.get(ComputeTACAIKey)
         val taCode = tacaiKey(m)
         val cfg = taCode.cfg
 
-        // Recall that we work on an SSA like representation which additionally does not have
+        // Recall that we work on an SSA like representation which typically does not have
         // simple alias creating statements of the form x_1 = x_0!
-        /* USING GEN-KILL FRAMEWORK
-        type F = (BinaryArithmeticOperator, Expr[_], Expr[_])
-        type Fs = Set[F]
-        val seed = Set.empty[F]
-        def kill(inFacts: Fs, stmt: Stmt[_]) = {
-            // we are SSA like... there is nothing to kill
-            inFacts
-        }
-        def gen(newFacts: Fs, stmt: Stmt[_], completesNormally: Boolean) = {
-            stmt match {
-                case Assignment(_, _, binExp: BinaryExpr[_]) if completesNormally ⇒
-                    newFacts + ((binExp.op, binExp.left, binExp.right))
-                case _ ⇒ newFacts
-            }
-        }
-        def cfJoin(oldFacts: Fs, newFacts: Fs) = {
-            val availableFacts = oldFacts.intersect(newFacts)
-            if (availableFacts.size == oldFacts.size)
-                oldFacts
-            else
-                availableFacts
-        }
-        val (stmtFacts, normalReturnFacts, abnormalReturnFacts) =
-            cfg.mop[Fs](seed, kill, gen, cfJoin)
-            */
-        type F = (BinaryArithmeticOperator, Expr[_], Expr[_])
-        type Fs = Set[F]
-        val seed = Set.empty[F]
-        def t(newFacts: Fs, stmt: Stmt[_], pc: PC, succId: CFG.SuccessorId) = {
-            stmt match {
-                case Assignment(_, _, e: BinaryExpr[_]) if succId >= 0 /*completes normally?*/ ⇒
-                    newFacts + ((e.op, e.left, e.right))
-                case _ ⇒ newFacts
-            }
-        }
-        def cfJoin(oldFacts: Fs, newFacts: Fs) = {
-            val availableFacts = oldFacts.intersect(newFacts)
-            if (availableFacts.size == oldFacts.size)
-                oldFacts
-            else
-                availableFacts
-        }
-        val (stmtFacts, normalReturnFacts, abnormalReturnFacts) =
-            cfg.mop[Fs](seed, t, cfJoin)
 
-        "Result: \n"+
-            taCode.toString+"\n"+
+        val seed = Set.empty[Fact]
+
+        def t(inFacts: Facts, stmt: Stmt[_], pc: PC, succId: CFG.SuccessorId) = {
+            stmt match {
+                case Assignment(_, _, e: BinaryExpr[_]) if succId >= 0 ⇒
+                    inFacts + ((e.op, e.left, e.right))
+
+                case _ ⇒ inFacts
+            }
+        }
+
+        def join(oldFacts: Facts, newFacts: Facts) = {
+            val availableFacts = oldFacts.intersect(newFacts)
+            // The following test is required, because Set.intersect is not implemented
+            // appropriately.
+            if (availableFacts.size == oldFacts.size)
+                oldFacts
+            else
+                availableFacts
+        }
+
+        val (stmtFacts, normalRetFacts, abnormalRetFacts) = {
+            cfg.performForwardDataFlowAnalysis(seed, t, join)
+        }
+
+        (taCode, stmtFacts, normalRetFacts, abnormalRetFacts)
+    }
+
+    def renderResult(r: Result): String = {
+        val (taCode, stmtFacts, normalRetFacts, abnormalRetFacts) = r
+
+        ToTxt(taCode).mkString("Code:\n", "\n", "\n") +
             stmtFacts
             .map(_.toString)
             .zipWithIndex
             .map(e ⇒ { val (f, index) = e; s"$index: $f" })
-            .mkString("", "\n", "\n")+
-            "Normal return(s): "+
-            (if (normalReturnFacts != null) normalReturnFacts.toString else "N/A")+"\n"+
-            "Abnormal return(s): "+
-            (if (abnormalReturnFacts != null) abnormalReturnFacts.toString else "N/A")
+            .mkString("Available expressions:\n\t", "\n\t", "\n\n")+
+            "\tNormal return(s): "+
+            (if (normalRetFacts != null) normalRetFacts.toString else "N/A")+"\n"+
+            "\tAbnormal return(s): "+
+            (if (abnormalRetFacts != null) abnormalRetFacts.toString else "N/A")
     }
 }
