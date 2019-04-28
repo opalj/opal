@@ -143,106 +143,36 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     }
 
     /**
-     * Computes the meet-over all paths solution.
+     * Computes the meet-over all paths solution for forward data-flow analyses.
+     *
+     * @param seed The initial facts associated with the first instruction (pc = 0).
+     *
+     * @param t The transfer function which implements the analysis:
+     *        `(Facts, I, PC, CFG.SuccessorId) ⇒ Facts`.
+     *        The parameters are: 1. the current set of facts, 2. the current instruction,
+     *        3. the program counter of the current instruction and 4. the id of the successor.
+     *        In the latter case, the id is either:
+     *         - `CFG.NormalReturnId` (`== Int.MaxValue`) if the successor is the unique exit
+     *           node representing normal returns.
+     *         - `CFG.AbnormalReturnId` (`== Int.MinValue`) if the successor is the unique exit
+     *           node representing abnormal returns (i.e., an uncaught exception will be thrown
+     *           by the instruction).
+     *         - [-65535,-1] to identify the catch handler that handles the exception thrown
+     *           by the current instruction. The pc of the first instruction of the catch handler
+     *           is (`- successorId`).
+     *         - the pc of the next instruction (the normal case.)
+     *
+     * @param join The operation (typically a set intersection or set union) that is
+     *        executed to join the results of the predecessors of a specific instruction.
+     *        '''It is required that join returns the left (first) set as is if the set of facts
+     *        didn't change.'''
+     *        I.e., even if the left and right sets contain the same values and are
+     *       `equal` (`==`) it is necessary to return the left set.
      */
-    /*
-    final def mop[Facts >: Null <: AnyRef: ClassTag](
-        seed: Facts,
-        kill: (Facts, I) ⇒ Facts,
-        gen:  (Facts, I, Boolean /*true=completes successfully; false=throws exception*/ ) ⇒ Facts,
-        join: (Facts, Facts) ⇒ Facts // left facts are the "previous" facts; _has to return the left facts_ if the facts haven't changed!
-    ): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
-
-        implicit val logContext = GlobalLogContext
-
-        val instructions = code.instructions
-        val codeSize = instructions.length
-
-        val iFacts = new Array[Facts](codeSize) // facts "before" before instruction evaluation
-        iFacts(0) = seed
-        var normalReturnFacts: Facts = null
-        var abnormalReturnFacts: Facts = null
-
-        val workList = new IntArrayStack(Math.min(codeSize, 10))
-        workList.push(0)
-
-        while (workList.nonEmpty) {
-            val pc = workList.pop
-            val instruction = instructions(pc)
-
-            val factsAfterKill = kill(iFacts(pc), instruction)
-
-            var newFactsNoException: Facts = null
-            var newFactsException: Facts = null
-            foreachLogicalSuccessor(pc) {
-                case CFG.NormalReturnId ⇒
-                    if (newFactsNoException == null) {
-                        newFactsNoException = gen(factsAfterKill, instruction, true)
-                    }
-                    normalReturnFacts =
-                        if (normalReturnFacts == null) {
-                            newFactsNoException
-                        } else {
-                            join(normalReturnFacts, newFactsNoException)
-                        }
-
-                case CFG.AbnormalReturnId ⇒
-                    if (newFactsException == null) {
-                        newFactsException = gen(factsAfterKill, instruction, false)
-                    }
-                    abnormalReturnFacts =
-                        if (abnormalReturnFacts == null) {
-                            newFactsException
-                        } else {
-                            join(abnormalReturnFacts, newFactsException)
-                        }
-
-                case succPC ⇒
-                    var effectiveSuccPC = succPC
-                    val newFacts =
-                        if (succPC < 0) {
-                            if (newFactsException == null) {
-                                newFactsException = gen(factsAfterKill, instruction, false)
-                            }
-                            effectiveSuccPC = -effectiveSuccPC
-                            newFactsException
-                        } else {
-                            if (newFactsNoException == null) {
-                                newFactsNoException = gen(factsAfterKill, instruction, true)
-                            }
-                            newFactsNoException
-                        }
-                    val succPCFacts = iFacts(effectiveSuccPC)
-                    if (succPCFacts == null) {
-                        if (CFG.TraceDFSolver) {
-                            info("progress - df solver", s"[initial] $pc -> $succPC: $newFacts")
-                        }
-                        iFacts(effectiveSuccPC) = newFacts
-                        workList += effectiveSuccPC
-                    } else {
-                        val newSuccPCFacts = join(succPCFacts, newFacts)
-                        if (newSuccPCFacts ne succPCFacts) {
-                            if (CFG.TraceDFSolver) {
-                                info("progress - df solver", s"[update] $pc -> $succPC: $succPCFacts -> $newSuccPCFacts")
-                            }
-                            iFacts(effectiveSuccPC) = newSuccPCFacts
-                            workList += effectiveSuccPC
-                        } else {
-                            if (CFG.TraceDFSolver) {
-                                info("progress - df solver", s"[no update] $pc -> $succPC: $succPCFacts -> $newSuccPCFacts")
-                            }
-                        }
-                    }
-            }
-        }
-
-        (iFacts, normalReturnFacts, abnormalReturnFacts)
-    }
-     */
-    final def mop[Facts >: Null <: AnyRef: ClassTag](
+    final def performForwardDataFlowAnalysis[Facts >: Null <: AnyRef: ClassTag](
         seed: Facts,
         t:    (Facts, I, PC, CFG.SuccessorId) ⇒ Facts,
-        join: (Facts, Facts) ⇒ Facts // left facts are the "previous" facts; _has to return the left facts_ if the facts haven't changed!
+        join: (Facts, Facts) ⇒ Facts
     ): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
 
         implicit val logContext = GlobalLogContext
@@ -250,8 +180,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         val instructions = code.instructions
         val codeSize = instructions.length
 
-        val iFacts = new Array[Facts](codeSize) // facts "before" before instruction evaluation
-        iFacts(0) = seed
+        val entryFacts = new Array[Facts](codeSize) // the facts before instruction evaluation
+        entryFacts(0) = seed
         var normalReturnFacts: Facts = null
         var abnormalReturnFacts: Facts = null
 
@@ -261,11 +191,11 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         while (workList.nonEmpty) {
             val pc = workList.pop
             val instruction = instructions(pc)
-            val inFacts = iFacts(pc)
+            val facts = entryFacts(pc)
 
             foreachLogicalSuccessor(pc) {
                 case CFG.NormalReturnId ⇒
-                    val newFactsNoException = t(inFacts, instruction, pc, CFG.NormalReturnId)
+                    val newFactsNoException = t(facts, instruction, pc, CFG.NormalReturnId)
                     normalReturnFacts =
                         if (normalReturnFacts == null) {
                             newFactsNoException
@@ -274,7 +204,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                         }
 
                 case CFG.AbnormalReturnId ⇒
-                    val newFactsException = t(inFacts, instruction, pc, CFG.AbnormalReturnId)
+                    val newFactsException = t(facts, instruction, pc, CFG.AbnormalReturnId)
                     abnormalReturnFacts =
                         if (abnormalReturnFacts == null) {
                             newFactsException
@@ -283,14 +213,14 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                         }
 
                 case succId ⇒
-                    val newFacts = t(inFacts, instruction, pc, succId)
+                    val newFacts = t(facts, instruction, pc, succId)
                     val effectiveSuccPC = if (succId < 0) -succId else succId
-                    val succPCFacts = iFacts(effectiveSuccPC)
+                    val succPCFacts = entryFacts(effectiveSuccPC)
                     if (succPCFacts == null) {
                         if (CFG.TraceDFSolver) {
                             info("progress - df solver", s"[initial] $pc -> $succId: $newFacts")
                         }
-                        iFacts(effectiveSuccPC) = newFacts
+                        entryFacts(effectiveSuccPC) = newFacts
                         workList += effectiveSuccPC
                     } else {
                         val newSuccPCFacts = join(succPCFacts, newFacts)
@@ -298,7 +228,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                             if (CFG.TraceDFSolver) {
                                 info("progress - df solver", s"[update] $pc -> $succId: $succPCFacts -> $newSuccPCFacts")
                             }
-                            iFacts(effectiveSuccPC) = newSuccPCFacts
+                            entryFacts(effectiveSuccPC) = newSuccPCFacts
                             workList += effectiveSuccPC
                         } else {
                             if (CFG.TraceDFSolver) {
@@ -309,7 +239,97 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             }
         }
 
-        (iFacts, normalReturnFacts, abnormalReturnFacts)
+        (entryFacts, normalReturnFacts, abnormalReturnFacts)
+    }
+
+    /*
+    * @note   No facts will derived for stmts that are not reachable from an
+    *         exit node; e.g., due to an infinite loop.
+    *         That is, the returned array may contain `null` values and in an
+    *         extreme case will only contain null values!
+    */
+    final def performBackwardDataFlowAnalysis[Facts >: Null <: AnyRef: ClassTag](
+        seed: Facts,
+        t:    (Facts, I, PC, CFG.SuccessorId) ⇒ Facts,
+        join: (Facts, Facts) ⇒ Facts
+    ): (Array[Facts], /*init*/ Facts) = {
+
+        implicit val logContext = GlobalLogContext
+
+        val instructions = code.instructions
+        val codeSize = instructions.length
+
+        val exitFacts = new Array[Facts](codeSize) // stores the facts after instruction evaluation
+        val workList = new IntArrayStack(Math.min(codeSize, 10))
+        normalReturnNode.predecessors.foreach { predBB ⇒
+            val returnPC = predBB.asBasicBlock.endPC
+            exitFacts(returnPC) = seed
+            workList.push(returnPC)
+        }
+        abnormalReturnNode.predecessors.foreach { predBB ⇒
+            val stmtPC = predBB.asBasicBlock.endPC
+            exitFacts(stmtPC) = seed
+            workList.push(stmtPC)
+        }
+
+        var initFacts: Facts = null
+
+        def handleTransition(pc: PC, predId: Int): Unit = {
+            val instruction = instructions(pc)
+            val facts = exitFacts(pc)
+            val newFacts = t(facts, instruction, pc, predId)
+
+            if (predId >= 0) {
+                val predPCFacts = exitFacts(predId)
+                if (predPCFacts == null) {
+                    if (CFG.TraceDFSolver) {
+                        info("progress - df solver", s"[initial] $pc -> $predId: $newFacts")
+                    }
+                    exitFacts(predId) = newFacts
+                    workList += predId
+                } else {
+                    val newPredPCFacts = join(predPCFacts, newFacts)
+                    if (newPredPCFacts ne predPCFacts) {
+                        if (CFG.TraceDFSolver) {
+                            info("progress - df solver", s"[update] $pc -> $predId: $predPCFacts -> $newPredPCFacts")
+                        }
+                        exitFacts(predId) = newPredPCFacts
+                        workList += predId
+                    } else {
+                        if (CFG.TraceDFSolver) {
+                            info("progress - df solver", s"[no update] $pc -> $predId: $predPCFacts -> $newPredPCFacts")
+                        }
+                    }
+                }
+            } else {
+                if (initFacts == null) {
+                    if (CFG.TraceDFSolver) {
+                        info("progress - df solver", s"[initial] $pc -> -1: $newFacts")
+                    }
+                    initFacts = newFacts
+                } else {
+                    val newInitFacts = join(initFacts, newFacts)
+                    if (newInitFacts ne initFacts) {
+                        if (CFG.TraceDFSolver) {
+                            info("progress - df solver", s"[update] $pc -> -1: $initFacts -> $newInitFacts")
+                        }
+                        initFacts = newFacts
+                    } else {
+                        if (CFG.TraceDFSolver) {
+                            info("progress - df solver", s"[no update] $pc -> -1: $initFacts -> $newFacts")
+                        }
+                    }
+                }
+            }
+        }
+
+        while (workList.nonEmpty) {
+            val pc = workList.pop
+            foreachPredecessor(pc) { predPC ⇒ handleTransition(pc, predPC) }
+            if (pc == 0) handleTransition(pc, -1)
+        }
+
+        (exitFacts, initFacts)
     }
 
     /**
@@ -424,13 +444,13 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      * instruction. (E.g., relevant in case of a switch where multiple cases are handled in the
      * same way.)
      * The value passed to f will either be:
-     *  - the pc of an instruction
+     *  - the pc of an instruction.
      *  - the value `CFG.AbnormalReturnId` (`Int.MinValue`) in case the evaluation of the
-     *    instruction with the PC throws an exception that leads to an abnormal return
+     *    instruction with the given pc throws an exception that leads to an abnormal return.
      *  - the value `CFG.NormalReturnId` (`Int.MaxValue`) in case the evaluation of the
-     *    (return) instruction leads to
-     *    a normal return.
-     *  - `-(pc)` if the evaluation leads to an exception that is handled
+     *    (return) instruction with the given `pc` leads to a normal return.
+     *  - `-(successorPC)` if the evaluation leads to an exception that is caught and where the
+     *    first instruction of the handler has the given `successorPC`.
      */
     def foreachLogicalSuccessor(pc: Int)(f: Int ⇒ Unit): Unit = {
         val bb = this.bb(pc)
@@ -438,7 +458,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             // it must be - w.r.t. the code array - the next instruction
             f(code.pcOfNextInstruction(pc))
         } else {
-            // the set of successors can be (at the same time) a RegularBB, a CatchBB or an ExitNode
+            // The set of successors can be (at the same time) a RegularBB, a CatchBB or an ExitNode
             var visited = IntTrieSet.empty
             bb.successors foreach {
                 case bb: BasicBlock ⇒
@@ -454,10 +474,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                         f(-nextPC)
                     }
                 case en: ExitNode ⇒
-                    if (en.normalReturn)
-                        f(CFG.NormalReturnId)
-                    else
-                        f(CFG.AbnormalReturnId)
+                    f(if (en.normalReturn) CFG.NormalReturnId else CFG.AbnormalReturnId)
             }
         }
     }
@@ -522,7 +539,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *         case where an instruction was transformed in a way that resulted in multiple
      *         instructions/statements, but which all belong to the same basic block.
      *         ''This situation cannot be handled using pcToIndex.''
-     *         This information is used to ensure that - if a basic block, which currently just
+     *         This information is used to ensure that if a basic block, which currently just
      *         encompasses a single instruction, will encompass the new and the old instruction
      *         afterwards.
      *         The returned value will be used as the `endIndex.`
@@ -759,6 +776,9 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
+    /**
+     * Identifies the successor of an instruction.
+     */
     final type SuccessorId = Int
 
     final val NormalReturnId = Int.MaxValue
