@@ -143,9 +143,10 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     }
 
     /**
-     * Computes the maximum fix point.
+     * Computes the meet-over all paths solution.
      */
-    final def mfp[Facts >: Null <: AnyRef: ClassTag](
+    /*
+    final def mop[Facts >: Null <: AnyRef: ClassTag](
         seed: Facts,
         kill: (Facts, I) ⇒ Facts,
         gen:  (Facts, I, Boolean /*true=completes successfully; false=throws exception*/ ) ⇒ Facts,
@@ -229,6 +230,79 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                         } else {
                             if (CFG.TraceDFSolver) {
                                 info("progress - df solver", s"[no update] $pc -> $succPC: $succPCFacts -> $newSuccPCFacts")
+                            }
+                        }
+                    }
+            }
+        }
+
+        (iFacts, normalReturnFacts, abnormalReturnFacts)
+    }
+     */
+    final def mop[Facts >: Null <: AnyRef: ClassTag](
+        seed: Facts,
+        t:    (Facts, I, PC, CFG.SuccessorId) ⇒ Facts,
+        join: (Facts, Facts) ⇒ Facts // left facts are the "previous" facts; _has to return the left facts_ if the facts haven't changed!
+    ): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
+
+        implicit val logContext = GlobalLogContext
+
+        val instructions = code.instructions
+        val codeSize = instructions.length
+
+        val iFacts = new Array[Facts](codeSize) // facts "before" before instruction evaluation
+        iFacts(0) = seed
+        var normalReturnFacts: Facts = null
+        var abnormalReturnFacts: Facts = null
+
+        val workList = new IntArrayStack(Math.min(codeSize, 10))
+        workList.push(0)
+
+        while (workList.nonEmpty) {
+            val pc = workList.pop
+            val instruction = instructions(pc)
+            val inFacts = iFacts(pc)
+
+            foreachLogicalSuccessor(pc) {
+                case CFG.NormalReturnId ⇒
+                    val newFactsNoException = t(inFacts, instruction, pc, CFG.NormalReturnId)
+                    normalReturnFacts =
+                        if (normalReturnFacts == null) {
+                            newFactsNoException
+                        } else {
+                            join(normalReturnFacts, newFactsNoException)
+                        }
+
+                case CFG.AbnormalReturnId ⇒
+                    val newFactsException = t(inFacts, instruction, pc, CFG.AbnormalReturnId)
+                    abnormalReturnFacts =
+                        if (abnormalReturnFacts == null) {
+                            newFactsException
+                        } else {
+                            join(abnormalReturnFacts, newFactsException)
+                        }
+
+                case succId ⇒
+                    val newFacts = t(inFacts, instruction, pc, succId)
+                    val effectiveSuccPC = if (succId < 0) -succId else succId
+                    val succPCFacts = iFacts(effectiveSuccPC)
+                    if (succPCFacts == null) {
+                        if (CFG.TraceDFSolver) {
+                            info("progress - df solver", s"[initial] $pc -> $succId: $newFacts")
+                        }
+                        iFacts(effectiveSuccPC) = newFacts
+                        workList += effectiveSuccPC
+                    } else {
+                        val newSuccPCFacts = join(succPCFacts, newFacts)
+                        if (newSuccPCFacts ne succPCFacts) {
+                            if (CFG.TraceDFSolver) {
+                                info("progress - df solver", s"[update] $pc -> $succId: $succPCFacts -> $newSuccPCFacts")
+                            }
+                            iFacts(effectiveSuccPC) = newSuccPCFacts
+                            workList += effectiveSuccPC
+                        } else {
+                            if (CFG.TraceDFSolver) {
+                                info("progress - df solver", s"[no update] $pc -> $succId: $succPCFacts -> $newSuccPCFacts")
                             }
                         }
                     }
@@ -684,6 +758,8 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 }
 
 object CFG {
+
+    final type SuccessorId = Int
 
     final val NormalReturnId = Int.MaxValue
     final val AbnormalReturnId = Int.MinValue

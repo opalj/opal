@@ -6,6 +6,7 @@ import java.net.URL
 
 import org.opalj.log.OPALLogger.info
 import org.opalj.br._
+import org.opalj.br.cfg._
 import org.opalj.br.analyses._
 
 /**
@@ -53,6 +54,7 @@ object AvailableExpressions extends DefaultOneStepAnalysis {
 
         // Recall that we work on an SSA like representation which additionally does not have
         // simple alias creating statements of the form x_1 = x_0!
+        /* USING GEN-KILL FRAMEWORK
         type F = (BinaryArithmeticOperator, Expr[_], Expr[_])
         type Fs = Set[F]
         val seed = Set.empty[F]
@@ -75,7 +77,27 @@ object AvailableExpressions extends DefaultOneStepAnalysis {
                 availableFacts
         }
         val (stmtFacts, normalReturnFacts, abnormalReturnFacts) =
-            cfg.mfp[Fs](seed, kill, gen, cfJoin)
+            cfg.mop[Fs](seed, kill, gen, cfJoin)
+            */
+        type F = (BinaryArithmeticOperator, Expr[_], Expr[_])
+        type Fs = Set[F]
+        val seed = Set.empty[F]
+        def t(newFacts: Fs, stmt: Stmt[_], pc: PC, succId: CFG.SuccessorId) = {
+            stmt match {
+                case Assignment(_, _, e: BinaryExpr[_]) if succId >= 0 /*completes normally?*/ ⇒
+                    newFacts + ((e.op, e.left, e.right))
+                case _ ⇒ newFacts
+            }
+        }
+        def cfJoin(oldFacts: Fs, newFacts: Fs) = {
+            val availableFacts = oldFacts.intersect(newFacts)
+            if (availableFacts.size == oldFacts.size)
+                oldFacts
+            else
+                availableFacts
+        }
+        val (stmtFacts, normalReturnFacts, abnormalReturnFacts) =
+            cfg.mop[Fs](seed, t, cfJoin)
 
         "Result: \n"+
             taCode.toString+"\n"+
