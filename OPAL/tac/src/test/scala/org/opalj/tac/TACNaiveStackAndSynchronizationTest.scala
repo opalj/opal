@@ -121,7 +121,7 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
             ))
             javaLikeCode.shouldEqual(Array(
                 "0: r_0 = this",
-                "1: op_0 = new Object",
+                "1: op_0 = new java.lang.Object",
                 "2: ;",
                 "3: op_0/*(non-virtual) java.lang.Object*/.<init>()",
                 "4: r_1 = op_0",
@@ -234,20 +234,23 @@ class TACNaiveStackAndSynchronizationTest extends TACNaiveTest {
                 Nop(21),
                 Return(22)
             ))
-            javaLikeCode.shouldEqual(Array(
+
+            val expected = Array(
                 "0: r_0 = this",
-                "1: op_0 = new ArrayList",
+                "1: op_0 = new java.util.ArrayList",
                 "2: ;",
                 "3: op_0/*(non-virtual) java.util.ArrayList*/.<init>()",
                 "4: r_1 = op_0",
                 "5: op_0 = r_1",
-                "6: op_1 = new Object",
+                "6: op_1 = new java.lang.Object",
                 "7: ;",
                 "8: op_1/*(non-virtual) java.lang.Object*/.<init>()",
                 "9: op_0 = op_0/*java.util.List*/.add(op_1)",
                 "10: ;",
                 "11: return"
-            ).mkString("\n"))
+            ).mkString("\n")
+
+            javaLikeCode.shouldEqual(expected)
         }
     }
 }

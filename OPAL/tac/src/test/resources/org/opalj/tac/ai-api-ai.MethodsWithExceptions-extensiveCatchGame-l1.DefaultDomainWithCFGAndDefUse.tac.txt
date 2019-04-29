@@ -13,7 +13,7 @@
 2:/*pc=8:*/ if({lv1} <= 0) goto 7
 
 // 2 →
-3:/*pc=11:*/ lv3 = new UnknownError
+3:/*pc=11:*/ lv3 = new java.lang.UnknownError
 4:/*pc=15:*/ lv4 = "hashCode was 0"
 5:/*pc=17:*/ {lv3}/*(non-virtual) java.lang.UnknownError*/.<init>({lv4})
 // ⚡️ java.lang.IllegalArgumentException → 13, ⚡️ java.lang.NullPointerException → 9, ⚡️ <uncaught exception ⇒ abnormal return>, ⚡️ java.lang.ClassCastException → 11, ⚡️ java.lang.ArithmeticException → 15
@@ -49,7 +49,7 @@
 
 // 10, 12, 14 →
 18:/*pc=47:*/ lv12 = java.lang.System.out
-19:/*pc=50:*/ lv13 = new StringBuilder
+19:/*pc=50:*/ lv13 = new java.lang.StringBuilder
 20:/*pc=54:*/ lv14 = "it was one of the three expected ones: "
 21:/*pc=56:*/ {lv13}/*(non-virtual) java.lang.StringBuilder*/.<init>({lv14})
 // ⚡️ <uncaught exception ⇒ abnormal return>
