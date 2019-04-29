@@ -11,7 +11,7 @@ import scala.language.existentials
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.INVOKEINTERFACE
@@ -26,7 +26,7 @@ import org.opalj.br.instructions.NEW
  * @author Marco Jacobasch
  * @author Michael Eichberg
  */
-object InfiniteRecursions extends DefaultOneStepAnalysis {
+object InfiniteRecursions extends ProjectAnalysisApplication {
 
     override def title: String = "infinite recursions analysis"
 

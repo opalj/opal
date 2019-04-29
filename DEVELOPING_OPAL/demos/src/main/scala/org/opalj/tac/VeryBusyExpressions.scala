@@ -10,13 +10,13 @@ import org.opalj.br.cfg._
 import org.opalj.br.analyses._
 
 /**
- * Computes the available arithmetic binary expressions.
+ * Computes the very busy binary arithmetic expressions.
  *
  * @author Michael Eichberg
  */
-object AvailableExpressions extends MethodAnalysisApplication {
+object VeryBusyExpressions extends MethodAnalysisApplication {
 
-    override def description: String = "Identifies the available arithmetic expressions."
+    override def description: String = "Identifies the very busy arithmetic expressions."
 
     final type TACAICode = TACode[TACMethodParameter, DUVar[ValueInformation]]
     final type Result = (TACAICode, Array[Facts], Facts, Facts)

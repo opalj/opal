@@ -71,7 +71,7 @@ class CovariantEqualsMethodDefined[Source] extends OneStepAnalysis[Source, Itera
 /**
  * Enables the stand alone execution of this analysis.
  */
-object CovariantEqualsMethodDefinedAnalysis extends AnalysisExecutor {
+object CovariantEqualsMethodDefinedAnalysis extends AnalysisApplication {
 
     val analysis = ReportableAnalysisAdapter[URL](new CovariantEqualsMethodDefined)
 }

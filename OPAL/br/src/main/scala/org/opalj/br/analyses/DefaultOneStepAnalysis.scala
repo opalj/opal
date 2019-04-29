@@ -7,18 +7,21 @@ import scala.language.implicitConversions
 
 import java.net.URL
 
+import org.opalj.log.OPALLogger.info
+
 /**
- * Default implementation of the [[AnalysisExecutor]] which facilitates the
+ * Default implementation of the [[AnalysisApplication]] which facilitates the
  * development of analyses which are executed in one step.
  *
  * @author Michael Eichberg
  */
-abstract class DefaultOneStepAnalysis
-    extends AnalysisExecutor
+abstract class ProjectAnalysisApplication
+    extends AnalysisApplication
     with OneStepAnalysis[URL, ReportableAnalysisResult] {
 
     implicit def String2BasicReport(report: String): BasicReport = BasicReport(report)
 
-    final override val analysis: DefaultOneStepAnalysis = this
+    final override val analysis: ProjectAnalysisApplication = this
+
 
 }

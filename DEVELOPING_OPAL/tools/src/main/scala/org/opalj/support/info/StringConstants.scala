@@ -5,7 +5,7 @@ package info
 
 import java.net.URL
 
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.StringConstantsInformationKey
 import org.opalj.br.analyses.BasicReport
@@ -15,7 +15,7 @@ import org.opalj.br.analyses.BasicReport
  *
  * @author Michael Eichberg
  */
-object StringConstants extends DefaultOneStepAnalysis {
+object StringConstants extends ProjectAnalysisApplication {
 
     override def title: String = "String Constants"
 

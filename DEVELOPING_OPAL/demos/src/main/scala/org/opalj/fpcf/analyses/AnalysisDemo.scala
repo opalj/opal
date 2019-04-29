@@ -3,7 +3,7 @@ package org.opalj
 package fpcf
 package analyses
 
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import java.net.URL
 import org.opalj.br.Method
@@ -11,7 +11,7 @@ import org.opalj.br.Method
 /**
  * @author Michael Reif
  */
-trait AnalysisDemo extends DefaultOneStepAnalysis {
+trait AnalysisDemo extends ProjectAnalysisApplication {
 
     def entitiesByProperty[P <: Property](
         property: P

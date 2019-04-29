@@ -9,14 +9,14 @@ import scala.collection.JavaConverters
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * Shows the local variable type tables of given class files.
  *
  * @author Daniel Klauer
  */
-object ShowLocalVariableTypeTables extends DefaultOneStepAnalysis {
+object ShowLocalVariableTypeTables extends ProjectAnalysisApplication {
 
     override def description: String = "Prints out the local variable type tables."
 

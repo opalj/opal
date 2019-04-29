@@ -13,7 +13,7 @@ import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -40,7 +40,7 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Michael Eichberg
  */
-object IfNullParameterAnalysis extends DefaultOneStepAnalysis {
+object IfNullParameterAnalysis extends ProjectAnalysisApplication {
 
     override def title: String =
         "Identifies methods that are sensitive to parameters that are \"null\""

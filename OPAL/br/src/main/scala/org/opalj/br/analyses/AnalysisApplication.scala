@@ -42,7 +42,7 @@ import org.opalj.log.LogMessage
  * @author Michael Eichberg
  * @author Arne Lottmann
  */
-trait AnalysisExecutor {
+trait AnalysisApplication {
 
     /**
      * The analysis that will be executed.

@@ -17,7 +17,7 @@ import org.opalj.br.PC
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
@@ -70,7 +70,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Dominik Helm
  */
-object UnusedResults extends DefaultOneStepAnalysis {
+object UnusedResults extends ProjectAnalysisApplication {
 
     /** The type of the TAC domain. */
     type V = DUVar[ValueInformation]

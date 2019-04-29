@@ -30,7 +30,7 @@ import org.opalj.ai.InstructionCountBoundedAI
  *
  * @author Michael Eichberg
  */
-object InterpretMethods extends AnalysisExecutor {
+object InterpretMethods extends AnalysisApplication {
 
     override def analysisSpecificParametersDescription: String =
         "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n"+

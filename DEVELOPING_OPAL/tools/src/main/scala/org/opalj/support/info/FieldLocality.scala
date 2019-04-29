@@ -4,7 +4,7 @@ package org.opalj.support.info
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
@@ -38,7 +38,7 @@ import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
  *
  * @author Florian Kuebler
  */
-object FieldLocality extends DefaultOneStepAnalysis {
+object FieldLocality extends ProjectAnalysisApplication {
 
     override def title: String = "Field Locality"
 

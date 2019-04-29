@@ -7,7 +7,7 @@ import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.opalj.ai.common.SimpleAIKey
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 
@@ -16,7 +16,7 @@ import org.opalj.br.analyses.BasicReport
  *
  * @author Michael Eichberg
  */
-object TACAItoGraphs extends DefaultOneStepAnalysis {
+object TACAItoGraphs extends ProjectAnalysisApplication {
 
     override def title: String = "CFG and Def/Use Creator"
 

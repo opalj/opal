@@ -5,7 +5,7 @@ package br
 import java.net.URL
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
 
 /**
@@ -14,7 +14,7 @@ import org.opalj.br.analyses.BasicReport
  *
  * @author Michael Eichberg
  */
-object PrivateMethodsWithObjectTypeParameterCounter extends DefaultOneStepAnalysis {
+object PrivateMethodsWithObjectTypeParameterCounter extends ProjectAnalysisApplication {
 
     override def description: String = {
         "counts the number of package private and private methods "+

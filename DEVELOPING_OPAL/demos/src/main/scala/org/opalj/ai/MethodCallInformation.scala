@@ -3,7 +3,7 @@ package org.opalj
 package ai
 
 import java.net.URL
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
+import org.opalj.br.analyses.{ProjectAnalysisApplication, BasicReport, Project}
 import org.opalj.br.Method
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.MethodDescriptor
@@ -15,7 +15,7 @@ import org.opalj.ai.domain.PerformAI
  *
  * @author Michael Eichberg
  */
-object MethodCallInformation extends DefaultOneStepAnalysis {
+object MethodCallInformation extends ProjectAnalysisApplication {
 
     override def title: String = "Extracting Actual Method Parameter Information"
 

@@ -11,7 +11,7 @@ import org.opalj.br.analyses._
  *
  * @author Michael Eichberg
  */
-object DependencyCounting extends AnalysisExecutor with OneStepAnalysis[URL, BasicReport] {
+object DependencyCounting extends AnalysisApplication with OneStepAnalysis[URL, BasicReport] {
 
     val analysis = this
 

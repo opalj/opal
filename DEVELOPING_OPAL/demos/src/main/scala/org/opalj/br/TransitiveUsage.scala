@@ -7,7 +7,7 @@ import java.net.URL
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 
-import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.de.DependencyExtractor
@@ -21,7 +21,7 @@ import org.opalj.de.DependencyType
  *
  * @author Michael Eichberg
  */
-object TransitiveUsage extends AnalysisExecutor {
+object TransitiveUsage extends AnalysisApplication {
 
     private[this] var visitedTypes = Set.empty[ObjectType]
 

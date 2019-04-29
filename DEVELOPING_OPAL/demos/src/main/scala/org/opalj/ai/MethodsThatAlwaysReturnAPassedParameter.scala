@@ -5,7 +5,7 @@ package ai
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain.RecordLastReturnedValues
 import org.opalj.ai.domain.Origins
@@ -17,7 +17,7 @@ import org.opalj.ai.domain.Origins
  *
  * @author Michael Eichberg
  */
-object MethodsThatAlwaysReturnAPassedParameter extends DefaultOneStepAnalysis {
+object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplication {
 
     override def title: String = "identify methods that always return a given parameter"
 

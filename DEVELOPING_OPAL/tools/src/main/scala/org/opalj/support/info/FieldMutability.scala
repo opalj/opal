@@ -6,7 +6,7 @@ package info
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
@@ -41,7 +41,7 @@ import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
  *
  * @author Dominik Helm
  */
-object FieldMutability extends DefaultOneStepAnalysis {
+object FieldMutability extends ProjectAnalysisApplication {
 
     override def title: String = "Field mutability"
 

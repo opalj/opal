@@ -3,7 +3,7 @@ package org.opalj
 package br
 
 import java.net.URL
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 
@@ -12,7 +12,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-object NativeMethodsCounter extends DefaultOneStepAnalysis {
+object NativeMethodsCounter extends ProjectAnalysisApplication {
 
     override def description: String = "Counts the number of native methods."
 

@@ -4,7 +4,7 @@ package ai
 
 import java.net.URL
 
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project, SomeProject}
+import org.opalj.br.analyses.{ProjectAnalysisApplication, BasicReport, Project, SomeProject}
 import org.opalj.br.Method
 import org.opalj.br.{ObjectType, IntegerType}
 import org.opalj.ai.analyses.cg.ComputedCallGraph
@@ -16,7 +16,7 @@ import org.opalj.ai.analyses.cg.VTACallGraphKey
  *
  * @author Michael Eichberg
  */
-object CallsOfNativeMethodsWithBoundedValues extends DefaultOneStepAnalysis {
+object CallsOfNativeMethodsWithBoundedValues extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
             override val project: Project[java.net.URL],

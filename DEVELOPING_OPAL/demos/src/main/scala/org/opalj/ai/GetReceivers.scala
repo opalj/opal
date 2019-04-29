@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.NEW
 import org.opalj.br.Method
@@ -21,7 +21,7 @@ import org.opalj.ai.fpcf.domain.L1DefaultDomainWithCFGAndDefUseAndSignatureRefin
  *
  * @author Michael Eichberg
  */
-object GetReceivers extends DefaultOneStepAnalysis {
+object GetReceivers extends ProjectAnalysisApplication {
 
     override def title: String = "Method Call Receivers information"
 

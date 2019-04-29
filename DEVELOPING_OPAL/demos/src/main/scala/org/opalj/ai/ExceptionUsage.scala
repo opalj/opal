@@ -13,7 +13,7 @@ import org.opalj.br.instructions._
  *
  * @author Michael Eichberg
  */
-object ExceptionUsage extends DefaultOneStepAnalysis {
+object ExceptionUsage extends ProjectAnalysisApplication {
 
     override def title: String = "Intra-procedural Usage of Exceptions"
 

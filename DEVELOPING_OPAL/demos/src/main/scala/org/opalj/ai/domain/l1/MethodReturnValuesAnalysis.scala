@@ -16,7 +16,7 @@ import org.opalj.value.TypeOfReferenceValue
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
@@ -30,7 +30,7 @@ import org.opalj.ai.InterruptableAI
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
+object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
             override val project: Project[java.net.URL],

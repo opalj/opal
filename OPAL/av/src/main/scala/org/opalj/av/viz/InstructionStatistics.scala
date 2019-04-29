@@ -6,7 +6,7 @@ package viz
 import java.net.URL
 
 import br._
-import br.analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
+import br.analyses.{OneStepAnalysis, AnalysisApplication, BasicReport, Project}
 
 /**
  * Counts the number of instructions aggregated per package.
@@ -15,7 +15,7 @@ import br.analyses.{OneStepAnalysis, AnalysisExecutor, BasicReport, Project}
  * @author Michael Eichberg
  */
 
-object InstructionStatistics extends AnalysisExecutor {
+object InstructionStatistics extends AnalysisApplication {
 
     val analysis = new OneStepAnalysis[URL, BasicReport] {
 

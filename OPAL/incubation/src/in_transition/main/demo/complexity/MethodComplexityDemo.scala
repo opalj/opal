@@ -7,7 +7,7 @@ package complexity
 import java.net.URL
 
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.PropertyStoreKey
 import org.opalj.fpcf.properties.MethodComplexity
@@ -17,7 +17,7 @@ import org.opalj.fpcf.properties.MethodComplexity
  *
  * @author Michael Eichberg
  */
-object MethodComplexityDemo extends DefaultOneStepAnalysis {
+object MethodComplexityDemo extends ProjectAnalysisApplication {
 
     override def title: String = "assesses the complexity of methods"
 

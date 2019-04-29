@@ -6,7 +6,7 @@ import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.instructions.INVOKESTATIC
 
 /**
@@ -14,7 +14,7 @@ import org.opalj.br.instructions.INVOKESTATIC
  *
  * @author Michael Eichberg
  */
-object CountClassForNameCalls extends DefaultOneStepAnalysis {
+object CountClassForNameCalls extends ProjectAnalysisApplication {
 
     override def description: String = "Counts the number of times Class.forName is called."
 

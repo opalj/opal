@@ -11,7 +11,7 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-object SimpleProjectStatistics extends DefaultOneStepAnalysis {
+object SimpleProjectStatistics extends ProjectAnalysisApplication {
 
     override def title: String = "collects project statistics"
 

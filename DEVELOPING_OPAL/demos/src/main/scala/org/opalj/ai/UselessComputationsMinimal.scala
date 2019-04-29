@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.IFICMPInstruction
 
@@ -19,7 +19,7 @@ import org.opalj.br.instructions.IFICMPInstruction
  *
  * @author Michael Eichberg
  */
-object UselessComputationsMinimal extends DefaultOneStepAnalysis {
+object UselessComputationsMinimal extends ProjectAnalysisApplication {
 
     class AnalysisDomain(val project: Project[URL], val method: Method)
         extends CorrelationalDomain

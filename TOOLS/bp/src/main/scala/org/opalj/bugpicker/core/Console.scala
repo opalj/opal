@@ -18,7 +18,7 @@ import org.opalj.io.process
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
-import org.opalj.br.analyses.{Analysis, AnalysisExecutor, BasicReport, Project}
+import org.opalj.br.analyses.{Analysis, AnalysisApplication, BasicReport, Project}
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.ai.util.XHTML
 import org.opalj.bugpicker.core.analyses.BugPickerAnalysis
@@ -31,7 +31,7 @@ import org.opalj.log.LogContext
  *
  * @author Michael Eichberg
  */
-object Console extends Analysis[URL, BasicReport] with AnalysisExecutor {
+object Console extends Analysis[URL, BasicReport] with AnalysisApplication {
 
     val analysis = this
 

@@ -7,7 +7,7 @@ import java.net.URL
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
 
-import analyses.AnalysisExecutor
+import analyses.AnalysisApplication
 import analyses.BasicReport
 import analyses.Project
 
@@ -18,7 +18,7 @@ import analyses.Project
  * @author Arne Lottmann
  * @author Michael Eichberg
  */
-object MethodAnnotationsPrinter extends AnalysisExecutor {
+object MethodAnnotationsPrinter extends AnalysisApplication {
 
     val analysis = new OneStepAnalysis[URL, BasicReport] {
 

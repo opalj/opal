@@ -15,7 +15,7 @@ import org.opalj.br.instructions.FieldReadAccess
  * @author Linus Armakola
  * @author Michael Eichberg
  */
-object ObserverPatternUsage extends DefaultOneStepAnalysis {
+object ObserverPatternUsage extends ProjectAnalysisApplication {
 
     override def description: String =
         "Loads all classes stored in the jar files and analyses the usage of the observer pattern."
