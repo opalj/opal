@@ -63,9 +63,8 @@ trait AnalysisExecutor {
     def analysisSpecificParametersDescription: String = ""
 
     /**
-     * Checks if the (additional) parameters are understood by
-     * the analysis. If an error is found, a list of issues is returned and the analysis
-     * will not be executed.
+     * Checks if the (additional) parameters are understood by the analysis.
+     * If an error is found, a list of issues is returned and the analysis will not be executed.
      *
      * This method '''must be''' overridden if the analysis defines additional
      * parameters. A method that overrides this method should `return` the list of
@@ -211,7 +210,7 @@ trait AnalysisExecutor {
         }
 
         if (args4.nonEmpty)
-            OPALLogger.info("project configuration", "analysis specific paramters: "+args4.mkString(","))
+            OPALLogger.info("project configuration", "analysis specific parameters: "+args4.mkString(","))
         val issues = checkAnalysisSpecificParameters(args4)
         if (issues.nonEmpty) {
             issues.foreach { i ⇒ OPALLogger.error("project configuration", i) }
