@@ -7,7 +7,7 @@
 1:/*pc=8:*/ lv1 = 1
 2:/*pc=9:*/ lv2 = new java.lang.Object[{lv1}]
 3:/*pc=14:*/ lv3 = 0
-4:/*pc=15:*/ lv4 = new Object
+4:/*pc=15:*/ lv4 = new java.lang.Object
 5:/*pc=19:*/ {lv4}/*(non-virtual) java.lang.Object*/.<init>()
 // ⚡️ <uncaught exception ⇒ abnormal return>
 
