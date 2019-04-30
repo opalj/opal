@@ -151,16 +151,6 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      *        `(Facts, I, PC, CFG.SuccessorId) ⇒ Facts`.
      *        The parameters are: 1. the current set of facts, 2. the current instruction,
      *        3. the program counter of the current instruction and 4. the id of the successor.
-     *        In the latter case, the id is either:
-     *         - `CFG.NormalReturnId` (`== Int.MaxValue`) if the successor is the unique exit
-     *           node representing normal returns.
-     *         - `CFG.AbnormalReturnId` (`== Int.MinValue`) if the successor is the unique exit
-     *           node representing abnormal returns (i.e., an uncaught exception will be thrown
-     *           by the instruction).
-     *         - [-65535,-1] to identify the catch handler that handles the exception thrown
-     *           by the current instruction. The pc of the first instruction of the catch handler
-     *           is (`- successorId`).
-     *         - the pc of the next instruction (the normal case.)
      *
      * @param join The operation (typically a set intersection or set union) that is
      *        executed to join the results of the predecessors of a specific instruction.
@@ -242,15 +232,32 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         (entryFacts, normalReturnFacts, abnormalReturnFacts)
     }
 
-    /*
-    * @note   No facts will derived for stmts that are not reachable from an
-    *         exit node; e.g., due to an infinite loop.
-    *         That is, the returned array may contain `null` values and in an
-    *         extreme case will only contain null values!
-    */
+    /**
+     * Computes the meet-over all paths solution for forward data-flow analyses.
+     *
+     * @param seed The initial facts associated with instructions which lead to (ab)normal
+     *        returns.
+     *
+     * @param t The transfer function which implements the analysis:
+     *        `(Facts, I, PC, CFG.PredecessorId) ⇒ Facts`.
+     *        The parameters are: 1. the current set of facts, 2. the current instruction,
+     *        3. the program counter of the current instruction and 4. the id of the predecessor.
+     *
+     * @param join The operation (typically a set intersection or set union) that is
+     *        executed to join the results of the successors of a specific instruction.
+     *        '''It is required that join returns the left (first) set as is if the set of facts
+     *        didn't change.'''
+     *        I.e., even if the left and right sets contain the same values and are
+     *       `equal` (`==`) it is necessary to return the left set.
+     *
+     * @note   No facts will derived for stmts that are not reachable from an
+     *         exit node; e.g., due to an infinite loop.
+     *         That is, the returned array may contain `null` values and in an
+     *         extreme case will only contain null values!
+     */
     final def performBackwardDataFlowAnalysis[Facts >: Null <: AnyRef: ClassTag](
         seed: Facts,
-        t:    (Facts, I, PC, CFG.SuccessorId) ⇒ Facts,
+        t:    (Facts, I, PC, CFG.PredecessorId) ⇒ Facts,
         join: (Facts, Facts) ⇒ Facts
     ): (Array[Facts], /*init*/ Facts) = {
 
@@ -776,13 +783,30 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
 
 object CFG {
 
+    final val NormalReturnId = Int.MaxValue
+    final val AbnormalReturnId = Int.MinValue
+
     /**
      * Identifies the successor of an instruction.
+     * The id is either:
+     *  - `CFG.NormalReturnId` (`== Int.MaxValue`) if the successor is the unique exit
+     *           node representing normal returns.
+     *  - `CFG.AbnormalReturnId` (`== Int.MinValue`) if the successor is the unique exit
+     *           node representing abnormal returns (i.e., an uncaught exception will be thrown
+     *           by the instruction).
+     *  - [-65535,-1] to identify the catch handler that handles the exception thrown
+     *           by the current instruction. The pc of the first instruction of the catch handler
+     *           is (`- successorId`).
+     *  - the (valid) pc of the next instruction (the normal case.)
      */
     final type SuccessorId = Int
 
-    final val NormalReturnId = Int.MaxValue
-    final val AbnormalReturnId = Int.MinValue
+    /**
+     * Identifies the predecessor of an instruction.
+     *  - -1 if the current instruction is the first instruction (`pc`/`index` = `0`)
+     *  - a regular pc.
+     */
+    final type PredecessorId = Int
 
     final val ValidateKey = "org.opalj.br.cfg.CFG.Validate"
 

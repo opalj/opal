@@ -75,7 +75,7 @@ object DefSites {
 
     /**
      * Defines an extractor to get the definition site of an expression's/statement's value.
-     * Returns the emp ty set if the value is a constant.
+     * Returns the empty set if the value is a constant.
      */
     def unapply(valueExpr: Expr[DUVar[_]] /*Expr to make it fail!*/ ): Some[IntTrieSet] = {
         Some(
@@ -84,6 +84,20 @@ object DefSites {
                 case _: Const          ⇒ IntTrieSet.empty
             }
         )
+    }
+
+    def toString(defSites: IntTrieSet): Iterator[String] = {
+        defSites.iterator.map { defSite ⇒
+            if (isImmediateVMException(defSite))
+                "exception[VM]@"+pcOfImmediateVMException(defSite)
+            else if (isMethodExternalExceptionOrigin(defSite))
+                "exception@"+pcOfMethodExternalException(defSite)
+            else if (defSite < 0) {
+                "param"+(-defSite - 1).toHexString
+            } else {
+                "lv"+defSite.toHexString
+            }
+        }
     }
 
 }
@@ -206,17 +220,11 @@ class UVar[+Value <: ValueInformation /*org.opalj.ai.ValuesDomain#DomainValue*/ 
 ) extends DUVar[Value] {
 
     def name: String = {
-        defSites.iterator.map { defSite ⇒
-            if (isImmediateVMException(defSite))
-                "exception[VM]@"+pcOfImmediateVMException(defSite)
-            else if (isMethodExternalExceptionOrigin(defSite))
-                "exception@"+pcOfMethodExternalException(defSite)
-            else if (defSite < 0) {
-                "param"+(-defSite - 1).toHexString
-            } else {
-                "lv"+defSite.toHexString
-            }
-        }.mkString("{", ", ", if (DUVar.printDomainValue) s"}/*domainValue=$value*/" else "}")
+        DefSites.toString(defSites).mkString(
+            "{",
+            ", ",
+            if (DUVar.printDomainValue) s"}/*domainValue=$value*/" else "}"
+        )
     }
 
     def definedBy: IntTrieSet = defSites
