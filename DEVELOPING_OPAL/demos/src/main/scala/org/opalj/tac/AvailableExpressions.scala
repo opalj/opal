@@ -24,9 +24,9 @@ object AvailableExpressions extends MethodAnalysisApplication {
     final type Facts = Set[Fact]
 
     override def analyzeMethod(p: Project[URL], m: Method): Result = {
-        // 2. Get the SSA-like three-address code.
-        //    (Using the naive three-address code wouldn't be useful given that all
-        //    operands based variables are always immediately redefined! )
+        // Get the SSA-like three-address code.
+        // Please note that using the naive three-address code wouldn't be useful given that all
+        // operands based variables are always immediately redefined!
         val tacaiKey = p.get(ComputeTACAIKey)
         val taCode = tacaiKey(m)
         val cfg = taCode.cfg
@@ -36,7 +36,7 @@ object AvailableExpressions extends MethodAnalysisApplication {
 
         val seed = Set.empty[Fact]
 
-        def t(inFacts: Facts, stmt: Stmt[_], pc: PC, succId: CFG.SuccessorId) = {
+        def t(inFacts: Facts, stmt: Stmt[_], index: PC, succId: CFG.SuccessorId) = {
             stmt match {
                 case Assignment(_, _, e: BinaryExpr[_]) if succId >= 0 ⇒
                     inFacts + ((e.op, e.left, e.right))
