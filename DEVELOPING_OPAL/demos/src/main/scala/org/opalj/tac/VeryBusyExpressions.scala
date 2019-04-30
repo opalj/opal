@@ -4,6 +4,7 @@ package tac
 
 import java.net.URL
 
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.value._
 import org.opalj.br._
 import org.opalj.br.cfg._
@@ -12,35 +13,46 @@ import org.opalj.br.analyses._
 /**
  * Computes the very busy binary arithmetic expressions.
  *
+ * This analysis can, e.g., be run against the demo code using sbt. After starting sbt type:
+ *  `; project Demos ; console`
+ * then start the analysis:
+ * `run -cp=target/scala-2.12/classes/org/opalj/tac -class=org.opalj.tac.VeryBusyExpressionsDemo -method=n_n_h`
+ *
  * @author Michael Eichberg
  */
 object VeryBusyExpressions extends MethodAnalysisApplication {
 
-    override def description: String = "Identifies the very busy arithmetic expressions."
+    override def description: String = "Identifies very busy binary arithmetic expressions."
 
     final type TACAICode = TACode[TACMethodParameter, DUVar[ValueInformation]]
-    final type Result = (TACAICode, Array[Facts], Facts, Facts)
-    final type Fact = (BinaryArithmeticOperator, Expr[_], Expr[_])
+    final type Result = (TACAICode, Array[Facts], Facts)
+
+    // We use as a replacement for variable names the IntTrieSets which identify the def-sites.
+    final type Fact = (BinaryArithmeticOperator, IntTrieSet /*Def-Sites*/ , IntTrieSet /*Def-Sites*/ )
     final type Facts = Set[Fact]
 
     override def analyzeMethod(p: Project[URL], m: Method): Result = {
-        // 2. Get the SSA-like three-address code.
-        //    (Using the naive three-address code wouldn't be useful given that all
-        //    operands based variables are always immediately redefined! )
+        // Get the SSA-like three-address code.
+        // Please note that using the naive three-address code wouldn't be useful given that all
+        // operands based variables are always immediately redefined!
         val tacaiKey = p.get(ComputeTACAIKey)
         val taCode = tacaiKey(m)
         val cfg = taCode.cfg
 
-        // Recall that we work on an SSA like representation which typically does not have
-        // simple alias creating statements of the form x_1 = x_0!
-
         val seed = Set.empty[Fact]
 
-        def t(inFacts: Facts, stmt: Stmt[_], pc: PC, succId: CFG.SuccessorId) = {
+        def t(inFacts: Facts, stmt: Stmt[_], index: PC, succId: CFG.SuccessorId) = {
+            // Recall that we work on a flat SSA like representation.
             stmt match {
-                case Assignment(_, _, e: BinaryExpr[_]) if succId >= 0 ⇒
-                    inFacts + ((e.op, e.left, e.right))
-
+                case Assignment(_, _, expr) ⇒
+                    val outFacts = inFacts.filter { f ⇒
+                        val (_, leftFacts, rightFacts) = f
+                        !leftFacts.contains(index) && !rightFacts.contains(index)
+                    }
+                    expr match {
+                        case BinaryExpr(_, _, op, UVar(_, l), UVar(_, r)) ⇒ outFacts + ((op, l, r))
+                        case _                                            ⇒ outFacts
+                    }
                 case _ ⇒ inFacts
             }
         }
@@ -55,25 +67,26 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
                 availableFacts
         }
 
-        val (stmtFacts, normalRetFacts, abnormalRetFacts) = {
-            cfg.performForwardDataFlowAnalysis(seed, t, join)
-        }
-
-        (taCode, stmtFacts, normalRetFacts, abnormalRetFacts)
+        val (stmtFacts, initFacts) = cfg.performBackwardDataFlowAnalysis(seed, t, join)
+        (taCode, stmtFacts, initFacts)
     }
 
     override def renderResult(r: Result): String = {
-        val (taCode, stmtFacts, normalRetFacts, abnormalRetFacts) = r
+        val (taCode, stmtFacts, initFacts) = r
 
         ToTxt(taCode).mkString("Code:\n", "\n", "\n") +
             stmtFacts
-            .map(_.toString)
+            .map { f ⇒
+                f.map { e ⇒
+                    val (op, l, r) = e
+                    val lUVar = DefSites.toString(l).mkString("{", ",", "}")
+                    val rUVar = DefSites.toString(r).mkString("{", ",", "}")
+                    s"($lUVar $op $rUVar)"
+                }
+            }
             .zipWithIndex
-            .map(e ⇒ { val (f, index) = e; s"$index: $f" })
-            .mkString("Available expressions:\n\t", "\n\t", "\n\n")+
-            "\tNormal return(s): "+
-            (if (normalRetFacts != null) normalRetFacts.toString else "N/A")+"\n"+
-            "\tAbnormal return(s): "+
-            (if (abnormalRetFacts != null) abnormalRetFacts.toString else "N/A")
+            .map({ e ⇒ val (f, index) = e; s"$index: $f" })
+            .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n")+
+            "\tInit: "+initFacts.toString
     }
 }
