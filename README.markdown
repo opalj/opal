@@ -4,29 +4,35 @@ advanced language features to provide a new and previously unseen level of flexi
 OPAL was designed from the ground up with *extensibility*, *adaptability* and *scalability* (memory and performance-wise) in mind. Many parts of OPAL are either already parallelized, provide the necessary infrastructure to implement highly concurrent analyses or are at least thread-safe.
 
 ## Main Projects
-OPAL consists of several projects which are found in the folder OPAL:
+OPAL consists of several projects:
 
-* **Common**(OPAL/common): Contains general useful functions, data-structures (e.g. TrieMaps) and graph algorithms (e.g., computing strongly connected components, computing dominator information etc.) useful when analyzing (byte) code.
+* **Common** (OPAL/common): Contains general useful functions, data-structures (e.g. TrieMaps) and graph algorithms (e.g., computing strongly connected components, computing dominator information etc.) useful when analyzing (byte) code.
 
-* **Static Analysis Infrastructure**(OPAL/si): Contains a generic lattices based framework for the implementation of modularized static analyses.
+* **Static Analysis Infrastructure** (OPAL/si): Contains a generic lattices based framework for the implementation of modularized static analyses.
 
-* **Bytecode Infrastructure**(OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 9 bytecode.
+* **Bytecode Infrastructure** (OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 11 bytecode.
 
-* **Bytecode Disassembler**(OPAL/da): A Java Bytecode Disassembler that provides a one-to-one representation of the class file and which can be used to create beautiful HTML representations of Java class files.
+* **Bytecode Disassembler** (OPAL/da): A Java Bytecode Disassembler that provides a one-to-one representation of the class file and which can be used to create class filesbeautiful HTML representations of Java class files.
 
-* **Bytecode Creator**(OPAL/bc): Most basic infrastructure to engineer Java bytecode.
+* **Bytecode Creator** (OPAL/bc): Most basic infrastructure to engineer Java bytecode.
 
-* **Bytecode Representation**(OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses on top of Java class files.
+* **Bytecode Representation** (OPAL/br): OPAL's base representation of Java bytecode. Implements all functionality to do basic analyses on top of Java class files.
 
-* **Abstract Interpretation Framework**(OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at different levels of precision. Additionally, a three-address based representation (called TAC) is provided that uses the results of a basic abstract interpretation.
+* **Abstract Interpretation Framework** (OPAL/ai): Implementation of an abstract interpretation based framework that can be used to easily implement analyses at different levels of precision. Additionally, a three-address based representation (called TAC) is provided that uses the results of a basic abstract interpretation.
 
-* **Dependencies Extraction**(OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is the foundation for projects to, e.g., check architectures.
+* **Three Address Code** (OPAL/tac): Provides two 3-address code based intermediate representation. A naive one which is directly created based on the bytecode and a higher-level SSA-like representation which directly provides a CFG as well as Def-Use information. 
 
-* **Architecture Validation**(OPAL/av): A small framework to check a project's implemented architecture against a specified one.
+* **Dependencies Extraction** (OPAL/de): Provides support for extracting and analyzing a project's source code dependencies. This project is the foundation for projects to, e.g., check architectures.
 
-* **Demos**(OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos`). After that you can `run` several small demo analyses.
+* **Architecture Validation** (OPAL/av): A small framework to check a project's implemented architecture against a specified one.
 
-* **BugPicker**(OPAL/TOOLS/bp): A tool to find control-/data-flow dependent issues in source code. The kind of issues that are identified range from useless defensive checks to bugs that lead to (unhandled) runtime exceptions.
+* ***Framework*** (OPAL/framework): Basically just aggregates all sub-projects to make it make it possible to easily get a consistent snapshot of all sub projects. In general, it is recommended to declare a dependency on this project when you want to use OPAL.
+
+* **Demos** (OPAL/demos): Contains working code samples that demonstrate how to use OPAL. The code in the Demo project is primarily meant as a teaching resource. To start the examples, start the `sbt` console (Scala Build Tools) and change the current project to "Demos" (`project Demos`). After that you can `run` several small demo analyses.
+
+* **Hermes** (OPAL/TOOLS/hermes): A framework to run various code queries against set of projects. 
+
+* **BugPicker** (OPAL/TOOLS/bp): A tool to find control-/data-flow dependent issues in source code. The kind of issues that are identified range from useless defensive checks to bugs that lead to (unhandled) runtime exceptions.
 
 ## Developer Tools
 
@@ -36,15 +42,16 @@ OPAL also comes with a growing number of tools that are intended to help develop
 The following applies to the "Master/Develop" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 8 at least update 171, Scala 2.12.7 and SBT 1.2.6 installed and running and that SBT can use at least 3GB of RAM (-Xmx3G). Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have Java 8 at least update 171, Scala 2.12.8 and SBT 1.2.8 installed and running and that SBT can use at least 3GB of RAM (-Xmx3G). Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder.
 
 * Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
 * Go to the `TOOLS/bp` folder and call `sbt compile` to compile the BugPicker UI. You can run the BugPicker using `sbt run`.
 * [Optional - but highly recommended] Edit the file `local.sbt` and specify the two system properties (`JAVA_OPTS`): `-Dorg.opalj.threads.CPUBoundTasks=8
--Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (CPUBoundTasks === "Number of real CPUs (Cores)", IOBoundTasks === "Number of (hyperthreaded) cores * 1 .5"). You can also set these properties when using sbt by typing: `eval sys.props("org.opalj.threads.CPUBoundTasks") = "1"`.
+-Dorg.opalj.threads.IOBoundTasks=24` - set the values to appropriate values for your machine (`CPUBoundTasks === "Number of real CPUs (Cores)"`, `IOBoundTasks === "Number of (hyperthreaded) cores * 1 .5"`). You can also set these properties when using sbt by typing:  
+`eval sys.props("org.opalj.threads.CPUBoundTasks") = "1"`.
 * Call `sbt test` to run the unit tests and to test that everything works as expected. Please note, that some tests generate some additional (colored) output. However, as long as all tests succeed without an error, everything is OK. *If `sbt test` fails it may be due to insufficient memory. In this case it is necessary to start SBT itself with more memory.*
-* Call `sbt it:test` to run the integration test suite. Executing this test suite may take longer (on a fast desktop with 32GB and 8 Cores it taks ~30min).
+* Call `sbt it:test` to run the integration test suite. Executing this test suite may take very long (on a fast desktop with 32GB and 8 Cores it taks ~30min).
 
 You are ready to go.
 
