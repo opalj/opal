@@ -41,14 +41,17 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
 
         val seed = Set.empty[Fact]
 
-        def t(inFacts: Facts, stmt: Stmt[_], index: PC, succId: CFG.SuccessorId) = {
+        def transfer(inFacts: Facts, stmt: Stmt[_], index: PC, succId: CFG.SuccessorId): Facts = {
             // Recall that we work on a flat SSA like representation.
             stmt match {
                 case Assignment(_, _, expr) ⇒
+                    // Kill... those (binary) expressions where one of the variables is defined
+                    //         by this assignment. For that, we simply check the def-sites.
                     val outFacts = inFacts.filter { f ⇒
                         val (_, leftFacts, rightFacts) = f
                         !leftFacts.contains(index) && !rightFacts.contains(index)
                     }
+                    // Gen...
                     expr match {
                         case BinaryExpr(_, _, op, UVar(_, l), UVar(_, r)) ⇒ outFacts + ((op, l, r))
                         case _                                            ⇒ outFacts
@@ -67,26 +70,28 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
                 availableFacts
         }
 
-        val (stmtFacts, initFacts) = cfg.performBackwardDataFlowAnalysis(seed, t, join)
+        val (stmtFacts, initFacts) = cfg.performBackwardDataFlowAnalysis(seed, transfer, join)
         (taCode, stmtFacts, initFacts)
     }
 
     override def renderResult(r: Result): String = {
         val (taCode, stmtFacts, initFacts) = r
 
+        def factsToString(f: Facts): Iterable[String] = {
+            f.map { e ⇒
+                val (op, l, r) = e
+                val lUVar = DefSites.toString(l).mkString("{", ",", "}")
+                val rUVar = DefSites.toString(r).mkString("{", ",", "}")
+                s"($lUVar $op $rUVar)"
+            }
+        }
+
         ToTxt(taCode).mkString("Code:\n", "\n", "\n") +
             stmtFacts
-            .map { f ⇒
-                f.map { e ⇒
-                    val (op, l, r) = e
-                    val lUVar = DefSites.toString(l).mkString("{", ",", "}")
-                    val rUVar = DefSites.toString(r).mkString("{", ",", "}")
-                    s"($lUVar $op $rUVar)"
-                }
-            }
+            .map(factsToString)
             .zipWithIndex
             .map({ e ⇒ val (f, index) = e; s"$index: $f" })
             .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n")+
-            "\tInit: "+initFacts.toString
+            "\tInit: "+factsToString(initFacts)
     }
 }
