@@ -18,12 +18,13 @@ abstract class IFDSProperty[DataFlowFact]
     /** The type of the TAC domain. */
     type V = DUVar[KnownTypedValue]
 
-    def flows: Map[Statement, Set[DataFlowFact]]
+    def normalExitFacts: Map[Statement, Set[DataFlowFact]]
+    def abnormalExitFacts: Map[Statement, Set[DataFlowFact]]
 
     override def equals(that: Any): Boolean = that match {
-        case other: IFDSProperty[DataFlowFact] ⇒ flows == other.flows
+        case other: IFDSProperty[DataFlowFact] ⇒ normalExitFacts == other.normalExitFacts && abnormalExitFacts == other.abnormalExitFacts
         case _                                 ⇒ false
     }
 
-    override def hashCode(): Int = flows.hashCode()
+    override def hashCode(): Int = 31 * normalExitFacts.hashCode() + abnormalExitFacts.hashCode()
 }

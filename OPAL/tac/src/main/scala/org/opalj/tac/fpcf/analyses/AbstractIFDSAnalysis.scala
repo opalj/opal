@@ -74,10 +74,11 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
     /**
      * Creates an IFDSProperty containing the result of this analysis.
      *
-     * @param result Maps each exit statement to the facts valid after the exit statement.
-     * @return An IFDSProperty containing the `result`.
+     * @param normalExitFacts Maps each statement preceding a normal exit node to the facts valid after the exit statement.
+     * @param abnormalExitFacts Maps each statement preceding an abnormal exit node to the facts valid after the exit statement.
+     * @return An IFDSProperty containing the exit facts.
      */
-    def createPropertyValue(result: Map[Statement, Set[IFDSFact]]): IFDSProperty[IFDSFact]
+    def createPropertyValue(normalExitFacts: Map[Statement, Set[IFDSFact]], abnormalExitFacts: Map[Statement, Set[IFDSFact]]): IFDSProperty[IFDSFact]
 
     /**
      * Computes the DataFlowFacts valid after statement `statement` on the CFG edge to statement `succ`
@@ -101,7 +102,8 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param call The analyzed call statement.
      * @param callee The called method.
      * @param in Some facts valid before the execution of the `call`.
-     * @return The facts valid after the execution of `statement` under the assumption that `in` held before `statement` and `statement` calls `callee`.
+     * @return The facts valid after the execution of `statement` under the assumption that `in` held before `statement`
+     *         and `statement` calls `callee`.
      */
     def callFlow(
         call: Statement, callee: DeclaredMethod, in: Set[IFDSFact]
@@ -169,7 +171,8 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param cfg The control glow graph of `method`.
      * @param pendingIfdsCallSites Maps callees of the analyzed `method` together with their input facts
      *                             to the basic block and statement index of the call site(s).
-     * @param pendingIfdsDependees Maps callees of the analyzed `method` together with their input facts to the intermediate result of their IFDS analysis.
+     * @param pendingIfdsDependees Maps callees of the analyzed `method` together with their input facts
+     *                             to the intermediate result of their IFDS analysis.
      *                             Only contains method-fact-pairs, for which this analysis is waiting for a result.
      * @param pendingCgCallSites The basic blocks containing call sites, for which the analysis is still waiting for the call graph result.
      * @param cgDependency If present, the analysis is waiting for the `method`'s call graph.
@@ -203,7 +206,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         // The analysis can only handle single defined methods
         // If a method is not single defined, this analysis assumes that it does not create any facts.
         if (!declaredMethod.hasSingleDefinedMethod)
-            return Result(entity, createPropertyValue(Map.empty))
+            return Result(entity, createPropertyValue(Map.empty, Map.empty))
 
         val method = declaredMethod.definedMethod
         val declaringClass: ObjectType = method.classFile.thisType
@@ -219,7 +222,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             case epk: EPK[Method, TACAI] ⇒
                 return InterimResult.forUB(
                     entity,
-                    createPropertyValue(Map.empty),
+                    createPropertyValue(Map.empty, Map.empty),
                     Seq(epk),
                     _ ⇒ performAnalysis(entity),
                     DefaultPropertyComputation
@@ -315,14 +318,15 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * Creates the current (intermediate) result for the analysis.
      *
      * @return A result containing a map, which maps each exit statement to the facts valid after the statement, based on the current results.
-     *         If the analysis is still waiting for its method's TAC or call graph or the IFDS of another method, an interim result will be returned.
+     *         If the analysis is still waiting for its method's TAC or call graph or the IFDS of another method,
+     *         an interim result will be returned.
      *
      */
     def createResult()(implicit state: State): ProperPropertyComputationResult = {
-        val propertyValue = createPropertyValue(mergeMaps(
+        val propertyValue = createPropertyValue(
             collectResult(state.cfg.normalReturnNode),
             collectResult(state.cfg.abnormalReturnNode)
-        ))
+        )
 
         var dependees: Set[SomeEOptionP] = state.pendingIfdsDependees.values.toSet
         if (state.cgDependency.isDefined) dependees += state.cgDependency.get
@@ -355,7 +359,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒ reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
 
             case interimEUBP @ InterimEUBP(e: (DeclaredMethod, IFDSFact) @unchecked, ub: IFDSProperty[IFDSFact]) ⇒
-                if (ub.flows.values.filter(!_.isInstanceOf[AbstractIFDSNullFact]).isEmpty) {
+                if ((ub.normalExitFacts.values ++ ub.abnormalExitFacts.values).filter(!_.isInstanceOf[AbstractIFDSNullFact]).isEmpty) {
                     // Do not re-analyze the caller if we only get the null fact.
                     // Update the pendingIfdsDependee entry to the new interim result.
                     state.pendingIfdsDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
@@ -511,8 +515,8 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      */
     def definedMethods(declaredMethods: Iterator[DeclaredMethod]): SomeSet[Method] = {
         val result = scala.collection.mutable.Set.empty[Method]
-        declaredMethods.filter(declaredMethod ⇒ declaredMethod.hasSingleDefinedMethod || declaredMethod.hasMultipleDefinedMethods).foreach(declaredMethod ⇒
-            declaredMethod.foreachDefinedMethod(defineMethod ⇒ result.add(defineMethod)))
+        declaredMethods.filter(declaredMethod ⇒ declaredMethod.hasSingleDefinedMethod || declaredMethod.hasMultipleDefinedMethods).
+            foreach(declaredMethod ⇒ declaredMethod.foreachDefinedMethod(defineMethod ⇒ result.add(defineMethod)))
         result
     }
 
@@ -600,40 +604,39 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 val callToStart =
                     if (calleeWithUpdateFact.isDefined) calleeWithUpdateFact.toSet
                     else propagateNullFact(in, callFlow(call, callee, in))
-                var allNewExitFacts: Map[Statement, Set[IFDSFact]] = Map.empty
+                var newNormalExitFacts: Map[Statement, Set[IFDSFact]] = Map.empty
+                var newAbnormalExitFacts: Map[Statement, Set[IFDSFact]] = Map.empty
                 // Collect exit facts for each input fact separately
                 for (fact ← callToStart) {
                     /*
-                    * If this is a recursive call with the same input facts, we assume that the call only produces the facts that are already known.
-                    * The call site is added to `pendingIfdsCallSites`, so that it will be re-evaluated if new output facts become known for the input fact.
+                    * If this is a recursive call with the same input facts, we assume that the call only produces the facts
+                    * that are already known. The call site is added to `pendingIfdsCallSites`, so that it will be re-evaluated
+                    * if new output facts become known for the input fact.
                     */
                     if ((calledMethod eq state.method) && fact == state.source._2) {
                         val newDependee =
                             state.pendingIfdsCallSites.getOrElse(state.source, Set.empty) + ((basicBlock, call.index))
                         state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(state.source, newDependee)
-                        allNewExitFacts = mergeMaps(
-                            allNewExitFacts,
-                            mergeMaps(
-                                collectResult(state.cfg.normalReturnNode),
-                                collectResult(state.cfg.abnormalReturnNode)
-                            )
-                        )
+                        newNormalExitFacts = mergeMaps(newNormalExitFacts, collectResult(state.cfg.normalReturnNode))
+                        newAbnormalExitFacts = mergeMaps(newAbnormalExitFacts, collectResult(state.cfg.abnormalReturnNode))
                     } else {
                         val e = (callee, fact)
                         val callFlows = propertyStore(e, propertyKey.key)
                             .asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
                         val oldValue = state.pendingIfdsDependees.get(e)
-                        val oldExitFacts: Map[Statement, Set[IFDSFact]] = oldValue match {
-                            case Some(ep: InterimEUBP[_, IFDSProperty[IFDSFact]]) ⇒ ep.ub.flows
-                            case _                                                ⇒ Map.empty
+                        val (oldNormalExitFacts, oldAbnormalExitFacts): (Map[Statement, Set[IFDSFact]], Map[Statement, Set[IFDSFact]]) =
+                            oldValue match {
+                            case Some(ep: InterimEUBP[_, IFDSProperty[IFDSFact]]) ⇒ (ep.ub.normalExitFacts, ep.ub.abnormalExitFacts)
+                            case _                                                ⇒ (Map.empty, Map.empty)
                         }
-                        val exitFacts: Map[Statement, Set[IFDSFact]] = callFlows match {
+                        val (normalExitFacts, abnormalExitFacts): (Map[Statement, Set[IFDSFact]], Map[Statement, Set[IFDSFact]]) =
+                            callFlows match {
                             case ep: FinalEP[_, IFDSProperty[IFDSFact]] ⇒
                                 val newDependee =
                                     state.pendingIfdsCallSites.getOrElse(e, Set.empty) - ((basicBlock, call.index))
                                 state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
                                 state.pendingIfdsDependees -= e
-                                ep.p.flows
+                                (ep.p.normalExitFacts, ep.p.abnormalExitFacts)
                             case ep: InterimEUBP[_, IFDSProperty[IFDSFact]] ⇒
                                 /*
                               * Add the call site to `pendingIfdsCallSites` and `pendingIfdsDependees` and
@@ -641,38 +644,44 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                               * callee finishes, the analysis for this call site will be triggered again.
                               */
                                 addIfdsDependee(e, callFlows, basicBlock, call.index)
-                                ep.ub.flows
+                                (ep.ub.normalExitFacts, ep.ub.abnormalExitFacts)
                             case _ ⇒
                                 addIfdsDependee(e, callFlows, basicBlock, call.index)
-                                Map.empty
+                                (Map.empty, Map.empty)
                         }
                         // Only process new facts that are not in `oldExitFacts`
-                        allNewExitFacts = mergeMaps(allNewExitFacts, mapDifference(exitFacts, oldExitFacts))
+                        newNormalExitFacts = mergeMaps(newNormalExitFacts, mapDifference(normalExitFacts, oldNormalExitFacts))
+                        newAbnormalExitFacts = mergeMaps(newAbnormalExitFacts, mapDifference(abnormalExitFacts, oldAbnormalExitFacts))
                         /*
                      * If new exit facts were discovered for the callee-fact-pair, all call sites depending on this pair have to be re-evaluated.
                      * oldValue is undefined if the callee-fact pair has not been queried before or returned a FinalEP.
                      */
-                        if (oldValue.isDefined && oldExitFacts != exitFacts) {
+                        if (oldValue.isDefined && (oldNormalExitFacts != normalExitFacts || oldAbnormalExitFacts != abnormalExitFacts)) {
                             reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
                         }
                     }
                 }
 
                 // Map facts valid on each exit statement of the callee back to the caller
-                // TODO We do not distinguish exceptions and normal return nodes!
+                // Start with edges from normal exit nodes.
                 for {
-                    successor ← successors
-                    exitStatement ← allNewExitFacts.keys
+                    successor ← successors if successor.node.isBasicBlock ||
+                        successor.node.isNormalReturnExitNode || successor.node.isStartOfSubroutine
+                    exitStatement ← newNormalExitFacts.keys
                 } {
-                    val oldSummaryEdges = summaryEdges.getOrElse(successor, Set.empty[IFDSFact])
-                    val exitToReturnFacts = returnFlow(
-                        call,
-                        callee,
-                        exitStatement,
-                        successor,
-                        allNewExitFacts.getOrElse(exitStatement, Set.empty)
-                    )
-                    summaryEdges += successor → (oldSummaryEdges ++ exitToReturnFacts)
+                    summaryEdges += successor →
+                        (returnFlow(call, callee, exitStatement, successor, newNormalExitFacts.getOrElse(exitStatement, Set.empty)) ++
+                            summaryEdges.getOrElse(successor, Set.empty[IFDSFact]))
+                }
+                // And then the ones for thrown exceptions.
+                for {
+                    successor ← successors if successor.node.isCatchNode ||
+                        successor.node.isAbnormalReturnExitNode
+                    exitStatement ← newAbnormalExitFacts.keys
+                } {
+                    summaryEdges += successor →
+                        (returnFlow(call, callee, exitStatement, successor, newNormalExitFacts.getOrElse(exitStatement, Set.empty)) ++
+                            summaryEdges.getOrElse(successor, Set.empty[IFDSFact]))
                 }
             }
         }
@@ -703,7 +712,8 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param callBB The basic block of the call site.
      * @param callIndex The index of the call site.
      */
-    def addIfdsDependee(entity: (DeclaredMethod, IFDSFact), calleeProperty: EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]], callBB: BasicBlock, callIndex: Int)(implicit state: State): Unit = {
+    def addIfdsDependee(entity: (DeclaredMethod, IFDSFact), calleeProperty: EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]],
+                        callBB: BasicBlock, callIndex: Int)(implicit state: State): Unit = {
         val callSites = state.pendingIfdsCallSites
         state.pendingIfdsCallSites = callSites.updated(entity, callSites.getOrElse(entity, Set.empty) + ((callBB, callIndex)))
         state.pendingIfdsDependees += entity → calleeProperty
@@ -803,7 +813,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             case epk ⇒
                 InterimResult.forUB(
                     source,
-                    createPropertyValue(Map.empty),
+                    createPropertyValue(Map.empty, Map.empty),
                     Seq(epk),
                     c,
                     CheapPropertyComputation

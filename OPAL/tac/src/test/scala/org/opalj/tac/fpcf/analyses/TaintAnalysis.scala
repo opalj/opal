@@ -46,8 +46,9 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
         .filter(method ⇒ method.isPublic)
         .map(method ⇒ declaredMethods(method) → NullFact).toMap
 
-    override def createPropertyValue(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
-        new Taint(result)
+    override def createPropertyValue(normalExitFacts: Map[Statement, Set[Fact]],
+                                     abnormalExitFacts: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
+        new Taint(normalExitFacts, abnormalExitFacts)
     }
 
     /**
@@ -186,24 +187,24 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      */
     override def callFlow(call: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
         val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
-            in.collect {
-                // Taint formal parameter if actual parameter is tainted
-                case Variable(index) ⇒
-                    allParams.zipWithIndex.collect {
-                        case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
-                            Variable(switchParamAndVariableIndex(paramIndex, !callee.definedMethod.isStatic))
-                    }
+        in.collect {
+            // Taint formal parameter if actual parameter is tainted
+            case Variable(index) ⇒
+                allParams.zipWithIndex.collect {
+                    case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+                        Variable(switchParamAndVariableIndex(paramIndex, !callee.definedMethod.isStatic))
+                }
 
-                // Taint element of formal parameter if element of actual parameter is tainted
-                case ArrayElement(index, taintedIndex) ⇒
-                    allParams.zipWithIndex.collect {
-                        case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
-                            ArrayElement(
-                                switchParamAndVariableIndex(paramIndex, !callee.definedMethod.isStatic),
-                                taintedIndex
-                            )
-                    }
-            }.flatten
+            // Taint element of formal parameter if element of actual parameter is tainted
+            case ArrayElement(index, taintedIndex) ⇒
+                allParams.zipWithIndex.collect {
+                    case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+                        ArrayElement(
+                            switchParamAndVariableIndex(paramIndex, !callee.definedMethod.isStatic),
+                            taintedIndex
+                        )
+                }
+        }.flatten
     }
 
     /**
@@ -349,9 +350,10 @@ object TaintAnalysis extends IFDSAnalysis[Fact] {
 /**
  * The IFDSProperty for this analysis.
  *
- * @param flows Maps a statement to the facts, which hold at the statement.
+ * @param normalExitFacts Maps each statement preceding a normal exit node to the facts valid after the exit statement.
+ * @param abnormalExitFacts Maps each statement preceding an abnormal exit node to the facts valid after the exit statement.
  */
-class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
+class Taint(val normalExitFacts: Map[Statement, Set[Fact]], val abnormalExitFacts: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
 
     override type Self = Taint
 
@@ -362,5 +364,5 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
 
     override type Self = Taint
 
-    val key: PropertyKey[Taint] = PropertyKey.create("Taint", new Taint(Map.empty))
+    val key: PropertyKey[Taint] = PropertyKey.create("Taint", new Taint(Map.empty, Map.empty))
 }
