@@ -9,7 +9,7 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.FinalP
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -35,7 +35,7 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
  *
  * @author Florian Kuebler
  */
-object FieldAndArrayUsageAnalysis extends DefaultOneStepAnalysis {
+object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = "Field and array usage evaluation"
 

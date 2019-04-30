@@ -10,7 +10,7 @@ import scala.collection.JavaConverters._
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -28,7 +28,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
  *
  * @author Stephan Neumann
  */
-object SimpleDefUseAnalysis extends DefaultOneStepAnalysis {
+object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
 
     override def title: String =
         "Identifies unused variables and unnecessary calculations"

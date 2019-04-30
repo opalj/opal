@@ -4,13 +4,13 @@ package org.opalj.ai.tutorial.base
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 
 /**
  * @author Michael Eichberg
  */
-object AnalysisTemplate extends DefaultOneStepAnalysis {
+object AnalysisTemplate extends ProjectAnalysisApplication {
 
     def doAnalyze(
         theProject:    Project[URL],

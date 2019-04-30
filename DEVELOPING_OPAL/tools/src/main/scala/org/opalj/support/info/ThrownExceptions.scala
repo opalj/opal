@@ -12,7 +12,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.collection.TypesSet
 import org.opalj.br.fpcf.properties.{ThrownExceptions ⇒ ThrownExceptionsProperty}
@@ -27,7 +27,7 @@ import org.opalj.br.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
  * @author Michael Eichberg
  * @author Andreas Muttschelller
  */
-object ThrownExceptions extends DefaultOneStepAnalysis {
+object ThrownExceptions extends ProjectAnalysisApplication {
 
     override def title: String = "Thrown Exceptions"
 

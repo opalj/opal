@@ -4,7 +4,7 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 
@@ -14,7 +14,7 @@ import org.opalj.br.analyses.Project
  * @author Daniel Klauer
  * @author Michael Eichberg
  */
-object ShowInnerClassesInformation extends DefaultOneStepAnalysis {
+object ShowInnerClassesInformation extends ProjectAnalysisApplication {
 
     override def description: String = "Prints out the inner classes tables."
 

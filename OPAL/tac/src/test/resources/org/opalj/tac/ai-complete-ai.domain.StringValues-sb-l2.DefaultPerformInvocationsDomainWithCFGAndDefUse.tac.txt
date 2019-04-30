@@ -4,7 +4,7 @@
    param2: useSites={3} (origin=-3)
    param3: useSites={4} (origin=-4)
 */
-0:/*pc=0:*/ lv0 = new StringBuilder
+0:/*pc=0:*/ lv0 = new java.lang.StringBuilder
 1:/*pc=4:*/ {lv0}/*(non-virtual) java.lang.StringBuilder*/.<init>()
 // ⚡️ <uncaught exception ⇒ abnormal return>
 

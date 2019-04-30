@@ -10,7 +10,7 @@ import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldMutability
@@ -25,7 +25,7 @@ import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
  *
  * @author Michael Eichberg
  */
-object ImmutabilityAnalysisDemo extends DefaultOneStepAnalysis {
+object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
     //                                                                                            //

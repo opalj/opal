@@ -7,7 +7,7 @@ import java.net.URL
 import org.opalj.util.asMB
 import org.opalj.util.PerformanceEvaluation.memory
 
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
@@ -22,7 +22,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
  *
  * @author Michael Eichberg
  */
-object FieldAccessInformationAnalysis extends DefaultOneStepAnalysis {
+object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
 
     override def description: String = "provides information about field accesses"
 

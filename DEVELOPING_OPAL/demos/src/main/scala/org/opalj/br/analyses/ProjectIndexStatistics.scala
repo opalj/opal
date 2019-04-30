@@ -10,7 +10,7 @@ import java.net.URL
  *
  * @author Michael Eichberg
  */
-object ProjectIndexStatistics extends DefaultOneStepAnalysis {
+object ProjectIndexStatistics extends ProjectAnalysisApplication {
 
     override def title: String = "project statistics"
 

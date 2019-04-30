@@ -5,7 +5,7 @@ package analyses
 
 /**
  * Common trait that analyses can inherit from when they want to use the general
- * analysis framework [[AnalysisExecutor]].
+ * analysis framework [[AnalysisApplication]].
  *
  * ==Conceptual Idea==
  * An analysis is basically a mapping of a `Project`'s resources to some result.

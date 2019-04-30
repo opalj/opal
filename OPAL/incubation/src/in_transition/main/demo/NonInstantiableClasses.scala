@@ -20,7 +20,7 @@ import org.opalj.util.PerformanceEvaluation.{memory, time}
  *
  * @author Michael Eichberg
  */
-object NonInstantiableClasses extends DefaultOneStepAnalysis {
+object NonInstantiableClasses extends ProjectAnalysisApplication {
 
     override def description: String = "Provides information about instantiable classes."
 

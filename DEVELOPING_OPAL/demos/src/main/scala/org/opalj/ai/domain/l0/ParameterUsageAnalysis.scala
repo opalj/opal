@@ -12,7 +12,7 @@ import scala.collection.JavaConverters._
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -23,7 +23,7 @@ import org.opalj.util.Seconds
  *
  * @author Michael Eichberg
  */
-object ParameterUsageAnalysis extends DefaultOneStepAnalysis {
+object ParameterUsageAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = "Identifies methods which return a given parameter"
 

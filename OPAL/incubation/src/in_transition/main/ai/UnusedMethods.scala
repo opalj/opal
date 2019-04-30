@@ -8,14 +8,14 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.ai.analyses.cg.{CallGraphFactory, VTACallGraphKey, ComputedCallGraph}
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * A shallow analysis that tries to identify ((package) private) methods that are dead.
  *
  * @author Michael Eichberg
  */
-object UnusedMethods extends DefaultOneStepAnalysis {
+object UnusedMethods extends ProjectAnalysisApplication {
 
     override def title: String = "Dead methods"
 

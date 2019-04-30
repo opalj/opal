@@ -10,7 +10,7 @@ import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.{ObjectType, PCAndInstruction}
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.GETFIELD
 import org.opalj.br.instructions.INVOKEINTERFACE
@@ -27,7 +27,7 @@ import org.opalj.br.instructions.LoadString
  *
  * @author Michael Reif
  */
-object CipherGetInstanceStringUsage extends DefaultOneStepAnalysis {
+object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
 
     override def title: String = "input value analysis for Chipher.getInstance calls"
 

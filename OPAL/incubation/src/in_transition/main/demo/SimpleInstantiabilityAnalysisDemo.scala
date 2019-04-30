@@ -7,7 +7,7 @@ package demo
 import java.net.URL
 
 import org.opalj.br.ClassFile
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.PropertyStoreKey
@@ -17,7 +17,7 @@ import org.opalj.fpcf.properties.Instantiable
 /**
  * @author Michael Reif
  */
-object SimpleInstantiabilityAnalysisDemo extends DefaultOneStepAnalysis {
+object SimpleInstantiabilityAnalysisDemo extends ProjectAnalysisApplication {
 
     override def title: String = "class instantiablility computation"
 

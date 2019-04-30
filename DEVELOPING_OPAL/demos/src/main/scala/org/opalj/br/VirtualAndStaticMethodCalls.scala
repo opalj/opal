@@ -8,14 +8,14 @@ import org.opalj.br.instructions._
 import org.opalj.br.analyses.{BasicReport, Project}
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Nanoseconds
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * Counts the number of static and virtual method calls.
  *
  * @author Michael Eichberg
  */
-object VirtualAndStaticMethodCalls extends DefaultOneStepAnalysis {
+object VirtualAndStaticMethodCalls extends ProjectAnalysisApplication {
 
     override def description: String = "Counts the number of static and virtual method calls."
 

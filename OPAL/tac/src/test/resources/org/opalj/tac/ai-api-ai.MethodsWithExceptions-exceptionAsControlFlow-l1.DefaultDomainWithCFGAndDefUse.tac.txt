@@ -14,7 +14,7 @@
 
 // java.lang.ArithmeticException →
 4:/*pc=10:*/ caught java.lang.ArithmeticException /* <= {exception@2,exception[VM]@1}*/
-5:/*pc=11:*/ lv5 = new IllegalArgumentException
+5:/*pc=11:*/ lv5 = new java.lang.IllegalArgumentException
 6:/*pc=15:*/ lv6 = ""
 7:/*pc=17:*/ {lv5}/*(non-virtual) java.lang.IllegalArgumentException*/.<init>({lv6})
 // ⚡️ <uncaught exception ⇒ abnormal return>

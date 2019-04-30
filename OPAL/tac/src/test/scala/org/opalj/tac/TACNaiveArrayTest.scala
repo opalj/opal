@@ -92,14 +92,14 @@ class TACNaiveArrayTest extends TACNaiveTest {
                 Assignment(18, SimpleVar(-3, ComputationalTypeReference), SimpleVar(0, ComputationalTypeReference)),
                 Return(19)
             ))
-            javaLikeCode.shouldEqual(Array(
+            val expected = Array(
                 "0: r_0 = this",
                 "1: op_0 = 5",
                 "2: op_0 = new java.lang.Object[op_0]",
                 "3: r_1 = op_0",
                 "4: op_0 = r_1",
                 "5: op_1 = 4",
-                "6: op_2 = new Object",
+                "6: op_2 = new java.lang.Object",
                 "7: ;",
                 "8: op_2/*(non-virtual) java.lang.Object*/.<init>()",
                 "9: op_0[op_1] = op_2",
@@ -108,7 +108,9 @@ class TACNaiveArrayTest extends TACNaiveTest {
                 "12: op_0 = op_0[op_1]",
                 "13: r_2 = op_0",
                 "14: return"
-            ).mkString("\n"))
+            ).mkString("\n")
+
+            javaLikeCode.shouldEqual(expected)
         }
 
         it("should correctly reflect multidimensional array instructions") {

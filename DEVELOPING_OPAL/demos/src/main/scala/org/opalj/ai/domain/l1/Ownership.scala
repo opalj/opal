@@ -18,14 +18,14 @@ import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.MULTIANEWARRAY
 import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.MethodInvocationInstruction
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * Find methods that return an internal (private) array to callers of the class.
  *
  * @author Michael Eichberg
  */
-object OwnershipAnalysis extends DefaultOneStepAnalysis {
+object OwnershipAnalysis extends ProjectAnalysisApplication {
 
     override def title: String =
         "basic ownership analysis for arrays"

@@ -5,7 +5,7 @@ package br
 import java.net.URL
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.LoadMethodHandle
 import org.opalj.br.instructions.LoadMethodHandle_W
@@ -15,7 +15,7 @@ import org.opalj.br.instructions.LoadMethodType_W
 /**
  * @author Michael Eichberg
  */
-object LoadMethodHandleOrMethodType extends DefaultOneStepAnalysis {
+object LoadMethodHandleOrMethodType extends ProjectAnalysisApplication {
 
     override def description: String = "prints information about loads of method handles and types"
 

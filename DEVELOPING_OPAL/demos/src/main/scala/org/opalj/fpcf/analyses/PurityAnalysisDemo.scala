@@ -9,7 +9,7 @@ import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.gc
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.Field
@@ -25,7 +25,7 @@ import org.opalj.br.fpcf.properties.Purity
  *
  * @author Michael Eichberg
  */
-object PurityAnalysisDemo extends DefaultOneStepAnalysis {
+object PurityAnalysisDemo extends ProjectAnalysisApplication {
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
     //                                                                                            //

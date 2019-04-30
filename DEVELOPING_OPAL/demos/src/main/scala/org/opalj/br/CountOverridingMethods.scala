@@ -6,7 +6,7 @@ import java.net.URL
 
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.AnalysisExecutor
+import org.opalj.br.analyses.AnalysisApplication
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.OneStepAnalysis
 import org.opalj.br.analyses.Project
@@ -16,7 +16,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-object CountOverridingMethods extends AnalysisExecutor {
+object CountOverridingMethods extends AnalysisApplication {
 
     val analysis = new OneStepAnalysis[URL, BasicReport] {
 

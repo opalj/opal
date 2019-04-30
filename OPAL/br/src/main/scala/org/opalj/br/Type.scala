@@ -268,7 +268,7 @@ object Type {
                     throw new UnknownError(s"unknown primitive type $clazz")
             }
         } else {
-            ReferenceType(clazz.getName)
+            ReferenceType(clazz.getName.replace('.', '/'))
         }
     }
 }

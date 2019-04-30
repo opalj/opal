@@ -9,7 +9,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
@@ -46,7 +46,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kübler
  */
-object UnnecessarySynchronizationAnalysis extends DefaultOneStepAnalysis {
+object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = "Finds unnecessary usages of synchronization"
 

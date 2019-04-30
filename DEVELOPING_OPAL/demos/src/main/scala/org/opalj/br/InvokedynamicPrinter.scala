@@ -15,7 +15,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig ⇒ invokedynamicRewritingConfig}
 
 /**
@@ -24,7 +24,7 @@ import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig ⇒ invokedynam
  * @author Arne Lottmann
  * @author Michael Eichberg
  */
-object InvokedynamicPrinter extends DefaultOneStepAnalysis {
+object InvokedynamicPrinter extends ProjectAnalysisApplication {
 
     // We have to adapt the configuration to ensure that invokedynamic instructions
     // are never rewritten!

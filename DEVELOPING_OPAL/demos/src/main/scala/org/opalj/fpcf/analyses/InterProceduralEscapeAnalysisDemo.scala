@@ -27,7 +27,7 @@ import org.opalj.br.fpcf.properties.EscapeViaStaticField
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
@@ -56,7 +56,7 @@ import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
  *
  * @author Florian Kübler
  */
-object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
+object InterProceduralEscapeAnalysisDemo extends ProjectAnalysisApplication {
 
     override def title: String = "determines escape information"
 

@@ -10,7 +10,7 @@ import org.opalj.fpcf.EPS
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.Method
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.Field
 import org.opalj.ai.fpcf.properties.FieldValue
@@ -21,7 +21,7 @@ import org.opalj.ai.fpcf.properties.MethodReturnValue
  *
  * @author Michael Eichberg
  */
-object Values extends DefaultOneStepAnalysis {
+object Values extends ProjectAnalysisApplication {
 
     override def title: String = "Values stored in fields and returned by methods"
 

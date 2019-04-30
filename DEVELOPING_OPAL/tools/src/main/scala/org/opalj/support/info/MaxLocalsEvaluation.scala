@@ -8,7 +8,7 @@ import java.net.URL
 import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * Computes some statistics related to the number of parameters and locals
@@ -16,7 +16,7 @@ import org.opalj.br.analyses.DefaultOneStepAnalysis
  *
  * @author Michael Eichberg
  */
-object MaxLocalsEvaluation extends DefaultOneStepAnalysis {
+object MaxLocalsEvaluation extends ProjectAnalysisApplication {
 
     override def title: String = "Maximum Number of Locals"
 

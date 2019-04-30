@@ -4,7 +4,7 @@ package br
 
 import java.net.URL
 
-import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
+import org.opalj.br.analyses.{ProjectAnalysisApplication, BasicReport, Project}
 
 /**
  * Lists all abstract classes and interfaces that have no concrete subclasses in
@@ -12,7 +12,7 @@ import org.opalj.br.analyses.{DefaultOneStepAnalysis, BasicReport, Project}
  *
  * @author Michael Eichberg
  */
-object ClassesWithoutConcreteSubclasses extends DefaultOneStepAnalysis {
+object ClassesWithoutConcreteSubclasses extends ProjectAnalysisApplication {
 
     override def description: String =
         "Abstract classes and interfaces that have no concrete subclass in the given jars."

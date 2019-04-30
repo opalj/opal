@@ -12,7 +12,8 @@ import org.opalj.collection.immutable.RefArray
  * optimized, but very unsafe methods and is therefore __not__ a general purpose data-structure.
  * In general, this buffer should only be used to reference objects which outlive the life time
  * of the buffer AND where the buffer is only used locally. To foster a local usage only, we do
- * not inherit from any standard collection classes.
+ * not inherit from any standard collection classes. One use case is for example the usage
+ * as the backing data-structure for work list algorithms.
  *
  * @note This data structure is not thread safe.
  *

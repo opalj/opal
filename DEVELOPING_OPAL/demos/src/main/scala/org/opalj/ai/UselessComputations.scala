@@ -12,14 +12,14 @@ import org.opalj.br.instructions.IFICMPInstruction
 import org.opalj.br.instructions.IFNULL
 import org.opalj.br.instructions.IFNONNULL
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * A shallow analysis that identifies useless computations.
  *
  * @author Michael Eichberg
  */
-object UselessComputations extends DefaultOneStepAnalysis {
+object UselessComputations extends ProjectAnalysisApplication {
 
     class AnalysisDomain(val project: Project[java.net.URL], val method: Method)
         extends CorrelationalDomain

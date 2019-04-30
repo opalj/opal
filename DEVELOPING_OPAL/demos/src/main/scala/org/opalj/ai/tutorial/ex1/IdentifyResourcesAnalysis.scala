@@ -14,7 +14,7 @@ import org.opalj.collection.immutable.Chain
 /**
  * @author Michael Eichberg
  */
-object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
+object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
 
     class AnalysisDomain(
             override val project: Project[URL],

@@ -35,28 +35,22 @@ import org.opalj.br.cfg.BasicBlock
  */
 object TACNaive {
 
-    //
-    //
-    // VAR DEFINITIONS USED BY THE NAIVE TAC
-    //
-    //
-
-    type Stack = List[IdBasedVar]
+    final type Stack = List[IdBasedVar]
 
     /**
      * Converts the plain bytecode of a method into a quadruples based three address
      * representation. Compared to the previous method, no data- and control-flow information is
-     * used and a very general tranformation mechanism is used to do the transformation.
+     * used and a very general transformation mechanism is used to do the transformation.
      * Therefore the representation is very verbose. However, both leverage the same
      * AST nodes.
      *
-     * @param   method A method with a body. I.e., a non-native, non-abstract method.
-     * @param classHierarchy The class hierarchy of the project defining the given method.
-     *          If the class hierarchy is not available, you can use:
-     *          `ClassHierarchy.PreInitializedClassHierarchy`.
+     * @param  method A method with a body. I.e., a non-native, non-abstract method.
+     * @param  classHierarchy The class hierarchy of the project defining the given method.
+     *         If the class hierarchy is not available, you can use:
+     *         `ClassHierarchy.PreInitializedClassHierarchy`.
      * @return The array with the generated statements.
      */
-    // IMPROVE Make it explicit that op0 is the thrown exception in case of an exception handler! (Currently, op0 just exists and only by checking the exception handler table it becomes obvious where op0 is comming from.)
+    // IMPROVE Make it explicit that op0 is the thrown exception in case of an exception handler! (Currently, op0 just exists and only by checking the exception handler table it becomes obvious where op0 is coming from.)
     def apply(
         method:         Method,
         classHierarchy: ClassHierarchy,

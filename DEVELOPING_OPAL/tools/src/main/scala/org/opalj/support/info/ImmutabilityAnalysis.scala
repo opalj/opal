@@ -8,7 +8,7 @@ import java.net.URL
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.ClassImmutability
@@ -23,7 +23,7 @@ import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
  *
  * @author Michael Eichberg
  */
-object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
+object ImmutabilityAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = "Immutability Analysis"
 

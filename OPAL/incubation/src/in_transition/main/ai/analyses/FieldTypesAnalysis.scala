@@ -6,7 +6,7 @@ package l0
 
 import java.net.URL
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.ai.analyses.BaseFieldValuesAnalysisDomain
 import org.opalj.br.analyses.SomeProject
@@ -17,7 +17,7 @@ import org.opalj.br.ClassFile
  *
  * @author Michael Eichberg
  */
-object FieldTypesAnalysis extends DefaultOneStepAnalysis {
+object FieldTypesAnalysis extends ProjectAnalysisApplication {
 
     override def title: String =
         "tries to derive more precise information about the fields of a class"

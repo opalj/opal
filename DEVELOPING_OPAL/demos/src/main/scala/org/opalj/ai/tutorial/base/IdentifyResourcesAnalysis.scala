@@ -12,7 +12,7 @@ import org.opalj.ai._
 /**
  * @author Michael Eichberg
  */
-object IdentifyResourcesAnalysis extends DefaultOneStepAnalysis {
+object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
 
     override def description: String =
         "Identifies java.io.File object instantiations using constant strings."

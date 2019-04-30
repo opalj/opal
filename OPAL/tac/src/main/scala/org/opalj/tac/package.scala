@@ -31,6 +31,10 @@ package object tac {
         List(SimplePropagation)
     }
 
+    def tacToGraph[P <: AnyRef, V <: Var[V]](tac: TACode[P, V]): Iterable[Node] = {
+        tacToGraph(tac.stmts, tac.cfg)
+    }
+
     def tacToGraph[V <: Var[V]](
         stmts: Array[Stmt[V]],
         cfg:   CFG[Stmt[V], TACStmts[V]]

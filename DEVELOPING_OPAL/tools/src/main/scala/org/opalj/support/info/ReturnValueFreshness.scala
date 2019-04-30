@@ -6,7 +6,7 @@ package info
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
 import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
@@ -41,7 +41,7 @@ import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
  *
  * @author Florian Kuebler
  */
-object ReturnValueFreshness extends DefaultOneStepAnalysis {
+object ReturnValueFreshness extends ProjectAnalysisApplication {
 
     override def title: String = "\"Freshness\" of Return Values"
 
