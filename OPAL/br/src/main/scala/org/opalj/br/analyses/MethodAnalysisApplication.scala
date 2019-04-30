@@ -3,27 +3,9 @@ package org.opalj
 package br
 package analyses
 
-import scala.language.implicitConversions
-
 import java.net.URL
 
 import org.opalj.log.OPALLogger.info
-
-/**
- * Default implementation of the [[AnalysisApplication]] which facilitates the
- * development of analyses which are executed in one step.
- *
- * @author Michael Eichberg
- */
-abstract class ProjectAnalysisApplication
-    extends AnalysisApplication
-    with OneStepAnalysis[URL, ReportableAnalysisResult] {
-
-    implicit def String2BasicReport(report: String): BasicReport = BasicReport(report)
-
-    final override val analysis: ProjectAnalysisApplication = this
-
-}
 
 /**
  * A small framework to implement analyses which should be executed for a given
@@ -32,7 +14,7 @@ abstract class ProjectAnalysisApplication
 abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
 
     override def analysisSpecificParametersDescription: String = {
-        "-class=<fully qualified name of the class>\n"+
+        "-class=<the fully qualified name of the class>\n"+
             "-method=<name and/or parts of the signature>"
     }
 
@@ -55,7 +37,7 @@ abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
     ): BasicReport = {
         implicit val logContext = p.logContext
 
-        // Find the class that we want to analyze.
+        // Find the class(es) that we want to analyze.
         // (Left as an exercise: error handling...)
         val className = params.find(_.startsWith("-class=")).get.substring(7).replace('.', '/')
         val methodSignature = params.find(_.startsWith("-method=")).get.substring(8)
