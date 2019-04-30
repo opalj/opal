@@ -2,6 +2,8 @@
 
 ## Upcoming (3.0.0)
 - Hermes was promoted to a real project: TOOLS/hermes
+- renamed `DefaultOneStepAnalysis` to `ProjectAnalysisApplication`
+- added support for analyses using the monotone framework; the monotone framework itself was added to `CFG`
 - the three-address code has been moved to its own subproject (`ThreeAddressCode`) in the folder OPAL/tac
 - fixed the name of the static analysis infrastructure project (the name of the project on Maven Central has changed)
 - vastly improved PropertyStore with support for Transformers
