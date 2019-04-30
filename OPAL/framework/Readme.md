@@ -1,4 +1,4 @@
 #Overview
-The Abstract Interpretation Framework is a framework for the abstract interpretation of Java bytecode.
-The framework can directly be used to perform data- and control-flow analyses, but 
-it is primarily meant to be adapted by users to their special needs.
+This project aggregates all core projects belonging to OPAL. Hence, in most cases it is sufficient/recommended to just declare a dependency to this project to get a consistent snapshot of all sub projects. 
+
+This project primarily contains configuration files that are targeted at specific use cases. 
