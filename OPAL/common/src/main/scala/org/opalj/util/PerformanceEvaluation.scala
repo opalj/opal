@@ -290,9 +290,9 @@ object PerformanceEvaluation {
         var runsSinceLastUpdate = 0
         var times = List.empty[Nanoseconds]
         if (runGC) gc()
-        time { f } { t ⇒
+        time { result = f } { t ⇒
             times = t :: times
-            if (t.timeSpan <= 199999) { // < 2 milliseconds
+            if (t.timeSpan <= 999/*ns*/) {
                 r(t, times)
                 OPALLogger.warn(
                     "common",
