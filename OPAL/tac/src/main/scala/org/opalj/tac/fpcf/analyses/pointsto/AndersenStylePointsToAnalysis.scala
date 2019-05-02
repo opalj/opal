@@ -233,6 +233,32 @@ class AndersenStylePointsToAnalysis private[analyses] (
         }
     }
 
+    private[this] def handleCall(
+        call: Call[DUVar[ValueInformation]], pc: Int
+    )(implicit state: PointsToState): Unit = {
+        val targets = state.callees(ps).callees(pc)
+        for (target ← targets) {
+            val fps = formalParameters(target)
+
+            if (fps != null) {
+                val receiverOpt = call.receiverOption
+                // handle receiver for non static methods
+                if (receiverOpt.isDefined) {
+                    val fp = fps(0)
+                    handleDefSites(fp, receiverOpt.get.asVar.definedBy)
+                }
+
+                // handle params
+                for (i ← 0 until target.descriptor.parametersCount) {
+                    val fp = fps(i + 1)
+                    handleDefSites(fp, call.params(i).asVar.definedBy)
+                }
+            } else {
+                // todo handle library methods, where no formal params exists
+            }
+        }
+    }
+
     private[this] def processMethod(implicit state: PointsToState): ProperPropertyComputationResult = {
         val tac = state.tac
         val method = state.method.definedMethod
@@ -319,27 +345,10 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 throw new IllegalArgumentException(s"unexpected assignment: $stmt")
 
             case call: Call[_] ⇒
-                val targets = state.callees(ps).callees(call.pc)
-                for (target ← targets) {
-                    val fps = formalParameters(target)
+                handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], call.pc)
 
-                    if (fps != null) {
-                        val receiverOpt = call.receiverOption
-                        // handle receiver for non static methods
-                        if (receiverOpt.isDefined) {
-                            val fp = fps(0)
-                            handleDefSites(fp, receiverOpt.get.asVar.asInstanceOf[DUVar[ValueInformation]].definedBy)
-                        }
-
-                        // handle params
-                        for (i ← 0 until target.descriptor.parametersCount) {
-                            val fp = fps(i + 1)
-                            handleDefSites(fp, call.params(i).asVar.asInstanceOf[DUVar[ValueInformation]].definedBy)
-                        }
-                    } else {
-                        // todo handle library methods, where no formal params exists
-                    }
-                }
+            case ExprStmt(pc, call: Call[_]) ⇒
+                handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
             case ArrayStore(_, arrayRef, _, UVar(_, defSites)) if isArrayOfObjectType(arrayRef.asVar) ⇒
                 val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
@@ -366,6 +375,8 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
             case _ ⇒
         }
+
+        // todo: we have to handle the exceptions that might be thrown by this method
 
         returnResult
     }
@@ -409,7 +420,6 @@ class AndersenStylePointsToAnalysis private[analyses] (
      */
     @inline private[this] def returnResult(implicit state: PointsToState): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
-
         if (state.hasOpenDependees) results += InterimPartialResult(state.dependees, c(state))
 
         for ((e, pointsToSet) ← state.pointsToSets) {
@@ -453,9 +463,12 @@ class AndersenStylePointsToAnalysis private[analyses] (
     @inline private[this] def handleEOptP(
         depender: Entity, dependeeDefSite: Int
     )(implicit state: PointsToState): UIDSet[ObjectType] = {
-        if (ai.isImplicitOrExternalException(dependeeDefSite)) {
+        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
+            UIDSet(ObjectType.Exception) // todo ask what exception has been thrown
+        } else if (ai.isImmediateVMException(dependeeDefSite)) {
             // todo -  we need to get the actual exception type here
             UIDSet(ObjectType.Exception)
+
         } else {
             handleEOptP(depender, toEntity(dependeeDefSite))
         }
