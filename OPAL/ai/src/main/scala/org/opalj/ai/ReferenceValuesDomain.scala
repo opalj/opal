@@ -7,7 +7,7 @@ import org.opalj.br.{ReferenceType, ArrayType, FieldType}
 /**
  * Domain that defines all methods that perform computations related to `RefernceValues`.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
 

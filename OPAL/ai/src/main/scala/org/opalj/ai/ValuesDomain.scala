@@ -20,7 +20,7 @@ import org.opalj.br.Type
  *
  * @see [[Domain]] For an explanation of the underlying concepts and ideas.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait ValuesDomain { domain ⇒

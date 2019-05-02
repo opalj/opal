@@ -12,7 +12,7 @@ import org.opalj.br.ObjectType
  *
  * (Linkage related exceptions are currently generally ignored.)
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait TypeLevelFieldAccessInstructions extends FieldAccessesDomain {
     domain: ReferenceValuesDomain with TypedValuesFactory with Configuration ⇒

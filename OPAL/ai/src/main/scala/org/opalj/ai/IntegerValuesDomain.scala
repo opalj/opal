@@ -6,7 +6,7 @@ package ai
  * Defines the public interface between the abstract interpreter and the domain
  * that implements the functionality related to the handling of `int`eger values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
 

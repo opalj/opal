@@ -54,7 +54,6 @@ object ClassHierarchyExtractor {
             println("Usage:     java …ClassHierarchy supertype filterprefix <JAR|JMOD file>+")
             println("Example:   … java.lang.Enum \"\" .../rt.jar")
             println("           lists all subclasses of java.lang.Enum in rt.jar; \"\" effectively disables the filter.")
-            println("Copyright: 2015, 2018 Michael Eichberg (eichberg@informatik.tu-darmstadt.de)")
             sys.exit(-1)
         }
 
