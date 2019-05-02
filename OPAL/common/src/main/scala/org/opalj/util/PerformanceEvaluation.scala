@@ -260,7 +260,7 @@ object PerformanceEvaluation {
      *           1. The first parameter is the last execution time of `f`.
      *           1. The last parameter is the list of times required to evaluate `f` that are taken
      *          into consideration when calculating the average.
-     * @param   runGC If `true` the garbage collector is run using `PerformanceEvaluation.gc()`
+     * @param   runGC If `true` the garbage collector is run using `org.opalj.util.gc()`
      *          before each run. This may be necessary to get reasonable stable behavior between
      *          multiple runs. However, if each run takes very long and the VM has to perform
      *          garbage collection as part of executing f (and also has to increase the JVM's heap)
