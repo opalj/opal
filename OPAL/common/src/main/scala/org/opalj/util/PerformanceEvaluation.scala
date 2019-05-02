@@ -292,7 +292,7 @@ object PerformanceEvaluation {
         if (runGC) gc()
         time { result = f } { t ⇒
             times = t :: times
-            if (t.timeSpan <= 999/*ns*/) {
+            if (t.timeSpan <= 999 /*ns*/ ) {
                 r(t, times)
                 OPALLogger.warn(
                     "common",
