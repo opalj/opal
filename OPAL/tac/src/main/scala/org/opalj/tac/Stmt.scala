@@ -81,14 +81,18 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
 }
 
 /**
+ * Representation of a conditional jump, where we jump to the given target if the condition
+ * evaluates to true.
+ *
  * @param target Index in the statements array.
  * @param left The expression left to the relational operator. In general, this can be expected to
- *             be a Var. However, it is an expression to facilitate advanced use cases such as
- *             generating source code.
+ *        be a Var or Const.
+ *        However, it is an expression to facilitate advanced use cases such as
+ *        generating source code.
  * @param right The expression right to the relational operator. In general, this can be expected to
- *             be a Var. However, it is an expression to facilitate advanced use cases such as
- *             generating source code.
- *
+ *        be a Var or Const.
+ *        However, it is an expression to facilitate advanced use cases such as
+ *        generating source code.
  */
 case class If[+V <: Var[V]](
         pc:                      PC,
@@ -268,9 +272,9 @@ object JSR {
  */
 case class Switch[+V <: Var[V]](
         pc:                        PC,
-        private var defaultTarget: PC,
+        private var defaultTarget: Int,
         index:                     Expr[V],
-        private var npairs:        RefArray[IntIntPair /*(Int, PC)*/ ]
+        private var npairs:        RefArray[IntIntPair /*(Case Value, Jump Target)*/ ]
 ) extends Stmt[V] {
 
     final override def asSwitch: this.type = this
@@ -338,7 +342,7 @@ object AssignmentLikeStmt {
 }
 
 case class Assignment[+V <: Var[V]](
-        pc:        Int,
+        pc:        PC,
         targetVar: V,
         expr:      Expr[V]
 ) extends AssignmentLikeStmt[V] {
@@ -520,7 +524,7 @@ object MonitorExit {
 }
 
 case class ArrayStore[+V <: Var[V]](
-        pc:       Int,
+        pc:       PC,
         arrayRef: Expr[V],
         index:    Expr[V],
         value:    Expr[V]
@@ -559,7 +563,7 @@ object ArrayStore {
     final val ASTID = 11
 }
 
-case class Throw[+V <: Var[V]](pc: Int, exception: Expr[V]) extends Stmt[V] {
+case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
     final override def asThrow: this.type = this
     final override def astID: Int = Throw.ASTID
@@ -1063,7 +1067,7 @@ object StaticFunctionCallStatement {
  * @note `CaughtException` expression are only created by [[TACAI]]!
  */
 case class CaughtException[+V <: Var[V]](
-        pc:                        Int,
+        pc:                        PC,
         exceptionType:             Option[ObjectType],
         private var throwingStmts: IntTrieSet
 ) extends Stmt[V] {
