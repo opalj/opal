@@ -57,7 +57,7 @@ trait IntSet[T <: IntSet[T]] { intSet: T ⇒
     }
 
     final def ++(that: T): T = {
-        if (this.size > that.size)
+        if (this.size >= that.size)
             that.foldLeft(this)(_ + _) // we expand `this` since `this` is larger
         else
             this.foldLeft(that)(_ + _) // we expand `that`
