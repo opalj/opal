@@ -956,6 +956,7 @@ object BugPicker {
         ))
     }
 
+    // TODO Remove and use variant found in "common"
     def renderConfig(config: Config, withComments: Boolean = true): String = {
         val renderingOptions = ConfigRenderOptions.
             defaults().

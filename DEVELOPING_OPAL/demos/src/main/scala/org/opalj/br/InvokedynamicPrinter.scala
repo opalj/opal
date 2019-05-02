@@ -32,7 +32,6 @@ object InvokedynamicPrinter extends ProjectAnalysisApplication {
         cpFiles:                 Iterable[File],
         libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
-        projectType:             ProjectType,
         fallbackConfiguration:   Config
     )(
         implicit
@@ -40,7 +39,7 @@ object InvokedynamicPrinter extends ProjectAnalysisApplication {
     ): Project[URL] = {
         val baseConfig = invokedynamicRewritingConfig(rewrite = false, logRewrites = true)
         val config = baseConfig.withFallback(fallbackConfiguration)
-        super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, projectType, config)
+        super.setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
     }
 
     override def description: String = "Prints information about invokedynamic instructions."

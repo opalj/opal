@@ -7,6 +7,9 @@ import java.lang.management.ManagementFactory
 
 import scala.util.Properties.versionNumberString
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigRenderOptions
+
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
 
@@ -80,6 +83,16 @@ package object util {
             run += 1
         } while (memoryMXBean.getObjectPendingFinalizationCount() > 0 &&
             ns2ms(System.nanoTime() - startTime) < maxGCTime.timeSpan)
+    }
+
+    def renderConfig(config: Config, withComments: Boolean = true): String = {
+        val renderingOptions = ConfigRenderOptions.
+            defaults().
+            setOriginComments(false).
+            setComments(withComments).
+            setJson(false)
+        val opalConf = config.withOnlyPath("org")
+        opalConf.root().render(renderingOptions)
     }
 
 }
