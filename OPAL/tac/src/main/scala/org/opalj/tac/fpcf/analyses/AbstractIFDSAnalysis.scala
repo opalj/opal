@@ -324,8 +324,8 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             collectResult(state.cfg.abnormalReturnNode)
         ))
 
-        var dependees: Set[SomeEOptionP] = state.pendingIfdsDependees.values.toSet
-        if (state.cgDependency.isDefined) dependees += state.cgDependency.get
+        var dependees: Iterable[SomeEOptionP] = state.pendingIfdsDependees.values
+        if (state.cgDependency.isDefined) dependees ++= Seq(state.cgDependency.get)
 
         if (dependees.isEmpty) {
             Result(state.source, propertyValue)
