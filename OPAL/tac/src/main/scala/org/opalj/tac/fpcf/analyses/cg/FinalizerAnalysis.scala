@@ -14,6 +14,7 @@ import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.DeclaredMethod
@@ -104,4 +105,6 @@ object TriggeredFinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisSch
         ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
+
+    override def triggeredBy: PropertyKind = CallersProperty
 }

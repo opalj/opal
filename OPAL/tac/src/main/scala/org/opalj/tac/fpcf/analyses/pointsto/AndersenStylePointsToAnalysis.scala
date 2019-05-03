@@ -23,6 +23,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -557,4 +558,6 @@ object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisSched
         ps:       PropertyStore,
         analysis: FPCFAnalysis
     ): Unit = {}
+
+    override def triggeredBy: PropertyKind = CallersProperty
 }

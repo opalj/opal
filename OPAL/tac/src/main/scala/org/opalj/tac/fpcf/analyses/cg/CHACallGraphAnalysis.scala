@@ -20,6 +20,7 @@ import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -232,4 +233,6 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
         ps:       PropertyStore,
         analysis: FPCFAnalysis
     ): Unit = {}
+
+    override def triggeredBy: PropertyKind = CallersProperty
 }

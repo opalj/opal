@@ -17,6 +17,7 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.fpcf.cg.properties.NoCallers
@@ -193,4 +194,6 @@ object TriggeredConfiguredNativeMethodsAnalysis extends BasicFPCFTriggeredAnalys
 
         analysis
     }
+
+    override def triggeredBy: PropertyKind = CallersProperty
 }
