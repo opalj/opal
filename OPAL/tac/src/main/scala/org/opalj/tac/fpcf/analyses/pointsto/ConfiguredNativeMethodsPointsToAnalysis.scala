@@ -99,46 +99,54 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
 
         // for each configured points to relation, add all points-to info from the rhs to the lhs
         for (PointsToRelation(lhs, rhs) ← data) {
-            // todo handle allocations
-            val pointsToEOptP = propertyStore(rhs.entity, PointsTo.key)
+            rhs match {
+                case asd: AllocationSiteDescription ⇒
+                    val pts = UIDSet(ObjectType(asd.instantiatedType))
+                    results += createPartialResultOpt(lhs.entity, pts).get
+                case _ ⇒
+                    val pointsToEOptP = propertyStore(rhs.entity, PointsTo.key)
 
-            // the points-to set associated with the rhs
-            val pts: UIDSet[ObjectType] =
-                if (pointsToEOptP.hasUBP)
-                    pointsToEOptP.ub.types
-                else
-                    UIDSet.empty
+                    // the points-to set associated with the rhs
+                    val pts: UIDSet[ObjectType] =
+                        if (pointsToEOptP.hasUBP)
+                            pointsToEOptP.ub.types
+                        else
+                            UIDSet.empty
 
-            // only create a partial result if there is some information to apply
-            // partial result that updates the points-to information
-            val prOpt = if (pts.nonEmpty) {
-                Some(PartialResult[Entity, PointsTo](lhs.entity, PointsTo.key, {
-                    case InterimUBP(ub: PointsTo) ⇒
-                        // here we assert that updated returns the identity if pts is already contained
-                        val newUB = ub.updated(pts)
-                        if (newUB eq ub) {
-                            None
-                        } else {
-                            Some(InterimEUBP(lhs.entity, newUB))
-                        }
-                    case _: EPK[Entity, PointsTo] ⇒
-                        Some(InterimEUBP(lhs.entity, PointsTo(pts)))
+                    // only create a partial result if there is some information to apply
+                    // partial result that updates the points-to information
+                    val prOpt = createPartialResultOpt(lhs.entity, pts)
 
-                    case fep: FinalEP[Entity, PointsTo] ⇒
-                        throw new IllegalStateException(s"unexpected final value $fep")
-                }))
-            } else
-                None
-
-            // if the rhs is not yet final, we need to get updated if it changes
-            if (pointsToEOptP.isRefinable) {
-                results += InterimPartialResult(prOpt, Some(pointsToEOptP), c(lhs.entity, pointsToEOptP))
-            } else if (prOpt.isDefined) {
-                results += prOpt.get
+                    // if the rhs is not yet final, we need to get updated if it changes
+                    if (pointsToEOptP.isRefinable) {
+                        results += InterimPartialResult(prOpt, Some(pointsToEOptP), c(lhs.entity, pointsToEOptP))
+                    } else if (prOpt.isDefined) {
+                        results += prOpt.get
+                    }
             }
-
         }
         Results(results)
+    }
+
+    private[this] def createPartialResultOpt(lhs: Entity, newPointsTo: UIDSet[ObjectType]) = {
+        if (newPointsTo.nonEmpty) {
+            Some(PartialResult[Entity, PointsTo](lhs, PointsTo.key, {
+                case InterimUBP(ub: PointsTo) ⇒
+                    // here we assert that updated returns the identity if pts is already contained
+                    val newUB = ub.updated(newPointsTo)
+                    if (newUB eq ub) {
+                        None
+                    } else {
+                        Some(InterimEUBP(lhs, newUB))
+                    }
+                case _: EPK[Entity, PointsTo] ⇒
+                    Some(InterimEUBP(lhs, PointsTo(newPointsTo)))
+
+                case fep: FinalEP[Entity, PointsTo] ⇒
+                    throw new IllegalStateException(s"unexpected final value $fep")
+            }))
+        } else
+            None
     }
 
     private[this] def c(

@@ -5,19 +5,17 @@ package fpcf
 package analyses
 package pointsto
 
-import net.ceedubs.ficus.Ficus._
+import scala.collection.JavaConverters._
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
-
-import scala.collection.JavaConverters._
 
 import org.opalj.fpcf.Entity
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.FieldType
-import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
@@ -28,8 +26,9 @@ case class ConfiguredNativeMethods(nativeMethods: Array[NativeMethodData])
 object ConfiguredNativeMethods {
     implicit val reader: ValueReader[ConfiguredNativeMethods] = (config: Config, path: String) ⇒ {
         val c = config.getConfig(path)
-        val data = c.getConfigList("nativeMethods").asScala.map(c ⇒ NativeMethodData.reader.read(c, ""))
-        ConfiguredNativeMethods(data.toArray)
+        val configs = c.getConfigList("nativeMethods").asScala.toArray
+        val data = configs.map(c ⇒ NativeMethodData.reader.read(c, ""))
+        ConfiguredNativeMethods(data)
     }
 }
 
@@ -52,7 +51,7 @@ case class NativeMethodData(
 
 object NativeMethodData {
     implicit val reader: ValueReader[NativeMethodData] = (config: Config, path: String) ⇒ {
-        val c = config.getConfig(path)
+        val c = if (path.nonEmpty) config.getConfig(path) else config
         val cf = c.as[String]("cf")
         val name = c.getString("name")
         val desc = c.getString("desc")
@@ -75,7 +74,7 @@ object NativeMethodData {
 case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
 object PointsToRelation {
     implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) ⇒ {
-        val c = config.getConfig(path)
+        val c = if (path.nonEmpty) config.getConfig(path) else config
         val lhs = EntityDescription.reader.read(c, "lhs")
         val rhs = EntityDescription.reader.read(c, "rhs")
         PointsToRelation(lhs, rhs)
@@ -184,15 +183,6 @@ case class AllocationSiteDescription(
         declaredMethods:         DeclaredMethods,
         virtualFormalParameters: VirtualFormalParameters
     ): Entity = {
-        val classType = ObjectType(cf)
-        val descriptor = MethodDescriptor(desc)
-        val dm = declaredMethods(classType, classType.packageName, classType, name, descriptor)
-        val it = ObjectType(instantiatedType)
-        // todo: use DefinitionSitesKey
-        // todo: should be safe to use even if dm has no defined method
-        new AllocationSite(dm.definedMethod, -1, it)
+        throw new RuntimeException("this should only be used as rhs and not be stored in the property store")
     }
 }
-
-// todo move class
-class AllocationSite(method: Method, pc: Int, instantiatedType: ObjectType)
