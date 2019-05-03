@@ -37,10 +37,6 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
-import org.opalj.tac.GetField
-import org.opalj.tac.GetStatic
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Stmt
 import org.opalj.tac.Var
@@ -96,7 +92,7 @@ class BasicIFDSTaintAnalysis private (
                 else if (index.isDefined && definedBy.size == 1) // Untaint if possible
                     in - ArrayElement(definedBy.head, index.get)
                 else in
-            case PutStatic.ASTID ⇒
+            /*case PutStatic.ASTID ⇒
                 val put = stmt.stmt.asPutStatic
                 if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
                 else in - StaticField(put.declaringClass, put.name)
@@ -107,7 +103,7 @@ class BasicIFDSTaintAnalysis private (
                     in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
                 else if (definedBy.size == 1) // Untaint if object is known precisely
                     in - InstanceField(definedBy.head, put.declaringClass, put.name)
-                else in
+                else in*/
             case _ ⇒ in
         }
 
@@ -171,7 +167,7 @@ class BasicIFDSTaintAnalysis private (
                     in + Variable(stmt.index)
                 else
                     in
-            case GetStatic.ASTID ⇒
+            /*case GetStatic.ASTID ⇒
                 val get = expr.asGetStatic
                 if (in.contains(StaticField(get.declaringClass, get.name)))
                     in + Variable(stmt.index)
@@ -188,7 +184,7 @@ class BasicIFDSTaintAnalysis private (
                 })
                     in + Variable(stmt.index)
                 else
-                    in
+                    in*/
             case _ ⇒ in
         }
 
@@ -232,7 +228,7 @@ class BasicIFDSTaintAnalysis private (
                             ArrayElement(paramToIndex(pIndex, !callee.definedMethod.isStatic), taintedIndex)
                     }
 
-                case InstanceField(index, declClass, taintedField) ⇒
+                /*case InstanceField(index, declClass, taintedField) ⇒
                     // Taint field of formal parameter if field of actual parameter is tainted
                     // Only if the formal parameter is of a type that may have that field!
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
@@ -241,7 +237,7 @@ class BasicIFDSTaintAnalysis private (
                                 classHierarchy.isSubtypeOf(declClass, callee.declaringClassType)) ⇒
                             InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
                     }
-                case sf: StaticField ⇒ Set(sf)
+                case sf: StaticField ⇒ Set(sf)*/
             }.flatten
         } else Set.empty
     }
@@ -292,7 +288,7 @@ class BasicIFDSTaintAnalysis private (
                         val param =
                             allParams(paramToIndex(index, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
-                    case sf: StaticField ⇒ flows += sf
+                    //case sf: StaticField ⇒ flows += sf
                     case FlowFact(flow) ⇒
                         val newFlow = flow + stmt.method
                         if (entryPoints.contains(declaredMethods(exit.method))) {
