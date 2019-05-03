@@ -5,14 +5,12 @@ package fpcf
 package analyses
 package cg
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.analyses.SomeProject
@@ -26,8 +24,8 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethods
 import org.opalj.tac.fpcf.analyses.pointsto.MethodDescription
-import org.opalj.tac.fpcf.analyses.pointsto.NativeMethodData
 
 /**
  * Add calls from configured native methods to the call graph.
@@ -44,10 +42,10 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private[this] implicit val virtualFormalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Seq[MethodDescription]]] = {
-        p.config.as[Iterator[NativeMethodData]](
-            "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis.nativeMethods"
-        ).map { v ⇒ (v.method, v.methodInvocations) }.toMap
+    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
+        ConfiguredNativeMethods.reader.read(
+            p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
+        ).nativeMethods.map { v ⇒ (v.method, v.methodInvocations) }.toMap
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
@@ -120,4 +118,9 @@ object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends FPCFTriggeredAn
         ps:       PropertyStore,
         analysis: FPCFAnalysis
     ): Unit = {}
+
+    /**
+     * Specifies the kind of the properties that will trigger the analysis to be registered.
+     */
+    override def triggeredBy: PropertyKind = CallersProperty
 }

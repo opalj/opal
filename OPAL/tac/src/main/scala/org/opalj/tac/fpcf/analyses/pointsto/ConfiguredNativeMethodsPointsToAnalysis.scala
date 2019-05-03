@@ -7,14 +7,12 @@ package pointsto
 
 import scala.collection.mutable.ArrayBuffer
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
@@ -24,6 +22,7 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -57,10 +56,10 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private[this] implicit val virtualFormalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
 
-    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Seq[PointsToRelation]]] = {
-        p.config.as[Iterator[NativeMethodData]](
-            "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis.nativeMethods"
-        ).map { v ⇒ (v.method, v.pointsTo) }.toMap
+    private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
+        ConfiguredNativeMethods.reader.read(
+            p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
+        ).nativeMethods.map { v ⇒ (v.method, v.pointsTo) }.toMap
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
@@ -124,6 +123,9 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
                         }
                     case _: EPK[Entity, PointsTo] ⇒
                         Some(InterimEUBP(lhs.entity, PointsTo(pts)))
+
+                    case fep: FinalEP[Entity, PointsTo] ⇒
+                        throw new IllegalStateException(s"unexpected final value $fep")
                 }))
             } else
                 None
@@ -159,8 +161,12 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
                         } else {
                             Some(InterimEUBP(lhs, newUB))
                         }
+
                     case _: EPK[Entity, PointsTo] ⇒
                         Some(InterimEUBP(lhs, PointsTo(rhsUB.types)))
+
+                    case fep: FinalEP[Entity, PointsTo] ⇒
+                        throw new IllegalStateException(s"unexpected final value $fep")
                 })
 
                 if (rhsIsFinal) {
@@ -171,6 +177,8 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
                     )
                 }
             }
+        case _ ⇒
+            throw new IllegalArgumentException(s"unexpected update $eps")
     }
 }
 
@@ -208,4 +216,9 @@ object ConfiguredNativeMethodsPointsToAnalysisScheduler extends FPCFTriggeredAna
         ps:       PropertyStore,
         analysis: FPCFAnalysis
     ): Unit = {}
+
+    /**
+     * Specifies the kind of the properties that will trigger the analysis to be registered.
+     */
+    override def triggeredBy: PropertyKind = CallersProperty
 }

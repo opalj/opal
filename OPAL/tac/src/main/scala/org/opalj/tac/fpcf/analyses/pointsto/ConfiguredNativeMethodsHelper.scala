@@ -5,6 +5,13 @@ package fpcf
 package analyses
 package pointsto
 
+import net.ceedubs.ficus.Ficus._
+
+import com.typesafe.config.Config
+import net.ceedubs.ficus.readers.ValueReader
+
+import scala.collection.JavaConverters._
+
 import org.opalj.fpcf.Entity
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.DeclaredMethod
@@ -16,7 +23,64 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.tac.common.DefinitionSite
+
+case class ConfiguredNativeMethods(nativeMethods: Array[NativeMethodData])
+object ConfiguredNativeMethods {
+    implicit val reader: ValueReader[ConfiguredNativeMethods] = (config: Config, path: String) ⇒ {
+        val c = config.getConfig(path)
+        val data = c.getConfigList("nativeMethods").asScala.map(c ⇒ NativeMethodData.reader.read(c, ""))
+        ConfiguredNativeMethods(data.toArray)
+    }
+}
+
+case class NativeMethodData(
+        cf:                String,
+        name:              String,
+        desc:              String,
+        pointsTo:          Option[Array[PointsToRelation]],
+        methodInvocations: Option[Array[MethodDescription]]
+) {
+    def method(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): DeclaredMethod = {
+        val classType = ObjectType(cf)
+        val descriptor = MethodDescriptor(desc)
+        declaredMethods(classType, classType.packageName, classType, name, descriptor)
+    }
+}
+
+object NativeMethodData {
+    implicit val reader: ValueReader[NativeMethodData] = (config: Config, path: String) ⇒ {
+        val c = config.getConfig(path)
+        val cf = c.as[String]("cf")
+        val name = c.getString("name")
+        val desc = c.getString("desc")
+        val pointsTo =
+            if (c.hasPath("pointsTo"))
+                Some(c.getConfigList("pointsTo").asScala.toArray.map(c ⇒ PointsToRelation.reader.read(c, "")))
+            else
+                None
+
+        val methodInvocations =
+            if (c.hasPath("methodInvocations"))
+                Some(c.getConfigList("methodInvocations").asScala.toArray.map(c ⇒ MethodDescription.reader.read(c, "")))
+            else
+                None
+
+        NativeMethodData(cf, name, desc, pointsTo, methodInvocations)
+    }
+}
+
+case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
+object PointsToRelation {
+    implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) ⇒ {
+        val c = config.getConfig(path)
+        val lhs = EntityDescription.reader.read(c, "lhs")
+        val rhs = EntityDescription.reader.read(c, "rhs")
+        PointsToRelation(lhs, rhs)
+    }
+}
 
 sealed trait EntityDescription {
     def entity(
@@ -25,6 +89,31 @@ sealed trait EntityDescription {
         declaredMethods:         DeclaredMethods,
         virtualFormalParameters: VirtualFormalParameters
     ): Entity
+}
+object EntityDescription {
+    implicit val reader: ValueReader[EntityDescription] = (config: Config, path: String) ⇒ {
+        val c = config.getConfig(path)
+        if (c.hasPath("fieldType")) {
+            val cf = c.getString("cf")
+            val name = c.getString("name")
+            val fieldType = c.getString("fieldType")
+            FieldDescription(cf, name, fieldType)
+        } else if (c.hasPath("index")) {
+            val cf = c.getString("cf")
+            val name = c.getString("name")
+            val desc = c.getString("desc")
+            val index = c.getInt("index")
+            ParameterDescription(cf, name, desc, index)
+        } else if (c.hasPath("instantiatedType")) {
+            val cf = c.getString("cf")
+            val name = c.getString("name")
+            val desc = c.getString("desc")
+            val instantiatedType = c.getString("instantiatedType")
+            AllocationSiteDescription(cf, name, desc, instantiatedType)
+        } else /*MethodDescription*/ {
+            MethodDescription.reader.read(c, "")
+        }
+    }
 }
 
 case class MethodDescription(
@@ -42,6 +131,15 @@ case class MethodDescription(
     }
 }
 
+object MethodDescription {
+    implicit val reader: ValueReader[MethodDescription] = (c: Config, path: String) ⇒ {
+        val cf = c.getString("cf")
+        val name = c.getString("name")
+        val desc = c.getString("desc")
+        MethodDescription(cf, name, desc)
+    }
+}
+
 case class FieldDescription(
         cf: String, name: String, fieldType: String
 ) extends EntityDescription {
@@ -52,8 +150,8 @@ case class FieldDescription(
         virtualFormalParameters: VirtualFormalParameters
     ): Field = {
         val classType = ObjectType(cf)
-        val fieldType = FieldType(fieldType)
-        val fieldOption = p.resolveFieldReference(classType, name, fieldType)
+        val ft = FieldType(fieldType)
+        val fieldOption = p.resolveFieldReference(classType, name, ft)
         if (fieldOption.isEmpty) {
             throw new RuntimeException(s"specified field $this is not part of the project.")
         }
@@ -92,32 +190,9 @@ case class AllocationSiteDescription(
         val it = ObjectType(instantiatedType)
         // todo: use DefinitionSitesKey
         // todo: should be safe to use even if dm has no defined method
-        AllocationSite(dm.definedMethod, -1, it)
+        new AllocationSite(dm.definedMethod, -1, it)
     }
 }
 
 // todo move class
-case class AllocationSite(
-    override val method: Method, override val pc: Int, instantiatedType: ObjectType
-) extends DefinitionSite(method, pc)
-
-case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
-
-case class NativeMethodData(
-        cf:                String,
-        name:              String,
-        desc:              String,
-        pointsTo:          Option[Seq[PointsToRelation]],
-        methodInvocations: Option[Seq[MethodDescription]]
-) {
-    def method(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): DeclaredMethod = {
-        val classType = ObjectType(cf)
-        val descriptor = MethodDescriptor(desc)
-        declaredMethods(classType, classType.packageName, classType, name, descriptor)
-    }
-}
+class AllocationSite(method: Method, pc: Int, instantiatedType: ObjectType)
