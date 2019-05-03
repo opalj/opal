@@ -23,8 +23,10 @@ class FlowPathMatcher extends AbstractPropertyMatcher {
         val expectedFlow = a.elementValuePairs.map((evp: ElementValuePair) ⇒
             evp.value.asArrayValue.values.map((value: ElementValue) ⇒
                 value.asStringValue.value)).head
-        val taint = properties.filter(_.isInstanceOf[Taint]).head.asInstanceOf[Taint]
-        val flows = (taint.normalExitFacts.values ++ taint.abnormalExitFacts.values)
+        val flows = properties.filter(_.isInstanceOf[Taint]).head
+            .asInstanceOf[Taint]
+            .flows
+            .values
             .fold(Set.empty)((acc, facts) ⇒ acc ++ facts)
             .collect {
                 case FlowFact(methods) ⇒ methods.map(_.name)

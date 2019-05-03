@@ -66,8 +66,8 @@ class TestTaintAnalysis private (
 
     override val propertyKey: IFDSPropertyMetaInformation[Fact] = Taint
 
-    override def createPropertyValue(normalExitFacts: Map[Statement, Set[Fact]], abnormalExitFacts: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
-        new Taint(normalExitFacts, abnormalExitFacts)
+    override def createPropertyValue(result: Map[Statement, Set[Fact]]): IFDSProperty[Fact] = {
+        new Taint(result)
     }
 
     override def normalFlow(stmt: Statement, succ: Statement, in: Set[Fact]): Set[Fact] =
@@ -385,7 +385,7 @@ object TestTaintAnalysis extends IFDSAnalysis[Fact] {
     override def property: IFDSPropertyMetaInformation[Fact] = Taint
 }
 
-class Taint(val normalExitFacts: Map[Statement, Set[Fact]], val abnormalExitFacts: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
+class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
 
     override type Self = Taint
 
@@ -397,11 +397,11 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
 
     val key: PropertyKey[Taint] = PropertyKey.create(
         "TestTaint",
-        new Taint(Map.empty, Map.empty)
+        new Taint(Map.empty)
     )
 }
 
-object BasicIFDSTaintAnalysisRunner {
+object BasicIFDSTaintAnalysisRunnter {
 
     def main(args: Array[String]): Unit = {
         if (args.contains("--help")) {
@@ -461,7 +461,7 @@ object BasicIFDSTaintAnalysisRunner {
         for {
             e ← entryPoints
             flows = ps(e, TestTaintAnalysis.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].normalExitFacts.values.flatten.toSet[Fact]
+            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
         } {
             fact match {
                 case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
