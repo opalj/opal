@@ -5,12 +5,11 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
 import java.io.File
+import java.io.InputStream
 import java.io.PrintWriter
 import java.net.URL
 import javafx.event.EventHandler
 import javafx.scene.control.CheckBoxTreeItem
-import javafx.beans.value.ChangeListener
-import javafx.beans.value.ObservableValue
 import javafx.concurrent.Worker.State
 
 import netscape.javascript.JSObject
@@ -182,9 +181,9 @@ object Visualization {
         }
     }
 
-    private val scripts = Map[String, String](
-        "BubbleChart" -> getClass.getResource("d3js/bubbleChart.js").getPath,
-        "BubblePieChart" -> getClass.getResource("d3js/bubblePieChart.js").getPath
+    private val scripts = Map[String, URL](
+        "BubbleChart" -> getClass.getResource("d3js/bubbleChart.js"),
+        "BubblePieChart" -> getClass.getResource("d3js/bubblePieChart.js")
     )
 
     private class OptionDetails(val description: String, val selected: Boolean)
@@ -194,208 +193,201 @@ object Visualization {
         "Pies" -> new OptionDetails("Show Pie Labels", true)
     )
 
-    def display(
-        mainStage:     Stage,
-        featureMatrix: ObservableBuffer[ProjectFeatures[URL]]
-    ): Stage = new Stage() { stage ⇒
-        title = "Query Result Visualization"
-        private val screenBounds = Screen.primary.visualBounds
-        private val scaling = 0.67
-        scene = new Scene(screenBounds.width * scaling, screenBounds.height * scaling) {
-            root = new VBox {
-                // setup WebView
-                val webView: WebView = new WebView { contextMenuEnabled = false }
-                val webEngine: WebEngine = webView.engine
-                val stackRight = new StackPane
-                stackRight.children.add(webView)
+    def display(mainStage: Stage, featureMatrix: ObservableBuffer[ProjectFeatures[URL]]): Stage = {
+        new Stage() { stage ⇒
+            title = "Query Result Visualization"
+            private val screenBounds = Screen.primary.visualBounds
+            private val scaling = 0.67
+            scene = new Scene(screenBounds.width * scaling, screenBounds.height * scaling) {
+                root = new VBox {
+                    // setup WebView
+                    val webView: WebView = new WebView { contextMenuEnabled = false }
+                    val webEngine: WebEngine = webView.engine
+                    val stackRight = new StackPane
+                    stackRight.children.add(webView)
 
-                // setup bridge class object
-                val rootSelection: SelectionOption = new SelectionOption("root")
-                val labelOptions = new mutable.HashMap[String, Boolean]
-                val dataProvider = new D3DataProvider(featureMatrix, rootSelection, labelOptions)
+                    // setup bridge class object
+                    val rootSelection: SelectionOption = new SelectionOption("root")
+                    val labelOptions = new mutable.HashMap[String, Boolean]
+                    val dataProvider = new D3DataProvider(featureMatrix, rootSelection, labelOptions)
 
-                // register bridge before loading a script
-                webEngine.getLoadWorker.stateProperty.addListener(
-                    new ChangeListener[State]() {
-                        def changed(
-                            obs:      ObservableValue[_ <: State],
-                            oldState: State, newState: State
-                        ): Unit = {
-                            if (newState == State.SUCCEEDED) {
-                                val bridge = webEngine.executeScript("window").asInstanceOf[JSObject]
-                                bridge.setMember("provider", dataProvider)
-                                val script = loadScript(getClass.getResource("d3js/bubbleChart.js").getPath)
-                                webEngine.executeScript(script)
-                                webEngine.executeScript("init();")
-                                webEngine.executeScript("display();")
-                            }
-                        }
-                    }
-                )
-                // load base canvas
-                webEngine.load(getClass.getResource("d3js/canvas.html").toExternalForm)
-
-                // build tree items for filter options
-                val rootQueries = new CheckBoxTreeItem[String]("root") { setExpanded(true) }
-                val filterItems = new CheckBoxTreeItem[String]("Filter") { setExpanded(true) }
-                rootQueries.getChildren.add(filterItems)
-
-                // statistics
-                val project: ProjectFeatures[URL] = featureMatrix.get(0)
-                val statisticSelection: SelectionOption = new SelectionOption("statistics")
-                rootSelection += statisticSelection
-                val projectStatistic = new CheckBoxTreeItem[String]("Statistics")
-                project.projectConfiguration.statistics foreach { statistic ⇒
-                    projectStatistic.getChildren.add(
-                        factoryCheckBoxTreeItem(statistic._1, statisticSelection)
-                    )
-                }
-                filterItems.getChildren.add(projectStatistic)
-
-                // features
-                val projectFeature = new CheckBoxTreeItem[String]("Features")
-                val featureSelection: SelectionOption = new SelectionOption("features")
-                rootSelection += featureSelection
-                project.featureGroups foreach {
-                    case (group, features) ⇒
-                        val featureGroup = new CheckBoxTreeItem[String](group.id)
-                        features foreach { feature ⇒
-                            featureGroup.getChildren.add(
-                                factoryCheckBoxTreeItem(feature.value.id, featureSelection)
-                            )
-                        }
-                        projectFeature.getChildren.add(featureGroup)
-                }
-                filterItems.getChildren.add(projectFeature)
-
-                val rootProjects = new CheckBoxTreeItem[String]("root") {
-                    setExpanded(true)
-                }
-
-                // project names
-                val projectSelection: SelectionOption = new SelectionOption("projects")
-                rootSelection += projectSelection
-                val projectItems = new CheckBoxTreeItem[String]("Projects") {
-                    setExpanded(true)
-                }
-                featureMatrix foreach { project ⇒
-                    projectItems.getChildren.add(
-                        factoryCheckBoxTreeItem(project.id.value, projectSelection)
-                    )
-                }
-                rootProjects.getChildren.add(projectItems)
-
-                // setup tree view for projects
-                val treeViewProjects: TreeView[String] = new TreeView[String]
-                treeViewProjects.root = rootProjects
-                treeViewProjects.showRoot = false
-                treeViewProjects.cellFactory = CheckBoxTreeCell.forTreeView[String]
-                // set default selection after registering children
-                projectItems.setSelected(true)
-
-                // setup tree view for queries
-                val treeViewQueries: TreeView[String] = new TreeView[String]
-                treeViewQueries.root = rootQueries
-                treeViewQueries.showRoot = false
-                treeViewQueries.cellFactory = CheckBoxTreeCell.forTreeView[String]
-                // set default selection after registering children
-                projectStatistic.setSelected(true)
-
-                // apply button
-                val applyButton = new Button("Apply Filter") {
-                    maxWidth = Double.MaxValue
-                    onAction = handle { webEngine.executeScript("display();") }
-                }
-
-                // setup menu bar
-                val menuFile = new Menu("File")
-                val menuOptions = new Menu("Options")
-                val menuView = new Menu("View")
-
-                // svg export
-                val svgExport = new MenuItem("Export as SVG") {
-                    onAction = handle {
-                        val fileChooser = new FileChooser {
-                            title = "Save as..."
-                            extensionFilters ++= Seq(
-                                new ExtensionFilter("Scalable Vector Graphics", "*.svg")
-                            )
-                        }
-                        val selectedFile = fileChooser.showSaveDialog(mainStage)
-                        if (selectedFile != null) {
-                            val filename = selectedFile.getName
-                            val extension = filename.substring(
-                                filename.lastIndexOf("."),
-                                filename.length()
-                            )
-                            if (extension.equals(".svg")) {
-                                exportSVG(
-                                    selectedFile,
-                                    webEngine.executeScript("exportSVG();").asInstanceOf[String]
-                                )
-                            }
-                        }
-                    }
-                }
-                menuFile.items.addAll(svgExport)
-
-                // label options
-                menuOptions.items = options.map { item ⇒
-                    val (name, options) = item
-                    new CheckMenuItem(options.description) {
-                        onAction = handle {
-                            labelOptions += (name → selected.value)
-                            webEngine.executeScript("display();")
-                        }
-                        if (options.selected) {
-                            selected = options.selected
-                            // manually add to labelOptions if default
-                            labelOptions += (name → selected.value)
-                        }
-                    }
-                }(collection.breakOut): List[CheckMenuItem]
-
-                // view options
-                val viewToggle = new ToggleGroup
-                menuView.items = scripts.map { item ⇒
-                    val (name, path) = item
-                    new RadioMenuItem(name) {
-                        toggleGroup = viewToggle
-                        onAction = handle {
-                            webEngine.executeScript(loadScript(path))
-                            // re-init on view change
+                    // register bridge before loading a script
+                    webEngine.getLoadWorker.stateProperty.addListener((_, _, newState: State) ⇒ {
+                        if (newState == State.SUCCEEDED) {
+                            val bridge = webEngine.executeScript("window").asInstanceOf[JSObject]
+                            bridge.setMember("provider", dataProvider)
+                            val bubbleChartJS = getClass.getResourceAsStream("d3js/bubbleChart.js")
+                            val script = loadScript(bubbleChartJS)
+                            webEngine.executeScript(script)
                             webEngine.executeScript("init();")
                             webEngine.executeScript("display();")
-                            title = stage.title.value+" - "+text.value
+                        }
+                    })
+                    // load base canvas
+                    webEngine.load(getClass.getResource("d3js/canvas.html").toExternalForm)
+
+                    // build tree items for filter options
+                    val rootQueries = new CheckBoxTreeItem[String]("root") { setExpanded(true) }
+                    val filterItems = new CheckBoxTreeItem[String]("Filter") { setExpanded(true) }
+                    rootQueries.getChildren.add(filterItems)
+
+                    // statistics
+                    val project: ProjectFeatures[URL] = featureMatrix.get(0)
+                    val statisticSelection: SelectionOption = new SelectionOption("statistics")
+                    rootSelection += statisticSelection
+                    val projectStatistic = new CheckBoxTreeItem[String]("Statistics")
+                    project.projectConfiguration.statistics foreach { statistic ⇒
+                        projectStatistic.getChildren.add(
+                            factoryCheckBoxTreeItem(statistic._1, statisticSelection)
+                        )
+                    }
+                    filterItems.getChildren.add(projectStatistic)
+
+                    // features
+                    val projectFeature = new CheckBoxTreeItem[String]("Features")
+                    val featureSelection: SelectionOption = new SelectionOption("features")
+                    rootSelection += featureSelection
+                    project.featureGroups foreach {
+                        case (group, features) ⇒
+                            val featureGroup = new CheckBoxTreeItem[String](group.id)
+                            features foreach { feature ⇒
+                                featureGroup.getChildren.add(
+                                    factoryCheckBoxTreeItem(feature.value.id, featureSelection)
+                                )
+                            }
+                            projectFeature.getChildren.add(featureGroup)
+                    }
+                    filterItems.getChildren.add(projectFeature)
+
+                    val rootProjects = new CheckBoxTreeItem[String]("root") {
+                        setExpanded(true)
+                    }
+
+                    // project names
+                    val projectSelection: SelectionOption = new SelectionOption("projects")
+                    rootSelection += projectSelection
+                    val projectItems = new CheckBoxTreeItem[String]("Projects") {
+                        setExpanded(true)
+                    }
+                    featureMatrix foreach { project ⇒
+                        projectItems.getChildren.add(
+                            factoryCheckBoxTreeItem(project.id.value, projectSelection)
+                        )
+                    }
+                    rootProjects.getChildren.add(projectItems)
+
+                    // setup tree view for projects
+                    val treeViewProjects: TreeView[String] = new TreeView[String]
+                    treeViewProjects.root = rootProjects
+                    treeViewProjects.showRoot = false
+                    treeViewProjects.cellFactory = CheckBoxTreeCell.forTreeView[String]
+                    // set default selection after registering children
+                    projectItems.setSelected(true)
+
+                    // setup tree view for queries
+                    val treeViewQueries: TreeView[String] = new TreeView[String]
+                    treeViewQueries.root = rootQueries
+                    treeViewQueries.showRoot = false
+                    treeViewQueries.cellFactory = CheckBoxTreeCell.forTreeView[String]
+                    // set default selection after registering children
+                    projectStatistic.setSelected(true)
+
+                    // apply button
+                    val applyButton = new Button("Apply Filter") {
+                        maxWidth = Double.MaxValue
+                        onAction = handle { webEngine.executeScript("display();") }
+                    }
+
+                    // setup menu bar
+                    val menuFile = new Menu("File")
+                    val menuOptions = new Menu("Options")
+                    val menuView = new Menu("View")
+
+                    // svg export
+                    val svgExport = new MenuItem("Export as SVG") {
+                        onAction = handle {
+                            val fileChooser = new FileChooser {
+                                title = "Save as..."
+                                extensionFilters ++= Seq(
+                                    new ExtensionFilter("Scalable Vector Graphics", "*.svg")
+                                )
+                            }
+                            val selectedFile = fileChooser.showSaveDialog(mainStage)
+                            if (selectedFile != null) {
+                                val filename = selectedFile.getName
+                                val extension = filename.substring(
+                                    filename.lastIndexOf("."),
+                                    filename.length()
+                                )
+                                if (extension.equals(".svg")) {
+                                    exportSVG(
+                                        selectedFile,
+                                        webEngine.executeScript("exportSVG();").asInstanceOf[String]
+                                    )
+                                }
+                            }
                         }
                     }
-                }(collection.breakOut): List[RadioMenuItem]
-                viewToggle.toggles.get(0).setSelected(true)
+                    menuFile.items.addAll(svgExport)
 
-                val menuBar = new MenuBar { menus.addAll(menuFile, menuOptions, menuView) }
+                    // label options
+                    menuOptions.items = options.map { item ⇒
+                        val (name, options) = item
+                        new CheckMenuItem(options.description) {
+                            onAction = handle {
+                                labelOptions += (name → selected.value)
+                                webEngine.executeScript("display();")
+                            }
+                            if (options.selected) {
+                                selected = options.selected
+                                // manually add to labelOptions if default
+                                labelOptions += (name → selected.value)
+                            }
+                        }
+                    }(collection.breakOut): List[CheckMenuItem]
 
-                // build GUI
-                val vBoxLeft = new VBox
-                VBox.setVgrow(treeViewQueries, Priority.Always)
-                vBoxLeft.children.addAll(applyButton, treeViewProjects, treeViewQueries)
+                    // view options
+                    val viewToggle = new ToggleGroup
+                    menuView.items = scripts.map { item ⇒
+                        val (name, url) = item
+                        new RadioMenuItem(name) {
+                            toggleGroup = viewToggle
+                            onAction = handle {
+                                webEngine.executeScript(loadScript(url.openStream))
+                                // re-init on view change
+                                webEngine.executeScript("init();")
+                                webEngine.executeScript("display();")
+                                title = stage.title.value+" - "+text.value
+                            }
+                        }
+                    }(collection.breakOut): List[RadioMenuItem]
+                    viewToggle.toggles.get(0).setSelected(true)
 
-                val mainContent = new HBox
-                HBox.setHgrow(stackRight, Priority.Always)
-                mainContent.children.addAll(vBoxLeft, stackRight)
+                    val menuBar = new MenuBar { menus.addAll(menuFile, menuOptions, menuView) }
 
-                VBox.setVgrow(mainContent, Priority.Always)
-                children.addAll(menuBar, mainContent)
+                    // build GUI
+                    val vBoxLeft = new VBox
+                    VBox.setVgrow(treeViewQueries, Priority.Always)
+                    vBoxLeft.children.addAll(applyButton, treeViewProjects, treeViewQueries)
+
+                    val mainContent = new HBox
+                    HBox.setHgrow(stackRight, Priority.Always)
+                    mainContent.children.addAll(vBoxLeft, stackRight)
+
+                    VBox.setVgrow(mainContent, Priority.Always)
+                    children.addAll(menuBar, mainContent)
+                }
             }
+            initOwner(mainStage)
         }
-        initOwner(mainStage)
     }
 
     private def exportSVG(file: File, svg: String): Unit = {
         process(new PrintWriter(file)) { _.write(svg) }
     }
 
-    private def loadScript(file: String): String = {
-        processSource(Source.fromFile(file)) { s ⇒ s.getLines().mkString("\n") }
+    private def loadScript(in: InputStream): String = {
+        processSource(Source.fromInputStream(in)) { s ⇒ s.getLines().mkString("\n") }
     }
 
     private def factoryCheckBoxTreeItem(
