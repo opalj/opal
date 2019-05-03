@@ -5,7 +5,7 @@ package analyses
 
 /**
  * Enables the management of the progress of a long running computation.
- * Typically a long running progress such as an analysis is expected to report
+ * Typically a long running progress, such as an analysis, is expected to report
  * progress every 250 to 2000 milliseconds. It should -- however -- check every ~100
  * milliseconds the interrupted status to enable a timely termination.
  *
@@ -92,7 +92,7 @@ trait ProgressManagement {
  */
 object ProgressManagement {
 
-    val None: (Int) ⇒ ProgressManagement = (maxSteps) ⇒ new ProgressManagement {
+    val None: Int ⇒ ProgressManagement = maxSteps ⇒ new ProgressManagement {
 
         final override def progress(step: Int, event: ProgressEvent, msg: Option[String]): Unit = {}
 
