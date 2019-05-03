@@ -208,7 +208,8 @@ class TestTaintAnalysis private (
             })
                 println(s"Found flow: $stmt")
         if ((callee.descriptor.returnType eq ObjectType.Class) ||
-            (callee.descriptor.returnType eq ObjectType.Object)) {
+            (callee.descriptor.returnType eq ObjectType.Object) ||
+            (callee.descriptor.returnType eq ObjectType.String)) {
             in.collect {
                 case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
                     allParams.zipWithIndex.collect {
@@ -401,7 +402,7 @@ object Taint extends IFDSPropertyMetaInformation[Fact] {
     )
 }
 
-object BasicIFDSTaintAnalysisRunnter {
+object BasicIFDSTaintAnalysisRunner {
 
     def main(args: Array[String]): Unit = {
         if (args.contains("--help")) {
@@ -446,7 +447,7 @@ object BasicIFDSTaintAnalysisRunnter {
         }
 
         val (_, analyses) =
-            time(2, 25, 10, {
+            time(100, 25, 10, {
                 val project = p.recreate()
                 project.get(FPCFAnalysesManagerKey).runAll(LazyTACAIProvider, TestTaintAnalysis, RTACallGraphAnalysisScheduler,
                     EagerLibraryEntryPointsAnalysis,

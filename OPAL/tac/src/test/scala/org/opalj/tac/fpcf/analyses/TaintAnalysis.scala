@@ -186,24 +186,24 @@ class TaintAnalysis private (implicit val project: SomeProject) extends Abstract
      */
     override def callFlow(call: Statement, callee: DeclaredMethod, in: Set[Fact]): Set[Fact] = {
         val allParams = asCall(call.stmt).receiverOption ++ asCall(call.stmt).params
-            in.collect {
-                // Taint formal parameter if actual parameter is tainted
-                case Variable(index) ⇒
-                    allParams.zipWithIndex.collect {
-                        case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
-                            Variable(switchParamAndVariableIndex(paramIndex, !callee.definedMethod.isStatic))
-                    }
+        in.collect {
+            // Taint formal parameter if actual parameter is tainted
+            case Variable(index) ⇒
+                allParams.zipWithIndex.collect {
+                    case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+                        Variable(switchParamAndVariableIndex(paramIndex, !callee.definedMethod.isStatic))
+                }
 
-                // Taint element of formal parameter if element of actual parameter is tainted
-                case ArrayElement(index, taintedIndex) ⇒
-                    allParams.zipWithIndex.collect {
-                        case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
-                            ArrayElement(
-                                switchParamAndVariableIndex(paramIndex, !callee.definedMethod.isStatic),
-                                taintedIndex
-                            )
-                    }
-            }.flatten
+            // Taint element of formal parameter if element of actual parameter is tainted
+            case ArrayElement(index, taintedIndex) ⇒
+                allParams.zipWithIndex.collect {
+                    case (param, paramIndex) if param.asVar.definedBy.contains(index) ⇒
+                        ArrayElement(
+                            switchParamAndVariableIndex(paramIndex, !callee.definedMethod.isStatic),
+                            taintedIndex
+                        )
+                }
+        }.flatten
     }
 
     /**
