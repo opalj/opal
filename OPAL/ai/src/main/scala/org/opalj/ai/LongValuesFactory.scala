@@ -7,7 +7,7 @@ import org.opalj.br.LongType
 /**
  * Defines the primary factory methods to create `long` values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait LongValuesFactory extends ValuesDomain { domain ⇒

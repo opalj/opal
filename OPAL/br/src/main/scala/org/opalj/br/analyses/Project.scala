@@ -25,7 +25,6 @@ import scala.collection.mutable.OpenHashMap
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
@@ -154,7 +153,6 @@ class Project[Source] private (
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
-        final val projectType:                        ProjectType,
         // Note that the referenced array will never shrink!
         @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] = new AtomicReferenceArray[AnyRef](32)
 )(
@@ -220,7 +218,6 @@ class Project[Source] private (
             newClassHierarchy,
             instanceMethods,
             overridingMethods,
-            projectType,
             newProjectInformation
         )(
             newLogContext,
@@ -626,10 +623,6 @@ class Project[Source] private (
      * class files.
      */
     def extend(other: Project[Source]): Project[Source] = {
-        if (this.projectType != other.projectType) {
-            throw new IllegalArgumentException("the projects have different analysis modes");
-        }
-
         if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly) {
             throw new IllegalArgumentException("the projects' libraries are loaded differently");
         }
@@ -1043,7 +1036,6 @@ class Project[Source] private (
 
         classDescriptions.mkString(
             "Project("+
-                "\n\tprojectType="+projectType+
                 "\n\tlibraryClassFilesAreInterfacesOnly="+libraryClassFilesAreInterfacesOnly+
                 "\n\t",
             "\n\t",
@@ -2144,8 +2136,7 @@ object Project {
                 virtualMethodsCount,
                 classHierarchy,
                 Await.result(instanceMethodsFuture, Duration.Inf),
-                Await.result(overridingMethodsFuture, Duration.Inf),
-                ProjectTypes.withName(config.as[String](ProjectType.ConfigKey))
+                Await.result(overridingMethodsFuture, Duration.Inf)
             )
 
             time {

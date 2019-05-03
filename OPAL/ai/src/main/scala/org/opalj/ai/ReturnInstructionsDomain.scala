@@ -7,7 +7,7 @@ package ai
  * can throw an `IllegalMonitorStateException`. If, e.g., the method is synchronized and
  * the method body contains a `Monitorexit` instruction, but no `Monitorenter` instruction.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait ReturnInstructionsDomain { domain: ValuesDomain ⇒

@@ -9,7 +9,7 @@ import org.opalj.br.ObjectType
  * Default implementation of the [[ExceptionsFactory]] trait that relies
  * on the [[ReferenceValuesFactory]].
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait DefaultExceptionsFactory extends ExceptionsFactory {
     this: ValuesDomain with ReferenceValuesFactory ⇒

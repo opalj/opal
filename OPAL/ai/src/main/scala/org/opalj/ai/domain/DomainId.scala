@@ -6,7 +6,7 @@ package domain
 /**
  * Common super trait of all domains have an id to identify them.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait DomainId {

@@ -41,8 +41,6 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     implicit val classHierarchy: ClassHierarchy
 
-    def projectType: ProjectType
-
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //
     //

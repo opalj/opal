@@ -6,7 +6,7 @@ package ai
  * Enables specialized processing of subroutine calls by domains; this is generally only
  * relevant for those domains that record the control-flow graph.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait SubroutinesDomain {

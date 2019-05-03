@@ -78,7 +78,7 @@ import org.opalj.br.ShortType
  * @note OPAL assumes that – at least conceptually – every method/code block is associated
  *      with its own instance of a domain object.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait Domain

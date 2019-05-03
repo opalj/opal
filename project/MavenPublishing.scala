@@ -4,7 +4,7 @@ import sbt._
 import scala.xml.NodeSeq
 
 /**
- * Definiton of the tasks and settings to support exporting OPAL to Maven.
+ * Definition of the tasks and settings to support exporting OPAL to Maven.
  *
  * @author Michael Eichberg
  * @author Simon Leischnig
