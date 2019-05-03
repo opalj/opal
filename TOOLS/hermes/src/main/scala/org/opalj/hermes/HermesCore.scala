@@ -2,23 +2,29 @@
 package org.opalj
 package hermes
 
+import scala.reflect.io.Directory
+
 import java.io.File
 import java.net.URL
 import java.io.FileWriter
 import java.io.BufferedWriter
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.collection.JavaConverters._
+
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.dataformat.csv.CsvFactory
-import scalafx.collections.ObservableBuffer
-import scalafx.beans.property.BooleanProperty
-import scalafx.beans.property.IntegerProperty
-import scalafx.beans.property.LongProperty
+import javafx.collections.FXCollections
+import javafx.collections.ObservableList
+import javafx.beans.property.BooleanProperty
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.IntegerProperty
+import javafx.beans.property.SimpleIntegerProperty
+import javafx.beans.property.LongProperty
+import javafx.beans.property.SimpleLongProperty
 import org.opalj.br.analyses.Project
-
-import scala.reflect.io.Directory
 
 /**
  * Implements the core functionality to evaluate a set of feature queries against a set of
@@ -89,25 +95,26 @@ trait HermesCore extends HermesConfig {
     // ---------------------------------------------------------------------------------------------
 
     /** The matrix containing for each project the extensions of all features. */
-    lazy val featureMatrix: ObservableBuffer[ProjectFeatures[URL]] = {
-        val featureMatrix = ObservableBuffer.empty[ProjectFeatures[URL]]
+    lazy val featureMatrix: ObservableList[ProjectFeatures[URL]] = {
+        val featureMatrix = FXCollections.observableArrayList[ProjectFeatures[URL]]
         for { projectConfiguration ← projectConfigurations } {
             val features = featureQueries map { fe ⇒ (fe, fe.createInitialFeatures[URL]) }
-            featureMatrix += ProjectFeatures(projectConfiguration, features)
+            featureMatrix.add(ProjectFeatures(projectConfiguration, features))
         }
         featureMatrix
     }
 
     /** Summary of the number of occurrences of a feature across all projects. */
     lazy val perFeatureCounts: Array[IntegerProperty] = {
-        val perFeatureCounts = Array.fill(featureIDs.size)(IntegerProperty(0))
-        featureMatrix.foreach { projectFeatures ⇒
+        val perFeatureCounts =
+            Array.fill[IntegerProperty](featureIDs.size)(new SimpleIntegerProperty(0))
+        featureMatrix.forEach { projectFeatures ⇒
             projectFeatures.features.view.zipWithIndex foreach { fi ⇒
                 val (feature, index) = fi
-                feature.onChange { (_, oldValue, newValue) ⇒
+                feature.addListener { (_, oldValue, newValue) ⇒
                     val change = newValue.count - oldValue.count
                     if (change != 0) {
-                        perFeatureCounts(index).value = perFeatureCounts(index).value + change
+                        perFeatureCounts(index).setValue(perFeatureCounts(index).getValue + change)
                     }
                 }
             }
@@ -115,10 +122,10 @@ trait HermesCore extends HermesConfig {
         perFeatureCounts
     }
 
-    val analysesFinished: BooleanProperty = BooleanProperty(false)
+    val analysesFinished: BooleanProperty = new SimpleBooleanProperty(false)
 
     // some statistics
-    val corpusAnalysisTime: LongProperty = new LongProperty
+    val corpusAnalysisTime: LongProperty = new SimpleLongProperty
 
     // ---------------------------------------------------------------------------------------------
     //
@@ -142,7 +149,7 @@ trait HermesCore extends HermesConfig {
             projectAnalysisStartTime: Long
         ): Boolean = {
             if (project.projectClassFilesCount == 0) {
-                updateProjectData { projectFeatures.id.value = "! "+projectFeatures.id.value }
+                updateProjectData { projectFeatures.id.setValue("! "+projectFeatures.id.getValue()) }
                 false
             } else {
                 true
@@ -156,7 +163,7 @@ trait HermesCore extends HermesConfig {
                 val stepsDone = new AtomicInteger(0)
                 for {
                     // Using an iterator is required to avoid eager initialization of all projects!
-                    projectFeatures ← featureMatrix.toIterator
+                    projectFeatures ← featureMatrix.iterator.asScala
                     if !Thread.currentThread.isInterrupted()
                     projectConfiguration = projectFeatures.projectConfiguration
                     projectAnalysisStartTime = System.nanoTime()
@@ -165,7 +172,7 @@ trait HermesCore extends HermesConfig {
                     rawClassFiles = projectInstantiation.rawClassFiles
                     if isValid(projectFeatures, project, projectAnalysisStartTime)
                     (featureQuery, features) ← projectFeatures.featureGroups.par
-                    featuresMap = features.map(f ⇒ (f.value.id, f)).toMap
+                    featuresMap = features.map(f ⇒ (f.getValue.id, f)).toMap
                     if !Thread.currentThread.isInterrupted()
                 } {
                     val featureAnalysisStartTime = System.nanoTime()
@@ -174,11 +181,12 @@ trait HermesCore extends HermesConfig {
                     val featureAnalysisTime = featureAnalysisEndTime - featureAnalysisStartTime
 
                     reportProgress {
-                        featureQuery.accumulatedAnalysisTime.value =
-                            featureQuery.accumulatedAnalysisTime.value + featureAnalysisTime
-                        corpusAnalysisTime.value = featureAnalysisEndTime - analysesStartTime
+                        featureQuery.accumulatedAnalysisTime.setValue(
+                            featureQuery.accumulatedAnalysisTime.getValue + featureAnalysisTime
+                        )
+                        corpusAnalysisTime.setValue(featureAnalysisEndTime - analysesStartTime)
                         // (implicitly) update the feature matrix
-                        features.foreach { f ⇒ featuresMap(f.id).value = f }
+                        features.foreach { f ⇒ featuresMap(f.id).setValue(f) }
 
                         stepsDone.incrementAndGet() / totalSteps
                     }
@@ -187,9 +195,9 @@ trait HermesCore extends HermesConfig {
                 // we are done with everything
                 reportProgress {
                     val analysesEndTime = System.nanoTime()
-                    corpusAnalysisTime.value = analysesEndTime - analysesStartTime
+                    corpusAnalysisTime.setValue(analysesEndTime - analysesStartTime)
 
-                    analysesFinished.value = true
+                    analysesFinished.setValue(true)
                     1.0d // <=> we are done
                 }
             }
@@ -232,7 +240,7 @@ trait HermesCore extends HermesConfig {
     def exportStatistics(writer: BufferedWriter, exportProjectStatistics: Boolean): Unit = {
         // Create the set of all names of all project-wide statistics
         var projectStatisticsIDs = Set.empty[String]
-        featureMatrix.foreach { pf ⇒
+        featureMatrix.forEach { pf ⇒
             projectStatisticsIDs ++= pf.projectConfiguration.statistics.keySet
         }
 
@@ -251,9 +259,9 @@ trait HermesCore extends HermesConfig {
 
         val csvGenerator = new CsvFactory().createGenerator(writer)
         csvGenerator.setSchema(csvSchema)
-        featureMatrix.foreach { pf ⇒
+        featureMatrix.forEach { pf ⇒
             csvGenerator.writeStartArray()
-            csvGenerator.writeString(pf.id.value)
+            csvGenerator.writeString(pf.id.getValue)
             if (exportProjectStatistics) {
                 projectStatisticsIDs.foreach { id ⇒
                     pf.projectConfiguration.statistics.get(id) match {
@@ -262,7 +270,7 @@ trait HermesCore extends HermesConfig {
                     }
                 }
             }
-            pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.value.count) }
+            pf.features.foreach { f ⇒ csvGenerator.writeNumber(f.getValue.count) }
             csvGenerator.flush()
             csvGenerator.writeEndArray()
         }
@@ -300,8 +308,8 @@ trait HermesCore extends HermesConfig {
 
     def exportLocations(dir: Directory): Unit = {
         projectConfigurations.iterator foreach { pc ⇒
-            featureMatrix.foreach { pf ⇒
-                val projectFile = new File(s"${dir.path}/${pf.id.value}.tsv")
+            featureMatrix.forEach { pf ⇒
+                val projectFile = new File(s"${dir.path}/${pf.id.getValue}.tsv")
                 io.process(new BufferedWriter(new FileWriter(projectFile))) { writer ⇒
                     exportLocations(writer, pf)
                 }
@@ -346,9 +354,9 @@ trait HermesCore extends HermesConfig {
             csvGenerator.writeString(field)
         }
 
-        val projectId = pf.id.value
+        val projectId = pf.id.getValue
         pf.features.foreach { f ⇒
-            val feature = f.value
+            val feature = f.getValue
             val fid = feature.id
             feature.extensions.foreach { l ⇒
                 csvGenerator.writeStartArray()

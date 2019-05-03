@@ -9,8 +9,10 @@ import scala.io.Codec
 
 import com.github.rjeschke.txtmark.Processor
 
-import scalafx.beans.property.ObjectProperty
-import scalafx.beans.property.LongProperty
+import javafx.beans.property.ObjectProperty
+import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.LongProperty
+import javafx.beans.property.SimpleLongProperty
 
 import org.opalj.io.processSource
 import org.opalj.br.analyses.Project
@@ -101,10 +103,10 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
     /**
      * The time it took to evaluate the query across all projects in nanoseconds.
      */
-    private[hermes] val accumulatedAnalysisTime = new LongProperty()
+    private[hermes] val accumulatedAnalysisTime: LongProperty = new SimpleLongProperty()
 
     private[hermes] def createInitialFeatures[S]: Seq[ObjectProperty[Feature[S]]] = {
-        featureIDs.map(fid ⇒ ObjectProperty(Feature[S](fid)))
+        featureIDs.map(fid ⇒ new SimpleObjectProperty(Feature[S](fid)))
     }
 
 }

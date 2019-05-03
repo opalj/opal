@@ -7,6 +7,7 @@ import java.util.concurrent.CountDownLatch
 
 import scala.io.Source
 import scala.reflect.io.Directory
+
 import org.opalj.io.processSource
 
 /**
@@ -75,7 +76,7 @@ object HermesCLI {
         }
 
         val waitOnFinished = new CountDownLatch(1)
-        Hermes.analysesFinished onChange { (_, _, isFinished) ⇒
+        Hermes.analysesFinished.addListener { (_, _, isFinished) ⇒
             if (isFinished) {
                 val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
                 Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)

@@ -2,8 +2,9 @@
 package org.opalj
 package hermes
 
-import scalafx.beans.property.StringProperty
-import scalafx.beans.property.ObjectProperty
+import javafx.beans.property.StringProperty
+import javafx.beans.property.SimpleStringProperty
+import javafx.beans.property.ObjectProperty
 
 /**
  * The feature objects associated with every project.
@@ -17,7 +18,7 @@ case class ProjectFeatures[S](
 
     /** The project's unique id. */
     final val id: StringProperty = {
-        new StringProperty(projectConfiguration, "project", projectConfiguration.id)
+        new SimpleStringProperty(projectConfiguration, "project", projectConfiguration.id)
     }
 
     final val features: Seq[ObjectProperty[Feature[S]]] = featureGroups.flatMap(_._2)

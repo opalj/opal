@@ -328,8 +328,8 @@ lazy val bp = `BugPicker`
 lazy val `BugPicker` = (project in file("TOOLS/bp"))
   .settings(buildSettings: _*)
   .settings(
-    name := "BugPicker - Core",
-    scalacOptions in(Compile, doc) ++= Opts.doc.title("BugPicker - Core"),
+    name := "BugPicker",
+    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - BugPicker"),
     fork := true
   )
   .dependsOn(framework % "it->it;it->test;test->test;compile->compile")
@@ -404,12 +404,13 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
 lazy val hermes_ui = `HermesUI`
 lazy val `HermesUI` = (project in file("TOOLS/hermes_ui"))
   .settings(buildSettings: _*)
+  .enablePlugins(JavaFxPlugin)
   .settings(
     name := "Hermes UI",
+    javaFxMainClass := "org.opalj.hermes.Hermes",
     publishArtifact := false,
-    // INCUBATION CODE IS NEVER EVEN CONSIDERED TO BE ALPHA QUALITY
     scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Hermes UI"),
-    libraryDependencies ++= Dependencies.hermesUI,
+    libraryDependencies ++= Dependencies.hermesJFXUI,
     fork in run := true
   )
   .dependsOn(hermes % "it->it;it->test;test->test;compile->compile")
