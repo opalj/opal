@@ -10,7 +10,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
@@ -45,7 +45,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisSchedul
  *
  * @author Florian Kuebler
  */
-object CallGraph extends DefaultOneStepAnalysis {
+object CallGraph extends ProjectAnalysisApplication {
 
     override def title: String = "Call Graph Analysis"
 
