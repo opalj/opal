@@ -59,7 +59,7 @@ case object NullFact extends Fact with AbstractIFDSNullFact
  *
  * @author Dominik Helm, Mario Trageser
  */
-class TestTaintAnalysis private (
+class BasicIFDSTaintAnalysis private(
         implicit
         val project: SomeProject
 ) extends AbstractIFDSAnalysis[Fact] {
@@ -380,8 +380,8 @@ class TestTaintAnalysis private (
 
 }
 
-object TestTaintAnalysis extends IFDSAnalysis[Fact] {
-    override def init(p: SomeProject, ps: PropertyStore) = new TestTaintAnalysis()(p)
+object BasicIFDSTaintAnalysis extends IFDSAnalysis[Fact] {
+    override def init(p: SomeProject, ps: PropertyStore) = new BasicIFDSTaintAnalysis()(p)
 
     override def property: IFDSPropertyMetaInformation[Fact] = Taint
 }
@@ -449,7 +449,7 @@ object BasicIFDSTaintAnalysisRunner {
         val (_, analyses) =
             time(100, 25, 10, {
                 val project = p.recreate()
-                project.get(FPCFAnalysesManagerKey).runAll(LazyTACAIProvider, TestTaintAnalysis, RTACallGraphAnalysisScheduler,
+                project.get(FPCFAnalysesManagerKey).runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis, RTACallGraphAnalysisScheduler,
                     EagerLibraryEntryPointsAnalysis,
                     LazyL0BaseAIAnalysis,
                     TriggeredInstantiatedTypesAnalysis,
@@ -458,10 +458,10 @@ object BasicIFDSTaintAnalysisRunner {
                 val average = times.map(_.toSeconds.timeSpan).sum / times.length
                 println(s"average time for taint-flow analysis: ${average}")
             })
-        val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
+        val entryPoints = analyses.collect { case (_, a: BasicIFDSTaintAnalysis) ⇒ a.entryPoints }.head
         for {
             e ← entryPoints
-            flows = ps(e, TestTaintAnalysis.property.key)
+            flows = ps(e, BasicIFDSTaintAnalysis.property.key)
             fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
         } {
             fact match {

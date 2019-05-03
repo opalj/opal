@@ -9,7 +9,7 @@ import org.opalj.br.analyses.{DeclaredMethodsKey, Project}
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.tac.fpcf.analyses.TaintAnalysis
+import org.opalj.tac.fpcf.analyses.TaintAnalysisFixture
 import org.opalj.tac.fpcf.analyses.NullFact
 import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 /**
  * @author Mario Trageser
  */
-class TaintAnalysisTest extends PropertiesTest {
+class TaintAnalysisFixtureTest extends PropertiesTest {
 
     val cgRelatedAnalysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
         RTACallGraphAnalysisScheduler,
@@ -41,7 +41,7 @@ class TaintAnalysisTest extends PropertiesTest {
     }
 
     describe("Test the FlowPath annotations") {
-        val testContext = executeAnalyses(cgRelatedAnalysisSchedulers + TaintAnalysis)
+        val testContext = executeAnalyses(cgRelatedAnalysisSchedulers + TaintAnalysisFixture)
         val project = testContext.project
         val declaredMethods = project.get(DeclaredMethodsKey)
         val eas = methodsWithAnnotations(project).map {
