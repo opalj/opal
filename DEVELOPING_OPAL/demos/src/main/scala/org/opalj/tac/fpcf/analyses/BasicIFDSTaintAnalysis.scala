@@ -35,6 +35,10 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
+import org.opalj.tac.GetField
+import org.opalj.tac.GetStatic
+import org.opalj.tac.PutField
+import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Stmt
 import org.opalj.tac.Var
@@ -42,7 +46,7 @@ import org.opalj.tac.Var
 trait Fact extends AbstractIFDSFact
 case class Variable(index: Int) extends Fact
 case class ArrayElement(index: Int, element: Int) extends Fact
-//case class StaticField(classType: ObjectType, fieldName: String) extends Fact
+case class StaticField(classType: ObjectType, fieldName: String) extends Fact
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
 case class FlowFact(flow: ListSet[Method]) extends Fact {
     override val hashCode: Int = {
@@ -59,7 +63,7 @@ case object NullFact extends Fact with AbstractIFDSNullFact
  *
  * @author Dominik Helm, Mario Trageser
  */
-class BasicIFDSTaintAnalysis private(
+class BasicIFDSTaintAnalysis private (
         implicit
         val project: SomeProject
 ) extends AbstractIFDSAnalysis[Fact] {
@@ -90,18 +94,18 @@ class BasicIFDSTaintAnalysis private(
                 else if (index.isDefined && definedBy.size == 1) // Untaint if possible
                     in - ArrayElement(definedBy.head, index.get)
                 else in
-            /*case PutStatic.ASTID ⇒
-                    val put = stmt.stmt.asPutStatic
-                    if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
-                    else in - StaticField(put.declaringClass, put.name)*/
-            /*case PutField.ASTID ⇒
-                    val put = stmt.stmt.asPutField
-                    val definedBy = put.objRef.asVar.definedBy
-                    if (isTainted(put.value, in))
-                        in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
-                    else if (definedBy.size == 1) // Untaint if object is known precisely
-                        in - InstanceField(definedBy.head, put.declaringClass, put.name)
-                    else in */
+            case PutStatic.ASTID ⇒
+                val put = stmt.stmt.asPutStatic
+                if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
+                else in - StaticField(put.declaringClass, put.name)
+            case PutField.ASTID ⇒
+                val put = stmt.stmt.asPutField
+                val definedBy = put.objRef.asVar.definedBy
+                if (isTainted(put.value, in))
+                    in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
+                else if (definedBy.size == 1) // Untaint if object is known precisely
+                    in - InstanceField(definedBy.head, put.declaringClass, put.name)
+                else in
             case _ ⇒ in
         }
 
@@ -165,12 +169,12 @@ class BasicIFDSTaintAnalysis private(
                     in + Variable(stmt.index)
                 else
                     in
-            /*case GetStatic.ASTID ⇒
+            case GetStatic.ASTID ⇒
                 val get = expr.asGetStatic
                 if (in.contains(StaticField(get.declaringClass, get.name)))
                     in + Variable(stmt.index)
-                else in*/
-            /*case GetField.ASTID ⇒
+                else in
+            case GetField.ASTID ⇒
                 val get = expr.asGetField
                 if (in.exists {
                     // The specific field may be tainted
@@ -182,7 +186,7 @@ class BasicIFDSTaintAnalysis private(
                 })
                     in + Variable(stmt.index)
                 else
-                    in*/
+                    in
             case _ ⇒ in
         }
 
@@ -224,7 +228,7 @@ class BasicIFDSTaintAnalysis private(
                             ArrayElement(paramToIndex(pIndex, !callee.definedMethod.isStatic), taintedIndex)
                     }
 
-                /*case InstanceField(index, declClass, taintedField) ⇒
+                case InstanceField(index, declClass, taintedField) ⇒
                     // Taint field of formal parameter if field of actual parameter is tainted
                     // Only if the formal parameter is of a type that may have that field!
                     asCall(stmt.stmt).allParams.zipWithIndex.collect {
@@ -232,8 +236,8 @@ class BasicIFDSTaintAnalysis private(
                             (paramToIndex(pIndex, !callee.definedMethod.isStatic) != -1 ||
                                 classHierarchy.isSubtypeOf(declClass, callee.declaringClassType)) ⇒
                             InstanceField(paramToIndex(pIndex, !callee.definedMethod.isStatic), declClass, taintedField)
-                    }*/
-                //case sf: StaticField ⇒ Set(sf)
+                    }
+                case sf: StaticField ⇒ Set(sf)
             }.flatten
         } else Set.empty
     }
@@ -284,7 +288,7 @@ class BasicIFDSTaintAnalysis private(
                         val param =
                             allParams(paramToIndex(index, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(InstanceField(_, declClass, taintedField))
-                    //case sf: StaticField ⇒ flows += sf
+                    case sf: StaticField ⇒ flows += sf
                     case FlowFact(flow) ⇒
                         val newFlow = flow + stmt.method
                         if (entryPoints.contains(declaredMethods(exit.method))) {
@@ -337,11 +341,11 @@ class BasicIFDSTaintAnalysis private(
                     asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             }) {
-                /*if (entryPoints.contains(declaredMethods(stmt.method))) {
-                    println(s"flow: "+stmt.method.toJava)
+                if (entryPoints.contains(declaredMethods(stmt.method))) {
+                    //println(s"flow: "+stmt.method.toJava)
                     in
-                } else*/
-                in ++ Set(FlowFact(ListSet(stmt.method)))
+                } else
+                    in ++ Set(FlowFact(ListSet(stmt.method)))
             } else {
                 in
             }
@@ -439,7 +443,7 @@ object BasicIFDSTaintAnalysisRunner {
             }
         }
 
-        val ps = p.get(PropertyStoreKey)
+        var ps: PropertyStore = null
 
         if (args.contains("-delay")) {
             println("Sleeping for three seconds.")
@@ -447,8 +451,9 @@ object BasicIFDSTaintAnalysisRunner {
         }
 
         val (_, analyses) =
-            time(100, 25, 10, {
+            time(50, 100, 3, {
                 val project = p.recreate()
+                ps = p.get(PropertyStoreKey)
                 project.get(FPCFAnalysesManagerKey).runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis, RTACallGraphAnalysisScheduler,
                     EagerLibraryEntryPointsAnalysis,
                     LazyL0BaseAIAnalysis,
