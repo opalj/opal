@@ -12,6 +12,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
+import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
@@ -20,6 +21,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
@@ -201,16 +203,18 @@ class BasicIFDSTaintAnalysis private (
                 case Variable(index) ⇒
                     allParams.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
-            })
-                println(s"Found flow: $stmt")
+            }) {
+                //println(s"Found flow: $stmt")
+            }
         if (callee.name == "forName" && (callee.declaringClassType eq ObjectType.Class) &&
             callee.descriptor.parameterTypes == RefArray(ObjectType.String))
             if (in.exists {
                 case Variable(index) ⇒
                     asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
-            })
-                println(s"Found flow: $stmt")
+            }) {
+                //println(s"Found flow: $stmt")
+            }
         if ((callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object) ||
             (callee.descriptor.returnType eq ObjectType.String)) {
@@ -292,7 +296,7 @@ class BasicIFDSTaintAnalysis private (
                     case FlowFact(flow) ⇒
                         val newFlow = flow + stmt.method
                         if (entryPoints.contains(declaredMethods(exit.method))) {
-                            //println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
+                            println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
                         } else {
                             flows += FlowFact(newFlow)
                         }
@@ -342,7 +346,7 @@ class BasicIFDSTaintAnalysis private (
                 case _ ⇒ false
             }) {
                 if (entryPoints.contains(declaredMethods(stmt.method))) {
-                    //println(s"flow: "+stmt.method.toJava)
+                    println(s"flow: "+stmt.method.toJava)
                     in
                 } else
                     in ++ Set(FlowFact(ListSet(stmt.method)))
@@ -443,26 +447,29 @@ object BasicIFDSTaintAnalysisRunner {
             }
         }
 
-        var ps: PropertyStore = null
-
         if (args.contains("-delay")) {
             println("Sleeping for three seconds.")
             Thread.sleep(3000)
         }
 
-        val (_, analyses) =
-            time(50, 100, 3, {
-                val project = p.recreate()
-                ps = p.get(PropertyStoreKey)
-                project.get(FPCFAnalysesManagerKey).runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis, RTACallGraphAnalysisScheduler,
-                    EagerLibraryEntryPointsAnalysis,
-                    LazyL0BaseAIAnalysis,
-                    TriggeredInstantiatedTypesAnalysis,
-                    LazyCalleesAnalysis(Set(StandardInvokeCallees)))
-            })({ (t, times) ⇒
-                val average = times.map(_.toSeconds.timeSpan).sum / times.length
-                println(s"average time for taint-flow analysis: ${average}")
-            })
+        val nrRuns = 1
+        var ps: PropertyStore = null
+        var analyses: List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)] = null
+        var times = Seq.empty[Long]
+        for (_ ← 1 to nrRuns) {
+            val project = p.recreate()
+            val manager = project.get(FPCFAnalysesManagerKey)
+            ps = project.get(PropertyStoreKey)
+            manager.runAll(LazyTACAIProvider, RTACallGraphAnalysisScheduler,
+                EagerLibraryEntryPointsAnalysis,
+                LazyL0BaseAIAnalysis,
+                TriggeredInstantiatedTypesAnalysis,
+                LazyCalleesAnalysis(Set(StandardInvokeCallees)))
+            analyses = time {
+                project.get(FPCFAnalysesManagerKey).runAll(BasicIFDSTaintAnalysis)
+            }(t ⇒ times :+= t.toMilliseconds.timeSpan)._2
+        }
+
         val entryPoints = analyses.collect { case (_, a: BasicIFDSTaintAnalysis) ⇒ a.entryPoints }.head
         for {
             e ← entryPoints
@@ -474,6 +481,7 @@ object BasicIFDSTaintAnalysisRunner {
                 case _              ⇒
             }
         }
+        println(s"The analysis took ${times.sum / times.size}ms on average.")
         println(
             ps.statistics.iterator.map(_.toString()).toList
                 .sorted
