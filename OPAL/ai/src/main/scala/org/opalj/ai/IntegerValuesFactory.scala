@@ -7,7 +7,7 @@ import org.opalj.br.CTIntType
 /**
  * Defines the primary factory methods to create `Integer` values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait IntegerValuesFactory extends ValuesDomain { domain ⇒
 

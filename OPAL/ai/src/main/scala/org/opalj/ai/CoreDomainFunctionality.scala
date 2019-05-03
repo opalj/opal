@@ -19,7 +19,7 @@ import org.opalj.collection.mutable.IntArrayStack
  *
  * @see     [[Domain]] For an explanation of the underlying concepts and ideas.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { coreDomain ⇒

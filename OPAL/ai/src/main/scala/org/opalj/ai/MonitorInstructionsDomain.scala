@@ -5,7 +5,7 @@ package ai
 /**
  * Domain that defines all methods related to monitor instructions.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait MonitorInstructionsDomain { this: ValuesDomain ⇒
 

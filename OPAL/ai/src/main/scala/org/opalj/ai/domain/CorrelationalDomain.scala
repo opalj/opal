@@ -5,7 +5,7 @@ package ai
 /**
  * A [[Domain]] that supports the tracking of correlations between values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait CorrelationalDomain extends Domain with CorrelationalDomainSupport
 

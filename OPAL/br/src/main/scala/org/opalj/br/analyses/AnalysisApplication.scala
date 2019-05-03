@@ -80,14 +80,13 @@ trait AnalysisApplication {
      * the set of specified parameters is not valid.
      */
     protected def printUsage(implicit logContext: LogContext): Unit = {
-        val projectTypes = ProjectTypes.values.map(_.toString.replace(" ", "_")).mkString(",")
         OPALLogger.info(
             "usage",
             "java "+
-                this.getClass().getName()+"\n"+
+                this.getClass.getName+"\n"+
                 "[-cp=<Directories or JAR/class files> (Default: the current folder.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
-                "[-projectType=<the kind of project ("+projectTypes+")>]\n"+
+                "[-renderConfig (prints the configuration)]\n"+
                 "[-completelyLoadLibraries=<true|false> (Default: false.)]\n"+
                 analysisSpecificParametersDescription
         )
@@ -97,7 +96,7 @@ trait AnalysisApplication {
 
     def main(args: Array[String]): Unit = {
 
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         if (args.contains("-help")) {
             printUsage
             sys.exit(0)
@@ -177,21 +176,11 @@ trait AnalysisApplication {
         }
         val libcpFiles = verifyFiles(libcp)
 
-        val (projectType, args3) = try {
-            args2.partition(_.startsWith("-projectType=")) match {
-                case (Array(), args3) ⇒
-                    (ProjectTypes.Library, args3)
-                case (Array(projectTypeParameter), args3) ⇒
-                    val projectType = projectTypeParameter.substring(14).replace("_", " ")
-                    (ProjectTypes.withName(projectType), args3)
+        val (renderConfig, args3) =
+            args2.partition(_ == "-renderConfig") match {
+                case (Array("-renderConfig"), args3) ⇒ (true, args3)
+                case (Array(), args3)                ⇒ (false, args3)
             }
-        } catch {
-            case t: Throwable ⇒
-                OPALLogger.error("project configuration", "failed parsing the analysis mode", t)
-                printUsage
-                sys.exit(2)
-        }
-        OPALLogger.info("project configuration", s"the project type is $projectType")
 
         val (completelyLoadLibraries, args4) = try {
             args3.partition(_.startsWith("-completelyLoadLibraries=")) match {
@@ -201,7 +190,6 @@ trait AnalysisApplication {
                     val completelyLoadLibraries: Boolean = completelyLoadLibrariesParameter.substring(25).toBoolean
                     (completelyLoadLibraries, args4)
             }
-
         } catch {
             case t: Throwable ⇒
                 OPALLogger.error("project configuration", "failed parsing completelyLoadLibraries", t)
@@ -222,17 +210,19 @@ trait AnalysisApplication {
         // 2. setup project context
         //
         val project: Project[URL] = try {
-            setupProject(
-                cpFiles, libcpFiles, completelyLoadLibraries,
-                projectType,
-                ConfigFactory.load()
-            )
+            setupProject(cpFiles, libcpFiles, completelyLoadLibraries, ConfigFactory.load())
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
                 OPALLogger.error("fatal", "setting up the project failed", t)
                 printUsage
                 sys.exit(2)
+        }
+
+        if (renderConfig) {
+            val effectiveConfiguration =
+                "Effective configuration:\n"+org.opalj.util.renderConfig(project.config)
+            OPALLogger.info("project configuration", effectiveConfiguration)
         }
 
         //
@@ -251,7 +241,7 @@ trait AnalysisApplication {
         if (exceptions.isEmpty)
             return ;
 
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
         for (exception ← exceptions) {
             OPALLogger.error("creating project", "ignoring invalid class file", exception)
         }
@@ -261,16 +251,16 @@ trait AnalysisApplication {
         cpFiles:                 Iterable[File],
         libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
-        projectType:             ProjectType,
         fallbackConfiguration:   Config
     )(
         implicit
         initialLogContext: LogContext
     ): Project[URL] = {
 
-        val projectTypeSpecification = s"${ProjectType.ConfigKey} = $projectType"
-        val projectTypeConfig = ConfigFactory.parseString(projectTypeSpecification)
-        val configuredConfig = projectTypeConfig.withFallback(fallbackConfiguration)
+        // TODO Add support for loading project type specific configuration
+        //  val projectTypeConfig = Config.load(...)
+        //  val configuredConfig = projectTypeConfig.withFallback(fallbackConfiguration)
+        val configuredConfig = fallbackConfiguration
 
         OPALLogger.info("creating project", "reading project class files")
         val JavaClassFileReader = Project.JavaClassFileReader(initialLogContext, configuredConfig)

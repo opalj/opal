@@ -6,7 +6,7 @@ package ai
  * Provides basic support for tracking the correlation between domain values stored in
  * different registers/in different stack slots.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait CorrelationalDomainSupport
     extends JoinStabilization

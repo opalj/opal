@@ -5,7 +5,7 @@ package ai
 /**
  * Defines a factory method to create `IntegerRange` values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author David Becker
  */
 trait IntegerRangeValuesFactory extends IntegerValuesFactory { domain ⇒

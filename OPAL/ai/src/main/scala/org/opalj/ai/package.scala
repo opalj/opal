@@ -308,10 +308,8 @@ package object ai {
      * identifies a parameter the value is returned as is.
      */
     final def underlyingPC(valueOrigin: Int): ValueOrigin = {
-        if (valueOrigin >= 0)
-            valueOrigin
-        else if (valueOrigin > ImmediateVMExceptionsOriginOffset)
-            valueOrigin // <- it is a parameter!
+        if (valueOrigin > ImmediateVMExceptionsOriginOffset)
+            valueOrigin // <- it is a parameter or a valid pc
         else if (valueOrigin > MethodExternalExceptionsOriginOffset)
             pcOfImmediateVMException(valueOrigin)
         else

@@ -28,7 +28,7 @@ import org.opalj.collection.immutable.IdentityPair
  *
  * @note Join stabilization is always done for all domain values once this trait is mixed in.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait JoinStabilization extends CoreDomainFunctionality {
 

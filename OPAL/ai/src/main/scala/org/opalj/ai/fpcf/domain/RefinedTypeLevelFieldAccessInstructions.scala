@@ -16,7 +16,7 @@ import org.opalj.ai.fpcf.properties.FieldValue
 /**
  * Queries the project information to identify fields with refined field type information.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait RefinedTypeLevelFieldAccessInstructions
     extends TypeLevelFieldAccessInstructions

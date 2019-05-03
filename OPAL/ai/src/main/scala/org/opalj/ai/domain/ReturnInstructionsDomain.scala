@@ -6,7 +6,7 @@ package domain
 /**
  * Adds support for handling return instructions in a generic manner.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain {
     domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
