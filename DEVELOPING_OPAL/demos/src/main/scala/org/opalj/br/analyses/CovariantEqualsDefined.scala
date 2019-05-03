@@ -37,7 +37,7 @@ object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
         project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ): Iterable[Issue] = {
+    ): BasicReport = {
 
         val mutex = new Object
         var reports = List[Issue]()
@@ -64,6 +64,6 @@ object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
                 }
             }
         }
-        reports
+        reports.map(_.toAnsiColoredString).mkString("\n")
     }
 }
