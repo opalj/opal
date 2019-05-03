@@ -130,6 +130,9 @@ lazy val `OPAL` = (project in file("."))
 //  .configure(_.copy(id = "OPAL"))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
+  .settings(
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(hermes, hermes_ui, validate, demos, incubation,tools)
+  )
   .aggregate(
     common,
     si,
