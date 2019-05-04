@@ -15,11 +15,6 @@ import org.opalj.br.cfg.CFG
 /**
  * Contains the 3-address code of a method.
  *
- * == Attributes ==
- * The following code attributes are `directly` reused (i.e., the PCs are not transformed):
- * - LineNumberTableAttribute; the statements keep the reference to the underlying/original
- *   instruction which is used to retrieve the respective information.
- *
  * @param params The variables which store the method's explicit and implicit (`this` in case
  *               of an instance method) parameters.
  *               In case of the ai-based representation (TACAI - default representation),
@@ -34,7 +29,7 @@ import org.opalj.br.cfg.CFG
  *
  * @tparam V     The type of Vars used by the underlying code.
  *               Given that the stmts array is conceptually immutable - i.e., no client is allowed
- *               to change it(!!!) - the type V is actually co-variant, but we cannot express this.
+ *               to change it(!) - the type V is actually co-variant, but we cannot express this.
  *
  * @author Michael Eichberg
  */
@@ -43,8 +38,7 @@ final class TACode[P <: AnyRef, V <: Var[V]](
         val stmts:             Array[Stmt[V]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
         val pcToIndex:         Array[Int],
         val cfg:               CFG[Stmt[V], TACStmts[V]],
-        val exceptionHandlers: ExceptionHandlers,
-        val lineNumberTable:   Option[LineNumberTable]
+        val exceptionHandlers: ExceptionHandlers
 // TODO Support the rewriting of TypeAnnotations etc.
 ) extends Attribute with CodeSequence[Stmt[V]] {
 
@@ -64,10 +58,12 @@ final class TACode[P <: AnyRef, V <: Var[V]](
         this equals other
     }
 
-    def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber()) // IMPROVE [L2] Use IntOption
+    def firstLineNumber(code : Code): Option[Int] = {
+        code.lineNumberTable.flatMap(_.firstLineNumber()) // IMPROVE [L2] Use IntOption
+    }
 
-    def lineNumber(index: Int): Option[Int] = { // IMPROVE [L2] Use IntOption
-        lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
+    def lineNumber(code : Code, index: Int): Option[Int] = { // IMPROVE [L2] Use IntOption
+        code.lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
     }
 
     override def equals(other: Any): Boolean = {
@@ -137,22 +133,20 @@ object TACode {
         stmts:             Array[Stmt[V]],
         pcToIndex:         Array[Int],
         cfg:               CFG[Stmt[V], TACStmts[V]],
-        exceptionHandlers: ExceptionHandlers,
-        lineNumberTable:   Option[LineNumberTable]
+        exceptionHandlers: ExceptionHandlers
     ): TACode[P, V] = {
-        new TACode(params, stmts, pcToIndex, cfg, exceptionHandlers, lineNumberTable)
+        new TACode(params, stmts, pcToIndex, cfg, exceptionHandlers)
     }
 
     def unapply[P <: AnyRef, V <: Var[V]](
         code: TACode[P, V]
-    ): Some[(Parameters[P], Array[Stmt[V]], Array[Int], CFG[Stmt[V], TACStmts[V]], ExceptionHandlers, Option[LineNumberTable])] = {
+    ): Some[(Parameters[P], Array[Stmt[V]], Array[Int], CFG[Stmt[V], TACStmts[V]], ExceptionHandlers)] = {
         Some((
             code.params,
             code.stmts,
             code.pcToIndex,
             code.cfg,
-            code.exceptionHandlers,
-            code.lineNumberTable
+            code.exceptionHandlers
         ))
     }
 
