@@ -658,8 +658,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     }
                 }
 
-                // Map facts valid on each exit statement of the callee back to the caller
-                // TODO We do not distinguish exceptions and normal return nodes!
+                //Create exit to return facts. At first for normal returns, then for abnormal returns.
                 for {
                     successor ← successors if successor.node.isBasicBlock || successor.node.isNormalReturnExitNode
                     exitStatement ← allNewExitFacts.keys if exitStatement.stmt.astID == Return.ASTID ||
