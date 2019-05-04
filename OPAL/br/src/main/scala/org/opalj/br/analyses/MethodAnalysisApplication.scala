@@ -36,7 +36,7 @@ abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
         params:        Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        implicit val logContext : LogContext = p.logContext
+        implicit val logContext: LogContext = p.logContext
 
         // Find the class(es) that we want to analyze.
         // (Left as an exercise: error handling...)

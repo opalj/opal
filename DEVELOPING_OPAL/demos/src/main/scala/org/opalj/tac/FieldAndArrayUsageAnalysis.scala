@@ -86,11 +86,11 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
             as ← ass
             pc = as.pc
             m = as.method
+            body = m.body.get
             FinalP(tacai) = propertyStore(m, org.opalj.tac.fpcf.properties.TACAI.key)
             code = tacai.tac.get
             stmts = code.stmts
-            lineNumbers = code.lineNumberTable
-            index = code.stmts indexWhere { stmt ⇒ stmt.pc == pc }
+            index = stmts indexWhere { stmt ⇒ stmt.pc == pc }
             if index != -1
         } {
             allocations += 1
@@ -166,21 +166,19 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                                 }
                                             }
 
-                                            for (stmt ← stmts) {
-                                                stmt match {
-                                                    case Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) if arrayRef2.isVar ⇒
-                                                        if (arrayRef2.asVar.definedBy.exists(defSitesOfArray.contains)) {
-                                                            arrayLoads += 1
-                                                            println(
-                                                                s"""
-                                                                    |${m.toJava}:
-                                                                    |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(as.pc)} new $as
-                                                                    |  ${if (lineNumbers.nonEmpty) lineNumbers.get.lookupLineNumber(pcOfStore)} $arrayStore}
-                                                                 """.stripMargin
-                                                            )
-                                                        }
-                                                    case _ ⇒
-                                                }
+                                            for {
+                                                Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) ← stmts
+                                                if arrayRef2.isVar
+                                                if arrayRef2.asVar.definedBy.exists(defSitesOfArray.contains)
+                                            } {
+                                                arrayLoads += 1
+                                                println(
+                                                    s"""
+                                                       |${m.toJava}:
+                                                       |  ${body.lineNumber(as.pc).map("line: "+_.toString).getOrElse("")} new $as
+                                                       |  ${body.lineNumber(pcOfStore).map("line: "+_.toString).getOrElse("")} $arrayStore}
+                                                       |""".stripMargin
+                                                )
                                             }
                                         }
                                     }

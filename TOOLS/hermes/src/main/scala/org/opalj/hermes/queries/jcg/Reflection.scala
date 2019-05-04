@@ -139,7 +139,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case i @ INVOKESTATIC(ClassT, false, "forName", ForName1MD | ForName3MD) ⇒ i
             }
         } {
-            val TACode(_, stmts, pcToIndex, _, _, _) = try {
+            val TACode(_, stmts, pcToIndex, _, _) = try {
                 tacai(method)
             } catch {
                 case e: Exception ⇒
@@ -482,7 +482,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             if (invokes.isEmpty) {
                 false
             } else {
-                val TACode(_, stmts, pcToIndex, _, _, _) = tacai(method)
+                val TACode(_, stmts, pcToIndex, _, _) = tacai(method)
                 invokes.exists { pcAndInvocation ⇒
                     val stmt = stmts(pcToIndex(pcAndInvocation.pc))
                     val call =

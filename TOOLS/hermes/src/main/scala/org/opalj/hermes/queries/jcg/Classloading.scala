@@ -72,7 +72,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             pcAndInvocation ← body collect {
                 case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) ⇒ i
             }
-            TACode(_, stmts, pcToIndex, _, _, _) = tacai(method)
+            TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(methodLocation, pc)

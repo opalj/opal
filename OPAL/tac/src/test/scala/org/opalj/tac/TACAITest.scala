@@ -64,7 +64,7 @@ class TACAITest extends FunSpec with Matchers {
                                 getConstructor(classOf[Project[_]], classOf[Method]).
                                 newInstance(p, m)
                         val aiResult = BaseAI(m, d)
-                        val TACode(params, code, _, cfg, _, _) = TACAI(m, p.classHierarchy, aiResult, false)(Nil)
+                        val TACode(params, code, _, cfg, _) = TACAI(m, p.classHierarchy, aiResult, false)(Nil)
                         val actual = ToTxt(params, code, cfg, skipParams = false, indented = false, true)
 
                         val simpleDomainName = domainName.stripPrefix("org.opalj.ai.domain.")

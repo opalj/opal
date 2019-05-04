@@ -6,11 +6,11 @@ import java.util.{Arrays ⇒ JArrays}
 
 import org.opalj.value.ValueInformation
 import org.opalj.br.Attribute
-import org.opalj.br.ExceptionHandlers
-import org.opalj.br.LineNumberTable
-import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.CodeSequence
+import org.opalj.br.ExceptionHandlers
+import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.cfg.CFG
+import org.opalj.br.Code
 
 /**
  * Contains the 3-address code of a method.
@@ -58,11 +58,11 @@ final class TACode[P <: AnyRef, V <: Var[V]](
         this equals other
     }
 
-    def firstLineNumber(code : Code): Option[Int] = {
+    def firstLineNumber(code: Code): Option[Int] = {
         code.lineNumberTable.flatMap(_.firstLineNumber()) // IMPROVE [L2] Use IntOption
     }
 
-    def lineNumber(code : Code, index: Int): Option[Int] = { // IMPROVE [L2] Use IntOption
+    def lineNumber(code: Code, index: Int): Option[Int] = { // IMPROVE [L2] Use IntOption
         code.lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
     }
 
@@ -71,14 +71,12 @@ final class TACode[P <: AnyRef, V <: Var[V]](
             case that: TACode[_, _] ⇒
                 // Recall that the CFG is derived from the stmts and therefore necessarily
                 // equal when the statements are equal.
-                JArrays.equals(
-                    this.stmts.asInstanceOf[Array[AnyRef]],
-                    that.stmts.asInstanceOf[Array[AnyRef]]
-                ) &&
+                val thisStmts = this.stmts.asInstanceOf[Array[AnyRef]]
+                val thatStmts = that.stmts.asInstanceOf[Array[AnyRef]]
+                JArrays.equals(thisStmts, thatStmts) &&
                     this.params == that.params &&
                     JArrays.equals(this.pcToIndex, that.pcToIndex) &&
-                    this.exceptionHandlers == that.exceptionHandlers &&
-                    this.lineNumberTable == that.lineNumberTable
+                    this.exceptionHandlers == that.exceptionHandlers
 
             case _ ⇒ false
         }
@@ -87,11 +85,10 @@ final class TACode[P <: AnyRef, V <: Var[V]](
     override lazy val hashCode: Int = {
         // In the following, we do not consider the CFG as the CFG is "just" a derived
         // data structure.
-        (((params.hashCode * 31 +
+        ((params.hashCode * 31 +
             JArrays.hashCode(stmts.asInstanceOf[Array[AnyRef]])) * 31 +
             JArrays.hashCode(pcToIndex)) * 31 +
-            exceptionHandlers.hashCode * 31) +
-            lineNumberTable.hashCode * 31
+            exceptionHandlers.hashCode * 31
     }
 
     /** Detaches the 3-address code from the underlying abstract interpreation result. */
@@ -101,8 +98,7 @@ final class TACode[P <: AnyRef, V <: Var[V]](
             this.stmts.map(_.toCanonicalForm),
             pcToIndex,
             cfg.asInstanceOf[CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]]],
-            exceptionHandlers,
-            lineNumberTable
+            exceptionHandlers
         )
     }
 
@@ -115,12 +111,7 @@ final class TACode[P <: AnyRef, V <: Var[V]](
                 exceptionHandlers.mkString(",exceptionHandlers=(\n\t", ",\n\t", "\n)")
             else
                 ""
-        val txtLineNumbers =
-            lineNumberTable match {
-                case Some(lnt) ⇒ lnt.lineNumbers.mkString(",lineNumberTable=(\n\t", ",\n\t", "\n)")
-                case None      ⇒ ""
-            }
-        s"TACode($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers$txtLineNumbers)"
+        s"TACode($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers)"
     }
 
 }

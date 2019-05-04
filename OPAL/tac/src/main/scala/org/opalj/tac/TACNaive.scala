@@ -933,13 +933,12 @@ object TACNaive {
         val tacEHs = updateExceptionHandlers(code.exceptionHandlers, pcToIndex)
 
         val taCodeParams = new Parameters(tacParams)
-        val lnt = code.lineNumberTable
         if (optimizations.nonEmpty) {
-            val initialTAC = TACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs, lnt)
+            val initialTAC = TACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs)
             val base = TACOptimizationResult[Param, IdBasedVar](initialTAC, wasTransformed = false)
             optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac)).code
         } else {
-            TACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs, lnt)
+            TACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs)
         }
     }
 

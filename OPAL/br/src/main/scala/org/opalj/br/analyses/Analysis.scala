@@ -128,9 +128,8 @@ trait Analysis[Source, +AnalysisResult] {
      */
     def analyze(
         project:                Project[Source],
-        parameters:             Seq[String]           = Seq.empty,
+        parameters:             Seq[String]              = Seq.empty,
         initProgressManagement: Int ⇒ ProgressManagement
     ): AnalysisResult
-
 
 }
