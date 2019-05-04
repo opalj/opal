@@ -13,6 +13,8 @@ import com.typesafe.config.Config
 
 import org.opalj.br.reader.Java9LibraryFramework
 import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.info
+import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.LogMessage
@@ -80,32 +82,61 @@ trait AnalysisApplication {
      * the set of specified parameters is not valid.
      */
     protected def printUsage(implicit logContext: LogContext): Unit = {
-        OPALLogger.info(
+        info(
             "usage",
             "java "+
                 this.getClass.getName+"\n"+
+                "[-help (prints this help and exits)]\n"+
+                "[-renderConfig (prints the configuration)]\n"+
                 "[-cp=<Directories or JAR/class files> (Default: the current folder.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
-                "[-renderConfig (prints the configuration)]\n"+
-                "[-completelyLoadLibraries=<true|false> (Default: false.)]\n"+
+                "[-completelyLoadLibraries (the bodies of library methods are loaded)]\n"+
                 analysisSpecificParametersDescription
         )
-        OPALLogger.info("general", "description: "+analysis.description)
-        OPALLogger.info("general", "copyright: "+analysis.copyright)
+        info("general", "description: "+analysis.description)
+        info("general", "copyright: "+analysis.copyright)
     }
 
     def main(args: Array[String]): Unit = {
 
         implicit val logContext: LogContext = GlobalLogContext
-        if (args.contains("-help")) {
-            printUsage
-            sys.exit(0)
-        }
 
-        def showError(message: String): Unit = OPALLogger.error("project configuration", message)
+        def showError(message: String): Unit = error("project configuration", message)
 
         //
-        // 1. check arguments
+        // Categories of args
+        //
+        var unknownArgs = List.empty[String]
+        var cp = IndexedSeq.empty[String]
+        var libcp = IndexedSeq.empty[String]
+        var completelyLoadLibraries = false
+        var renderConfig = false
+
+        //
+        // 1. Process args
+        //
+        def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
+        def splitLibCPath(path: String) = path.substring(7).split(File.pathSeparator)
+        args.foreach { arg ⇒
+            if (arg == "-help") {
+                printUsage
+                sys.exit(0)
+            } else if (arg.startsWith("-cp=")) {
+                cp ++= splitCPath(arg)
+            } else if (arg.startsWith("-libcp=")) {
+                libcp ++= splitLibCPath(arg)
+            } else if (arg == "-completelyLoadLibraries") {
+                completelyLoadLibraries = true
+            } else if (arg == "-renderConfig") {
+                renderConfig = true
+            } else {
+                unknownArgs ::= arg
+            }
+
+        }
+
+        //
+        // 2. Check parsed args
         //
         // Input files must be either directories, or class/jar files.
         //
@@ -122,7 +153,7 @@ trait AnalysisApplication {
             } else if (!file.canRead) {
                 showError(s"Cannot read: $file $workingDirectory.")
                 None
-            } else if (!file.isDirectory() &&
+            } else if (!file.isDirectory &&
                 !filename.endsWith(".jar") &&
                 !filename.endsWith(".ear") &&
                 !filename.endsWith(".war") &&
@@ -135,26 +166,10 @@ trait AnalysisApplication {
                 Some(file)
         }
 
-        def verifyFiles(filenames: Array[String]): Seq[File] = filenames.toSeq.flatMap(verifyFile)
+        def verifyFiles(filenames: IndexedSeq[String]): Seq[File] = filenames.flatMap(verifyFile)
 
-        val (cp, args1) = try {
-            def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
-
-            args.partition(_.startsWith("-cp=")) match {
-                case (Array(), notCPArgs) ⇒
-                    (Array(System.getProperty("user.dir")), notCPArgs)
-                case (Array(cpParam), notCPArgs) ⇒
-                    (splitCPath(cpParam), notCPArgs)
-                case (cpParams: Array[String], notCPArgs) ⇒
-                    (cpParams.flatMap(splitCPath), notCPArgs)
-            }
-        } catch {
-            case t: Throwable ⇒
-                OPALLogger.error("fatal", "failed parsing the classpath", t)
-                sys.exit(2)
-        }
-
-        OPALLogger.info("project configuration", s"the classpath is ${cp.mkString}")
+        if (cp.isEmpty) cp = Array(System.getProperty("user.dir"))
+        info("project configuration", s"the classpath is ${cp.mkString}")
         val cpFiles = verifyFiles(cp)
         if (cpFiles.isEmpty) {
             showError("Nothing to analyze.")
@@ -162,44 +177,11 @@ trait AnalysisApplication {
             sys.exit(1)
         }
 
-        val (libcp, args2) = {
-            def splitLibCPath(path: String) = path.substring(7).split(File.pathSeparator)
-
-            args1.partition(_.startsWith("-libcp=")) match {
-                case noLibs @ (Array(), _) ⇒
-                    noLibs
-                case (Array(libParam), args2) ⇒
-                    (splitLibCPath(libParam), args2)
-                case (libParams: Array[String], args2) ⇒
-                    (libParams.map(splitLibCPath).flatten, args2)
-            }
-        }
         val libcpFiles = verifyFiles(libcp)
 
-        val (renderConfig, args3) =
-            args2.partition(_ == "-renderConfig") match {
-                case (Array("-renderConfig"), args3) ⇒ (true, args3)
-                case (Array(), args3)                ⇒ (false, args3)
-            }
-
-        val (completelyLoadLibraries, args4) = try {
-            args3.partition(_.startsWith("-completelyLoadLibraries=")) match {
-                case (Array(), args4) ⇒
-                    (false, args4)
-                case (Array(completelyLoadLibrariesParameter), args4) ⇒
-                    val completelyLoadLibraries: Boolean = completelyLoadLibrariesParameter.substring(25).toBoolean
-                    (completelyLoadLibraries, args4)
-            }
-        } catch {
-            case t: Throwable ⇒
-                OPALLogger.error("project configuration", "failed parsing completelyLoadLibraries", t)
-                printUsage
-                sys.exit(2)
-        }
-
-        if (args4.nonEmpty)
-            OPALLogger.info("project configuration", "analysis specific parameters: "+args4.mkString(","))
-        val issues = checkAnalysisSpecificParameters(args4)
+        if (unknownArgs.nonEmpty)
+            OPALLogger.info("project configuration", "analysis specific parameters: "+unknownArgs.mkString(","))
+        val issues = checkAnalysisSpecificParameters(unknownArgs)
         if (issues.nonEmpty) {
             issues.foreach { i ⇒ OPALLogger.error("project configuration", i) }
             printUsage
@@ -207,30 +189,31 @@ trait AnalysisApplication {
         }
 
         //
-        // 2. setup project context
+        // 3. Setup project context
         //
         val project: Project[URL] = try {
             setupProject(cpFiles, libcpFiles, completelyLoadLibraries, ConfigFactory.load())
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
-                OPALLogger.error("fatal", "setting up the project failed", t)
+                error("fatal", "setting up the project failed", t)
                 printUsage
                 sys.exit(2)
         }
 
+        //
+        // 4. execute analysis
+        //
+
         if (renderConfig) {
             val effectiveConfiguration =
                 "Effective configuration:\n"+org.opalj.util.renderConfig(project.config)
-            OPALLogger.info("project configuration", effectiveConfiguration)
+            info("project configuration", effectiveConfiguration)
         }
 
-        //
-        // 3. execute analysis
-        //
-        OPALLogger.info("info", "executing analysis: "+analysis.title+".")
+        info("info", "executing analysis: "+analysis.title+".")
         // TODO Add progressmanagement.
-        val result = analysis.analyze(project, args2, ProgressManagement.None)
+        val result = analysis.analyze(project, unknownArgs.toSeq, ProgressManagement.None)
         OPALLogger.log(LogMessage.plainInfo(result.toConsoleString))
     }
 
@@ -243,7 +226,7 @@ trait AnalysisApplication {
 
         implicit val logContext: LogContext = project.logContext
         for (exception ← exceptions) {
-            OPALLogger.error("creating project", "ignoring invalid class file", exception)
+            error("creating project", "ignoring invalid class file", exception)
         }
     }
 
@@ -262,19 +245,19 @@ trait AnalysisApplication {
         //  val configuredConfig = projectTypeConfig.withFallback(fallbackConfiguration)
         val configuredConfig = fallbackConfiguration
 
-        OPALLogger.info("creating project", "reading project class files")
+        info("creating project", "reading project class files")
         val JavaClassFileReader = Project.JavaClassFileReader(initialLogContext, configuredConfig)
 
         val (classFiles, exceptions1) =
             reader.readClassFiles(
                 cpFiles,
                 JavaClassFileReader.ClassFiles,
-                file ⇒ OPALLogger.info("creating project", "\tfile: "+file)
+                file ⇒ info("creating project", "\tfile: "+file)
             )
 
         val (libraryClassFiles, exceptions2) = {
             if (libcpFiles.nonEmpty) {
-                OPALLogger.info("creating project", "reading library class files")
+                info("creating project", "reading library class files")
                 reader.readClassFiles(
                     libcpFiles,
                     if (completelyLoadLibraries) {
@@ -282,7 +265,7 @@ trait AnalysisApplication {
                     } else {
                         Java9LibraryFramework.ClassFiles
                     },
-                    file ⇒ OPALLogger.info("creating project", "\tfile: "+file)
+                    file ⇒ info("creating project", "\tfile: "+file)
                 )
             } else {
                 (Iterable.empty[(ClassFile, URL)], List.empty[Throwable])
@@ -297,11 +280,12 @@ trait AnalysisApplication {
             )(config = configuredConfig)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 
-        OPALLogger.info(
-            "project",
-            project.statistics.map(kv ⇒ "- "+kv._1+": "+kv._2).toList.sorted.reverse.
-                mkString("project statistics:\n\t", "\n\t", "\n")
-        )(project.logContext)
+        val statistics =
+            project
+                .statistics.map(kv ⇒ "- "+kv._1+": "+kv._2)
+                .toList.sorted.reverse
+                .mkString("project statistics:\n\t", "\n\t", "\n")
+        info("project", statistics)(project.logContext)
         project
     }
 }
