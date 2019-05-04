@@ -334,7 +334,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 state.source,
                 propertyValue,
                 dependees,
-                propertyHasBeenComputed,
+                propertyUpdate,
                 DefaultPropertyComputation
             )
         }
@@ -347,7 +347,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param eps The new property value.
      * @return The new (interim) result of this analysis.
      */
-    def propertyHasBeenComputed(eps: SomeEPS)(
+    def propertyUpdate(eps: SomeEPS)(
         implicit
         state: State
     ): ProperPropertyComputationResult = {
@@ -661,19 +661,17 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 // Map facts valid on each exit statement of the callee back to the caller
                 // TODO We do not distinguish exceptions and normal return nodes!
                 for {
-                    successor ← successors
-                    exitStatement ← allNewExitFacts.keys
-                } {
-                    val oldSummaryEdges = summaryEdges.getOrElse(successor, Set.empty[IFDSFact])
-                    val exitToReturnFacts = returnFlow(
-                        call,
-                        callee,
-                        exitStatement,
-                        successor,
-                        allNewExitFacts.getOrElse(exitStatement, Set.empty)
-                    )
-                    summaryEdges += successor → (oldSummaryEdges ++ exitToReturnFacts)
-                }
+                    successor ← successors if successor.node.isBasicBlock || successor.node.isNormalReturnExitNode
+                    exitStatement ← allNewExitFacts.keys if exitStatement.stmt.astID == Return.ASTID ||
+                        exitStatement.stmt.astID == ReturnValue.ASTID
+                } summaryEdges += successor → (summaryEdges.getOrElse(successor, Set.empty[IFDSFact]) ++
+                    returnFlow(call, callee, exitStatement, successor, allNewExitFacts.getOrElse(exitStatement, Set.empty)))
+                for {
+                    successor ← successors if successor.node.isCatchNode || successor.node.isAbnormalReturnExitNode
+                    exitStatement ← allNewExitFacts.keys if exitStatement.stmt.astID != Return.ASTID &&
+                        exitStatement.stmt.astID != ReturnValue.ASTID
+                } summaryEdges += successor → (summaryEdges.getOrElse(successor, Set.empty[IFDSFact]) ++
+                    returnFlow(call, callee, exitStatement, successor, allNewExitFacts.getOrElse(exitStatement, Set.empty)))
             }
         }
         summaryEdges
