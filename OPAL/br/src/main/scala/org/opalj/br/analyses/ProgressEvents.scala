@@ -25,7 +25,7 @@ object ProgressEvents extends Enumeration {
     val End = Value("end")
 
     /**
-     * Use to signal that a computation was killed.
+     * Used to signal that a computation was killed.
      *
      * '''After signaling a `Killed` event the underlying computation is not
      * allowed to signal any further events.'''

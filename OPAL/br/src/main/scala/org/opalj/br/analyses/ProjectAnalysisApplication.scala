@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 import java.net.URL
 
 /**
- * Default implementation of the [[AnalysisApplication]] which facilitates the
+ * Default implementation of the [[AnalysisApplication]] trait which facilitates the
  * development of analyses which are executed in one step.
  *
  * @author Michael Eichberg

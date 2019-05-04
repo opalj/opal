@@ -21,7 +21,7 @@ import org.opalj.issues.ClassLocation
  *
  * @author Michael Eichberg
  */
-class CovariantEqualsMethodDefined[Source] extends OneStepAnalysis[Source, Iterable[Issue]] {
+object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
 
     //
     // Meta-data
@@ -34,10 +34,10 @@ class CovariantEqualsMethodDefined[Source] extends OneStepAnalysis[Source, Itera
     //
 
     def doAnalyze(
-        project:       Project[Source],
+        project:       Project[URL],
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
-    ): Iterable[Issue] = {
+    ): BasicReport = {
 
         val mutex = new Object
         var reports = List[Issue]()
@@ -64,14 +64,6 @@ class CovariantEqualsMethodDefined[Source] extends OneStepAnalysis[Source, Itera
                 }
             }
         }
-        reports
+        reports.map(_.toAnsiColoredString).mkString("\n")
     }
-}
-
-/**
- * Enables the stand alone execution of this analysis.
- */
-object CovariantEqualsMethodDefinedAnalysis extends AnalysisApplication {
-
-    val analysis = ReportableAnalysisAdapter[URL](new CovariantEqualsMethodDefined)
 }
