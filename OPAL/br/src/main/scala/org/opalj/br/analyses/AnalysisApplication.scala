@@ -90,6 +90,7 @@ trait AnalysisApplication {
                 "[-renderConfig (prints the configuration)]\n"+
                 "[-cp=<Directories or JAR/class files> (Default: the current folder.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
+                "[-projectConf=<project type specific configuration options)>]\n"+
                 "[-completelyLoadLibraries (the bodies of library methods are loaded)]\n"+
                 analysisSpecificParametersDescription
         )
@@ -109,6 +110,7 @@ trait AnalysisApplication {
         var unknownArgs = List.empty[String]
         var cp = IndexedSeq.empty[String]
         var libcp = IndexedSeq.empty[String]
+        var projectConf: Option[String] = None
         var completelyLoadLibraries = false
         var renderConfig = false
 
@@ -127,6 +129,8 @@ trait AnalysisApplication {
                 libcp ++= splitLibCPath(arg)
             } else if (arg == "-completelyLoadLibraries") {
                 completelyLoadLibraries = true
+            } else if (arg.startsWith("-projectConf=")) {
+                projectConf = Some(arg.substring(13))
             } else if (arg == "-renderConfig") {
                 renderConfig = true
             } else {
@@ -180,10 +184,10 @@ trait AnalysisApplication {
         val libcpFiles = verifyFiles(libcp)
 
         if (unknownArgs.nonEmpty)
-            OPALLogger.info("project configuration", "analysis specific parameters: "+unknownArgs.mkString(","))
+            info("project configuration", "analysis specific parameters: "+unknownArgs.mkString(", "))
         val issues = checkAnalysisSpecificParameters(unknownArgs)
         if (issues.nonEmpty) {
-            issues.foreach { i ⇒ OPALLogger.error("project configuration", i) }
+            issues.foreach { i ⇒ error("project configuration", i) }
             printUsage
             sys.exit(2)
         }
@@ -192,7 +196,12 @@ trait AnalysisApplication {
         // 3. Setup project context
         //
         val project: Project[URL] = try {
-            setupProject(cpFiles, libcpFiles, completelyLoadLibraries, ConfigFactory.load())
+            val config =
+                if (projectConf.isEmpty)
+                    ConfigFactory.load()
+                else
+                    ConfigFactory.load(projectConf.get)
+            setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
             case t: Throwable ⇒
@@ -234,17 +243,11 @@ trait AnalysisApplication {
         cpFiles:                 Iterable[File],
         libcpFiles:              Iterable[File],
         completelyLoadLibraries: Boolean,
-        fallbackConfiguration:   Config
+        configuredConfig:        Config
     )(
         implicit
         initialLogContext: LogContext
     ): Project[URL] = {
-
-        // TODO Add support for loading project type specific configuration
-        //  val projectTypeConfig = Config.load(...)
-        //  val configuredConfig = projectTypeConfig.withFallback(fallbackConfiguration)
-        val configuredConfig = fallbackConfiguration
-
         info("creating project", "reading project class files")
         val JavaClassFileReader = Project.JavaClassFileReader(initialLogContext, configuredConfig)
 
