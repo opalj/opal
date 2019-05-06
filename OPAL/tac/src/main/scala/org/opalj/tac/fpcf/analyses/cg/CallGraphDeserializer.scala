@@ -154,13 +154,13 @@ private class CallGraphDeserializer private[analyses] (
         dm: DeclaredMethod, lineNumber: Int, declaredTgt: DeclaredMethod, index: Int
     ): Int = {
         if (!dm.hasSingleDefinedMethod)
-            return -1;
+            return 0;
 
         val method = dm.definedMethod
         val bodyOpt = method.body
 
         if (bodyOpt.isEmpty)
-            return -1;
+            return 0;
 
         val body = bodyOpt.get
 
@@ -185,7 +185,7 @@ private class CallGraphDeserializer private[analyses] (
         val instructions = body.collectInstructionsWithPC(pf)
 
         if (!instructions.isDefinedAt(index))
-            return -1;
+            return 0;
 
         instructions(index).pc
     }
