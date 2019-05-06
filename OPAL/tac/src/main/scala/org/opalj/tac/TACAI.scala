@@ -1018,9 +1018,6 @@ object TACAI {
                 statements(index).astID == CaughtException.ASTID
             }
             if (index == maxStatements) {
-                // Examples:
-                // It can be a single goto, a return or a throw (of an exception passed to
-                // the method via a parameter).
                 var s = 0
                 while (s < maxStatements) {
                     statements(s).remapIndexes(pcToIndex, isIndexOfCaughtExceptionStmt)
