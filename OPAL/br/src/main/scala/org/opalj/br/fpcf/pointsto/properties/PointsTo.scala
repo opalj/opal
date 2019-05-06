@@ -27,10 +27,10 @@ sealed trait PointsToPropertyMetaInformation extends PropertyMetaInformation {
 }
 
 case class PointsTo private[properties] (
-    private val orderedTypes: List[ObjectType],
-    types:                    UIDSet[ObjectType]
+        private val orderedTypes: List[ObjectType],
+        types:                    UIDSet[ObjectType]
 ) extends OrderedProperty
-        with PointsToPropertyMetaInformation {
+    with PointsToPropertyMetaInformation {
 
     assert(orderedTypes == null || orderedTypes.size == types.size)
 

@@ -70,7 +70,7 @@ object ReachableMethodDescription {
  * contains the set of computed target methods (`targets`).
  */
 case class CallSiteDescription(
-    declaredTarget: MethodDesc, line: Int, pc: Option[Int], targets: Set[MethodDesc]
+        declaredTarget: MethodDesc, line: Int, pc: Option[Int], targets: Set[MethodDesc]
 )
 
 object CallSiteDescription {
@@ -186,7 +186,7 @@ private class CallGraphDeserializer private[analyses] (
 
         if (!instructions.isDefinedAt(index))
             return -1;
-      
+
         instructions(index).pc
     }
 }

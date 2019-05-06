@@ -455,12 +455,12 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
                     val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
-                        val cfOption = project.classFile(subtype)
-                        cfOption.isDefined && {
-                            val cf = cfOption.get
-                            !cf.isInterfaceDeclaration && !cf.isAbstract
+                            val cfOption = project.classFile(subtype)
+                            cfOption.isDefined && {
+                                val cf = cfOption.get
+                                !cf.isInterfaceDeclaration && !cf.isAbstract
+                            }
                         }
-                    }
 
                     handleImpreciseCall(
                         caller,
@@ -740,7 +740,6 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
         ps:       PropertyStore,
         analysis: FPCFAnalysis
     ): Unit = {}
-
 
     override def triggeredBy: PropertyKind = CallersProperty
 }
