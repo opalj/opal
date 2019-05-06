@@ -79,7 +79,8 @@ object RTACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                 LazyTACAIProvider
             )
 
-        // in case the library entrypoints finder is configured, we wan to use the 
+        // in case the library entrypoints finder is configured, we want to use the
+        // EagerLibraryEntryPointsAnalysis
         val isLibrary =
             config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
                 "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
