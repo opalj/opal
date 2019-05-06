@@ -26,6 +26,7 @@ import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
 
 /**
  * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on RTA.
@@ -74,6 +75,7 @@ object RTACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             List(
                 RTACallGraphAnalysisScheduler,
                 TriggeredInstantiatedTypesAnalysis,
+                TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
                 LazyTACAIProvider
             )
 
