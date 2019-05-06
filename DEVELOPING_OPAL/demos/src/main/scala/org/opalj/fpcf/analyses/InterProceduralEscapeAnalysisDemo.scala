@@ -9,8 +9,8 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeInCallee
@@ -40,7 +40,7 @@ import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
  *
  * @author Florian Kuebler
  */
-object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
+object InterProceduralEscapeAnalysisDemo extends ProjectAnalysisApplication {
 
     override def title: String = "determines escape information"
 
@@ -58,13 +58,10 @@ object InterProceduralEscapeAnalysisDemo extends DefaultOneStepAnalysis {
         val propertyStore = time {
             val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 
-            project.updateProjectInformationKeyInitializationData(
-                AIDomainFactoryKey,
-                (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                    case None               ⇒ Set(performInvocationsDomain)
-                    case Some(requirements) ⇒ requirements + performInvocationsDomain
-                }): Set[Class[_ <: AnyRef]]
-            )
+            project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                case None               ⇒ Set(performInvocationsDomain)
+                case Some(requirements) ⇒ requirements + performInvocationsDomain
+            }
             project.get(PropertyStoreKey)
         } { t ⇒ info("progress", s"initialization of property store took ${t.toSeconds}") }
 

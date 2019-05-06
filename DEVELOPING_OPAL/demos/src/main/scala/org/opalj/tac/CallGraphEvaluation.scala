@@ -14,8 +14,8 @@ import com.typesafe.config.ConfigValueFactory
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -23,7 +23,7 @@ import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 
-object CallGraphEvaluation extends DefaultOneStepAnalysis {
+object CallGraphEvaluation extends ProjectAnalysisApplication {
 
     override def analysisSpecificParametersDescription: String = {
         "[-module=<module>]"+"[-algorithm=CHA|RTA]"+"[-projectName=<name>]"
@@ -102,13 +102,11 @@ object CallGraphEvaluation extends DefaultOneStepAnalysis {
         val p = Project.recreate(project, config)
 
         val domain = classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
-        p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(domain)
-                case Some(requirements) ⇒ requirements + domain
-            }): Set[Class[_ <: AnyRef]]
-        )
+
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               ⇒ Set(domain)
+            case Some(requirements) ⇒ requirements + domain
+        }
 
         val start = System.currentTimeMillis()
 
