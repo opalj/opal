@@ -39,7 +39,6 @@ final class TACode[P <: AnyRef, V <: Var[V]](
         val pcToIndex:         Array[Int],
         val cfg:               CFG[Stmt[V], TACStmts[V]],
         val exceptionHandlers: ExceptionHandlers
-// TODO Support the rewriting of TypeAnnotations etc.
 ) extends Attribute with CodeSequence[Stmt[V]] {
 
     override def instructions: Array[Stmt[V]] = stmts
@@ -83,7 +82,7 @@ final class TACode[P <: AnyRef, V <: Var[V]](
     }
 
     override lazy val hashCode: Int = {
-        // In the following, we do not consider the CFG as the CFG is "just" a derived
+        // In the following we do not consider the CFG as it is "just" a derived
         // data structure.
         ((params.hashCode * 31 +
             JArrays.hashCode(stmts.asInstanceOf[Array[AnyRef]])) * 31 +
