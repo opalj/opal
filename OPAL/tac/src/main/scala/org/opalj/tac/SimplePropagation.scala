@@ -106,8 +106,7 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar] {
             code, // <= mutated
             taCode.pcToIndex, // <= we only introduce nops => no need to update the mapping
             cfg,
-            taCode.exceptionHandlers,
-            taCode.lineNumberTable
+            taCode.exceptionHandlers
         )
         new TACOptimizationResult(newTACode, wasTransformed)
     }

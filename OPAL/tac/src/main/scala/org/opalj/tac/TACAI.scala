@@ -1045,17 +1045,16 @@ object TACAI {
             // singleton bbs.
             if (addedHandlerStmts.contains(index)) index + 1 else index
         }
-        val taCodeCFG =
+        val tacCFG =
             cfg.mapPCsToIndexes[Stmt[AIDUVar], TACStmts[AIDUVar]](
                 TACStmts(tacStmts),
                 pcToIndex,
                 singletonBBsExpander,
                 lastIndex = index - 1
             )
-        val taExceptionHandlers = updateExceptionHandlers(pcToIndex)(aiResult)
-        val lnt = code.lineNumberTable
+        val tacExceptionHandlers = updateExceptionHandlers(pcToIndex)(aiResult)
         val initialTAC = TACode[TACMethodParameter, AIDUVar](
-            tacParams, tacStmts, pcToIndex, taCodeCFG, taExceptionHandlers, lnt
+            tacParams, tacStmts, pcToIndex, tacCFG, tacExceptionHandlers
         )
 
         // Potential Optimizations

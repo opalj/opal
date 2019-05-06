@@ -108,7 +108,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case i @ INVOKEVIRTUAL(declClass, "readObject", JustReturnsObject) if classHierarchy.isSubtypeOf(declClass, OIS)             ⇒ i
                 case i @ INVOKEVIRTUAL(declClass, "registerValidation", OISregisterValidation) if classHierarchy.isSubtypeOf(declClass, OIS) ⇒ i
             }
-            TACode(_, stmts, pcToIndex, _, _, _) = tacai(method)
+            TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(methodLocation, pc)

@@ -449,6 +449,29 @@ object Return {
     final val ASTID = 7
 }
 
+/**
+ * Models a no-operation. In general, a NOP operation can be pruned; however, in the TACAI
+ * representation, if a NOP is the last statement of a basic block where the previous basic block
+ * has multiple-successors then it may be the case that the NOP cannot be pruned, because it it
+ * is required to keep the path alive. For example, given the following code:
+ * {{{
+ * public int m(int i, int j, boolean z){
+ *   int r = 0;
+ *   if (z) {
+ *     r = i;
+ *   } else {
+ *     r = j;
+ *   }
+ *   return r;
+ * }
+ * }}}
+ *
+ * In this case, the returned value is either i or j and therefore the UVar would directly encode that
+ * information and therefore the assignments would be ignored. (The information can be recovered,
+ * if needed, using the control-flow information.)
+ *
+ * @param pc
+ */
 case class Nop(pc: Int) extends SimpleStmt {
 
     final override def asNop: this.type = this

@@ -5,6 +5,7 @@ package analyses
 
 import java.net.URL
 
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 
 /**
@@ -35,7 +36,7 @@ abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
         params:        Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
-        implicit val logContext = p.logContext
+        implicit val logContext: LogContext = p.logContext
 
         // Find the class(es) that we want to analyze.
         // (Left as an exercise: error handling...)

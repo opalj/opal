@@ -45,22 +45,23 @@
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-08-14-2014.jar"
                     },
                     {
-                        "id": "OPAL-MultiJar-SNAPSHOT-11-01-2017.jar",
-                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-11-01-2017.jar"
+                        "id": "OPAL-MultiJar-SNAPSHOT-01-04-2018.jar",
+                        "cp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018.jar",
+                        "libcp": "../../OPAL/bi/src/test/resources/classfiles/OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies"
                     },
                     {
                         "id": "Multithreaded RPN Calculator ",
                         "cp": "../../OPAL/bi/src/test/resources/classfiles/Multithreaded RPN Calculator 2008_10_17 - Java 6 all debug info.jar"
                     },
                     {
-                        "id" : "JVM Features",
+                        "id": "JVM Features",
                         "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/jvm_features-1.8-g-parameters-genericsignature.jar",
-                        "libcp_defaults" : "RTJar"
+                        "libcp_defaults": "RTJar"
                     },
                     {
                         "id": "ai",
                         "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/ai.jar",
-                        "libcp_defaults" : "JRE"
+                        "libcp_defaults": "JRE"
                     },
                     {
                         "id": "arrays",
@@ -69,7 +70,7 @@
                     {
                         "id": "bugs",
                         "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/bugs.jar",
-                        "libcp_defaults" : "RTJar"
+                        "libcp_defaults": "RTJar"
                     },
                     {
                         "id": "classhierarchy",
@@ -148,8 +149,8 @@
                         "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/methods.jar"
                     },
                     {
-                      "id": "metrics",
-                      "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/metrics.jar"
+                        "id": "metrics",
+                        "cp": "../../OPAL/bi/target/scala-2.12/resource_managed/test/metrics.jar"
                     },
                     {
                         "id": "polymorphism",
