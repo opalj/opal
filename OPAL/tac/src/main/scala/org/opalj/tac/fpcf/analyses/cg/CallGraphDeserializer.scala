@@ -29,6 +29,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.PCAndInstruction
+import org.opalj.br.instructions.Instruction
 
 /**
  * Representation of all Methods that are reachable in the represented call graph.
@@ -67,7 +69,9 @@ object ReachableMethodDescription {
  * A call site has a `declaredTarget` method, is associated with a line number (-1 if unknown) and
  * contains the set of computed target methods (`targets`).
  */
-case class CallSiteDescription(declaredTarget: MethodDesc, line: Int, targets: Set[MethodDesc])
+case class CallSiteDescription(
+    declaredTarget: MethodDesc, line: Int, pc: Option[Int], targets: Set[MethodDesc]
+)
 
 object CallSiteDescription {
     implicit val callSiteReads: Reads[CallSiteDescription] = Json.reads[CallSiteDescription]
@@ -102,6 +106,14 @@ object MethodDesc {
     implicit val methodWrites: Writes[MethodDesc] = Json.writes[MethodDesc]
 }
 
+/**
+ * Reads the given serialized CG and stores the relations into the propertyStore.
+ * The call graphs must be given in the JCG format.
+ *
+ * IMPROVE: Currently uses the Play's JSON API, which is not optimized for large files.
+ *
+ * @author Florian Kuebler
+ */
 private class CallGraphDeserializer private[analyses] (
         final val serializedCG: File,
         final val project:      SomeProject
@@ -120,9 +132,14 @@ private class CallGraphDeserializer private[analyses] (
             val calls = new DirectCalls()
             val method = methodDesc.toDeclaredMethod
             for (
-                (CallSiteDescription(declaredTgtDesc, line, tgts), index) ← callSites.zipWithIndex
+                (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) ← callSites.zipWithIndex
             ) {
-                val pc = -1 //todo: how to get the pc
+
+                val pc = if (pcOpt.isDefined)
+                    pcOpt.get
+                else
+                    getPCFromLineNumber(method, line, declaredTgtDesc.toDeclaredMethod, index)
+
                 for (tgtDesc ← tgts) {
                     calls.addCall(method, tgtDesc.toDeclaredMethod, pc)
                 }
@@ -131,6 +148,46 @@ private class CallGraphDeserializer private[analyses] (
         }
 
         Results(results)
+    }
+
+    private[this] def getPCFromLineNumber(
+        dm: DeclaredMethod, lineNumber: Int, declaredTgt: DeclaredMethod, index: Int
+    ): Int = {
+        if (!dm.hasSingleDefinedMethod)
+            return -1;
+
+        val method = dm.definedMethod
+        val bodyOpt = method.body
+
+        if (bodyOpt.isEmpty)
+            return -1;
+
+        val body = bodyOpt.get
+
+        val pf = new PartialFunction[PCAndInstruction, Instruction] {
+            override def isDefinedAt(pcAndInst: PCAndInstruction): Boolean = {
+                val lnOpt = body.lineNumber(pcAndInst.pc)
+                lnOpt.isDefined && {
+                    lnOpt.get == lineNumber && {
+                        val inst = pcAndInst.instruction
+                        inst.isInvocationInstruction && {
+                            val invokeInst = inst.asInvocationInstruction
+                            invokeInst.name == declaredTgt.name &&
+                                invokeInst.methodDescriptor == declaredTgt.descriptor
+                        }
+                    }
+                }
+            }
+
+            override def apply(pcAndInst: PCAndInstruction) = pcAndInst.instruction
+        }
+
+        val instructions = body.collectInstructionsWithPC(pf)
+
+        if (!instructions.isDefinedAt(index))
+            return -1;
+      
+        instructions(index).pc
     }
 }
 
