@@ -227,8 +227,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
     }
 
     /**
-     * Called by the framework after performing a computation to inform the domain
-     * about the result.
+     * Called by the framework after performing a computation to inform the domain about the result.
      * That is, after evaluating the effect of the instruction with `currentPC` on the current
      * stack and register and (if necessary) joining the updated stack and registers with the stack
      * and registers associated with the instruction `successorPC`. (Hence, this method
