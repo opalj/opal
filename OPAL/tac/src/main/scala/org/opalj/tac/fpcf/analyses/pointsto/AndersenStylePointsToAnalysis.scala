@@ -330,6 +330,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                         // handle params
                         for (i ← 0 until target.descriptor.parametersCount) {
                             val fp = fps(i + 1)
+                            // TODO This may fail on signature polymorphic methods as the actual parameter count (call.params) might differ from the target descriptor
                             handleDefSites(fp, call.params(i).asVar.definedBy)
                         }
                     } else {
