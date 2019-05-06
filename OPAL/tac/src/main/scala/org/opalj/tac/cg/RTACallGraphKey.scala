@@ -32,21 +32,20 @@ import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
- * @param isLibrary                     should the [[org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis]] be scheduled?
+ * If the [[org.opalj.br.analyses.cg.LibraryEntryPointsFinder]] is scheduled
+ * the analysis will schedule [[org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis]].
  *
- *                                      Note, that initial instantiated types ([[InitialInstantiatedTypesKey]]) and entry points
- *                                      ([[InitialEntryPointsKey]]) can be configured before hand.
- *                                      Furthermore, you can configure the analysis mode (Library or Application) in the configuration
- *                                      of these keys.
+ * Note, that initial instantiated types ([[InitialInstantiatedTypesKey]]) and entry points
+ * ([[InitialEntryPointsKey]]) can be configured before hand.
+ * Furthermore, you can configure the analysis mode (Library or Application) in the configuration
+ * of these keys.
  *
  *
  *
  * @author Florian Kuebler
  *
  */
-case class RTACallGraphKey(
-        isLibrary: Boolean
-) extends ProjectInformationKey[CallGraph, Nothing] {
+object RTACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     override protected def requirements: ProjectInformationKeys = {
         Seq(
@@ -77,6 +76,11 @@ case class RTACallGraphKey(
                 TriggeredInstantiatedTypesAnalysis,
                 LazyTACAIProvider
             )
+
+        // in case the library entrypoints finder is configured, we wan to use the 
+        val isLibrary =
+            config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
+                "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
 
         if (isLibrary)
             analyses ::= EagerLibraryEntryPointsAnalysis

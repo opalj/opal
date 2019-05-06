@@ -83,7 +83,7 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
 
                     time {
                         // todo do not want to run this for every setting
-                        p.get(RTACallGraphKey(true))
+                        p.get(RTACallGraphKey)
                     } { t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}") }
 
                     time { p.get(FPCFAnalysesManagerKey).runAll(analyses) }(reportAnalysisTime)

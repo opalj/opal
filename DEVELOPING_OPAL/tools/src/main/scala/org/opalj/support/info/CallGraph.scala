@@ -126,7 +126,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
         val cg = cgAlgorithm.get match {
             case "CHA"      ⇒ project.get(CHACallGraphKey)
-            case "RTA"      ⇒ project.get(RTACallGraphKey(isLibrary.get))
+            case "RTA"      ⇒ project.get(RTACallGraphKey)
             case "PointsTo" ⇒ project.get(PointsToCallGraphKey)
         }
 

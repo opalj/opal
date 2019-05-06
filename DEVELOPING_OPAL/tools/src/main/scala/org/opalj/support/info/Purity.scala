@@ -209,7 +209,7 @@ object Purity {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         time {
-            project.get(RTACallGraphKey(isLibrary = isLibrary))
+            project.get(RTACallGraphKey)
         } { t ⇒ callGraphTime = t.toSeconds }
 
         val reachableMethods =

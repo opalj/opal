@@ -57,7 +57,7 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
         implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-        project.get(RTACallGraphKey(true))
+        project.get(RTACallGraphKey)
 
         it should s"have matching callers and callees in $projectName" in {
             checkBidirectionCallerCallee

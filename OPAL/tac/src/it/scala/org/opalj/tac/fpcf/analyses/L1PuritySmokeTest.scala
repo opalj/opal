@@ -52,7 +52,7 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
     def checkProject(p: SomeProject, withSupportAnalyses: Boolean): Unit = {
         val manager = p.get(FPCFAnalysesManagerKey)
 
-        p.get(RTACallGraphKey(true))
+        p.get(RTACallGraphKey)
 
         var analyses = primaryAnalyses
         if (withSupportAnalyses)
