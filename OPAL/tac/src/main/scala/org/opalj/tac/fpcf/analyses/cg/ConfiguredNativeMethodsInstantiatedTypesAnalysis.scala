@@ -36,7 +36,6 @@ import org.opalj.tac.fpcf.analyses.pointsto.PointsToRelation
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-// TODO: rename this class as it only affects the instantiated types!
 class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
