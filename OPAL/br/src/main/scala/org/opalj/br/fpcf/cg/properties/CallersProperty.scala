@@ -241,7 +241,7 @@ object CallersProperty extends CallersPropertyMetaInformation {
     }
 
     def toLong(methodId: Int, pc: Int, isDirect: Boolean): Long = {
-        assert(pc >= 0 && pc < 0xFFFF)
+        assert(pc >= 0 && pc <= 0xFFFF)
         assert(methodId >= 0 && methodId <= 0x3FFFFF)
         (methodId.toLong | (pc.toLong << 22)) | (if (isDirect) Long.MinValue else 0)
     }
