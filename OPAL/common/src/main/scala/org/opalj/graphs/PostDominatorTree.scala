@@ -98,7 +98,7 @@ object PostDominatorTree {
      *
      * @param   uniqueExitNode `true` if and only if the underlying CFG has a a unique exit node.
      *          (This property is independent of the `additionalExitNodes` property which
-     *          is not a statement about the underlying CFG, but a directive how to computed
+     *          is not a statement about the underlying CFG, but a directive how to compute
      *          the post-dominator tree.)
      * @param   isExitNode A function that returns `true` if the given node – in the underlying
      *          (control-flow) graph – is an exit node; that is the node has no successors.
