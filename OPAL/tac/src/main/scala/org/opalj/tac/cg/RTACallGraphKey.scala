@@ -26,6 +26,7 @@ import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
 
 /**
  * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on RTA.
@@ -74,10 +75,12 @@ object RTACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             List(
                 RTACallGraphAnalysisScheduler,
                 TriggeredInstantiatedTypesAnalysis,
+                TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
                 LazyTACAIProvider
             )
 
-        // in case the library entrypoints finder is configured, we wan to use the 
+        // in case the library entrypoints finder is configured, we want to use the
+        // EagerLibraryEntryPointsAnalysis
         val isLibrary =
             config.getString("org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis") ==
                 "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"

@@ -25,7 +25,7 @@ import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
@@ -68,7 +68,7 @@ object PureVoidMethods extends ProjectAnalysisApplication {
             TriggeredSerializationRelatedCallsAnalysis,
             TriggeredReflectionRelatedCallsAnalysis,
             TriggeredInstantiatedTypesAnalysis,
-            TriggeredConfiguredNativeMethodsAnalysis,
+            TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
             TriggeredSystemPropertiesAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,

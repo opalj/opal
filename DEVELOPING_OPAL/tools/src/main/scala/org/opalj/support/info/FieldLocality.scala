@@ -22,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
@@ -60,7 +60,7 @@ object FieldLocality extends ProjectAnalysisApplication {
             TriggeredSerializationRelatedCallsAnalysis,
             TriggeredReflectionRelatedCallsAnalysis,
             TriggeredInstantiatedTypesAnalysis,
-            TriggeredConfiguredNativeMethodsAnalysis,
+            TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
             TriggeredSystemPropertiesAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
