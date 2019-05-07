@@ -6,19 +6,14 @@ import java.util.{Arrays ⇒ JArrays}
 
 import org.opalj.value.ValueInformation
 import org.opalj.br.Attribute
-import org.opalj.br.ExceptionHandlers
-import org.opalj.br.LineNumberTable
-import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.CodeSequence
+import org.opalj.br.ExceptionHandlers
+import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.cfg.CFG
+import org.opalj.br.Code
 
 /**
  * Contains the 3-address code of a method.
- *
- * == Attributes ==
- * The following code attributes are `directly` reused (i.e., the PCs are not transformed):
- * - LineNumberTableAttribute; the statements keep the reference to the underlying/original
- *   instruction which is used to retrieve the respective information.
  *
  * @param params The variables which store the method's explicit and implicit (`this` in case
  *               of an instance method) parameters.
@@ -34,7 +29,7 @@ import org.opalj.br.cfg.CFG
  *
  * @tparam V     The type of Vars used by the underlying code.
  *               Given that the stmts array is conceptually immutable - i.e., no client is allowed
- *               to change it(!!!) - the type V is actually co-variant, but we cannot express this.
+ *               to change it(!) - the type V is actually co-variant, but we cannot express this.
  *
  * @author Michael Eichberg
  */
@@ -43,8 +38,7 @@ final class TACode[P <: AnyRef, V <: Var[V]](
         val stmts:             Array[Stmt[V]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
         val pcToIndex:         Array[Int],
         val cfg:               CFG[Stmt[V], TACStmts[V]],
-        val exceptionHandlers: ExceptionHandlers,
-        val lineNumberTable:   Option[LineNumberTable]
+        val exceptionHandlers: ExceptionHandlers
 // TODO Support the rewriting of TypeAnnotations etc.
 ) extends Attribute with CodeSequence[Stmt[V]] {
 
@@ -64,10 +58,12 @@ final class TACode[P <: AnyRef, V <: Var[V]](
         this equals other
     }
 
-    def firstLineNumber: Option[Int] = lineNumberTable.flatMap(_.firstLineNumber()) // IMPROVE [L2] Use IntOption
+    def firstLineNumber(code: Code): Option[Int] = {
+        code.lineNumberTable.flatMap(_.firstLineNumber()) // IMPROVE [L2] Use IntOption
+    }
 
-    def lineNumber(index: Int): Option[Int] = { // IMPROVE [L2] Use IntOption
-        lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
+    def lineNumber(code: Code, index: Int): Option[Int] = { // IMPROVE [L2] Use IntOption
+        code.lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
     }
 
     override def equals(other: Any): Boolean = {
@@ -75,14 +71,12 @@ final class TACode[P <: AnyRef, V <: Var[V]](
             case that: TACode[_, _] ⇒
                 // Recall that the CFG is derived from the stmts and therefore necessarily
                 // equal when the statements are equal.
-                JArrays.equals(
-                    this.stmts.asInstanceOf[Array[AnyRef]],
-                    that.stmts.asInstanceOf[Array[AnyRef]]
-                ) &&
+                val thisStmts = this.stmts.asInstanceOf[Array[AnyRef]]
+                val thatStmts = that.stmts.asInstanceOf[Array[AnyRef]]
+                JArrays.equals(thisStmts, thatStmts) &&
                     this.params == that.params &&
                     JArrays.equals(this.pcToIndex, that.pcToIndex) &&
-                    this.exceptionHandlers == that.exceptionHandlers &&
-                    this.lineNumberTable == that.lineNumberTable
+                    this.exceptionHandlers == that.exceptionHandlers
 
             case _ ⇒ false
         }
@@ -91,11 +85,10 @@ final class TACode[P <: AnyRef, V <: Var[V]](
     override lazy val hashCode: Int = {
         // In the following, we do not consider the CFG as the CFG is "just" a derived
         // data structure.
-        (((params.hashCode * 31 +
+        ((params.hashCode * 31 +
             JArrays.hashCode(stmts.asInstanceOf[Array[AnyRef]])) * 31 +
             JArrays.hashCode(pcToIndex)) * 31 +
-            exceptionHandlers.hashCode * 31) +
-            lineNumberTable.hashCode * 31
+            exceptionHandlers.hashCode * 31
     }
 
     /** Detaches the 3-address code from the underlying abstract interpreation result. */
@@ -105,8 +98,7 @@ final class TACode[P <: AnyRef, V <: Var[V]](
             this.stmts.map(_.toCanonicalForm),
             pcToIndex,
             cfg.asInstanceOf[CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]]],
-            exceptionHandlers,
-            lineNumberTable
+            exceptionHandlers
         )
     }
 
@@ -119,12 +111,7 @@ final class TACode[P <: AnyRef, V <: Var[V]](
                 exceptionHandlers.mkString(",exceptionHandlers=(\n\t", ",\n\t", "\n)")
             else
                 ""
-        val txtLineNumbers =
-            lineNumberTable match {
-                case Some(lnt) ⇒ lnt.lineNumbers.mkString(",lineNumberTable=(\n\t", ",\n\t", "\n)")
-                case None      ⇒ ""
-            }
-        s"TACode($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers$txtLineNumbers)"
+        s"TACode($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers)"
     }
 
 }
@@ -137,22 +124,20 @@ object TACode {
         stmts:             Array[Stmt[V]],
         pcToIndex:         Array[Int],
         cfg:               CFG[Stmt[V], TACStmts[V]],
-        exceptionHandlers: ExceptionHandlers,
-        lineNumberTable:   Option[LineNumberTable]
+        exceptionHandlers: ExceptionHandlers
     ): TACode[P, V] = {
-        new TACode(params, stmts, pcToIndex, cfg, exceptionHandlers, lineNumberTable)
+        new TACode(params, stmts, pcToIndex, cfg, exceptionHandlers)
     }
 
     def unapply[P <: AnyRef, V <: Var[V]](
         code: TACode[P, V]
-    ): Some[(Parameters[P], Array[Stmt[V]], Array[Int], CFG[Stmt[V], TACStmts[V]], ExceptionHandlers, Option[LineNumberTable])] = {
+    ): Some[(Parameters[P], Array[Stmt[V]], Array[Int], CFG[Stmt[V], TACStmts[V]], ExceptionHandlers)] = {
         Some((
             code.params,
             code.stmts,
             code.pcToIndex,
             code.cfg,
-            code.exceptionHandlers,
-            code.lineNumberTable
+            code.exceptionHandlers
         ))
     }
 

@@ -59,6 +59,7 @@ import org.opalj.br.cfg.CatchNode
 trait RecordCFG
     extends CoreDomainFunctionality
     with CustomInitialization
+    // with TheMemoryLayout
     with ai.ReturnInstructionsDomain {
     cfgDomain: ValuesDomain with TheCode ⇒
 
@@ -72,7 +73,9 @@ trait RecordCFG
     // ... elements are either null or non-empty
     private[this] var exceptionHandlerSuccessors: Array[IntTrieSet] = _
 
-    private[this] var theExitPCs: IntTrieSet = _
+    private[this] var theNormalExitPCs: IntTrieSet = _
+
+    private[this] var theAbnormalExitPCs: IntTrieSet = _
 
     private[this] var theSubroutineStartPCs: IntTrieSet = _
 
@@ -122,7 +125,8 @@ trait RecordCFG
         val codeSize = code.instructions.length
         regularSuccessors = new Array[IntTrieSet](codeSize)
         exceptionHandlerSuccessors = new Array[IntTrieSet](codeSize)
-        theExitPCs = IntTrieSet.empty
+        theNormalExitPCs = IntTrieSet.empty
+        theAbnormalExitPCs = IntTrieSet.empty
         theSubroutineStartPCs = IntTrieSet.empty
         theJumpBackTargetPCs = IntTrieSet.empty
 
@@ -207,8 +211,10 @@ trait RecordCFG
      *       ensured; otherwise the recorded CFG will be incomplete.
      */
     abstract override def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
-        theExitPCs +!= pc
-        super.returnVoid(pc)
+        val r = super.returnVoid(pc)
+        if (r.returnsNormally) theNormalExitPCs +!= pc
+        if (r.throwsException) theAbnormalExitPCs +!= pc
+        r
     }
 
     /**
@@ -221,8 +227,10 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs +!= pc
-        super.ireturn(pc, value)
+        val r = super.ireturn(pc, value)
+        if (r.returnsNormally) theNormalExitPCs +!= pc
+        if (r.throwsException) theAbnormalExitPCs +!= pc
+        r
     }
 
     /**
@@ -235,8 +243,10 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs +!= pc
-        super.lreturn(pc, value)
+        val r = super.lreturn(pc, value)
+        if (r.returnsNormally) theNormalExitPCs +!= pc
+        if (r.throwsException) theAbnormalExitPCs +!= pc
+        r
     }
 
     /**
@@ -249,8 +259,10 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs +!= pc
-        super.freturn(pc, value)
+        val r = super.freturn(pc, value)
+        if (r.returnsNormally) theNormalExitPCs +!= pc
+        if (r.throwsException) theAbnormalExitPCs +!= pc
+        r
     }
 
     /**
@@ -263,8 +275,10 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs +!= pc
-        super.dreturn(pc, value)
+        val r = super.dreturn(pc, value)
+        if (r.returnsNormally) theNormalExitPCs +!= pc
+        if (r.throwsException) theAbnormalExitPCs +!= pc
+        r
     }
 
     /**
@@ -277,8 +291,10 @@ trait RecordCFG
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
-        theExitPCs +!= pc
-        super.areturn(pc, value)
+        val r = super.areturn(pc, value)
+        if (r.returnsNormally) theNormalExitPCs +!= pc
+        if (r.throwsException) theAbnormalExitPCs +!= pc
+        r
     }
 
     /**
@@ -291,7 +307,7 @@ trait RecordCFG
         pc:             Int,
         exceptionValue: ExceptionValue
     ): Unit = {
-        theExitPCs +!= pc
+        theAbnormalExitPCs +!= pc
         super.abruptMethodExecution(pc, exceptionValue)
     }
 
@@ -321,7 +337,23 @@ trait RecordCFG
      * some unhandled exceptions will also be returned; even if the instruction may
      * also have regular and also exception handlers!
      */
-    def exitPCs: IntTrieSet = theExitPCs
+    def allExitPCs: IntTrieSet = theNormalExitPCs ++ theAbnormalExitPCs
+
+    def isExitPC(pc: PC): Boolean = theNormalExitPCs.contains(pc) || theAbnormalExitPCs.contains(pc)
+
+    /**
+     * Returns the PCs of all return instructions which may have returned normally;
+     * which are practically always all return instructions unless the analysis _really_
+     * finds an unbalanced return; which is __very__ unlikely.
+     */
+    def normalExitPCs: IntTrieSet = theNormalExitPCs
+
+    /**
+     * Returns the PCs of all instructions whose execution may have led to an exception.
+     * This can, e.g., be instance field read/field write statements or method invocations,
+     * but _in very rare cases_ also return instructions.
+     */
+    def abnormalExitPCs: IntTrieSet = theAbnormalExitPCs
 
     /**
      * Returns the PCs of the first instructions of all subroutines; that is, the instructions
@@ -339,9 +371,19 @@ trait RecordCFG
      * Returns `true` if the instruction with the given `pc` was executed.
      * The `pc` has to identify a valid instruction.
      */
-    private[this] final def unsafeWasExecuted(pc: Int): Boolean = {
+    private[this] final def unsafeWasExecuted(pc: PC): Boolean = {
+        /*
+        try {
+            operandsArray(pc) ne null
+        } catch {
+            case t: Throwable ⇒
+                println(s"BIG BUG: $pc vs ${code.codeSize})")
+                t.printStackTrace
+                throw t
+        }
+        */
         (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
-            theExitPCs.contains(pc)
+            normalExitPCs.contains(pc) || abnormalExitPCs.contains(pc)
     }
 
     /**
@@ -689,7 +731,7 @@ trait RecordCFG
         // every potential loop header can be reached.
         val predecessors = this.predecessors
         var remainingPotentialInfiniteLoopHeaders = theJumpBackTargetPCs
-        var nodesToVisit = theExitPCs.toChain
+        var nodesToVisit = allExitPCs.toChain
         val visitedNodes = new Array[Boolean](code.codeSize)
         while (nodesToVisit.nonEmpty) {
             val nextPC = nodesToVisit.head
@@ -780,17 +822,14 @@ trait RecordCFG
 
         // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
         val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode](code.exceptionHandlers.size)
-        // for {
-        //     (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
-        // } {
         code.exceptionHandlers foreachWithIndex { (exceptionHandler, index) ⇒
+            val handlerPC = exceptionHandler.handlerPC
             if ( // 1.1.    Let's check if the handler was executed at all.
-            unsafeWasExecuted(exceptionHandler.handlerPC) &&
+            unsafeWasExecuted(handlerPC) &&
                 // 1.2.    The handler may be shared by multiple try blocks, hence, we have
                 //         to ensure the we have at least one instruction in the try block
                 //         that jumps to the handler.
                 handlesException(exceptionHandler)) {
-                val handlerPC = exceptionHandler.handlerPC
                 // OLD val catchNodeCandidate = new CatchNode(exceptionHandler, index)
                 // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandidate)
                 var catchNode = exceptionHandlers.get(handlerPC)
@@ -835,17 +874,16 @@ trait RecordCFG
                 var endRunningBB: Boolean = false
                 var connectedWithNextBBs = false
 
-                if (exitPCs.contains(pc)) {
-                    val successorNode =
-                        if (code.instructions(pc).isReturnInstruction)
-                            normalReturnNode
-                        else
-                            abnormalReturnNode
-
-                    runningBB.addSuccessor(successorNode)
-                    successorNode.addPredecessor(runningBB)
+                if (normalExitPCs.contains(pc)) {
+                    // the instruction with the given "pc" has to be a return instruction.
+                    runningBB.addSuccessor(normalReturnNode)
+                    normalReturnNode.addPredecessor(runningBB)
                     endRunningBB = true
-                    // connection is done later, when we handle the (regular) successors
+                }
+                if (abnormalExitPCs.contains(pc)) {
+                    runningBB.addSuccessor(abnormalReturnNode)
+                    abnormalReturnNode.addPredecessor(runningBB)
+                    endRunningBB = true
                 }
 
                 // NOTE THAT WE NEVER HAVE TO SPLIT A BLOCK, BECAUSE WE IMMEDIATELY CONSIDER ALL
@@ -923,8 +961,7 @@ trait RecordCFG
      *       are also used as additional exit nodes.
      */
     def postDominatorTree: PostDominatorTree = {
-
-        val exitPCs = theExitPCs
+        val exitPCs = allExitPCs
         val uniqueExitNode =
             if (exitPCs.isSingletonSet && regularSuccessorsOf(exitPCs.head).isEmpty)
                 Some(exitPCs.head)
@@ -1027,14 +1064,14 @@ trait RecordCFG
                     visualProperties += "fillcolor" → "green"
                     visualProperties += "style" → "filled"
                 } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
-                    if (theExitPCs.contains(pc)) {
+                    if (abnormalExitPCs.contains(pc)) {
                         visualProperties += "fillcolor" → "red"
                         visualProperties += "style" → "filled"
                     } else {
                         visualProperties += "fillcolor" → "yellow"
                         visualProperties += "style" → "filled"
                     }
-                } else if (allSuccessorsOf(pc).isEmpty && !theExitPCs.contains(pc)) {
+                } else if (allSuccessorsOf(pc).isEmpty && !isExitPC(pc)) {
                     visualProperties += "fillcolor" → "red"
                     visualProperties += "style" → "filled"
                     visualProperties += "shape" → "octagon"
@@ -1070,7 +1107,7 @@ trait RecordCFG
                 nodes(pc).addChild(nodes(succPC))
                 nodePredecessorsCount(succPC) += 1
             }
-            if (theExitPCs.contains(pc)) {
+            if (isExitPC(pc)) {
                 nodes(pc).addChild(exitNode)
             }
         }
