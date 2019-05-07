@@ -67,7 +67,7 @@ object InterProceduralEscapeAnalysisDemo extends ProjectAnalysisApplication {
 
         val manager = project.get(FPCFAnalysesManagerKey)
         time {
-            project.get(RTACallGraphKey(true))
+            project.get(RTACallGraphKey)
         } { t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
         time {
             manager.runAll(EagerInterProceduralEscapeAnalysis)

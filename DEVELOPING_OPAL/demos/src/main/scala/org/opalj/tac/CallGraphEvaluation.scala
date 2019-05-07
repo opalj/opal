@@ -111,7 +111,7 @@ object CallGraphEvaluation extends ProjectAnalysisApplication {
         val start = System.currentTimeMillis()
 
         val cg = algorithm.get match {
-            case "RTA" ⇒ p.get(RTACallGraphKey(false))
+            case "RTA" ⇒ p.get(RTACallGraphKey)
             case "CHA" ⇒ p.get(CHACallGraphKey)
         }
 
