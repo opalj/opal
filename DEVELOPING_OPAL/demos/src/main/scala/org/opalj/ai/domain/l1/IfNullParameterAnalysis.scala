@@ -5,9 +5,12 @@ package domain
 package l1
 
 import java.net.URL
+
 import scala.Console.BLUE
 import scala.Console.RESET
-import scala.collection.{Set, Map}
+import scala.collection.Set
+import scala.collection.immutable.LongMap
+
 import org.opalj.ai.Domain
 import org.opalj.ai.InterruptableAI
 import org.opalj.ai.domain
@@ -101,7 +104,7 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 // all thrown exceptions and to throw away those that are
                 // thrown in both cases, the remaining ones constitute
                 // the difference.
-                var result = Map.empty[Int /*PC*/ , Set[_ <: AnyRef]]
+                var result = LongMap.empty[Set[_ <: AnyRef]]
                 var d2ThrownExceptions = domain2.allThrownExceptions
                 domain1.allThrownExceptions.foreach { e ⇒
                     val (pc, d1thrownException) = e

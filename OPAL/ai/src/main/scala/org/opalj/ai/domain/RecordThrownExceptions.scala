@@ -3,6 +3,8 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.immutable.LongMap
+
 /**
  * Generic infrastructure to record the exceptions thrown by a method.
  * This trait can be used to record the thrown exceptions independently of the
@@ -60,18 +62,23 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
         value:                     ExceptionValue
     ): ThrownException
 
-    @volatile private[this] var thrownExceptions: Map[Int /*PC*/ , ThrownException] = Map.empty // IMPROVE use LongMap or Int2AnyRefMap...
+    @volatile private[this] var thrownExceptions: LongMap[ThrownException] = LongMap.empty
 
-    def allThrownExceptions: Map[Int /*PC*/ , ThrownException] = thrownExceptions // IMPROVE use LongMap  or Int2AnyRefMap...
+    /**
+     * Returns all thrown exceptions.
+     * The key of the returned map is the pc of the instruction which threw the exception.
+     */
+    def allThrownExceptions: LongMap[ThrownException] = thrownExceptions
 
     abstract override def abruptMethodExecution(
         pc:        Int /*PC*/ ,
         exception: ExceptionValue
     ): Unit = {
+        val longPC = pc.toLong
         thrownExceptions =
             thrownExceptions.updated(
-                pc,
-                thrownExceptions.get(pc) match {
+                longPC,
+                thrownExceptions.get(longPC) match {
                     case Some(previouslyThrownException) ⇒
                         joinThrownExceptions(pc, previouslyThrownException, exception)
                     case None ⇒
