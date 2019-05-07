@@ -69,7 +69,7 @@ object CallGraphSerializer {
                     for (tgt ← targets) {
                         if (first) first = false
                         else out.write(",")
-                        writeCallSite(tgt, -1, Iterator(tgt), out)
+                        writeCallSite(tgt, -1, pc, Iterator(tgt), out)
                     }
 
                 case Some(body) ⇒
@@ -100,19 +100,19 @@ object CallGraphSerializer {
                         for (tgt ← indirectCallees) {
                             if (first) first = false
                             else out.write(",")
-                            writeCallSite(tgt, line, Iterator(tgt), out)
+                            writeCallSite(tgt, line, pc, Iterator(tgt), out)
                         }
                         if (directCallees.nonEmpty) {
                             if (first) first = false
                             else out.write(",")
-                            writeCallSite(declaredTarget, line, directCallees, out)
+                            writeCallSite(declaredTarget, line, pc, directCallees, out)
                         }
 
                     } else {
                         for (tgt ← targets) {
                             if (first) first = false
                             else out.write(",")
-                            writeCallSite(tgt, line, Iterator(tgt), out)
+                            writeCallSite(tgt, line, pc, Iterator(tgt), out)
                         }
                     }
             }
@@ -122,6 +122,7 @@ object CallGraphSerializer {
     private def writeCallSite(
         declaredTarget: DeclaredMethod,
         line:           Int,
+        pc:             Int,
         targets:        Iterator[DeclaredMethod],
         out:            Writer
     ): Unit = {
@@ -129,6 +130,8 @@ object CallGraphSerializer {
         writeMethodObject(declaredTarget, out)
         out.write(",\"line\":")
         out.write(line.toString)
+        out.write(",\"pc\":")
+        out.write(pc.toString)
         out.write(",\"targets\":[")
         var first = true
         for (tgt ← targets) {
