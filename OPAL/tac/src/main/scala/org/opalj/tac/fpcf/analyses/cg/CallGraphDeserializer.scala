@@ -38,12 +38,12 @@ import org.opalj.br.instructions.Instruction
  *
  * @author Florian Kuebler
  */
-case class ReachableMethodsDescription(reachableMethods: Set[ReachableMethodDescription]) {
+case class ReachableMethodsDescription(reachableMethods: List[ReachableMethodDescription]) {
 
     /**
      * Converts the set of reachable methods into a mapping from method to the set of call sites.
      */
-    lazy val toMap: Map[MethodDesc, Set[CallSiteDescription]] = {
+    lazy val toMap: Map[MethodDesc, List[CallSiteDescription]] = {
         reachableMethods.groupBy(_.method).map { case (k, v) ⇒ k → v.flatMap(_.callSites) }
     }
 }
@@ -57,7 +57,7 @@ object ReachableMethodsDescription {
 /**
  * A reachable method contains of the `method` itself and the call sites within that method.
  */
-case class ReachableMethodDescription(method: MethodDesc, callSites: Set[CallSiteDescription])
+case class ReachableMethodDescription(method: MethodDesc, callSites: List[CallSiteDescription])
 
 object ReachableMethodDescription {
     implicit val reachableMethodsReads: Reads[ReachableMethodDescription] = Json.reads[ReachableMethodDescription]
@@ -70,7 +70,7 @@ object ReachableMethodDescription {
  * contains the set of computed target methods (`targets`).
  */
 case class CallSiteDescription(
-        declaredTarget: MethodDesc, line: Int, pc: Option[Int], targets: Set[MethodDesc]
+        declaredTarget: MethodDesc, line: Int, pc: Option[Int], targets: List[MethodDesc]
 )
 
 object CallSiteDescription {
@@ -120,7 +120,7 @@ private class CallGraphDeserializer private[analyses] (
 ) extends FPCFAnalysis {
     private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    private val data: Map[MethodDesc, Set[CallSiteDescription]] = Json.parse(
+    private val data: Map[MethodDesc, List[CallSiteDescription]] = Json.parse(
         new FileInputStream(serializedCG)
     ).validate[ReachableMethodsDescription].get.toMap
 
@@ -132,7 +132,8 @@ private class CallGraphDeserializer private[analyses] (
             val calls = new DirectCalls()
             val method = methodDesc.toDeclaredMethod
             for (
-                (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) ← callSites.zipWithIndex
+                x ← callSites.groupBy(cs ⇒ (cs.declaredTarget, cs.line)).values;
+                (CallSiteDescription(declaredTgtDesc, line, pcOpt, tgts), index) ← x.zipWithIndex
             ) {
 
                 val pc = if (pcOpt.isDefined)
@@ -164,6 +165,7 @@ private class CallGraphDeserializer private[analyses] (
 
         val body = bodyOpt.get
 
+        // TODO this won't work when the code has no line numbers, resulting in all calls mapped to pc 0
         val pf = new PartialFunction[PCAndInstruction, Instruction] {
             override def isDefinedAt(pcAndInst: PCAndInstruction): Boolean = {
                 val lnOpt = body.lineNumber(pcAndInst.pc)
