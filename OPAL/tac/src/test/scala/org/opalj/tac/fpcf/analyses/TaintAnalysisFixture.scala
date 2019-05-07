@@ -14,9 +14,36 @@ import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 
 trait Fact extends AbstractIFDSFact
 case object NullFact extends Fact with AbstractIFDSNullFact
+
+/**
+ * A tainted variable.
+ *
+ * @param index The variable's definition site.
+ */
 case class Variable(index: Int) extends Fact
+
+/**
+ * A tainted array element.
+ *
+ * @param index The array's definition site.
+ * @param element The index of the tainted element in the array.
+ */
 case class ArrayElement(index: Int, element: Int) extends Fact
+
+/**
+ * A tainted instance field.
+ *
+ * @param index The instance's definition site.
+ * @param classType The instance's type.
+ * @param fieldName The name of the tainted field.
+ */
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
+
+/**
+ * A path of method calls, originating from the analyzed method, over which a tainted variable reaches the sink.
+ *
+ * @param flow A sequence of method calls, originating from but not including this method.
+ */
 case class FlowFact(flow: Seq[Method]) extends Fact {
     override val hashCode: Int = {
         var r = 1
@@ -37,8 +64,7 @@ class TaintAnalysisFixture private (implicit val project: SomeProject) extends A
     override val propertyKey: IFDSPropertyMetaInformation[Fact] = Taint
 
     /**
-     * The analysis starts at the TaintAnalysisTestClass.
-     * TODO Make the entry points variable
+     * The analysis starts with all public methods in TaintAnalysisTestClass.
      */
     override val entryPoints: Map[DeclaredMethod, Fact] = p.allProjectClassFiles.filter(classFile ⇒
         classFile.thisType.fqn == "org/opalj/fpcf/fixtures/taint/TaintAnalysisTestClass")
@@ -348,8 +374,6 @@ object TaintAnalysisFixture extends IFDSAnalysis[Fact] {
 
 /**
  * The IFDSProperty for this analysis.
- *
- * @param flows Maps a statement to the facts, which hold at the statement.
  */
 class Taint(val flows: Map[Statement, Set[Fact]]) extends IFDSProperty[Fact] {
 

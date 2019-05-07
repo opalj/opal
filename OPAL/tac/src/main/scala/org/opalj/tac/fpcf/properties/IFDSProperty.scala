@@ -18,6 +18,9 @@ abstract class IFDSProperty[DataFlowFact]
     /** The type of the TAC domain. */
     type V = DUVar[KnownTypedValue]
 
+    /**
+     * Maps exits statements to the data flow facts, which hold after them.
+     */
     def flows: Map[Statement, Set[DataFlowFact]]
 
     override def equals(that: Any): Boolean = that match {
