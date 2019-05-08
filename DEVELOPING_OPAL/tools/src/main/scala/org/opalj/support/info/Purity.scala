@@ -33,10 +33,6 @@ import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.NoCallers
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.ContextuallyPure
 import org.opalj.br.fpcf.properties.ContextuallySideEffectFree
@@ -57,27 +53,15 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.EagerLibraryEntryPointsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
@@ -103,30 +87,6 @@ object Purity {
             "[-eval <path to evaluation directory>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
-
-    val cgAnalyses = Set[ComputationSpecification[FPCFAnalysis]](
-        RTACallGraphAnalysisScheduler,
-        TriggeredStaticInitializerAnalysis,
-        TriggeredLoadedClassesAnalysis,
-        TriggeredFinalizerAnalysisScheduler,
-        TriggeredThreadRelatedCallsAnalysis,
-        TriggeredSerializationRelatedCallsAnalysis,
-        TriggeredReflectionRelatedCallsAnalysis,
-        TriggeredInstantiatedTypesAnalysis,
-        TriggeredConfiguredNativeMethodsAnalysis,
-        TriggeredSystemPropertiesAnalysis,
-        // LazyL0BaseAIAnalysis,
-        // TACAITransformer,
-        LazyTACAIProvider,
-        LazyCalleesAnalysis(
-            Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )
-        )
-    )
 
     val supportingAnalyses = IndexedSeq(
         List[FPCFAnalysisScheduler](
@@ -249,11 +209,7 @@ object Purity {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         time {
-            if (isLibrary) {
-                manager.runAll(cgAnalyses + EagerLibraryEntryPointsAnalysis)
-            } else {
-                manager.runAll(cgAnalyses)
-            }
+            project.get(RTACallGraphKey)
         } { t ⇒ callGraphTime = t.toSeconds }
 
         val reachableMethods =

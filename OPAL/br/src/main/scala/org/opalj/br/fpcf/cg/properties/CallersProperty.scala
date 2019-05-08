@@ -34,7 +34,7 @@ sealed trait CallersProperty extends OrderedProperty with CallersPropertyMetaInf
 
     def size: Int
 
-    def callers(implicit declaredMethods: DeclaredMethods): TraversableOnce[(DeclaredMethod, Int /*PC*/ )]
+    def callers(implicit declaredMethods: DeclaredMethods): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )]
 
     /**
      * Returns a new callers object, containing all callers of `this` object and a call from
@@ -43,7 +43,7 @@ sealed trait CallersProperty extends OrderedProperty with CallersPropertyMetaInf
      * In case, the specified call is already contained, `this` is returned, i.e. the reference does
      * not change when the of callers set remains unchanged.
      */
-    def updated(caller: DeclaredMethod, pc: Int): CallersProperty
+    def updated(caller: DeclaredMethod, pc: Int, isDirect: Boolean): CallersProperty
 
     def updatedWithUnknownContext(): CallersProperty
 
@@ -85,14 +85,14 @@ sealed trait EmptyConcreteCallers extends CallersProperty {
     final override def callers(
         implicit
         declaredMethods: DeclaredMethods
-    ): TraversableOnce[(DeclaredMethod, Int)] = {
+    ): TraversableOnce[(DeclaredMethod, Int, Boolean)] = {
         Nil
     }
 
     final override def updated(
-        caller: DeclaredMethod, pc: Int
+        caller: DeclaredMethod, pc: Int, isDirect: Boolean
     ): CallersProperty = {
-        val set = LongTrieSet(CallersProperty.toLong(caller.id, pc))
+        val set = LongTrieSet(CallersProperty.toLong(caller.id, pc, isDirect))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
             new CallersOnlyWithConcreteCallers(set)
@@ -129,12 +129,12 @@ sealed trait CallersImplementation extends CallersProperty {
     final override def callers(
         implicit
         declaredMethods: DeclaredMethods
-    ): TraversableOnce[(DeclaredMethod, Int /*PC*/ )] = {
+    ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
         for {
             encodedPair ← encodedCallers.iterator
         } yield {
-            val (mId, pc) = CallersProperty.toMethodAndPc(encodedPair)
-            declaredMethods(mId) → pc
+            val (mId, pc, isDirect) = CallersProperty.toMethodPcAndIsDirect(encodedPair)
+            (declaredMethods(mId), pc, isDirect)
         }
     }
 }
@@ -144,9 +144,9 @@ class CallersOnlyWithConcreteCallers(
 ) extends CallersImplementation with CallersWithoutVMLevelCall with CallersWithoutUnknownContext {
 
     override def updated(
-        caller: DeclaredMethod, pc: Int
+        caller: DeclaredMethod, pc: Int, isDirect: Boolean
     ): CallersProperty = {
-        val encodedCaller = CallersProperty.toLong(caller.id, pc)
+        val encodedCaller = CallersProperty.toLong(caller.id, pc, isDirect)
         val newSet = encodedCallers + encodedCaller
 
         // requires the LongTrieSet to return `this` if the `encodedCaller` is already contained.
@@ -183,9 +183,9 @@ class CallersImplWithOtherCalls(
     override def hasCallersWithUnknownContext: Boolean = (specialCallSitesFlags & 2) != 0
 
     override def updated(
-        caller: DeclaredMethod, pc: Int
+        caller: DeclaredMethod, pc: Int, isDirect: Boolean
     ): CallersProperty = {
-        val encodedCaller = CallersProperty.toLong(caller.id, pc)
+        val encodedCaller = CallersProperty.toLong(caller.id, pc, isDirect)
         val newSet = encodedCallers + encodedCaller
 
         // requires the LongTrieSet to return `this` if the `encodedCaller` is already contained.
@@ -240,13 +240,13 @@ object CallersProperty extends CallersPropertyMetaInformation {
         )
     }
 
-    def toLong(methodId: Int, pc: Int): Long = {
-        assert(pc >= 0 && pc < 0xFFFF)
+    def toLong(methodId: Int, pc: Int, isDirect: Boolean): Long = {
+        assert(pc >= 0 && pc <= 0xFFFF)
         assert(methodId >= 0 && methodId <= 0x3FFFFF)
-        methodId.toLong | (pc.toLong << 22)
+        (methodId.toLong | (pc.toLong << 22)) | (if (isDirect) Long.MinValue else 0)
     }
 
-    def toMethodAndPc(pcAndMethod: Long): (Int, Int) = {
-        (pcAndMethod.toInt & 0x3FFFFF, (pcAndMethod >> 22).toInt)
+    def toMethodPcAndIsDirect(pcMethodAndIsDirect: Long): (Int, Int, Boolean) = {
+        (pcMethodAndIsDirect.toInt & 0x3FFFFF, (pcMethodAndIsDirect >> 22).toInt & 0xFFFF, pcMethodAndIsDirect < 0)
     }
 }

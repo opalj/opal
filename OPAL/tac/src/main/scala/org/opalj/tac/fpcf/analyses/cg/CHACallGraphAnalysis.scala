@@ -9,33 +9,25 @@ import org.opalj.log.Error
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
-import org.opalj.fpcf.NoResult
-import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.cg.properties.NoCallers
-import org.opalj.br.fpcf.cg.properties.NoStandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCalleesImplementation
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.Results
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
-import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.value.ValueInformation
+import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
+import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
@@ -43,6 +35,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
@@ -87,10 +80,8 @@ class CHACallGraphAnalysis private[analyses] (
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
             processMethod(declaredMethod, tacEP)
         } else {
-            InterimResult.forUB(
-                declaredMethod,
-                NoStandardInvokeCallees,
-                Seq(tacEP),
+            InterimPartialResult(
+                Some(tacEP),
                 continuationForTAC(declaredMethod)
             )
         }
@@ -102,10 +93,8 @@ class CHACallGraphAnalysis private[analyses] (
         case UBP(tac: TACAI) if tac.tac.isDefined ⇒
             processMethod(declaredMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
         case _ ⇒
-            InterimResult.forUB(
-                declaredMethod,
-                NoStandardInvokeCallees,
-                Seq(someEPS),
+            InterimPartialResult(
+                Some(someEPS),
                 continuationForTAC(declaredMethod)
             )
     }
@@ -116,15 +105,15 @@ class CHACallGraphAnalysis private[analyses] (
         val tac = tacEP.ub.tac.get
 
         // for each call site in the current method, the set of methods that might called
-        val calleesAndCallers = new CalleesAndCallers()
+        val calleesAndCallers = new DirectCalls()
 
         // todo add calls to library targets
         @inline def handleTgts(tgts: Set[Method], pc: Int): Unit = {
             if (tgts.isEmpty) {
-                calleesAndCallers.addIncompleteCallsite(pc) // todo is this reasonable?
+                calleesAndCallers.addIncompleteCallSite(pc) // todo is this reasonable?
             } else {
                 tgts.foreach { tgt ⇒
-                    calleesAndCallers.updateWithCall(declaredMethod, declaredMethods(tgt), pc)
+                    calleesAndCallers.addCall(declaredMethod, declaredMethods(tgt), pc)
                 }
             }
         }
@@ -159,13 +148,13 @@ class CHACallGraphAnalysis private[analyses] (
                 )
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallsite(idc.pc)
+                calleesAndCallers.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )(p.logContext)
 
             case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallsite(idc.pc)
+                calleesAndCallers.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )(p.logContext)
@@ -174,43 +163,29 @@ class CHACallGraphAnalysis private[analyses] (
 
         }
 
-        val callees = if (calleesAndCallers.callees.isEmpty)
-            NoStandardInvokeCallees
+        if (tacEP.isFinal)
+            Results(calleesAndCallers.partialResults(declaredMethod))
         else
-            new StandardInvokeCalleesImplementation(
-                calleesAndCallers.callees, calleesAndCallers.incompleteCallsites
+            Results(
+                InterimPartialResult(Some(tacEP), continuationForTAC(declaredMethod)),
+                calleesAndCallers.partialResults(declaredMethod)
             )
-
-        val calleesResult = if (tacEP.isFinal)
-            Result(declaredMethod, callees)
-        else
-            InterimResult.forUB(
-                declaredMethod, callees, Seq(tacEP), continuationForTAC(declaredMethod)
-            )
-
-        Results(calleesResult :: calleesAndCallers.partialResultsForCallers)
     }
-
 }
 
 object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
-
     override type InitializationData = Null
 
-    override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty),
-        PropertyBounds.ub(TACAI)
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
+        CallersProperty,
+        Callees,
+        TACAI
     )
 
-    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
-    override def derivesEagerly: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(StandardInvokeCallees)
-    )
-
-    override def derivesCollaboratively: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty)
-    )
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        PropertyBounds.ubs(CallersProperty, Callees)
 
     /**
      * Updates the caller properties of the initial entry points
@@ -228,9 +203,12 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
         entryPoints.foreach { ep ⇒
             ps.preInitialize(ep, CallersProperty.key) {
-                case _: EPK[_, _]   ⇒ InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub) ⇒ InterimEUBP(ep, ub.updatedWithUnknownContext())
-                case eps            ⇒ throw new IllegalStateException(s"unexpected: $eps")
+                case _: EPK[_, _] ⇒
+                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
+                case InterimUBP(ub: CallersProperty) ⇒
+                    InterimEUBP(ep, ub.updatedWithUnknownContext())
+                case eps ⇒
+                    throw new IllegalStateException(s"unexpected: $eps")
             }
         }
     }
@@ -244,7 +222,7 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): CHACallGraphAnalysis = {
         val analysis = new CHACallGraphAnalysis(p)
-        ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
+        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
         analysis
     }
 
@@ -255,4 +233,6 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
         ps:       PropertyStore,
         analysis: FPCFAnalysis
     ): Unit = {}
+
+    override def triggeredBy: PropertyKind = CallersProperty
 }

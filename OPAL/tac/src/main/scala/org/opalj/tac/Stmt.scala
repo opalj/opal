@@ -78,6 +78,12 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asCaughtException: CaughtException[V] = throw new ClassCastException();
     def asCheckcast: Checkcast[V] = throw new ClassCastException();
 
+    def isAssignment: Boolean = false
+    def isExprStmt: Boolean = false
+    def isNonVirtualMethodCall: Boolean = false
+    def isVirtualMethodCall: Boolean = false
+    def isStaticMethodCall: Boolean = false
+
 }
 
 /**
@@ -348,6 +354,8 @@ case class Assignment[+V <: Var[V]](
 ) extends AssignmentLikeStmt[V] {
 
     final override def asAssignment: this.type = this
+    final override def isAssignment: Boolean = true
+
     final override def astID: Int = Assignment.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         p(expr)
@@ -782,6 +790,7 @@ case class NonVirtualMethodCall[+V <: Var[V]](
 ) extends InstanceMethodCall[V] {
 
     final override def asNonVirtualMethodCall: this.type = this
+    final override def isNonVirtualMethodCall: Boolean = true
     final override def astID: Int = NonVirtualMethodCall.ASTID
 
     /**
@@ -842,6 +851,7 @@ case class VirtualMethodCall[+V <: Var[V]](
     with VirtualCall[V] {
 
     final override def asVirtualMethodCall: this.type = this
+    final override def isVirtualMethodCall: Boolean = true
     final override def astID: Int = VirtualMethodCall.ASTID
 
     final override def toCanonicalForm(
@@ -882,6 +892,7 @@ case class StaticMethodCall[+V <: Var[V]](
     final override def allParams: Seq[Expr[V]] = params
 
     final override def asStaticMethodCall: this.type = this
+    final override def isStaticMethodCall: Boolean = true
     final override def astID: Int = StaticMethodCall.ASTID
     final override def receiverOption: Option[Expr[V]] = None
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
@@ -1002,6 +1013,7 @@ object InvokedynamicMethodCall { final val ASTID = 18 }
 case class ExprStmt[+V <: Var[V]](pc: Int, expr: Expr[V]) extends AssignmentLikeStmt[V] {
 
     final override def asExprStmt: this.type = this
+    final override def isExprStmt: Boolean = true
     final override def astID: Int = ExprStmt.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         p(expr)

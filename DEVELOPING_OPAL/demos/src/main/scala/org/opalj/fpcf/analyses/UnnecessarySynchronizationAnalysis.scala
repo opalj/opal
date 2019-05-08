@@ -11,18 +11,13 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
@@ -73,16 +68,8 @@ object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
                 TriggeredSerializationRelatedCallsAnalysis,
                 TriggeredReflectionRelatedCallsAnalysis,
                 TriggeredInstantiatedTypesAnalysis,
-                TriggeredConfiguredNativeMethodsAnalysis,
+                TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
                 TriggeredSystemPropertiesAnalysis,
-                LazyCalleesAnalysis(
-                    Set(
-                        StandardInvokeCallees,
-                        SerializationRelatedCallees,
-                        ReflectionRelatedCallees,
-                        ThreadRelatedIncompleteCallSites
-                    )
-                ),
                 LazyL0BaseAIAnalysis,
                 TACAITransformer
             )

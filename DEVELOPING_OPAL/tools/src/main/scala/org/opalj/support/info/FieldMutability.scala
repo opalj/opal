@@ -10,10 +10,6 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.properties.DeclaredFinalField
 import org.opalj.br.fpcf.properties.EffectivelyFinalField
 import org.opalj.br.fpcf.properties.LazyInitializedField
@@ -23,8 +19,7 @@ import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
@@ -66,16 +61,8 @@ object FieldMutability extends ProjectAnalysisApplication {
             TriggeredSerializationRelatedCallsAnalysis,
             TriggeredReflectionRelatedCallsAnalysis,
             TriggeredInstantiatedTypesAnalysis,
-            TriggeredConfiguredNativeMethodsAnalysis,
+            TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
             TriggeredSystemPropertiesAnalysis,
-            LazyCalleesAnalysis(
-                Set(
-                    StandardInvokeCallees,
-                    SerializationRelatedCallees,
-                    ReflectionRelatedCallees,
-                    ThreadRelatedIncompleteCallSites
-                )
-            ),
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyL2PurityAnalysis,
