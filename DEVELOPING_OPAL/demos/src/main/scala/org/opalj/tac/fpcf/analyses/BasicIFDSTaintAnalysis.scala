@@ -1,11 +1,14 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses
 
+import java.io.File
+
 import scala.collection.immutable.ListSet
 
 import org.opalj.bytecode
 
 import org.opalj.log.LogContext
+import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyKey
@@ -18,6 +21,7 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
@@ -44,6 +48,7 @@ import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Stmt
 import org.opalj.tac.Var
+import org.opalj.tac.fpcf.analyses.cg.CallGraphDeserializerScheduler
 
 trait Fact extends AbstractIFDSFact
 case class Variable(index: Int) extends Fact
@@ -99,14 +104,12 @@ class BasicIFDSTaintAnalysis private (
             case PutStatic.ASTID ⇒
                 val put = stmt.stmt.asPutStatic
                 if (isTainted(put.value, in)) in + StaticField(put.declaringClass, put.name)
-                else in - StaticField(put.declaringClass, put.name)
+                else in
             case PutField.ASTID ⇒
                 val put = stmt.stmt.asPutField
                 val definedBy = put.objRef.asVar.definedBy
                 if (isTainted(put.value, in))
                     in ++ definedBy.iterator.map(InstanceField(_, put.declaringClass, put.name))
-                else if (definedBy.size == 1) // Untaint if object is known precisely
-                    in - InstanceField(definedBy.head, put.declaringClass, put.name)
                 else in
             case _ ⇒ in
         }
@@ -204,7 +207,7 @@ class BasicIFDSTaintAnalysis private (
                     allParams.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             }) {
-                //println(s"Found flow: $stmt")
+                println(s"Found flow: $stmt")
             }
         if (callee.name == "forName" && (callee.declaringClassType eq ObjectType.Class) &&
             callee.descriptor.parameterTypes == RefArray(ObjectType.String))
@@ -213,7 +216,7 @@ class BasicIFDSTaintAnalysis private (
                     asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             }) {
-                //println(s"Found flow: $stmt")
+                println(s"Found flow: $stmt")
             }
         if ((callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object) ||
@@ -296,7 +299,7 @@ class BasicIFDSTaintAnalysis private (
                     case FlowFact(flow) ⇒
                         val newFlow = flow + stmt.method
                         if (entryPoints.contains(declaredMethods(exit.method))) {
-                            println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
+                            //println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
                         } else {
                             flows += FlowFact(newFlow)
                         }
@@ -345,10 +348,10 @@ class BasicIFDSTaintAnalysis private (
                     asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index))
                 case _ ⇒ false
             }) {
-                if (entryPoints.contains(declaredMethods(stmt.method))) {
+                /*if (entryPoints.contains(declaredMethods(stmt.method))) {
                     println(s"flow: "+stmt.method.toJava)
                     in
-                } else
+                } else*/
                     in ++ Set(FlowFact(ListSet(stmt.method)))
             } else {
                 in
@@ -452,19 +455,19 @@ object BasicIFDSTaintAnalysisRunner {
             Thread.sleep(3000)
         }
 
+        PerformanceEvaluation.time {
+            val manager = p.get(FPCFAnalysesManagerKey)
+            manager.runAll(new CallGraphDeserializerScheduler(new File("/home/dominik/Desktop/rt2.cg")))
+        } { t ⇒ println(s"CG took ${t.toSeconds}") }
+
         val nrRuns = 1
         var ps: PropertyStore = null
         var analyses: List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)] = null
         var times = Seq.empty[Long]
         for (_ ← 1 to nrRuns) {
-            val project = p.recreate()
+            val project = p.recreate(k ⇒ k == PropertyStoreKey.uniqueId || k == DeclaredMethodsKey.uniqueId)
             val manager = project.get(FPCFAnalysesManagerKey)
             ps = project.get(PropertyStoreKey)
-            manager.runAll(LazyTACAIProvider, RTACallGraphAnalysisScheduler,
-                EagerLibraryEntryPointsAnalysis,
-                LazyL0BaseAIAnalysis,
-                TriggeredInstantiatedTypesAnalysis,
-                LazyCalleesAnalysis(Set(StandardInvokeCallees)))
             analyses = time {
                 project.get(FPCFAnalysesManagerKey).runAll(BasicIFDSTaintAnalysis)
             }(t ⇒ times :+= t.toMilliseconds.timeSpan)._2
