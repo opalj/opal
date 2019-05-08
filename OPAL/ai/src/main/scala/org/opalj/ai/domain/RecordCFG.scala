@@ -59,7 +59,6 @@ import org.opalj.br.cfg.CatchNode
 trait RecordCFG
     extends CoreDomainFunctionality
     with CustomInitialization
-    // with TheMemoryLayout
     with ai.ReturnInstructionsDomain {
     cfgDomain: ValuesDomain with TheCode ⇒
 
@@ -366,22 +365,16 @@ trait RecordCFG
      */
     def jumpBackTargetPCs: IntTrieSet = theJumpBackTargetPCs
 
-    // IMPROVE Move the functionality to record/decide which instructions were executed to another domain which uses the operandsArray as the source of the information (more efficient!)
     /**
      * Returns `true` if the instruction with the given `pc` was executed.
      * The `pc` has to identify a valid instruction.
      */
     private[this] final def unsafeWasExecuted(pc: PC): Boolean = {
-        /*
-        try {
-            operandsArray(pc) ne null
-        } catch {
-            case t: Throwable ⇒
-                println(s"BIG BUG: $pc vs ${code.codeSize})")
-                t.printStackTrace
-                throw t
-        }
-        */
+        // The following "comparatively expensive" test cannot be replace by a simple
+        // operandsArray(pc) eq null test as long as we support containing subroutines.
+        // In the latter case, a subroutine's (sub) operands array will contain null
+        // values directly after the analysis has finished (when the computeBBCFG is
+        // potentially called) but before the subroutine results are merged.
         (regularSuccessors(pc) ne null) || (exceptionHandlerSuccessors(pc) ne null) ||
             normalExitPCs.contains(pc) || abnormalExitPCs.contains(pc)
     }
@@ -395,11 +388,8 @@ trait RecordCFG
      * Computes the set of all executed instructions.
      */
     final def allExecuted: BitSet = {
-        val wasExecuted = new mutable.BitSet(code.instructions.length)
-        code.programCounters.foreach { pc ⇒
-            if (unsafeWasExecuted(pc))
-                wasExecuted += pc
-        }
+        val wasExecuted = new mutable.BitSet(code.codeSize)
+        code.foreachProgramCounter { pc ⇒ if (unsafeWasExecuted(pc)) wasExecuted += pc }
         wasExecuted
     }
 
