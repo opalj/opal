@@ -2973,7 +2973,7 @@ object ClassHierarchy {
             OPALLogger.info(
                 "project configuration",
                 duplicateTypeDeclarations.mkString(
-                    "ignored duplicate type declarations for: {", ",", "}"
+                    "ignored duplicate type declarations for: {", ", ", "}"
                 )
             )
         }
@@ -3345,12 +3345,17 @@ object ClassHierarchy {
             if (unexpectedRootTypes.hasNext) {
                 OPALLogger.warn(
                     "project configuration - class hierarchy",
-                    "supertype information incomplete:\n\t"+
-                        unexpectedRootTypes.
-                        map { t ⇒
+                    unexpectedRootTypes
+                        .map { t ⇒
                             (if (isInterfaceTypeMap(t.id)) "interface " else "class ") + t.toJava
-                        }.
-                        toList.sorted.mkString("\n\t")
+                        }
+                        .toList.sorted
+                        .take(10)
+                        .mkString(
+                            "supertype information incomplete: {",
+                            ", ",
+                            if (unexpectedRootTypes.size > 10) ", ...}" else "}"
+                        )
                 )
             }
 
