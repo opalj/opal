@@ -211,7 +211,7 @@ class BasicIFDSTaintAnalysis private (
             }) {
                 println(s"Found flow: $stmt")
             }
-        if ((callee.descriptor.returnType eq ObjectType.Class) ||
+        if (true||(callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object) ||
             (callee.descriptor.returnType eq ObjectType.String)) {
             in.collect {
@@ -443,7 +443,7 @@ object BasicIFDSTaintAnalysisRunner {
             } { t ⇒ println(s"CG took ${t.toSeconds}") }
             val manager = project.get(FPCFAnalysesManagerKey)
             ps = project.get(PropertyStoreKey)
-            analyses = time { manager.runAll(BasicIFDSTaintAnalysis) }(t ⇒ times :+= t.toMilliseconds.timeSpan)._2
+            analyses = time { manager.runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis) }(t ⇒ times :+= t.toMilliseconds.timeSpan)._2
         }
 
         val entryPoints = analyses.collect { case (_, a: BasicIFDSTaintAnalysis) ⇒ a.entryPoints }.head
