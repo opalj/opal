@@ -8,14 +8,14 @@ import java.util.Collections
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListSet
 
-import heros.FlowFunctions
 import heros.FlowFunction
+import heros.FlowFunctions
 import heros.TwoElementSet
-import heros.flowfunc.Identity
-import heros.flowfunc.KillAll
 import heros.flowfunc.Gen
-import heros.flowfunc.Union
+import heros.flowfunc.Identity
 import heros.flowfunc.Kill
+import heros.flowfunc.KillAll
+import heros.flowfunc.Union
 import heros.solver.IFDSSolver
 import heros.template.DefaultIFDSTabulationProblem
 
@@ -23,32 +23,27 @@ import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
-import org.opalj.tac.fpcf.analyses.Statement
-import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.ClassHierarchy
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.tac.ExprStmt
-import org.opalj.tac.Call
-import org.opalj.tac.Stmt
+import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
+import org.opalj.tac.fpcf.analyses.Statement
 import org.opalj.tac.Assignment
-import org.opalj.tac.ReturnValue
+import org.opalj.tac.Call
 import org.opalj.tac.Expr
+import org.opalj.tac.ExprStmt
 import org.opalj.tac.GetField
 import org.opalj.tac.GetStatic
 import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
+import org.opalj.tac.ReturnValue
+import org.opalj.tac.Stmt
 import org.opalj.tac.Var
 import org.opalj.tac.fpcf.analyses.cg.CallGraphDeserializerScheduler
-import org.opalj.tac.DUVar
-import org.opalj.tac.LazyDetachedTACAIKey
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 
 case object NullFact extends Fact
 
