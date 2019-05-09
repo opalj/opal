@@ -211,7 +211,7 @@ class BasicIFDSTaintAnalysis private (
             }) {
                 println(s"Found flow: $stmt")
             }
-        if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
+        if ((callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object) ||
             (callee.descriptor.returnType eq ObjectType.String)) {
             in.collect {
