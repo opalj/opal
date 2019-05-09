@@ -9,22 +9,19 @@ import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.FPCFAnalysesManagerKey
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.analyses.AbstractIFDSAnalysis
-import org.opalj.fpcf.analyses.Statement
-import org.opalj.fpcf.analyses.IFDSAnalysis
-import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
-import org.opalj.fpcf.properties.IFDSProperty
-import org.opalj.fpcf.properties.IFDSPropertyMetaInformation
+import org.opalj.tac.fpcf.analyses.Statement
+import org.opalj.tac.fpcf.analyses.IFDSAnalysis
+import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
@@ -33,6 +30,9 @@ import org.opalj.tac.ArrayLoad
 import org.opalj.tac.ArrayStore
 import org.opalj.tac.Stmt
 import org.opalj.tac.ReturnValue
+import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis
+import org.opalj.tac.fpcf.properties.IFDSProperty
+import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
 //import org.opalj.tac.PutStatic
 //import org.opalj.tac.GetStatic
 //import org.opalj.tac.PutField
@@ -43,7 +43,7 @@ trait Fact
 
 case class Variable(index: Int) extends Fact
 case class ArrayElement(index: Int, element: Int) extends Fact
-//case class StaticField(classType: ObjectType, fieldName: String) extends Fact
+case class StaticField(classType: ObjectType, fieldName: String) extends Fact
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
 case class FlowFact(flow: ListSet[Method]) extends Fact {
     override val hashCode: Int = { flow.foldLeft(1)(_ + _.hashCode() * 31) }
@@ -388,7 +388,7 @@ object TestTaintAnalysisRunner {
             val manager = p.get(FPCFAnalysesManagerKey)
             val (_, analyses) =
                 manager.runAll(LazyL0BaseAIAnalysis, TACAITransformer, TestTaintAnalysis)
-            val entryPoints = analyses.collect { case a: TestTaintAnalysis ⇒ a.entryPoints }.head
+            val entryPoints = analyses.collect { case (_, a: TestTaintAnalysis) ⇒ a.entryPoints }.head
             for {
                 e ← entryPoints
                 flows = ps(e, TestTaintAnalysis.property.key)

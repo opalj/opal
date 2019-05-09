@@ -11,12 +11,16 @@ import scala.collection.JavaConverters._
 
 import heros.InterproceduralCFG
 
-import org.opalj.fpcf.analyses.Statement
-import org.opalj.fpcf.analyses.AbstractIFDSAnalysis.V
+import org.opalj.fpcf.FinalEP
+import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.value.ValueInformation
 import org.opalj.br.Method
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.ProjectLike
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.DefinedMethod
+import org.opalj.br.MultipleDefinedMethods
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.Assignment
 import org.opalj.tac.ExprStmt
@@ -29,14 +33,17 @@ import org.opalj.tac.Expr
 import org.opalj.tac.Stmt
 import org.opalj.tac.MethodCall
 import org.opalj.tac.FunctionCall
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACode
+import org.opalj.tac.fpcf.analyses.Statement
+import org.opalj.tac.LazyDetachedTACAIKey
 
 class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Method] {
 
-    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(DefaultTACAIKey)
+    val tacai: Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = project.get(LazyDetachedTACAIKey)
+    implicit val ps = project.get(PropertyStoreKey)
+    implicit val declaredMethods = project.get(DeclaredMethodsKey)
 
     //    val cfgs: ConcurrentHashMap[Method, CFG] = {
     //        val cfgs = new ConcurrentHashMap[Method, CFG]
@@ -90,39 +97,11 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
     }
 
     def getCalleesOfCallAt(callInstr: Statement): JCollection[Method] = {
-        val stmt = callInstr.stmt
-        val declClass = callInstr.method.classFile.thisType
-        implicit val p: ProjectLike = project
-        (stmt.astID match {
-            case StaticMethodCall.ASTID ⇒
-                stmt.asStaticMethodCall.resolveCallTarget.toSet.filter(_.body.isDefined)
-
-            case NonVirtualMethodCall.ASTID ⇒
-                stmt.asNonVirtualMethodCall.resolveCallTarget(declClass).toSet.filter(_.body.isDefined)
-
-            case VirtualMethodCall.ASTID ⇒
-                stmt.asVirtualMethodCall.resolveCallTargets(declClass).filter(_.body.isDefined)
-
-            case Assignment.ASTID if expr(stmt).astID == StaticFunctionCall.ASTID ⇒
-                stmt.asAssignment.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined)
-
-            case Assignment.ASTID if expr(stmt).astID == NonVirtualFunctionCall.ASTID ⇒
-                stmt.asAssignment.expr.asNonVirtualFunctionCall.resolveCallTarget(declClass).toSet.filter(_.body.isDefined)
-
-            case Assignment.ASTID if expr(stmt).astID == VirtualFunctionCall.ASTID ⇒
-                stmt.asAssignment.expr.asVirtualFunctionCall.resolveCallTargets(declClass).filter(_.body.isDefined)
-
-            case ExprStmt.ASTID if expr(stmt).astID == StaticFunctionCall.ASTID ⇒
-                stmt.asExprStmt.expr.asStaticFunctionCall.resolveCallTarget.toSet.filter(_.body.isDefined)
-
-            case ExprStmt.ASTID if expr(stmt).astID == NonVirtualFunctionCall.ASTID ⇒
-                stmt.asExprStmt.expr.asNonVirtualFunctionCall.resolveCallTarget(declClass).toSet.filter(_.body.isDefined)
-
-            case ExprStmt.ASTID if expr(stmt).astID == VirtualFunctionCall.ASTID ⇒
-                stmt.asExprStmt.expr.asVirtualFunctionCall.resolveCallTargets(declClass).filter(_.body.isDefined)
-
-            case _ ⇒ throw new RuntimeException("Unexpected type")
-        }).asJava
+        val FinalEP(_, callees) = ps(declaredMethods(callInstr.method), Callees.key)
+        callees.callees(callInstr.stmt.pc).collect{
+            case d: DefinedMethod ⇒ List(d.definedMethod)
+            case md: MultipleDefinedMethods ⇒ md.definedMethods
+        }.flatten.filter(_.body.isDefined).toList.asJava
     }
 
     /** Gets the expression from an assingment/expr statement. */
@@ -135,7 +114,7 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
     def getCallersOf(m: Method): JCollection[Statement] = ???
 
     def getCallsFromWithin(m: Method): JSet[Statement] = {
-        val TACode(_, code, _, cfg, _, _) = tacai(m)
+        val TACode(_, code, _, cfg, _) = tacai(m)
         code.zipWithIndex.collect {
             case (mc: MethodCall[V], index) ⇒ Statement(m, mc, index, code, cfg)
             case (as @ Assignment(_, _, _: FunctionCall[V]), index) ⇒
@@ -145,7 +124,7 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
     }
 
     def getStartPointsOf(m: Method): JCollection[Statement] = {
-        val TACode(_, code, _, cfg, _, _) = tacai(m)
+        val TACode(_, code, _, cfg, _) = tacai(m)
         Collections.singletonList(Statement(m, code(0), 0, code, cfg))
     }
 
@@ -181,7 +160,7 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
         val res = new ConcurrentLinkedQueue[Statement]
         project.parForeachMethodWithBody() { mi ⇒
             val m = mi.method
-            val TACode(_, code, _, cfg, _, _) = tacai(m)
+            val TACode(_, code, _, cfg, _) = tacai(m)
             val endIndex = code.length
             var index = 1
             while (index < endIndex) {
