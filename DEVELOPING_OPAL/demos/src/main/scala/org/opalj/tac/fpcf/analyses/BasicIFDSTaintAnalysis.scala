@@ -195,10 +195,10 @@ class BasicIFDSTaintAnalysis private (
         }
 
     override def callFlow(
-                             stmt:   Statement,
-                             callee: DeclaredMethod,
-                             in:     Set[Fact]
-                         ): Set[Fact] = {
+        stmt:   Statement,
+        callee: DeclaredMethod,
+        in:     Set[Fact]
+    ): Set[Fact] = {
         val allParams = asCall(stmt.stmt).receiverOption ++ asCall(stmt.stmt).params
         if (callee.name == "sink")
             if (in.exists {
@@ -217,7 +217,7 @@ class BasicIFDSTaintAnalysis private (
             }) {
                 println(s"Found flow: $stmt")
             }
-        if (true||(callee.descriptor.returnType eq ObjectType.Class) ||
+        if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object) ||
             (callee.descriptor.returnType eq ObjectType.String)) {
             in.collect {
@@ -249,12 +249,12 @@ class BasicIFDSTaintAnalysis private (
     }
 
     override def returnFlow(
-                               stmt:   Statement,
-                               callee: DeclaredMethod,
-                               exit:   Statement,
-                               succ:   Statement,
-                               in:     Set[Fact]
-                           ): Set[Fact] = {
+        stmt:   Statement,
+        callee: DeclaredMethod,
+        exit:   Statement,
+        succ:   Statement,
+        in:     Set[Fact]
+    ): Set[Fact] = {
 
         /**
          * Checks whether the formal parameter is of a reference type, as primitive types are
@@ -414,10 +414,12 @@ object BasicIFDSTaintAnalysisRunner {
             println(" -seq to use the SequentialPropertyStore")
             println(" -l2 to use the l2 domain instead of the default l1 domain")
             println(" -delay for a three seconds delay before the taint flow analysis is started")
+            println(" the second to last parameter is the call graph file to be used")
+            println(" the last parameter is the project path")
         }
 
-        val p = Project(new File("/usr/lib/jvm/java-7-openjdk/jre/lib/rt.jar"))//bytecode.RTJar)
-        p.getOrCreateProjectInformationKeyInitializationData(
+        val p = Project(new File(args(args.length - 1))) //bytecode.RTJar)
+        /*p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = p.logContext
@@ -430,7 +432,7 @@ object BasicIFDSTaintAnalysisRunner {
                 //PKEFJPoolPropertyStore.apply(context: _*)
                 ps
             }
-        )
+        )*/
         if (args.contains("-l2")) {
             p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
                 case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
@@ -448,7 +450,6 @@ object BasicIFDSTaintAnalysisRunner {
             Thread.sleep(3000)
         }
 
-
         val nrRuns = 1
         var ps: PropertyStore = null
         var analyses: List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)] = null
@@ -457,7 +458,7 @@ object BasicIFDSTaintAnalysisRunner {
             val project = p.recreate(k ⇒ k == DeclaredMethodsKey.uniqueId)
             PerformanceEvaluation.time {
                 val manager = project.get(FPCFAnalysesManagerKey)
-                manager.runAll(new CallGraphDeserializerScheduler(new File("/home/dominik/Desktop/wala.json")))
+                manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
             } { t ⇒ println(s"CG took ${t.toSeconds}") }
             val manager = project.get(FPCFAnalysesManagerKey)
             ps = project.get(PropertyStoreKey)
