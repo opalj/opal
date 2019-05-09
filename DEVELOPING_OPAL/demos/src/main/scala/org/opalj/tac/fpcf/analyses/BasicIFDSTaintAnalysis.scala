@@ -5,14 +5,11 @@ import java.io.File
 
 import scala.collection.immutable.ListSet
 
-import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -29,8 +26,6 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation
-import org.opalj.tac.ArrayLoad
-import org.opalj.tac.ArrayStore
 import org.opalj.tac.Assignment
 import org.opalj.tac.Expr
 import org.opalj.tac.GetField
@@ -255,19 +250,6 @@ class BasicIFDSTaintAnalysis private (
         succ:   Statement,
         in:     Set[Fact]
     ): Set[Fact] = {
-
-        /**
-         * Checks whether the formal parameter is of a reference type, as primitive types are
-         * call-by-value.
-         */
-        def isRefTypeParam(index: Int): Boolean =
-            if (index == -1) true
-            else {
-                callee.descriptor.parameterType(
-                    paramToIndex(index, includeThis = false)
-                ).isReferenceType
-            }
-
         if (callee.name == "source" && stmt.stmt.astID == Assignment.ASTID)
             Set(Variable(stmt.index))
         else if (callee.name == "sanitize")
