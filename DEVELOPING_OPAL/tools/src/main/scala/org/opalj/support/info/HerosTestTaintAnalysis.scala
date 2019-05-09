@@ -178,7 +178,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                             }
                             Collections.emptySet()
                         }
-                } else if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
+                } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
                     (callee.descriptor.returnType eq ObjectType.Object) ||
                     (callee.descriptor.returnType eq ObjectType.String)) {
                     source: Fact ⇒
