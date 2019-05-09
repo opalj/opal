@@ -30,6 +30,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.analyses.Statement
 import org.opalj.tac.Assignment
@@ -44,6 +45,7 @@ import org.opalj.tac.ReturnValue
 import org.opalj.tac.Stmt
 import org.opalj.tac.Var
 import org.opalj.tac.fpcf.analyses.cg.CallGraphDeserializerScheduler
+import org.opalj.tac.LazyDetachedTACAIKey
 
 case object NullFact extends Fact
 
@@ -178,7 +180,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                             }
                             Collections.emptySet()
                         }
-                } else if ((callee.descriptor.returnType eq ObjectType.Class) ||
+                } else if (true||(callee.descriptor.returnType eq ObjectType.Class) ||
                     (callee.descriptor.returnType eq ObjectType.Object) ||
                     (callee.descriptor.returnType eq ObjectType.String)) {
                     source: Fact ⇒
@@ -371,6 +373,10 @@ object HerosTestTaintAnalysis {
 
     def main(args: Array[String]): Unit = {
         val p = Project(new File(args(args.length - 1)))
+
+        p.getOrCreateProjectInformationKeyInitializationData(LazyDetachedTACAIKey,
+            (m: Method) ⇒ new PrimitiveTACAIDomain(p, m)
+        )
 
         val initialMethods: Map[Method, util.Set[Fact]] = {
             var result: Map[Method, util.Set[Fact]] = Map.empty
