@@ -25,7 +25,7 @@ case class ANEWARRAY(componentType: ReferenceType) extends CreateNewOneDimension
  *
  * @author Malte Limmeroth
  */
-object ANEWARRAY {
+object ANEWARRAY extends InstructionMetaInformation {
 
     final val opcode = 189
 

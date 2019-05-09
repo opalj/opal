@@ -3,7 +3,6 @@ package org.opalj
 package collection
 package eval
 
-import org.opalj.util
 import org.opalj.util.PerformanceEvaluation.time
 
 /**
@@ -46,7 +45,8 @@ object MapsEval extends App {
     //
     val anyRefMap = scala.collection.mutable.AnyRefMap.empty[T, Object]
     val openHashMap = scala.collection.mutable.OpenHashMap.empty[T, Object]
-    // imutable maps...
+    val trieMap = scala.collection.concurrent.TrieMap.empty[T, Object]
+    // immmutable maps...
     var hashMap = scala.collection.immutable.HashMap.empty[T, Object]
     var treeMap = scala.collection.immutable.TreeMap.empty[T, Object]
 
@@ -57,15 +57,11 @@ object MapsEval extends App {
     println("Fill maps...")
     // fill maps
     time {
-        ls.foreach { s ⇒
-            jConcurrentMap.put(s, theObject)
-        }
+        ls.foreach { s ⇒ jConcurrentMap.put(s, theObject) }
     } { t ⇒ println("Java ConcurrentHashMap.add: "+t.toSeconds) }
 
     time {
-        ls.foreach { s ⇒
-            jHashMap.put(s, theObject)
-        }
+        ls.foreach { s ⇒ jHashMap.put(s, theObject) }
     } { t ⇒ println("Java HashMap.add: "+t.toSeconds) }
 
     time {
@@ -73,25 +69,23 @@ object MapsEval extends App {
             anyRefMap += (s -> theObject) // <= faster then adding it using pairs...
             //anyRefMap += ((s, theObject()))
         }
-    } { t ⇒ println("AnyRefMap.add: "+t.toSeconds) }
+    } { t ⇒ println("mutable AnyRefMap.add: "+t.toSeconds) }
 
     time {
-        ls.foreach { s ⇒
-            openHashMap += (s -> theObject)
-        }
-    } { t ⇒ println("OpenHashMap.add: "+t.toSeconds) }
+        ls.foreach { s ⇒ trieMap += (s -> theObject) }
+    } { t ⇒ println("concurrent mutable TrieMap.add: "+t.toSeconds) }
 
     time {
-        ls.foreach { s ⇒
-            hashMap += (s -> theObject)
-        }
-    } { t ⇒ println("HashMap.add: "+t.toSeconds) }
+        ls.foreach { s ⇒ openHashMap += (s -> theObject) }
+    } { t ⇒ println("mutable OpenHashMap.add: "+t.toSeconds) }
 
     time {
-        ls.foreach { s ⇒
-            treeMap += (s -> theObject)
-        }
-    } { t ⇒ println("TreeMap.add: "+t.toSeconds) }
+        ls.foreach { s ⇒ hashMap += (s -> theObject) }
+    } { t ⇒ println("immutable HashMap.add: "+t.toSeconds) }
+
+    time {
+        ls.foreach { s ⇒ treeMap += (s -> theObject) }
+    } { t ⇒ println("immutable TreeMap.add: "+t.toSeconds) }
 
     // query maps
 
@@ -101,9 +95,7 @@ object MapsEval extends App {
         val ts = Array.fill(Threads)(new Thread() {
             override def run(): Unit = {
                 (1 to Repetitions).foreach { i ⇒
-                    ls.foreach { s ⇒
-                        t += jConcurrentMap.get(s).hashCode
-                    }
+                    ls.foreach { s ⇒ t += jConcurrentMap.get(s).hashCode }
                 }
             }
         })
@@ -114,11 +106,7 @@ object MapsEval extends App {
     time {
         val ts = Array.fill(Threads)(new Thread() {
             override def run(): Unit = {
-                (1 to Repetitions).foreach { i ⇒
-                    ls.foreach { s ⇒
-                        t += jHashMap.get(s).hashCode
-                    }
-                }
+                (1 to Repetitions).foreach { i ⇒ ls.foreach { s ⇒ t += jHashMap.get(s).hashCode } }
             }
         })
         ts.foreach(t ⇒ t.start)
@@ -128,11 +116,7 @@ object MapsEval extends App {
     time {
         val ts = Array.fill(Threads)(new Thread() {
             override def run(): Unit = {
-                (1 to Repetitions).foreach { i ⇒
-                    ls.foreach { s ⇒
-                        t += anyRefMap(s).hashCode
-                    }
-                }
+                (1 to Repetitions).foreach { i ⇒ ls.foreach { s ⇒ t += anyRefMap(s).hashCode } }
             }
         })
         ts.foreach(t ⇒ t.start)
@@ -142,11 +126,7 @@ object MapsEval extends App {
     time {
         val ts = Array.fill(Threads)(new Thread() {
             override def run(): Unit = {
-                (1 to Repetitions).foreach { i ⇒
-                    ls.foreach { s ⇒
-                        t += openHashMap(s).hashCode
-                    }
-                }
+                (1 to Repetitions).foreach { i ⇒ ls.foreach { s ⇒ t += openHashMap(s).hashCode } }
             }
         })
         ts.foreach(t ⇒ t.start)
@@ -156,11 +136,17 @@ object MapsEval extends App {
     time {
         val ts = Array.fill(Threads)(new Thread() {
             override def run(): Unit = {
-                (1 to Repetitions).foreach { i ⇒
-                    ls.foreach { s ⇒
-                        t += anyRefMap(s).hashCode
-                    }
-                }
+                (1 to Repetitions).foreach { i ⇒ ls.foreach { s ⇒ t += trieMap(s).hashCode } }
+            }
+        })
+        ts.foreach(t ⇒ t.start)
+        ts.foreach(t ⇒ t.join)
+    } { t ⇒ println("concurrent.TrieMap.get: "+t.toSeconds) }
+
+    time {
+        val ts = Array.fill(Threads)(new Thread() {
+            override def run(): Unit = {
+                (1 to Repetitions).foreach { i ⇒ ls.foreach { s ⇒ t += anyRefMap(s).hashCode } }
             }
         })
         ts.foreach(t ⇒ t.start)
@@ -170,11 +156,7 @@ object MapsEval extends App {
     time {
         val ts = Array.fill(Threads)(new Thread() {
             override def run(): Unit = {
-                (1 to Repetitions).foreach { i ⇒
-                    ls.foreach { s ⇒
-                        t += treeMap(s).hashCode
-                    }
-                }
+                (1 to Repetitions).foreach { i ⇒ ls.foreach { s ⇒ t += treeMap(s).hashCode } }
             }
         })
         ts.foreach(t ⇒ t.start)

@@ -3,14 +3,19 @@ package org.opalj.fpcf
 
 import java.net.URL
 
-import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
-import org.opalj.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 
 /**
  * Tests if the escape properties specified in the test project (the classes in the (sub-)package of
@@ -21,16 +26,22 @@ import org.opalj.tac.fpcf.analyses.TACAITransformer
  */
 class EscapeAnalysisTests extends PropertiesTest {
 
+    val analyses: List[FPCFAnalysisScheduler] = List(
+        RTACallGraphAnalysisScheduler,
+        TriggeredStaticInitializerAnalysis,
+        TriggeredInstantiatedTypesAnalysis,
+        TriggeredLoadedClassesAnalysis,
+        LazyL0BaseAIAnalysis,
+        TACAITransformer
+    )
+
     override def init(p: Project[URL]): Unit = {
         val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 
-        p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(performInvocationsDomain)
-                case Some(requirements) ⇒ requirements + performInvocationsDomain
-            }): Set[Class[_ <: AnyRef]]
-        )
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               ⇒ Set(performInvocationsDomain)
+            case Some(requirements) ⇒ requirements + performInvocationsDomain
+        }
     }
 
     describe("no analysis is scheduled") {
@@ -45,7 +56,7 @@ class EscapeAnalysisTests extends PropertiesTest {
     }
 
     describe("the org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis is executed") {
-        val as = executeAnalyses(LazyL0BaseAIAnalysis, TACAITransformer, EagerSimpleEscapeAnalysis)
+        val as = executeAnalyses(EagerSimpleEscapeAnalysis :: analyses)
         as.propertyStore.shutdown()
         validateProperties(
             as,
@@ -55,13 +66,17 @@ class EscapeAnalysisTests extends PropertiesTest {
         )
     }
 
-    describe("the org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
-        val as = executeAnalyses(
-            EagerInterProceduralEscapeAnalysis,
-            LazyL0BaseAIAnalysis,
-            TACAITransformer,
-            LazyVirtualCallAggregatingEscapeAnalysis
-        )
+    describe("the org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis is executed") {
+        val testContext = executeAnalyses(analyses)
+
+        // todo: we need final results for the CallersProperty, this should be a task of the manager
+        val p = testContext.project
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        val (ps, List((_, a))) = manager.runAll(EagerInterProceduralEscapeAnalysis)
+
+        val as = TestContext(p, ps, a :: testContext.analyses)
+
         as.propertyStore.shutdown()
         validateProperties(
             as,

@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.thrown_exceptions;
 
-import org.opalj.fpcf.analyses.L1ThrownExceptionsAnalysis;
+import org.opalj.br.fpcf.analyses.L1ThrownExceptionsAnalysis;
 import org.opalj.fpcf.properties.thrown_exceptions.DoesNotThrowException;
 import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptions;
 import org.opalj.fpcf.properties.thrown_exceptions.ExpectedExceptionsByOverridingMethods;
@@ -26,7 +26,7 @@ public class ExceptionUsages {
 
     @DoesNotThrowException(
             reason="infinite self-recursive call",
-            requires = {L1ThrownExceptionsAnalysis.class}
+            requires = { L1ThrownExceptionsAnalysis.class}
     )
     public static int staticCallDoesNotThrowException() {
         staticCallDoesNotThrowException();

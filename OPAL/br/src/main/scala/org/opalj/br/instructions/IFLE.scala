@@ -38,7 +38,7 @@ case class IFLE(branchoffset: Int) extends IF0Instruction[IFLE] with IFLELike {
  *
  * @author Malte Limmeroth
  */
-object IFLE {
+object IFLE extends InstructionMetaInformation {
 
     final val opcode = 158
 

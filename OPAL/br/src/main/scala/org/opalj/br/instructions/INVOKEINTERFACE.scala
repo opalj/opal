@@ -36,7 +36,7 @@ case class INVOKEINTERFACE(
  *
  * @author Malte Limmeroth
  */
-object INVOKEINTERFACE {
+object INVOKEINTERFACE extends InstructionMetaInformation {
 
     final val opcode = 185
 

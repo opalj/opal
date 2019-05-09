@@ -9,64 +9,60 @@ import java.io.PrintWriter
 import java.util.Calendar
 
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyL0PurityAnalysis
-import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.purity.LazyL1PurityAnalysis
-import org.opalj.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.purity.DomainSpecificRater
-import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.fpcf.properties.CompileTimePure
-import org.opalj.fpcf.properties.ContextuallyPure
-import org.opalj.fpcf.properties.ContextuallySideEffectFree
-import org.opalj.fpcf.properties.DContextuallyPure
-import org.opalj.fpcf.properties.DContextuallySideEffectFree
-import org.opalj.fpcf.properties.DPure
-import org.opalj.fpcf.properties.DSideEffectFree
-import org.opalj.fpcf.properties.ImpureByAnalysis
-import org.opalj.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.fpcf.properties.Pure
-import org.opalj.fpcf.properties.SideEffectFree
-import org.opalj.fpcf.FPCFAnalysisScheduler
-import org.opalj.fpcf.AnalysisScenario
+import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.PropertyStore
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
+import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.fpcf.properties.CompileTimePure
+import org.opalj.br.fpcf.properties.ContextuallyPure
+import org.opalj.br.fpcf.properties.ContextuallySideEffectFree
+import org.opalj.br.fpcf.properties.DContextuallyPure
+import org.opalj.br.fpcf.properties.DContextuallySideEffectFree
+import org.opalj.br.fpcf.properties.DPure
+import org.opalj.br.fpcf.properties.DSideEffectFree
+import org.opalj.br.fpcf.properties.ImpureByAnalysis
+import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
+import org.opalj.br.fpcf.properties.Pure
+import org.opalj.br.fpcf.properties.SideEffectFree
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.ai.domain
 import org.opalj.ai.Domain
-import org.opalj.ai.common.SimpleAIKey
+import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.DefaultTACAIKey
-import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater
+import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -86,7 +82,6 @@ object Purity {
             "[-noJDK] (do not analyze any JDK methods)\n"+
             "[-individual] (reports the purity result for each method)\n"+
             "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n"+
-            "[-eagerTAC] (eagerly precompute three-address code for all methods)\n"+
             "[-debug] (enable debug output from PropertyStore)\n"+
             "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
             "[-eval <path to evaluation directory>]\n"+
@@ -105,15 +100,9 @@ object Purity {
             LazyTypeImmutabilityAnalysis
         ),
         List[FPCFAnalysisScheduler](
-            LazyL0BaseAIAnalysis,
-            TACAITransformer, //LazyL0TACAIAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
-            LazyVirtualMethodStaticDataUsageAnalysis,
-            LazyInterProceduralEscapeAnalysis,
-            LazyVirtualCallAggregatingEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
-            LazyVirtualReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
@@ -131,7 +120,6 @@ object Purity {
         withoutJDK:            Boolean,
         individual:            Boolean,
         closedWorldAssumption: Boolean,
-        eagerTAC:              Boolean,
         debug:                 Boolean,
         evaluationDir:         Option[File]
     ): Unit = {
@@ -152,17 +140,36 @@ object Purity {
         val projectEvalDir = evaluationDir.map(new File(_, dirName))
         if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
 
+        val isLibrary = cp eq JRELibraryFolder // TODO make configurable
+
         var projectTime: Seconds = Seconds.None
-        var tacTime: Seconds = Seconds.None
         var propertyStoreTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
+        var callGraphTime: Seconds = Seconds.None
 
-        val baseConfig = ConfigFactory.load()
-        implicit val config: Config = if (closedWorldAssumption) baseConfig.withValue(
+        val baseConfig = if (closedWorldAssumption) BaseConfig.withValue(
             "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
         )
-        else baseConfig
+        else BaseConfig
+
+        implicit val config: Config = if (isLibrary) {
+            baseConfig.withValue(
+                "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
+            ).withValue(
+                    "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
+                    ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryInstantiatedTypesFinder")
+                )
+        } else {
+            baseConfig.withValue(
+                "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
+            ).withValue(
+                    "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
+                    ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
+                )
+        }
 
         val project = time {
             Project(
@@ -173,23 +180,9 @@ object Purity {
             )
         } { t ⇒ projectTime = t.toSeconds }
 
-        val d: Method ⇒ Domain with RecordDefUse = (m: Method) ⇒
-            domain.getConstructor(classOf[Project[_]], classOf[Method]).newInstance(project, m)
-
-        project.getOrCreateProjectInformationKeyInitializationData(SimpleAIKey, d)
-        project.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (i: Option[Set[Class[_ <: AnyRef]]]) ⇒ (i match {
-                case None               ⇒ Set(domain)
-                case Some(requirements) ⇒ requirements + domain
-            }): Set[Class[_ <: AnyRef]]
-        )
-
-        if (eagerTAC) {
-            time {
-                val tacai = project.get(DefaultTACAIKey)
-                project.parForeachMethodWithBody() { mi ⇒ tacai(mi.method) }
-            } { t ⇒ tacTime = t.toSeconds }
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               ⇒ Set(domain)
+            case Some(requirements) ⇒ requirements + domain
         }
 
         PropertyStore.updateDebug(debug)
@@ -208,23 +201,36 @@ object Purity {
         }
 
         val declaredMethods = project.get(DeclaredMethodsKey)
-        val projMethods =
+
+        val projMethods: Seq[DefinedMethod] =
             for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
                 yield declaredMethods(m)
 
+        val manager = project.get(FPCFAnalysesManagerKey)
+
         time {
-            val as = AnalysisScenario(support) += LazyVirtualMethodPurityAnalysis += analysis
-            val schedule = as.computeSchedule(project.logContext)
-            schedule(
-                ps,
-                trace = true,
-                afterPhaseScheduling =
-                    computationSpecifications ⇒ {
-                        if (computationSpecifications.contains(LazyVirtualMethodPurityAnalysis)) {
-                            projMethods foreach { dm ⇒ ps.force(dm, fpcf.properties.Purity.key) }
-                        }
+            project.get(RTACallGraphKey)
+        } { t ⇒ callGraphTime = t.toSeconds }
+
+        val reachableMethods =
+            ps.entities(CallersProperty.key).collect {
+                case FinalEP(e: DeclaredMethod, c: CallersProperty) if c ne NoCallers ⇒ e
+            }.toSet
+
+        val analyzedMethods = projMethods.filter(reachableMethods.contains)
+
+        time {
+            val analyses = analysis :: support
+
+            manager.runAll(
+                analyses,
+                { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                    if (css.contains(analysis)) {
+                        analyzedMethods.foreach { dm ⇒ ps.force(dm, br.fpcf.properties.Purity.key) }
                     }
+                }
             )
+
         } { t ⇒ analysisTime = t.toSeconds }
         ps.shutdown()
 
@@ -235,15 +241,15 @@ object Purity {
             try {
                 if (runtimeNew) {
                     runtime.createNewFile()
-                    runtimeWriter.println("project;tac;propertyStore;analysis")
+                    runtimeWriter.println("project;tac;propertyStore;callGraph;analysis")
                 }
-                runtimeWriter.println(s"$projectTime;$tacTime;$propertyStoreTime;$analysisTime")
+                runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime;$analysisTime")
             } finally {
                 if (runtimeWriter != null) runtimeWriter.close()
             }
         }
 
-        val purityEs = ps(projMethods, fpcf.properties.Purity.key).filter {
+        val purityEs = ps(analyzedMethods, br.fpcf.properties.Purity.key).filter {
             case FinalP(p) ⇒ p ne ImpureByLackOfInformation
             case ep        ⇒ throw new RuntimeException(s"non final purity result $ep")
         }
@@ -362,6 +368,7 @@ object Purity {
                     "\nImpure:                                "+lbImpure.size+
                     "\nTotal:                                 "+purityEs.size
             Console.println(result)
+            Console.println(s"Call-graph time: $callGraphTime")
             Console.println(s"Analysis time: $analysisTime")
         }
     }
@@ -378,7 +385,6 @@ object Purity {
         var withoutJDK = false
         var individual = false
         var cwa = false
-        var eagerTAC = false
         var debug = false
         var multiProjects = false
         var evaluationDir: Option[File] = None
@@ -406,7 +412,6 @@ object Purity {
                 case "-rater"       ⇒ raterName = Some(readNextArg())
                 case "-individual"  ⇒ individual = true
                 case "-closedWorld" ⇒ cwa = true
-                case "-eagerTAC"    ⇒ eagerTAC = true
                 case "-debug"       ⇒ debug = true
                 case "-multi"       ⇒ multiProjects = true
                 case "-eval"        ⇒ evaluationDir = Some(new File(readNextArg()))
@@ -442,7 +447,7 @@ object Purity {
             if (domainName.isEmpty)
                 classOf[domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
             else {
-                Class.forName(raterName.get).asInstanceOf[Class[Domain with RecordDefUse]]
+                Class.forName(domainName.get).asInstanceOf[Class[Domain with RecordDefUse]]
             }
 
         val rater = if (raterName.isEmpty) {
@@ -473,7 +478,6 @@ object Purity {
                         withoutJDK,
                         individual,
                         cwa,
-                        eagerTAC,
                         debug,
                         evaluationDir
                     )
@@ -489,7 +493,6 @@ object Purity {
                     withoutJDK,
                     individual,
                     cwa,
-                    eagerTAC,
                     debug,
                     evaluationDir
                 )

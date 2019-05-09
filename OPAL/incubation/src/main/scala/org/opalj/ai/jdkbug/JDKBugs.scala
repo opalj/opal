@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.io.process
 import org.opalj.graphs._
 import org.opalj.br._
-import org.opalj.br.analyses.{AnalysisExecutor, OneStepAnalysis, Project, ReportableAnalysisResult}
+import org.opalj.br.analyses.{AnalysisApplication, OneStepAnalysis, Project, ReportableAnalysisResult}
 import project.{AIProject, OptionalReport}
 import org.opalj.ai.domain.l0.TypeLevelLongValuesShiftOperators
 import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
@@ -82,7 +82,7 @@ class ContextNode(
 object JDKTaintAnalysis
     extends AIProject[URL, Domain with OptionalReport]
     with OneStepAnalysis[URL, ReportableAnalysisResult]
-    with AnalysisExecutor {
+    with AnalysisApplication {
 
     def ai: AI[Domain with OptionalReport] = new AI[Domain with OptionalReport] {}
 

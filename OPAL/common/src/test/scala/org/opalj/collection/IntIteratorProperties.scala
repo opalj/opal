@@ -198,4 +198,47 @@ class IntIteratorFactoryTest extends FunSpec with Matchers {
 
     }
 
+    describe("an IntIterator over a range of values (upTo") {
+
+        it("should iterate over a range with just one value") {
+            val it = IntIterator.upTo(1, 1);
+
+            assert(it.hasNext)
+            assert(it.next == 1)
+            assert(!it.hasNext)
+        }
+
+        it("should iterate over a larger range") {
+            val it = IntIterator.upTo(1, 3);
+
+            assert(it.hasNext)
+            assert(it.next == 1)
+            assert(it.hasNext)
+            assert(it.next == 2)
+            assert(it.hasNext)
+            assert(it.next == 3)
+            assert(!it.hasNext)
+        }
+
+    }
+
+    describe("an IntIterator over a range of values - excluding the last value (upUntil)") {
+
+        it("should iterate over a range with no value") {
+            val it = IntIterator.upUntil(1, 1);
+            assert(!it.hasNext)
+        }
+
+        it("should iterate over a larger range") {
+            val it = IntIterator.upUntil(1, 3);
+
+            assert(it.hasNext)
+            assert(it.next == 1)
+            assert(it.hasNext)
+            assert(it.next == 2)
+            assert(!it.hasNext)
+        }
+
+    }
+
 }

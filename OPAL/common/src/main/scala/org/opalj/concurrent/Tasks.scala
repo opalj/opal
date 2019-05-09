@@ -138,24 +138,22 @@ final class ConcurrentTasks[T](
     def submit(t: T): Unit = {
         if (isInterrupted())
             return ;
-        val runnable = new Runnable {
-            def run(): Unit = {
-                try {
-                    if (!isInterrupted()) process(self, t)
-                } catch {
-                    case userException: Throwable ⇒ self.synchronized {
-                        if (exceptions == null) exceptions = new ConcurrentExceptions()
-                        exceptions.addSuppressed(userException)
-                        if (abortOnExceptions) {
-                            isInterrupted = () ⇒ true // prevent further submissions...
-                        }
+        val runnable: Runnable = () ⇒ {
+            try {
+                if (!isInterrupted()) process(self, t)
+            } catch {
+                case userException: Throwable ⇒ self.synchronized {
+                    if (exceptions == null) exceptions = new ConcurrentExceptions()
+                    exceptions.addSuppressed(userException)
+                    if (abortOnExceptions) {
+                        isInterrupted = () ⇒ true // prevent further submissions...
                     }
-                } finally {
-                    withLock(tasksLock) {
-                        val newTasksCount = tasksCount - 1
-                        tasksCount = newTasksCount
-                        if (newTasksCount == 0) { isFinished.signalAll() }
-                    }
+                }
+            } finally {
+                withLock(tasksLock) {
+                    val newTasksCount = tasksCount - 1
+                    tasksCount = newTasksCount
+                    if (newTasksCount == 0) { isFinished.signalAll() }
                 }
             }
         }
@@ -199,7 +197,7 @@ final class ConcurrentTasks[T](
     }
 
     /**
-     * Blocks the calling thread until all sbumitted tasks as well as those tasks
+     * Blocks the calling thread until all submitted tasks as well as those tasks
      * that are created while processing tasks have been processed.
      *
      * '''`join` must not be called by a thread that actually executes a task!'''

@@ -137,7 +137,7 @@ sealed trait Type extends UIDValue with Ordered[Type] {
      * The number of operand stack slots/registers required to store
      * a single value of this type. In case of `VoidType` `0` is returned.
      */
-    def operandSize: Int = computationalType.operandSize.toInt
+    def operandSize: Int
 
     @throws[ClassCastException]("if this type is not a reference type")
     def asReferenceType: ReferenceType = {
@@ -268,7 +268,7 @@ object Type {
                     throw new UnknownError(s"unknown primitive type $clazz")
             }
         } else {
-            ReferenceType(clazz.getName)
+            ReferenceType(clazz.getName.replace('.', '/'))
         }
     }
 }
@@ -370,6 +370,15 @@ sealed abstract class ReferenceType extends FieldType {
     final override def asReferenceType: ReferenceType = this
 
     final override def computationalType: ComputationalType = ComputationalTypeReference
+
+    final override def operandSize: Int = 1
+
+    /**
+     * Returns the most precise object type that represents this reference type. In
+     * case of an `ArrayType`, the `ObjectType` of `java.lang.Object` is returned;
+     * other the current `ObjectType`.
+     */
+    def mostPreciseObjectType: ObjectType
 
     /**
      * Each reference type is associated with a unique id. Object types get ids &gt;= 0
@@ -518,6 +527,8 @@ sealed trait CTIntType extends Type {
 
     final override def computationalType: ComputationalType = ComputationalTypeInt
 
+    final override def operandSize: Int = 1
+
 }
 
 /**
@@ -656,6 +667,8 @@ sealed abstract class DoubleType private () extends NumericType {
 
     final override def computationalType: ComputationalType = ComputationalTypeDouble
 
+    final override def operandSize: Int = 2
+
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     final val atype = 7
@@ -716,6 +729,8 @@ sealed abstract class FloatType private () extends NumericType {
     final override def isFloatType: Boolean = true
 
     final override def computationalType: ComputationalType = ComputationalTypeFloat
+
+    final override def operandSize: Int = 1
 
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
@@ -877,6 +892,8 @@ sealed abstract class LongType private () extends NumericType {
 
     final override def computationalType: ComputationalType = ComputationalTypeLong
 
+    final override def operandSize: Int = 2
+
     final override def accept[T](v: SignatureVisitor[T]): T = v.visit(this)
 
     def toJava: String = "long"
@@ -976,6 +993,8 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
     override def isObjectType: Boolean = true
 
     override def asObjectType: ObjectType = this
+
+    override def mostPreciseObjectType: ObjectType = this
 
     @inline final def isPrimitiveTypeWrapper: Boolean = {
         val thisId = this.id
@@ -1193,6 +1212,9 @@ object ObjectType {
     final val Exception = ObjectType("java/lang/Exception")
     final val RuntimeException = ObjectType("java/lang/RuntimeException")
 
+    final val Thread = ObjectType("java/lang/Thread")
+    final val Runnable = ObjectType("java/lang/Runnable")
+
     final val StringBuilder = ObjectType("java/lang/StringBuilder")
 
     // Types related to the invokedynamic instruction
@@ -1240,6 +1262,9 @@ object ObjectType {
 
     // Given the importance of "Object Serialization" we also predefine Externalizable
     final val Externalizable = ObjectType("java/io/Externalizable")
+
+    final val ObjectInputStream = ObjectType("java/io/ObjectInputStream")
+    final val ObjectOutputStream = ObjectType("java/io/ObjectOutputStream")
 
     /**
      * Implicit mapping from a wrapper type to its primitive type.
@@ -1355,9 +1380,11 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
         val componentType: FieldType
 ) extends ReferenceType {
 
-    final override def isArrayType = true
+    override def isArrayType = true
 
-    final override def asArrayType = this
+    override def asArrayType = this
+
+    override def mostPreciseObjectType: ObjectType = ObjectType.Object
 
     /**
      * Returns this array type's element type. E.g., the element type of an
@@ -1478,7 +1505,21 @@ object ArrayType {
  * @author Michael Eichberg
  */
 object ArrayElementType {
+
     def unapply(at: ArrayType): Option[FieldType] = Some(at.elementType)
+
+}
+
+object ElementReferenceType {
+
+    def unapply(rt: ReferenceType): Option[ObjectType] = {
+        rt match {
+            case ot: ObjectType                   ⇒ Some(ot)
+            case ArrayElementType(ot: ObjectType) ⇒ Some(ot)
+            case _                                ⇒ None
+        }
+    }
+
 }
 
 /**

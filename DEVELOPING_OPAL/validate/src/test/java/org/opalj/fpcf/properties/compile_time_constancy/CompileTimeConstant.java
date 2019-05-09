@@ -2,7 +2,6 @@
 package org.opalj.fpcf.properties.compile_time_constancy;
 
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.allocation_freeness.AllocationFreeMethodMatcher;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

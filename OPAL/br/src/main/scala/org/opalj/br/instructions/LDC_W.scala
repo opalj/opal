@@ -10,7 +10,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  *
  * @author Michael Eichberg
  */
-sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] {
+sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] with InstructionMetaInformation {
 
     final def opcode: Opcode = LDC_W.opcode
 
@@ -28,11 +28,14 @@ sealed abstract class LDC_W[T] extends LoadConstantInstruction[T] {
 
 }
 
-final case class LoadInt_W(value: Int) extends LDC_W[Int] {
+/** A load constant instruction which never fails. */
+sealed abstract class PrimitiveLDC_W[T] extends LDC_W[T]
+
+final case class LoadInt_W(value: Int) extends PrimitiveLDC_W[Int] {
     final def computationalType = ComputationalTypeInt
 }
 
-final case class LoadFloat_W(value: Float) extends LDC_W[Float] {
+final case class LoadFloat_W(value: Float) extends PrimitiveLDC_W[Float] {
 
     final def computationalType = ComputationalTypeFloat
 
@@ -75,7 +78,7 @@ final case class LoadMethodType_W(value: MethodDescriptor) extends LDC_W[MethodD
 /**
  * @note To match [[LoadString]] and [[LoadString_W]] instructions you can use [[LDCString]].
  */
-final case class LoadString_W(value: String) extends LDC_W[String] {
+final case class LoadString_W(value: String) extends PrimitiveLDC_W[String] {
     final def computationalType = ComputationalTypeReference
 }
 

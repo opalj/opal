@@ -7,13 +7,18 @@ package compile_time_constancy
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.CompileTimeConstancy
+import org.opalj.br.fpcf.properties.CompileTimeConstantField
+import org.opalj.br.fpcf.properties.CompileTimeVaryingField
 
 /**
  * Base trait for matchers that match a field's `CompileTimeConstancy` property.
  *
  * @author Dominik Helm
  */
-sealed abstract class CompileTimeConstancyMatcher(val property: CompileTimeConstancy)
+sealed abstract class CompileTimeConstancyMatcher(
+        val property: CompileTimeConstancy
+)
     extends AbstractPropertyMatcher {
 
     def validateProperty(
@@ -37,13 +42,13 @@ sealed abstract class CompileTimeConstancyMatcher(val property: CompileTimeConst
 
 /**
  * Matches a field's `CompileTimeConstancy` property. The match is successful if the field has the
- * property [[org.opalj.fpcf.properties.CompileTimeConstantField]].
+ * property [[org.opalj.br.fpcf.properties.CompileTimeConstantField]].
  */
 class CompileTimeConstantMatcher extends CompileTimeConstancyMatcher(CompileTimeConstantField)
 
 /**
  * Matches a field's `CompileTimeConstancy` property. The match is successful if the field has the
- * property [[org.opalj.fpcf.properties.CompileTimeVaryingField]].
+ * property [[org.opalj.br.fpcf.properties.CompileTimeVaryingField]].
  */
 class CompileTimeVaryingMatcher extends CompileTimeConstancyMatcher(CompileTimeVaryingField)
 

@@ -147,10 +147,11 @@ case class InvokeSpecialMethodHandle(
 }
 
 case class NewInvokeSpecialMethodHandle(
-        receiverType:     ReferenceType,
-        name:             String,
+        receiverType:     ObjectType,
         methodDescriptor: MethodDescriptor
 ) extends MethodCallMethodHandle {
+
+    final override val name = "<init>"
 
     override def opcodeOfUnderlyingInstruction: Opcode = instructions.INVOKESPECIAL.opcode
 

@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.purity;
 
-import org.opalj.fpcf.FPCFAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
+import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

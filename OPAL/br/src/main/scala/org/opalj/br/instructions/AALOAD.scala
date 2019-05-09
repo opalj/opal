@@ -8,7 +8,7 @@ package instructions
  *
  * @author Michael Eicberg
  */
-case object AALOAD extends ArrayLoadInstruction {
+case object AALOAD extends ArrayLoadInstruction with InstructionMetaInformation {
 
     final val opcode = 50
 

@@ -7,7 +7,7 @@ import org.opalj.br.DoubleType
 /**
  * Defines the primary factory methods for Double values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait DoubleValuesFactory extends ValuesDomain { domain ⇒

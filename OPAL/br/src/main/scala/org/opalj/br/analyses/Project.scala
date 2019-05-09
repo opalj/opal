@@ -4,6 +4,7 @@ package br
 package analyses
 
 import scala.annotation.switch
+import scala.annotation.tailrec
 
 import java.io.File
 import java.lang.ref.SoftReference
@@ -24,7 +25,6 @@ import scala.collection.mutable.OpenHashMap
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.Error
 import org.opalj.log.GlobalLogContext
@@ -49,6 +49,7 @@ import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.NEW
+import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
@@ -114,7 +115,8 @@ import org.opalj.br.reader.Java9LibraryFramework
  *                         + all class files.
  *
  * @param libraryClassFilesAreInterfacesOnly If `true` then only the public interfaces
- *         of the methods of the library's classes are available.
+ *         of the methods of the library's classes are available; if `false` all methods and
+ *         method bodies are reified.
  *
  * @author Michael Eichberg
  * @author Marco Torsello
@@ -151,7 +153,6 @@ class Project[Source] private (
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
-        final val projectType:                        ProjectType,
         // Note that the referenced array will never shrink!
         @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] = new AtomicReferenceArray[AnyRef](32)
 )(
@@ -217,7 +218,6 @@ class Project[Source] private (
             newClassHierarchy,
             instanceMethods,
             overridingMethods,
-            projectType,
             newProjectInformation
         )(
             newLogContext,
@@ -476,7 +476,8 @@ class Project[Source] private (
      * @note    Initialization data is discarded once the key is used.
      */
     def updateProjectInformationKeyInitializationData[T <: AnyRef, I <: AnyRef](
-        key:  ProjectInformationKey[T, I],
+        key: ProjectInformationKey[T, I]
+    )(
         info: Option[I] ⇒ I
     ): I = {
         projectInformationKeyInitializationData.compute(
@@ -524,7 +525,7 @@ class Project[Source] private (
     def get[T <: AnyRef](pik: ProjectInformationKey[T, _]): T = {
         val pikUId = pik.uniqueId
 
-        /* synchronization is done by the caller! */
+        /* Synchronization is done by the caller! */
         def derive(projectInformation: AtomicReferenceArray[AnyRef]): T = {
             var className = pik.getClass.getSimpleName
             if (className.endsWith("Key"))
@@ -540,12 +541,7 @@ class Project[Source] private (
                 // we don't need the initialization data anymore
                 projectInformationKeyInitializationData.remove(pik)
                 pi
-            } { t ⇒
-                info(
-                    "project",
-                    s"initialization of $className took ${t.toSeconds}"
-                )
-            }
+            } { t ⇒ info("project", s"initialization of $className took ${t.toSeconds}") }
             projectInformation.set(pikUId, pi)
             pi
         }
@@ -627,10 +623,6 @@ class Project[Source] private (
      * class files.
      */
     def extend(other: Project[Source]): Project[Source] = {
-        if (this.projectType != other.projectType) {
-            throw new IllegalArgumentException("the projects have different analysis modes");
-        }
-
         if (this.libraryClassFilesAreInterfacesOnly != other.libraryClassFilesAreInterfacesOnly) {
             throw new IllegalArgumentException("the projects' libraries are loaded differently");
         }
@@ -654,8 +646,7 @@ class Project[Source] private (
         if (classFilesCount == 0)
             return ;
 
-        val parallelizationLevel = Math.min(NumberOfThreadsForCPUBoundTasks, classFilesCount)
-        parForeachArrayElement(classFiles, parallelizationLevel, isInterrupted)(f)
+        parForeachArrayElement(classFiles, NumberOfThreadsForCPUBoundTasks, isInterrupted)(f)
     }
 
     def parForeachProjectClassFile[T](
@@ -886,6 +877,75 @@ class Project[Source] private (
     }
 
     /**
+     * Returns all available `ClassFile` objects for the given `objectTypes` that
+     * pass the given `filter`. `ObjectType`s for which no `ClassFile` is available
+     * are ignored.
+     */
+    def lookupClassFiles(
+        objectTypes: Traversable[ObjectType]
+    )(
+        classFileFilter: ClassFile ⇒ Boolean
+    ): Traversable[ClassFile] = {
+        objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
+    }
+
+    def hasInstanceMethod(
+        receiverType:     ObjectType,
+        name:             String,
+        descriptor:       MethodDescriptor,
+        isPackagePrivate: Boolean
+    ): Boolean = {
+        val data = instanceMethods(receiverType)
+
+        @tailrec @inline def binarySearch(low: Int, high: Int): Int = {
+            if (high < low)
+                return -1;
+
+            val mid = (low + high) / 2 // <= will never overflow...(by constraint...)
+            val e = data(mid)
+            val eComparison = e.method.compare(name, descriptor)
+            if (eComparison == 0) {
+                mid
+            } else if (eComparison < 0) {
+                binarySearch(mid + 1, high)
+            } else {
+                binarySearch(low, mid - 1)
+            }
+        }
+
+        val candidateIndex = binarySearch(0, data.length - 1)
+        // In case we found a method, but it is not `method.isPackagePrivate` == `isPackagePrivate`,
+        // it is possible that there is another method with the same name and descriptor next
+        // to that one (i.e. left or right).
+        // Therefore, we also check if there exists such a method, with indices lower/higher to
+        // the found one.
+        candidateIndex != -1 && {
+            var index = candidateIndex
+            var method: Method = null
+            // check the methods with a smaller (or equal) index
+            while (index >= 0
+                && { method = data(index).method; method.compare(name, descriptor) == 0 }) {
+                if (method.isPackagePrivate == isPackagePrivate)
+                    return true;
+                index -= 1
+            }
+
+            index = candidateIndex + 1 // reset the index
+
+            // check the methods with a higher index
+            while (index < data.length
+                && { method = data(index).method; method.compare(name, descriptor) == 0 }) {
+                if (method.isPackagePrivate == isPackagePrivate)
+                    return true;
+
+                index += 1
+            }
+
+            false
+        }
+    }
+
+    /**
      * Converts this project abstraction into a standard Java `HashMap`.
      *
      * @note This method is intended to be used by Java projects that want to interact with OPAL.
@@ -967,19 +1027,6 @@ class Project[Source] private (
         result
     }
 
-    /**
-     * Returns all available `ClassFile` objects for the given `objectTypes` that
-     * pass the given `filter`. `ObjectType`s for which no `ClassFile` is available
-     * are ignored.
-     */
-    def lookupClassFiles(
-        objectTypes: Traversable[ObjectType]
-    )(
-        classFileFilter: ClassFile ⇒ Boolean
-    ): Traversable[ClassFile] = {
-        objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
-    }
-
     override def toString: String = {
         val classDescriptions =
             sources map { entry ⇒
@@ -989,7 +1036,6 @@ class Project[Source] private (
 
         classDescriptions.mkString(
             "Project("+
-                "\n\tprojectType="+projectType+
                 "\n\tlibraryClassFilesAreInterfacesOnly="+libraryClassFilesAreInterfacesOnly+
                 "\n\t",
             "\n\t",
@@ -1094,6 +1140,26 @@ object Project {
                     }.getOrElse("<None>")
 
                 m.body.get iterate { (pc: Int, instruction: Instruction) ⇒
+
+                    def validateReceiverTypeKind(
+                        invoke: NonVirtualMethodInvocationInstruction
+                    ): Boolean = {
+                        val typeIsInterface = isInterface(invoke.declaringClass.asObjectType)
+                        if (typeIsInterface.isYesOrNo && typeIsInterface.isYes != invoke.isInterfaceCall) {
+                            val ex = InconsistentProjectException(
+                                s"the type of the declaring class of the target method of the invokes call in "+
+                                    m.toJava(s"pc=$pc; $invoke - $disclaimer")+
+                                    " is inconsistent; it is expected to be "+
+                                    (if (invoke.isInterfaceCall) "an interface" else "a class"),
+                                Error
+                            )
+                            addException(ex)
+                            false
+                        } else {
+                            true
+                        }
+                    }
+
                     try {
                         (instruction.opcode: @switch) match {
 
@@ -1110,38 +1176,41 @@ object Project {
 
                             case INVOKESTATIC.opcode ⇒
                                 val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
-                                project.staticCall(invokestatic) match {
-                                    case _: Success[_] ⇒ /*OK*/
-                                    case Empty         ⇒ /*OK - partial project*/
-                                    case Failure ⇒
-                                        val ex = InconsistentProjectException(
-                                            s"target method of invokestatic call in "+
-                                                m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
-                                                " cannot be resolved; supertype information is complete="+
-                                                completeSupertypeInformation+
-                                                "; missing supertype class file: "+missingSupertypeClassFile,
-                                            Error
-                                        )
-                                        addException(ex)
+                                if (validateReceiverTypeKind(invokestatic)) {
+                                    project.staticCall(invokestatic) match {
+                                        case _: Success[_] ⇒ /*OK*/
+                                        case Empty         ⇒ /*OK - partial project*/
+                                        case Failure ⇒
+                                            val ex = InconsistentProjectException(
+                                                s"target method of invokestatic call in "+
+                                                    m.toJava(s"pc=$pc; $invokestatic - $disclaimer")+
+                                                    " cannot be resolved; supertype information is complete="+
+                                                    completeSupertypeInformation+
+                                                    "; missing supertype class file: "+missingSupertypeClassFile,
+                                                Error
+                                            )
+                                            addException(ex)
+                                    }
                                 }
 
                             case INVOKESPECIAL.opcode ⇒
                                 val invokespecial = instruction.asInstanceOf[INVOKESPECIAL]
-                                project.specialCall(cf.thisType, invokespecial) match {
-                                    case _: Success[_] ⇒ /*OK*/
-                                    case Empty         ⇒ /*OK - partial project*/
-                                    case Failure ⇒
-                                        val ex = InconsistentProjectException(
-                                            s"target method of invokespecial call in "+
-                                                m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
-                                                " cannot be resolved; supertype information is complete="+
-                                                completeSupertypeInformation+
-                                                "; missing supertype class file: "+missingSupertypeClassFile,
-                                            Error
-                                        )
-                                        addException(ex)
+                                if (validateReceiverTypeKind(invokespecial)) {
+                                    project.specialCall(cf.thisType, invokespecial) match {
+                                        case _: Success[_] ⇒ /*OK*/
+                                        case Empty         ⇒ /*OK - partial project*/
+                                        case Failure ⇒
+                                            val ex = InconsistentProjectException(
+                                                s"target method of invokespecial call in "+
+                                                    m.toJava(s"pc=$pc; $invokespecial - $disclaimer")+
+                                                    " cannot be resolved; supertype information is complete="+
+                                                    completeSupertypeInformation+
+                                                    "; missing supertype class file: "+missingSupertypeClassFile,
+                                                Error
+                                            )
+                                            addException(ex)
+                                    }
                                 }
-
                             case _ ⇒ // Nothing special is checked (so far)
                         }
                     } catch {
@@ -1327,25 +1396,28 @@ object Project {
                 }
             }
 
-            uniqueInterfaceMethods foreach { m ⇒
-                processMaximallySpecificSuperinterfaceMethod(m)
-            }
+            uniqueInterfaceMethods foreach { m ⇒ processMaximallySpecificSuperinterfaceMethod(m) }
 
             // let's keep the contexts related to the maximally specific methods.
+            /* OLD
             interfaceMethods.iterator.filterNot { ms ⇒
                 uniqueInterfaceMethodSignatures.contains(ms)
             } foreach { interfaceMethod ⇒
-                val (_, maximallySpecificSuperiniterfaceMethod) =
-                    findMaximallySpecificSuperinterfaceMethods(
-                        superinterfaceTypes,
-                        interfaceMethod.name, interfaceMethod.descriptor,
-                        UIDSet.empty[ObjectType]
-                    )(objectTypeToClassFile, classHierarchy, logContext)
-                if (maximallySpecificSuperiniterfaceMethod.size == 1) {
-                    // A maximally specific interface method can only be invoked if it is unique!
-                    processMaximallySpecificSuperinterfaceMethod(
-                        maximallySpecificSuperiniterfaceMethod.head
-                    )
+            */
+            interfaceMethods foreach { interfaceMethod ⇒
+                if (!uniqueInterfaceMethodSignatures.contains(interfaceMethod)) {
+                    val (_, maximallySpecificSuperiniterfaceMethod) =
+                        findMaximallySpecificSuperinterfaceMethods(
+                            superinterfaceTypes,
+                            interfaceMethod.name, interfaceMethod.descriptor,
+                            UIDSet.empty[ObjectType]
+                        )(objectTypeToClassFile, classHierarchy, logContext)
+                    if (maximallySpecificSuperiniterfaceMethod.size == 1) {
+                        // A maximally specific interface method can only be invoked if it is unique!
+                        processMaximallySpecificSuperinterfaceMethod(
+                            maximallySpecificSuperiniterfaceMethod.head
+                        )
+                    }
                 }
             }
 
@@ -2064,8 +2136,7 @@ object Project {
                 virtualMethodsCount,
                 classHierarchy,
                 Await.result(instanceMethodsFuture, Duration.Inf),
-                Await.result(overridingMethodsFuture, Duration.Inf),
-                ProjectTypes.withName(config.as[String](ProjectType.ConfigKey))
+                Await.result(overridingMethodsFuture, Duration.Inf)
             )
 
             time {

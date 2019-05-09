@@ -4,30 +4,35 @@ package fpcf
 
 import java.net.URL
 
-import org.opalj.concurrent.ConcurrentExceptions
-import org.opalj.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.fpcf.analyses.purity.EagerL1PurityAnalysis
-import org.opalj.fpcf.analyses.purity.EagerL2PurityAnalysis
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.fpcf.analyses.LazyClassImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.LazyTypeImmutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodPurityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.fpcf.analyses.LazyL0FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualMethodStaticDataUsageAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
+import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
@@ -42,67 +47,99 @@ class PurityTests extends PropertiesTest {
     override def withRT = true
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(
-            AIDomainFactoryKey,
-            (_: Option[Set[Class[_ <: AnyRef]]]) ⇒
-                Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
+            _ ⇒ Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         )
     }
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
-        val as = try {
+        val as =
             executeAnalyses(
-                EagerL0PurityAnalysis,
-                LazyL0FieldMutabilityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis
-
+                Set(
+                    EagerL0PurityAnalysis,
+                    LazyL0FieldMutabilityAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis
+                )
             )
-        } catch {
-            case ce: ConcurrentExceptions ⇒
-                ce.getSuppressed.foreach(e ⇒ e.printStackTrace())
-                throw ce;
-        }
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L1PurityAnalysis is executed") {
+        val testContext =
+            executeAnalyses(
+                Set(
+                    RTACallGraphAnalysisScheduler,
+                    TriggeredStaticInitializerAnalysis,
+                    TriggeredLoadedClassesAnalysis,
+                    TriggeredFinalizerAnalysisScheduler,
+                    TriggeredThreadRelatedCallsAnalysis,
+                    TriggeredSerializationRelatedCallsAnalysis,
+                    TriggeredReflectionRelatedCallsAnalysis,
+                    TriggeredSystemPropertiesAnalysis,
+                    TriggeredInstantiatedTypesAnalysis,
+                    TACAITransformer,
+                    LazyL0BaseAIAnalysis,
+                    LazyL1FieldMutabilityAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis
+                )
+            )
+
         L1PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
-        val as = executeAnalyses(
-            EagerL1PurityAnalysis,
-            // Lazy ones
-            LazyL0BaseAIAnalysis,
-            TACAITransformer, // LazyL0TACAIAnalysis,
-            LazyL1FieldMutabilityAnalysis,
-            LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis,
-            LazyVirtualMethodPurityAnalysis
-        )
+
+        // TODO: we need final results for the CallersProperty, this should be a task of the manager
+        val p = testContext.project
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        val (ps, List((_, a))) = manager.runAll(EagerL1PurityAnalysis)
+
+        val as = TestContext(p, ps, a :: testContext.analyses)
+        assert(as != null)
+
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
+        val testContext =
+            executeAnalyses(
+                Set(
+                    TACAITransformer,
+                    LazyL0BaseAIAnalysis,
+                    RTACallGraphAnalysisScheduler,
+                    TriggeredStaticInitializerAnalysis,
+                    TriggeredLoadedClassesAnalysis,
+                    TriggeredFinalizerAnalysisScheduler,
+                    TriggeredThreadRelatedCallsAnalysis,
+                    TriggeredSerializationRelatedCallsAnalysis,
+                    TriggeredReflectionRelatedCallsAnalysis,
+                    TriggeredSystemPropertiesAnalysis,
+                    TriggeredInstantiatedTypesAnalysis
+                )
+            )
+
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
-        val as = executeAnalyses(
+
+        // TODO: we need final results for the CallersProperty, this should be a task of the manager
+        val p = testContext.project
+        val manager = p.get(FPCFAnalysesManagerKey)
+
+        val (ps, analyses) = manager.runAll(
             EagerL2PurityAnalysis,
-            // Lazy analyses
-            LazyL0BaseAIAnalysis,
-            TACAITransformer, // LazyL0TACAIAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
             LazyStaticDataUsageAnalysis,
-            LazyVirtualMethodStaticDataUsageAnalysis,
+            LazyL0CompileTimeConstancyAnalysis,
             LazyInterProceduralEscapeAnalysis,
-            LazyVirtualCallAggregatingEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
-            LazyVirtualReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
             LazyL1FieldMutabilityAnalysis,
             LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis,
-            LazyVirtualMethodPurityAnalysis
+            LazyTypeImmutabilityAnalysis
         )
+
+        val as = TestContext(p, ps, testContext.analyses ++ analyses.map(_._2))
+
         as.propertyStore.shutdown()
         validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
     }

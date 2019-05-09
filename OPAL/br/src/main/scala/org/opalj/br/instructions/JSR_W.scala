@@ -30,7 +30,7 @@ case class JSR_W(branchoffset: Int) extends JSRInstruction with JSR_WLike {
  *
  * @author Malte Limmeroth
  */
-object JSR_W {
+object JSR_W extends InstructionMetaInformation {
 
     final val opcode = 201
 
@@ -42,7 +42,7 @@ object JSR_W {
 
 case class LabeledJSR_W(
         branchTarget: InstructionLabel
-) extends LabeledUnconditionalBranchInstruction with JSRLike {
+) extends LabeledUnconditionalBranchInstruction with JSR_WLike {
 
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): JSR_W = {
         JSR_W(pcs(branchTarget) - currentPC)

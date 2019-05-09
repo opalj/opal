@@ -25,7 +25,7 @@ case class DLOAD(lvIndex: Int) extends DLoadInstruction with ExplicitLocalVariab
     override def toString: String = s"DLOAD($lvIndex)"
 }
 
-object DLOAD {
+object DLOAD extends InstructionMetaInformation {
 
     final val opcode = 24
 

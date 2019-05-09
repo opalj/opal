@@ -16,7 +16,7 @@ case class FSTORE(lvIndex: Int) extends FStoreInstruction with ExplicitLocalVari
 
 }
 
-object FSTORE {
+object FSTORE extends InstructionMetaInformation {
 
     final val opcode = 56
 

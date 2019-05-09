@@ -15,7 +15,7 @@ case class LSTORE(lvIndex: Int) extends LStoreInstruction with ExplicitLocalVari
     final def mnemonic: String = "lstore"
 
 }
-object LSTORE {
+object LSTORE extends InstructionMetaInformation {
 
     final val opcode = 55
 

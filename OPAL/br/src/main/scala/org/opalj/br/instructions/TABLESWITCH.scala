@@ -9,6 +9,7 @@ import org.opalj.collection.immutable.IntArray
 import org.opalj.collection.immutable.IntArraySet
 import org.opalj.collection.immutable.IntArraySet1
 import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.ForeachRefIterator
 
 /**
  * Access jump table by index and jump.
@@ -67,7 +68,7 @@ case class TABLESWITCH(
     }
 
     override def caseValues: IntIterator = {
-        IntIterator.inclusive(low, high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+        IntIterator.upTo(low, high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
     }
 
     final def nextInstructions(
@@ -136,7 +137,7 @@ case class TABLESWITCH(
  *
  * @author Malte Limmeroth
  */
-object TABLESWITCH {
+object TABLESWITCH extends InstructionMetaInformation {
 
     final val opcode = 170
 
@@ -183,7 +184,9 @@ case class LabeledTABLESWITCH(
         )
     }
 
-    override def branchTargets: Seq[InstructionLabel] = defaultBranchTarget +: jumpTargets
+    override def branchTargets: ForeachRefIterator[InstructionLabel] = {
+        jumpTargets.foreachIterator + defaultBranchTarget
+    }
 
     def caseValueOfJumpTarget(jumpTarget: InstructionLabel): (Chain[Int], Boolean) = {
         var caseValues = Chain.empty[Int]
@@ -197,7 +200,7 @@ case class LabeledTABLESWITCH(
     }
 
     override def caseValues: IntIterator = {
-        IntIterator.inclusive(low, high).filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
+        IntIterator.upTo(low, high).filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {

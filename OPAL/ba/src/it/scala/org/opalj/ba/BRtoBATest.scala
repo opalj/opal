@@ -23,7 +23,7 @@ import org.opalj.br.reader.Java9FrameworkWithCaching
 import org.opalj.br.reader.BytecodeOptimizer.SimplifyControlFlowKey
 
 /**
- * Tests if we can convert every class file using the "Bytecode Representation" back to a
+ * Smoketest if we can convert every class file using the "Bytecode Representation" back to a
  * class file using the naive representation (Bytecode Disassembler).
  *
  * @author Michael Eichberg

@@ -15,7 +15,7 @@ case class ISTORE(lvIndex: Int) extends IStoreInstruction with ExplicitLocalVari
     final def mnemonic: String = "istore"
 
 }
-object ISTORE {
+object ISTORE extends InstructionMetaInformation {
 
     final val opcode = 54
 

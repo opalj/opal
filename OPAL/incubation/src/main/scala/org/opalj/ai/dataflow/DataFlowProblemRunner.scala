@@ -16,7 +16,7 @@ import org.opalj.util.PerformanceEvaluation.time
  *
  * @author Michael Eichberg and Ben Hermann
  */
-trait DataFlowProblemRunner extends AnalysisExecutor {
+trait DataFlowProblemRunner extends AnalysisApplication {
     dataFlowProblemFactory: DataFlowProblemFactory ⇒
 
     final override val analysis = new Analysis[URL, ReportableAnalysisResult] {

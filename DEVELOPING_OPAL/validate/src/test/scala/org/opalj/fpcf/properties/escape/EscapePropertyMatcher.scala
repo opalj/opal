@@ -3,7 +3,7 @@ package org.opalj
 package fpcf
 package properties
 package escape
-import org.opalj.ai.common.DefinitionSite
+
 import org.opalj.ai.domain.l2.PerformInvocations
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.AnnotationLike
@@ -12,6 +12,8 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.tac.common.DefinitionSite
 
 /**
  * A property matcher that checks whether an annotated allocation or parameter has the specified
@@ -19,8 +21,16 @@ import org.opalj.br.analyses.VirtualFormalParameter
  *
  * @author Florian Kuebler
  */
-abstract class EscapePropertyMatcher(val property: EscapeProperty) extends AbstractPropertyMatcher {
-    override def isRelevant(p: Project[_], as: Set[ObjectType], entity: Any, a: AnnotationLike): Boolean = {
+abstract class EscapePropertyMatcher(
+        val property: EscapeProperty
+) extends AbstractPropertyMatcher {
+
+    override def isRelevant(
+        p:      Project[_],
+        as:     Set[ObjectType],
+        entity: Any,
+        a:      AnnotationLike
+    ): Boolean = {
         // check whether the analyses specified in the annotation are present
         val analysesElementValues = getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues map { _.asClassValue.value.asObjectType }
@@ -32,10 +42,11 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
 
         // retrieve the current method and using this the domain used for the TAC
         val m = entity match {
-            case VirtualFormalParameter(DefinedMethod(dc, m), _) if dc == m.classFile.thisType ⇒ m
-            case VirtualFormalParameter(DefinedMethod(_, _), _) ⇒ return false
-            case DefinitionSite(m, _) ⇒ m
-            case _ ⇒ throw new RuntimeException(s"unsuported entity $entity")
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.declaringClassType == dm.definedMethod.classFile.thisType ⇒
+                dm.definedMethod
+            case VirtualFormalParameter(dm: DefinedMethod, _) ⇒ return false;
+            case DefinitionSite(m, _)                         ⇒ m
+            case _                                            ⇒ throw new RuntimeException(s"unsuported entity $entity")
         }
         if (as.nonEmpty && m.body.isDefined) {
             val domainClass = p.get(AIDomainFactoryKey).domainClass
@@ -71,25 +82,66 @@ abstract class EscapePropertyMatcher(val property: EscapeProperty) extends Abstr
     }
 }
 
-class NoEscapeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.NoEscape)
-class EscapeInCalleeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeInCallee)
-class EscapeViaParameterMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaParameter)
-class EscapeViaReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaReturn)
-class EscapeViaAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaAbnormalReturn)
-class EscapeViaParameterAndReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndReturn)
-class EscapeViaParameterAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn)
-class EscapeViaNormalAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn)
-class EscapeViaParameterAndNormalAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn)
-class AtMostNoEscapeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.NoEscape))
-class AtMostEscapeInCalleeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeInCallee))
-class AtMostEscapeViaParameterMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameter))
-class AtMostEscapeViaReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaReturn))
-class AtMostEscapeViaAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaAbnormalReturn))
-class AtMostEscapeViaParameterAndReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndReturn))
-class AtMostEscapeViaParameterAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndAbnormalReturn))
-class AtMostEscapeViaNormalAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaNormalAndAbnormalReturn))
-class AtMostEscapeViaParameterAndNormalAndAbnormalReturnMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.AtMost(org.opalj.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn))
-class EscapeViaStaticFieldMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaStaticField)
-class EscapeViaHeapObjectMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.EscapeViaHeapObject)
-class GlobalEscapeMatcher extends EscapePropertyMatcher(org.opalj.fpcf.properties.GlobalEscape)
+class NoEscapeMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.NoEscape)
+
+class EscapeInCalleeMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeInCallee)
+
+class EscapeViaParameterMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaParameter)
+
+class EscapeViaReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaReturn)
+
+class EscapeViaAbnormalReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn)
+
+class EscapeViaParameterAndReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaParameterAndReturn)
+
+class EscapeViaParameterAndAbnormalReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaParameterAndAbnormalReturn)
+
+class EscapeViaNormalAndAbnormalReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn)
+
+class EscapeViaParameterAndNormalAndAbnormalReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn)
+
+class AtMostNoEscapeMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.NoEscape))
+
+class AtMostEscapeInCalleeMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeInCallee))
+
+class AtMostEscapeViaParameterMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaParameter))
+
+class AtMostEscapeViaReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaReturn))
+
+class AtMostEscapeViaAbnormalReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaAbnormalReturn))
+
+class AtMostEscapeViaParameterAndReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndReturn))
+
+class AtMostEscapeViaParameterAndAbnormalReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndAbnormalReturn))
+
+class AtMostEscapeViaNormalAndAbnormalReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn))
+
+class AtMostEscapeViaParameterAndNormalAndAbnormalReturnMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.AtMost(org.opalj.br.fpcf.properties.EscapeViaParameterAndNormalAndAbnormalReturn))
+
+class EscapeViaStaticFieldMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaStaticField)
+
+class EscapeViaHeapObjectMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.EscapeViaHeapObject)
+
+class GlobalEscapeMatcher
+    extends EscapePropertyMatcher(org.opalj.br.fpcf.properties.GlobalEscape)
 

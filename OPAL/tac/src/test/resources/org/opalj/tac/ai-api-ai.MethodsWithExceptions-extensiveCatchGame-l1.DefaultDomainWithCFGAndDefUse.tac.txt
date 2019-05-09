@@ -1,0 +1,71 @@
+/* PARAMETERS:
+   param1: useSites={0,8,22,7} (origin=-2)
+   param2: useSites={1} (origin=-3)
+*/
+0:/*pc=4:*/ lv0 = {param1}/*java.lang.Object*/.hashCode()
+// ⚡️ java.lang.IllegalArgumentException → 13, ⚡️ java.lang.NullPointerException → 9, ⚡️ <uncaught exception ⇒ abnormal return>, ⚡️ java.lang.ClassCastException → 11, ⚡️ java.lang.ArithmeticException → 15
+
+// 0 →
+1:/*pc=7:*/ lv1 = {param2} / {lv0}
+// ⚡️ java.lang.ArithmeticException → 15
+
+// 1 →
+2:/*pc=8:*/ if({lv1} <= 0) goto 7
+
+// 2 →
+3:/*pc=11:*/ lv3 = new java.lang.UnknownError
+4:/*pc=15:*/ lv4 = "hashCode was 0"
+5:/*pc=17:*/ {lv3}/*(non-virtual) java.lang.UnknownError*/.<init>({lv4})
+// ⚡️ java.lang.IllegalArgumentException → 13, ⚡️ java.lang.NullPointerException → 9, ⚡️ <uncaught exception ⇒ abnormal return>, ⚡️ java.lang.ClassCastException → 11, ⚡️ java.lang.ArithmeticException → 15
+
+// 5 →
+6:/*pc=20:*/ throw {lv3}
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 2 →
+7:/*pc=22:*/ (java.lang.Throwable) {param1}
+// ⚡️ java.lang.ClassCastException → 11
+
+// 7 →
+8:/*pc=25:*/ throw {param1}
+// ⚡️ java.lang.IllegalArgumentException → 13, ⚡️ java.lang.NullPointerException → 9, ⚡️ <uncaught exception ⇒ abnormal return>, ⚡️ java.lang.ClassCastException → 11, ⚡️ java.lang.ArithmeticException → 15
+
+// java.lang.NullPointerException →
+9:/*pc=26:*/ caught java.lang.NullPointerException /* <= {exception@0,exception[VM]@0,param1,exception@5}*/
+10:/*pc=29:*/ goto 18
+
+// java.lang.ClassCastException →
+11:/*pc=32:*/ caught java.lang.ClassCastException /* <= {exception@0,param1,exception[VM]@7,exception@5}*/
+12:/*pc=35:*/ goto 18
+
+// java.lang.IllegalArgumentException →
+13:/*pc=38:*/ caught java.lang.IllegalArgumentException /* <= {exception@0,param1,exception@5}*/
+14:/*pc=41:*/ goto 18
+
+// java.lang.ArithmeticException →
+15:/*pc=44:*/ caught java.lang.ArithmeticException /* <= {exception@0,param1,exception@5,exception[VM]@1}*/
+16:/*pc=45:*/ lv10 = 0
+17:/*pc=46:*/ return {lv10}
+
+// 10, 12, 14 →
+18:/*pc=47:*/ lv12 = java.lang.System.out
+19:/*pc=50:*/ lv13 = new java.lang.StringBuilder
+20:/*pc=54:*/ lv14 = "it was one of the three expected ones: "
+21:/*pc=56:*/ {lv13}/*(non-virtual) java.lang.StringBuilder*/.<init>({lv14})
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 21 →
+22:/*pc=60:*/ lv16 = {lv13}/*java.lang.StringBuilder*/.append({exception@0, exception[VM]@0, param1, exception[VM]@7, exception@5})
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 22 →
+23:/*pc=63:*/ lv17 = {lv16}/*java.lang.StringBuilder*/.toString()
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 23 →
+24:/*pc=66:*/ {lv12}/*java.io.PrintStream*/.println({lv17})
+// ⚡️ <uncaught exception ⇒ abnormal return>
+
+// 24 →
+25:/*pc=69:*/ lv19 = -1
+26:/*pc=70:*/ return {lv19}

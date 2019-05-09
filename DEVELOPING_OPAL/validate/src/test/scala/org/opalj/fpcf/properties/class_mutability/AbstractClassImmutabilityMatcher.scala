@@ -7,8 +7,12 @@ package class_mutability
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.properties
 
-class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
+class AbstractClassImmutabilityMatcher(
+        val property: properties.ClassImmutability
+) extends AbstractPropertyMatcher {
+
     override def validateProperty(
         p:          Project[_],
         as:         Set[ObjectType],
@@ -27,8 +31,12 @@ class AbstractClassImmutabilityMatcher(val property: ClassImmutability) extends 
     }
 }
 
-class ImmutableObjectMatcher extends AbstractClassImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableObject)
-class ImmutableContainerObjectMatcher extends AbstractClassImmutabilityMatcher(org.opalj.fpcf.properties.ImmutableContainer)
+class ImmutableObjectMatcher
+    extends AbstractClassImmutabilityMatcher(properties.ImmutableObject)
+
+class ImmutableContainerObjectMatcher
+    extends AbstractClassImmutabilityMatcher(properties.ImmutableContainer)
+
 class MutableObjectMatcher extends AbstractPropertyMatcher {
     override def validateProperty(
         p:          Project[_],
@@ -38,8 +46,8 @@ class MutableObjectMatcher extends AbstractPropertyMatcher {
         properties: Traversable[Property]
     ): Option[String] = {
         if (properties.exists {
-            case _: org.opalj.fpcf.properties.MutableObject ⇒ true
-            case _                                          ⇒ false
+            case _: MutableObject ⇒ true
+            case _                ⇒ false
         })
             Some(a.elementValuePairs.head.value.asStringValue.value)
         else

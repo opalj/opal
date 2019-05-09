@@ -135,6 +135,7 @@ object ConstArray /*extends LowLevelConstArrayImplicits*/ {
         }
     }
 
+    // TODO rename binarySearch
     def find[T <: AnyRef](sortedConstArray: ConstArray[T])(evaluate: T ⇒ Int): Option[T] = {
         findInArray(sortedConstArray.data)(evaluate)
     }

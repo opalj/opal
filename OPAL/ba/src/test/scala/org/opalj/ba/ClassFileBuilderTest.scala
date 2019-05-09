@@ -44,7 +44,8 @@ class ClassFileBuilderTest extends FlatSpec {
 
     val (simpleConcreteClass, _) =
         CLASS[Nothing](
-            version = UShortPair(2, 49),
+            // Note: Java 11 checks if the minor version is a known one!
+            version = UShortPair(0, 49),
             accessModifiers = PUBLIC.SUPER.FINAL.SYNTHETIC,
             thisType = "ConcreteClass",
             superclassType = Some("org/opalj/bc/AbstractClass"),
@@ -100,8 +101,8 @@ class ClassFileBuilderTest extends FlatSpec {
             (ACC_PUBLIC.mask | ACC_FINAL.mask | ACC_SYNTHETIC.mask | ACC_SUPER.mask))
     }
 
-    it should "have the specified minor version: 2" in {
-        assert(concreteBRClassFile.minorVersion == 2)
+    it should "have the specified minor version: 0" in {
+        assert(concreteBRClassFile.minorVersion == 0)
     }
 
     it should "have the specified major version: 49" in {

@@ -59,7 +59,7 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
      * The key associated with every [[BaseAIResult]] property.
      */
     final val key: PropertyKey[BaseAIResult] = PropertyKey.create[Method, BaseAIResult](
-        "org.opalj.ai.fpcf.properties.BaseAIResult",
+        "opalj.BaseAIResult",
         (ps: PropertyStore, r: FallbackReason, m: Method) ⇒ {
             r match {
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒

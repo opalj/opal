@@ -8,7 +8,9 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class BitwiseInstruction extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction {
+abstract class BitwiseInstruction
+    extends AlwaysSucceedingStackBasedBinaryArithmeticInstruction
+    with InstructionMetaInformation {
 
     final override def jvmExceptions: List[ObjectType] = Nil
 

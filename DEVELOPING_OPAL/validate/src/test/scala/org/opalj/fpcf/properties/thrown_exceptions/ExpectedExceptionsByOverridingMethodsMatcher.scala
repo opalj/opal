@@ -7,6 +7,7 @@ package thrown_exceptions
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 
 /**
  * Matches a methods's `ThrownExceptionsByOverridingMethods` property.
@@ -14,7 +15,9 @@ import org.opalj.br.ObjectType
  * @author Andreas Muttscheller
  * @author Michael Eichberg
  */
-class ExpectedExceptionsByOverridingMethodsMatcher extends AbstractPropertyMatcher with ExceptionTypeExtractor {
+class ExpectedExceptionsByOverridingMethodsMatcher
+    extends AbstractPropertyMatcher
+    with ExceptionTypeExtractor {
 
     def validateProperty(
         p:          SomeProject,

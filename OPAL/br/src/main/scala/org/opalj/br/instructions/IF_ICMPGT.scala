@@ -38,7 +38,7 @@ case class IF_ICMPGT(branchoffset: Int) extends IFICMPInstruction[IF_ICMPGT] wit
  *
  * @author Malte Limmeroth
  */
-object IF_ICMPGT {
+object IF_ICMPGT extends InstructionMetaInformation {
 
     final val opcode = 163
 

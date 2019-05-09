@@ -597,18 +597,16 @@ trait RecordCFG
             this
         ) {
                 val predecessors = new Array[IntTrieSet](regularSuccessors.length)
-                for {
-                    pc ← code.programCounters
-                    successorPC ← allSuccessorsOf(pc)
-                } {
-                    val oldPredecessorsOfSuccessor = predecessors(successorPC)
-                    predecessors(successorPC) =
-                        if (oldPredecessorsOfSuccessor eq null) {
-                            IntTrieSet1(pc)
-                        } else {
-                            oldPredecessorsOfSuccessor + pc
-                        }
-
+                code.foreachPC { pc ⇒
+                    foreachSuccessorOf(pc) { successorPC ⇒
+                        val oldPredecessorsOfSuccessor = predecessors(successorPC)
+                        predecessors(successorPC) =
+                            if (oldPredecessorsOfSuccessor eq null) {
+                                IntTrieSet1(pc)
+                            } else {
+                                oldPredecessorsOfSuccessor + pc
+                            }
+                    }
                 }
                 predecessors
             }
@@ -676,7 +674,7 @@ trait RecordCFG
      * Returns the first instructions of the infinite loops of the current method. An infinite loop
      * is a set of instructions that does not have a connection to any instruction outside of
      * the loop (closed strongly connected component).
-     * I.e., whatever path is taken, all remaining paths will eventualy include the loop header
+     * I.e., whatever path is taken, all remaining paths will eventually include the loop header
      * instruction.
      * The very vast majority of methods does not have infinite loops.
      */
@@ -782,9 +780,10 @@ trait RecordCFG
 
         // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
         val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode](code.exceptionHandlers.size)
-        for {
-            (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
-        } {
+        // for {
+        //     (exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex
+        // } {
+        code.exceptionHandlers foreachWithIndex { (exceptionHandler, index) ⇒
             if ( // 1.1.    Let's check if the handler was executed at all.
             unsafeWasExecuted(exceptionHandler.handlerPC) &&
                 // 1.2.    The handler may be shared by multiple try blocks, hence, we have
@@ -792,8 +791,8 @@ trait RecordCFG
                 //         that jumps to the handler.
                 handlesException(exceptionHandler)) {
                 val handlerPC = exceptionHandler.handlerPC
-                // OLD val catchNodeCandiate = new CatchNode(exceptionHandler, index)
-                // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandiate)
+                // OLD val catchNodeCandidate = new CatchNode(exceptionHandler, index)
+                // OLD val catchNode = exceptionHandlers.getOrElseUpdate(handlerPC, catchNodeCandidate)
                 var catchNode = exceptionHandlers.get(handlerPC)
                 if (catchNode == null) {
                     catchNode = new CatchNode(exceptionHandler, index)

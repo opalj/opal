@@ -49,7 +49,6 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduledTasksCount should be(0)
                 ps.fastTrackPropertiesCount should be(0)
                 ps.scheduledOnUpdateComputationsCount should be(0)
-                ps.immediateOnUpdateComputationsCount should be(0)
                 ps.isKnown("<DOES NOT EXIST>") should be(false)
                 ps.hasProperty("<DOES NOT EXIST>", Palindrome) should be(false)
                 ps.properties("<DOES NOT EXIST>") should be('Empty)
@@ -74,7 +73,6 @@ sealed abstract class PropertyStoreTest(
                 ps.scheduledTasksCount should be(0)
                 ps.fastTrackPropertiesCount should be(0)
                 ps.scheduledOnUpdateComputationsCount should be(0)
-                ps.immediateOnUpdateComputationsCount should be(0)
                 ps.isKnown("<DOES NOT EXIST>") should be(false)
                 ps.hasProperty("<DOES NOT EXIST>", Palindrome) should be(false)
                 ps.properties("<DOES NOT EXIST>") should be('Empty)
@@ -113,20 +111,65 @@ sealed abstract class PropertyStoreTest(
                 ps.setupPhase(Set(PalindromeKey), Set.empty)
                 ps.scheduleEagerComputationForEntity("a") { e ⇒
                     ps.doTerminate = true
-                    val dependee = EPK("d", Palindromes.PalindromeKey)
+                    val dependee = EPK("d", PalindromeKey)
                     ps(dependee) // we use a fake dependency...
-                    InterimResult(
-                        "a",
-                        NoPalindrome,
-                        Palindrome,
-                        Seq(dependee),
-                        eps ⇒ { Result("a", Palindrome) },
-                        pch
+                    IncrementalResult(
+                        InterimResult(
+                            "a",
+                            NoPalindrome,
+                            Palindrome,
+                            Seq(dependee),
+                            eps ⇒ { Result("a", Palindrome) },
+                            pch
+                        ),
+                        // This computation should not be executed!
+                        Iterator.single(
+                            (
+                                (e: Entity) ⇒ { fail("should not be executed") }: Result,
+                                "d"
+                            )
+                        )
                     )
                 }
-                assertThrows[InterruptedException] { ps.waitOnPhaseCompletion() }
+                try {
+                    ps.waitOnPhaseCompletion()
+                    fail("expected InterruptedException")
+                } catch {
+                    case _: InterruptedException ⇒ // OK
+                    case t: Throwable ⇒
+                        val m =
+                            t.getStackTrace
+                                .take(25)
+                                .map(_.toString)
+                                .mkString(
+                                    s"unexpected exception (${t.getClass.getSimpleName}): "+
+                                        s"${t.getMessage}\n\t",
+                                    "\n\t",
+                                    ""
+                                )
+                        fail(m)
+                }
 
                 ps("a", PalindromeKey) should be(InterimELUBP("a", NoPalindrome, Palindrome))
+
+                ps.shutdown()
+            }
+
+            it("should be possible to call setupPhase after waitOnPhaseCompletion") {
+                val ps = createPropertyStore()
+                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                ps.setupPhase(Set(PalindromeKey), Set.empty)
+                ps.scheduleEagerComputationForEntity("a") { e ⇒
+                    val dependee = EPK("d", Palindromes.PalindromeKey)
+                    ps(dependee) // we use a fake dependency...
+                    Result("a", NoPalindrome)
+                }
+                ps.waitOnPhaseCompletion()
+
+                ps.setupPhase(Set.empty, Set.empty)
+
+                ps("a", PalindromeKey) should be(FinalEP("a", NoPalindrome))
 
                 ps.shutdown()
             }
@@ -143,8 +186,9 @@ sealed abstract class PropertyStoreTest(
                 ps.setupPhase(Set(PalindromeKey), Set.empty)
 
                 ps.scheduleEagerComputationForEntity("e1") { e ⇒
-                    val dependees = Seq(EPK("e2", PalindromeKey), EPK("e3", PalindromeKey))
-                    dependees.foreach(ps.apply[Entity, Property]) // we have to quey them!
+                    val e3EPK = EPK("e3", PalindromeKey)
+                    val dependees = Seq(EPK("e2", PalindromeKey), e3EPK)
+                    ps(e3EPK) // we have to query it (e2 is already set => no need to query it)!
                     InterimResult(
                         "e1",
                         NoPalindrome,
@@ -192,6 +236,8 @@ sealed abstract class PropertyStoreTest(
 
                 ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey), Set.empty)
                 ps.waitOnPhaseCompletion()
+
+                ps.isKnown("aba") should be(true)
 
                 ps.hasProperty("aba", PalindromeKey) should be(true)
                 ps.hasProperty("zzYzz", SuperPalindromeKey) should be(true)
@@ -308,7 +354,7 @@ sealed abstract class PropertyStoreTest(
                 val es = Set("aba", "cc", "d", "fd", "zu", "aaabbbaaa")
                 ps.scheduleEagerComputationsForEntities[String](es) { e ⇒
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case FinalP(NoAnalysisForPalindromeProperty) /*<= the test...*/ ⇒
                                 Result(e, Marker.NotMarked)
                             case epk: SomeEPK ⇒
@@ -337,7 +383,7 @@ sealed abstract class PropertyStoreTest(
                 }
                 ps.scheduleEagerComputationsForEntities(es) { e ⇒
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case FinalP(Palindrome) | FinalP(NoPalindrome) ⇒
                                 Result(e, Marker.IsMarked)
 
@@ -353,6 +399,7 @@ sealed abstract class PropertyStoreTest(
                 }
 
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty)
 
                 val notMarkedEntities = ps.entities(Marker.NotMarked, Marker.NotMarked).toSet
                 notMarkedEntities should be(Set("fd", "zu", "aaabbbaaa"))
@@ -384,6 +431,7 @@ sealed abstract class PropertyStoreTest(
                 }
 
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty)
 
                 ps.entities(pk).map(_.e).toSet should be(es)
                 ps.entities(_.lb == Palindrome).toSet should be(Set("aba", "cc", "d", "aaabbbaaa"))
@@ -427,6 +475,8 @@ sealed abstract class PropertyStoreTest(
                 )
                 ps("aba", pk) should be(EPK("aba", pk))
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
+
                 ps("aba", pk) should be(FinalEP("aba", Palindrome))
 
                 ps.shutdown()
@@ -453,6 +503,7 @@ sealed abstract class PropertyStoreTest(
                 ps("aba", pk) // just trigger it again...
 
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
 
                 if (invocationCount.get != 1) {
                     fail(s"invocation count should be 1; was ${invocationCount.get}")
@@ -486,12 +537,12 @@ sealed abstract class PropertyStoreTest(
                     (e: Entity) ⇒ {
                         invocationCount.incrementAndGet()
 
-                        val initialsExpectedEP = EPK(e, PalindromeKey)
-                        ps(e, PalindromeKey) should be(initialsExpectedEP)
+                        val initiallyExpectedEP = EPK(e, PalindromeKey)
+                        ps(e, PalindromeKey) should be(initiallyExpectedEP)
 
                         InterimResult(
                             e, NoSuperPalindrome, SuperPalindrome,
-                            Seq(initialsExpectedEP),
+                            Seq(initiallyExpectedEP),
                             eps ⇒ {
                                 if (eps.lb == Palindrome /*&& ...*/ )
                                     Result(e, SuperPalindrome)
@@ -509,7 +560,7 @@ sealed abstract class PropertyStoreTest(
                         "e", Marker.NotMarked, Marker.IsMarked,
                         Seq(initiallyExpectedEP),
                         eps ⇒ {
-                            // Depending the scheduling, we can have a final result here as well.
+                            // Depending on the scheduling, we can have a final result here as well.
                             if (eps.isFinal) {
                                 if (eps.lb == SuperPalindrome)
                                     Result(e, Marker.IsMarked)
@@ -534,6 +585,8 @@ sealed abstract class PropertyStoreTest(
                     )
                 }
                 ps.waitOnPhaseCompletion()
+
+                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
 
                 ps("e", PalindromeKey) should be(FinalEP("e", Palindrome))
                 ps("e", SuperPalindromeKey) should be(FinalEP("e", SuperPalindrome))
@@ -598,6 +651,7 @@ sealed abstract class PropertyStoreTest(
                 )
 
                 ps.waitOnPhaseCompletion()
+                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
 
                 ps("fragments", PalindromeFragmentsKey) should be(
                     FinalEP("fragments", PalindromeFragments(Set("a", "e")))
@@ -605,6 +659,64 @@ sealed abstract class PropertyStoreTest(
                 processedStrings.keySet should be(Set("aNOa", "eNOe", "aBa", "eBe"))
                 ps.shutdown()
             }
+
+            it(
+                "should be possible to register multiple triggered computations, "+
+                    "even if the first triggered computation is already potentially triggered"
+            ) {
+                    val ps = createPropertyStore()
+                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                    ps.set("aBa", Palindrome)
+                    ps.set("aNOa", NoPalindrome)
+
+                    val processedStrings = scala.collection.concurrent.TrieMap.empty[String, Boolean]
+
+                    ps.setupPhase(Set(PalindromeKey, PalindromeFragmentsKey), Set.empty)
+
+                    def uc(
+                        e: String
+                    )(
+                        fragmentsEOptionP: EOptionP[Entity, PalindromeFragments]
+                    ): Option[EPS[String, PalindromeFragments]] = {
+                        processedStrings.put(e, true)
+                        (fragmentsEOptionP: @unchecked) match {
+                            case _: EPK[_, _] ⇒
+                                Some(
+                                    InterimEUBP(
+                                        "fragments",
+                                        PalindromeFragments(Set(e.substring(0, 1)))
+                                    )
+                                )
+                            case InterimUBP(PalindromeFragments(fs)) ⇒
+                                val newFs = fs + e.substring(0, 1)
+                                if (newFs != fs)
+                                    Some(InterimEUBP("fragments", PalindromeFragments(newFs)))
+                                else
+                                    None
+                        }
+                    }
+                    ps.registerTriggeredComputation(
+                        PalindromeKey,
+                        (e: Entity) ⇒ PartialResult("fragments", PalindromeFragmentsKey, uc(e.toString))
+                    )
+
+                    // In this case, we can actually schedule the same computation multiple times;
+                    // it should be idempotent anyway!
+                    ps.registerTriggeredComputation(
+                        PalindromeKey,
+                        (e: Entity) ⇒ PartialResult("fragments", PalindromeFragmentsKey, uc(e.toString))
+                    )
+
+                    ps.waitOnPhaseCompletion()
+                    ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
+
+                    ps("fragments", PalindromeFragmentsKey) should be(
+                        FinalEP("fragments", PalindromeFragments(Set("a")))
+                    )
+                    processedStrings.keySet should be(Set("aNOa", "aBa"))
+                    ps.shutdown()
+                }
 
             describe("support for fast track properties") {
 
@@ -630,7 +742,10 @@ sealed abstract class PropertyStoreTest(
                             }
                         )
                         entities foreach { ps.force(_, MarkerWithFastTrackKey) }
+
                         ps.waitOnPhaseCompletion()
+                        ps.setupPhase(Set.empty, Set.empty)
+
                         entities foreach { e ⇒
                             ps(e, MarkerWithFastTrackKey) should be(FinalEP(e, IsMarked))
                         }
@@ -767,7 +882,7 @@ sealed abstract class PropertyStoreTest(
                     var ub: Int = n.targets.size
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case InterimUBP(ReachableNodesCount(otherUB)) ⇒
                                 if (ub + otherUB > 4)
                                     Result(n, TooManyNodesReachable)
@@ -839,7 +954,7 @@ sealed abstract class PropertyStoreTest(
                 ): ProperPropertyComputationResult = {
 
                     def c(eps: SomeEOptionP): ProperPropertyComputationResult = {
-                        eps match {
+                        (eps: @unchecked) match {
                             case eps @ InterimUBP(ReachableNodes(nodes)) ⇒
                                 val lb = TooManyNodesReachable
                                 val ub = ReachableNodesCount(nodes.size)
@@ -892,15 +1007,14 @@ sealed abstract class PropertyStoreTest(
                             ps(nodeA, ReachableNodesCount.Key) // forces the evaluation for all nodes...
 
                             ps.waitOnPhaseCompletion()
+                            ps.setupPhase(Set.empty, Set.empty)
 
                             info(
                                 s"(id of first permutation = ${dropCount + 1}; this permutation="+
                                     s"${nodeEntitiesPermutation.mkString("[", ",", "]")} "+
                                     "; number of executed tasks:"+ps.scheduledTasksCount+
                                     "; number of scheduled onUpdateContinuations:"+
-                                    ps.scheduledOnUpdateComputationsCount+
-                                    "; number of immediate onUpdateContinuations:"+
-                                    ps.immediateOnUpdateComputationsCount
+                                    ps.scheduledOnUpdateComputationsCount
                             )
                             try {
                                 ps(nodeA, ReachableNodes.Key) should be(FinalEP(
@@ -1465,7 +1579,7 @@ sealed abstract class PropertyStoreTest(
                         def c(successorNode: SomeEOptionP): ProperPropertyComputationResult = {
                             // HERE - For this test case only, we can simple get to the previous
                             // node from the one that was updated.
-                            successorNode match {
+                            (successorNode: @unchecked) match {
                                 case epk: EPK[_, _] ⇒
                                     InterimResult(node, Impure, Pure, Iterable(epk), c, pch)
 
@@ -1499,9 +1613,7 @@ sealed abstract class PropertyStoreTest(
                     info(
                         s"number of executed tasks:"+ps.scheduledTasksCount+
                             "; number of scheduled onUpdateContinuations:"+
-                            ps.scheduledOnUpdateComputationsCount+
-                            "; number of immediate onUpdateContinuations:"+
-                            ps.immediateOnUpdateComputationsCount
+                            ps.scheduledOnUpdateComputationsCount
                     )
                 }
             }
@@ -1567,9 +1679,7 @@ sealed abstract class PropertyStoreTest(
                     info(
                         s"number of executed tasks:"+ps.scheduledTasksCount+
                             "; number of scheduled onUpdateContinuations:"+
-                            ps.scheduledOnUpdateComputationsCount+
-                            "; number of immediate onUpdateContinuations:"+
-                            ps.immediateOnUpdateComputationsCount
+                            ps.scheduledOnUpdateComputationsCount
                     )
                 }
             }
@@ -1582,8 +1692,15 @@ abstract class PropertyStoreTestWithDebugging(
 ) extends PropertyStoreTest(propertyComputationHints) {
 
     private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
-    override def beforeAll(): Unit = PropertyStore.updateDebug(true)
-    override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
+    private[this] var oldPropertyStoreTraceFallbacksSetting = PropertyStore.TraceFallbacks
+    override def beforeAll(): Unit = {
+        PropertyStore.updateDebug(true)
+        PropertyStore.updateTraceFallbacks(true)
+    }
+    override def afterAll(): Unit = {
+        PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
+        PropertyStore.updateTraceFallbacks(oldPropertyStoreTraceFallbacksSetting)
+    }
 
     propertyComputationHints foreach { pch ⇒
 
@@ -1837,4 +1954,3 @@ abstract class PropertyStoreTestWithoutDebugging(
     override def afterAll(): Unit = PropertyStore.updateDebug(oldPropertyStoreUpdateSetting)
 
 }
-

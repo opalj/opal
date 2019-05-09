@@ -14,14 +14,14 @@ import org.opalj.ai.analyses.cg.VTAWithPreAnalysisCallGraphAlgorithmConfiguratio
 import org.opalj.ai.analyses.cg.DefaultVTACallGraphDomain
 import org.opalj.ai.analyses.cg.CallGraphDifferenceReport
 import org.opalj.ai.analyses.cg.CallGraphComparison
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 
 /**
  * Calculates and compares the results of two call graphs.
  *
  * @author Michael Eichberg
  */
-object CallGraphDiff extends DefaultOneStepAnalysis {
+object CallGraphDiff extends ProjectAnalysisApplication {
 
     override def title: String = "identifies differences between two call graphs"
 

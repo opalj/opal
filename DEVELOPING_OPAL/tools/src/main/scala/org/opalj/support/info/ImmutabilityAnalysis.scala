@@ -7,23 +7,23 @@ import java.net.URL
 
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.opalj.fpcf.PropertyStoreKey
-import org.opalj.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.fpcf.analyses.EagerL0FieldMutabilityAnalysis
-import org.opalj.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.fpcf.properties.ClassImmutability
-import org.opalj.fpcf.properties.TypeImmutability
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.properties.ClassImmutability
+import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
  *
  * @author Michael Eichberg
  */
-object ImmutabilityAnalysis extends DefaultOneStepAnalysis {
+object ImmutabilityAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = "Immutability Analysis"
 

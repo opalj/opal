@@ -579,14 +579,14 @@ final class Code private (
             }
             val thePCPredecessorPCs = predecessorPCs(pc)
             // if the code contains some "trivially" dead code as, e.g., shown next:
-            // com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary (JDK8u92)
-            // PC   Line  Instruction
-            // 0    1363  aload_0
-            // 1    |     checkcast com.sun.org.apache.xalan.internal.xsltc.DOM
-            // 4    |     areturn
-            // 5    1365  astore_1  // ... exception handler for irrelevant exception...
-            // ...
-            // 23   |   areturn
+            //      com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary (JDK8u92)
+            //      PC   Line  Instruction
+            //      0    1363  aload_0
+            //      1    |     checkcast com.sun.org.apache.xalan.internal.xsltc.DOM
+            //      4    |     areturn
+            //      5    1365  astore_1  // ... exception handler for irrelevant exception...
+            //      ...
+            //      23   |     areturn
             // predecessorPCs(pc) will be null!
             if (thePCPredecessorPCs ne null) {
                 thePCPredecessorPCs foreach { predecessorPC ⇒
@@ -696,6 +696,24 @@ final class Code private (
         }
     }
 
+    /**
+     * Iterates over all instructions with the given opcode and calls the given function `f` for every instruction.
+     */
+    @inline final def iterate[U](
+        instructionType: InstructionMetaInformation
+    )(
+        f: ( /*pc:*/ Int, Instruction) ⇒ U
+    ): Unit = {
+        val opcode = instructionType.opcode
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            val instruction = instructions(pc)
+            if (instruction.opcode == opcode) f(pc, instruction)
+            pc = pcOfNextInstruction(pc)
+        }
+    }
+
     @inline final def forall(f: ( /*pc:*/ Int, Instruction) ⇒ Boolean): Boolean = {
         val instructionsLength = instructions.length
         var pc = 0
@@ -719,6 +737,19 @@ final class Code private (
         while (pc < instructionsLength) {
             val instruction = instructions(pc)
             f(instruction)
+            pc = pcOfNextInstruction(pc)
+        }
+    }
+
+    /**
+     * Iterates over all instructions and calls the given function `f`
+     * for every instruction.
+     */
+    @inline final def foreachPC[U](f: PC ⇒ U): Unit = {
+        val instructionsLength = instructions.length
+        var pc = 0
+        while (pc < instructionsLength) {
+            f(pc)
             pc = pcOfNextInstruction(pc)
         }
     }

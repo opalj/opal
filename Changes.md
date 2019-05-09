@@ -1,9 +1,17 @@
 # Changes
 
-## Upcoming (most likely 2.1.0)
-
+## Upcoming (3.0.0)
+- Hermes was promoted to a real project: TOOLS/hermes
+- renamed `DefaultOneStepAnalysis` to `ProjectAnalysisApplication`
+- added support for analyses using the monotone framework; the monotone framework itself was added to `CFG`
+- the three-address code has been moved to its own subproject (`ThreeAddressCode`) in the folder OPAL/tac
+- fixed the name of the static analysis infrastructure project (the name of the project on Maven Central has changed)
+- vastly improved PropertyStore with support for Transformers
+- the demos subproject was moved to the OPAL-DeveloperTools subfolder
+- fixed the computation of `allSubtypes` of for `java.lang.Object`
 - fixed several issues related to the handling of methods with subroutines (JSR/RET)
 - fixed the toString method of `StaticMethodCall`
+- fixed the generation of ObjectTypes using `Type(classOf[...])`
 - added a preliminary FPCF analysis which determines the type of values stored in fields
 - added a preliminary FPCF analysis which determines core properties of the values returned by methods
 - the FPCF framework now has proper support for analyses which refine lower bounds
@@ -14,13 +22,15 @@
 - moved the `isValueASubtypeOf` methods to the _value framework (`org.opalj.value`)_ (i.e., the methods are moved up in the class hierarchy)
 - moved the `verificationTypeInfo` methods to the _value framework_ (i.e., they are moved up in the class hierarchy)
 - the domain classes (e.g., `org.opalj.ai.domain.l0.TypeLevelReferenceValue` or `...l1.ReferenceValues`) which define the framework for handling reference values now use traits instead of classes; the concrete classes are now found in the `...DefaultBinding...` classes
-- `java…Comparable|Cloneable|Serializable` now get fixed ObjectType ids
+- `java.*.Comparable|Cloneable|Serializable` now get fixed ObjectType ids
+- Java 11 files which do not use Java 11 Bytecode features can be read (Java doesn't make use of the new features so far)
+- we now have a new meta-project `Framework` to facilitate reuse.
 
 ## 2.0.1 - Released Oct. 10th 2018
 
 - fixed a bug in the identification of closed strongly connected components
 - fixed a bug when computing the stackmap table when a register store instruction is found in a try block of a finally handler and therefore is considered to be throwing an exception by the VM when it tries to verify the bytecode
-- fixed a bug when a simple property of an entity is queried in a later phase (after the analysis was run) and the analysis didn't compute a value  
+- fixed a bug when a simple property of an entity is queried in a later phase (after the analysis was run) and the analysis didn't compute a value
 
 ## 2.0.0 - Released Oct. 2nd 2018
 

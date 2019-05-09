@@ -8,7 +8,7 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.Method
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.MethodSignature
@@ -26,7 +26,7 @@ import org.opalj.ai.analyses.cg.CallGraphCache
  *
  * @author Michael Eichberg
  */
-object MethodReturnValuesAnalysis extends DefaultOneStepAnalysis {
+object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
 
     override def title: String = TheMethodReturValuesAnalysis.title
 

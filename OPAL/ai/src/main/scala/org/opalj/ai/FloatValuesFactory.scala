@@ -8,7 +8,7 @@ import org.opalj.br.FloatType
  * Defines factory methods to create concrete representations of constant
  * float values.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait FloatValuesFactory extends ValuesDomain { domain ⇒

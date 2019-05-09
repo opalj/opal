@@ -25,7 +25,7 @@ case class LLOAD(lvIndex: Int) extends LLoadInstruction with ExplicitLocalVariab
     override def toString: String = s"LLOAD($lvIndex)"
 
 }
-object LLOAD {
+object LLOAD extends InstructionMetaInformation {
 
     final val opcode = 22
 

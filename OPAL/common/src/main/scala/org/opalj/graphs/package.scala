@@ -259,14 +259,13 @@ package object graphs {
                             cSCCs ::= cSCC
                             markPathAsProcessed()
                         } else {
-
                             // Test if we are done exploring all paths potentially related to
                             // the cSCC...
                             // ALTERNATIVE CHECK:
                             //val cSCCandidate = path.iterator.drop(cSCCDFSNum - initialDFSNum)
-                            val cSCCandidate = path.iterator(from = cSCCDFSNum - initialDFSNum)
                             if (workstack.isEmpty ||
-                                cSCCandidate.forall(n ⇒
+                                path.iterator(from = cSCCDFSNum - initialDFSNum).forall(n ⇒
+                                    // ... for all cSCCandidates
                                     es(n).forall(succN ⇒
                                         hasDFSNum(succN) &&
                                             dfsNum(succN) == cSCCDFSNum // <= prevents premature cscc identifications

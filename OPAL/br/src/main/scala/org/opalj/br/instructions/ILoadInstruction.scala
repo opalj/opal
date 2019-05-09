@@ -14,3 +14,8 @@ trait ILoadInstruction extends LoadLocalVariableInstruction {
 
     final def stackSlotsChange: Int = +1
 }
+
+trait ConstantIndexILoadInstruction
+    extends ILoadInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

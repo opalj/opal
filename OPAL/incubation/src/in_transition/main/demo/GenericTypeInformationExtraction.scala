@@ -11,7 +11,7 @@ import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheAnalysis}
  *
  * @author Michael Eichberg
  */
-object GenericTypeInformationExtraction extends DefaultOneStepAnalysis {
+object GenericTypeInformationExtraction extends ProjectAnalysisApplication {
 
     override def title: String = "demonstrates how to extract generic type information associated with a class"
 

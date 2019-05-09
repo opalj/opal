@@ -1,10 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.purity;
 
-import org.opalj.fpcf.analyses.L0PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L2PurityAnalysis;
+import org.opalj.br.fpcf.analyses.L0PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
+import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis;
 
 /**
  * Test cases for purity in the presence of local as well as non-local fields
@@ -29,7 +29,7 @@ public class Fields implements Cloneable {
     @DomainSpecificSideEffectFree(value = "Only creates copy (but can raise NullPointerException)",
             eps = @EP(cf = Object.class, pk = "ReturnValueFreshness",
                     method = "clone()Ljava/lang/Object;", p = "FreshReturnValue"))
-    @Impure(value = "Allocates new objects",
+    @Impure(value = "Allocates new objects/return value of super.clone not recognized as fresh",
             eps = @EP(cf = Object.class, pk = "ReturnValueFreshness",
                     method = "clone()Ljava/lang/Object;", p = "FreshReturnValue",
                     analyses = L2PurityAnalysis.class), negate = true)

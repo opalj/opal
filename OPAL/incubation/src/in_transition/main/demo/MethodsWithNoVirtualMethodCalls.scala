@@ -16,7 +16,7 @@ import org.opalj.ai.analyses.{MethodReturnValuesAnalysis ⇒ TheAnalysis}
  *
  * @author Michael Eichberg
  */
-object MethodsWithNoVirtualMethodCalls extends DefaultOneStepAnalysis {
+object MethodsWithNoVirtualMethodCalls extends ProjectAnalysisApplication {
 
     override def title: String = "identifies methods that perform no virtual method calls"
 

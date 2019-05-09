@@ -1,6 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
+import org.opalj.collection.ForeachRefIterator
+
 /**
  * Encapsulates the (intermediate) result of the computation of a property.
  *
@@ -15,9 +17,15 @@ sealed abstract class PropertyComputationResult {
         throw new ClassCastException();
     }
 
-    private[fpcf] def asResult: Result = {
+    private[fpcf] def isInterimPartialResult: Boolean = false
+    private[fpcf] def asInterimPartialResult: InterimPartialResult[_ >: Null <: Property] = {
         throw new ClassCastException();
     }
+
+    private[fpcf] def asResult: Result = throw new ClassCastException();
+
+    private[fpcf] def asResults: Results = throw new ClassCastException();
+
 }
 
 /**
@@ -134,11 +142,11 @@ object MultiResult { private[fpcf] final val id = 2 }
 final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
         val dependees: Traversable[SomeEOptionP],
-        val c:         OnUpdateContinuation,
+        val c:         ProperOnUpdateContinuation,
         val hint:      PropertyComputationHint
 ) extends ProperPropertyComputationResult { result ⇒
 
-    val key: PropertyKey[P] = eps.pk
+    final def key: PropertyKey[P] = eps.pk
 
     if (PropertyStore.Debug) { // TODO move to generic handleResult method ...
         if (dependees.isEmpty) {
@@ -191,7 +199,7 @@ object InterimResult {
     def apply[P >: Null <: Property](
         eps:       InterimEP[Entity, P],
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation
+        c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
         new InterimResult[P](eps, dependees, c, DefaultPropertyComputation)
     }
@@ -199,7 +207,7 @@ object InterimResult {
     def apply[P >: Null <: Property](
         eps:       InterimEP[Entity, P],
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
+        c:         ProperOnUpdateContinuation,
         hint:      PropertyComputationHint
     ): InterimResult[P] = {
         new InterimResult[P](eps, dependees, c, hint)
@@ -210,8 +218,8 @@ object InterimResult {
         lb:        P,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         require(lb != null && ub != null)
         new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c, hint)
@@ -229,7 +237,7 @@ object InterimResult {
         new InterimResult[P](
             InterimELUBP(e, lb, ub),
             dependees,
-            c.asInstanceOf[OnUpdateContinuation],
+            c.asInstanceOf[ProperOnUpdateContinuation],
             hint
         )
     }
@@ -244,8 +252,8 @@ object InterimResult {
         e:         Entity,
         lb:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         new InterimResult[P](InterimELBP(e, lb), dependees, c, hint)
     }
@@ -254,8 +262,8 @@ object InterimResult {
         e:         Entity,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint   = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation,
+        hint:      PropertyComputationHint    = DefaultPropertyComputation
     ): InterimResult[P] = {
         new InterimResult[P](InterimEUBP(e, ub), dependees, c, hint)
     }
@@ -295,18 +303,55 @@ object IncrementalResult { private[fpcf] final val id = 4 }
  * Just a collection of multiple results. The results have to be disjoint w.r.t. the underlying
  * e/pk pairs for which it contains results.
  */
-case class Results(
-        results: TraversableOnce[ProperPropertyComputationResult]
-) extends ProperPropertyComputationResult {
+sealed abstract class Results extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = Results.id
+
+    private[fpcf] final override def asResults: Results = this
+
+    def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit
 
 }
 object Results {
 
     private[fpcf] final val id = 5
 
-    def apply(results: ProperPropertyComputationResult*): Results = new Results(results)
+    def apply(results: ProperPropertyComputationResult*): Results = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+    }
+
+    def apply(results: TraversableOnce[ProperPropertyComputationResult]) = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+    }
+
+    def apply(
+        result:  ProperPropertyComputationResult,
+        results: TraversableOnce[ProperPropertyComputationResult]
+    ) = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
+            f(result)
+            results.foreach(f)
+        }
+    }
+
+    def apply(
+        resultOption: Option[ProperPropertyComputationResult],
+        results:      TraversableOnce[ProperPropertyComputationResult]
+    ) = {
+        if (resultOption.isEmpty && results.isEmpty)
+            NoResult
+        else
+            new Results {
+                def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
+                    resultOption.foreach(r ⇒ f(r))
+                    results.foreach(f)
+                }
+            }
+    }
+
+    def apply(results: ForeachRefIterator[ProperPropertyComputationResult]) = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+    }
 }
 
 /**
@@ -341,33 +386,62 @@ object PartialResult { private[fpcf] final val id = 6 }
 /**
  * `InterimPartialResult`s are used for properties of entities which are computed
  * collaboratively where the individual contribution to the final result depends on the
- * given dependees.
- *
- * @param e The entity for which we have a partial result.
- * @param pk The kind of the property for which we have a partial result.
- * @param u The function which is given the current property (if any) and which computes the
- *          new property. `u` has to return `None` if the update does not change the property
- *          and `Some(NewProperty)` otherwise.
- * @tparam P The type of the property.
+ * given dependees. For example an analysis which analyzes a method to determine the set
+ * of all instantiated types will use an `InterimPartialResult` to commit those results.
  */
-case class InterimPartialResult[E >: Null <: Entity, P >: Null <: Property](
-        e:  E,
-        pk: PropertyKey[P],
-        u:  UpdateComputation[E, P],
-        // We can't have a list of dependees, because we wouldn't be able to effectively
-        // prevent multiple concurrent notifications!
-        dependee: SomeEOptionP,
-        c:        OnUpdateContinuation
+case class InterimPartialResult[SE >: Null <: Property](
+        us:        Traversable[SomePartialResult], // can be empty!
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
+
+    assert(dependees.nonEmpty)
+
+    override private[fpcf] def isInterimPartialResult: Boolean = true
+    override private[fpcf] def asInterimPartialResult: InterimPartialResult[SE] = this
 
     private[fpcf] final def id = InterimPartialResult.id
 
 }
-object InterimPartialResult { private[fpcf] final val id = 7 }
+object InterimPartialResult {
+
+    private[fpcf] final val id = 7
+
+    /**
+     * Creates a new `InterimPartialResult` for the case where we just want to (re)register
+     * a depending computation.
+     */
+    def apply[SE >: Null <: Property](
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+    ): InterimPartialResult[SE] = {
+        new InterimPartialResult[SE](Nil, dependees, c)
+    }
+
+    /**
+     * Creates a new `InterimPartialResult`s
+     *
+     * @param uE The entity for which we have a partial result.
+     * @param uPK The kind of the property for which we have a partial result.
+     * @param u The function which is given the current property (if any) and which computes the
+     *          new property. `u` has to return `None` if the update does not change the property
+     *          and `Some(NewProperty)` otherwise.
+     */
+    def apply[SE >: Null <: Property, UE >: Null <: Entity, UP >: Null <: Property](
+        uE:        UE,
+        uPK:       PropertyKey[UP],
+        u:         UpdateComputation[UE, UP],
+        dependees: Traversable[SomeEOptionP],
+        c:         OnUpdateContinuation
+    ): InterimPartialResult[SE] = {
+        val pruc = PartialResult(uE, uPK, u)
+        new InterimPartialResult[SE](List(pruc), dependees, c)
+    }
+}
 
 /**************************************************************************************************\
  *
- *                              ONLY USED INTERNALLY BY THE FRAMEWORK! 
+ *                              ONLY USED INTERNALLY BY THE FRAMEWORK!
  *
 \**************************************************************************************************/
 

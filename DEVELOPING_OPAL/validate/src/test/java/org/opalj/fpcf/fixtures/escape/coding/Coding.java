@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.escape.coding;
 
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.NoEscape;
+import org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
 
 import java.util.HashMap;
 import java.util.Map;

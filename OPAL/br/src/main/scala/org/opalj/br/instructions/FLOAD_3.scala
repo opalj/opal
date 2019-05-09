@@ -8,7 +8,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object FLOAD_3 extends FLoadInstruction with ImplicitLocalVariableIndex {
+case object FLOAD_3 extends ConstantIndexFLoadInstruction {
 
     final val lvIndex = 3
 

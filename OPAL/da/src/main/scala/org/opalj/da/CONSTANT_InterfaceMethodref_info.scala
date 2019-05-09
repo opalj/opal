@@ -2,6 +2,8 @@
 package org.opalj
 package da
 
+import scala.xml.NodeSeq
+
 import org.opalj.bi.ConstantPoolTag
 
 /**
@@ -15,6 +17,10 @@ case class CONSTANT_InterfaceMethodref_info(
 
     override def Constant_Type_Value: ConstantPoolTag = {
         bi.ConstantPoolTags.CONSTANT_InterfaceMethodref
+    }
+
+    override def asInstructionParameter(implicit cp: Constant_Pool): NodeSeq = {
+        super.asInstructionParameter(Some("interface"))
     }
 
 }

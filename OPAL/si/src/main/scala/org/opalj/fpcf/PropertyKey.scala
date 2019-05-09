@@ -28,6 +28,8 @@ final class PropertyKey[+P] private[fpcf] (val id: Int) extends AnyVal with Prop
  */
 object PropertyKey {
 
+    private[this] val propertyKeys = new Array[SomePropertyKey](SupportedPropertyKinds)
+
     private[this] val propertyKeyNames = new Array[String](SupportedPropertyKinds)
 
     /*
@@ -93,7 +95,7 @@ object PropertyKey {
      *              must be idempotent.
      *
      * @note This method is '''not thread-safe''' - the setup of the property store (e.g.,
-     *       using the [[org.opalj.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
+     *       using the [[org.opalj.br.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
      *       be done by the driver thread and therefore no synchronization is needed.)
      */
     def create[E <: Entity, P <: Property](
@@ -110,7 +112,10 @@ object PropertyKey {
         fastTrackPropertyComputations(thisKeyId) =
             fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
 
-        new PropertyKey(thisKeyId)
+        val pk = new PropertyKey(thisKeyId)
+        propertyKeys(thisKeyId) = pk
+
+        pk
     }
 
     def create[E <: Entity, P <: Property](name: String): PropertyKey[P] = {
@@ -145,6 +150,8 @@ object PropertyKey {
     // Query the core properties of each property kind
     // ===============================================
     //
+
+    def key(id: Int): SomePropertyKey = propertyKeys(id)
 
     /**
      * Returns the unique name of the kind of properties associated with the given key id.
@@ -233,8 +240,10 @@ object PropertyKey {
         val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
         if (fastTrackPropertyComputation == null)
             None
-        else
+        else {
+            ps.incrementFastTrackPropertyComputationsCounter()
             fastTrackPropertyComputation(ps, e).asInstanceOf[Option[P]]
+        }
     }
 
     /**
@@ -245,33 +254,4 @@ object PropertyKey {
      */
     private[fpcf] def maxId: Int = lastKeyId.get
 
-}
-
-/**
- * Specifies the reason why a fallback is used.
- */
-sealed trait FallbackReason {
-    def propertyIsNotComputedByAnyAnalysis: Boolean
-    def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean
-}
-/**
- * The fallback is used, because the property was queried, but was not explicitly computed in the
- * past, is not computed now and will also not be computed in the future.
- */
-case object PropertyIsNotComputedByAnyAnalysis extends FallbackReason {
-    def propertyIsNotComputedByAnyAnalysis: Boolean = true
-    def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean = false
-}
-
-/**
- * The fallback is used, because the property was queried/is required, but the property was
- * not computed for the specific entity though an analysis is scheduled/executed.
- *
- * @note This may happen for properties associated with dead code/code that is no used by the
- *       current project. E.g., the callers property of an unused library method is most
- *       likely not computed. If it is queried, then this is the Property that should be returned.
- */
-case object PropertyIsNotDerivedByPreviouslyExecutedAnalysis extends FallbackReason {
-    def propertyIsNotComputedByAnyAnalysis: Boolean = false
-    def propertyIsNotDerivedByPreviouslyExecutedAnalysis: Boolean = true
 }

@@ -64,7 +64,7 @@ case class GETFIELD(
  *
  * @author Malte Limmeroth
  */
-object GETFIELD {
+object GETFIELD extends InstructionMetaInformation {
 
     final val opcode = 180
 

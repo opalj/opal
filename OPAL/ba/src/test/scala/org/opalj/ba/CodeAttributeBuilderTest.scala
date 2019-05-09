@@ -3,7 +3,6 @@ package org.opalj
 package ba
 
 import org.junit.runner.RunWith
-
 import org.scalatest.FlatSpec
 import org.scalatest.junit.JUnitRunner
 
@@ -17,6 +16,9 @@ import org.opalj.br.instructions._
 import org.opalj.br.ClassHierarchy
 import org.opalj.ai.domain.l0.TypeCheckingDomain
 import org.opalj.ai.util.XHTML
+import org.opalj.br.BooleanType
+import org.opalj.br.ExceptionHandler
+import org.opalj.br.MethodDescriptor.JustTakes
 
 /**
  * Tests the require statements and warnings of a CodeAttributeBuilder.
@@ -67,6 +69,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
             f
         } catch {
             case e: VerifyError ⇒
+                import ClassHierarchy.PreInitializedClassHierarchy
                 val theCode = theBRMethod.body.get
                 val theSMT = theCode.stackMapTable.get
 
@@ -87,14 +90,14 @@ class CodeAttributeBuilderTest extends FlatSpec {
                     theCode.exceptionHandlers.mkString("Exception Handlers:\n\t\t", "\n\t\t", "\n")
                 )
                 info(
-                    theCode.liveVariables(ClassHierarchy.PreInitializedClassHierarchy).
+                    theCode.liveVariables(PreInitializedClassHierarchy).
                         zipWithIndex.filter(_._1 != null).map(_.swap).
                         mkString("Live variables:\n\t\t", "\n\t\t", "\n")
                 )
                 info(theSMT.pcs.mkString("Stack map table pcs: ", ", ", ""))
                 info(theSMT.stackMapFrames.mkString("Stack map table entries:\n\t\t", "\n\t\t", "\n"))
 
-                val theDomain = new TypeCheckingDomain(br.ClassHierarchy.PreInitializedClassHierarchy, theBRMethod)
+                val theDomain = new TypeCheckingDomain(PreInitializedClassHierarchy, theBRMethod)
                 val ils = CodeAttributeBuilder.ai.initialLocals(theBRMethod, theDomain)(None)
                 val ios = CodeAttributeBuilder.ai.initialOperands(theBRMethod, theDomain)
                 val r = CodeAttributeBuilder.ai.performInterpretation(theCode, theDomain)(ios, ils)
@@ -371,7 +374,7 @@ class CodeAttributeBuilderTest extends FlatSpec {
             ASTORE_1,
             GETSTATIC("java/lang/System", "out", PrintStreamType.toJVMTypeName),
             LoadString("bar"),
-            INVOKEVIRTUAL("java/io/PrintStream", "println", MethodDescriptor.JustTakes(ObjectType.String).toJVMDescriptor),
+            INVOKEVIRTUAL(PrintStreamType, "println", JustTakes(ObjectType.String)),
             ALOAD_1,
             POP,
             INVOKESTATIC(thisName, false, "otherMethod", "()Z"),
@@ -435,5 +438,102 @@ class CodeAttributeBuilderTest extends FlatSpec {
             val clazzMethod = clazz.getMethod("stackMap")
             clazzMethod.invoke(clazzInstance)
         }
+    }
+
+    it should "not remove live code after simple conditional branch instructions" in {
+        import ObjectType.{Object ⇒ OObject}
+        import ObjectType.{RuntimeException ⇒ ORuntimeException}
+        val codeElements = Array[CodeElement[AnyRef]](
+            LabelElement(0),
+            TRY('eh),
+            ACONST_NULL,
+            LabelElement(1),
+            ACONST_NULL,
+            LabelElement(2),
+            INVOKEVIRTUAL(OObject, "equals", MethodDescriptor(OObject, BooleanType)),
+            LabelElement(5),
+            ICONST_0,
+            LabelElement(6),
+            IRETURN,
+            TRYEND('eh),
+            CATCH('eh, 1, Some(ORuntimeException)),
+            LabelElement(7),
+            POP,
+            LabelElement(8),
+            ICONST_1,
+            LabelElement(9),
+            ICONST_2,
+            LabelElement(10),
+            LabeledIFNE(16),
+            LabelElement(13),
+            POP,
+            ICONST_0,
+            IRETURN,
+            LabelElement(16),
+            IRETURN
+        )
+        val c = CODE[AnyRef](codeElements)
+        val expectedInstructions = Array(
+            /* 00 */ ACONST_NULL,
+            /* 01 */ ACONST_NULL,
+            /* 02 */ INVOKEVIRTUAL(OObject, "equals", MethodDescriptor(OObject, BooleanType)),
+            /* 03 */ null,
+            /* 04 */ null,
+            /* 05 */ ICONST_0,
+            /* 06 */ IRETURN,
+            /* 07 */ POP,
+            /* 08 */ ICONST_1,
+            /* 09 */ ICONST_2,
+            /* 10 */ IFNE(6),
+            /* 11 */ null,
+            /* 12 */ null,
+            /* 13 */ POP,
+            /* 14 */ ICONST_0,
+            /* 15 */ IRETURN,
+            /* 16 */ IRETURN
+        )
+        assert(c.instructions === expectedInstructions)
+        assert(c.exceptionHandlers.head == ExceptionHandler(0, 7, 7, Some(ORuntimeException)))
+    }
+
+    it should "allow explicitly specified ExceptionHandlers that include the last PC" in {
+        val code = br.Code(0, 0, Array(
+            /* 0 */ GOTO(6),
+            /* 1 */ null,
+            /* 2 */ null,
+            /* 3 */ POP,
+            /* 4 */ ICONST_2,
+            /* 5 */ IRETURN,
+            /* 6 */ ICONST_0,
+            /* 7 */ ICONST_1,
+            /* 8 */ IADD,
+            /* 9 */ IRETURN
+        ),
+            RefArray(ExceptionHandler(7, 10, 3, Some(ObjectType.RuntimeException))))
+        val labeledCode = LabeledCode(code)
+        val labeledInstructions = labeledCode.codeElements.toIndexedSeq
+        assert(labeledInstructions(2) == CATCH('eh0, 0, Some(ObjectType.RuntimeException)))
+        assert(labeledInstructions(11) == TRY('eh0))
+        assert(labeledInstructions(18) == TRYEND('eh0))
+    }
+
+    it should "allow inline ExceptionHandlers that include the last PC" in {
+        import ObjectType.{RuntimeException ⇒ ORuntimeException}
+        import ObjectType.{Object ⇒ OObject}
+        val codeElements = Array[CodeElement[AnyRef]](
+            GOTO('NORMAL_CF), // => 0,1,2
+            CATCH('eh, 1, Some(ORuntimeException)),
+            POP, // => 3
+            ICONST_2, // => 4
+            IRETURN, // => 5
+            'NORMAL_CF,
+            TRY('eh),
+            ACONST_NULL, // => 6
+            INVOKEVIRTUAL(OObject, "hashCode", MethodDescriptor.JustReturnsInteger), // => 7,8,9
+            IRETURN, // => 10
+            TRYEND('eh)
+        )
+        val code = CODE[AnyRef](codeElements)
+        assert(code.exceptionHandlers.head == ExceptionHandler(6, 11, 3, Some(ORuntimeException)))
     }
 }

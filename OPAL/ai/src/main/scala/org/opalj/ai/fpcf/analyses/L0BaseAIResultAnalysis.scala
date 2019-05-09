@@ -6,17 +6,16 @@ package analyses
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FPCFAnalysis
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
@@ -72,9 +71,7 @@ object L0BaseAIResultAnalysis {
     }
 }
 
-sealed trait L0BaseAIResultAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
-
-    final override def uses: Set[PropertyBounds] = Set.empty
+sealed trait L0BaseAIResultAnalysisScheduler extends DomainBasedFPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(BaseAIResult)
 
@@ -89,7 +86,7 @@ object EagerL0BaseAIAnalysis
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0BaseAIResultAnalysis(p)
+        val analysis = new L0BaseAIResultAnalysis(p) // <= NOT TO BE CREATED IN INIT!
         val methods = p.allMethodsWithBody
         ps.scheduleEagerComputationsForEntities(methods)(analysis.performAI)
         analysis
@@ -103,7 +100,7 @@ object LazyL0BaseAIAnalysis
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0BaseAIResultAnalysis(p)
+        val analysis = new L0BaseAIResultAnalysis(p) // <= NOT TO BE CREATED IN INIT!
         ps.registerLazyPropertyComputation(BaseAIResult.key, analysis.performAI)
         analysis
     }

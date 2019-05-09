@@ -13,6 +13,11 @@ trait BitSet {
 
     def contains(i: Int): Boolean
 
+    /**
+     * Iterator over the values stored in this set. In general, iteration over bit sets
+     * is an expensive operation and other data structures such as IntTrieSets may be
+     * reasonable alternatives.
+     */
     def iterator: IntIterator
 
     final def mkString(pre: String, in: String, post: String): String = {

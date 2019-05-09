@@ -7,12 +7,12 @@ package cha
 
 import java.net.URL
 import org.opalj.ai.analyses.cg.ComputedCallGraph
-import org.opalj.br.analyses.{BasicReport, DefaultOneStepAnalysis, Project, PropertyStoreKey}
+import org.opalj.br.analyses.{BasicReport, ProjectAnalysisApplication, Project, PropertyStoreKey}
 import org.opalj.br.analyses.AnalysisModeConfigFactory
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.fpcf.properties.IsEntryPoint
 
-object OpaCHADemo extends DefaultOneStepAnalysis {
+object OpaCHADemo extends ProjectAnalysisApplication {
 
     override def title: String = "Test stuff."
 

@@ -17,8 +17,10 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.immutable.UIDSet1
 import org.opalj.collection.immutable.UIDSet2
 import org.opalj.value.IsMultipleReferenceValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.ValueInformation
 import org.opalj.br.ArrayType
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.ComputationalType
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ObjectType
@@ -137,8 +139,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
      * if it contains one. In this case the other types have to be in a super-/subtype
      * relation and were added "just" as a result of explicit CHECKCAST instructions.
      *
-     * Note that this method is generally only useful when we have to handle incomplete
-     * type hierarchies.
+     * @note This method is generally only useful when we have to handle incomplete type hierarchies.
      */
     protected def effectiveUTB(utb: UIDSet[_ <: ReferenceType]): UIDSet[_ <: ReferenceType] = {
         val it = utb.iterator
@@ -564,11 +565,11 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         }
 
         override def doRefineIsNull(isNull: Answer): DomainSingleOriginReferenceValue = {
-            throw new ImpossibleRefinement(this, "nullness property of null value")
+            throw ImpossibleRefinement(this, "nullness property of null value")
         }
 
         def doRefineUpperTypeBound(supertype: ReferenceType): DomainSingleOriginReferenceValue = {
-            throw new ImpossibleRefinement(this, "refinement of type of null value")
+            throw ImpossibleRefinement(this, "refinement of type of null value")
         }
 
         protected override def doJoinWithNonNullValueWithSameOrigin(
@@ -1085,6 +1086,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             s"unexpected precision (precise == $isPrecise): $this"
         )
         assert(
+            !upperTypeBound.isSingletonSet || (
+                !classHierarchy.isKnownToBeFinal(upperTypeBound.head) || isPrecise
+            ),
+            s"isPrecise has to be true if the upper type bound belongs to final type $upperTypeBound"
+        )
+        assert(
             (isNull.isYes && upperTypeBound.isEmpty) || (
                 isNull.isNoOrUnknown &&
                 upperTypeBound.nonEmpty && (
@@ -1104,7 +1111,12 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             s"invalid upper type bound: $upperTypeBound for: ${values.mkString("[", ";", "]")}"
         )
 
-        override def classHierarchy: ClassHierarchy = domain.classHierarchy
+        override def leastUpperType: Option[ReferenceType] = {
+            if (isNull.isYes)
+                None
+            else
+                Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
+        }
 
         override def baseValues: Traversable[DomainSingleOriginReferenceValue] = values
 
@@ -1166,8 +1178,6 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     newIsNull
             }
 
-            val newIsPrecise = newIsNull.isYes || domain.isPrecise(newValues)
-
             val newUTB =
                 if (newIsNull.isYes)
                     UIDSet.empty[ReferenceType]
@@ -1183,6 +1193,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     else
                         baseUTB
                 }
+
+            val newIsPrecise =
+                newIsNull.isYes || domain.isPrecise(newValues) ||
+                    (newUTB.isSingletonSet && classHierarchy.isKnownToBeFinal(newUTB.head))
 
             if (!valuesUpdated &&
                 newRefId == this.refId &&
@@ -1429,15 +1443,20 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         )
                     else {
                         val thisUTB = this.upperTypeBound
+                        val newUTB =
+                            if (classHierarchy.isASubtypeOf(thisUTB, newValuesUTB).isYesOrUnknown)
+                                thisUTB
+                            else
+                                newValuesUTB
+                        val newIsPrecise =
+                            (newUTB.isSingletonSet && classHierarchy.isKnownToBeFinal(newUTB.head)) ||
+                                domain.isPrecise(newValues)
                         MultipleReferenceValues(
                             newValues,
                             origins,
                             No, // we refined the "isNull" property!
-                            domain.isPrecise(newValues),
-                            if (classHierarchy.isASubtypeOf(thisUTB, newValuesUTB).isYesOrUnknown)
-                                thisUTB
-                            else
-                                newValuesUTB,
+                            newIsPrecise,
+                            newUTB,
                             newRefId
                         )
                     }
@@ -1452,7 +1471,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             locals:    Locals
         ): (Operands, Locals) = {
 
-            // let's keep all values with a type that is a potential subtype of the
+            // Let's keep all values with a type that is a potential subtype of the
             // given supertype.
             var filteredValuesOrigins = origins
             val filteredValues =
@@ -1468,8 +1487,8 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             if (filteredValues.isSingletonSet) {
                 refineToValue(filteredValues.head, this.isNull, UIDSet(supertype), operands, locals)
             } else {
-                // there are no individual values to refine....
-                // we have to choose the more "precise" utb
+                // There are no individual values to refine -
+                // we have to choose the more "precise" utb.
                 val filteredValuesUTB = domain.upperTypeBound(filteredValues)
 
                 // We have to support (1) the case where we cast a value for which we only have
@@ -1480,6 +1499,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 // type X to an array of reference values of type Y (which may succeed if at least
                 // one type is an interface type or if both types are in an effective
                 // inheritance relation! For example,
+                // {{{
                 // scala> val ss = new Array[java.util.ArrayList[AnyRef]](1)
                 // ss: Array[java.util.ArrayList[AnyRef]] = Array(null)
                 //
@@ -1490,6 +1510,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 //
                 // scala> os.asInstanceOf[Array[java.io.Serializable]]
                 // Array[java.io.Serializable] = Array([])
+                // }}}
                 // However, we currently have no support to model the case "Array of <X with Y>";
                 // therefore, we simply accept the target refinement type.
                 val supertypeUTB: UIDSet[_ <: ReferenceType] =
@@ -1504,6 +1525,10 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                     else
                         supertypeUTB
                 val newRefId = if (filteredValues.size == values.size) refId else nextRefId()
+                val newIsPrecise = {
+                    (newUTB.isSingletonSet && classHierarchy.isKnownToBeFinal(newUTB.head)) ||
+                        domain.isPrecise(filteredValues)
+                }
                 val newValue =
                     MultipleReferenceValues(
                         filteredValues,
@@ -1512,7 +1537,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                             isNull
                         else
                             domain.isNull(filteredValues),
-                        domain.isPrecise(filteredValues),
+                        newIsPrecise,
                         newUTB,
                         newRefId
                     )
@@ -1557,8 +1582,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                         } else {
                             classHierarchy.joinUpperTypeBounds(thisUTB, thatUTB)
                         }
-                    if (newIsNull != this.isNull || newUTB != thisUTB)
+                    if (newIsNull != this.isNull || newUTB != thisUTB) {
                         updateType = StructuralUpdateType
+                    }
                     val newIsPrecise = this.isPrecise && thatValue.isPrecise && (
                         thisUTB.isEmpty || thatUTB.isEmpty || thisUTB == thatUTB
                     )
@@ -2012,5 +2038,36 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         upperTypeBound: UIDSet[_ <: ReferenceType],
         refId:          Int
     ): DomainMultipleReferenceValues
+
+    // Only intended to be used to map values from the outside into the context of a method.
+    abstract override def InitializedDomainValue(
+        origin: ValueOrigin,
+        vi:     ValueInformation
+    ): DomainValue = {
+        vi match {
+            // Matching:
+            //
+            //      IsMultipleReferenceValue
+            //
+            // is NOT YET SUPPORTED because THE INDIVIDUAL VALUES OF A MultipleReferenceValues
+            // have to have unique origins.
+
+            case _: IsNullValue ⇒
+                NullValue(origin)
+
+            case v: IsReferenceValue ⇒
+                if (v.upperTypeBound.size > 1)
+                    // handles MObjectValue
+                    ObjectValue(origin, v.isNull, v.upperTypeBound.asInstanceOf[UIDSet[ObjectType]])
+                else if (v.upperTypeBound.isEmpty) {
+                    // Should not happen unless we have a MultipleReferenceValue over a
+                    // collection of null values.
+                    NullValue(origin)
+                } else
+                    ReferenceValue(origin, v.isNull, v.isPrecise, v.leastUpperType.get)
+
+            case vi ⇒ super.InitializedDomainValue(origin, vi)
+        }
+    }
 
 }

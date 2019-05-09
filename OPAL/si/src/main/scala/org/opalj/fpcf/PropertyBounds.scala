@@ -2,6 +2,14 @@
 package org.opalj
 package fpcf
 
+/**
+ * Encapsulate the information about the property bounds used or derived by an analysis.
+ *
+ * @note Equality is only based on the `PropertyKind` and not on the information about
+ *       the concrete bounds.
+ *
+ * @author Michael Eichberg
+ */
 sealed abstract class PropertyBounds(val pk: PropertyKind) {
 
     def lowerBound: Boolean
@@ -12,7 +20,7 @@ sealed abstract class PropertyBounds(val pk: PropertyKind) {
             case (true, true)   ⇒ "LBP+UBP"
             case (true, false)  ⇒ "LBP"
             case (false, true)  ⇒ "UBP"
-            case (false, false) ⇒ "FinalP" // Used by transformers (only)
+            case (false, false) ⇒ "FinalP" // Intended to be used only by transformers
         }) + '(' + PropertyKey.name(pk) + ')'
     }
 
@@ -29,7 +37,26 @@ sealed abstract class PropertyBounds(val pk: PropertyKind) {
         s"PropertyBounds(pk=$pk,lowerBound=$lowerBound,upperBound=$upperBound)"
     }
 }
+
 object PropertyBounds {
+
+    def apply(pbt: PropertiesBoundType, pks: Array[PropertyKind]): Set[PropertyBounds] = {
+        pbt match {
+            case LBProperties    ⇒ lbs(pks: _*)
+            case UBProperties    ⇒ ubs(pks: _*)
+            case LUBProperties   ⇒ lubs(pks: _*)
+            case FinalProperties ⇒ finalPs(pks: _*)
+        }
+    }
+
+    def apply(pbt: PropertiesBoundType, pk: PropertyKind): PropertyBounds = {
+        pbt match {
+            case LBProperties    ⇒ lb(pk)
+            case UBProperties    ⇒ ub(pk)
+            case LUBProperties   ⇒ lub(pk)
+            case FinalProperties ⇒ finalP(pk)
+        }
+    }
 
     def finalP(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -38,12 +65,16 @@ object PropertyBounds {
         }
     }
 
+    def finalPs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(finalP).toSet
+
     def lub(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
             override def lowerBound: Boolean = true
             override def upperBound: Boolean = true
         }
     }
+
+    def lubs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(lub).toSet
 
     def lb(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
@@ -52,10 +83,15 @@ object PropertyBounds {
         }
     }
 
+    def lbs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(lb).toSet
+
     def ub(pk: PropertyKind): PropertyBounds = {
         new PropertyBounds(pk) {
             override def lowerBound: Boolean = false
             override def upperBound: Boolean = true
         }
     }
+
+    def ubs(pks: PropertyKind*): Set[PropertyBounds] = pks.map(ub).toSet
+
 }

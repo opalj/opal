@@ -8,7 +8,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object FSTORE_2 extends FStoreInstruction with ImplicitLocalVariableIndex {
+case object FSTORE_2 extends ConstantIndexFStoreInstruction {
 
     final val lvIndex = 2
 

@@ -11,7 +11,7 @@ import org.opalj.br.MethodHandle
 /**
  * Definition of factory methods to create `ReferenceValues`.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
 

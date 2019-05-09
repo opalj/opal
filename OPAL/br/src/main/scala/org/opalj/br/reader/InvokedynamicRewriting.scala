@@ -986,37 +986,41 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         var updatedClassFile = classFile
 
-        // If the target method is private, we have to generate a forwarding method that is
-        // accessible by the proxy class, i.e. not private, or we have to lift the target method
-        // (only for static methods and constructors, where the lifted method can not interfere with
-        // inherited methods).
-        val targetMethod = updatedClassFile.methods.find { m ⇒
-            m.isPrivate && m.name == targetMethodName && m.descriptor == targetMethodDescriptor
-        }
+        if (targetMethodOwner eq classFile.thisType) {
+            // If the target method is private, we have to generate a forwarding method that is
+            // accessible by the proxy class, i.e. not private, or we have to lift the target method
+            // (only for static methods and constructors, where the lifted method can not interfere with
+            // inherited methods).
+            val targetMethod = updatedClassFile.methods.find { m ⇒
+                m.name == targetMethodName && m.descriptor == targetMethodDescriptor
+            }
 
-        if (targetMethod.isDefined) {
+            assert(targetMethod.isDefined)
             val m = targetMethod.get
 
-            if (m.isStatic || m.isConstructor) {
-                updatedClassFile =
-                    updatedClassFile._UNSAFE_replaceMethod(targetMethod.get, lift(targetMethod.get))
-            } else {
-                val forwardingName = "$forward$"+m.name
-
-                // Update the implMethod and other information to match the forwarder
-                implMethod = if (isInterface) {
-                    InvokeInterfaceMethodHandle(thisType, forwardingName, m.descriptor)
+            if (m.isPrivate) {
+                if (m.isStatic || m.isConstructor) {
+                    updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(
+                        targetMethod.get, lift(targetMethod.get)
+                    )
                 } else {
-                    InvokeVirtualMethodHandle(thisType, forwardingName, m.descriptor)
-                }
-                invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
-                receiverType = thisType
-                receiverIsInterface = isInterface
+                    val forwardingName = "$forward$"+m.name
 
-                val forwarderO = updatedClassFile.findMethod(forwardingName, m.descriptor)
-                if (forwarderO.isEmpty) { // Add forwarder if not already present
-                    val forwarder = createForwardingMethod(m, forwardingName)
-                    updatedClassFile = updatedClassFile._UNSAFE_addMethod(forwarder)
+                    // Update the implMethod and other information to match the forwarder
+                    implMethod = if (isInterface) {
+                        InvokeInterfaceMethodHandle(thisType, forwardingName, m.descriptor)
+                    } else {
+                        InvokeVirtualMethodHandle(thisType, forwardingName, m.descriptor)
+                    }
+                    invocationInstruction = implMethod.opcodeOfUnderlyingInstruction
+                    receiverType = thisType
+                    receiverIsInterface = isInterface
+
+                    val forwarderO = updatedClassFile.findMethod(forwardingName, m.descriptor)
+                    if (forwarderO.isEmpty) { // Add forwarder if not already present
+                        val forwarder = createForwardingMethod(m, forwardingName)
+                        updatedClassFile = updatedClassFile._UNSAFE_addMethod(forwarder)
+                    }
                 }
             }
         }
@@ -1028,8 +1032,9 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                     m.name == "$deserializeLambda$"
             }
             if (deserialize.isDefined)
-                updatedClassFile =
-                    updatedClassFile._UNSAFE_replaceMethod(deserialize.get, lift(deserialize.get))
+                updatedClassFile = updatedClassFile._UNSAFE_replaceMethod(
+                    deserialize.get, lift(deserialize.get)
+                )
         }
 
         val needsBridgeMethod = samMethodType != instantiatedMethodType

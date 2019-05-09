@@ -16,26 +16,26 @@ The base configuration scope of the plugin is "Compile". The plugin offers the f
 ```
 // tasks of the plugin
 
-val javafixtureCompile = taskKey[Seq[JavaFixtureCompilationResult]]("compilation of java fixture projects against Eclipse JDT compiler specified statically in the plugin's dependencies")
+val javaFixtureCompile = taskKey[Seq[JavaFixtureCompilationResult]]("compilation of java fixture projects against Eclipse JDT compiler specified statically in the plugin's dependencies")
 
-val javafixturePackage = taskKey[Seq[JavaFixturePackagingResult]]("compilation and packaging of java fixture projects against Eclipse JDT compiler specified statically in the plugin's dependencies")
+val javaFixturePackage = taskKey[Seq[JavaFixturePackagingResult]]("compilation and packaging of java fixture projects against Eclipse JDT compiler specified statically in the plugin's dependencies")
 
-val javafixtureDiscovery = taskKey[Seq[JavaFixtureCompilationTask]]("discovery of java compilation tasks")
+val javaFixtureDiscovery = taskKey[Seq[JavaFixtureCompilationTask]]("discovery of java compilation tasks")
 
 // will be scoped to the compilation task.
 
-val javafixtureTaskDefs = settingKey[Seq[JavaFixtureCompilationTask]]("java fixture compilation task definitions for the plugin")
+val javaFixtureTaskDefs = settingKey[Seq[JavaFixtureCompilationTask]]("java fixture compilation task definitions for the plugin")
 
 // will be scoped to the discovery task
 
-val javafixtureProjectsDir = settingKey[File]("Folder containing java project folders to be discovered by the plugin")
+val javaFixtureProjectsDir = settingKey[File]("Folder containing java project folders to be discovered by the plugin")
 
-val javafixtureSupportDir = settingKey[File]("Folder containing support libraries for use of discovered tasks of the plugin")
+val javaFixtureSupportDir = settingKey[File]("Folder containing support libraries for use of discovered tasks of the plugin")
 
-val javafixtureTargetDir = settingKey[File]("Folder in which subfolders and JAR files for the output of discovered tasks of the plugin will be created")
+val javaFixtureTargetDir = settingKey[File]("Folder in which subfolders and JAR files for the output of discovered tasks of the plugin will be created")
 ```
 
-The definitions and implementations of the tasks (compile, package, discovery) reside within the plugin's main object, `org.opalj.javacompilation.JavaFixtureCompiler`. The classes that model the settings and results for the tasks are
+The definitions and implementations of the tasks (compile, package, discovery) reside within the plugin's main object, `org.opalj.javacompilation.javaFixtureCompiler`. The classes that model the settings and results for the tasks are
 
 - `org.opalj.javacompilation.JavaFixtureCompilationTask`
 - `JavaFixtureCompilationResult`
@@ -43,7 +43,7 @@ The definitions and implementations of the tasks (compile, package, discovery) r
 
 and reside within `org.opalj.javacompilation.FixtureCompileSpec.scala`.
 
-In the following, we discuss how to setup the plugin to find all java fixtures and how to compile them automatically using the discovery task and fixture-specific configuration files. For doing it all manually, the user may set the `javafixtureTaskDefs` setting to a sequence of `org.opalj.javacompilation.JavaFixtureCompilationTask` task descriptions. The intricacies of this approach are not discussed here; it is straightforward though to instantiate custom compilation tasks with the configuration semantics that are also used with the automated discovery. See `org.opalj.javacompilation.FixtureCompileSpec.scala` for inline documentation of the `JavaFixtureCompilationTask` class.
+In the following, we discuss how to setup the plugin to find all java fixtures and how to compile them automatically using the discovery task and fixture-specific configuration files. For doing it all manually, the user may set the `javaFixtureTaskDefs` setting to a sequence of `org.opalj.javacompilation.JavaFixtureCompilationTask` task descriptions. The intricacies of this approach are not discussed here; it is straightforward though to instantiate custom compilation tasks with the configuration semantics that are also used with the automated discovery. See `org.opalj.javacompilation.FixtureCompileSpec.scala` for inline documentation of the `JavaFixtureCompilationTask` class.
 
 The version of the Eclipse JDT compiler is set statically in the plugin's `build.sbt` file.
 
@@ -52,15 +52,15 @@ The version of the Eclipse JDT compiler is set statically in the plugin's `build
 The setup of the plugin in OPAL uses the default settings, quoted verbatim:
 
 ```
-javafixtureProjectsDir in javafixtureDiscovery := sourceDirectory.value / "fixtures-java" / "projects",
-javafixtureSupportDir in javafixtureDiscovery := sourceDirectory.value / "fixtures-java" / "support",
-javafixtureTargetDir in javafixtureDiscovery := resourceManaged.value
+javaFixtureProjectsDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "projects",
+javaFixtureSupportDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "support",
+javaFixtureTargetDir in javaFixtureDiscovery := resourceManaged.value
 ```
 
 These three settings define where the compilation task discovery looks for java fixtures and their specific configuration. It suffices to say here that the general directory structure as it concerns this plugin, looks like this:
 
 ```
-  + javafixtureProjectsDir
+  + javaFixtureProjectsDir
     + project1 (ostensibly package "project1")
       + sub1 (ostensibly package "project1.sub1")
         . ClassSub.java
@@ -68,12 +68,12 @@ These three settings define where the compilation task discovery looks for java 
       . Class2.java
       . compiler.config    // optional, specifies compiler options and support libraries
     + project2
-  + javafixtureSupportDir
+  + javaFixtureSupportDir
     + lib1
       + pkg1
         . SupportClass1.java (ostensibly package "lib1.pkg1")
         . SupportClass2.java (ostensibly package "lib1.pkg1")
-  + javafixtureTargetDir
+  + javaFixtureTargetDir
     + project1 (possibly with configuration options as part of the folder name)
       . (here the compiled class files will reside)
     + project2
@@ -96,7 +96,7 @@ A more complete specification on the format of fixture-specific .config files (t
 
 In the following code, we manually specify the parameters for the plug-in when used in the "Test"
 configuration as opposed to the (enclosing) "Compile" configuration scope. One implication of this is,
-that the default settings for the plugin locate the (default) `javafixtureProjectsDir` inside of the
+that the default settings for the plugin locate the (default) `javaFixtureProjectsDir` inside of the
 `sourceDirectory` of the configuration scope as seen above. So, when using "Compile" as scope as per default,
 the fixture projects are taken to be located under `src/main/...`, while with the "Test" configuration, the
 fixture projects directory is by default located under `src/test`. We will go one step further and change the name of
@@ -107,7 +107,7 @@ First, every project that wants to use the plugin has to do so explicitely:
 ```
 lazy val proj = Project(
 		base = file("xyz/here")
-).enablePlugins(JavaFixtureCompiler)
+).enablePlugins(javaFixtureCompiler)
 ```
 
 For this to work, import the plugin inside your `project/plugins.sbt`:
@@ -127,13 +127,13 @@ Now, for changing that as described above, using the "Test" scope:
 ```
 lazy val bi = Project(
 		base = file("xyz/here")
-).enablePlugins(JavaFixtureCompiler)
+).enablePlugins(javaFixtureCompiler)
 .settings(
   inConfig(Test)(
-    JavaFixtureCompiler.baseJavafixtureSettings ++ // first, import the base settings
+    javaFixtureCompiler.baseJavafixtureSettings ++ // first, import the base settings
     Seq(
-      javafixtureProjectsDir in javafixtureDiscovery := sourceDirectory.value / "fixt" / "projects",
-      javafixtureSupportDir in javafixtureDiscovery := sourceDirectory.value / "fixt" / "support"
+      javaFixtureProjectsDir in javaFixtureDiscovery := sourceDirectory.value / "fixt" / "projects",
+      javaFixtureSupportDir in javaFixtureDiscovery := sourceDirectory.value / "fixt" / "support"
     )
   )
 )
@@ -146,12 +146,12 @@ The directories for the fixture discovery in the "Test" scope should now be:
 - `src/test/fixt/support`
 - `target/scala-2.xx/resource_managed/main`
 
-The `javafixtureCompile` and `javafixturePackage` tasks are ready to be used on the sbt command line; to
+The `javaFixtureCompile` and `javaFixturePackage` tasks are ready to be used on the sbt command line; to
 include them in your build, this following additional project settings are an example of using the package
 task for test resource generation, mapping the return value of the package task to a sequence of generated files in the process:
 
 ```
 resourceGenerators += Def.task {
-    (javafixturePackage in Test).value flatMap (_.generatedFiles)
+    (javaFixturePackage in Test).value flatMap (_.generatedFiles)
 }
 ```

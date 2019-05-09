@@ -45,7 +45,7 @@ sealed abstract class LongTrieSet
 
     /**
      * Tries to add the given method to this trie set by ''mutating the set if possible''.
-     * Due to the longernal organization, mutating the set is not always possible. In this case, a
+     * Due to the internal organization, mutating the set is not always possible. In this case, a
      * new set containing the new value is returned. Hence, the return value ''must not'' be
      * ignored!
      */
@@ -270,7 +270,12 @@ private[immutable] final class LongTrieSet2 private[immutable] (
         else if (i == i2) LongTrieSet1(i1)
         else this
     }
-    override def +(i: Long): LongTrieSet = if (i1 == i | i2 == i) this else LongTrieSet.from(i1, i2, i)
+    override def +(i: Long): LongTrieSet = {
+        if (i1 == i || i2 == i)
+            this
+        else
+            LongTrieSet.from(i1, i2, i)
+    }
     override def +!(i: Long): LongTrieSet = this + i
     override def intersect(other: LongTrieSet): LongTrieSet = {
         other.size match {
@@ -337,10 +342,8 @@ private[immutable] final class LongTrieSet3 private[immutable] (
     override def isSingletonSet: Boolean = false
     override def hasMultipleElements: Boolean = true
     override def size: Int = 3
-    override def headAndTail: LongRefPair[LongTrieSet] = {
-        LongRefPair(i3, new LongTrieSet2(i1, i2))
-    }
-    override def head: Long = i1
+    override def headAndTail: LongRefPair[LongTrieSet] = LongRefPair(i3, new LongTrieSet2(i1, i2))
+    override def head: Long = i3
     override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = f(i1) ++ f(i2) ++ f(i3)
     override def iterator: LongIterator = LongIterator(i1, i2, i3)
 
@@ -491,8 +494,6 @@ private[immutable] final class LongTrieSetN private[immutable] (
 
     assert(left.size + right.size == size)
     assert(size > 0) // <= can be "one" at construction time
-
-    override def head: Long = if (left.nonEmpty) left.head else right.head
 
     override def exists(p: Long ⇒ Boolean): Boolean = left.exists(p) || right.exists(p)
     override def forall(p: Long ⇒ Boolean): Boolean = left.forall(p) && right.forall(p)
@@ -645,9 +646,19 @@ private[immutable] final class LongTrieSetN private[immutable] (
         def next(): Long = { val v = it.next(); checkIterator(); v }
     }
 
+    override def head: Long = {
+        val left = this.left
+        val right = this.right
+        val leftSize = left.size
+        val rightSize = right.size
+        if (leftSize > rightSize)
+            left.head
+        else
+            right.head
+    }
+
     override def headAndTail: LongRefPair[LongTrieSet] = {
-        // try to reduce the tree size by removing an element from the
-        // bigger subtree
+        // try to reduce the tree size by removing an element from the bigger subtree
         val left = this.left
         val right = this.right
         val leftSize = left.size

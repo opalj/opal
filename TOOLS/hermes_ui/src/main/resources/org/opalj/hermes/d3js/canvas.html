@@ -1,0 +1,440 @@
+<!-- BSD 2-Clause License - see OPAL/LICENSE for details. -->
+
+<!--
+    @author Alexander Appel
+-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+  <title>Project Matrics Visualizations</title>
+  <script type="text/javascript" src="d3/d3.min.js"></script>
+  <style>
+    /* main */
+    body {
+        font-size: 12px;
+        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+        text-anchor: middle;
+        position: relative;
+        overflow: hidden;
+    }
+    table {
+        border: 1px;
+        background: white;
+    }
+    th {
+        border-bottom: 1px;
+        border-bottom-style: solid;
+        border-bottom-color: lightgray;
+    }
+    a {
+        font-size: 12px;
+        text-anchor: middle;
+        text-decoration: none;
+    }
+
+    /* navigation */
+    #nav {
+        position: fixed
+    }
+    #nav ul {
+        list-style: none;
+    }
+    #nav ul li {
+        display: inline;
+        font-size: 12px;
+    }
+    #nav ul li+li:before {
+        padding: 8px;
+        color: black;
+        content: ">";
+    }
+    #nav ul li a {
+        color: black;
+    }
+    #nav ul li a:hover {
+        text-decoration: underline;
+    }
+
+    /* extendable sidebar */
+    #side {
+        position: fixed;
+        top: 5px;
+        right: 5px;
+        width: 200px;
+    }
+    #side-main {
+        height: 97vh;
+        display: none;
+        overflow: auto;
+    }
+    #show, #hide {
+        display: block;
+        padding: 2px;
+        color: black;
+        text-align: center;
+        border-style: solid;
+        border-color: lightgray;
+        border-width: 1px;
+    }
+    #show:hover, #hide:hover {
+        background-color: skyblue;
+    }
+    #hide {
+        display: none; 
+    }
+    #show:target + #hide {
+        display: block; 
+    }
+    #show:target {
+        display: none; 
+    }
+    #show:target ~ #side-main {
+        display: block;
+    }
+    .arrow-down {
+        width: 0; 
+        height: 0; 
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid black;
+        float: right;
+        margin-top: 3px;
+    }
+    .arrow-left {
+        width: 0; 
+        height: 0; 
+        border-top: 6px solid transparent;
+        border-bottom: 6px solid transparent; 
+        border-right: 6px solid black;
+        float: right;
+    }
+
+    /* tooltip */
+    #title {
+        width: auto;
+        height: auto;
+        max-height: 300px;
+        visibility: hidden;
+        border-radius: 5px;
+        background-color: #34282C;
+        opacity: 0.9;
+        overflow: auto;
+        padding: 5px;
+        position: fixed;
+    }
+    #title span {
+        color: whitesmoke;
+        white-space: pre-line;
+    }
+    #title table {
+        color: whitesmoke;
+        background-color: #34282C;
+        opacity: 0.9;
+        border-collapse: collapse;
+    }
+    #title table tr {
+        border-bottom: 1px solid #36454F;
+    }
+    #title span.info {
+        font-size: 14px;
+        background-color: #FFBF00;
+        color: black;
+        display: none;
+        margin-bottom: 3px;
+    }
+  </style>
+</head>
+
+<body>
+    <div id="nav"><ul></ul></div>
+    <div id="main">
+        <div id="title"></div>
+        <svg width="1200" height="960"></svg>
+    </div>
+    <div id="side">
+        <a href="#show" id="show"><span>+</span><div class="arrow-left"></div></a>
+        <a href="#hide" id="hide"><span>-</span><div class="arrow-down"></div></a>
+        <div id="side-main"></div>
+    </div>
+</body>
+<script type="text/javascript">
+"use strict";
+
+// SVG AND D3 SETUP
+var svg = d3.select("svg");
+
+// rectangle for panning effect
+var panel = svg.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "none")
+    .style("pointer-events", "fill");
+
+resize(svg);
+resize(panel);
+
+var width = svg.attr("width");
+var height = svg.attr("height");
+
+const table = d3.select("#side-main").append("table");
+const format = d3.format(",d");
+const fontSize = 12;
+
+// INIT
+function init() {
+    clearNavItems();
+}
+
+// NAVIGATION
+let navItems = {};
+
+function addNavItem(title, func_name, args) {
+    if (navItems[title] !== undefined) { return; }
+    const node = d3.select("#nav ul").append("li");
+        node.append("a")
+            .attr("href", "javascript:void(0)")
+            .text(title)
+            .on("click", function () {
+                updateNavItems(title);
+                window[func_name].apply(window, args);
+            });
+    navItems[title] = node;
+}
+
+function clearNavItems() {
+    d3.select("#nav").selectAll("li").remove();
+    navItems = {};
+}
+
+function updateNavItems(title) {
+    // removes all 'a' nodes coming after flag is set to true
+    var flag = false;
+    d3.selectAll("#nav li a")
+        .each(function () {
+            if (flag) {
+                navItems[this.text].remove();
+                navItems[this.text] = undefined;
+            }
+            if (this.text == title) {
+                flag = true;
+            }
+        });
+}
+
+// TOOLTIP
+let lockTooltip = false;
+const infoText= "toggle 'shift' to focus";
+
+function registerTooltip(element, formatter) {
+    element.on("mouseenter", function(d) {
+            if (lockTooltip === true) return;
+
+            const title = d3.select("#title")
+            // reset content
+            title.selectAll("*").remove();
+            title.append("span").classed("info", true).text(infoText);
+            formatter(d, title);
+        })
+        .on("mousemove", function(d) {
+            if (lockTooltip === true) return;
+
+            const coords = d3.mouse(this);
+            const title = d3.select("#title");
+
+            if (title.node().getBoundingClientRect().height > 300) {
+                title.select(".info").style("display", "block");
+            }
+            // reposition container and display
+            title.style("top", event.clientY + 10 + "px")
+                .style("left", event.clientX + 10 + "px")
+                .style("visibility", "visible");
+        })
+        .on("mouseout", function(d) {
+            if (lockTooltip === false) {
+                d3.select("#title").style("visibility", "hidden");
+            }
+        })
+        .on("mousedown", function(d) {
+            lockTooltip = false;
+            d3.select("#title").style("visibility", "hidden");
+        });
+}
+
+// register shift key down event for locking the tooltip in place
+const keyCode = "shiftKey";
+d3.select("body").on("keydown", function(d) {
+        if (d3.event[keyCode]) {
+            lockTooltip = !lockTooltip;
+            if (lockTooltip === false) {
+                d3.select("#title").style("visibility", "hidden");
+            }
+            d3.select("#title").select(".info").style("display", "none");
+        }
+    });
+svg.on("mousedown", function(d) {
+        lockTooltip = false;
+        d3.select("#title").style("visibility", "hidden");
+    });
+
+// UTILITIES
+function isElementInArc(d, arc, element) {
+    let bb = element.getBBox(),
+        center = arc.outerRadius(d.r).centroid(d);
+
+    let topLeft = {
+        x : center[0] + bb.x,
+        y : center[1] + bb.y
+    };
+
+    let topRight = {
+        x : topLeft.x + bb.width,
+        y : topLeft.y
+    };
+
+    let bottomLeft = {
+        x : topLeft.x,
+        y : topLeft.y + bb.height
+    };
+
+    let bottomRight = {
+        x : topLeft.x + bb.width,
+        y : topLeft.y + bb.height
+    };
+
+    return pointIsInArc(topLeft, d, arc) &&
+            pointIsInArc(topRight, d, arc) &&
+            pointIsInArc(bottomLeft, d, arc) &&
+            pointIsInArc(bottomRight, d, arc);
+
+    function pointIsInArc(pt, ptData, d3Arc) {
+        let r1 = d3Arc.innerRadius()(ptData),
+            r2 = d3Arc.outerRadius()(ptData),
+            theta1 = d3Arc.startAngle()(ptData),
+            theta2 = d3Arc.endAngle()(ptData);
+
+        let dist = pt.x * pt.x + pt.y * pt.y,
+            angle = Math.atan2(pt.x, -pt.y);
+
+        angle = (angle < 0) ? (angle + Math.PI * 2) : angle;
+
+        return (r1 * r1 <= dist) && (dist <= r2 * r2) && 
+                (theta1 <= angle) && (angle <= theta2);
+    }
+}
+
+function exportSVG() {
+    const svgNode = svg.node().cloneNode(true);
+    // set header and append standard body and sidebar css
+    svgNode.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    const cssRule = document.createElement("style");
+    cssRule.setAttribute("type","text/css");
+    cssRule.innerHTML = getCSSRule("body").replace("body", "svg");
+    cssRule.innerHTML += getCSSRule("table");
+    cssRule.innerHTML += getCSSRule("th");
+    cssRule.innerHTML += getCSSRule("a");
+    cssRule.innerHTML += getCSSRule("#side");
+    cssRule.innerHTML += getCSSRule("#side-main");
+    cssRule.innerHTML += getCSSRule("#show, #hide");
+    cssRule.innerHTML += getCSSRule("#show:hover, #hide:hover");
+    cssRule.innerHTML += getCSSRule("#hide");
+    cssRule.innerHTML += getCSSRule("#show:target + #hide");
+    cssRule.innerHTML += getCSSRule("#show:target");
+    cssRule.innerHTML += getCSSRule("#show:target ~ #side-main");
+    cssRule.innerHTML += getCSSRule(".arrow-down");
+    cssRule.innerHTML += getCSSRule(".arrow-left");
+
+    const firstNode = svgNode.hasChildNodes() ? svgNode.children[0] : null;
+    svgNode.insertBefore(cssRule, firstNode);
+
+    // embed side bar as a foreign object to keep the html structure
+    const foreign = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+    const sideDiv = document.getElementById("side");
+    const sideBb = sideDiv.getBoundingClientRect();
+    foreign.setAttributeNS(null, "x", sideBb.left);
+    foreign.setAttributeNS(null, "y", sideBb.top);
+    foreign.setAttributeNS(null, "width", sideBb.width);
+    foreign.setAttributeNS(null, "height", sideBb.height);
+
+    const body = document.createElement("body");
+    body.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+
+    body.appendChild(sideDiv.cloneNode(true));
+    foreign.appendChild(body);
+    svgNode.appendChild(foreign);
+
+    return new XMLSerializer().serializeToString(svgNode);
+
+    function getCSSRule(ruleName) {
+        const rules = document.styleSheets[0].cssRules;
+        for (var x = 0; x < rules.length; x++) {
+            if (rules[x].selectorText == ruleName) {
+                return rules[x].cssText;
+            }
+        }
+    }
+}
+
+function getLabelContrast(hexcolor){
+    let hex = hexcolor.replace('#', '');
+	let r = parseInt(hex.substr(0,2),16);
+	let g = parseInt(hex.substr(2,2),16);
+	let b = parseInt(hex.substr(4,2),16);
+	let yiq = ((r*299)+(g*587)+(b*114))/1000;
+	return (yiq >= 128) ? 'black' : 'white';
+}
+
+function resize(svg) {
+    svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
+}
+
+function wrapText(text, maxWidth, fontSize) {
+    let split = text.split(/([^A-z0-9])/g);
+    let measured = [];
+    if (split.length) {
+        let contingent = maxWidth;
+        let current = "";
+        for (let part of split) {
+            if (contingent - part.length * fontSize > 0) {
+                current = current + part;
+                contingent -= part.length * fontSize;
+            } else {
+                // parts that are very small get added before pushing
+                if (part.length <= 4) {
+                    current = current + part;
+                    part = "";
+                }
+                // Do not add empty strings in case one part is bigger than the whole
+                // contingent and can not be split. It will get added during the
+                // next iteration.
+                if (current.length > 0) {
+                    measured.push(current);
+                }
+                contingent = maxWidth;
+                current = part;
+            }
+        }
+        // check if last was pushed
+        if (current.length > 0 && measured[measured.length-1] != current) {
+            measured.push(current);
+        }
+    }
+    return measured.filter(part => { return part != ' '; });
+}
+
+// save args for reapplying on resize
+var lastArgs;
+
+// handle resize
+window.addEventListener('resize', (ev) => {
+    resize(svg);
+    resize(panel);
+    width = svg.attr("width");
+    height = svg.attr("height");
+
+    if (display !== undefined) {
+        window.display.apply(window, lastArgs);
+    }
+});
+</script>
+</html>

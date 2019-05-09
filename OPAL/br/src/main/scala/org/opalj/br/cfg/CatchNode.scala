@@ -20,7 +20,7 @@ import org.opalj.br.ExceptionHandler
  * @author Erich Wittenbeck
  * @author Michael Eichberg
  */
-class CatchNode(
+final class CatchNode(
         val index:     Int, // primarily used to compute a unique id
         val startPC:   Int,
         val endPC:     Int,

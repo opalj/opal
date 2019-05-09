@@ -18,7 +18,9 @@ import org.opalj.collection.immutable.Naught
  */
 case class RET(
         lvIndex: Int
-) extends ControlTransferInstruction with ConstantLengthInstruction with NoLabels {
+) extends ControlTransferInstruction
+    with ConstantLengthInstruction
+    with NoLabels {
 
     final override def opcode: Opcode = RET.opcode
 
@@ -98,7 +100,7 @@ case class RET(
 
     final override def toString(currentPC: Int): String = toString()
 }
-object RET {
+object RET extends InstructionMetaInformation {
 
     final val opcode = 169
 

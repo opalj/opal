@@ -338,14 +338,16 @@ private[immutable] final class IntTrieSet2 private[immutable] (
         val newI1 = f(i1)
         val i2 = this.i2
         val newI2 = f(i2)
-        if (newI1 != i1 || newI2 != i2)
-            IntTrieSet(newI1, newI2)
-        else
+        if (newI1 == newI2)
+            IntTrieSet1(newI1)
+        else if ((newI1 == i1 && newI2 == i2) || (newI1 == i2 && newI2 == i1))
             this
+        else
+            IntTrieSet.from(newI1, newI2)
     }
     override def map(map: Array[Int]): IntTrieSet = {
-        val newI1 = map(i1)
-        val newI2 = map(i2)
+        val newI1 = map(this.i1)
+        val newI2 = map(this.i2)
         if (newI1 == newI2)
             IntTrieSet1(newI1)
         else if ((newI1 == i1 && newI2 == i2) || (newI1 == i2 && newI2 == i1))
@@ -432,7 +434,7 @@ private[immutable] final class IntTrieSet3 private[immutable] (
     override def headAndTail: IntRefPair[IntTrieSet] = {
         IntRefPair(i3, new IntTrieSet2(i1, i2))
     }
-    override def head: Int = i1
+    override def head: Int = i3
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = f(i1) ++ f(i2) ++ f(i3)
     override def iterator: IntIterator = IntIterator(i1, i2, i3)
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2); f(i3) }
@@ -595,7 +597,6 @@ private[immutable] final class IntTrieSetN private[immutable] (
     assert(left.size + right.size == size)
     assert(size > 0) // <= can be "one" at construction time
 
-    override def head: Int = if (left.nonEmpty) left.head else right.head
     override def hasMultipleElements: Boolean = size > 1
     override def exists(p: Int ⇒ Boolean): Boolean = left.exists(p) || right.exists(p)
     override def forall(p: Int ⇒ Boolean): Boolean = left.forall(p) && right.forall(p)
@@ -759,6 +760,17 @@ private[immutable] final class IntTrieSetN private[immutable] (
         advanceIterator()
         def hasNext: Boolean = it.hasNext
         def next(): Int = { val v = it.next(); advanceIterator(); v }
+    }
+
+    override def head: Int = {
+        val left = this.left
+        val right = this.right
+        val leftSize = left.size
+        val rightSize = right.size
+        if (leftSize > rightSize)
+            left.head
+        else
+            right.head
     }
 
     override def headAndTail: IntRefPair[IntTrieSet] = {

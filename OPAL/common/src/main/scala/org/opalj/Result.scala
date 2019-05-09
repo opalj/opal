@@ -11,6 +11,7 @@ package org.opalj
  *
  * @author  Michael Eichberg
  */
+// TODO Create specialized IntResult and RefResult classes
 sealed trait Result[@specialized(Int) +T] extends Serializable {
     final def isEmpty: Boolean = !hasValue
     def hasValue: Boolean
@@ -20,6 +21,7 @@ sealed trait Result[@specialized(Int) +T] extends Serializable {
     def foreach[U](f: (T) ⇒ U): Unit
     def withFilter(q: (T) ⇒ Boolean): Result[T]
     def toSet[X >: T]: Set[X]
+    def toOption: Option[T]
 }
 
 /**
@@ -66,6 +68,7 @@ case class Success[@specialized(Int) +T](value: T) extends Result[T] {
         def flatMap[B](f: (T) ⇒ Result[B]): Result[B] = if (p(value)) f(value) else Empty
         def withFilter(p: (T) ⇒ Boolean): Result[T] = new FilteredSuccess((t: T) ⇒ p(t) && this.p(t))
         def toSet[X >: T]: Set[X] = if (p(value)) Set(value) else Set.empty
+        def toOption: Option[T] = if (p(value)) Some(value) else None
     }
 
     def hasValue: Boolean = true
@@ -74,6 +77,7 @@ case class Success[@specialized(Int) +T](value: T) extends Result[T] {
     def flatMap[B](f: (T) ⇒ Result[B]): Result[B] = f(value)
     def withFilter(p: (T) ⇒ Boolean): Result[T] = new FilteredSuccess(p)
     def toSet[X >: T]: Set[X] = Set(value)
+    def toOption: Option[T] = Some(value)
 }
 
 sealed trait NoResult extends Result[Nothing] {
@@ -84,6 +88,7 @@ sealed trait NoResult extends Result[Nothing] {
     final def flatMap[B](f: (Nothing) ⇒ Result[B]): this.type = this
     final def withFilter(q: (Nothing) ⇒ Boolean): this.type = this
     final def toSet[X >: Nothing]: Set[X] = Set.empty
+    final def toOption: Option[Nothing] = None
 }
 
 object NoResult {

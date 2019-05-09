@@ -5,35 +5,38 @@ package info
 
 import java.net.URL
 
-import org.opalj.fpcf.FPCFAnalysesManagerKey
-import org.opalj.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
-import org.opalj.fpcf.analyses.LazyVirtualReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
-import org.opalj.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.fpcf.properties.ExtensibleGetter
-import org.opalj.fpcf.properties.FreshReturnValue
-import org.opalj.fpcf.properties.Getter
-import org.opalj.fpcf.properties.NoFreshReturnValue
-import org.opalj.fpcf.properties.PrimitiveReturnValue
-import org.opalj.fpcf.properties.VExtensibleGetter
-import org.opalj.fpcf.properties.VFreshReturnValue
-import org.opalj.fpcf.properties.VGetter
-import org.opalj.fpcf.properties.VNoFreshReturnValue
-import org.opalj.fpcf.properties.VPrimitiveReturnValue
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.properties.ExtensibleGetter
+import org.opalj.br.fpcf.properties.FreshReturnValue
+import org.opalj.br.fpcf.properties.Getter
+import org.opalj.br.fpcf.properties.NoFreshReturnValue
+import org.opalj.br.fpcf.properties.PrimitiveReturnValue
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
+import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 
 /**
  * Computes return value freshness information; see
- * [[org.opalj.fpcf.properties.ReturnValueFreshness]] for details.
+ * [[org.opalj.br.fpcf.properties.ReturnValueFreshness]] for details.
  *
  * @author Florian Kuebler
  */
-object ReturnValueFreshness extends DefaultOneStepAnalysis {
+object ReturnValueFreshness extends ProjectAnalysisApplication {
 
     override def title: String = "\"Freshness\" of Return Values"
 
@@ -51,10 +54,19 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
         val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
             LazyL0BaseAIAnalysis,
             TACAITransformer, // LazyL0TACAIAnalysis,
+            /* Call Graph Analyses */
+            RTACallGraphAnalysisScheduler,
+            TriggeredStaticInitializerAnalysis,
+            TriggeredLoadedClassesAnalysis,
+            TriggeredFinalizerAnalysisScheduler,
+            TriggeredThreadRelatedCallsAnalysis,
+            TriggeredSerializationRelatedCallsAnalysis,
+            TriggeredReflectionRelatedCallsAnalysis,
+            TriggeredInstantiatedTypesAnalysis,
+            TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
+            TriggeredSystemPropertiesAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyFieldLocalityAnalysis,
-            LazyVirtualCallAggregatingEscapeAnalysis,
-            LazyVirtualReturnValueFreshnessAnalysis,
             EagerReturnValueFreshnessAnalysis
         )
 
@@ -65,23 +77,19 @@ object ReturnValueFreshness extends DefaultOneStepAnalysis {
         val prim = ps.finalEntities(PrimitiveReturnValue).toSeq
         val getter = ps.finalEntities(Getter).toSeq
         val extGetter = ps.finalEntities(ExtensibleGetter).toSeq
-        val vfresh = ps.finalEntities(VFreshReturnValue).toSeq
-        val vnotFresh = ps.finalEntities(VNoFreshReturnValue).toSeq
-        val vprim = ps.finalEntities(VPrimitiveReturnValue).toSeq
-        val vgetter = ps.finalEntities(VGetter).toSeq
-        val vextGetter = ps.finalEntities(VExtensibleGetter).toSeq
 
         val message =
-            s"""|# of methods with fresh return value: ${fresh.size}
+
+            s"""|${fresh.mkString("fresh methods:", "\t\n)}", "")}
+                |${getter.mkString("getter methods:", "\t\n)}", "")}
+                |${extGetter.mkString("external getter methods:", "\t\n)}", "")}
+                |${prim.mkString("methods with primitive return value:", "\t\n)}", "")}
+                |${notFresh.mkString("methods that are not fresh at all:", "\t\n)}", "")}
+                |# of methods with fresh return value: ${fresh.size}
                 |# of methods without fresh return value: ${notFresh.size}
                 |# of methods with primitive return value: ${prim.size}
                 |# of methods that are getters: ${getter.size}
                 |# of methods that are extensible getters: ${extGetter.size}
-                |# of vmethods with fresh return value: ${vfresh.size}
-                |# of vmethods without fresh return value: ${vnotFresh.size}
-                |# of vmethods with primitive return value: ${vprim.size}
-                |# of vmethods that are getters: ${vgetter.size}
-                |# of vmethods that are extensible getters: ${vextGetter.size}
                 |"""
 
         BasicReport(message.stripMargin('|'))

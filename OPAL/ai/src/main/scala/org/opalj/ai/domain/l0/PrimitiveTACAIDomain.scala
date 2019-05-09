@@ -27,3 +27,4 @@ class PrimitiveTACAIDomain(
         this(project.classHierarchy, method)
     }
 }
+

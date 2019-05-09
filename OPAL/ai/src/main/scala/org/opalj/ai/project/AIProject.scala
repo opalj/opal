@@ -11,7 +11,7 @@ import org.opalj.br.analyses.{Project, ReportableAnalysisResult}
  * Template class for analyzing complete Java projects that use the abstract interpreter.
  *
  * This trait is intended to be used in combination with the `Analysis` and the
- * `AnalysisExecutor` traits to easily create a readily executable analysis (see
+ * `AnalysisApplication` traits to easily create a readily executable analysis (see
  * the ''Demos'' project for examples).
  *
  * @author Michael Eichberg

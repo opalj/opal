@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.escape;
 
-import org.opalj.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
-import org.opalj.fpcf.analyses.escape.SimpleEscapeAnalysis;
 import org.opalj.fpcf.properties.escape.*;
+import org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis;
+import org.opalj.tac.fpcf.analyses.escape.SimpleEscapeAnalysis;
 
 public class EscapesViaReturn {
 
@@ -73,7 +73,8 @@ public class EscapesViaReturn {
 
     public Object escapeAfterCallToSometimesIdentity(boolean b) {
         Object o = new
-                @AtMostEscapeInCallee("the object is passed to an identity like function")
+                @AtMostEscapeInCallee(value = "the object is passed to an identity like function", performInvokationsDomain = false)
+                @AtMostEscapeViaReturn(value = "the object is passed to an identity like function", performInvokationsDomain = true)
                         Object();
         return sometimesIdentity(b, o);
     }

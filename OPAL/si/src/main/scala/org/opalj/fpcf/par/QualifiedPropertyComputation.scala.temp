@@ -92,7 +92,6 @@ private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <:
         ps:                          PKEParallelTasksPropertyStore,
         dependeeEPK:                 EPK[E, P],
         previousResult:              PropertyComputationResult,
-        forceDependersNotifications: Set[SomeEPK],
         c:                           OnUpdateContinuation
 ) extends ContinuationTask[E] {
 
@@ -109,7 +108,7 @@ private[par] final case class ImmediateOnUpdateComputationTask[E <: Entity, P <:
                 s"an on-update continuation resulted in the same result as before: $newResult"
             )
         }
-        ps.handleResult(newResult, forceDependersNotifications)
+        ps.handleResult(newResult)
     }
 }
 
@@ -117,7 +116,6 @@ private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity,
         ps:                          PKEParallelTasksPropertyStore,
         dependeeFinalP:              FinalEP[E, P],
         previousResult:              PropertyComputationResult,
-        forceDependersNotifications: Set[SomeEPK],
         c:                           OnUpdateContinuation
 ) extends ContinuationTask[E] {
 
@@ -134,7 +132,7 @@ private[par] final case class ImmediateOnFinalUpdateComputationTask[E <: Entity,
                 s"an on-update continuation resulted in the same result as before: $newResult"
             )
         }
-        ps.handleResult(newResult, forceDependersNotifications)
+        ps.handleResult(newResult)
     }
 }
 

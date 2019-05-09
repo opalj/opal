@@ -2,12 +2,25 @@
 package org.opalj
 package ai
 
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsPrimitiveValue
+import org.opalj.value.IsReferenceValue
+import org.opalj.value.IsReturnAddressValue
+import org.opalj.value.ValueInformation
+import org.opalj.br.BooleanType
+import org.opalj.br.ByteType
+import org.opalj.br.CharType
 import org.opalj.br.ConstantFieldValue
 import org.opalj.br.ConstantInteger
 import org.opalj.br.ConstantLong
 import org.opalj.br.ConstantFloat
 import org.opalj.br.ConstantDouble
 import org.opalj.br.ConstantString
+import org.opalj.br.DoubleType
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
+import org.opalj.br.LongType
+import org.opalj.br.ShortType
 
 /**
  * A domain is the fundamental abstraction mechanism in OPAL that enables the customization
@@ -65,7 +78,7 @@ import org.opalj.br.ConstantString
  * @note OPAL assumes that – at least conceptually – every method/code block is associated
  *      with its own instance of a domain object.
  *
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  * @author Dennis Siebert
  */
 trait Domain
@@ -99,6 +112,49 @@ trait Domain
             case ConstantFloat.KindId   ⇒ FloatValue(pc, cv.toFloat)
             case ConstantDouble.KindId  ⇒ DoubleValue(pc, cv.toDouble)
             case ConstantString.KindId  ⇒ StringValue(pc, cv.toUTF8)
+        }
+    }
+
+    // Here, we provide the base implementation!
+    override def InitializedDomainValue(origin: ValueOrigin, vi: ValueInformation): DomainValue = {
+        vi match {
+
+            case pv @ IsPrimitiveValue(baseType) ⇒
+                if (pv.constantValue.isDefined) {
+                    baseType match {
+                        case BooleanType ⇒ BooleanValue(origin, pv.asConstantBoolean)
+                        case ByteType    ⇒ ByteValue(origin, pv.asConstantByte)
+                        case ShortType   ⇒ ShortValue(origin, pv.asConstantShort)
+                        case CharType    ⇒ CharValue(origin, pv.asConstantChar)
+                        case IntegerType ⇒ IntegerValue(origin, pv.asConstantInteger)
+                        case LongType    ⇒ LongValue(origin, pv.asConstantLong)
+                        case FloatType   ⇒ FloatValue(origin, pv.asConstantFloat)
+                        case DoubleType  ⇒ DoubleValue(origin, pv.asConstantDouble)
+                    }
+                } else {
+                    TypedValue(origin, baseType)
+                }
+
+            case _: IsNullValue ⇒ NullValue(origin)
+
+            case v: IsReferenceValue ⇒
+                if (v.isNull.isNo && v.asReferenceType.isObjectType) {
+                    val t = v.leastUpperType.get.asObjectType
+                    if (v.isPrecise)
+                        InitializedObjectValue(origin, t)
+                    else
+                        NonNullObjectValue(origin, t)
+                } else {
+                    ReferenceValue(origin, v.leastUpperType.get)
+                }
+
+            case _: IsReturnAddressValue ⇒
+                throw new IllegalArgumentException(
+                    s"$vi does not contain sufficient information to create a return address value"
+                )
+
+            case vi ⇒
+                throw new IllegalArgumentException(s"cannot create domain value for $vi")
         }
     }
 }

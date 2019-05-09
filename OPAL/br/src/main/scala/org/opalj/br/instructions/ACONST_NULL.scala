@@ -8,7 +8,10 @@ package instructions
  *
  * @author Michael Eichberg
  */
-case object ACONST_NULL extends LoadConstantInstruction[Null] with ImplicitValue {
+case object ACONST_NULL
+    extends LoadConstantInstruction[Null]
+    with ImplicitValue
+    with InstructionMetaInformation {
 
     final def computationalType = ComputationalTypeReference
 

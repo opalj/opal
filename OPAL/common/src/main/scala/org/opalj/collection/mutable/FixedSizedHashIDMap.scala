@@ -27,7 +27,7 @@ import scala.reflect.ClassTag
 class FixedSizedHashIDMap[K <: AnyRef, V] private (
         private var theKeys:        Array[K],
         private var theValues:      Array[V],
-        private var hashCodeOffset: Int
+        private var hashCodeOffset: Int // basically -minValue
 ) { self ⇒
 
     /**
@@ -40,7 +40,7 @@ class FixedSizedHashIDMap[K <: AnyRef, V] private (
     def put(k: K, v: V): this.type = {
         val id = k.hashCode() + hashCodeOffset
         if (id < 0) {
-            throw new IllegalArgumentException(s"the key's id (${k.hashCode()}+$hashCodeOffset) is out of range: $k")
+            throw new IllegalArgumentException(s"the key's id (${k.hashCode()}) is < minValue")
         }
         theKeys(id) = k
         theValues(id) = v

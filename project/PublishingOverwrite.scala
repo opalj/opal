@@ -8,7 +8,10 @@ object PublishingOverwrite {
 
   val onSnapshotOverwriteSettings = Seq(
     publishConfiguration := withOverwrite(publishConfiguration.value, isSnapshot.value),
-    publishSignedConfiguration := withOverwrite(publishSignedConfigurationTask.value, isSnapshot.value),
+    publishSignedConfiguration := withOverwrite(
+      publishSignedConfigurationTask.value,
+      isSnapshot.value
+    ),
     publishLocalConfiguration ~= (_.withOverwrite(true)),
     publishLocalSignedConfiguration ~= (_.withOverwrite(true))
   )

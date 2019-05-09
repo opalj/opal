@@ -9,7 +9,7 @@ package instructions
  *
  * @author Michael Eichberg
  */
-abstract class AStoreInstruction extends StoreLocalVariableInstruction {
+trait AStoreInstruction extends StoreLocalVariableInstruction {
 
     def computationalType: ComputationalType = ComputationalTypeReference
 
@@ -21,3 +21,8 @@ object AStoreInstruction {
     def unapply(astore: AStoreInstruction): Some[Int] = Some(astore.lvIndex)
 
 }
+
+trait ConstantIndexAStoreInstruction
+    extends AStoreInstruction
+    with ImplicitLocalVariableIndex
+    with InstructionMetaInformation

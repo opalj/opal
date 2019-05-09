@@ -20,4 +20,13 @@ trait OrderedProperty extends Property {
      */
     @throws[IllegalArgumentException]("if this property is not more precise than the given one")
     def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit
+
+    /**
+     * Returns a value between zero and 9 which describes how close the value is to its absolute
+     * bottom. Zero means the value is very close to the bottom and 9 means the value is
+     * far away from the bottom.
+     *
+     * The default value is "5".
+     */
+    def bottomness: Int = 5
 }

@@ -5,7 +5,7 @@ package domain
 package l0
 
 /**
- * @author Michael Eichberg (eichberg@informatik.tu-darmstadt.de)
+ * @author Michael Eichberg
  */
 trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain with MonitorInstructionsTracker {
     domain: ValuesDomain with Configuration with ExceptionsFactory ⇒

@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.purity;
 
-import org.opalj.fpcf.analyses.L0PurityAnalysis;
-import org.opalj.fpcf.analyses.purity.L1PurityAnalysis;
+import org.opalj.br.fpcf.analyses.L0PurityAnalysis;
 import org.opalj.fpcf.properties.purity.*;
+import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis;
 
 /**
  * Collection of simple test methods using primitive types for purity analyses that can be analyzed
@@ -66,7 +66,7 @@ class PrimitiveTypes {
         nonFinalField = newValue;
     }
 
-    @ContextuallyPure(value = "Only modifies field of parameter", modifies = {0})
+    @ContextuallyPure(value = "Only modifies field of parameter", modifies = {1})
     @Impure(value="Modifies field of different instance",
             analyses = { L0PurityAnalysis.class, L1PurityAnalysis.class })
     public static void setNonFinalFieldStatic(PrimitiveTypes other, int newValue) {

@@ -24,6 +24,7 @@ import java.util.jar.JarEntry
 
 import scala.util.control.ControlThrowable
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
@@ -35,10 +36,13 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.OPALLogger.info
 import org.opalj.control.fillArrayOfInt
 import org.opalj.io.process
-import org.opalj.concurrent.OPALExecutionContextTaskSupport
+
 import org.opalj.concurrent.NumberOfThreadsForIOBoundTasks
+import org.opalj.concurrent.BoundedExecutionContext
+import org.opalj.concurrent.parForeachSeqElement
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.RefArray
+import org.opalj.concurrent.Tasks
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -238,11 +242,14 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         // let's make sure that we support this class file's version
         if (!(
             major_version >= 45 && // at least JDK 1.1
-            (major_version < 54 /* Java 8 = 52.0 */ ||
-                (major_version == 54 && minor_version == 0 /*Java 10 == 54.0*/ ))
+            (major_version < LatestSupportedJavaMajorVersion || (
+                major_version == LatestSupportedJavaMajorVersion
+                && minor_version <= LatestSupportedJavaVersion.minor
+            ))
         )) throw BytecodeProcessingFailedException(
             s"unsupported class file version: $major_version.$minor_version"+
-                " (Supported: 45(Java 1.1) <= version <= 54(Java 10))"
+                " (Supported: 45(Java 1.1) <= version <= "+
+                s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
         )
 
         val cp = Constant_Pool(in)
@@ -506,7 +513,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         }
                     }
                 }
-            }(org.opalj.concurrent.OPALExecutionContext)
+            }(org.opalj.concurrent.OPALHTBoundedExecutionContext)
             futureIndex += 1
         }
         while ({ futureIndex -= 1; futureIndex } >= 0) {
@@ -606,8 +613,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             else if (filename.endsWith(".class")) processClassFile(file)
             else Nil
         } else if (file.isDirectory) {
-            var jarFiles = List.empty[File]
-            var classFiles = List.empty[File]
+            val jarFiles = ArrayBuffer.empty[File]
+            val classFiles = ArrayBuffer.empty[File]
             def collectFiles(files: Array[File]): Unit = {
                 if (files eq null)
                     return ;
@@ -616,12 +623,15 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                     val filename = file.getName
                     if (file.isFile) {
                         if (file.length() == 0) Nil
-                        else if (isClassFileRepository(filename, None)) jarFiles ::= file
-                        else if (filename.endsWith(".class")) classFiles ::= file
+                        else if (isClassFileRepository(filename, None)) jarFiles += file
+                        else if (filename.endsWith(".class")) classFiles += file
                     } else if (file.isDirectory) {
                         collectFiles(file.listFiles())
                     } else {
-                        throw new UnknownError(s"$file is neither a file nor a directory")
+                        info(
+                            "class file reader",
+                            s"ignored: $file it is neither a file nor a directory"
+                        )
                     }
                 }
             }
@@ -634,9 +644,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             // 2.1 load - in parallel - all ".class" files
             if (classFiles.nonEmpty) {
                 val theClassFiles = new ConcurrentLinkedQueue[(ClassFile, URL)]
-                val parClassFiles = classFiles.par
-                parClassFiles.tasksupport = OPALExecutionContextTaskSupport
-                parClassFiles foreach { classFile ⇒
+                parForeachSeqElement(classFiles, NumberOfThreadsForIOBoundTasks) { classFile ⇒
                     theClassFiles.addAll(processClassFile(classFile, exceptionHandler).asJava)
                 }
                 allClassFiles ++= theClassFiles.asScala
@@ -699,6 +707,46 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     }
 
     /**
+     * Goes over all files in parallel and calls back the given function which has to be thread-safe!
+     */
+    def processClassFiles(
+        files:              Traversable[File],
+        progressReporter:   File ⇒ Unit,
+        classFileProcessor: ((ClassFile, URL)) ⇒ Unit,
+        exceptionHandler:   ExceptionHandler          = defaultExceptionHandler
+    ): Unit = {
+        val ts = Tasks[File] { (tasks: Tasks[File], file: File) ⇒
+            if (file.isFile && file.length() > 0) {
+                val filename = file.getName
+
+                if (isClassFileRepository(filename, None)) {
+                    if (!filename.endsWith("-javadoc.jar") &&
+                        !filename.endsWith("-sources.jar")) {
+                        progressReporter(file)
+                        processJar(file, exceptionHandler).foreach(classFileProcessor)
+                    }
+                } else if (filename.endsWith(".class")) {
+                    progressReporter(file)
+                    processClassFile(file, exceptionHandler).foreach(classFileProcessor)
+                }
+            } else if (file.isDirectory) {
+                progressReporter(file)
+                file.listFiles().foreach(tasks.submit)
+            }
+        }(
+            // We need a fresh/privately owned execution context with a fixed number of threads
+            // to avoid that – if the processor also uses the fixed size pool –
+            // we potentially run out of threads!
+            BoundedExecutionContext(
+                "ClassFileReader.processClassFiles",
+                NumberOfThreadsForIOBoundTasks
+            )
+        )
+        files.foreach(ts.submit)
+        ts.join()
+    }
+
+    /**
      * Searches for the first class file that is accepted by the filter. If no class file
      * can be found that is accepted by the filter the set of all class names is returned.
      *
@@ -722,13 +770,13 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
                         if (!filename.endsWith("-javadoc.jar") &&
                             !filename.endsWith("-sources.jar")) {
                             progressReporter(file)
-                            processJar(file)
+                            processJar(file, exceptionHandler)
                         } else {
                             Nil
                         }
                     } else if (filename.endsWith(".class")) {
                         progressReporter(file)
-                        processClassFile(file)
+                        processClassFile(file, exceptionHandler)
                     } else {
                         Nil
                     }
@@ -763,5 +811,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 object ClassFileReader {
 
     type ExceptionHandler = (AnyRef, Throwable) ⇒ Unit
+
+    final val SuppressExceptionHandler: ExceptionHandler = (_, _) ⇒ {}
 
 }

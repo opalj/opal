@@ -28,7 +28,7 @@ case class SIPUSH(value: Int) extends LoadConstantInstruction[Int] {
 
 }
 
-object SIPUSH {
+object SIPUSH extends InstructionMetaInformation {
 
     final val opcode = 17
 
