@@ -33,7 +33,6 @@ import org.opalj.tac.GetStatic
 import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
-import org.opalj.tac.Stmt
 import org.opalj.tac.Var
 import org.opalj.tac.fpcf.analyses.cg.CallGraphDeserializerScheduler
 
@@ -78,12 +77,12 @@ class BasicIFDSTaintAnalysis private (
                 val index = getConstValue(store.index, stmt.code)
                 if (isTainted(store.value, in))
                     if (index.isDefined) // Taint known array index
-                    // Instead of using an iterator, we are going to use internal iteration
-                    // in ++ definedBy.iterator.map(ArrayElement(_, index.get))
+                        // Instead of using an iterator, we are going to use internal iteration
+                        // in ++ definedBy.iterator.map(ArrayElement(_, index.get))
                         definedBy.foldLeft(in) { (c, n) ⇒ c + ArrayElement(n, index.get) }
                     else // Taint whole array if index is unknown
-                    // Instead of using an iterator, we are going to use internal iteration:
-                    // in ++ definedBy.iterator.map(Variable)
+                        // Instead of using an iterator, we are going to use internal iteration:
+                        // in ++ definedBy.iterator.map(Variable)
                         definedBy.foldLeft(in) { (c, n) ⇒ c + Variable(n) }
                 else in*/
             case PutStatic.ASTID ⇒
@@ -118,7 +117,7 @@ class BasicIFDSTaintAnalysis private (
     /**
      * Returns the constant int value of an expression if it exists, None otherwise.
      */
-    def getConstValue(expr: Expr[V], code: Array[Stmt[V]]): Option[Int] = {
+    /*def getConstValue(expr: Expr[V], code: Array[Stmt[V]]): Option[Int] = {
         if (expr.isIntConst) Some(expr.asIntConst.value)
         else if (expr.isVar) {
             // TODO The following looks optimizable!
@@ -135,7 +134,7 @@ class BasicIFDSTaintAnalysis private (
                 constVals.head
             else None
         } else None
-    }
+    }*/
 
     def handleAssignment(stmt: Statement, expr: Expr[V], in: Set[Fact]): Set[Fact] =
         expr.astID match {
@@ -144,35 +143,35 @@ class BasicIFDSTaintAnalysis private (
                     case Variable(index) if expr.asVar.definedBy.contains(index) ⇒
                         Some(Variable(stmt.index))
                     /*case ArrayElement(index, taintIndex) if expr.asVar.definedBy.contains(index) ⇒
-                        Some(ArrayElement(stmt.index, taintIndex))*/
+                    Some(ArrayElement(stmt.index, taintIndex))*/
                     case _ ⇒ None
                 }.flatten
                 in ++ newTaint
             /*case ArrayLoad.ASTID ⇒
-                val load = expr.asArrayLoad
-                if (in.exists {
-                    // The specific array element may be tainted
-                    case ArrayElement(index, taintedIndex) ⇒
-                        val element = getConstValue(load.index, stmt.code)
-                        load.arrayRef.asVar.definedBy.contains(index) &&
-                            (element.isEmpty || taintedIndex == element.get)
-                    // Or the whole array
-                    case Variable(index) ⇒ load.arrayRef.asVar.definedBy.contains(index)
-                    case _               ⇒ false
-                })
-                    in + Variable(stmt.index)
-                else
-                    in*/
+            val load = expr.asArrayLoad
+            if (in.exists {
+                // The specific array element may be tainted
+                case ArrayElement(index, taintedIndex) ⇒
+                    val element = getConstValue(load.index, stmt.code)
+                    load.arrayRef.asVar.definedBy.contains(index) &&
+                        (element.isEmpty || taintedIndex == element.get)
+                // Or the whole array
+                case Variable(index) ⇒ load.arrayRef.asVar.definedBy.contains(index)
+                case _               ⇒ false
+            })
+                in + Variable(stmt.index)
+            else
+                in*/
             case GetStatic.ASTID ⇒
                 val get = expr.asGetStatic
                 if (in.contains(StaticField(get.declaringClass, get.name)))
                     in + Variable(stmt.index)
                 else in
             /*case GetField.ASTID ⇒
-                val get = expr.asGetField
-                if (in.contains(StaticField(get.declaringClass, get.name)))
-                    in + Variable(stmt.index)
-                else in*/
+            val get = expr.asGetField
+            if (in.contains(StaticField(get.declaringClass, get.name)))
+                in + Variable(stmt.index)
+            else in*/
             case GetField.ASTID ⇒
                 val get = expr.asGetField
                 if (in.exists {
@@ -265,7 +264,7 @@ class BasicIFDSTaintAnalysis private (
                             allParams(paramToIndex(index, !callee.definedMethod.isStatic))
                         flows ++= param.asVar.definedBy.iterator.map(ArrayElement(_, taintedIndex))*/
 
-                    case InstanceField(index, declClass, taintedField) if index < 0 && index > -10 ⇒
+                    case InstanceField(index, declClass, taintedField) if index < 0 && index > -255 ⇒
                         // Taint field of actual parameter if field of formal parameter is tainted
                         val param =
                             allParams(paramToIndex(index, !callee.definedMethod.isStatic))
@@ -340,21 +339,21 @@ class BasicIFDSTaintAnalysis private (
      * If forName is called, we add a FlowFact.
      */
     override def nativeCall(statement: Statement, callee: DeclaredMethod, successor: Statement, in: Set[Fact]): Set[Fact] = {
-        /* val allParams = asCall(statement.stmt).receiverOption ++ asCall(statement.stmt).params
-        if (statement.stmt.astID == Assignment.ASTID && in.exists {
-            case Variable(index) ⇒
-                allParams.zipWithIndex.exists {
-                    case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
-                    case _                                                   ⇒ false
-                }
-            case ArrayElement(index, _) ⇒
-                allParams.zipWithIndex.exists {
-                    case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
-                    case _                                                   ⇒ false
-                }
-            case _ ⇒ false
-        }) Set(Variable(statement.index))
-        else*/ Set.empty
+        /* val allParams = asCall(statement.stmt).allParams
+         if (statement.stmt.astID == Assignment.ASTID && in.exists {
+             case Variable(index) ⇒
+                 allParams.zipWithIndex.exists {
+                     case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
+                     case _                                                   ⇒ false
+                 }
+             /*case ArrayElement(index, _) ⇒
+                 allParams.zipWithIndex.exists {
+                     case (param, _) if param.asVar.definedBy.contains(index) ⇒ true
+                     case _                                                   ⇒ false
+                 }*/
+             case _ ⇒ false
+         }) Set(Variable(statement.index))
+         else*/ Set.empty
     }
 
     val entryPoints: Map[DeclaredMethod, Fact] = (for {
