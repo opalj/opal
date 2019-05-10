@@ -9,11 +9,11 @@ package tac
  *
  * @author Michael Eichberg
  */
-object SimplePropagation extends TACOptimization[Param, IdBasedVar] {
+object SimplePropagation extends TACOptimization[Param, IdBasedVar, NaiveTACode[Param]] {
 
     def apply(
-        tac: TACOptimizationResult[Param, IdBasedVar]
-    ): TACOptimizationResult[Param, IdBasedVar] = {
+        tac: TACOptimizationResult[Param, IdBasedVar, NaiveTACode[Param]]
+    ): TACOptimizationResult[Param, IdBasedVar, NaiveTACode[Param]] = {
         val cfg = tac.code.cfg
         val bbs = cfg.allBBs
         val code = tac.code.stmts
@@ -101,7 +101,7 @@ object SimplePropagation extends TACOptimization[Param, IdBasedVar] {
 
         }
         val taCode = tac.code
-        val newTACode = TACode(
+        val newTACode = new NaiveTACode(
             taCode.params,
             code, // <= mutated
             taCode.pcToIndex, // <= we only introduce nops => no need to update the mapping

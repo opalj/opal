@@ -27,7 +27,7 @@ package object tac {
 
     final val SelfReferenceParameter = IntTrieSet(OriginOfThis)
 
-    final val AllTACNaiveOptimizations: List[TACOptimization[Param, IdBasedVar]] = {
+    final val AllNaiveTACodeOptimizations: List[TACOptimization[Param, IdBasedVar, NaiveTACode[Param]]] = {
         List(SimplePropagation)
     }
 

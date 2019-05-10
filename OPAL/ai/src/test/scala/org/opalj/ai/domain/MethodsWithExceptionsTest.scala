@@ -8,6 +8,8 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
+import scala.collection.immutable.LongMap
+
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -96,7 +98,7 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that catches the thrown exceptions" in {
         evaluateMethod("throwsNoException") { domain ⇒
             import domain._
-            allThrownExceptions should be(Map.empty)
+            allThrownExceptions should be(LongMap.empty)
             allReturnVoidInstructions should be(IntTrieSet(39)) // <= void return
         }
     }
@@ -105,9 +107,9 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
         evaluateMethod("leverageException") { domain ⇒
             import domain._
             allReturnVoidInstructions should be(IntTrieSet(38)) // <= void return
-            allThrownExceptions should be(Map())
+            allThrownExceptions should be(LongMap.empty)
             // Due to the simplicity of the domain (the exceptions of called methods are
-            // not yet analyze) we cannot determine that the following exception
+            // not yet analyzed) we cannot determine that the following exception
             // (among others?) may also be thrown:
             // ("throws", SomeReferenceValue(...,ObjectType("java/lang/RuntimeException"),No))
         }

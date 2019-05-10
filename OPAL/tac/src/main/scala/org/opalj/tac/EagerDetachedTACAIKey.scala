@@ -41,13 +41,13 @@ object EagerDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUs
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = {
+    ): Method ⇒ AITACode[TACMethodParameter, ValueInformation] = {
         val domainFactory = project.
             getProjectInformationKeyInitializationData(this).
             getOrElse((m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m))
 
         val taCodes =
-            new ConcurrentLinkedQueue[(Method, TACode[TACMethodParameter, DUVar[ValueInformation]])]()
+            new ConcurrentLinkedQueue[(Method, AITACode[TACMethodParameter, ValueInformation])]()
 
         project.parForeachMethodWithBody() { mi ⇒
             val m = mi.method
@@ -56,12 +56,12 @@ object EagerDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUs
             val code = TACAI(project, m, aiResult)
             // well... the following cast safe is safe, because the underlying
             // data-structure is actually, conceptually immutable
-            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+            val taCode = code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
             taCode.detach
             taCodes.add((m, taCode))
         }
 
-        mutable.Map.empty[Method, TACode[TACMethodParameter, DUVar[ValueInformation]]] ++
+        mutable.Map.empty[Method, AITACode[TACMethodParameter, ValueInformation]] ++
             taCodes.asScala
     }
 }

@@ -33,22 +33,21 @@ import org.opalj.br.Code
  *
  * @author Michael Eichberg
  */
-final class TACode[P <: AnyRef, V <: Var[V]](
-        val params:            Parameters[P],
-        val stmts:             Array[Stmt[V]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
-        val pcToIndex:         Array[Int],
-        val cfg:               CFG[Stmt[V], TACStmts[V]],
-        val exceptionHandlers: ExceptionHandlers
-// TODO Support the rewriting of TypeAnnotations etc.
-) extends Attribute with CodeSequence[Stmt[V]] {
+sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequence[Stmt[V]] {
+
+    def params: Parameters[P]
+    def stmts: Array[Stmt[V]] // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+    def pcToIndex: Array[Int]
+    def cfg: CFG[Stmt[V], TACStmts[V]]
+    def exceptionHandlers: ExceptionHandlers
 
     override def instructions: Array[Stmt[V]] = stmts
 
-    override def pcOfPreviousInstruction(pc: Int): Int = {
-        // The representation is compact: hence, the previous instruction/statement just
-        // has the current index/pc - 1.
-        pc - 1
-    }
+    /**
+     * Returns the pc of the previous instruction which is always the current pc - 1, because
+     * the representation is compact.
+     */
+    override def pcOfPreviousInstruction(pc: Int): Int = pc - 1
 
     override def pcOfNextInstruction(pc: Int): Int = pc + 1
 
@@ -66,11 +65,12 @@ final class TACode[P <: AnyRef, V <: Var[V]](
         code.lineNumberTable.flatMap(_.lookupLineNumber(stmts(index).pc))
     }
 
-    override def equals(other: Any): Boolean = {
+    final override def equals(other: Any): Boolean = {
         other match {
             case that: TACode[_, _] ⇒
                 // Recall that the CFG is derived from the stmts and therefore necessarily
-                // equal when the statements are equal.
+                // equal when the statements are equal; this is true independent of the
+                // concrete of 3-address code that we have!
                 val thisStmts = this.stmts.asInstanceOf[Array[AnyRef]]
                 val thatStmts = that.stmts.asInstanceOf[Array[AnyRef]]
                 JArrays.equals(thisStmts, thatStmts) &&
@@ -82,8 +82,8 @@ final class TACode[P <: AnyRef, V <: Var[V]](
         }
     }
 
-    override lazy val hashCode: Int = {
-        // In the following, we do not consider the CFG as the CFG is "just" a derived
+    final override lazy val hashCode: Int = {
+        // In the following we do not consider the CFG as it is "just" a derived
         // data structure.
         ((params.hashCode * 31 +
             JArrays.hashCode(stmts.asInstanceOf[Array[AnyRef]])) * 31 +
@@ -91,18 +91,7 @@ final class TACode[P <: AnyRef, V <: Var[V]](
             exceptionHandlers.hashCode * 31
     }
 
-    /** Detaches the 3-address code from the underlying abstract interpreation result. */
-    def detach(implicit ev: V <:< DUVar[ValueInformation]): TACode[P, DUVar[ValueInformation]] = {
-        new TACode(
-            params,
-            this.stmts.map(_.toCanonicalForm),
-            pcToIndex,
-            cfg.asInstanceOf[CFG[Stmt[DUVar[ValueInformation]], TACStmts[DUVar[ValueInformation]]]],
-            exceptionHandlers
-        )
-    }
-
-    override def toString: String = {
+    protected[this] def toString(taCodeType: String, additionalParameters: String): String = {
         val txtParams = s"params=($params)"
         val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e ⇒ val (s, i) = e; s"$i: $s" }
         val txtStmts = stmtsWithIndex.mkString("stmts=(\n\t", ",\n\t", "\n)")
@@ -111,27 +100,19 @@ final class TACode[P <: AnyRef, V <: Var[V]](
                 exceptionHandlers.mkString(",exceptionHandlers=(\n\t", ",\n\t", "\n)")
             else
                 ""
-        s"TACode($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers)"
+        s"$taCodeType($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers$additionalParameters)"
     }
-
 }
+
 object TACode {
+
+    type TACodeCFG[V <: Var[V]] = CFG[Stmt[V], TACStmts[V]]
 
     final val KindId = 1003
 
-    def apply[P <: AnyRef, V <: Var[V]](
-        params:            Parameters[P],
-        stmts:             Array[Stmt[V]],
-        pcToIndex:         Array[Int],
-        cfg:               CFG[Stmt[V], TACStmts[V]],
-        exceptionHandlers: ExceptionHandlers
-    ): TACode[P, V] = {
-        new TACode(params, stmts, pcToIndex, cfg, exceptionHandlers)
-    }
-
     def unapply[P <: AnyRef, V <: Var[V]](
         code: TACode[P, V]
-    ): Some[(Parameters[P], Array[Stmt[V]], Array[Int], CFG[Stmt[V], TACStmts[V]], ExceptionHandlers)] = {
+    ): Some[(Parameters[P], Array[Stmt[V]], Array[Int], TACodeCFG[V], ExceptionHandlers)] = {
         Some((
             code.params,
             code.stmts,
@@ -142,3 +123,60 @@ object TACode {
     }
 
 }
+
+final class AITACode[P <: AnyRef, VI <: ValueInformation](
+        val params:            Parameters[P],
+        val stmts:             Array[Stmt[DUVar[VI]]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+        val pcToIndex:         Array[Int],
+        val cfg:               CFG[Stmt[DUVar[VI]], TACStmts[DUVar[VI]]],
+        val exceptionHandlers: ExceptionHandlers
+) extends TACode[P, DUVar[VI]] {
+
+    import AITACode.AITACodeCFG
+
+    /** Detaches the 3-address code from the underlying abstract interpreation result. */
+    def detach(): AITACode[P, ValueInformation] = {
+        new AITACode[P, ValueInformation](
+            params,
+            this.stmts.map(_.toCanonicalForm),
+            pcToIndex,
+            cfg.asInstanceOf[AITACodeCFG[ValueInformation]],
+            exceptionHandlers
+        )
+    }
+
+    override def toString: String = toString("AITACode", "")
+
+}
+
+object AITACode {
+
+    type AITACodeCFG[VI <: ValueInformation] = CFG[Stmt[DUVar[VI]], TACStmts[DUVar[VI]]]
+    type AITACodeStmts[VI <: ValueInformation] = Array[Stmt[DUVar[VI]]]
+
+    def unapply[P <: AnyRef, VI <: ValueInformation](
+        code: AITACode[P, VI]
+    ): Some[(Parameters[P], AITACodeStmts[VI], Array[Int], AITACodeCFG[VI], ExceptionHandlers)] = {
+        Some((
+            code.params,
+            code.stmts,
+            code.pcToIndex,
+            code.cfg,
+            code.exceptionHandlers
+        ))
+    }
+
+}
+
+final class NaiveTACode[P <: AnyRef](
+        val params:            Parameters[P],
+        val stmts:             Array[Stmt[IdBasedVar]], // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+        val pcToIndex:         Array[Int],
+        val cfg:               CFG[Stmt[IdBasedVar], TACStmts[IdBasedVar]],
+        val exceptionHandlers: ExceptionHandlers
+) extends TACode[P, IdBasedVar] {
+
+    override def toString: String = toString("NaiveTACode", "")
+
+}
+

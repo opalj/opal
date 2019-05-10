@@ -8,12 +8,12 @@ package tac
  *
  * @author Michael Eichberg
  */
-trait TACOptimization[P <: AnyRef, V <: Var[V]] {
+trait TACOptimization[P <: AnyRef, V <: Var[V], C <: TACode[P, V]] {
 
     /**
      * Transforms the given code to the target code.
      */
-    def apply(tac: TACOptimizationResult[P, V]): TACOptimizationResult[P, V]
+    def apply(tac: TACOptimizationResult[P, V, C]): TACOptimizationResult[P, V, C]
 }
 
 /**
@@ -21,7 +21,7 @@ trait TACOptimization[P <: AnyRef, V <: Var[V]] {
  *
  * @author Michael Eichberg
  */
-case class TACOptimizationResult[P <: AnyRef, V <: Var[V]](
-        code:           TACode[P, V],
+case class TACOptimizationResult[P <: AnyRef, V <: Var[V], C <: TACode[P, V]](
+        code:           C,
         wasTransformed: Boolean
 )

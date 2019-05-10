@@ -54,7 +54,7 @@ object TACNaive {
     def apply(
         method:         Method,
         classHierarchy: ClassHierarchy,
-        optimizations:  List[TACOptimization[Param, IdBasedVar]] = List.empty
+        optimizations:  List[TACOptimization[Param, IdBasedVar, NaiveTACode[Param]]] = List.empty
     ): TACode[Param, IdBasedVar] = {
 
         import BinaryArithmeticOperators._
@@ -934,11 +934,11 @@ object TACNaive {
 
         val taCodeParams = new Parameters(tacParams)
         if (optimizations.nonEmpty) {
-            val initialTAC = TACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs)
-            val base = TACOptimizationResult[Param, IdBasedVar](initialTAC, wasTransformed = false)
+            val initialTAC = new NaiveTACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs)
+            val base = TACOptimizationResult[Param, IdBasedVar, NaiveTACode[Param]](initialTAC, wasTransformed = false)
             optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac)).code
         } else {
-            TACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs)
+            new NaiveTACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs)
         }
     }
 
