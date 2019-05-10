@@ -149,7 +149,7 @@ object TAC {
                 val (tac: String, cfg: String, ehs: Option[String]) =
                     if (naive) {
                         val tac @ TACode(params, code, _, cfg, ehs) =
-                            TACNaive(m, ch, AllTACNaiveOptimizations)
+                            TACNaive(m, ch, AllNaiveTACodeOptimizations)
                         if (toString) Console.out.println(m.toJava(tac.toString))
 
                         (

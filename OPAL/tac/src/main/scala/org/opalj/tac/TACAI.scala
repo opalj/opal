@@ -94,7 +94,7 @@ object TACAI {
         method:  Method
     )(
         domain: Domain with RecordDefUse = new DefaultDomainWithCFGAndDefUse(project, method)
-    ): TACode[TACMethodParameter, DUVar[domain.DomainValue]] = {
+    ): AITACode[TACMethodParameter, domain.DomainValue] = {
         val aiResult = BaseAI(method, domain)
         TACAI(project, method, aiResult)
     }
@@ -103,7 +103,7 @@ object TACAI {
         project:  SomeProject,
         method:   Method,
         aiResult: AIResult { val domain: Domain with RecordDefUse }
-    ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
+    ): AITACode[TACMethodParameter, aiResult.domain.DomainValue] = {
         val config = project.config
         val propagateConstants = config.getBoolean("org.opalj.tacai.performConstantPropagation")
         TACAI(method, project.classHierarchy, aiResult, propagateConstants)(Nil)
@@ -125,8 +125,8 @@ object TACAI {
         aiResult:           AIResult { val domain: Domain with RecordDefUse },
         propagateConstants: Boolean
     )(
-        optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue]]]
-    ): TACode[TACMethodParameter, DUVar[aiResult.domain.DomainValue]] = {
+        optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue], AITACode[TACMethodParameter, aiResult.domain.DomainValue]]]
+    ): AITACode[TACMethodParameter, aiResult.domain.DomainValue] = {
 
         val domain: aiResult.domain.type = aiResult.domain
         val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
@@ -1012,7 +1012,8 @@ object TACAI {
                 }
             }
         }
-        type AIDUVar = DUVar[aiResult.domain.DomainValue]
+        type ValueInformation = aiResult.domain.DomainValue
+        type AIDUVar = DUVar[ValueInformation]
         val tacStmts: Array[Stmt[AIDUVar]] = {
             def isIndexOfCaughtExceptionStmt(index: Int): Boolean = {
                 statements(index).astID == CaughtException.ASTID
@@ -1050,7 +1051,7 @@ object TACAI {
                 lastIndex = index - 1
             )
         val tacExceptionHandlers = updateExceptionHandlers(pcToIndex)(aiResult)
-        val initialTAC = TACode[TACMethodParameter, AIDUVar](
+        val initialTAC = new AITACode[TACMethodParameter, ValueInformation](
             tacParams, tacStmts, pcToIndex, tacCFG, tacExceptionHandlers
         )
 
@@ -1096,7 +1097,7 @@ object TACAI {
         // HOWEVER, THIS IS NOT DIRECTLY OBVIOUS FROM THE ABOVE CODE!
 
         if (optimizations.nonEmpty) {
-            val base = TACOptimizationResult(initialTAC, wasTransformed = false)
+            val base = TACOptimizationResult[TACMethodParameter, DUVar[aiResult.domain.DomainValue], AITACode[TACMethodParameter, aiResult.domain.DomainValue]](initialTAC, wasTransformed = false)
             val result = optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac))
             result.code
         } else {

@@ -10,4 +10,4 @@ import org.opalj.value.ValueInformation
  * @author Michael Eichberg
  */
 trait TACAIKey[I <: AnyRef]
-    extends ProjectInformationKey[Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]], I]
+    extends ProjectInformationKey[Method ⇒ AITACode[TACMethodParameter, ValueInformation], I]

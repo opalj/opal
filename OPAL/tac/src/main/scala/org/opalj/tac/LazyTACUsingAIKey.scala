@@ -42,16 +42,16 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = {
+    ): Method ⇒ AITACode[TACMethodParameter, ValueInformation] = {
         val aiResults = project.get(SimpleAIKey)
-        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[ValueInformation]]]
+        val taCodes = TrieMap.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
         (m: Method) ⇒ taCodes.getOrElseUpdate(m, {
             val aiResult = aiResults(m)
             val code = TACAI(project, m, aiResult)
             // well... the following cast is safe, because the underlying
             // data structure is actually (at least conceptually) immutable
-            code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+            code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
         })
 
         /*
@@ -60,7 +60,7 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
             val code = TACAI(m, project.classHierarchy, aiResult)(Nil)
             // well... the following cast is safe, because the underlying
             // data structure is actually (at least conceptually) immutable
-            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+            val taCode = code.asInstanceOf[AITACode[TACMethodParameter, DUVar[ValueInformation]]]
             taCodes.put(m, taCode)
             taCode
         }
