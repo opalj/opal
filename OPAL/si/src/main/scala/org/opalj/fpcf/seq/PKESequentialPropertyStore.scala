@@ -202,12 +202,74 @@ final class PKESequentialPropertyStore private (
         def size: Int = initialTasks.size + tasks.size
     }
 
-    private[this] final val tasksManager = ManyLastTasksManager
+    lazy val ManyLastOwnPrioQueueTasksManager = new TasksManager {
 
-    // The list of scheduled computations
-    // private[this] var tasks: Array[ArrayDeque[QualifiedTask]] = {
-    //     Array.fill(10)(new ArrayDeque(50000))
-    // }
+        private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+
+        private[this] var minQueueId: Int = 0
+        private[this] var lastQueueId: Int = 0
+        private[this] var tasks = new Array[List[QualifiedTask]](100000) // we need some more flexibility here...
+
+        def pushInitialTask(task: QualifiedTask): Unit = {
+            this.initialTasks.addFirst(task)
+        }
+
+        def push(
+            task:                  QualifiedTask,
+            dependeesCount:        Int,
+            currentDependersCount: Int,
+            bottomness:            Int,
+            hint:                  PropertyComputationHint
+        ): Unit = {
+            val currentQueueId = Math.max(1, dependeesCount) * Math.max(1, currentDependersCount)
+            val currentQueue = this.tasks(currentQueueId)
+            lastQueueId = Math.max(lastQueueId, currentQueueId)
+            minQueueId = Math.min(minQueueId, currentQueueId)
+            this.tasks(currentQueueId) = if (currentQueue ne null) task :: currentQueue else List(task)
+        }
+
+        def poll(): QualifiedTask = {
+            val t = this.initialTasks.pollFirst()
+            if (t ne null)
+                t
+            else {
+                var currentQueueId = minQueueId
+                while (tasks(currentQueueId) == null && currentQueueId <= lastQueueId) currentQueueId += 1
+                minQueueId = currentQueueId
+
+                val currentQueue = tasks(currentQueueId)
+                val t = currentQueue.head
+                val remainingQueue = currentQueue.tail
+                tasks(currentQueueId) =
+                    if (remainingQueue.isEmpty) {
+                        if (currentQueueId == lastQueueId) {
+                            while (lastQueueId > 0 && tasks(lastQueueId) == null) lastQueueId -= 1;
+                            minQueueId = lastQueueId
+                        }
+                        null
+                    } else {
+                        remainingQueue
+                    }
+                t
+            }
+        }
+
+        def isEmpty: Boolean = {
+            this.initialTasks.isEmpty && {
+                var queueId = minQueueId
+                var isEmpty = true
+                while (queueId <= lastQueueId && isEmpty) {
+                    isEmpty = tasks(queueId) == null
+                    queueId += 1
+                }
+                isEmpty
+            }
+        }
+
+        def size: Int = initialTasks.size + tasks.iterator.take(lastQueueId + 1).map(_.size).sum
+    }
+
+    private[this] final val tasksManager = ManyLastOwnPrioQueueTasksManager
 
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
