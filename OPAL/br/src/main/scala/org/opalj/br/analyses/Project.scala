@@ -163,10 +163,10 @@ class Project[Source] private (
 
     /**
      * Returns a shallow clone of this project with an updated log context and (optionally)
-     * filtered ProjectInformations.
+     * filtered ProjectInformation objects.
      *
-     * @param filterProjectInformation Enables filtering of the ProjectInformations that should be
-     *                                 kept when a new Project is created.
+     * @param filterProjectInformation Enables filtering of the ProjectInformation objects
+     *          that should be kept when a new Project is created.
      */
     def recreate(
         filterProjectInformation: Int ⇒ Boolean = _ ⇒ false
@@ -1276,6 +1276,8 @@ object Project {
         // class...
         var staticallyOverriddenInstanceMethods: List[(ObjectType, String, MethodDescriptor)] = Nil
 
+        var missingClassTypes = Set.empty[ObjectType]
+
         // Returns `true` if the potentially available information is not yet available.
         @inline def notYetAvailable(superinterfaceType: ObjectType): Boolean = {
             methods.get(superinterfaceType).isEmpty &&
@@ -1457,10 +1459,7 @@ object Project {
 
                 case None ⇒
                     // ... reached only in case of rather incomplete projects...
-                    OPALLogger.warn(
-                        "project configuration - instance methods",
-                        s"no class file for ${objectType.toJava}"
-                    )
+                    missingClassTypes += objectType
             }
             methods(objectType) = definedMethods
             classHierarchy.foreachDirectSubtypeOf(objectType)(tasks.submit)
@@ -1470,6 +1469,20 @@ object Project {
         classHierarchy.rootTypes.foreach(tasks.submit)
         try {
             tasks.join()
+            if (missingClassTypes.nonEmpty) {
+                OPALLogger.warn(
+                    "project configuration - instance methods",
+                    missingClassTypes
+                        .map(_.toJava)
+                        .toList.sorted
+                        .take(10)
+                        .mkString(
+                            "no class files found for: {",
+                            ", ",
+                            if (missingClassTypes.size > 10) ", ...}" else "}"
+                        )
+                )
+            }
         } catch {
             case ce: ConcurrentExceptions ⇒
                 ce.getSuppressed foreach { e ⇒
