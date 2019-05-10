@@ -7,6 +7,11 @@ package org.opalj.fpcf
  */
 sealed trait PropertyComputationHint
 
+object PropertyComputationHint {
+
+    final val Default = DefaultPropertyComputation
+}
+
 /**
  * A standard property computation.
  */
