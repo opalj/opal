@@ -6,6 +6,7 @@ package seq
 import scala.language.existentials
 
 import java.util.ArrayDeque
+import java.util.PriorityQueue
 
 import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
@@ -116,16 +117,18 @@ final class PKESequentialPropertyStore private (
     private[seq] trait TasksManager {
         def pushInitialTask(task: QualifiedTask): Unit
         def push(
-            task:       QualifiedTask,
-            bottomness: Int                     = OrderedProperty.DefaultBottomness,
-            hint:       PropertyComputationHint = DefaultPropertyComputation
+            task:                  QualifiedTask,
+            dependeesCount:        Int, //  0 only for final properties
+            currentDependersCount: Int, // may change between the time the tasks is scheduled and the time it is evaluated!
+            bottomness:            Int                     = OrderedProperty.DefaultBottomness,
+            hint:                  PropertyComputationHint = DefaultPropertyComputation
         ): Unit
         def poll(): QualifiedTask
         def isEmpty: Boolean
         def size: Int
     }
 
-    lazy val NaiveTasksManager = new TasksManager {
+    lazy val LastSubmittedTasksFirstManager = new TasksManager {
         private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
         private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
 
@@ -133,7 +136,14 @@ final class PKESequentialPropertyStore private (
             this.initialTasks.addFirst(task)
         }
 
-        def push(task: QualifiedTask, bottomness: Int, hint: PropertyComputationHint): Unit = {
+        def push(
+            task:                  QualifiedTask,
+            dependeesCount:        Int,
+            currentDependersCount: Int,
+            bottomness:            Int,
+            hint:                  PropertyComputationHint
+        ): Unit = {
+
             this.tasks.addFirst(task)
         }
 
@@ -150,7 +160,49 @@ final class PKESequentialPropertyStore private (
         def size: Int = initialTasks.size + tasks.size
     }
 
-    private[this] final val tasksManager = NaiveTasksManager
+    lazy val ManyLastTasksManager = new TasksManager {
+
+        private class WeightedQualifiedTask(
+                val task:   QualifiedTask,
+                val weight: Int
+        ) extends Comparable[WeightedQualifiedTask] {
+            def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
+        }
+
+        private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+        private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
+
+        def pushInitialTask(task: QualifiedTask): Unit = {
+            this.initialTasks.addFirst(task)
+        }
+
+        def push(
+            task:                  QualifiedTask,
+            dependeesCount:        Int,
+            currentDependersCount: Int,
+            bottomness:            Int,
+            hint:                  PropertyComputationHint
+        ): Unit = {
+            // this.tasks.add(new WeightedQualifiedTask(task, currentDependersCount )) // IFDS: ~706
+            // this.tasks.add(new WeightedQualifiedTask(task, dependeesCount )) // // IFDS: ~237
+            val weight = Math.max(1, dependeesCount) * Math.max(1, currentDependersCount) // IFDS: 183607
+            this.tasks.add(new WeightedQualifiedTask(task, weight))
+        }
+
+        def poll(): QualifiedTask = {
+            val t = this.initialTasks.pollFirst()
+            if (t ne null)
+                t
+            else
+                this.tasks.poll().task
+        }
+
+        def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
+
+        def size: Int = initialTasks.size + tasks.size
+    }
+
+    private[this] final val tasksManager = ManyLastTasksManager
 
     // The list of scheduled computations
     // private[this] var tasks: Array[ArrayDeque[QualifiedTask]] = {
@@ -422,8 +474,8 @@ final class PKESequentialPropertyStore private (
                     eps.ub.asOrderedProperty.bottomness
                 else
                     OrderedProperty.DefaultBottomness
-
-            dependers(pkId).get(e).foreach { dependersOfEPK ⇒
+            val theDependers = dependers(pkId).get(e)
+            theDependers.foreach { dependersOfEPK ⇒
                 dependersOfEPK foreach { cHint ⇒
                     val (dependerEPK, (c, hint)) = cHint
                     if (isFinal || !suppressInterimUpdates(dependerEPK.pk.id)(pkId)) {
@@ -433,7 +485,7 @@ final class PKESequentialPropertyStore private (
                             } else {
                                 new OnUpdateComputationTask(this, eps.toEPK, c)
                             }
-                        tasksManager.push(t, bottomness, hint)
+                        tasksManager.push(t, newDependees.size, theDependers.size, bottomness, hint)
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {
@@ -511,7 +563,7 @@ final class PKESequentialPropertyStore private (
                 } else {
                     OnUpdateComputationTask(this, processedDependee.toEPK, c)
                 }
-                tasksManager.push(t, OrderedProperty.DefaultBottomness, DefaultPropertyComputation)
+                tasksManager.push(t, processedDependees.size, /*FIXME: */ 0, OrderedProperty.DefaultBottomness, DefaultPropertyComputation)
                 false
             } else {
                 true // <= no update
@@ -557,7 +609,7 @@ final class PKESequentialPropertyStore private (
                         case r ⇒
                             // Actually this shouldn't happen, though it is not a problem!
                             scheduledOnUpdateComputationsCounter += 1
-                            tasksManager.push(HandleResultTask(store, r))
+                            tasksManager.push(HandleResultTask(store, r), nextDependees.size, /*FIXME*/ 0)
                             // The last comparable result still needs to be stored,
                             // but obviously, no further relevant computations need to be
                             // carried.
