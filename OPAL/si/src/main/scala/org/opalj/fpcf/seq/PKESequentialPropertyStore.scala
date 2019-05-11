@@ -5,9 +5,6 @@ package seq
 
 import scala.language.existentials
 
-import java.util.ArrayDeque
-import java.util.PriorityQueue
-
 import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
@@ -15,6 +12,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.control.foreachWithIndex
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
+import org.opalj.log.OPALLogger.info
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
@@ -30,6 +28,8 @@ final class PKESequentialPropertyStore private (
         implicit
         val logContext: LogContext
 ) extends SeqPropertyStore { store ⇒
+
+    import PKESequentialPropertyStore.EntityDependers
 
     // --------------------------------------------------------------------------------------------
     //
@@ -99,7 +99,7 @@ final class PKESequentialPropertyStore private (
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
-    private[this] val dependers: Array[AnyRefMap[Entity, AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]]] = {
+    private[this] val dependers: Array[AnyRefMap[Entity, EntityDependers]] = {
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
 
@@ -107,169 +107,26 @@ final class PKESequentialPropertyStore private (
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
 
+    private[seq] def dependeesCount(epk: SomeEPK): Int = {
+        dependees(epk.pk.id).get(epk.e) match {
+            case Some(dependees) ⇒ dependees.size
+            case None            ⇒ 0
+        }
+    }
+
     // The registered triggered computations along with the set of entities for which the analysis was triggered
     private[this] var triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]] = {
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
-    private[this] final val DefaultQueueId = 0
-
-    private[seq] trait TasksManager {
-        def pushInitialTask(task: QualifiedTask): Unit
-        def push(
-            task:                  QualifiedTask,
-            dependeesCount:        Int, //  0 only for final properties
-            currentDependersCount: Int, // may change between the time the tasks is scheduled and the time it is evaluated!
-            bottomness:            Int                     = OrderedProperty.DefaultBottomness,
-            hint:                  PropertyComputationHint = DefaultPropertyComputation
-        ): Unit
-        def poll(): QualifiedTask
-        def isEmpty: Boolean
-        def size: Int
-    }
-
-    lazy val LastSubmittedTasksFirstManager = new TasksManager {
-        private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
-        private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
-
-        def pushInitialTask(task: QualifiedTask): Unit = {
-            this.initialTasks.addFirst(task)
-        }
-
-        def push(
-            task:                  QualifiedTask,
-            dependeesCount:        Int,
-            currentDependersCount: Int,
-            bottomness:            Int,
-            hint:                  PropertyComputationHint
-        ): Unit = {
-
-            this.tasks.addFirst(task)
-        }
-
-        def poll(): QualifiedTask = {
-            val t = this.initialTasks.pollFirst()
-            if (t ne null)
-                t
-            else
-                this.tasks.pollFirst()
-        }
-
-        def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
-
-        def size: Int = initialTasks.size + tasks.size
-    }
-
-    lazy val ManyLastTasksManager = new TasksManager {
-
-        private class WeightedQualifiedTask(
-                val task:   QualifiedTask,
-                val weight: Int
-        ) extends Comparable[WeightedQualifiedTask] {
-            def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
-        }
-
-        private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
-        private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
-
-        def pushInitialTask(task: QualifiedTask): Unit = {
-            this.initialTasks.addFirst(task)
-        }
-
-        def push(
-            task:                  QualifiedTask,
-            dependeesCount:        Int,
-            currentDependersCount: Int,
-            bottomness:            Int,
-            hint:                  PropertyComputationHint
-        ): Unit = {
-            // this.tasks.add(new WeightedQualifiedTask(task, currentDependersCount )) // IFDS: ~706
-            // this.tasks.add(new WeightedQualifiedTask(task, dependeesCount )) // // IFDS: ~237
-            val weight = Math.max(1, dependeesCount) * Math.max(1, currentDependersCount) // IFDS: 183607
-            this.tasks.add(new WeightedQualifiedTask(task, weight))
-        }
-
-        def poll(): QualifiedTask = {
-            val t = this.initialTasks.pollFirst()
-            if (t ne null)
-                t
-            else
-                this.tasks.poll().task
-        }
-
-        def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
-
-        def size: Int = initialTasks.size + tasks.size
-    }
-
-    lazy val ManyLastOwnPrioQueueTasksManager = new TasksManager {
-
-        private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
-
-        private[this] var minQueueId: Int = 0
-        private[this] var lastQueueId: Int = 0
-        private[this] var tasks = new Array[List[QualifiedTask]](100000) // we need some more flexibility here...
-
-        def pushInitialTask(task: QualifiedTask): Unit = {
-            this.initialTasks.addFirst(task)
-        }
-
-        def push(
-            task:                  QualifiedTask,
-            dependeesCount:        Int,
-            currentDependersCount: Int,
-            bottomness:            Int,
-            hint:                  PropertyComputationHint
-        ): Unit = {
-            val currentQueueId = Math.max(1, dependeesCount) * Math.max(1, currentDependersCount)
-            val currentQueue = this.tasks(currentQueueId)
-            lastQueueId = Math.max(lastQueueId, currentQueueId)
-            minQueueId = Math.min(minQueueId, currentQueueId)
-            this.tasks(currentQueueId) = if (currentQueue ne null) task :: currentQueue else List(task)
-        }
-
-        def poll(): QualifiedTask = {
-            val t = this.initialTasks.pollFirst()
-            if (t ne null)
-                t
-            else {
-                var currentQueueId = minQueueId
-                while (tasks(currentQueueId) == null && currentQueueId <= lastQueueId) currentQueueId += 1
-                minQueueId = currentQueueId
-
-                val currentQueue = tasks(currentQueueId)
-                val t = currentQueue.head
-                val remainingQueue = currentQueue.tail
-                tasks(currentQueueId) =
-                    if (remainingQueue.isEmpty) {
-                        if (currentQueueId == lastQueueId) {
-                            while (lastQueueId > 0 && tasks(lastQueueId) == null) lastQueueId -= 1;
-                            minQueueId = lastQueueId
-                        }
-                        null
-                    } else {
-                        remainingQueue
-                    }
-                t
-            }
-        }
-
-        def isEmpty: Boolean = {
-            this.initialTasks.isEmpty && {
-                var queueId = minQueueId
-                var isEmpty = true
-                while (queueId <= lastQueueId && isEmpty) {
-                    isEmpty = tasks(queueId) == null
-                    queueId += 1
-                }
-                isEmpty
-            }
-        }
-
-        def size: Int = initialTasks.size + tasks.iterator.take(lastQueueId + 1).map(_.size).sum
-    }
-
-    private[this] final val tasksManager = ManyLastOwnPrioQueueTasksManager
+    // EVAL FOR IFDS:
+    // LIFOTasksManager = 698923
+    // FIFOTasksManager = 426475
+    // ManyDependenciesLastTasksManager = 213322ms
+    // ArrayOfListsBasedManyDependencisLastTasksManager = 244417ms
+    // ArrayOfListsBasedManyDependenciesLastWithPriorityOnFinalPropertiesTasksManager =
+    private[this] final val tasksManager = new ManyDependeesOfDependersLastTasksManager(this)
+    info("property store", s"using $tasksManager for managing tasks")
 
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
@@ -547,7 +404,7 @@ final class PKESequentialPropertyStore private (
                             } else {
                                 new OnUpdateComputationTask(this, eps.toEPK, c)
                             }
-                        tasksManager.push(t, newDependees.size, theDependers.size, bottomness, hint)
+                        tasksManager.push(t, newDependees, dependersOfEPK, bottomness, hint)
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {
@@ -625,7 +482,7 @@ final class PKESequentialPropertyStore private (
                 } else {
                     OnUpdateComputationTask(this, processedDependee.toEPK, c)
                 }
-                tasksManager.push(t, processedDependees.size, /*FIXME: */ 0, OrderedProperty.DefaultBottomness, DefaultPropertyComputation)
+                tasksManager.push(t, processedDependees, /*FIXME: */ Map.empty, OrderedProperty.DefaultBottomness, DefaultPropertyComputation)
                 false
             } else {
                 true // <= no update
@@ -671,7 +528,7 @@ final class PKESequentialPropertyStore private (
                         case r ⇒
                             // Actually this shouldn't happen, though it is not a problem!
                             scheduledOnUpdateComputationsCounter += 1
-                            tasksManager.push(HandleResultTask(store, r), nextDependees.size, /*FIXME*/ 0)
+                            tasksManager.push(HandleResultTask(store, r), nextDependees, /*FIXME*/ Map.empty)
                             // The last comparable result still needs to be stored,
                             // but obviously, no further relevant computations need to be
                             // carried.
@@ -926,6 +783,10 @@ final class PKESequentialPropertyStore private (
  * @author Michael Eichberg
  */
 object PKESequentialPropertyStore extends PropertyStoreFactory {
+
+    final type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
+
+    final type EntityDependersView = scala.collection.Map[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*

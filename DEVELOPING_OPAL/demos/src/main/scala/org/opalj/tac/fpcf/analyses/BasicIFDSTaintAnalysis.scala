@@ -211,7 +211,7 @@ class BasicIFDSTaintAnalysis private (
             }) {
                 println(s"Found flow: $stmt")
             }
-        if (true||(callee.descriptor.returnType eq ObjectType.Class) ||
+        if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
             (callee.descriptor.returnType eq ObjectType.Object) ||
             (callee.descriptor.returnType eq ObjectType.String)) {
             in.collect {
@@ -392,11 +392,16 @@ object BasicIFDSTaintAnalysisRunner {
     def main(args: Array[String]): Unit = {
         if (args.contains("--help")) {
             println("Potential parameters:")
-            println(" -seq to use the SequentialPropertyStore")
-            println(" -l2 to use the l2 domain instead of the default l1 domain")
-            println(" -delay for a three seconds delay before the taint flow analysis is started")
+            println(" -seq (to use the SequentialPropertyStore)")
+            println(" -l2 (to use the l2 domain instead of the default l1 domain)")
+            println(" -delay (for a three seconds delay before the taint flow analysis is started)")
+            println(" -debug (for a three seconds delay before the taint flow analysis is started)")
             println(" the second to last parameter is the call graph file to be used")
             println(" the last parameter is the project path")
+        }
+
+        if (args.contains("-debug")) {
+            PropertyStore.updateDebug(true)
         }
 
         val p = Project(new File(args(args.length - 1))) //bytecode.RTJar)
@@ -443,7 +448,10 @@ object BasicIFDSTaintAnalysisRunner {
             } { t ⇒ println(s"CG took ${t.toSeconds}") }
             val manager = project.get(FPCFAnalysesManagerKey)
             ps = project.get(PropertyStoreKey)
-            analyses = time { manager.runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis) }(t ⇒ times :+= t.toMilliseconds.timeSpan)._2
+            println("Start: "+new java.util.Date)
+            analyses = time {
+                manager.runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis)
+            }(t ⇒ times :+= t.toMilliseconds.timeSpan)._2
         }
 
         val entryPoints = analyses.collect { case (_, a: BasicIFDSTaintAnalysis) ⇒ a.entryPoints }.head
