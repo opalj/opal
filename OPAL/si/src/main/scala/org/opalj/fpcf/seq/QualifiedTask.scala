@@ -8,7 +8,15 @@ package seq
  *
  * @author Michael Eichberg
  */
-private[seq] sealed abstract class QualifiedTask extends (() ⇒ Unit)
+private[seq] sealed abstract class QualifiedTask extends (() ⇒ Unit) {
+
+    /**
+     * Returns `true` if and only if this task was definitively triggered 
+     * by a final property.
+     */
+    def istriggeredByFinalProperty : Boolean
+
+}
 
 private[seq] final case class PropertyComputationTask[E <: Entity](
         ps: PropertyStore,
@@ -18,6 +26,7 @@ private[seq] final case class PropertyComputationTask[E <: Entity](
 
     override def apply(): Unit = ps.handleResult(pc(e))
 
+    override def istriggeredByFinalProperty : Boolean = false
 }
 
 private[seq] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
@@ -28,6 +37,7 @@ private[seq] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Pro
 
     override def apply(): Unit = ps.handleResult(c(r))
 
+    override def istriggeredByFinalProperty : Boolean = true
 }
 
 private[seq] final case class OnUpdateComputationTask[E <: Entity, P <: Property](
@@ -41,6 +51,8 @@ private[seq] final case class OnUpdateComputationTask[E <: Entity, P <: Property
         ps.handleResult(c(ps(epk).asEPS))
     }
 
+    override def istriggeredByFinalProperty : Boolean = false
+
 }
 
 private[seq] final case class HandleResultTask[E <: Entity, P <: Property](
@@ -53,4 +65,10 @@ private[seq] final case class HandleResultTask[E <: Entity, P <: Property](
         ps.handleResult(r)
     }
 
+    override def triggeredByFinalProperty : Boolean = {
+        r match  {
+            case NoResult | _: FinalPropertyComputationResult => true
+            case _ => false
+        }
+    }
 }
