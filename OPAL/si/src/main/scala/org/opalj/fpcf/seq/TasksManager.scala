@@ -97,7 +97,6 @@ private[seq] object FIFOTasksManager extends TasksManager {
     def size: Int = this.initialTasks.size + this.tasks.size
 }
 
-
 private class WeightedQualifiedTask(
         val task:   QualifiedTask,
         val weight: Int
