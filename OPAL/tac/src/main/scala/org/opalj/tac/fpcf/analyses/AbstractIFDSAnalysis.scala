@@ -650,6 +650,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     * The call site is added to `pendingIfdsCallSites`, so that it will be re-evaluated if new output facts become known for the input fact.
                     */
                     if ((calledMethod eq state.method) && fact == state.source._2) {
+                        // FIXME Get rid of "getOrElse(...,Set.empty)" due to its potentially very BAD performance
                         val newDependee =
                             state.pendingIfdsCallSites.getOrElse(state.source, Set.empty) + ((basicBlock, call.index))
                         state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(state.source, newDependee)
@@ -671,6 +672,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                         }
                         val exitFacts: Map[Statement, Set[IFDSFact]] = callFlows match {
                             case ep: FinalEP[_, IFDSProperty[IFDSFact]] ⇒
+                            // FIXME Get rid of "getOrElse(...,Set.empty)" due to its potentially very BAD performance
                                 val newDependee =
                                     state.pendingIfdsCallSites.getOrElse(e, Set.empty) - ((basicBlock, call.index))
                                 state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
@@ -707,6 +709,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     exitStatement ← allNewExitFacts.keys
                     if exitStatement.stmt.astID == Return.ASTID || exitStatement.stmt.astID == ReturnValue.ASTID
                 } {
+                    // FIXME Get rid of "getOrElse(...,Set.empty)" due to its potentially very BAD performance
                     summaryEdges += successor → (summaryEdges.getOrElse(successor, Set.empty[IFDSFact]) ++
                         returnFlow(call, callee, exitStatement, successor, allNewExitFacts.getOrElse(exitStatement, Set.empty)))
                 }
@@ -716,6 +719,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     exitStatement ← allNewExitFacts.keys
                     if exitStatement.stmt.astID != Return.ASTID && exitStatement.stmt.astID != ReturnValue.ASTID
                 } {
+                    // FIXME Get rid of "getOrElse(...,Set.empty)" due to its potentially very BAD performance
                     summaryEdges += successor → (summaryEdges.getOrElse(successor, Set.empty[IFDSFact]) ++
                         returnFlow(call, callee, exitStatement, successor, allNewExitFacts.getOrElse(exitStatement, Set.empty)))
                 }
