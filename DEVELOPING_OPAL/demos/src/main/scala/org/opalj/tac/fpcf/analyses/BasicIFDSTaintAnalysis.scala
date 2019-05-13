@@ -21,7 +21,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
@@ -36,7 +35,6 @@ import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Var
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.cg.CallGraphDeserializerScheduler
 
 trait Fact extends AbstractIFDSFact
 case class Variable(index: Int) extends Fact
