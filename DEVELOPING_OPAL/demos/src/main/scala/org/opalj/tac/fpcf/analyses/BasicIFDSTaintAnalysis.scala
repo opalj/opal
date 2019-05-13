@@ -34,7 +34,7 @@ import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Var
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.cg.CallGraphDeserializerScheduler
 
 trait Fact extends AbstractIFDSFact
 case class Variable(index: Int) extends Fact
@@ -443,12 +443,8 @@ object BasicIFDSTaintAnalysisRunner {
         for (_ ← 1 to nrRuns) {
             val project = p.recreate(k ⇒ k == DeclaredMethodsKey.uniqueId)
             PerformanceEvaluation.time {
-
-                //val manager = project.get(FPCFAnalysesManagerKey)
-                //manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
-
-                project.get(RTACallGraphKey)
-
+                val manager = project.get(FPCFAnalysesManagerKey)
+                manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
             } { t ⇒ println(s"CG took ${t.toSeconds}") }
             val manager = project.get(FPCFAnalysesManagerKey)
             ps = project.get(PropertyStoreKey)
