@@ -8,14 +8,12 @@ import java.util.PriorityQueue
 
 private[seq] trait TasksManager {
 
-    import PKESequentialPropertyStore.EntityDependersView
-
     def pushInitialTask(task: QualifiedTask): Unit
 
     def push(
         task:             QualifiedTask,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: EntityDependersView, // may change between the time the task is scheduled and the time it is evaluated!
+        currentDependers: Traversable[SomeEPK], // may change between the time the task is scheduled and the time it is evaluated!
         bottomness:       Int                       = OrderedProperty.DefaultBottomness,
         hint:             PropertyComputationHint   = DefaultPropertyComputation
     ): Unit
@@ -30,7 +28,7 @@ private[seq] trait TasksManager {
 /**
  * Processes the task that was added last first.
  */
-private[seq] object LIFOTasksManager extends TasksManager {
+private[seq] class LIFOTasksManager extends TasksManager {
 
     private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
@@ -42,7 +40,7 @@ private[seq] object LIFOTasksManager extends TasksManager {
     def push(
         task:             QualifiedTask,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: PKESequentialPropertyStore.EntityDependersView,
+        currentDependers: Traversable[SomeEPK],
         bottomness:       Int,
         hint:             PropertyComputationHint
     ): Unit = {
@@ -65,7 +63,7 @@ private[seq] object LIFOTasksManager extends TasksManager {
 /**
  * Processes the tasks that are schedulued for the longest time first.
  */
-private[seq] object FIFOTasksManager extends TasksManager {
+private[seq] class FIFOTasksManager extends TasksManager {
 
     private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] var tasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
@@ -77,7 +75,7 @@ private[seq] object FIFOTasksManager extends TasksManager {
     def push(
         task:             QualifiedTask,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: PKESequentialPropertyStore.EntityDependersView,
+        currentDependers: Traversable[SomeEPK],
         bottomness:       Int,
         hint:             PropertyComputationHint
     ): Unit = {
@@ -107,7 +105,7 @@ private class WeightedQualifiedTask(
 /**
  * Schedules tasks that have many depender and dependee relations last.
  */
-private[seq] object ManyDependenciesLastTasksManager extends TasksManager {
+private[seq] class ManyDependenciesLastTasksManager extends TasksManager {
 
     private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
@@ -119,7 +117,7 @@ private[seq] object ManyDependenciesLastTasksManager extends TasksManager {
     def push(
         task:             QualifiedTask,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: PKESequentialPropertyStore.EntityDependersView,
+        currentDependers: Traversable[SomeEPK],
         bottomness:       Int,
         hint:             PropertyComputationHint
     ): Unit = {
@@ -140,9 +138,7 @@ private[seq] object ManyDependenciesLastTasksManager extends TasksManager {
     def size: Int = this.initialTasks.size + this.tasks.size
 }
 
-private[seq] class ManyDependeesOfDependersLastTasksManager(
-        store: PKESequentialPropertyStore
-) extends TasksManager {
+private[seq] class ManyDependersLastTasksManager extends TasksManager {
 
     private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
@@ -154,11 +150,52 @@ private[seq] class ManyDependeesOfDependersLastTasksManager(
     def push(
         task:             QualifiedTask,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: PKESequentialPropertyStore.EntityDependersView,
+        currentDependers: Traversable[SomeEPK],
         bottomness:       Int,
         hint:             PropertyComputationHint
     ): Unit = {
-        val weight = currentDependers.keys.map(epk ⇒ store.dependeesCount(epk)).sum
+        this.tasks.add(new WeightedQualifiedTask(task, currentDependers.size))
+    }
+
+    def poll(): QualifiedTask = {
+        val t = this.initialTasks.pollFirst()
+        if (t ne null)
+            t
+        else
+            this.tasks.poll().task
+    }
+
+    def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
+
+    def size: Int = this.initialTasks.size + this.tasks.size
+}
+
+private[seq] class ManyDependeesOfDependersLastTasksManager extends TasksManager {
+
+    private[this] var ps: PKESequentialPropertyStore = null
+
+    private[seq] def setSeqPropertyStore(ps: PKESequentialPropertyStore): Unit = {
+        if (this.ps != null)
+            throw new IllegalStateException(s"property store is already set: ${this.ps}")
+
+        this.ps = ps
+    }
+
+    private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
+
+    def pushInitialTask(task: QualifiedTask): Unit = {
+        this.initialTasks.addFirst(task)
+    }
+
+    def push(
+        task:             QualifiedTask,
+        dependees:        Traversable[SomeEOptionP],
+        currentDependers: Traversable[SomeEPK],
+        bottomness:       Int,
+        hint:             PropertyComputationHint
+    ): Unit = {
+        val weight = currentDependers.toIterator.map(epk ⇒ ps.dependeesCount(epk)).sum
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 

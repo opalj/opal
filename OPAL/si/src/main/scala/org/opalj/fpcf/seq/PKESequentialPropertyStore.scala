@@ -9,6 +9,8 @@ import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
 import scala.collection.mutable.ArrayBuffer
 
+import com.typesafe.config.Config
+
 import org.opalj.control.foreachWithIndex
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
@@ -23,11 +25,14 @@ import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
  * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore private (
-        val ctx: Map[Class[_], AnyRef]
+        final val ctx:          Map[Class[_], AnyRef],
+        final val tasksManager: TasksManager
 )(
         implicit
         val logContext: LogContext
 ) extends SeqPropertyStore { store ⇒
+
+    info("property store", s"using $tasksManager for managing tasks")
 
     import PKESequentialPropertyStore.EntityDependers
 
@@ -44,20 +49,6 @@ final class PKESequentialPropertyStore private (
     // STATISTICS
     //
     // --------------------------------------------------------------------------------------------
-
-    /**
-     * Controls in which order updates are processed/scheduled.
-     *
-     * May be changed (concurrently) at any time.
-     */
-    @volatile var dependeeUpdateHandling: DependeeUpdateHandling = new DependeeUpdateHandling
-
-    /**
-     * Controls in which order dependers are processed/scheduled.
-     *
-     * May be changed (concurrently) at any time.
-     */
-    @volatile var delayHandlingOfDependerNotification: Boolean = true
 
     private[this] var scheduledTasksCounter: Int = 0
     override def scheduledTasksCount: Int = scheduledTasksCounter
@@ -118,15 +109,6 @@ final class PKESequentialPropertyStore private (
     private[this] var triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]] = {
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
-
-    // EVAL FOR IFDS:
-    // LIFOTasksManager = 698923
-    // FIFOTasksManager = 426475
-    // ManyDependenciesLastTasksManager = 213322ms
-    // ArrayOfListsBasedManyDependencisLastTasksManager = 244417ms
-    // ArrayOfListsBasedManyDependenciesLastWithPriorityOnFinalPropertiesTasksManager =
-    private[this] final val tasksManager = new ManyDependeesOfDependersLastTasksManager(this)
-    info("property store", s"using $tasksManager for managing tasks")
 
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
@@ -404,7 +386,7 @@ final class PKESequentialPropertyStore private (
                             } else {
                                 new OnUpdateComputationTask(this, eps.toEPK, c)
                             }
-                        tasksManager.push(t, newDependees, dependersOfEPK, bottomness, hint)
+                        tasksManager.push(t, newDependees, dependersOfEPK.keys, bottomness, hint)
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {
@@ -460,6 +442,7 @@ final class PKESequentialPropertyStore private (
 
     /* Returns `true` if no dependee was updated in the meantime. */
     private[this] def processDependeesOfInterimPartialResult(
+        partialResults:     Traversable[SomePartialResult],
         processedDependees: Traversable[SomeEOptionP],
         c:                  OnUpdateContinuation
     ): Boolean = {
@@ -482,7 +465,7 @@ final class PKESequentialPropertyStore private (
                 } else {
                     OnUpdateComputationTask(this, processedDependee.toEPK, c)
                 }
-                tasksManager.push(t, processedDependees, /*FIXME: */ Map.empty, OrderedProperty.DefaultBottomness, DefaultPropertyComputation)
+                tasksManager.push(t, processedDependees, partialResults.map(pr ⇒ pr.epk))
                 false
             } else {
                 true // <= no update
@@ -528,7 +511,7 @@ final class PKESequentialPropertyStore private (
                         case r ⇒
                             // Actually this shouldn't happen, though it is not a problem!
                             scheduledOnUpdateComputationsCounter += 1
-                            tasksManager.push(HandleResultTask(store, r), nextDependees, /*FIXME*/ Map.empty)
+                            tasksManager.push(HandleResultTask(store, r), nextDependees, /*FIXME*/ Nil)
                             // The last comparable result still needs to be stored,
                             // but obviously, no further relevant computations need to be
                             // carried.
@@ -581,7 +564,7 @@ final class PKESequentialPropertyStore private (
                 val InterimPartialResult(prs, processedDependees, c) = r
                 // 1. let's check if a new dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
-                val noUpdates = processDependeesOfInterimPartialResult(processedDependees, c)
+                val noUpdates = processDependeesOfInterimPartialResult(prs, processedDependees, c)
 
                 val sourceE = new Object() // an arbitrary, but unique object
                 if (noUpdates) {
@@ -778,7 +761,11 @@ final class PKESequentialPropertyStore private (
 }
 
 /**
- * Factory for creating `EPKSequentialPropertyStore`s.
+ * Factory for creating `PKESequentialPropertyStore`s.
+ *
+ * The task manager that will be used to instantiate the project will be extracted from the
+ * `PropertyStoreContext` if the context contains a `Config` object. The fallback is the
+ * `ManyDependeesOfDependersLastTasksManager`.
  *
  * @author Michael Eichberg
  */
@@ -786,7 +773,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
 
     final type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
 
-    final type EntityDependersView = scala.collection.Map[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
+    final val TasksManagerKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.TasksManager"
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
@@ -795,6 +782,50 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         logContext: LogContext
     ): PKESequentialPropertyStore = {
         val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
-        new PKESequentialPropertyStore(contextMap)
+        val taskManagerId =
+            contextMap.get(classOf[Config]) match {
+                case Some(config: Config) ⇒ config.getString(TasksManagerKey)
+                case _                    ⇒ "ManyDependeesOfDependersLast" // <= default
+            }
+        apply(taskManagerId)(contextMap)
+    }
+
+    // EVAL FOR IFDS:
+    // tasksManager = LIFOTasksManager // for IFDS = 698923
+    // tasksManager = FIFOTasksManager // for IFDS = 426475 // best strategy for computing the return- and field-value information!
+    // tasksManager = ManyDependenciesLastTasksManager // for IFDS = 213322ms
+    // tasksManager =  ManyDependeesOfDependersLastTasksManager // for IFDS = 163715ms
+    def apply(
+        taskManagerId: String
+    )(
+        context: Map[Class[_], AnyRef] = Map.empty
+    )(
+        implicit
+        logContext: LogContext
+    ): PKESequentialPropertyStore = {
+        taskManagerId match {
+
+            case "FIFO" ⇒
+                new PKESequentialPropertyStore(context, new FIFOTasksManager)
+
+            case "LIFO" ⇒
+                new PKESequentialPropertyStore(context, new LIFOTasksManager)
+
+            case "ManyDependenciesLast" ⇒
+                new PKESequentialPropertyStore(context, new ManyDependenciesLastTasksManager)
+
+            case "ManyDependersLast" ⇒
+                new PKESequentialPropertyStore(context, new ManyDependersLastTasksManager)
+
+            case "ManyDependeesOfDependersLast" ⇒
+                val taskManager = new ManyDependeesOfDependersLastTasksManager
+                val ps = new PKESequentialPropertyStore(context, taskManager)
+                taskManager.setSeqPropertyStore(ps)
+                ps
+
+            case _ ⇒
+                throw new IllegalArgumentException(s"task manager $taskManagerId does not exist")
+        }
+
     }
 }
