@@ -20,7 +20,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.ai.domain.l1
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
@@ -426,8 +426,8 @@ object BasicIFDSTaintAnalysisRunner {
             }
         } else {
             p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                case None               ⇒ Set(classOf[PrimitiveTACAIDomain])
+                case Some(requirements) ⇒ requirements + classOf[PrimitiveTACAIDomain]
             }
         }
 
