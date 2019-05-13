@@ -672,7 +672,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                         }
                         val exitFacts: Map[Statement, Set[IFDSFact]] = callFlows match {
                             case ep: FinalEP[_, IFDSProperty[IFDSFact]] ⇒
-                            // FIXME Get rid of "getOrElse(...,Set.empty)" due to its potentially very BAD performance
+                                // FIXME Get rid of "getOrElse(...,Set.empty)" due to its potentially very BAD performance
                                 val newDependee =
                                     state.pendingIfdsCallSites.getOrElse(e, Set.empty) - ((basicBlock, call.index))
                                 state.pendingIfdsCallSites = state.pendingIfdsCallSites.updated(e, newDependee)
