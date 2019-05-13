@@ -830,6 +830,12 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
                 taskManager.setSeqPropertyStore(ps)
                 ps
 
+            case "ManyDependeesAndDependersOfDependersLast" ⇒
+                val taskManager = new ManyDependeesAndDependersOfDependersLastTasksManager
+                val ps = new PKESequentialPropertyStore(context, taskManager)
+                taskManager.setSeqPropertyStore(ps)
+                ps
+
             case _ ⇒
                 throw new IllegalArgumentException(s"task manager $taskManagerId does not exist")
         }

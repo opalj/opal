@@ -58,6 +58,8 @@ private[seq] class LIFOTasksManager extends TasksManager {
     def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
 
     def size: Int = this.initialTasks.size + this.tasks.size
+
+    override def toString: String = "LIFOTasksManager"
 }
 
 /**
@@ -93,6 +95,8 @@ private[seq] class FIFOTasksManager extends TasksManager {
     def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
 
     def size: Int = this.initialTasks.size + this.tasks.size
+
+    override def toString: String = "FIFOTasksManager"
 }
 
 private class WeightedQualifiedTask(
@@ -136,6 +140,8 @@ private[seq] class ManyDependenciesLastTasksManager extends TasksManager {
     def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
 
     def size: Int = this.initialTasks.size + this.tasks.size
+
+    override def toString: String = "ManyDependenciesLastTasksManager"
 }
 
 private[seq] class ManyDependersLastTasksManager extends TasksManager {
@@ -168,6 +174,8 @@ private[seq] class ManyDependersLastTasksManager extends TasksManager {
     def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
 
     def size: Int = this.initialTasks.size + this.tasks.size
+
+    override def toString: String = "ManyDependersLastTasksManager"
 }
 
 private[seq] class ManyDependeesOfDependersLastTasksManager extends TasksManager {
@@ -195,7 +203,8 @@ private[seq] class ManyDependeesOfDependersLastTasksManager extends TasksManager
         bottomness:       Int,
         hint:             PropertyComputationHint
     ): Unit = {
-        val weight = currentDependers.toIterator.map(epk ⇒ ps.dependeesCount(epk)).sum
+        var weight = currentDependers.toIterator.map(epk ⇒ ps.dependeesCount(epk)).sum
+        if (hint == CheapPropertyComputation) weight -= 1
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
@@ -210,4 +219,52 @@ private[seq] class ManyDependeesOfDependersLastTasksManager extends TasksManager
     def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
 
     def size: Int = this.initialTasks.size + this.tasks.size
+
+    override def toString: String = "ManyDependeesOfDependersLastTasksManager"
+}
+
+private[seq] class ManyDependeesAndDependersOfDependersLastTasksManager extends TasksManager {
+
+    private[this] var ps: PKESequentialPropertyStore = null
+
+    private[seq] def setSeqPropertyStore(ps: PKESequentialPropertyStore): Unit = {
+        if (this.ps != null)
+            throw new IllegalStateException(s"property store is already set: ${this.ps}")
+
+        this.ps = ps
+    }
+
+    private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
+
+    def pushInitialTask(task: QualifiedTask): Unit = {
+        this.initialTasks.addFirst(task)
+    }
+
+    def push(
+        task:             QualifiedTask,
+        dependees:        Traversable[SomeEOptionP],
+        currentDependers: Traversable[SomeEPK],
+        bottomness:       Int,
+        hint:             PropertyComputationHint
+    ): Unit = {
+        val weight =
+            currentDependers.toIterator.map(epk ⇒
+                ps.dependeesCount(epk) + ps.dependersCount(epk)).sum
+        this.tasks.add(new WeightedQualifiedTask(task, weight))
+    }
+
+    def poll(): QualifiedTask = {
+        val t = this.initialTasks.pollFirst()
+        if (t ne null)
+            t
+        else
+            this.tasks.poll().task
+    }
+
+    def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
+
+    def size: Int = this.initialTasks.size + this.tasks.size
+
+    override def toString: String = "ManyDependeesAndDependersOfDependersLastTasksManager"
 }
