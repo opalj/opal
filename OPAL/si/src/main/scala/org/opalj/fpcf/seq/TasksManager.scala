@@ -195,7 +195,7 @@ private[seq] class ManyDependeesOfDependersLastTasksManager extends TasksManager
         bottomness:       Int,
         hint:             PropertyComputationHint
     ): Unit = {
-        val weight = 0//currentDependers.toIterator.map(epk ⇒ ps.dependeesCount(epk)).sum
+        val weight = currentDependers.toIterator.map(epk ⇒ ps.dependeesCount(epk)).sum
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
