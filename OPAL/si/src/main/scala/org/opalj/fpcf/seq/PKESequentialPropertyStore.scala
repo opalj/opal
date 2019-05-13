@@ -105,6 +105,13 @@ final class PKESequentialPropertyStore private (
         }
     }
 
+    private[seq] def dependersCount(epk: SomeEPK): Int = {
+        dependers(epk.pk.id).get(epk.e) match {
+            case Some(dependees) ⇒ dependees.size
+            case None            ⇒ 0
+        }
+    }
+
     // The registered triggered computations along with the set of entities for which the analysis was triggered
     private[this] var triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]] = {
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
