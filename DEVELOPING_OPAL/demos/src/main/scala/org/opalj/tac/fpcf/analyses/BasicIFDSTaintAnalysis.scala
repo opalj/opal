@@ -404,7 +404,7 @@ object BasicIFDSTaintAnalysisRunner {
             PropertyStore.updateDebug(true)
         }
 
-        val p = Project(Array(new File(args(args.length - 1)), new File(args(args.length - 3))), Array.empty[File]) //bytecode.RTJar)
+        val p = Project(new File(args(args.length - 1))) //bytecode.RTJar)
         /*p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
