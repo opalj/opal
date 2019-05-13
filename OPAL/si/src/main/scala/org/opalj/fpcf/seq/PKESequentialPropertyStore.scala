@@ -620,6 +620,14 @@ final class PKESequentialPropertyStore private (
 
     override def isIdle: Boolean = tasksManager.isEmpty
 
+    protected[this] def processTasks(): Unit = {
+        while (!tasksManager.isEmpty) {
+            val task = tasksManager.poll()
+            if (doTerminate) throw new InterruptedException()
+            task.apply()
+        }
+    }
+
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         require(subPhaseId == 0, "unpaired waitOnPhaseCompletion call")
 
@@ -640,11 +648,7 @@ final class PKESequentialPropertyStore private (
         do {
             continueComputation = false
 
-            while (!tasksManager.isEmpty) {
-                val task = tasksManager.poll()
-                if (doTerminate) throw new InterruptedException()
-                task.apply()
-            }
+            processTasks()
 
             quiescenceCounter += 1
             if (debug) {
