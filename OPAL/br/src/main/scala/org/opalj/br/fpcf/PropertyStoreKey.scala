@@ -3,6 +3,8 @@ package org.opalj
 package br
 package fpcf
 
+import com.typesafe.config.Config
+
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
@@ -46,14 +48,15 @@ object PropertyStoreKey
         implicit val logContext: LogContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
-            PropertyStoreContext(classOf[SomeProject], project)
+            PropertyStoreContext(classOf[SomeProject], project),
+            PropertyStoreContext(classOf[Config], project.config)
         )
         project.getProjectInformationKeyInitializationData(this) match {
             case Some(psFactory) ⇒
                 OPALLogger.info(
                     "analysis configuration",
                     "the PropertyStore is created using project information key initialization data"
-                )(project.logContext)
+                )
                 psFactory(context)
             case None ⇒
                 val ps = PKESequentialPropertyStore(context: _*)
