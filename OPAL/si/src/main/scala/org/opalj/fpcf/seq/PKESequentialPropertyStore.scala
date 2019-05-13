@@ -801,11 +801,6 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         apply(taskManagerId)(contextMap)
     }
 
-    // EVAL FOR IFDS:
-    // tasksManager = LIFOTasksManager // for IFDS = 698923
-    // tasksManager = FIFOTasksManager // for IFDS = 426475 // best strategy for computing the return- and field-value information!
-    // tasksManager = ManyDependenciesLastTasksManager // for IFDS = 213322ms
-    // tasksManager =  ManyDependeesOfDependersLastTasksManager // for IFDS = 163715ms
     def apply(
         taskManagerId: String
     )(
