@@ -20,6 +20,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -34,6 +35,7 @@ import org.opalj.tac.PutField
 import org.opalj.tac.PutStatic
 import org.opalj.tac.ReturnValue
 import org.opalj.tac.Var
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.CallGraphDeserializerScheduler
 
 trait Fact extends AbstractIFDSFact
@@ -426,8 +428,8 @@ object BasicIFDSTaintAnalysisRunner {
             }
         } else {
             p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                case None               ⇒ Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                case Some(requirements) ⇒ requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                case None               ⇒ Set(classOf[PrimitiveTACAIDomain])
+                case Some(requirements) ⇒ requirements + classOf[PrimitiveTACAIDomain]
             }
         }
 
@@ -443,8 +445,12 @@ object BasicIFDSTaintAnalysisRunner {
         for (_ ← 1 to nrRuns) {
             val project = p.recreate(k ⇒ k == DeclaredMethodsKey.uniqueId)
             PerformanceEvaluation.time {
-                val manager = project.get(FPCFAnalysesManagerKey)
-                manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
+
+                //val manager = project.get(FPCFAnalysesManagerKey)
+                //manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
+
+                project.get(RTACallGraphKey)
+
             } { t ⇒ println(s"CG took ${t.toSeconds}") }
             val manager = project.get(FPCFAnalysesManagerKey)
             ps = project.get(PropertyStoreKey)
