@@ -105,6 +105,10 @@ final class PKESequentialPropertyStore private (
         }
     }
 
+    private[seq] def dependees(epk: SomeEPK): Traversable[SomeEOptionP] = {
+        dependees(epk.pk.id)(epk.e)
+    }
+
     private[seq] def dependersCount(epk: SomeEPK): Int = {
         dependers(epk.pk.id).get(epk.e) match {
             case Some(dependees) ⇒ dependees.size
@@ -344,7 +348,7 @@ final class PKESequentialPropertyStore private (
     private[this] def update(
         eps: SomeEPS,
         // RECALL, IF THE EPS IS THE RESULT OF A PARTIAL RESULT UPDATE COMPUTATION, THEN
-        // NEWDEPENDEES WILL ALWAYS BE EMPTY!
+        // NEW DEPENDEES WILL ALWAYS BE EMPTY!
         newDependees: Traversable[SomeEOptionP]
     ): Unit = {
         val pkId = eps.pk.id
@@ -521,7 +525,7 @@ final class PKESequentialPropertyStore private (
                             tasksManager.push(HandleResultTask(store, r), nextDependees, /*FIXME*/ Nil)
                             // The last comparable result still needs to be stored,
                             // but obviously, no further relevant computations need to be
-                            // carried.
+                            // carried out.
                             nextDependees = Nil
                             nextC = null
                     }
