@@ -411,6 +411,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
         instantiatedTypesUB: UIDSet[ObjectType],
         calleesAndCallers:   DirectCalls
     )(implicit state: RTAState): Unit = {
+        // todo: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
         val callerType = caller.definedMethod.classFile.thisType
 
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
