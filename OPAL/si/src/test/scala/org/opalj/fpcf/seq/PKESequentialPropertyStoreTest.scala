@@ -2,116 +2,63 @@
 package org.opalj.fpcf
 package seq
 
-class TrueTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class LIFOTaskskManagePKESequentialPropertyStoreTest
+    extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = DependeeUpdateHandling(
-            delayHandlingOfFinalDependeeUpdates = true,
-            delayHandlingOfNonFinalDependeeUpdates = true
-        )
-        s.delayHandlingOfDependerNotification = true
+        val s = PKESequentialPropertyStore("LIFO")()
         s.suppressError = true
         s
     }
 
 }
 
-class FalseTrueTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class FIFOTaskskManagePKESequentialPropertyStoreTest
+    extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = DependeeUpdateHandling(
-            delayHandlingOfFinalDependeeUpdates = false,
-            delayHandlingOfNonFinalDependeeUpdates = true
-        )
-        s.delayHandlingOfDependerNotification = true
+        val s = PKESequentialPropertyStore("FIFO")()
         s.suppressError = true
         s
     }
 }
 
-class TrueFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class ManyDependenciesLastTaskskManagePKESequentialPropertyStoreTest
+    extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = DependeeUpdateHandling(
-            delayHandlingOfFinalDependeeUpdates = true,
-            delayHandlingOfNonFinalDependeeUpdates = false
-        )
-        s.delayHandlingOfDependerNotification = true
+        val s = PKESequentialPropertyStore("ManyDependenciesLast")()
         s.suppressError = true
         s
     }
 }
 
-class TrueTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class ManyDependersLastTaskskManagePKESequentialPropertyStoreTest
+    extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = DependeeUpdateHandling(
-            delayHandlingOfFinalDependeeUpdates = true,
-            delayHandlingOfNonFinalDependeeUpdates = true
-        )
-        s.delayHandlingOfDependerNotification = false
+        val s = PKESequentialPropertyStore("ManyDependersLast")()
         s.suppressError = true
         s
     }
 }
 
-class FalseFalseTruePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class ManyDependeesOfDependersLastTaskskManagePKESequentialPropertyStoreTest
+    extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = DependeeUpdateHandling(
-            delayHandlingOfFinalDependeeUpdates = false,
-            delayHandlingOfNonFinalDependeeUpdates = false
-        )
-        s.delayHandlingOfDependerNotification = true
+        val s = PKESequentialPropertyStore("ManyDependeesOfDependersLast")()
         s.suppressError = true
         s
     }
 }
 
-class FalseTrueFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
+class ManyDependeesAndDependersOfDependersLastTaskskManagePKESequentialPropertyStoreTest
+    extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = DependeeUpdateHandling(
-            delayHandlingOfFinalDependeeUpdates = false,
-            delayHandlingOfNonFinalDependeeUpdates = true
-        )
-        s.delayHandlingOfDependerNotification = false
+        val s = PKESequentialPropertyStore("ManyDependeesAndDependersOfDependersLast")()
         s.suppressError = true
         s
     }
 }
-
-class TrueFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
-
-    def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = DependeeUpdateHandling(
-            delayHandlingOfFinalDependeeUpdates = true,
-            delayHandlingOfNonFinalDependeeUpdates = false
-        )
-        s.delayHandlingOfDependerNotification = false
-        s.suppressError = true
-        s
-    }
-}
-
-class FalseFalseFalsePKESequentialPropertyStoreTest extends PropertyStoreTestWithDebugging {
-
-    def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore()
-        s.dependeeUpdateHandling = DependeeUpdateHandling(
-            delayHandlingOfFinalDependeeUpdates = false,
-            delayHandlingOfNonFinalDependeeUpdates = false
-        )
-        s.delayHandlingOfDependerNotification = false
-        s.suppressError = true
-        s
-    }
-}
-

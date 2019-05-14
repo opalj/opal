@@ -13,7 +13,7 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.Field
-import org.opalj.br.Method
+import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
@@ -106,8 +106,8 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
                 effectivelyFinalFields.map(f ⇒ f._2+" >> "+f._1.toJava)
 
             val pureEntities: Iterator[EPS[Entity, Purity]] = propertyStore.entities(Purity.key)
-            val pureMethods: Iterator[(Method, Property)] =
-                pureEntities.map(eps ⇒ (eps.e.asInstanceOf[Method], eps.ub))
+            val pureMethods: Iterator[(DefinedMethod, Property)] =
+                pureEntities.map(eps ⇒ (eps.e.asInstanceOf[DefinedMethod], eps.ub))
             val pureMethodsAsStrings = pureMethods.map(m ⇒ m._2+" >> "+m._1.toJava)
 
             val fieldInfo =
