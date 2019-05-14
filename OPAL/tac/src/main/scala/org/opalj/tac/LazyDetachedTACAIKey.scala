@@ -41,12 +41,12 @@ object LazyDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse
      */
     override protected def compute(
         project: SomeProject
-    ): Method ⇒ TACode[TACMethodParameter, DUVar[ValueInformation]] = {
+    ): Method ⇒ AITACode[TACMethodParameter, ValueInformation] = {
         val domainFactory = project.
             getProjectInformationKeyInitializationData(this).
             getOrElse((m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(project, m))
 
-        val taCodes = TrieMap.empty[Method, TACode[TACMethodParameter, DUVar[ValueInformation]]]
+        val taCodes = TrieMap.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
         def computeAndCacheTAC(m: Method) = {
             val domain = domainFactory(m)
@@ -54,7 +54,7 @@ object LazyDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse
             val code = TACAI(project, m, aiResult)
             // well... the following cast safe is safe, because the underlying
             // data-structure is actually, conceptually immutable
-            val taCode = code.asInstanceOf[TACode[TACMethodParameter, DUVar[ValueInformation]]]
+            val taCode = code.asInstanceOf[AITACode[TACMethodParameter, ValueInformation]]
             taCode.detach
             taCodes.put(m, taCode)
             taCode

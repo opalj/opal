@@ -30,3 +30,15 @@ trait OrderedProperty extends Property {
      */
     def bottomness: Int = 5
 }
+
+object OrderedProperty {
+
+    /** The value is the lattice's top value. */
+    final val TopBottomness = 9
+
+    /** The value is the lattice's bottom value. */
+    final val BottomBottomness = 0
+
+    final val DefaultBottomness = TopBottomness
+
+}

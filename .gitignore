@@ -55,3 +55,4 @@ scalac.options.local
 # Contains additional, machine-local settings which do not conflict with
 # settings from the build file
 local.sbt
+.sbtopts

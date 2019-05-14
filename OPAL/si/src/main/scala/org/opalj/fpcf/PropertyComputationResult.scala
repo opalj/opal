@@ -378,6 +378,8 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
         u:  UpdateComputation[E, P]
 ) extends ProperPropertyComputationResult {
 
+    final def epk: EPK[E, P] = EPK(e, pk)
+
     private[fpcf] final def id = PartialResult.id
 
 }

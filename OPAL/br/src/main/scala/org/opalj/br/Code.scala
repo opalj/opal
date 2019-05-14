@@ -202,6 +202,15 @@ final class Code private (
         def next(): Int = { val pc = nextPC; nextPC = pcOfNextInstruction(nextPC); pc }
     }
 
+    def foreachProgramCounter[U](f: Int ⇒ U): Unit = {
+        var nextPC = 0 // there is always at least one instruction
+        val maxPC = instructions.length
+        while (nextPC < maxPC) {
+            f(nextPC)
+            nextPC = pcOfNextInstruction(nextPC)
+        }
+    }
+
     /**
      * Counts the number of instructions.
      *

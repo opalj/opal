@@ -3,6 +3,8 @@ package org.opalj
 package ai
 package domain
 
+import scala.collection.immutable.LongMap
+
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
@@ -93,7 +95,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
     it should "be able to analyze a method that catches the thrown exceptions" in {
         evaluateMethod("throwsNoException") { domain ⇒
             import domain._
-            allThrownExceptions should be(Map.empty)
+            allThrownExceptions should be(LongMap.empty)
             allReturnVoidInstructions should be(IntTrieSet(39)) // <= void return
         }
     }
@@ -102,7 +104,7 @@ class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
         evaluateMethod("leverageException") { domain ⇒
             import domain._
             allReturnVoidInstructions should be(IntTrieSet(38)) // <= void return
-            allThrownExceptions should be(Map.empty)
+            allThrownExceptions should be(LongMap.empty)
             // Due to the simplicity of the domain I(the exceptions of called methods are
             // not yet analyze) we cannot determine that the following exception
             // (among others?) may also be thrown:

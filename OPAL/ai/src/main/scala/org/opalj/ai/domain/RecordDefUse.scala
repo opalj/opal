@@ -449,9 +449,8 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                 case None ⇒
                     // We don't have precise origin information...
 
-                    // We now have to determine the source of the exception - whether
-                    // it was (potentially) created externally (i.e., in another method)
-                    // and/or by the JVM.
+                    // We now have to determine the source of the exception - whether it was
+                    // (potentially) created externally (i.e., in another method) and/or by the JVM.
                     (currentInstruction.opcode: @switch) match {
                         case ATHROW.opcode ⇒
                             // The thrown value may be null... in that case the thrown exception is
@@ -464,14 +463,11 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                                 } else {
                                     NoValueOrigins
                                 }
-                            if (throwNullPointerExceptionOnThrow &&
-                                exceptionIsNull.isYesOrUnknown)
+                            if (throwNullPointerExceptionOnThrow && exceptionIsNull.isYesOrUnknown)
                                 newDefOps += ValueOriginForImmediateVMException(currentPC)
                             newDefOps
 
-                        case INVOKEINTERFACE.opcode |
-                            INVOKEVIRTUAL.opcode |
-                            INVOKESPECIAL.opcode ⇒
+                        case INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode | INVOKESPECIAL.opcode ⇒
                             val mii = currentInstruction.asInstanceOf[MethodInvocationInstruction]
                             val receiver = operandsArray(currentPC)(mii.methodDescriptor.parametersCount)
                             var newDefOps = NoValueOrigins
@@ -512,7 +508,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                             newDefOps
 
                         case INVOKEDYNAMIC.opcode | INVOKESTATIC.opcode ⇒
-                            // ... we have no receiver, hence, we can't have a
+                            // ... we have no receiver, hence, we can't have a VM
                             // VM NullPointerException and therefore the exception
                             // is not raised by the INVOKEDYNAMIC instruction
                             ValueOrigins(ValueOriginForMethodExternalException(currentPC))
@@ -983,7 +979,7 @@ trait RecordDefUse extends RecordCFG { defUseDomain: Domain with TheCode ⇒
                         throw BytecodeProcessingFailedException(message)
                     }
 
-                case 176 /*a...*/ | 175 /*d...*/ | 174 /*f...*/ | 172 /*i...*/ | 173 /*l...return*/ ⇒
+                case 176 /*a…*/ | 175 /*d…*/ | 174 /*f…*/ | 172 /*i…*/ | 173 /*l…return*/ ⇒
                     if (isExceptionalControlFlow) {
                         val pushesValue = true /* value doesn't matter - special handling downstream */
                         stackOperation(1, pushesValue)
