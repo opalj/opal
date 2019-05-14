@@ -5,6 +5,10 @@ package fpcf
 /**
  * Object stored in the `PropertyStore` to provide general context information.
  *
+ * Two typical objects that are stored by OPAL's subprojects in the context are:
+ *  - the project (`org.opalj.br.analysis.Project`)
+ *  - the (project dependent) configuration (`com.typesafe.config.Config`)
+ *
  * @author Michael Eichberg
  */
 class PropertyStoreContext[+T <: AnyRef] private (val key: Class[_], val data: T) {
