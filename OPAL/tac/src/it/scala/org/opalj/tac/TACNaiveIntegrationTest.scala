@@ -48,7 +48,7 @@ class TACNaiveIntegrationTest extends FunSpec with Matchers {
                 val TACode(params, tacNaiveCode, _, cfg, _) = TACNaive(
                     method = m,
                     classHierarchy = ch,
-                    optimizations = AllTACNaiveOptimizations
+                    optimizations = AllNaiveTACodeOptimizations
                 )
                 ToTxt(params, tacNaiveCode, cfg, true, true, true)
             } catch {
