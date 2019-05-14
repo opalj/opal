@@ -2,20 +2,13 @@
 package org.opalj
 package fpcf
 
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import java.net.URL
+
+import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 
 /**
@@ -27,18 +20,9 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
  */
 class ReturnValueFreshnessTests extends PropertiesTest {
 
-    val cgRelatedAnalysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
-        RTACallGraphAnalysisScheduler,
-        TriggeredStaticInitializerAnalysis,
-        TriggeredLoadedClassesAnalysis,
-        TriggeredFinalizerAnalysisScheduler,
-        TriggeredThreadRelatedCallsAnalysis,
-        TriggeredSerializationRelatedCallsAnalysis,
-        TriggeredReflectionRelatedCallsAnalysis,
-        TriggeredSystemPropertiesAnalysis,
-        LazyL0BaseAIAnalysis,
-        TACAITransformer
-    )
+    override def init(p: Project[URL]): Unit = {
+        p.get(RTACallGraphKey)
+    }
 
     val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
         LazyInterProceduralEscapeAnalysis,
@@ -47,14 +31,7 @@ class ReturnValueFreshnessTests extends PropertiesTest {
     )
 
     describe("return value freshness analysis is executed") {
-        val testContext = executeAnalyses(cgRelatedAnalysisSchedulers)
-
-        val p = testContext.project
-        val manager = p.get(FPCFAnalysesManagerKey)
-
-        val (ps, analyses) = manager.runAll(analysisSchedulers)
-
-        val as = TestContext(p, ps, testContext.analyses ++ analyses.map(_._2))
+        val as = executeAnalyses(analysisSchedulers)
         as.propertyStore.shutdown()
         validateProperties(
             as,
