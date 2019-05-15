@@ -9,31 +9,20 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaNormalAndAbnormalReturn
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 import org.opalj.tac.Assignment
 import org.opalj.tac.DVar
 import org.opalj.tac.MonitorEnter
 import org.opalj.tac.New
 import org.opalj.tac.NewArray
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -59,20 +48,7 @@ object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
         val propertyStore = project.get(PropertyStoreKey)
         val manager = project.get(FPCFAnalysesManagerKey)
         time {
-            manager.runAll(
-                RTACallGraphAnalysisScheduler,
-                TriggeredStaticInitializerAnalysis,
-                TriggeredLoadedClassesAnalysis,
-                TriggeredFinalizerAnalysisScheduler,
-                TriggeredThreadRelatedCallsAnalysis,
-                TriggeredSerializationRelatedCallsAnalysis,
-                TriggeredReflectionRelatedCallsAnalysis,
-                TriggeredInstantiatedTypesAnalysis,
-                TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
-                TriggeredSystemPropertiesAnalysis,
-                LazyL0BaseAIAnalysis,
-                TACAITransformer
-            )
+            project.get(RTACallGraphKey)
         } { t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
         time {
             manager.runAll(

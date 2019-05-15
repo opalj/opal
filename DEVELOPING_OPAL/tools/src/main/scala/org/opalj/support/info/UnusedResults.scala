@@ -17,8 +17,8 @@ import org.opalj.br.PC
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.properties.{Purity ⇒ PurityProperty}
@@ -28,32 +28,19 @@ import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.br.fpcf.properties.VirtualMethodPurity
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 import org.opalj.tac.DUVar
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.TACode
 import org.opalj.tac.VirtualFunctionCall
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -87,22 +74,9 @@ object UnusedResults extends ProjectAnalysisApplication {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
+        project.get(RTACallGraphKey)
+
         project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0BaseAIAnalysis,
-            TACAITransformer,
-            /* Call Graph Analyses */
-            RTACallGraphAnalysisScheduler,
-            TriggeredStaticInitializerAnalysis,
-            TriggeredLoadedClassesAnalysis,
-            TriggeredFinalizerAnalysisScheduler,
-            TriggeredThreadRelatedCallsAnalysis,
-            TriggeredSerializationRelatedCallsAnalysis,
-            TriggeredReflectionRelatedCallsAnalysis,
-            TriggeredInstantiatedTypesAnalysis,
-            TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis,
-            TriggeredSystemPropertiesAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
-            LazyStaticDataUsageAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
