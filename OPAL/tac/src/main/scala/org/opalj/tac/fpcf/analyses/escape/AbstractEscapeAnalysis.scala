@@ -362,13 +362,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         // if we do not depend on other entities, or are globally escaping, return the result
         // note: replace by global escape
         if (!state.hasDependees || state.mostRestrictiveProperty.isBottom) {
-            // that is, mostRestrictiveProperty is an AtMost
-            if (state.mostRestrictiveProperty.isInstanceOf[AtMost]) {
-                //TODO InterimResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
-                Result(context.entity, state.mostRestrictiveProperty)
-            } else {
-                Result(context.entity, state.mostRestrictiveProperty)
-            }
+            Result(context.entity, state.mostRestrictiveProperty)
+
         } else {
             InterimResult(
                 context.entity,
