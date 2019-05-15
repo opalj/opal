@@ -120,7 +120,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
     }
 }
 
-object EagerLibraryEntryPointsAnalysis extends BasicFPCFEagerAnalysisScheduler {
+object EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def start(
         project:       SomeProject,
