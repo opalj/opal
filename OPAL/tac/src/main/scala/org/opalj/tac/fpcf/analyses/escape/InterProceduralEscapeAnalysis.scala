@@ -116,12 +116,10 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 handleEscapeState(propertyStore(parameterOfBase, EscapeProperty.key))
 
             case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
-                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
             // parameters of base types are not considered
             case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType ⇒
-                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
             case VirtualFormalParameter(dm: DefinedMethod, i) ⇒

@@ -161,6 +161,10 @@ class PointsToState private (
 
     private[pointsto] def hasDependees(potentialDepender: Entity): Boolean =
         _dependerToDependees.contains(potentialDepender)
+
+    private[pointsto] def addIncompletePointsToInfo(pc: Int): Unit = {
+        // Todo: We need a mechanism to mark points-to sets as incomplete
+    }
 }
 
 object PointsToState {
@@ -254,7 +258,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     handleDefSites(fp, call.params(i).asVar.definedBy)
                 }
             } else {
-                // todo handle library methods, where no formal params exists
+                state.addIncompletePointsToInfo(pc)
             }
         }
     }
@@ -285,7 +289,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 if (fieldOpt.isDefined) {
                     state.setOrUpdatePointsToSet(defSiteObject, handleEOptP(defSiteObject, fieldOpt.get))
                 } else {
-                    // todo: handle the case that the field does not exists
+                    state.addIncompletePointsToInfo(pc)
                 }
 
             case Assignment(pc, targetVar, GetStatic(_, declaringClass, name, fieldType)) if targetVar.value.isReferenceValue ⇒
@@ -294,7 +298,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 if (fieldOpt.isDefined) {
                     state.setOrUpdatePointsToSet(defSiteObject, handleEOptP(defSiteObject, fieldOpt.get))
                 } else {
-                    // todo: handle the case that the field does not exists
+                    state.addIncompletePointsToInfo(pc)
                 }
 
             case Assignment(pc, _, ArrayLoad(_, _, arrayRef)) if isArrayOfObjectType(arrayRef.asVar) ⇒
@@ -329,11 +333,11 @@ class AndersenStylePointsToAnalysis private[analyses] (
                         // handle params
                         for (i ← 0 until target.descriptor.parametersCount) {
                             val fp = fps(i + 1)
-                            // TODO This may fail on signature polymorphic methods as the actual parameter count (call.params) might differ from the target descriptor
+                            // FIXME: This may fail on signature polymorphic methods as the actual parameter count (call.params) might differ from the target descriptor
                             handleDefSites(fp, call.params(i).asVar.definedBy)
                         }
                     } else {
-                        // todo handle library methods, where no formal params exists
+                        state.addIncompletePointsToInfo(pc)
                     }
                 }
 
@@ -355,20 +359,20 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
                 handleDefSites(arrayBaseType, defSites)
 
-            case PutField(_, declaringClass, name, fieldType, _, UVar(_, defSites)) if fieldType.isObjectType ⇒
+            case PutField(pc, declaringClass, name, fieldType, _, UVar(_, defSites)) if fieldType.isObjectType ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
                     handleDefSites(fieldOpt.get, defSites)
                 else {
-                    // todo: field does not exists
+                    state.addIncompletePointsToInfo(pc)
                 }
 
-            case PutStatic(_, declaringClass, name, fieldType, UVar(_, defSites)) if fieldType.isObjectType ⇒
+            case PutStatic(pc, declaringClass, name, fieldType, UVar(_, defSites)) if fieldType.isObjectType ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
                     handleDefSites(fieldOpt.get, defSites)
                 else {
-                    // todo: field does not exists
+                    state.addIncompletePointsToInfo(pc)
                 }
 
             case ReturnValue(_, value @ UVar(_, defSites)) if value.value.isReferenceValue ⇒
@@ -408,8 +412,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 returnResult(state)
 
             case UBP(callees: Callees) ⇒
-                // todo get new calls for all pcs
-                //returnResult(state)
+                // todo instead of rerunning the complete analysis, get new calls for all pcs only
 
                 state.updateCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
                 processMethod(state)
@@ -424,7 +427,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
         if (state.hasOpenDependees) results += InterimPartialResult(state.dependees, c(state))
 
         for ((e, pointsToSet) ← state.pointsToSets) {
-            // todo: ensure isFinal is set correctly
+            // todo: ensure isFinal is set correctly and set FinalEPs
             //val isFinal = e.isInstanceOf[DefinitionSite] && !state.hasDependees(e)
             results += PartialResult[Entity, PointsTo](e, PointsTo.key, {
                 //case _: EPK[Entity, PointsTo] if isFinal ⇒
@@ -469,7 +472,6 @@ class AndersenStylePointsToAnalysis private[analyses] (
         } else if (ai.isImmediateVMException(dependeeDefSite)) {
             // todo -  we need to get the actual exception type here
             UIDSet(ObjectType.Exception)
-
         } else {
             handleEOptP(depender, toEntity(dependeeDefSite))
         }
