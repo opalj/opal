@@ -109,7 +109,7 @@ private class WeightedQualifiedTask(
 /**
  * Schedules tasks that have many depender and dependee relations last.
  */
-private[seq] class ManyDependenciesLastTasksManager extends TasksManager {
+private[seq] class ManyDirectDependenciesLastTasksManager extends TasksManager {
 
     private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
@@ -141,10 +141,10 @@ private[seq] class ManyDependenciesLastTasksManager extends TasksManager {
 
     def size: Int = this.initialTasks.size + this.tasks.size
 
-    override def toString: String = "ManyDependenciesLastTasksManager"
+    override def toString: String = "ManyDirectDependenciesLastTasksManager"
 }
 
-private[seq] class ManyDependersLastTasksManager extends TasksManager {
+private[seq] class ManyDirectDependersLastTasksManager extends TasksManager {
 
     private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
@@ -175,10 +175,10 @@ private[seq] class ManyDependersLastTasksManager extends TasksManager {
 
     def size: Int = this.initialTasks.size + this.tasks.size
 
-    override def toString: String = "ManyDependersLastTasksManager"
+    override def toString: String = "ManyDirectDependersLastTasksManager"
 }
 
-private[seq] class ManyDependeesOfDependersLastTasksManager extends TasksManager {
+private[seq] class ManyDependeesOfDirectDependersLastTasksManager extends TasksManager {
 
     private[this] var ps: PKESequentialPropertyStore = null
 
@@ -220,10 +220,10 @@ private[seq] class ManyDependeesOfDependersLastTasksManager extends TasksManager
 
     def size: Int = this.initialTasks.size + this.tasks.size
 
-    override def toString: String = "ManyDependeesOfDependersLastTasksManager"
+    override def toString: String = "ManyDependeesOfDirectDependersLastTasksManager"
 }
 
-private[seq] class ManyDependeesAndDependersOfDependersLastTasksManager extends TasksManager {
+private[seq] class ManyDependeesAndDependersOfDirectDependersLastTasksManager extends TasksManager {
 
     private[this] var ps: PKESequentialPropertyStore = null
 
@@ -266,5 +266,91 @@ private[seq] class ManyDependeesAndDependersOfDependersLastTasksManager extends 
 
     def size: Int = this.initialTasks.size + this.tasks.size
 
-    override def toString: String = "ManyDependeesAndDependersOfDependersLastTasksManager"
+    override def toString: String = "ManyDependeesAndDependersOfDirectDependersLastTasksManager"
+}
+
+private[seq] class AllDependeesTasksManager(
+        final val forward:           Boolean = true,
+        final val manyDependeesLast: Boolean = true
+) extends TasksManager {
+
+    private[this] var ps: PKESequentialPropertyStore = null
+
+    private[seq] def setSeqPropertyStore(ps: PKESequentialPropertyStore): Unit = {
+        if (this.ps != null)
+            throw new IllegalStateException(s"property store is already set: ${this.ps}")
+
+        this.ps = ps
+    }
+
+    private[this] var initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
+    private[this] var tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
+
+    def pushInitialTask(task: QualifiedTask): Unit = {
+        this.initialTasks.addFirst(task)
+    }
+
+    def push(
+        task:             QualifiedTask,
+        dependees:        Traversable[SomeEOptionP],
+        currentDependers: Traversable[SomeEPK],
+        bottomness:       Int,
+        hint:             PropertyComputationHint
+    ): Unit = {
+        var weight = 0
+
+        if (forward) {
+            var allDependees = Set.empty[SomeEOptionP]
+            var newDependees = dependees.toList
+            while (newDependees.nonEmpty) {
+                val nextDependee = newDependees.head
+                newDependees = newDependees.tail
+                allDependees += nextDependee
+                ps.dependees(nextDependee.toEPK) foreach { nextNextDependee ⇒
+                    if (!allDependees.contains(nextNextDependee)) {
+                        newDependees ::= nextNextDependee
+                        allDependees += nextNextDependee
+                    }
+                }
+            }
+            weight = allDependees.size
+        } else {
+            // dependees of dependers
+            var allDependers = Set.empty[SomeEPK]
+            var newDependers = currentDependers.toList
+            while (newDependers.nonEmpty) {
+                val nextDepender = newDependers.head
+                newDependers = newDependers.tail
+                allDependers += nextDepender
+                ps.dependers(nextDepender) foreach { nextNextDepender ⇒
+                    if (!allDependers.contains(nextNextDepender)) {
+                        newDependers ::= nextNextDepender
+                        weight += ps.dependeesCount(nextNextDepender)
+                        allDependers += nextNextDepender
+                    }
+                }
+            }
+        }
+
+        if (!manyDependeesLast) weight = -weight
+
+        //println("Weight: "+weight+"   -     Tasks:"+size)
+        this.tasks.add(new WeightedQualifiedTask(task, weight))
+    }
+
+    def poll(): QualifiedTask = {
+        val t = this.initialTasks.pollFirst()
+        if (t ne null)
+            t
+        else
+            this.tasks.poll().task
+    }
+
+    def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
+
+    def size: Int = this.initialTasks.size + this.tasks.size
+
+    override def toString: String = {
+        s"AllDependeesTasksManager(forward=$forward,manyDependeesLast=$manyDependeesLast)"
+    }
 }
