@@ -5,18 +5,22 @@ import java.io.File
 
 import scala.collection.immutable.ListSet
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
+
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.ComputationSpecification
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -396,6 +400,7 @@ object BasicIFDSTaintAnalysisRunner {
             println(" -l2 (to use the l2 domain instead of the default l1 domain)")
             println(" -delay (for a three seconds delay before the taint flow analysis is started)")
             println(" -debug (for a three seconds delay before the taint flow analysis is started)")
+            println(" -evalSchedulingStrategies (evaluates all available scheduling strategies)")
             println(" the second to last parameter is the call graph file to be used")
             println(" the last parameter is the project path")
         }
@@ -404,72 +409,89 @@ object BasicIFDSTaintAnalysisRunner {
             PropertyStore.updateDebug(true)
         }
 
+        def evalProject(p: SomeProject): Seconds = {
+            if (args.contains("-l2")) {
+                p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                    case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+                }
+            } else {
+                p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                    case None               ⇒ Set(classOf[PrimitiveTACAIDomain])
+                    case Some(requirements) ⇒ requirements + classOf[PrimitiveTACAIDomain]
+                }
+            }
+
+            var ps: PropertyStore = null
+            var analyses: List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)] = null
+            var analysisTime: Seconds = Seconds.None
+            val manager = p.get(FPCFAnalysesManagerKey)
+            PerformanceEvaluation.time {
+                manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
+            } { t ⇒ println(s"CG took ${t.toSeconds}") }
+            ps = p.get(PropertyStoreKey)
+            println("Start: "+new java.util.Date)
+            analyses =
+                time {
+                    manager.runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis)
+                }(t ⇒ analysisTime = t.toSeconds)._2
+
+            val entryPoints = analyses.collect { case (_, a: BasicIFDSTaintAnalysis) ⇒ a.entryPoints }.head
+            for {
+                e ← entryPoints
+                flows = ps(e, BasicIFDSTaintAnalysis.property.key)
+                fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+            } {
+                fact match {
+                    case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                    case _              ⇒
+                }
+            }
+            println(s"The analysis took $analysisTime.")
+            println(
+                ps.statistics.iterator.map(_.toString()).toList
+                    .sorted
+                    .mkString("PropertyStore Statistics:\n\t", "\n\t", "\n")
+            )
+            analysisTime
+        }
+
         val p = Project(new File(args(args.length - 1))) //bytecode.RTJar)
         /*p.getOrCreateProjectInformationKeyInitializationData(
-            PropertyStoreKey,
-            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                implicit val lg: LogContext = p.logContext
-                PropertyStore.updateDebug(false)
-                val ps =
-                    if (args.contains("-seq"))
-                        PKESequentialPropertyStore.apply(context: _*)
-                    else
-                        ???
-                //PKEFJPoolPropertyStore.apply(context: _*)
-                ps
-            }
-        )*/
-        if (args.contains("-l2")) {
-            p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                case None               ⇒ Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
-                case Some(requirements) ⇒ requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
-            }
-        } else {
-            p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                case None               ⇒ Set(classOf[PrimitiveTACAIDomain])
-                case Some(requirements) ⇒ requirements + classOf[PrimitiveTACAIDomain]
-            }
+        PropertyStoreKey,
+        (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+            implicit val lg: LogContext = p.logContext
+            PropertyStore.updateDebug(false)
+            val ps =
+                if (args.contains("-seq"))
+                    PKESequentialPropertyStore.apply(context: _*)
+                else
+                    ???
+            //PKEFJPoolPropertyStore.apply(context: _*)
+            ps
         }
+    )*/
 
         if (args.contains("-delay")) {
             println("Sleeping for three seconds.")
             Thread.sleep(3000)
         }
 
-        val nrRuns = 1
-        var ps: PropertyStore = null
-        var analyses: List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)] = null
-        var times = Seq.empty[Long]
-        for (_ ← 1 to nrRuns) {
-            val project = p.recreate(k ⇒ k == DeclaredMethodsKey.uniqueId)
-            PerformanceEvaluation.time {
-                val manager = project.get(FPCFAnalysesManagerKey)
-                manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
-            } { t ⇒ println(s"CG took ${t.toSeconds}") }
-            val manager = project.get(FPCFAnalysesManagerKey)
-            ps = project.get(PropertyStoreKey)
-            println("Start: "+new java.util.Date)
-            analyses = time {
-                manager.runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis)
-            }(t ⇒ times :+= t.toMilliseconds.timeSpan)._2
-        }
-
-        val entryPoints = analyses.collect { case (_, a: BasicIFDSTaintAnalysis) ⇒ a.entryPoints }.head
-        for {
-            e ← entryPoints
-            flows = ps(e, BasicIFDSTaintAnalysis.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
-        } {
-            fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                case _              ⇒
+        if (args.contains("-evalSchedulingStrategies")) {
+            val results = for {
+                i ← 1 to 2
+                strategy ← PKESequentialPropertyStore.Strategies
+            } yield {
+                println(s"Round: $i - $strategy")
+                val strategyValue = ConfigValueFactory.fromAnyRef(strategy)
+                val newConfig = p.config.withValue(PKESequentialPropertyStore.TasksManagerKey, strategyValue)
+                val analysisTime = evalProject(Project.recreate(p, newConfig))
+                (i, strategy, analysisTime)
+                org.opalj.util.gc()
             }
+            println(results.mkString("AllResults:\n\t", "\n\t", "\n"))
+        } else {
+            evalProject(p)
         }
-        println(s"The analysis took ${times.sum / times.size}ms on average.")
-        println(
-            ps.statistics.iterator.map(_.toString()).toList
-                .sorted
-                .mkString("PropertyStore Statistics:\n\t", "\n\t", "\n")
-        )
     }
 }
