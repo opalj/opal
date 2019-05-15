@@ -24,7 +24,7 @@ import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
  *
  * @author Michael Eichberg
  */
-final class PKESequentialPropertyStore private (
+final class PKESequentialPropertyStore protected (
         final val ctx:          Map[Class[_], AnyRef],
         final val tasksManager: TasksManager
 )(
@@ -106,13 +106,20 @@ final class PKESequentialPropertyStore private (
     }
 
     private[seq] def dependees(epk: SomeEPK): Traversable[SomeEOptionP] = {
-        dependees(epk.pk.id)(epk.e)
+        dependees(epk.pk.id).getOrElse(epk.e, Nil)
     }
 
     private[seq] def dependersCount(epk: SomeEPK): Int = {
         dependers(epk.pk.id).get(epk.e) match {
-            case Some(dependees) ⇒ dependees.size
+            case Some(dependers) ⇒ dependers.size
             case None            ⇒ 0
+        }
+    }
+
+    private[seq] def dependers(epk: SomeEPK): Traversable[SomeEPK] = {
+        dependers(epk.pk.id).get(epk.e) match {
+            case Some(dependers) ⇒ dependers.keys
+            case None            ⇒ Nil
         }
     }
 
@@ -805,6 +812,19 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         apply(taskManagerId)(contextMap)
     }
 
+    final val Strategies = List(
+        "FIFO",
+        "LIFO",
+        "ManyDirectDependenciesLast",
+        "ManyDirectDependersLast",
+        "ManyDependeesOfDirectDependersLast",
+        "ManyDependeesAndDependersOfDirectDependersLast",
+        "ForwardAllDependeesLast",
+        "ForwardAllDependeesFirst",
+        "BackwardAllDependeesLast",
+        "BackwardAllDependeesFirst"
+    )
+
     def apply(
         taskManagerId: String
     )(
@@ -821,26 +841,35 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
             case "LIFO" ⇒
                 new PKESequentialPropertyStore(context, new LIFOTasksManager)
 
-            case "ManyDependenciesLast" ⇒
-                new PKESequentialPropertyStore(context, new ManyDependenciesLastTasksManager)
+            case "ManyDirectDependenciesLast" ⇒
+                new PKESequentialPropertyStore(context, new ManyDirectDependenciesLastTasksManager)
 
-            case "ManyDependersLast" ⇒
-                new PKESequentialPropertyStore(context, new ManyDependersLastTasksManager)
+            case "ManyDirectDependersLast" ⇒
+                new PKESequentialPropertyStore(context, new ManyDirectDependersLastTasksManager)
 
-            case "ManyDependeesOfDependersLast" ⇒
-                val taskManager = new ManyDependeesOfDependersLastTasksManager
+            case "ManyDependeesOfDirectDependersLast" ⇒
+                val taskManager = new ManyDependeesOfDirectDependersLastTasksManager
                 val ps = new PKESequentialPropertyStore(context, taskManager)
                 taskManager.setSeqPropertyStore(ps)
                 ps
 
-            case "ManyDependeesAndDependersOfDependersLast" ⇒
-                val taskManager = new ManyDependeesAndDependersOfDependersLastTasksManager
+            case "ManyDependeesAndDependersOfDirectDependersLast" ⇒
+                val taskManager = new ManyDependeesAndDependersOfDirectDependersLastTasksManager
+                val ps = new PKESequentialPropertyStore(context, taskManager)
+                taskManager.setSeqPropertyStore(ps)
+                ps
+
+            case "ForwardAllDependeesLast" | "ForwardAllDependeesFirst" |
+                "BackwardAllDependeesLast" | "BackwardAllDependeesFirst" ⇒
+                val forward = taskManagerId.startsWith("Forward")
+                val manyDependeeslast = taskManagerId.endsWith("Last")
+                val taskManager = new AllDependeesTasksManager(forward, manyDependeeslast)
                 val ps = new PKESequentialPropertyStore(context, taskManager)
                 taskManager.setSeqPropertyStore(ps)
                 ps
 
             case _ ⇒
-                throw new IllegalArgumentException(s"task manager $taskManagerId does not exist")
+                throw new IllegalArgumentException(s"unknown task manager $taskManagerId")
         }
 
     }
