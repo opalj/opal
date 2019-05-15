@@ -162,24 +162,6 @@ object Purity {
             )
             else baseConfig
 
-        implicit val config: Config = if (isLibrary) {
-            baseConfig.withValue(
-                "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
-            ).withValue(
-                    "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
-                    ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryInstantiatedTypesFinder")
-                )
-        } else {
-            baseConfig.withValue(
-                "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
-            ).withValue(
-                    "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.analysis",
-                    ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
-                )
-        }
-
         val project = time {
             Project(
                 classFiles,

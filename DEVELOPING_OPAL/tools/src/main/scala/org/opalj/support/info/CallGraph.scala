@@ -32,9 +32,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisSchedul
  *  -algorithm=CHA for an CHA-based call graph
  *  -algorithm=RTA for an RTA-based call graph
  *
- * Please also specify whether the target (-cp=) is an application or a library:
- *  -mode=app for an application
- *  -mode=library for a library
+ * Please also specify whether the target (-cp=) is an application or a library using "-projectConf=".
+ * TODO: See ApplicationProject.conf or LibraryProject.conf
  *
  * Furthermore, it can be used to print the callees or callers of specific methods.
  * To do so, add -callers=m, where m is the method name/signature using Java notation, as parameter
@@ -62,7 +61,6 @@ object CallGraph extends ProjectAnalysisApplication {
             parameters.filter { p ⇒
                 !p.startsWith("-callers=") &&
                     !p.startsWith("-callees=") &&
-                    !p.startsWith("-mode=") &&
                     !p.startsWith("-algorithm=") &&
                     !p.startsWith("-writeCG=")
             }
@@ -77,7 +75,6 @@ object CallGraph extends ProjectAnalysisApplication {
     ): BasicReport = {
         var calleesSigs: List[String] = Nil
         var callersSigs: List[String] = Nil
-        var isLibrary: Option[Boolean] = None
         var cgAlgorithm: Option[String] = None
         var cgFile: Option[String] = None
 
@@ -90,14 +87,6 @@ object CallGraph extends ProjectAnalysisApplication {
         parameters.foreach {
             case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
             case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
-            case modeRegex("app") ⇒
-                if (isLibrary.isEmpty)
-                    isLibrary = Some(false)
-                else throw new IllegalArgumentException("-mode was set twice")
-            case modeRegex("library") ⇒
-                if (isLibrary.isEmpty)
-                    isLibrary = Some(true)
-                else throw new IllegalArgumentException("-mode was set twice")
             case algorithmRegex(algo) ⇒
                 if (cgAlgorithm.isEmpty)
                     cgAlgorithm = Some(algo)
@@ -108,10 +97,6 @@ object CallGraph extends ProjectAnalysisApplication {
                 else throw new IllegalArgumentException("-writeCG was set twice")
 
         }
-
-        // todo: also manipulate the entry points and instantiated types keys
-        if (isLibrary.isEmpty)
-            throw new IllegalArgumentException("-mode was not set")
 
         if (cgAlgorithm.isEmpty)
             throw new IllegalArgumentException("-algorithm was not set")
