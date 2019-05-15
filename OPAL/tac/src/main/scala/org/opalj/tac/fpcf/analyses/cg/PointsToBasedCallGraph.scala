@@ -75,7 +75,6 @@ class P2CGState private[cg] (
     private[this] val _callSiteToDefSites: mutable.Map[CallSiteT, Set[Entity]] = mutable.Map.empty
 
     // maps a defsite to its result in the property store for the points-to set
-    // todo: add accessor methods
     private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
 
     private[cg] def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
@@ -92,7 +91,7 @@ class P2CGState private[cg] (
     }
 
     private[cg] def typesForCallSite(callSite: CallSiteT): IntTrieSet = {
-        _virtualCallSites(callSite) //, IntTrieSet.empty) // todo: should use apply
+        _virtualCallSites(callSite)
     }
 
     private[cg] def initialPotentialTypesOfCallSite(

@@ -165,7 +165,7 @@ private class CallGraphDeserializer private[analyses] (
 
         val body = bodyOpt.get
 
-        // TODO this won't work when the code has no line numbers, resulting in all calls mapped to pc 0
+        // FIXME this won't work when the code has no line numbers, resulting in all calls mapped to pc 0
         val pf = new PartialFunction[PCAndInstruction, Instruction] {
             override def isDefinedAt(pcAndInst: PCAndInstruction): Boolean = {
                 val lnOpt = body.lineNumber(pcAndInst.pc)

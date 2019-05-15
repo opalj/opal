@@ -66,7 +66,6 @@ class PointsToState private (
 
     private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[Entity]] = mutable.Map.empty
 
-    // todo accessor methods
     private[this] val _dependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
 
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None

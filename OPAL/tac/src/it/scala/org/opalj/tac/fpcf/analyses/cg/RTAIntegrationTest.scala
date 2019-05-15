@@ -33,7 +33,7 @@ case class CallSite(declaredTarget: Method, line: Int, method: Method, targets: 
 
 case class Method(name: String, declaringClass: String, returnType: String, parameterTypes: List[String])
 
-@RunWith(classOf[JUnitRunner])
+@RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
 class RTAIntegrationTest extends FlatSpec with Matchers {
 
     behavior of "the rta call graph analysis on columbus"

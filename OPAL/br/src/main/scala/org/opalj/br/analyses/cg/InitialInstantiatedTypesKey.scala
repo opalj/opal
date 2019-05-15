@@ -6,8 +6,9 @@ package cg
 
 import net.ceedubs.ficus.Ficus._
 
-// TODO document
 /**
+ *
+ * Creates the [[InstantiatedTypesFinder]] as specified in the [[ConfigKeyPrefix]] config key.
  *
  * @example
  *      {{{
@@ -18,7 +19,7 @@ import net.ceedubs.ficus.Ficus._
  *      }
  *      }}}
  *
- * @note Please see the documentation of [[EntryPointFinder]] and its subtypes for more
+ * @note Please see the documentation of [[InstantiatedTypesFinder]] and its subtypes for more
  *       information.
  *
  * @author Florian Kuebler

@@ -85,7 +85,6 @@ class FinalizerAnalysis private[analyses] (
             })
         }
 
-        // todo: should we also derive finalizers?
         Results(r)
     }
 }

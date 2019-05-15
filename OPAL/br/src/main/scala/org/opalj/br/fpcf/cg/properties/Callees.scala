@@ -91,7 +91,8 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     /**
      * PCs of all call sites in the method.
      */
-    def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int] // TODO Use IntIterator once we have an IntMap
+    // TODO Use IntIterator once we have our own IntMap
+    def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int]
 
     /**
      * Map of pc to potential callees of the call site at that pc. The callees may not match the
@@ -127,9 +128,9 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
 
     /**
      * Returns for a given call site pc and indirect target method the sequence of parameter
-     * sources. If a parameter source can not be determined, the Option will be empty, otherwise it
-     * will contain all PCs and the negative indices of parameters that may define the value of the
-     * corresponding actual parameter.
+     * sources. If a parameter source can not be determined, the [[Option]] will be empty, otherwise
+     * it will contain all PCs and the negative indices of parameters that may define the value of
+     * the corresponding actual parameter.
      * The parameter at index 0 always corresponds to the *this* local and is `null` for static
      * methods.
      */
@@ -138,9 +139,20 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
         callee: DeclaredMethod
     )(implicit propertyStore: PropertyStore): Seq[Option[(ValueInformation, IntTrieSet)]]
 
+    /**
+     * Returns for a given call site pc and indirect target method the receiver information.
+     * If the receiver can not be determined, the [[Option]] will be empty, otherwise it will
+     * contain all [[PCs]] and the the negative indices of parameters that may define the value of
+     * the receiver.
+     * The parameter at index 0 always corresponds to the *this* local and is `null` for static
+     * methods.
+     */
     def indirectCallReceiver(pc: Int, callee: DeclaredMethod): Option[(ValueInformation, PCs)]
 
-    // todo: document
+    /**
+     * Creates a copy of the current callees object, including the additional callee information
+     * specified in the parameters.
+     */
     def updateWithCallees(
         directCallees:          IntMap[IntTrieSet],
         indirectCallees:        IntMap[IntTrieSet],
@@ -326,7 +338,7 @@ object NoCallees extends Callees {
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = 0
 
-    override def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int] = Iterator.empty
+    override def callSitePCs(implicit propertyStore: PropertyStore): IntIterator = IntIterator.empty
 
     override def callSites()(
         implicit
@@ -406,7 +418,7 @@ object NoCalleesDueToNotReachableMethod extends Callees {
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = 0
 
-    override def callSitePCs(implicit propertyStore: PropertyStore): Iterator[Int] = Iterator.empty
+    override def callSitePCs(implicit propertyStore: PropertyStore): IntIterator = IntIterator.empty
 
     override def callSites()(
         implicit

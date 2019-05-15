@@ -56,8 +56,7 @@ sealed class LoadedClasses private[properties] (
         orderedClasses.iterator.take(classes.size - index)
     }
 
-    // TODO Rename "size"
-    def numElements: Int = classes.size
+    def size: Int = classes.size
 
     override def key: PropertyKey[LoadedClasses] = LoadedClasses.key
 
