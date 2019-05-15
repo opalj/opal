@@ -80,7 +80,6 @@ object CallGraph extends ProjectAnalysisApplication {
 
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
-        val modeRegex = "-mode=(app|library)".r
         val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
         val writeCGRegex = "-writeCG=(.*)".r
 
