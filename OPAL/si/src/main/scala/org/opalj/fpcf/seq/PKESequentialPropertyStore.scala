@@ -787,7 +787,7 @@ final class PKESequentialPropertyStore protected (
  *
  * The task manager that will be used to instantiate the project will be extracted from the
  * `PropertyStoreContext` if the context contains a `Config` object. The fallback is the
- * `ManyDependeesOfDependersLastTasksManager`.
+ * `ManyDirectDependersLastTasksManager`.
  *
  * @author Michael Eichberg
  */
@@ -807,7 +807,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         val taskManagerId =
             contextMap.get(classOf[Config]) match {
                 case Some(config: Config) ⇒ config.getString(TasksManagerKey)
-                case _                    ⇒ "ManyDependeesOfDependersLast" // <= default
+                case _                    ⇒ "ManyDirectDependersLast" // <= default
             }
         apply(taskManagerId)(contextMap)
     }
