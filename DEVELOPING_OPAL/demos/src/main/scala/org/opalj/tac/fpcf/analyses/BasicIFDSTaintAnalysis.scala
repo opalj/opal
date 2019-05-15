@@ -478,18 +478,19 @@ object BasicIFDSTaintAnalysisRunner {
         }
 
         if (args.contains("-evalSchedulingStrategies")) {
-            val results = for {
-                i ← 1 to 2
+            var results = List.empty[String]
+            for {
+                i ← 1 to 3
                 strategy ← PKESequentialPropertyStore.Strategies
             } yield {
                 println(s"Round: $i - $strategy")
                 val strategyValue = ConfigValueFactory.fromAnyRef(strategy)
                 val newConfig = p.config.withValue(PKESequentialPropertyStore.TasksManagerKey, strategyValue)
                 val analysisTime = evalProject(Project.recreate(p, newConfig))
-                (i, strategy, analysisTime)
                 org.opalj.util.gc()
+                results ::= s"$i-$strategy: $analysisTime"
+                println(results.mkString("AllResults:\n\t", "\n\t", "\n"))
             }
-            println(results.mkString("AllResults:\n\t", "\n\t", "\n"))
         } else {
             evalProject(p)
         }
