@@ -8,8 +8,9 @@ package reflection
 
 import scala.language.existentials
 
-import org.opalj.log.OPALLogger.error
-import org.opalj.log.OPALLogger.info
+import org.opalj.log.Error
+import org.opalj.log.Info
+import org.opalj.log.OPALLogger.logOnce
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.UIDSet
@@ -51,17 +52,18 @@ sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedCallGraphAnalysis {
             project.config.getBoolean(ReflectionRelatedCallsAnalysis.ConfigKey)
         } catch {
             case t: Throwable ⇒
-                error(
+                logOnce(Error(
                     "analysis configuration - reflection analysis",
                     s"couldn't read: ${ReflectionRelatedCallsAnalysis.ConfigKey}",
                     t
-                )
+                ))
                 false
         }
-        info(
+
+        logOnce(Info(
             "analysis configuration",
             "reflection analysis uses "+(if (activated) "high soundness mode" else "standard mode")
-        )
+        ))
         activated
     }
 
