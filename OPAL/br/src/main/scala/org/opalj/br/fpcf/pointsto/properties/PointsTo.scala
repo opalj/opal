@@ -58,6 +58,16 @@ case class PointsTo private[properties] (
     }
 
     def numElements: Int = types.size
+
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case that: PointsTo ⇒
+                that.numElements == this.numElements && orderedTypes == orderedTypes
+            case _ ⇒ false
+        }
+    }
+
+    override def hashCode: Int = types.hashCode() * 31
 }
 
 object PointsTo extends PointsToPropertyMetaInformation {
