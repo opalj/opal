@@ -424,7 +424,7 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: FinalEP[_, _] ⇒ that.e == this.e && this.p == that.p
+            case that: FinalEP[_, _] ⇒ (this eq that) || (that.e == this.e && this.p == that.p)
             case _                   ⇒ false
         }
     }
@@ -561,8 +561,10 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimELUBP[_, _] ⇒ e == that.e && lb == that.lb && ub == that.ub
-            case _                        ⇒ false
+            case that: InterimELUBP[_, _] ⇒
+                (this.e eq that.e) || (e == that.e && lb == that.lb && ub == that.ub)
+            case _ ⇒
+                false
         }
     }
 
@@ -616,8 +618,10 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimEUBP[_, _] ⇒ ub == that.ub && e == that.e
-            case _                       ⇒ false
+            case that: InterimEUBP[_, _] ⇒
+                (this eq that) || (this.e == that.e && this.ub == that.ub)
+            case _ ⇒
+                false
         }
     }
 
@@ -730,8 +734,10 @@ final class InterimELBP[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimELBP[_, _] ⇒ lb == that.lb && e == that.e
-            case _                       ⇒ false
+            case that: InterimELBP[_, _] ⇒
+                (this eq that) || (this.lb == that.lb && this.e == that.e)
+            case _ ⇒
+                false
         }
     }
 
@@ -812,7 +818,7 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: EPK[_, _] ⇒ this.pk == that.pk && that.e == this.e
+            case that: EPK[_, _] ⇒ (this eq that) || (this.pk == that.pk && that.e == this.e)
             case _               ⇒ false
         }
     }
