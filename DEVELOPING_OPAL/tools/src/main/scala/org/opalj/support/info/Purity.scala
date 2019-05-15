@@ -9,6 +9,7 @@ import java.io.PrintWriter
 import java.util.Calendar
 
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.util.PerformanceEvaluation.time
@@ -147,11 +148,19 @@ object Purity {
         var analysisTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
 
-        val baseConfig = if (closedWorldAssumption) BaseConfig.withValue(
-            "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
-        )
-        else BaseConfig
+        // todo: use variables for the constants
+        val baseConfig = if (isLibrary)
+            ConfigFactory.load("LibraryProject")
+        else
+            ConfigFactory.load("ApplicationProject")
+
+        // todo in case of application this value is already set
+        implicit val config: Config =
+            if (closedWorldAssumption) baseConfig.withValue(
+                "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
+            )
+            else baseConfig
 
         implicit val config: Config = if (isLibrary) {
             baseConfig.withValue(
