@@ -5,9 +5,12 @@ import java.io.File
 
 import scala.collection.immutable.ListSet
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
@@ -389,6 +392,7 @@ object BasicIFDSTaintAnalysisRunner {
             println(" -primitive (to use the primitive l0 domain instead of the default l1 domain)")
             println(" -delay (for a three seconds delay before the taint flow analysis is started)")
             println(" -debug (to set the PropertyStore's debug flag)")
+            println(" -evalSchedulingStrategies (evaluates all available scheduling strategies)")
         }
 
         if (args.contains("-debug")) {
@@ -402,6 +406,69 @@ object BasicIFDSTaintAnalysisRunner {
             else
                 Project(JRELibraryFolder)
 
+        def evalProject(p: SomeProject): Seconds = {
+            if (args.contains("-l2")) {
+                p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                    case None ⇒
+                        Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒
+                        requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
+                }
+            } else if (args.contains("-primitive")) {
+                p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                    case None               ⇒ Set(classOf[PrimitiveTACAIDomain])
+                    case Some(requirements) ⇒ requirements + classOf[PrimitiveTACAIDomain]
+                }
+            } else {
+                p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+                    case None ⇒
+                        Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
+                    case Some(requirements) ⇒
+                        requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
+                }
+            }
+
+            val ps = p.get(PropertyStoreKey)
+            val manager = p.get(FPCFAnalysesManagerKey)
+            var analysisTime: Seconds = Seconds.None
+
+            val cgArg = args.find(_.startsWith("-cg="))
+            PerformanceEvaluation.time {
+                if (cgArg.isDefined)
+                    manager.runAll(
+                        new CallGraphDeserializerScheduler(new File(cgArg.get.substring(4)))
+                    )
+                else
+                    p.get(RTACallGraphKey)
+            } { t ⇒ println(s"CG took ${t.toSeconds}s.") }
+
+            println("Start: "+new java.util.Date)
+            val analyses = time {
+                manager.runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis)
+            }(t ⇒ analysisTime = t.toSeconds)._2
+
+            val entryPoints =
+                analyses.collect { case (_, a: BasicIFDSTaintAnalysis) ⇒ a.entryPoints }.head
+            for {
+                e ← entryPoints
+                flows = ps(e, BasicIFDSTaintAnalysis.property.key)
+                fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
+            } {
+                fact match {
+                    case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
+                    case _              ⇒
+                }
+            }
+            println(s"The analysis took $analysisTime.")
+            println(
+                ps.statistics.iterator.map(_.toString()).toList
+                    .sorted
+                    .mkString("PropertyStore Statistics:\n\t", "\n\t", "\n")
+            )
+
+            analysisTime
+        }
+
         p.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
@@ -414,64 +481,28 @@ object BasicIFDSTaintAnalysisRunner {
                 ps
             }
         )
-        if (args.contains("-l2")) {
-            p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                case None ⇒
-                    Set(classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]])
-                case Some(requirements) ⇒
-                    requirements + classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
-            }
-        } else if (args.contains("-primitive")) {
-            p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                case None               ⇒ Set(classOf[PrimitiveTACAIDomain])
-                case Some(requirements) ⇒ requirements + classOf[PrimitiveTACAIDomain]
-            }
-        } else {
-            p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-                case None ⇒
-                    Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
-                case Some(requirements) ⇒
-                    requirements + classOf[l1.DefaultDomainWithCFGAndDefUse[_]]
-            }
-        }
 
         if (args.contains("-delay")) {
             println("Sleeping for three seconds.")
             Thread.sleep(3000)
         }
 
-        val ps = p.get(PropertyStoreKey)
-        val manager = p.get(FPCFAnalysesManagerKey)
-
-        val cgArg = args.find(_.startsWith("-cg="))
-        PerformanceEvaluation.time {
-            if (cgArg.isDefined)
-                manager.runAll(new CallGraphDeserializerScheduler(new File(cgArg.get.substring(4))))
-            else
-                p.get(RTACallGraphKey)
-        } { t ⇒ println(s"CG took ${t.toSeconds}s.") }
-
-        println("Start: "+new java.util.Date)
-        val analyses = time {
-            manager.runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis)
-        }(t ⇒ s"The analysis took ${t.toSeconds}s.")._2
-
-        val entryPoints =
-            analyses.collect { case (_, a: BasicIFDSTaintAnalysis) ⇒ a.entryPoints }.head
-        for {
-            e ← entryPoints
-            flows = ps(e, BasicIFDSTaintAnalysis.property.key)
-            fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
-        } {
-            fact match {
-                case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                case _              ⇒
+        if (args.contains("-evalSchedulingStrategies")) {
+            val results = for {
+                i ← 1 to 2
+                strategy ← PKESequentialPropertyStore.Strategies
+            } yield {
+                println(s"Round: $i - $strategy")
+                val strategyValue = ConfigValueFactory.fromAnyRef(strategy)
+                val newConfig =
+                    p.config.withValue(PKESequentialPropertyStore.TasksManagerKey, strategyValue)
+                val analysisTime = evalProject(Project.recreate(p, newConfig))
+                (i, strategy, analysisTime)
+                org.opalj.util.gc()
             }
+            println(results.mkString("AllResults:\n\t", "\n\t", "\n"))
+        } else {
+            evalProject(p)
         }
-        println(
-            ps.statistics.iterator.map(_.toString()).toList
-                .sorted
-                .mkString("PropertyStore Statistics:\n\t", "\n\t", "\n")
-        )
     }
 }
