@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 package seq
 
+import scala.collection.mutable
+
 import java.util.ArrayDeque
 import java.util.PriorityQueue
 
@@ -300,33 +302,33 @@ private[seq] class AllDependeesTasksManager(
         var weight = 0
 
         if (forward) {
-            var allDependees = Set.empty[SomeEOptionP]
-            var newDependees = dependees.toList
+            val allDependees = mutable.HashSet.empty[SomeEPK]
+            var newDependees = dependees.map(_.toEPK).toList
             while (newDependees.nonEmpty) {
                 val nextDependee = newDependees.head
                 newDependees = newDependees.tail
-                allDependees += nextDependee
-                ps.dependees(nextDependee.toEPK) foreach { nextNextDependee ⇒
-                    if (!allDependees.contains(nextNextDependee)) {
-                        newDependees ::= nextNextDependee
-                        allDependees += nextNextDependee
+                val nextDependeeEPK = nextDependee
+                allDependees += nextDependeeEPK
+                ps.dependees(nextDependeeEPK) foreach { nextNextDependee ⇒
+                    val nextNextDependeeEPK = nextNextDependee.toEPK
+                    if (allDependees.add(nextNextDependeeEPK)) {
+                        newDependees ::= nextNextDependeeEPK
                     }
                 }
             }
             weight = allDependees.size
         } else {
             // dependees of dependers
-            var allDependers = Set.empty[SomeEPK]
+            val allDependers = mutable.HashSet.empty[SomeEPK]
             var newDependers = currentDependers.toList
             while (newDependers.nonEmpty) {
                 val nextDepender = newDependers.head
                 newDependers = newDependers.tail
                 allDependers += nextDepender
                 ps.dependers(nextDepender) foreach { nextNextDepender ⇒
-                    if (!allDependers.contains(nextNextDepender)) {
+                    if (allDependers.add(nextNextDepender)) {
                         newDependers ::= nextNextDepender
                         weight += ps.dependeesCount(nextNextDepender)
-                        allDependers += nextNextDepender
                     }
                 }
             }
