@@ -18,12 +18,20 @@ abstract class IFDSProperty[DataFlowFact]
     /** The type of the TAC domain. */
     type V = DUVar[KnownTypedValue]
 
+    /**
+     * Maps exit statements to the data flow facts, which hold after them.
+     */
     def flows: Map[Statement, Set[DataFlowFact]]
 
-    override def equals(that: Any): Boolean = that match {
-        case other: IFDSProperty[DataFlowFact] ⇒ flows == other.flows
-        case _                                 ⇒ false
+    override def equals(other: Any): Boolean = other match {
+        case that: IFDSProperty[DataFlowFact] ⇒
+            // We cached the "hashCode" to make the following comparison more efficient;
+            // note that all properties are eventually added to some set and therefore
+            // the hashCode is required anyway!
+            (this eq that) || (this.hashCode == that.hashCode && this.flows == that.flows)
+        case _ ⇒
+            false
     }
 
-    override def hashCode(): Int = flows.hashCode()
+    override lazy val hashCode: Int = flows.hashCode()
 }
