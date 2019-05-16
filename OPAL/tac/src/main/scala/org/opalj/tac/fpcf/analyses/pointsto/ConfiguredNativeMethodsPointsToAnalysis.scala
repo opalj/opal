@@ -30,7 +30,7 @@ import org.opalj.fpcf.UBPS
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
@@ -63,7 +63,7 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(dm, CallersProperty.key): @unchecked) match {
+        (propertyStore(dm, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -194,7 +194,7 @@ object ConfiguredNativeMethodsPointsToAnalysisScheduler extends FPCFTriggeredAna
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty,
+        Callers,
         PointsTo
     )
 
@@ -213,7 +213,7 @@ object ConfiguredNativeMethodsPointsToAnalysisScheduler extends FPCFTriggeredAna
     ): ConfiguredNativeMethodsPointsToAnalysis = {
         val analysis = new ConfiguredNativeMethodsPointsToAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
@@ -228,5 +228,5 @@ object ConfiguredNativeMethodsPointsToAnalysisScheduler extends FPCFTriggeredAna
     /**
      * Specifies the kind of the properties that will trigger the analysis to be registered.
      */
-    override def triggeredBy: PropertyKind = CallersProperty
+    override def triggeredBy: PropertyKind = Callers
 }

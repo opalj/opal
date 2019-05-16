@@ -23,11 +23,19 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.ConcreteCallees
 import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 
+/**
+ * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
+ * call sites and allows the analyses to retrieve the required [[PartialResult]]s for
+ * [[Callers]] and [[Callees]].
+ *
+ * @author Florian Kuebler
+ * @author Dominik Helm
+ */
 sealed trait CalleesAndCallers {
     final def partialResults(
         caller: DeclaredMethod
@@ -77,7 +85,7 @@ sealed trait CalleesAndCallers {
         })
     }
 
-    protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, CallersProperty]] = Iterator.empty
+    protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = Iterator.empty
 }
 
 trait IncompleteCallSites extends CalleesAndCallers {
@@ -95,9 +103,9 @@ trait Calls extends CalleesAndCallers {
         caller: DeclaredMethod,
         callee: DeclaredMethod,
         pc:     Int
-    ): PartialResult[DeclaredMethod, CallersProperty] = {
-        PartialResult[DeclaredMethod, CallersProperty](callee, CallersProperty.key, {
-            case InterimUBP(ub: CallersProperty) ⇒
+    ): PartialResult[DeclaredMethod, Callers] = {
+        PartialResult[DeclaredMethod, Callers](callee, Callers.key, {
+            case InterimUBP(ub: Callers) ⇒
                 val newCallers = ub.updated(caller, pc, isDirect)
                 // here we assert that update returns the identity if there is no change
                 if (ub ne newCallers)
@@ -106,7 +114,7 @@ trait Calls extends CalleesAndCallers {
                     None
 
             case _: EPK[_, _] ⇒
-                val set = LongTrieSet(CallersProperty.toLong(caller.id, pc, isDirect))
+                val set = LongTrieSet(Callers.toLong(caller.id, pc, isDirect))
                 Some(InterimEUBP(
                     callee,
                     new CallersOnlyWithConcreteCallers(set)
@@ -119,7 +127,7 @@ trait Calls extends CalleesAndCallers {
 
     protected var _callees: IntMap[IntTrieSet] = IntMap.empty
 
-    private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, CallersProperty]] =
+    private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, Callers]] =
         List.empty
 
     private[cg] def addCall(
@@ -142,7 +150,7 @@ trait Calls extends CalleesAndCallers {
         }
     }
 
-    override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, CallersProperty]] = {
+    override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
         _partialResultsForCallers.iterator ++ super.partialResultsForCallers
     }
 }
@@ -223,13 +231,13 @@ trait VMReachableMethodsBase extends CalleesAndCallers {
     def addVMReachableMethod(declaredMethod: DeclaredMethod): Unit =
         vmReachableMethods += declaredMethod
 
-    override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, CallersProperty]] = {
+    override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
         vmReachableMethods.iterator.map { m ⇒
-            PartialResult[DeclaredMethod, CallersProperty](m, CallersProperty.key, {
+            PartialResult[DeclaredMethod, Callers](m, Callers.key, {
                 case _: EPK[_, _] ⇒
                     Some(InterimEUBP(m, OnlyVMLevelCallers))
 
-                case InterimUBP(ub: CallersProperty) ⇒
+                case InterimUBP(ub: Callers) ⇒
                     if (ub.hasVMLevelCallers)
                         None
                     else

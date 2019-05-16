@@ -22,7 +22,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -49,7 +49,7 @@ class FinalizerAnalysis private[analyses] (
             return NoResult;
 
         // is the method reachable?
-        (propertyStore(dm, CallersProperty.key): @unchecked) match {
+        (propertyStore(dm, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -73,8 +73,8 @@ class FinalizerAnalysis private[analyses] (
 
         val r = finalizers.map { finalizerMethod ⇒
             val finalizer = declaredMethods(finalizerMethod)
-            PartialResult[DeclaredMethod, CallersProperty](finalizer, CallersProperty.key, {
-                case InterimUBP(ub: CallersProperty) ⇒
+            PartialResult[DeclaredMethod, Callers](finalizer, Callers.key, {
+                case InterimUBP(ub: Callers) ⇒
                     if (!ub.hasVMLevelCallers)
                         Some(InterimEUBP(finalizer, ub.updatedWithVMLevelCall()))
                     else None
@@ -91,19 +91,19 @@ class FinalizerAnalysis private[analyses] (
 
 object TriggeredFinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(CallersProperty)
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty)
+        PropertyBounds.ub(Callers)
     )
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FinalizerAnalysis = {
         val analysis = new FinalizerAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
-    override def triggeredBy: PropertyKind = CallersProperty
+    override def triggeredBy: PropertyKind = Callers
 }

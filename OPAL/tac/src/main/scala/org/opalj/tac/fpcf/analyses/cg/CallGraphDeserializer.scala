@@ -23,7 +23,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.FieldType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -203,7 +203,7 @@ class CallGraphDeserializerScheduler(serializedCG: File) extends BasicFPCFEagerA
 
     override def uses: Set[PropertyBounds] = Set.empty
 
-    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(Callees, CallersProperty)
+    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(Callees, Callers)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }

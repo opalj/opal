@@ -36,7 +36,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -48,7 +48,7 @@ class CHACallGraphAnalysis private[analyses] (
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
-        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
+        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -177,7 +177,7 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty,
+        Callers,
         Callees,
         TACAI
     )
@@ -185,7 +185,7 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(CallersProperty, Callees)
+        PropertyBounds.ubs(Callers, Callees)
 
     /**
      * Updates the caller properties of the initial entry points
@@ -202,10 +202,10 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
             )(p.logContext)
 
         entryPoints.foreach { ep ⇒
-            ps.preInitialize(ep, CallersProperty.key) {
+            ps.preInitialize(ep, Callers.key) {
                 case _: EPK[_, _] ⇒
                     InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub: CallersProperty) ⇒
+                case InterimUBP(ub: Callers) ⇒
                     InterimEUBP(ep, ub.updatedWithUnknownContext())
                 case eps ⇒
                     throw new IllegalStateException(s"unexpected: $eps")
@@ -222,7 +222,7 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): CHACallGraphAnalysis = {
         val analysis = new CHACallGraphAnalysis(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
@@ -234,5 +234,5 @@ object CHACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
         analysis: FPCFAnalysis
     ): Unit = {}
 
-    override def triggeredBy: PropertyKind = CallersProperty
+    override def triggeredBy: PropertyKind = Callers
 }

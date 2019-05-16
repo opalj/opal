@@ -28,7 +28,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.LoadedClasses
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.ArrayType
@@ -775,14 +775,14 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty,
+        Callers,
         Callees,
         LoadedClasses,
         TACAI
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty,
+        Callers,
         Callees,
         LoadedClasses
     )

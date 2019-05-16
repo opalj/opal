@@ -34,7 +34,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DefinedMethod
@@ -199,7 +199,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
     private val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
+        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -528,7 +528,7 @@ object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisSched
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty,
+        Callers,
         Callees,
         PointsTo,
         TACAI
@@ -549,7 +549,7 @@ object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisSched
     ): AndersenStylePointsToAnalysis = {
         val analysis = new AndersenStylePointsToAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
@@ -561,5 +561,5 @@ object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisSched
         analysis: FPCFAnalysis
     ): Unit = {}
 
-    override def triggeredBy: PropertyKind = CallersProperty
+    override def triggeredBy: PropertyKind = Callers
 }

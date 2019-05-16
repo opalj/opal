@@ -28,7 +28,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -48,9 +48,9 @@ class InstantiatedTypesAnalysis private[analyses] (
         if (declaredMethod.name != "<init>")
             return NoResult;
 
-        val callersEOptP = propertyStore(declaredMethod, CallersProperty.key)
+        val callersEOptP = propertyStore(declaredMethod, Callers.key)
 
-        val callersUB: CallersProperty = (callersEOptP: @unchecked) match {
+        val callersUB: Callers = (callersEOptP: @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -88,11 +88,11 @@ class InstantiatedTypesAnalysis private[analyses] (
     }
 
     private[this] def processCallers(
-        declaredMethod:   DeclaredMethod,
-        declaredType:     ObjectType,
-        callersEOptP:     EOptionP[DeclaredMethod, CallersProperty],
-        callersUB:        CallersProperty,
-        seenSuperCallers: Set[DeclaredMethod]
+                                        declaredMethod:   DeclaredMethod,
+                                        declaredType:     ObjectType,
+                                        callersEOptP:     EOptionP[DeclaredMethod, Callers],
+                                        callersUB:        Callers,
+                                        seenSuperCallers: Set[DeclaredMethod]
     ): PropertyComputationResult = {
         var newSeenSuperCallers = seenSuperCallers
         for {
@@ -176,7 +176,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         declaredType:     ObjectType,
         seenSuperCallers: Set[DeclaredMethod]
     )(someEPS: SomeEPS): PropertyComputationResult = {
-        val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, CallersProperty]]
+        val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
         processCallers(declaredMethod, declaredType, eps, eps.ub, seenSuperCallers)
 
     }
@@ -230,10 +230,10 @@ object TriggeredInstantiatedTypesAnalysis extends FPCFTriggeredAnalysisScheduler
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         InstantiatedTypes,
-        CallersProperty
+        Callers
     )
 
-    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+    override def triggeredBy: PropertyKey[Callers] = Callers.key
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
 

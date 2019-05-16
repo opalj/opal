@@ -8,20 +8,20 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 
 /**
  * The proxy class for all call-graph related properties.
  * All information will be queried in the property store ([[PropertyStore]]), therefore,
- * all values for [[Callees]] and [[CallersProperty]] in the property store must be final,
+ * all values for [[Callees]] and [[Callers]] in the property store must be final,
  * when instantiating this class.
  *
  * @author Florian Kuebler
  */
 class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: DeclaredMethods) {
     assert(ps.entities(_.pk == Callees.key).forall(ps(_, Callees.key).isFinal))
-    assert(ps.entities(_.pk == CallersProperty.key).forall(ps(_, CallersProperty.key).isFinal))
+    assert(ps.entities(_.pk == Callers.key).forall(ps(_, Callers.key).isFinal))
 
     def calleesOf(m: DeclaredMethod, pc: Int): Iterator[DeclaredMethod] = {
         ps(m, Callees.key).ub.callees(pc)
@@ -52,29 +52,29 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
     }
 
     def callersOf(m: DeclaredMethod): TraversableOnce[(DeclaredMethod, Int, Boolean)] = {
-        ps(m, CallersProperty.key).ub.callers
+        ps(m, Callers.key).ub.callers
     }
 
-    def callersPropertyOf(m: DeclaredMethod): CallersProperty = {
-        ps(m, CallersProperty.key).ub
+    def callersPropertyOf(m: DeclaredMethod): Callers = {
+        ps(m, Callers.key).ub
     }
 
     def hasVMLevelCaller(m: DeclaredMethod): Boolean = {
-        ps(m, CallersProperty.key).ub.hasVMLevelCallers
+        ps(m, Callers.key).ub.hasVMLevelCallers
     }
 
     def hasCallersWithUnknownContext(m: DeclaredMethod): Boolean = {
-        ps(m, CallersProperty.key).ub.hasCallersWithUnknownContext
+        ps(m, Callers.key).ub.hasCallersWithUnknownContext
     }
 
     def reachableMethods(): Iterator[DeclaredMethod] = {
-        val callersProperties = ps.entities(CallersProperty.key)
+        val callersProperties = ps.entities(Callers.key)
 
         callersProperties.filterNot(_.ub eq NoCallers).map(_.e.asInstanceOf[DeclaredMethod])
     }
 
     lazy val numEdges: Int = {
-        val callers = ps.entities(CallersProperty.key).map(_.ub.callers)
+        val callers = ps.entities(Callers.key).map(_.ub.callers)
         callers.map(_.size).sum
     }
 }

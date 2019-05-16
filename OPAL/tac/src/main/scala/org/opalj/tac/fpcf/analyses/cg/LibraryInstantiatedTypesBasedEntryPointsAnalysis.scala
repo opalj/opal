@@ -21,7 +21,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.DeclaredMethod
@@ -104,7 +104,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         reachableMethods: Iterator[DeclaredMethod]
     ): Iterator[ProperPropertyComputationResult] = {
         reachableMethods.map { method ⇒
-            PartialResult[DeclaredMethod, CallersProperty](method, CallersProperty.key, {
+            PartialResult[DeclaredMethod, Callers](method, Callers.key, {
                 case InterimUBP(ub) if !ub.hasCallersWithUnknownContext ⇒
                     Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
 
@@ -137,7 +137,7 @@ object EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis extends BasicFPCFEa
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty)
+        PropertyBounds.ub(Callers)
     )
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty

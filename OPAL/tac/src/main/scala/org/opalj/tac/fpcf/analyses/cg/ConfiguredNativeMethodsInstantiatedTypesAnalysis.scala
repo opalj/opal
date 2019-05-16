@@ -21,7 +21,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -58,7 +58,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     }
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
+        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -109,7 +109,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
 object TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
     override def uses: Set[PropertyBounds] =
-        PropertyBounds.ubs(CallersProperty, InstantiatedTypes)
+        PropertyBounds.ubs(Callers, InstantiatedTypes)
 
     override def derivesCollaboratively: Set[PropertyBounds] =
         PropertyBounds.ubs(InstantiatedTypes)
@@ -121,10 +121,10 @@ object TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis extends BasicFP
     ): ConfiguredNativeMethodsInstantiatedTypesAnalysis = {
         val analysis = new ConfiguredNativeMethodsInstantiatedTypesAnalysis(p)
 
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
 
         analysis
     }
 
-    override def triggeredBy: PropertyKind = CallersProperty
+    override def triggeredBy: PropertyKind = Callers
 }

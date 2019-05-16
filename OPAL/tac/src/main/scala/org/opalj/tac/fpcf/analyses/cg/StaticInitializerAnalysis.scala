@@ -21,7 +21,7 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -56,7 +56,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
      * For the given project, it registers to the [[org.opalj.br.fpcf.cg.properties.LoadedClasses]]
      * and the [[org.opalj.br.fpcf.cg.properties.InstantiatedTypes]] and ensures that:
      *     1. For each loaded class, its static initializer is called (see
-     *     [[org.opalj.br.fpcf.cg.properties.CallersProperty]])
+     *     [[org.opalj.br.fpcf.cg.properties.Callers]])
      *     2. For each instantiated type, the type is also a loaded class
      */
     // FIXME "register to" doesn't make sense, here!
@@ -100,9 +100,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
             unseenLoadedClasses
                 .flatMap { lc ⇒ retrieveStaticInitializers(lc) }
                 .map { clInit ⇒
-                    PartialResult[DeclaredMethod, CallersProperty](
+                    PartialResult[DeclaredMethod, Callers](
                         clInit,
-                        CallersProperty.key,
+                        Callers.key,
                         {
                             case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
                                 Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
@@ -153,7 +153,7 @@ object TriggeredStaticInitializerAnalysis extends BasicFPCFEagerAnalysisSchedule
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(LoadedClasses)
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty
+        Callers
     )
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty

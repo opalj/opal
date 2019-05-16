@@ -43,7 +43,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
@@ -195,7 +195,7 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
     private[this] val declaredMethods = p.get(DeclaredMethodsKey)
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
+        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -637,18 +637,18 @@ object PointsToBasedCallGraphScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        PointsTo, Callees, CallersProperty, TACAI
+        PointsTo, Callees, Callers, TACAI
     )
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        Callees, CallersProperty
+        Callees, Callers
     )
 
     override def register(p: SomeProject, ps: PropertyStore, i: Null): PointsToBasedCallGraph = {
         val analysis = new PointsToBasedCallGraph(p)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
@@ -666,10 +666,10 @@ object PointsToBasedCallGraphScheduler extends FPCFTriggeredAnalysisScheduler {
             logOnce(Error("project configuration", "the project has no entry points"))
 
         entryPoints.foreach { ep ⇒
-            ps.preInitialize(ep, CallersProperty.key) {
+            ps.preInitialize(ep, Callers.key) {
                 case _: EPK[_, _] ⇒
                     InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub: CallersProperty) ⇒
+                case InterimUBP(ub: Callers) ⇒
                     InterimEUBP(ep, ub.updatedWithUnknownContext())
                 case r ⇒
                     throw new IllegalStateException(s"unexpected eps $r")
@@ -690,5 +690,5 @@ object PointsToBasedCallGraphScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
 
-    override def triggeredBy: PropertyKind = CallersProperty
+    override def triggeredBy: PropertyKind = Callers
 }

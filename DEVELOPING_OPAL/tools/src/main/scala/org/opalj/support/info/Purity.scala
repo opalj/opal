@@ -32,7 +32,7 @@ import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.ContextuallyPure
@@ -204,8 +204,8 @@ object Purity {
         } { t ⇒ callGraphTime = t.toSeconds }
 
         val reachableMethods =
-            ps.entities(CallersProperty.key).collect {
-                case FinalEP(e: DeclaredMethod, c: CallersProperty) if c ne NoCallers ⇒ e
+            ps.entities(Callers.key).collect {
+                case FinalEP(e: DeclaredMethod, c: Callers) if c ne NoCallers ⇒ e
             }.toSet
 
         val analyzedMethods = projMethods.filter(reachableMethods.contains)

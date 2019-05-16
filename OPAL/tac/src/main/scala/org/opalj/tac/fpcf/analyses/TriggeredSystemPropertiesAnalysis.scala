@@ -25,7 +25,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.TACAI
@@ -37,7 +37,7 @@ class TriggeredSystemPropertiesAnalysis private[analyses] (
 
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         // todo this is copy & past code from the RTACallGraphAnalysis -> refactor
-        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
+        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -187,11 +187,11 @@ class TriggeredSystemPropertiesAnalysis private[analyses] (
 object TriggeredSystemPropertiesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.ub(CallersProperty),
+        PropertyBounds.ub(Callers),
         PropertyBounds.ub(TACAI)
     )
 
-    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+    override def triggeredBy: PropertyKey[Callers] = Callers.key
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null

@@ -23,7 +23,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.cg.RTACallGraphKey
 
@@ -133,12 +133,12 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             (pc, tgts) ← callees.callSites()
             callee ← tgts
         } {
-            val FinalP(callersProperty) = propertyStore(callee, CallersProperty.key).asFinal
+            val FinalP(callersProperty) = propertyStore(callee, Callers.key).asFinal
             assert(callersProperty.callers.map(caller ⇒ (caller._1, caller._2)).toSet.contains(dm → pc))
         }
 
         for {
-            FinalEP(dm: DeclaredMethod, callers) ← propertyStore.entities(CallersProperty.key).map(_.asFinal)
+            FinalEP(dm: DeclaredMethod, callers) ← propertyStore.entities(Callers.key).map(_.asFinal)
             (caller, pc, _) ← callers.callers
         } {
             val FinalP(calleesProperty) = propertyStore(caller, Callees.key).asFinal

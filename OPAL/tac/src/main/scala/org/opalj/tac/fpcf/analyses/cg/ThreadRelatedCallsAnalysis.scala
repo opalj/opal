@@ -9,7 +9,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.value.IsReferenceValue
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -427,10 +427,10 @@ object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFEagerAnalysisSchedul
     }
 
     override def uses: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callees, CallersProperty, TACAI)
+        PropertyBounds.ubs(Callees, Callers, TACAI)
 
     override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callees, CallersProperty)
+        PropertyBounds.ubs(Callees, Callers)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 

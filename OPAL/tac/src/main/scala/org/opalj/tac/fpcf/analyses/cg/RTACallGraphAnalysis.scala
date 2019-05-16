@@ -37,7 +37,7 @@ import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSObjectValue
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.DeclaredMethod
@@ -171,7 +171,7 @@ object RTAState {
 /**
  * A rapid type call graph analysis (RTA). For a given [[org.opalj.br.Method]] it computes the set
  * of outgoing call edges ([[org.opalj.br.fpcf.cg.properties.Callees]]). Furthermore, it updates the
- * [[org.opalj.br.fpcf.cg.properties.CallersProperty]].
+ * [[org.opalj.br.fpcf.cg.properties.Callers]].
  *
  * This analysis does not handle features such as JVM calls to static initializers or finalize
  * calls.
@@ -191,7 +191,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
     /**
      * Computes the calls from the given method
      * ([[org.opalj.br.fpcf.cg.properties.Callees]] property) and updates the
-     * [[org.opalj.br.fpcf.cg.properties.CallersProperty]].
+     * [[org.opalj.br.fpcf.cg.properties.Callers]].
      *
      * Whenever a `declaredMethod` becomes reachable (the caller property is set initially),
      * this method is called.
@@ -201,7 +201,7 @@ class RTACallGraphAnalysis private[analyses] ( final val project: SomeProject) e
      */
     def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
 
-        (propertyStore(declaredMethod, CallersProperty.key): @unchecked) match {
+        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -686,12 +686,12 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         InstantiatedTypes,
         Callees,
-        CallersProperty,
+        Callers,
         TACAI
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callees, CallersProperty)
+        PropertyBounds.ubs(Callees, Callers)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
@@ -709,10 +709,10 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
             logOnce(Error("project configuration", "the project has no entry points"))
 
         entryPoints.foreach { ep ⇒
-            ps.preInitialize(ep, CallersProperty.key) {
+            ps.preInitialize(ep, Callers.key) {
                 case _: EPK[_, _] ⇒
                     InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub: CallersProperty) ⇒
+                case InterimUBP(ub: Callers) ⇒
                     InterimEUBP(ep, ub.updatedWithUnknownContext())
                 case r ⇒
                     throw new IllegalStateException(s"unexpected eps $r")
@@ -730,7 +730,7 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): RTACallGraphAnalysis = {
         val analysis = new RTACallGraphAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
@@ -742,5 +742,5 @@ object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
         analysis: FPCFAnalysis
     ): Unit = {}
 
-    override def triggeredBy: PropertyKind = CallersProperty
+    override def triggeredBy: PropertyKind = Callers
 }

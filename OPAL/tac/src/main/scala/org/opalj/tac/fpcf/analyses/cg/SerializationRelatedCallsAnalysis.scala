@@ -23,7 +23,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -50,7 +50,7 @@ trait APIBasedCallGraphAnalysis extends FPCFAnalysis {
 
     final def registerAPIMethod(): ProperPropertyComputationResult = {
         val seenCallers = Set.empty[(DeclaredMethod, Int, Boolean)]
-        val callersEOptP = ps(apiMethod, CallersProperty.key)
+        val callersEOptP = ps(apiMethod, Callers.key)
         c(seenCallers)(callersEOptP)
     }
 
@@ -58,7 +58,7 @@ trait APIBasedCallGraphAnalysis extends FPCFAnalysis {
         seenCallers: Set[(DeclaredMethod, Int, Boolean)]
     )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
         (callersEOptP: @unchecked) match {
-            case UBP(callersUB: CallersProperty) ⇒
+            case UBP(callersUB: Callers) ⇒
                 // IMPROVE: use better design in order to get new callers
                 var newSeenCallers = seenCallers
                 var results: List[ProperPropertyComputationResult] = Nil
@@ -548,13 +548,13 @@ class SerializationRelatedCallsAnalysis private[analyses] (
 object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty,
+        Callers,
         Callees,
         TACAI
     )
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        CallersProperty, Callees
+        Callers, Callees
     )
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty

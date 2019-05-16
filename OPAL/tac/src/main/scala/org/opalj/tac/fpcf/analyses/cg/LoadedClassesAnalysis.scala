@@ -25,7 +25,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.LoadedClasses
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -33,7 +33,7 @@ import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * For a reachable methods (see [[org.opalj.br.fpcf.cg.properties.CallersProperty]]) this class
+ * For a reachable methods (see [[org.opalj.br.fpcf.cg.properties.Callers]]) this class
  * computes the classes that are being loaded (e.g. due to static field accesses).
  *
  * @author Florian Kuebler
@@ -57,7 +57,7 @@ class LoadedClassesAnalysis(
     def handleCaller(
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
-        val callersOfMethod = propertyStore(declaredMethod, CallersProperty.key)
+        val callersOfMethod = propertyStore(declaredMethod, Callers.key)
         callersOfMethod match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
@@ -217,11 +217,11 @@ object TriggeredLoadedClassesAnalysis extends BasicFPCFTriggeredAnalysisSchedule
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         LoadedClasses,
-        CallersProperty,
+        Callers,
         TACAI
     )
 
-    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+    override def triggeredBy: PropertyKey[Callers] = Callers.key
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 

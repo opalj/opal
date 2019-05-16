@@ -16,7 +16,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.cg.properties.CallersImplWithOtherCalls
 import org.opalj.br.fpcf.cg.properties.CallersOnlyWithConcreteCallers
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.cg.properties.OnlyVMCallersAndWithUnknownContext
@@ -24,7 +24,7 @@ import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 @RunWith(classOf[JUnitRunner])
-class CallersPropertyTest extends FlatSpec with Matchers {
+class CallersTest extends FlatSpec with Matchers {
     val typesProject =
         Project(
             ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
@@ -189,7 +189,7 @@ class CallersPropertyTest extends FlatSpec with Matchers {
     }
 
     it should "behave correctly" in {
-        val encodedCallers = LongTrieSet(CallersProperty.toLong(declaredMethod.id, pc = 0, isDirect = true))
+        val encodedCallers = LongTrieSet(Callers.toLong(declaredMethod.id, pc = 0, isDirect = true))
         val withVM = CallersImplWithOtherCalls(
             encodedCallers, hasVMLevelCallers = true, hasCallersWithUnknownContext = false
         )

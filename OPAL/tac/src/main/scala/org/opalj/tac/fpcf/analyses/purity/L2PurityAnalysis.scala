@@ -64,7 +64,7 @@ import org.opalj.br.fpcf.properties.UsesNoStaticData
 import org.opalj.br.fpcf.properties.UsesVaryingData
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.Purity
@@ -976,7 +976,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
             // todo querying ps is quiet expensive
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, CallersProperty.key).ub != NoCallers ⇒
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
                 dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(methods)(
@@ -985,7 +985,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
         analysis
     }
 
-    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(CallersProperty)
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(Callers)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 

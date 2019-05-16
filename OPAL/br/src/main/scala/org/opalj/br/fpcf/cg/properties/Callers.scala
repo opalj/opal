@@ -23,10 +23,10 @@ import org.opalj.br.analyses.DeclaredMethods
  */
 sealed trait CallersPropertyMetaInformation extends PropertyMetaInformation {
 
-    final type Self = CallersProperty
+    final type Self = Callers
 }
 
-sealed trait CallersProperty extends OrderedProperty with CallersPropertyMetaInformation {
+sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation {
 
     def hasCallersWithUnknownContext: Boolean
 
@@ -43,43 +43,43 @@ sealed trait CallersProperty extends OrderedProperty with CallersPropertyMetaInf
      * In case, the specified call is already contained, `this` is returned, i.e. the reference does
      * not change when the of callers set remains unchanged.
      */
-    def updated(caller: DeclaredMethod, pc: Int, isDirect: Boolean): CallersProperty
+    def updated(caller: DeclaredMethod, pc: Int, isDirect: Boolean): Callers
 
-    def updatedWithUnknownContext(): CallersProperty
+    def updatedWithUnknownContext(): Callers
 
-    def updatedWithVMLevelCall(): CallersProperty
+    def updatedWithVMLevelCall(): Callers
 
     override def toString: String = {
         s"Callers(size=${this.size})"
     }
 
-    final def key: PropertyKey[CallersProperty] = CallersProperty.key
+    final def key: PropertyKey[Callers] = Callers.key
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: CallersProperty): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Callers): Unit = {
         if (other.size < size)
             throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
     }
 }
 
-sealed trait CallersWithoutUnknownContext extends CallersProperty {
+sealed trait CallersWithoutUnknownContext extends Callers {
     final override def hasCallersWithUnknownContext: Boolean = false
 }
 
-sealed trait CallersWithUnknownContext extends CallersProperty {
+sealed trait CallersWithUnknownContext extends Callers {
     final override def hasCallersWithUnknownContext: Boolean = true
     final override def updatedWithUnknownContext(): CallersWithUnknownContext = this
 }
 
-sealed trait CallersWithVMLevelCall extends CallersProperty {
+sealed trait CallersWithVMLevelCall extends Callers {
     final override def hasVMLevelCallers: Boolean = true
     final override def updatedWithVMLevelCall(): CallersWithVMLevelCall = this
 }
 
-sealed trait CallersWithoutVMLevelCall extends CallersProperty {
+sealed trait CallersWithoutVMLevelCall extends Callers {
     final override def hasVMLevelCallers: Boolean = false
 }
 
-sealed trait EmptyConcreteCallers extends CallersProperty {
+sealed trait EmptyConcreteCallers extends Callers {
     final override def size: Int = 0
 
     final override def callers(
@@ -91,8 +91,8 @@ sealed trait EmptyConcreteCallers extends CallersProperty {
 
     final override def updated(
         caller: DeclaredMethod, pc: Int, isDirect: Boolean
-    ): CallersProperty = {
-        val set = LongTrieSet(CallersProperty.toLong(caller.id, pc, isDirect))
+    ): Callers = {
+        val set = LongTrieSet(Callers.toLong(caller.id, pc, isDirect))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
             new CallersOnlyWithConcreteCallers(set)
@@ -122,7 +122,7 @@ object OnlyVMLevelCallers
 object OnlyVMCallersAndWithUnknownContext
     extends EmptyConcreteCallers with CallersWithVMLevelCall with CallersWithUnknownContext
 
-sealed trait CallersImplementation extends CallersProperty {
+sealed trait CallersImplementation extends Callers {
     val encodedCallers: LongTrieSet /* MethodId + PC*/
     final override def size: Int = encodedCallers.size
 
@@ -133,7 +133,7 @@ sealed trait CallersImplementation extends CallersProperty {
         for {
             encodedPair ← encodedCallers.iterator
         } yield {
-            val (mId, pc, isDirect) = CallersProperty.toMethodPcAndIsDirect(encodedPair)
+            val (mId, pc, isDirect) = Callers.toMethodPcAndIsDirect(encodedPair)
             (declaredMethods(mId), pc, isDirect)
         }
     }
@@ -145,8 +145,8 @@ class CallersOnlyWithConcreteCallers(
 
     override def updated(
         caller: DeclaredMethod, pc: Int, isDirect: Boolean
-    ): CallersProperty = {
-        val encodedCaller = CallersProperty.toLong(caller.id, pc, isDirect)
+    ): Callers = {
+        val encodedCaller = Callers.toLong(caller.id, pc, isDirect)
         val newSet = encodedCallers + encodedCaller
 
         // requires the LongTrieSet to return `this` if the `encodedCaller` is already contained.
@@ -156,14 +156,14 @@ class CallersOnlyWithConcreteCallers(
             new CallersOnlyWithConcreteCallers(newSet)
     }
 
-    override def updatedWithUnknownContext(): CallersProperty =
+    override def updatedWithUnknownContext(): Callers =
         CallersImplWithOtherCalls(
             encodedCallers,
             hasVMLevelCallers = false,
             hasCallersWithUnknownContext = true
         )
 
-    override def updatedWithVMLevelCall(): CallersProperty =
+    override def updatedWithVMLevelCall(): Callers =
         CallersImplWithOtherCalls(
             encodedCallers,
             hasVMLevelCallers = true,
@@ -184,8 +184,8 @@ class CallersImplWithOtherCalls(
 
     override def updated(
         caller: DeclaredMethod, pc: Int, isDirect: Boolean
-    ): CallersProperty = {
-        val encodedCaller = CallersProperty.toLong(caller.id, pc, isDirect)
+    ): Callers = {
+        val encodedCaller = Callers.toLong(caller.id, pc, isDirect)
         val newSet = encodedCallers + encodedCaller
 
         // requires the LongTrieSet to return `this` if the `encodedCaller` is already contained.
@@ -195,13 +195,13 @@ class CallersImplWithOtherCalls(
             new CallersImplWithOtherCalls(newSet, specialCallSitesFlags)
     }
 
-    override def updatedWithVMLevelCall(): CallersProperty =
+    override def updatedWithVMLevelCall(): Callers =
         if (hasVMLevelCallers)
             this
         else
             new CallersImplWithOtherCalls(encodedCallers, (specialCallSitesFlags | 1).toByte)
 
-    override def updatedWithUnknownContext(): CallersProperty =
+    override def updatedWithUnknownContext(): Callers =
         if (hasCallersWithUnknownContext)
             this
         else
@@ -226,9 +226,9 @@ object CallersImplWithOtherCalls {
     }
 }
 
-object CallersProperty extends CallersPropertyMetaInformation {
+object Callers extends CallersPropertyMetaInformation {
 
-    final val key: PropertyKey[CallersProperty] = {
+    final val key: PropertyKey[Callers] = {
         val name = "opalj.CallersProperty"
         PropertyKey.create(
             name,

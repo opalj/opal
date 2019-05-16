@@ -32,7 +32,7 @@ import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
@@ -173,7 +173,7 @@ object EagerInterProceduralEscapeAnalysis
         val declaredMethods = p.get(DeclaredMethodsKey)
 
         val methods = declaredMethods.declaredMethods
-        val callersProperties = ps(methods.toTraversable, CallersProperty)
+        val callersProperties = ps(methods.toTraversable, Callers)
         assert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map(_.e).toSet
@@ -192,7 +192,7 @@ object EagerInterProceduralEscapeAnalysis
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
-    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(CallersProperty)
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(Callers)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }

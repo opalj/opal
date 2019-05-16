@@ -15,7 +15,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.DeclaredMethod
@@ -49,7 +49,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(dm, CallersProperty.key): @unchecked) match {
+        (propertyStore(dm, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -90,7 +90,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(CallersProperty)
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callees)
 
@@ -107,7 +107,7 @@ object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends FPCFTriggeredAn
     ): ConfiguredNativeMethodsCallGraphAnalysis = {
         val analysis = new ConfiguredNativeMethodsCallGraphAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(CallersProperty.key, analysis.analyze)
+        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
@@ -122,5 +122,5 @@ object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends FPCFTriggeredAn
     /**
      * Specifies the kind of the properties that will trigger the analysis to be registered.
      */
-    override def triggeredBy: PropertyKind = CallersProperty
+    override def triggeredBy: PropertyKind = Callers
 }

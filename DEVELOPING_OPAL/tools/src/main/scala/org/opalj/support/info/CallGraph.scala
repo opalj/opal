@@ -14,7 +14,7 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.CallGraphSerializer
@@ -144,7 +144,7 @@ object CallGraph extends ProjectAnalysisApplication {
             for (methodSignature ← callersSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callers of ${m.toJava}:")
-                    println(ps(m, CallersProperty.key).ub.callers.map {
+                    println(ps(m, Callers.key).ub.callers.map {
                         case (caller, pc, isDirect) ⇒
                             s"${caller.toJava}, $pc${if (!isDirect) ", indirect" else ""}"
                     }.mkString("\t", "\n\t", "\n"))
