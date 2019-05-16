@@ -150,9 +150,9 @@ object Purity {
 
         // todo: use variables for the constants
         val baseConfig = if (isLibrary)
-            ConfigFactory.load("LibraryProject")
+            ConfigFactory.load("LibraryProject.conf")
         else
-            ConfigFactory.load("ApplicationProject")
+            ConfigFactory.load("ApplicationProject.conf")
 
         // todo in case of application this value is already set
         implicit val config: Config =
