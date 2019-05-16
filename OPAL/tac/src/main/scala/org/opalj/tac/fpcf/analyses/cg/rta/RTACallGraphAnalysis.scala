@@ -302,12 +302,12 @@ class RTACallGraphAnalysis private[analyses] (
                     val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
-                        val cfOption = project.classFile(subtype)
-                        cfOption.isDefined && {
-                            val cf = cfOption.get
-                            !cf.isInterfaceDeclaration && !cf.isAbstract
+                            val cfOption = project.classFile(subtype)
+                            cfOption.isDefined && {
+                                val cf = cfOption.get
+                                !cf.isInterfaceDeclaration && !cf.isAbstract
+                            }
                         }
-                    }
 
                     handleImpreciseCall(
                         caller,

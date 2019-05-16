@@ -19,14 +19,11 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBPS
-import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
@@ -40,16 +37,14 @@ import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSObjectValue
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.pointsto.properties.PointsTo
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
+import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -405,12 +400,12 @@ class PointsToBasedCallGraph private[analyses] (
                         classHierarchy.allSubtypesForeachIterator(
                             ov.theUpperTypeBound, reflexive = true
                         ).filter { subtype ⇒
-                            val cfOption = project.classFile(subtype)
-                            cfOption.isDefined && {
-                                val cf = cfOption.get
-                                !cf.isInterfaceDeclaration && !cf.isAbstract
+                                val cfOption = project.classFile(subtype)
+                                cfOption.isDefined && {
+                                    val cf = cfOption.get
+                                    !cf.isInterfaceDeclaration && !cf.isAbstract
+                                }
                             }
-                        }
                     }
 
                     val callSite = (pc, call.name, call.descriptor, call.declaringClass)
