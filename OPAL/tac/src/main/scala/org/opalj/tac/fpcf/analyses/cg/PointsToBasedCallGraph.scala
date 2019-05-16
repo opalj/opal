@@ -110,7 +110,7 @@ class P2CGState private[cg] (
                     _defSitesToCallSites(defSite) = newCallSites
             }
             _callSiteToDefSites.remove(callSite)
-            // todo here we shold also remove all dependencies for this call-site
+            // todo here we should also remove all dependencies for this call-site
         } else {
             _virtualCallSites(callSite) = typesLeft
         }

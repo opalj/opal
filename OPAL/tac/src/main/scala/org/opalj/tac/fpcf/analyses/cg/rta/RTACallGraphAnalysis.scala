@@ -11,8 +11,6 @@ import scala.language.existentials
 import org.opalj.log.Error
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -23,18 +21,12 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.value.IsMObjectValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsSArrayValue
-import org.opalj.value.IsSObjectValue
 import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -62,306 +54,58 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class RTACallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends ReachableMethodAnalysis {
+) extends CallGraphAnalysis {
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
 
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
-    /**
-     * Computes the calls from the given method
-     * ([[org.opalj.br.fpcf.cg.properties.Callees]] property) and updates the
-     * [[org.opalj.br.fpcf.cg.properties.Callers]].
-     *
-     * Whenever a `declaredMethod` becomes reachable (the caller property is set initially),
-     * this method is called.
-     * In case the method never becomes reachable, the fallback
-     * [[org.opalj.br.fpcf.cg.properties.NoCallers]] will be used by the framework and this method
-     * returns [[org.opalj.fpcf.NoResult]].
-     */
-    override def processMethod(
-        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
-        val state = RTAState(definedMethod, tacEP)
-        processMethod(state, new DirectCalls())
+    override type State = RTAState
+
+    override def c(state: RTAState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
+            state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
+
+            // we only want to add the new calls, so we create a fresh object
+            processMethod(state, new DirectCalls())
+
+        case UBP(_: TACAI) ⇒
+            InterimPartialResult(
+                Some(eps), c(state)
+            )
+        case UBP(_: InstantiatedTypes) ⇒
+            val seenTypes = state.instantiatedTypesUB.size
+
+            state.updateInstantiatedTypesDependee(
+                eps.asInstanceOf[EPS[SomeProject, InstantiatedTypes]]
+            )
+
+            // we only want to add the new calls, so we create a fresh object
+            val calleesAndCallers = new DirectCalls()
+
+            handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
+
+            returnResult(calleesAndCallers)(state)
     }
 
-    private[this] def processMethod(
-        state: RTAState, calleesAndCallers: DirectCalls
-    ): ProperPropertyComputationResult = {
-        val tac = state.tac().get
-
+    override def createInitialState(
+        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
+    ): RTAState = {
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-
-        // the upper bound for type instantiations, seen so far
-        // in case they are not yet computed, we use the initialTypes
-        val instantiatedTypesUB: UIDSet[ObjectType] =
-            if (instantiatedTypesEOptP.hasUBP)
-                instantiatedTypesEOptP.ub.types
-            else
-                UIDSet.empty
-
-        val instantiatedTypesDependee =
-            if (instantiatedTypesEOptP.isFinal) None else Some(instantiatedTypesEOptP)
-
-        // the number of types, already seen by the analysis
-        val numTypesProcessed = instantiatedTypesUB.size
-        implicit val newState: RTAState = state.copy(
-            numTypesProcessed = numTypesProcessed,
-            instantiatedTypesDependee = instantiatedTypesDependee
-        )
-
-        // process each stmt in the current method to compute:
-        //  1. newly allocated types
-        //  2. methods (+ pc) called by the current method
-        //  3. compute the call sites of virtual calls, whose targets are not yet final
-        handleStmts(tac, instantiatedTypesUB, calleesAndCallers)
-
-        returnResult(calleesAndCallers)
+        new RTAState(definedMethod, tacEP, instantiatedTypesEOptP)
     }
 
-    def handleStmts(
-        tac:                 TACode[TACMethodParameter, V],
-        instantiatedTypesUB: UIDSet[ObjectType],
-        calleesAndCallers:   DirectCalls
-    // (callees map, virtual call sites)
-    )(
-        implicit
-        state: RTAState
-    ): Unit = {
-        val method = state.method
-
-        // for allocation sites, add new types
-        // for calls, add new edges
-        tac.stmts.foreach {
-            case stmt @ StaticFunctionCallStatement(call) ⇒
-                handleCall(
-                    method,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    stmt.pc,
-                    call.resolveCallTarget,
-                    calleesAndCallers
-                )
-
-            case call: StaticMethodCall[V] ⇒
-                handleCall(
-                    method,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    call.pc,
-                    call.resolveCallTarget,
-                    calleesAndCallers
-                )
-
-            case stmt @ NonVirtualFunctionCallStatement(call) ⇒
-                handleCall(
-                    method,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    stmt.pc,
-                    call.resolveCallTarget(method.declaringClassType.asObjectType),
-                    calleesAndCallers
-                )
-
-            case call: NonVirtualMethodCall[V] ⇒
-                handleCall(
-                    method,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    call.pc,
-                    call.resolveCallTarget(method.declaringClassType.asObjectType),
-                    calleesAndCallers
-                )
-
-            case VirtualFunctionCallStatement(call) ⇒
-                handleVirtualCall(
-                    method, call, call.pc, instantiatedTypesUB, calleesAndCallers
-                )
-
-            case call: VirtualMethodCall[V] ⇒
-                handleVirtualCall(
-                    method, call, call.pc, instantiatedTypesUB, calleesAndCallers
-                )
-
-            case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallSite(idc.pc)
-                logOnce(
-                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
-                )
-
-            case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallSite(idc.pc)
-                logOnce(
-                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
-                )
-
-            case idc: InvokedynamicMethodCall[_] ⇒
-                calleesAndCallers.addIncompleteCallSite(idc.pc)
-                logOnce(
-                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
-                )
-
-            case _ ⇒ //nothing to do
-        }
-    }
-
-    private[this] def unknownLibraryCall(
-        caller:              DefinedMethod,
-        callName:            String,
-        callDescriptor:      MethodDescriptor,
-        callDeclaringClass:  ReferenceType,
-        runtimeReceiverType: ReferenceType,
-        packageName:         String,
-        pc:                  Int,
-        calleesAndCallers:   DirectCalls
-    ): Unit = {
-        val declaringClassType = callDeclaringClass.mostPreciseObjectType
-        val runtimeType = runtimeReceiverType.mostPreciseObjectType
-
-        val declTgt = declaredMethods.apply(
-            declaringClassType,
-            packageName,
-            runtimeType,
-            callName,
-            callDescriptor
-        )
-
-        if (declTgt.isVirtualOrHasSingleDefinedMethod) {
-            calleesAndCallers.addCall(caller, declTgt, pc)
-        } else {
-            declTgt.definedMethods foreach { m ⇒
-                val dm = declaredMethods(m)
-                calleesAndCallers.addCall(caller, dm, pc)
-            }
-        }
-
-        calleesAndCallers.addIncompleteCallSite(pc)
-    }
-
-    /**
-     * Computes the calles of the given `method` including the known effect of the `call` and
-     * the call sites associated ith this call (in order to process updates of instantiated types).
-     * There can be multiple "call sites", in case the three-address code has computed multiple
-     * type bounds for the receiver.
-     */
-    private[this] def handleVirtualCall(
-        caller:              DefinedMethod,
-        call:                Call[V] with VirtualCall[V],
-        pc:                  Int,
-        instantiatedTypesUB: UIDSet[ObjectType],
-        calleesAndCallers:   DirectCalls
-    )(implicit state: RTAState): Unit = {
-        // todo: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
-        val callerType = caller.definedMethod.classFile.thisType
-
-        val rvs = call.receiver.asVar.value.asReferenceValue.allValues
-        for (rv ← rvs) rv match {
-            case _: IsSArrayValue ⇒
-                val tgtR = project.instanceCall(
-                    caller.declaringClassType.asObjectType,
-                    ObjectType.Object,
-                    call.name,
-                    call.descriptor
-                )
-
-                handleCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    pc,
-                    tgtR,
-                    calleesAndCallers
-                )
-
-            case ov: IsSObjectValue ⇒
-                if (ov.isPrecise) {
-                    val tgt = project.instanceCall(
-                        callerType,
-                        rv.leastUpperType.get,
-                        call.name,
-                        call.descriptor
-                    )
-
-                    handleCall(
-                        caller,
-                        call.name,
-                        call.descriptor,
-                        call.declaringClass,
-                        pc,
-                        tgt,
-                        calleesAndCallers
-                    )
-                } else {
-                    val potentialTypes = classHierarchy.allSubtypesForeachIterator(
-                        ov.theUpperTypeBound, reflexive = true
-                    ).filter { subtype ⇒
-                            val cfOption = project.classFile(subtype)
-                            cfOption.isDefined && {
-                                val cf = cfOption.get
-                                !cf.isInterfaceDeclaration && !cf.isAbstract
-                            }
-                        }
-
-                    handleImpreciseCall(
-                        caller,
-                        call,
-                        pc,
-                        ov.theUpperTypeBound,
-                        instantiatedTypesUB,
-                        potentialTypes,
-                        calleesAndCallers
-                    )
-                }
-
-            case mv: IsMObjectValue ⇒
-                val typeBounds = mv.upperTypeBound
-                val remainingTypeBounds = typeBounds.tail
-                val firstTypeBound = typeBounds.head
-                val potentialTypes = ch.allSubtypesForeachIterator(
-                    firstTypeBound, reflexive = true
-                ).filter { subtype ⇒
-                    val cfOption = project.classFile(subtype)
-                    cfOption.isDefined && {
-                        val cf = cfOption.get
-                        !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                            remainingTypeBounds.forall { supertype ⇒
-                                ch.isSubtypeOf(subtype, supertype)
-                            }
-                    }
-                }
-
-                handleImpreciseCall(
-                    caller,
-                    call,
-                    pc,
-                    call.declaringClass,
-                    instantiatedTypesUB,
-                    potentialTypes,
-                    calleesAndCallers
-                )
-            case _: IsNullValue ⇒
-            // for now, we ignore the implicit calls to NullPointerException.<init>
-        }
-    }
-
-    private[this] def handleImpreciseCall(
+    override def handleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,
         specializedDeclaringClassType: ReferenceType,
-        instantiatedTypesUB:           UIDSet[ObjectType],
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
     )(implicit state: RTAState): Unit = {
         for (possibleTgtType ← potentialTargets) {
-            if (instantiatedTypesUB.contains(possibleTgtType)) {
+            if (state.instantiatedTypesUB.contains(possibleTgtType)) {
                 val tgtR = project.instanceCall(
                     caller.declaringClassType.asObjectType,
                     possibleTgtType,
@@ -418,42 +162,23 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     /**
-     * For a call at `pc` and the set of `targets` (determined by CHA), add corresponding
-     * edges for all targets.
+     * Computes the calls from the given method
+     * ([[org.opalj.br.fpcf.cg.properties.Callees]] property) and updates the
+     * [[org.opalj.br.fpcf.cg.properties.Callers]].
+     *
+     * Whenever a `declaredMethod` becomes reachable (the caller property is set initially),
+     * this method is called.
+     * In case the method never becomes reachable, the fallback
+     * [[org.opalj.br.fpcf.cg.properties.NoCallers]] will be used by the framework and this method
+     * returns [[org.opalj.fpcf.NoResult]].
      */
-    private[this] def handleCall(
-        caller:             DefinedMethod,
-        callName:           String,
-        callDescriptor:     MethodDescriptor,
-        callDeclaringClass: ReferenceType,
-        pc:                 Int,
-        target:             org.opalj.Result[Method],
-        calleesAndCallers:  DirectCalls
-    ): Unit = {
-        if (target.hasValue) {
-            val tgtDM = declaredMethods(target.value)
-            calleesAndCallers.addCall(caller, tgtDM, pc)
-        } else {
-            val packageName = caller.definedMethod.classFile.thisType.packageName
-            unknownLibraryCall(
-                caller,
-                callName,
-                callDescriptor,
-                callDeclaringClass,
-                callDeclaringClass,
-                packageName,
-                pc,
-                calleesAndCallers
-            )
-        }
-    }
 
     // modifies state and the calleesAndCallers
     private[this] def handleVirtualCallSites(
-        newInstantiatedTypes: Iterator[ObjectType], calleesAndCallers: DirectCalls
+        calleesAndCallers: DirectCalls, seenTypes: Int
     )(implicit state: RTAState): Unit = {
-        newInstantiatedTypes.foreach { instantiatedType ⇒
-            val callSitesOpt = state.virtualCallSites.get(instantiatedType.id.toLong)
+        state.newInstantiatedTypes(seenTypes).foreach { instantiatedType ⇒
+            val callSitesOpt = state.getVirtualCallSites(instantiatedType)
             if (callSitesOpt.isDefined) {
                 callSitesOpt.get.foreach { callSite ⇒
                     val (pc, name, descr, declaringClass) = callSite
@@ -480,49 +205,6 @@ class RTACallGraphAnalysis private[analyses] (
         }
     }
 
-    private[this] def returnResult(
-        calleesAndCallers: DirectCalls
-    )(implicit state: RTAState): ProperPropertyComputationResult = {
-        val results = calleesAndCallers.partialResults(state.method)
-
-        if (state.virtualCallSites.isEmpty || !state.hasOpenDependees)
-            Results(results)
-        else Results(
-            InterimPartialResult(state.dependees(), c(state)),
-            results
-        )
-    }
-
-    private[this] def c(state: RTAState)(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
-                state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
-                // as the callees and callers creates partial results for both (callees and callers)
-                // we should create an empty/new one!
-                processMethod(state, new DirectCalls())
-
-            case UBP(_: TACAI) ⇒
-                InterimPartialResult(
-                    Some(eps), c(state)
-                )
-            case UBP(ub: InstantiatedTypes) ⇒
-                state.updateInstantiatedTypesDependee(
-                    eps.asInstanceOf[EPS[SomeProject, InstantiatedTypes]]
-                )
-                val toBeDropped = state.numTypesProcessed
-                state.numTypesProcessed = ub.numElements
-                val newInstantiatedTypes = ub.getNewTypes(toBeDropped)
-
-                val calleesAndCallers = new DirectCalls()
-
-                // the new edges in the call graph due to the new types
-                // as the callees and callers creates partial results for both (callees and callers)
-                // we should create an empty/new one!
-                handleVirtualCallSites(newInstantiatedTypes, calleesAndCallers)(state)
-
-                returnResult(calleesAndCallers)(state)
-        }
-    }
 }
 
 object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
