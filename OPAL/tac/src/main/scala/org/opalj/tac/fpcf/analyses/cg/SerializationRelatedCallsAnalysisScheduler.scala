@@ -357,7 +357,7 @@ class OISReadObjectAnalysis private[analyses] (
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class SerializationRelatedCallsAnalysis private[analyses] (
+class SerializationRelatedCallsAnalysisScheduler private[analyses](
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -386,7 +386,7 @@ object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFEagerAnalysis
 
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
 
-        val analysis = new SerializationRelatedCallsAnalysis(p)
+        val analysis = new SerializationRelatedCallsAnalysisScheduler(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }

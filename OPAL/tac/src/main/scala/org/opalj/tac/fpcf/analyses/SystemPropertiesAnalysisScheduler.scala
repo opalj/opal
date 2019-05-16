@@ -31,7 +31,8 @@ import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
-class TriggeredSystemPropertiesAnalysis private[analyses] (
+// todo: let it extend ReachableMethodsAnalysis
+class SystemPropertiesAnalysisScheduler private[analyses](
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -184,7 +185,7 @@ class TriggeredSystemPropertiesAnalysis private[analyses] (
 
 }
 
-object TriggeredSystemPropertiesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object SystemPropertiesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(Callers),
@@ -195,8 +196,8 @@ object TriggeredSystemPropertiesAnalysis extends BasicFPCFTriggeredAnalysisSched
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
-    ): TriggeredSystemPropertiesAnalysis = {
-        val analysis = new TriggeredSystemPropertiesAnalysis(p)
+    ): SystemPropertiesAnalysisScheduler = {
+        val analysis = new SystemPropertiesAnalysisScheduler(p)
         ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis
     }

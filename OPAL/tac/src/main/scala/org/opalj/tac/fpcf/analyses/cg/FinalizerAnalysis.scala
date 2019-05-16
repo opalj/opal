@@ -89,7 +89,7 @@ class FinalizerAnalysis private[analyses] (
     }
 }
 
-object TriggeredFinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+object FinalizerAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)
 

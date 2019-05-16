@@ -772,7 +772,7 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
     }
 }
 
-object TriggeredReflectionRelatedCallsAnalysis extends BasicFPCFEagerAnalysisScheduler {
+object ReflectionRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

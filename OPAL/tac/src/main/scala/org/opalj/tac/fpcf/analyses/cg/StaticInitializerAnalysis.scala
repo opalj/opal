@@ -48,10 +48,10 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     private case class LCState(
-            // only present for non-final values
-            var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
-            var loadedClassesUB: Option[LoadedClasses],
-            var seenClasses:     Int
+        // only present for non-final values
+        var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
+        var loadedClassesUB: Option[LoadedClasses],
+        var seenClasses:     Int
     )
 
     /**
@@ -106,7 +106,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
                         clInit,
                         Callers.key,
                         {
-                            case InterimUBP(ub) if !ub.hasVMLevelCallers ⇒
+                            case InterimUBP(ub: Callers) if !ub.hasVMLevelCallers ⇒
                                 Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
 
                             case _: InterimEP[_, _] ⇒ None
@@ -150,7 +150,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
 }
 
-object TriggeredStaticInitializerAnalysis extends BasicFPCFEagerAnalysisScheduler {
+object StaticInitializerAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(LoadedClasses)
 

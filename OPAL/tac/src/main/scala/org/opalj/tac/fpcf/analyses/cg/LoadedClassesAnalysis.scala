@@ -213,7 +213,7 @@ class LoadedClassesAnalysis(
     }
 }
 
-object TriggeredLoadedClassesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object LoadedClassesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         LoadedClasses,

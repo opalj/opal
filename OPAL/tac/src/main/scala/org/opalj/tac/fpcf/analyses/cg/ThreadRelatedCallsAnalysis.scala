@@ -335,7 +335,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
             thisType,
             preciseType,
             name,
-            TriggeredThreadRelatedCallsAnalysis.uncaughtExceptionDescriptor
+            ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
         )
         // todo refactor
         if (tgt.hasValue) {
@@ -346,7 +346,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
                 definedMethod.declaringClassType.asObjectType.packageName,
                 preciseType,
                 name,
-                TriggeredThreadRelatedCallsAnalysis.uncaughtExceptionDescriptor
+                ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
             )
 
             assert(!declTgt.hasSingleDefinedMethod)
@@ -367,7 +367,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
  * @author Dominik Helm
  * @author Michael Reif
  */
-class TriggeredThreadRelatedCallsAnalysis private[analyses] (
+class ThreadRelatedCallsAnalysisScheduler private[analyses](
         final val project: SomeProject
 ) extends FPCFAnalysis {
     def process(p: SomeProject): PropertyComputationResult = {
@@ -418,7 +418,7 @@ class TriggeredThreadRelatedCallsAnalysis private[analyses] (
     }
 }
 
-object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFEagerAnalysisScheduler {
+object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     private[cg] val uncaughtExceptionDescriptor = {
         MethodDescriptor(
@@ -436,8 +436,8 @@ object TriggeredThreadRelatedCallsAnalysis extends BasicFPCFEagerAnalysisSchedul
 
     override def start(
         p: SomeProject, ps: PropertyStore, unused: Null
-    ): TriggeredThreadRelatedCallsAnalysis = {
-        val analysis = new TriggeredThreadRelatedCallsAnalysis(p)
+    ): ThreadRelatedCallsAnalysisScheduler = {
+        val analysis = new ThreadRelatedCallsAnalysisScheduler(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }

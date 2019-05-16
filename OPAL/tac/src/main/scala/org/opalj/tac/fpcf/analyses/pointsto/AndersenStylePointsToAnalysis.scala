@@ -252,7 +252,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
     }
 
     /**
-     * Constructs the [[PropertyComputationResult]] associated with the state.
+     * Constructs the [[org.opalj.fpcf.PropertyComputationResult]] associated with the state.
      */
     @inline private[this] def returnResult(implicit state: PointsToState): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
