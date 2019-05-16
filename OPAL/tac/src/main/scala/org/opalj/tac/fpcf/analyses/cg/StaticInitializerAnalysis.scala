@@ -34,9 +34,11 @@ import org.opalj.br.fpcf.cg.properties.LoadedClasses
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 
 /**
- * Extends the call graph analysis (e.g. [[org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysis]]) to
- * include calls to static initializers from within the JVM for each loaded class
+ * Extends the call graph analysis (e.g. [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis]]
+ * ) to include calls to static initializers from within the JVM for each loaded class
  * ([[org.opalj.br.fpcf.cg.properties.LoadedClasses]]).
+ * This requires the [[org.opalj.br.fpcf.cg.properties.LoadedClasses]] to be computed, e.g. by the
+ * [[LoadedClassesAnalysis]].
  *
  * @author Florian Kuebler
  */
@@ -46,10 +48,10 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     private case class LCState(
-            // only present for non-final values
-            var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
-            var loadedClassesUB: Option[LoadedClasses],
-            var seenClasses:     Int
+        // only present for non-final values
+        var lcDependee:      Option[EOptionP[SomeProject, LoadedClasses]],
+        var loadedClassesUB: Option[LoadedClasses],
+        var seenClasses:     Int
     )
 
     /**

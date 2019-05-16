@@ -22,11 +22,11 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
-import org.opalj.tac.fpcf.analyses.cg.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.rta.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis
+import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredInstantiatedTypesAnalysis
 
 /**
  * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on RTA.
@@ -34,7 +34,7 @@ import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsInstantiat
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
  * If the [[org.opalj.br.analyses.cg.LibraryEntryPointsFinder]] is scheduled
- * the analysis will schedule [[org.opalj.tac.fpcf.analyses.cg.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis]].
+ * the analysis will schedule [[EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis]].
  *
  * Note, that initial instantiated types ([[InitialInstantiatedTypesKey]]) and entry points
  * ([[InitialEntryPointsKey]]) can be configured before hand.

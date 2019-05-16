@@ -122,7 +122,7 @@ class LoadedClassesAnalysis(
         def update(
             eop: EOptionP[_, LoadedClasses]
         ): Option[EPS[SomeProject, LoadedClasses]] = eop match {
-            case InterimUBP(ub) ⇒
+            case InterimUBP(ub: LoadedClasses) ⇒
                 val newUb = ub.classes ++ newLoadedClasses
                 // due to monotonicity:
                 // the size check sufficiently replaces the subset check

@@ -4,6 +4,7 @@ package tac
 package fpcf
 package analyses
 package cg
+package rta
 
 import scala.language.existentials
 
@@ -88,11 +89,11 @@ class InstantiatedTypesAnalysis private[analyses] (
     }
 
     private[this] def processCallers(
-                                        declaredMethod:   DeclaredMethod,
-                                        declaredType:     ObjectType,
-                                        callersEOptP:     EOptionP[DeclaredMethod, Callers],
-                                        callersUB:        Callers,
-                                        seenSuperCallers: Set[DeclaredMethod]
+        declaredMethod:   DeclaredMethod,
+        declaredType:     ObjectType,
+        callersEOptP:     EOptionP[DeclaredMethod, Callers],
+        callersUB:        Callers,
+        seenSuperCallers: Set[DeclaredMethod]
     ): PropertyComputationResult = {
         var newSeenSuperCallers = seenSuperCallers
         for {

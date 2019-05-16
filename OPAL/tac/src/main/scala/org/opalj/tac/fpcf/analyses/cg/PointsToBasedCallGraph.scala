@@ -189,52 +189,20 @@ class P2CGState private[cg] (
  *
  * @author Florian Kuebler
  */
-class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
+class PointsToBasedCallGraph private[analyses] (
+        final val project: SomeProject
+) extends ReachableMethodAnalysis {
     private[this] val definitionSites = p.get(DefinitionSitesKey)
     private[this] val formalParameters = p.get(VirtualFormalParametersKey)
-    private[this] val declaredMethods = p.get(DeclaredMethodsKey)
 
-    def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
-            case FinalP(NoCallers) ⇒
-                // nothing to do, since there is no caller
-                return NoResult;
-
-            case eps: EPS[_, _] ⇒
-                if (eps.ub eq NoCallers) {
-                    // we can not create a dependency here, so the analysis is not allowed to create
-                    // such a result
-                    throw new IllegalStateException("illegal immediate result for callers")
-                }
-            // the method is reachable, so we analyze it!
-        }
-
-        // we only allow defined methods
-        if (!declaredMethod.hasSingleDefinedMethod)
-            return NoResult;
-
-        val method = declaredMethod.definedMethod
-
-        // we only allow defined methods with declared type eq. to the class of the method
-        if (method.classFile.thisType != declaredMethod.declaringClassType)
-            return NoResult;
-
-        if (method.body.isEmpty)
-            // happens in particular for native methods
-            return NoResult;
-
-        val tacEP = propertyStore(method, TACAI.key)
-
-        val state = new P2CGState(declaredMethod.asDefinedMethod, tacEP)
-
-        if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
-            processMethod(state, new DirectCalls())
-        else {
-            InterimPartialResult(Some(tacEP), c(state))
-        }
+    override def processMethod(
+        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
+        val state = new P2CGState(definedMethod, tacEP)
+        doProcessMethod(state, new DirectCalls())
     }
 
-    private[this] def processMethod(
+    private[this] def doProcessMethod(
         state: P2CGState, calls: DirectCalls
     ): ProperPropertyComputationResult = {
         val tac = state.tac
@@ -437,12 +405,12 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
                         classHierarchy.allSubtypesForeachIterator(
                             ov.theUpperTypeBound, reflexive = true
                         ).filter { subtype ⇒
-                                val cfOption = project.classFile(subtype)
-                                cfOption.isDefined && {
-                                    val cf = cfOption.get
-                                    !cf.isInterfaceDeclaration && !cf.isAbstract
-                                }
+                            val cfOption = project.classFile(subtype)
+                            cfOption.isDefined && {
+                                val cf = cfOption.get
+                                !cf.isInterfaceDeclaration && !cf.isAbstract
                             }
+                        }
                     }
 
                     val callSite = (pc, call.name, call.descriptor, call.declaringClass)
@@ -590,7 +558,7 @@ class PointsToBasedCallGraph private[analyses] ( final val project: SomeProject)
         eps match {
             case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
-                processMethod(state, new DirectCalls())
+                doProcessMethod(state, new DirectCalls())
 
             case UBP(_: TACAI) ⇒
                 InterimPartialResult(Some(eps), c(state))

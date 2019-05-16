@@ -182,7 +182,7 @@ class ThreadStartAnalysis private[analyses] (
                             if (indexOfRunnableParameter != -1) {
                                 for (runnableValue ← params(indexOfRunnableParameter).asVar.value.asReferenceValue.allValues) {
                                     if (runnableValue.isPrecise) {
-                                        addMethodASDJADNGNASIFI(
+                                        addMethod(
                                             definedMethod,
                                             runnableValue,
                                             pc,
@@ -202,7 +202,7 @@ class ThreadStartAnalysis private[analyses] (
         }
     }
 
-    private[this] def addMethodASDJADNGNASIFI(
+    private[this] def addMethod(
         definedMethod:      DefinedMethod,
         receiver:           IsReferenceValue,
         pc:                 Int,

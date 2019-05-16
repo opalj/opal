@@ -9,98 +9,35 @@ import org.opalj.log.Error
 import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.DefinedMethod
 import org.opalj.tac.fpcf.properties.TACAI
 
 class CHACallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ReachableMethodAnalysis {
 
-    private implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
-    def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-
-        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
-            case FinalP(NoCallers) ⇒
-                // nothing to do, since there is no caller
-                return NoResult;
-
-            case eps: SomeEPS ⇒
-                if (eps.ub eq NoCallers) {
-                    // we can not create a dependency here, so the analysis is not allowed to create
-                    // such a result
-                    throw new IllegalStateException("illegal immediate result for callers")
-                }
-            // the method is reachable, so we analyze it!
-        }
-
-        // we only allow defined methods
-        if (!declaredMethod.hasSingleDefinedMethod)
-            return NoResult;
-
-        val method = declaredMethod.definedMethod
-
-        // we only allow defined methods with declared type eq. to the class of the method
-        if (method.classFile.thisType != declaredMethod.declaringClassType)
-            return NoResult;
-
-        if (method.body.isEmpty)
-            return NoResult;
-
-        val tacEP = propertyStore(method, TACAI.key)
-
-        if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(declaredMethod, tacEP)
-        } else {
-            InterimPartialResult(
-                Some(tacEP),
-                continuationForTAC(declaredMethod)
-            )
-        }
-    }
-
-    private[this] def continuationForTAC(declaredMethod: DeclaredMethod)(
-        someEPS: SomeEPS
-    ): ProperPropertyComputationResult = someEPS match {
-        case UBP(tac: TACAI) if tac.tac.isDefined ⇒
-            processMethod(declaredMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
-        case _ ⇒
-            InterimPartialResult(
-                Some(someEPS),
-                continuationForTAC(declaredMethod)
-            )
-    }
-
-    private[this] def processMethod(
-        declaredMethod: DeclaredMethod, tacEP: EOptionP[Method, TACAI]
+    override def processMethod(
+        declaredMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         val tac = tacEP.ub.tac.get
 

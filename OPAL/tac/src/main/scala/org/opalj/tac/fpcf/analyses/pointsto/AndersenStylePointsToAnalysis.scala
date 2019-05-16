@@ -5,22 +5,17 @@ package fpcf
 package analyses
 package pointsto
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
@@ -35,146 +30,17 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
-
-/**
- * Encapsulates the state of the analysis, analyzing a certain method.
- */
-class PointsToState private (
-        private[pointsto] val method:   DefinedMethod,
-        private[this] var _tacDependee: Option[EOptionP[Method, TACAI]]
-) {
-
-    private[this] val _pointsToSets: mutable.Map[Entity, UIDSet[ObjectType]] = mutable.Map.empty
-
-    // todo document
-    // if we get an update for e: we have to update all points-to sets for the entities in map(e)
-    private[this] val _dependeeToDependers: mutable.Map[Entity, mutable.Set[Entity]] = mutable.Map.empty
-
-    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[Entity]] = mutable.Map.empty
-
-    private[this] val _dependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
-
-    private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
-
-    private[pointsto] def callees(ps: PropertyStore): Callees = {
-        val calleesProperty = if (_calleesDependee.isDefined) {
-
-            _calleesDependee.get
-        } else {
-            val calleesProperty = ps(method, Callees.key)
-            _calleesDependee = Some(calleesProperty)
-            calleesProperty
-        }
-
-        if (calleesProperty.isEPK)
-            NoCallees
-        else calleesProperty.ub
-    }
-
-    private[pointsto] def updateCalleesDependee(newCallees: EPS[DeclaredMethod, Callees]): Unit = {
-        _calleesDependee = Some(newCallees)
-    }
-
-    private[pointsto] def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
-        assert(_tacDependee.isDefined)
-        assert(_tacDependee.get.ub.tac.isDefined)
-        _tacDependee.get.ub.tac.get
-    }
-
-    private[pointsto] def dependees: Traversable[EOptionP[Entity, Property]] = {
-        _tacDependee.filterNot(_.isFinal) ++ _dependees.values ++ _calleesDependee.filter(_.isRefinable)
-    }
-
-    private[pointsto] def hasOpenDependees: Boolean = {
-        !_tacDependee.forall(_.isFinal) ||
-            _dependees.nonEmpty ||
-            (_calleesDependee.isDefined && _calleesDependee.get.isRefinable)
-    }
-
-    private[pointsto] def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
-        _tacDependee = Some(tacDependee)
-    }
-
-    private[pointsto] def addPointsToDependency(depender: Entity, dependee: EOptionP[Entity, PointsTo]): Unit = {
-        _dependeeToDependers.getOrElseUpdate(dependee.e, mutable.Set.empty).add(depender)
-        _dependerToDependees.getOrElseUpdate(depender, mutable.Set.empty).add(dependee.e)
-        _dependees(dependee.e) = dependee
-        assert(_dependees.contains(dependee.e) && _dependeeToDependers.contains(dependee.e))
-    }
-
-    private[pointsto] def removePointsToDependee(eps: EPS[Entity, PointsTo]): Unit = {
-        val dependee = eps.e
-        assert(_dependees.contains(dependee))
-        _dependees.remove(dependee)
-        val dependers = _dependeeToDependers(dependee)
-        _dependeeToDependers.remove(dependee)
-        for (depender ← dependers) {
-            val dependees = _dependerToDependees(depender)
-            dependees.remove(dependee)
-            if (dependees.isEmpty)
-                _dependerToDependees.remove(depender)
-        }
-    }
-
-    private[pointsto] def updatePointsToDependee(eps: EOptionP[Entity, PointsTo]): Unit = {
-        _dependees(eps.e) = eps
-    }
-
-    private[pointsto] def getOrRetrievePointsToEPS(
-        dependee: Entity, ps: PropertyStore
-    ): EOptionP[Entity, PointsTo] = {
-        _dependees.getOrElse(dependee, ps(dependee, PointsTo.key))
-    }
-
-    private[pointsto] def setOrUpdatePointsToSet(e: Entity, p2s: UIDSet[ObjectType]): Unit = {
-        if (_pointsToSets.contains(e)) {
-            val newPointsToSet = _pointsToSets(e) ++ p2s
-            _pointsToSets(e) = newPointsToSet
-        } else {
-            _pointsToSets(e) = p2s
-        }
-    }
-
-    private[pointsto] def clearPointsToSet(): Unit = {
-        _pointsToSets.clear()
-    }
-
-    private[pointsto] def pointsToSets: Iterator[(Entity, UIDSet[ObjectType])] = {
-        _pointsToSets.iterator
-    }
-
-    private[pointsto] def dependersOf(dependee: Entity): Traversable[Entity] = _dependeeToDependers(dependee)
-
-    private[pointsto] def hasDependees(potentialDepender: Entity): Boolean =
-        _dependerToDependees.contains(potentialDepender)
-
-    private[pointsto] def addIncompletePointsToInfo(pc: Int): Unit = {
-        // Todo: We need a mechanism to mark points-to sets as incomplete
-    }
-}
-
-object PointsToState {
-    def apply(
-        method:      DefinedMethod,
-        tacDependee: EOptionP[Method, TACAI]
-    ): PointsToState = {
-        new PointsToState(method, Some(tacDependee))
-    }
-}
 
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
@@ -192,49 +58,16 @@ object PointsToState {
  */
 class AndersenStylePointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends ReachableMethodAnalysis {
 
-    private implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
     private val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
 
-    def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
-            case FinalP(NoCallers) ⇒
-                // nothing to do, since there is no caller
-                return NoResult;
-
-            case eps: EPS[_, _] ⇒
-                if (eps.ub eq NoCallers) {
-                    // we can not create a dependency here, so the analysis is not allowed to create
-                    // such a result
-                    throw new IllegalStateException("illegal immediate result for callers")
-                }
-            // the method is reachable, so we analyze it!
-        }
-
-        // we only allow defined methods
-        if (!declaredMethod.hasSingleDefinedMethod)
-            return NoResult;
-
-        val method = declaredMethod.definedMethod
-
-        // we only allow defined methods with declared type eq. to the class of the method
-        if (method.classFile.thisType != declaredMethod.declaringClassType)
-            return NoResult;
-
-        if (method.body.isEmpty)
-            // happens in particular for native methods
-            return NoResult;
-
-        val tacEP = propertyStore(method, TACAI.key)
-        implicit val state: PointsToState = PointsToState(declaredMethod.asDefinedMethod, tacEP)
-
-        if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod
-        } else {
-            InterimPartialResult(Some(tacEP), c(state))
-        }
+    override def processMethod(
+        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
+        implicit val state: PointsToState = PointsToState(definedMethod, tacEP)
+        doProcessMethod
     }
 
     private[this] def handleCall(
@@ -263,7 +96,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
         }
     }
 
-    private[this] def processMethod(implicit state: PointsToState): ProperPropertyComputationResult = {
+    private[this] def doProcessMethod(implicit state: PointsToState): ProperPropertyComputationResult = {
         val tac = state.tac
         val method = state.method.definedMethod
 
@@ -394,7 +227,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
         eps match {
             case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
-                processMethod(state)
+                doProcessMethod(state)
 
             case UBP(_: TACAI) ⇒
                 InterimPartialResult(Some(eps), c(state))
@@ -415,7 +248,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 // todo instead of rerunning the complete analysis, get new calls for all pcs only
 
                 state.updateCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
-                processMethod(state)
+                doProcessMethod(state)
         }
     }
 
