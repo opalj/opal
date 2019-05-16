@@ -23,7 +23,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
-import org.opalj.tac.fpcf.analyses.cg.PointsToBasedCallGraphScheduler
+import org.opalj.tac.fpcf.analyses.cg.pointsto.PointsToBasedCallGraphScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethodsPointsToAnalysisScheduler
 
