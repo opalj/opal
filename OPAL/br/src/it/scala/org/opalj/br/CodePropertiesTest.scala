@@ -32,8 +32,6 @@ import org.scalatest.FunSuite
 import java.util.concurrent.atomic.AtomicInteger
 import java.lang.{Boolean ⇒ JBoolean}
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.util.PerformanceEvaluation.timed
 import org.opalj.bytecode.JRELibraryFolder
@@ -195,12 +193,12 @@ class CodePropertiesTest extends FunSuite {
         // To make the comparison more meaningful we have to turn off bytecode optimizations;
         // (Due to the optimizations we get a new smaller cfg; however the old stack map table
         // remains valid; it just contains superfluous entries.)
-        val baseConfig: Config = ConfigFactory.load()
         val optimizationConfigKey = BytecodeOptimizer.SimplifyControlFlowKey
         val logOptimizationsConfigKey = BytecodeOptimizer.LogControlFlowSimplificationKey
-        val theConfig = baseConfig.
-            withValue(logOptimizationsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
-            withValue(optimizationConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
+        val theConfig =
+            BaseConfig
+                .withValue(logOptimizationsConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE))
+                .withValue(optimizationConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
         class Reader extends { override val config = theConfig } with Java9Framework {
             override def loadsInterfacesOnly: Boolean = false
         }

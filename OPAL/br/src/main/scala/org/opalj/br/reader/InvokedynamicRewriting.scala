@@ -6,7 +6,6 @@ package reader
 import java.lang.invoke.LambdaMetafactory
 
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.log.Info
@@ -1300,11 +1299,10 @@ object InvokedynamicRewriting {
      * set to the specified values.
      */
     def defaultConfig(rewrite: Boolean, logRewrites: Boolean): Config = {
-        val baseConfig: Config = ConfigFactory.load()
         val rewritingConfigKey = InvokedynamicRewritingConfigKey
         val logLambdaConfigKey = LambdaExpressionsLogRewritingsConfigKey
         val logConcatConfigKey = StringConcatLogRewritingsConfigKey
-        baseConfig.
+        BaseConfig.
             withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(rewrite)).
             withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(logRewrites)).
             withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(logRewrites))

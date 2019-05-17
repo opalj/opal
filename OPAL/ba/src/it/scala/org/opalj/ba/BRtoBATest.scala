@@ -6,14 +6,13 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import java.lang.{Boolean ⇒ JBoolean}
+import java.lang.Boolean.FALSE
 import java.io.File
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 import java.util.concurrent.atomic.AtomicInteger
 
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.locateTestResources
@@ -34,8 +33,7 @@ class BRtoBATest extends FlatSpec with Matchers {
     behavior of "toDA(...br.ClassFile)"
 
     val ClassFileReader = {
-        val testConfig = ConfigFactory.load().
-            withValue(SimplifyControlFlowKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
+        val testConfig = BaseConfig.withValue(SimplifyControlFlowKey, fromAnyRef(FALSE))
 
         object Framework extends {
             override val config = testConfig
