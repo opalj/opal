@@ -33,7 +33,6 @@ import org.opalj.tac.fpcf.analyses.pointsto.PointsToRelation
 /**
  * Handles the effect of certain (configured native methods) to the set of instantiated types.
  *
- *
  * @author Dominik Helm
  * @author Florian Kuebler
  */
@@ -43,6 +42,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
+    // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
         ConfiguredNativeMethods.reader.read(
             p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"

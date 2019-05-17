@@ -13,8 +13,8 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DeclaredMethod
 
 /**
- * Provides the functionality to serialize a [[CallGraph]] into a .json file according to the
- * format required by the JCG (https://bitbucket.org/delors/jcg) project.
+ * Provides the functionality to serialize a [[CallGraph]] into a .json file according to the format
+ * required by the JCG (https://bitbucket.org/delors/jcg) project.
  *
  * @author Florian Kuebler
  * @author Dominik Helm
@@ -27,8 +27,7 @@ object CallGraphSerializer {
      *
      * @note That this implementation explicitly uses a buffered writer and writes the information
      *       directly into the file. Furthermore, it is not pretty printed and spaces are omitted.
-     *       This is due to inefficient representation for large call graphs, so they can also be
-     *       serialized.
+     *       This allows large call graphs to be serialized efficiently.
      */
     def writeCG(cg: CallGraph, outFile: File)(implicit declaredMethods: DeclaredMethods): Unit = {
         val writer = new BufferedWriter(new FileWriter(outFile))

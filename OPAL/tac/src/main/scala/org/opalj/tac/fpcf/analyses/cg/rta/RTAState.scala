@@ -83,7 +83,7 @@ class RTAState(
 
     def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ObjectType] = {
         if (_instantiatedTypesDependee.hasUBP) {
-            _instantiatedTypesDependee.ub.getNewTypes(seenTypes)
+            _instantiatedTypesDependee.ub.drop(seenTypes)
         } else {
             UIDSet.empty
         }

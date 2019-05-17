@@ -33,8 +33,8 @@ import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * For a reachable methods (see [[org.opalj.br.fpcf.cg.properties.Callers]]) this class
- * computes the classes that are being loaded (e.g. due to static field accesses).
+ * For a reachable methods (see [[org.opalj.br.fpcf.cg.properties.Callers]]) this class computes the
+ * classes that are being loaded (e.g. due to static field accesses).
  *
  * @author Florian Kuebler
  */
@@ -95,6 +95,7 @@ class LoadedClassesAnalysis(
                 }
         }
     }
+
     private[this] def continuationForTAC(
         method: DeclaredMethod
     )(eps: SomeEPS): PropertyComputationResult = {

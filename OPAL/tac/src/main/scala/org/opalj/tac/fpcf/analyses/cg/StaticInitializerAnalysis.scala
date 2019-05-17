@@ -83,7 +83,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val (unseenLoadedClasses, seenClasses) =
             if (state.loadedClassesUB.isDefined) {
                 val lcUB = state.loadedClassesUB.get
-                (lcUB.getNewClasses(state.seenClasses), lcUB.size)
+                (lcUB.drop(state.seenClasses), lcUB.size)
             } else {
                 (Iterator.empty, 0)
             }

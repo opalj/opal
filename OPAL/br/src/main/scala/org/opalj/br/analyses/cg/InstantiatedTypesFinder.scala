@@ -17,6 +17,12 @@ sealed trait InstantiatedTypesFinder {
     def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = Traversable.empty
 }
 
+/**
+ * This trait considers only the type java.lang.String as instantiated that is the type that is
+ * be instantiated for command line applications for their command line parameters.
+ *
+ * @author Florian Kuebler
+ */
 trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
@@ -24,6 +30,13 @@ trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
     }
 }
 
+/**
+ * This trait considers those types instantiated that can be instantiated by an application using
+ * the project under analysis as a library, i.e., those types that can be instantiated because they
+ * are public or inside an open package and that have a constructor that is accessible.
+ *
+ * @author Dominik Helm
+ */
 trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
@@ -38,6 +51,33 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
     }
 }
 
+/**
+ * This trait provides an analysis that loads instantiated types from the given project
+ * configuration file.
+ *
+ * All instantiated types must be configured under the following configuration key:
+ *      **org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.instantiatedTypes**
+ *
+ * Example:
+ * {{{
+ *        org.opalj.br.analyses.cg {
+ *            InitialInstantiatedTypesKey {
+ *                analysis = "org.opalj.br.analyses.cg.ConfigurationInstantiatedTypesFinder"
+ *                instantiatedTypes = [
+ *                  "java/util/List+",
+ *                  "java/util/HashSet"
+ *                ]
+ *            }
+ *        }
+ *  }}}
+ *
+ * Please note that the first instantiated type, by adding the "+" to the class' name,
+ * considers all subtypes of List as instantiated. In contrast, the second entry does not consider
+ * any subtypes of HashSet (by not suffixing a plus to class), so only the single class is
+ * considered to be instantiated.
+ *
+ * @author Michael Reif
+ */
 trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     // don't make this a val for initialization reasons
@@ -81,7 +121,8 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
             val objectType = ObjectType(typeName)
             if (considerSubtypes)
-                instantiatedTypes = instantiatedTypes ++ project.classHierarchy.allSubtypes(objectType, true)
+                instantiatedTypes =
+                    instantiatedTypes ++ project.classHierarchy.allSubtypes(objectType, true)
             else
                 instantiatedTypes += objectType
         }
@@ -103,7 +144,11 @@ object LibraryInstantiatedTypesFinder
 
 /**
  * The AllInstantiatedTypesFinder considers all class files' types as instantiated. It can be
- * configured to consider only project class files instead of project and library class files.
+ * configured to consider only project class files instead of project and library class files by
+ * specifying
+ * **org.opalj.br.analyses.cg.InitialInstantiatedTypesKey.AllInstantiatedTypesFinder.projectClassesOnly=true**.
+ *
+ * @author Dominik Helm
  */
 object AllInstantiatedTypesFinder extends InstantiatedTypesFinder {
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {

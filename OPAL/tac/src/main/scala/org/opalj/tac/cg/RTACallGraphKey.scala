@@ -29,7 +29,7 @@ import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredConfiguredNativeMethodsInstan
 import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredInstantiatedTypesAnalysis
 
 /**
- * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on RTA.
+ * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type analysis (RTA).
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
@@ -41,10 +41,7 @@ import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredInstantiatedTypesAnalysis
  * Furthermore, you can configure the analysis mode (Library or Application) in the configuration
  * of these keys.
  *
- *
- *
  * @author Florian Kuebler
- *
  */
 object RTACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
@@ -66,11 +63,12 @@ object RTACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val manager = project.get(FPCFAnalysesManagerKey)
         val config = project.config
 
-        // todo use registry here
+        // TODO use FPCFAnaylsesRegistry here
         val registeredModules = config.getStringList(
             "org.opalj.tac.cg.CallGraphKey.modules"
         ).asScala.flatMap(resolveAnalysisRunner(_))
 
+        // TODO make TACAI analysis configurable
         var analyses: List[ComputationSpecification[FPCFAnalysis]] =
             List(
                 RTACallGraphAnalysisScheduler,

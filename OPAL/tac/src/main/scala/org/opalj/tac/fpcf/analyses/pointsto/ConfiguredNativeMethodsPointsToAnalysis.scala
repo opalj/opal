@@ -160,7 +160,7 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
                 val pr = PartialResult[Entity, PointsTo](lhs, PointsTo.key, {
                     case InterimUBP(lhsUB: PointsTo) ⇒
                         val seenTypes = if (rhsEOptP.hasUBP) rhsEOptP.ub.numElements else 0
-                        val newTypes = rhsUB.getNewTypes(seenTypes).toSet
+                        val newTypes = rhsUB.drop(seenTypes).toSet
 
                         // here we assert that updated returns the identity if pts is already contained
                         val newUB = lhsUB.updated(newTypes)

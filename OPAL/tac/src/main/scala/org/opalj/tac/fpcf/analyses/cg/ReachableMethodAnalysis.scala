@@ -23,6 +23,12 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.tac.fpcf.properties.TACAI
 
+/**
+ * Base trait for analyses that are executed for every method that is reachable.
+ * The analysis is performed by `processMethod`.
+ *
+ * @author Florian Kuebler
+ */
 trait ReachableMethodAnalysis extends FPCFAnalysis {
 
     protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)

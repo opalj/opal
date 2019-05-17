@@ -20,7 +20,7 @@ import org.opalj.br.BaseType
 import org.opalj.br.ClassHierarchy
 
 /**
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 trait MethodMatcher {
     def initialMethods(implicit p: SomeProject): Iterator[Method]

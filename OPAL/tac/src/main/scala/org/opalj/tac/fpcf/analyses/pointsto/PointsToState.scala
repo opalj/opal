@@ -69,7 +69,9 @@ class PointsToState private (
     }
 
     private[pointsto] def dependees: Traversable[EOptionP[Entity, Property]] = {
-        _tacDependee.filterNot(_.isFinal) ++ _dependees.values ++ _calleesDependee.filter(_.isRefinable)
+        _tacDependee.filterNot(_.isFinal) ++
+            _dependees.values ++
+            _calleesDependee.filter(_.isRefinable)
     }
 
     private[pointsto] def hasOpenDependees: Boolean = {
@@ -82,7 +84,10 @@ class PointsToState private (
         _tacDependee = Some(tacDependee)
     }
 
-    private[pointsto] def addPointsToDependency(depender: Entity, dependee: EOptionP[Entity, PointsTo]): Unit = {
+    private[pointsto] def addPointsToDependency(
+        depender: Entity,
+        dependee: EOptionP[Entity, PointsTo]
+    ): Unit = {
         _dependeeToDependers.getOrElseUpdate(dependee.e, mutable.Set.empty).add(depender)
         _dependerToDependees.getOrElseUpdate(depender, mutable.Set.empty).add(dependee.e)
         _dependees(dependee.e) = dependee

@@ -125,7 +125,7 @@ class PointsToBasedCallGraph private[analyses] (
                 val oldEOptP = state.getPointsToEPS(eps.e)
                 val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
                 val typesLeft = state.typesForCallSite(callSite)
-                for (newType ← ub.getNewTypes(seenTypes)) {
+                for (newType ← ub.drop(seenTypes)) {
                     if (typesLeft.contains(newType.id)) {
                         state.removeTypeForCallSite(callSite, newType)
                         val (pc, name, descriptor, declaredType) = callSite

@@ -103,19 +103,19 @@ sealed trait EmptyConcreteCallers extends Callers {
 }
 
 object NoCallers
-    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithoutVMLevelCall {
     override def updatedWithVMLevelCall(): CallersWithVMLevelCall = OnlyVMLevelCallers
 
     override def updatedWithUnknownContext(): CallersWithUnknownContext = OnlyCallersWithUnknownContext
 }
 
 object OnlyCallersWithUnknownContext
-    extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithUnknownContext with CallersWithoutVMLevelCall {
     override def updatedWithVMLevelCall(): CallersWithVMLevelCall = OnlyVMCallersAndWithUnknownContext
 }
 
 object OnlyVMLevelCallers
-    extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
+        extends EmptyConcreteCallers with CallersWithoutUnknownContext with CallersWithVMLevelCall {
     override def updatedWithUnknownContext(): CallersWithUnknownContext = OnlyVMCallersAndWithUnknownContext
 }
 
@@ -247,6 +247,10 @@ object Callers extends CallersPropertyMetaInformation {
     }
 
     def toMethodPcAndIsDirect(pcMethodAndIsDirect: Long): (Int, Int, Boolean) = {
-        (pcMethodAndIsDirect.toInt & 0x3FFFFF, (pcMethodAndIsDirect >> 22).toInt & 0xFFFF, pcMethodAndIsDirect < 0)
+        (
+            pcMethodAndIsDirect.toInt & 0x3FFFFF,
+            (pcMethodAndIsDirect >> 22).toInt & 0xFFFF,
+            pcMethodAndIsDirect < 0
+        )
     }
 }

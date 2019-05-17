@@ -28,6 +28,12 @@ import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.tac.fpcf.properties.TACAI
 
+/**
+ * Analysis handling the specifics of java.io.ObjectOutputStream.writeObject.
+ * This method may invoke writeObject, writeReplace or writeExternal on its parameter.
+ *
+ * @author Florian Kuebler
+ */
 class OOSWriteObjectAnalysis private[analyses] (
         final val project: SomeProject
 ) extends TACAIBasedAPIBasedCallGraphAnalysis {
@@ -168,6 +174,13 @@ class OOSWriteObjectAnalysis private[analyses] (
 
 }
 
+/**
+ * Analysis handling the specifics of java.io.ObjectInputStream.readObject.
+ * This method may instantiate new objects and invoke readObject, readResolve, readExternal or
+ * validateObject on them.
+ *
+ * @author Florian Kuebler
+ */
 class OISReadObjectAnalysis private[analyses] (
         final val project: SomeProject
 ) extends TACAIBasedAPIBasedCallGraphAnalysis {

@@ -12,9 +12,9 @@ import net.ceedubs.ficus.Ficus._
  *
  * @example
  *      {{{
- *      org.opalj.br.analyses {
- *          InitialEntryPointKey {
- *              analysis = "org.opalj.br.analyses.ApplicationEntryPointFinder"
+ *      org.opalj.br.analyses.cg {
+ *          InitialInstantiatedTypesKey {
+ *              analysis = "org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder"
  *          }
  *      }
  *      }}}

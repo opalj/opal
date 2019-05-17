@@ -38,6 +38,12 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.PCAndInstruction
 import org.opalj.br.instructions.NEW
 
+/**
+ * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
+ * constructors do not result in additional instantiated types.
+ *
+ * @author Florian Kuebler
+ */
 class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {

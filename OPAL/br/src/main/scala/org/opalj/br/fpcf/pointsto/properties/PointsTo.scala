@@ -45,7 +45,6 @@ case class PointsTo private[properties] (
     }
 
     def updated(newTypes: Set[ObjectType]): PointsTo = {
-
         var newOrderedTypes = orderedTypes
         for { t ← newTypes if !types.contains(t) } {
             newOrderedTypes ::= t
@@ -53,7 +52,10 @@ case class PointsTo private[properties] (
         new PointsTo(newOrderedTypes, types ++ newTypes)
     }
 
-    def getNewTypes(index: Int): Iterator[ObjectType] = {
+    /**
+     * Will return the types added most recently, dropping the `index` oldest ones.
+     */
+    def drop(index: Int): Iterator[ObjectType] = {
         orderedTypes.iterator.take(types.size - index)
     }
 

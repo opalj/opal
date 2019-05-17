@@ -42,6 +42,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private[this] implicit val virtualFormalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
 
+    // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
         ConfiguredNativeMethods.reader.read(
             p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"

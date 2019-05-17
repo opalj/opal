@@ -52,18 +52,6 @@ package object cg {
     }
 
     final def valueOriginsOfPCs(pcs: PCs, pcToIndex: Array[Int]): IntTrieSet = {
-        /* OLD
-        val origins = new IntTrieSetBuilder
-        PCs.iterator.collect {
-            case pc if ai.underlyingPC(pc) < 0       ⇒ pc // parameter
-            case pc if pc >= 0 && pcToIndex(pc) >= 0 ⇒ pcToIndex(pc) // local
-            case pc if isImmediateVMException(pc) && pcToIndex(pcOfImmediateVMException(pc)) >= 0 ⇒
-                ValueOriginForImmediateVMException(pcToIndex(pcOfImmediateVMException(pc)))
-            case pc if isMethodExternalExceptionOrigin(pc) && pcToIndex(pcOfMethodExternalException(pc)) >= 0 ⇒
-                ValueOriginForMethodExternalException(pcToIndex(pcOfMethodExternalException(pc)))
-        } foreach { origins += _ }
-        origins.result()
-        */
         pcs.foldLeft(EmptyIntTrieSet: IntTrieSet) { (origins, pc) ⇒
             if (ai.underlyingPC(pc) < 0)
                 origins + pc // parameter

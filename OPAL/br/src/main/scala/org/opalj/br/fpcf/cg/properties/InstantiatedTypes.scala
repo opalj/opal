@@ -40,12 +40,11 @@ case class InstantiatedTypes private[properties] (
 
     override def checkIsEqualOrBetterThan(e: Entity, other: InstantiatedTypes): Unit = {
         if (!types.subsetOf(other.types)) {
-            throw new IllegalArgumentException(s"$e: illegal refinement of property $other to $this")
+            throw new IllegalArgumentException(s"$e: illegal refinement of $other to $this")
         }
     }
 
     def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
-
         var newOrderedTypes = orderedTypes
         for { t ← newTypes if !types.contains(t) } {
             newOrderedTypes ::= t
@@ -53,7 +52,10 @@ case class InstantiatedTypes private[properties] (
         new InstantiatedTypes(newOrderedTypes, types ++ newTypes)
     }
 
-    def getNewTypes(index: Int): Iterator[ObjectType] = {
+    /**
+     * Will return the instantiated types added most recently, dropping the `index` oldest ones.
+     */
+    def drop(index: Int): Iterator[ObjectType] = {
         orderedTypes.iterator.take(types.size - index)
     }
 

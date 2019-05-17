@@ -50,10 +50,13 @@ sealed class LoadedClasses private[properties] (
         new LoadedClasses(updatedOrderedClasses, updatedClasses)
     }
 
-    // TODO Rename "take" (document that always the newest one(s) will be taken.
+    /**
+     * Will return the loaded classes added most recently, dropping the `index` oldest ones.
+     */
     // TODO Consider adding/using a bounded ForeachIterator?
-    def getNewClasses(index: Int): Iterator[ObjectType] = {
+    def drop(index: Int): Iterator[ObjectType] = {
         orderedClasses.iterator.take(classes.size - index)
+        orderedClasses.drop()
     }
 
     def size: Int = classes.size

@@ -52,7 +52,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  *  - [[org.opalj.br.analyses.VirtualFormalParameter]] for the parameters of a method.
  *  - [[org.opalj.br.ObjectType]] for the element type of an array.
  *
- *
  * @author Florian Kuebler
  */
 class AndersenStylePointsToAnalysis private[analyses] (
@@ -95,7 +94,10 @@ class AndersenStylePointsToAnalysis private[analyses] (
         }
     }
 
-    private[this] def doProcessMethod(implicit state: PointsToState): ProperPropertyComputationResult = {
+    private[this] def doProcessMethod(
+        implicit
+        state: PointsToState
+    ): ProperPropertyComputationResult = {
         val tac = state.tac
         val method = state.method.definedMethod
 
@@ -119,7 +121,10 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 val defSiteObject = definitionSites(method, pc)
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    state.setOrUpdatePointsToSet(defSiteObject, handleEOptP(defSiteObject, fieldOpt.get))
+                    state.setOrUpdatePointsToSet(
+                        defSiteObject,
+                        handleEOptP(defSiteObject, fieldOpt.get)
+                    )
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
@@ -136,7 +141,10 @@ class AndersenStylePointsToAnalysis private[analyses] (
             case Assignment(pc, _, ArrayLoad(_, _, arrayRef)) if isArrayOfObjectType(arrayRef.asVar) ⇒
                 val defSiteObject = definitionSites(method, pc)
                 val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
-                state.setOrUpdatePointsToSet(defSiteObject, handleEOptP(defSiteObject, arrayBaseType))
+                state.setOrUpdatePointsToSet(
+                    defSiteObject,
+                    handleEOptP(defSiteObject, arrayBaseType)
+                )
 
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
                 val targets = state.callees(ps).callees(pc)
@@ -254,7 +262,10 @@ class AndersenStylePointsToAnalysis private[analyses] (
     /**
      * Constructs the [[org.opalj.fpcf.PropertyComputationResult]] associated with the state.
      */
-    @inline private[this] def returnResult(implicit state: PointsToState): ProperPropertyComputationResult = {
+    @inline private[this] def returnResult(
+        implicit
+        state: PointsToState
+    ): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
         if (state.hasOpenDependees) results += InterimPartialResult(state.dependees, c(state))
 
@@ -326,7 +337,13 @@ class AndersenStylePointsToAnalysis private[analyses] (
     }
 
     // todo: rename
-    @inline private[this] def handleDefSites(e: Entity, defSites: IntTrieSet)(implicit state: PointsToState): Unit = {
+    @inline private[this] def handleDefSites(
+        e:        Entity,
+        defSites: IntTrieSet
+    )(
+        implicit
+        state: PointsToState
+    ): Unit = {
         var pointsToSet = UIDSet.empty[ObjectType]
         for (defSite ← defSites) {
             pointsToSet ++=

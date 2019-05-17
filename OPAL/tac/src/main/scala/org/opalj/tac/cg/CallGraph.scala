@@ -13,9 +13,9 @@ import org.opalj.br.fpcf.cg.properties.NoCallers
 
 /**
  * The proxy class for all call-graph related properties.
- * All information will be queried in the property store ([[PropertyStore]]), therefore,
- * all values for [[Callees]] and [[Callers]] in the property store must be final,
- * when instantiating this class.
+ * All information will be queried from the property store ([[PropertyStore]]), therefore,
+ * all values for [[Callees]] and [[Callers]] in the property store must be final when instantiating
+ * this class.
  *
  * @author Florian Kuebler
  */

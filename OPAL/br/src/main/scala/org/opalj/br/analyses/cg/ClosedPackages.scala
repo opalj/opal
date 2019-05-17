@@ -80,9 +80,9 @@ class ClosedCodeBase(val project: SomeProject) extends ClosedPackages {
  * may result in imprecise analysis results.
  *
  * To use this analysis set the config key:
- *  `org.opalj.br.analyses.ClosedPackagesKey.analysis`
+ *  `org.opalj.br.analyses.cg.ClosedPackagesKey.analysis`
  * to
- *  `org.opalj.br.analyses.[[OpenCodeBase]]`
+ *  `org.opalj.br.analyses.cg.[[OpenCodeBase]]`
  */
 class OpenCodeBase(val project: SomeProject) extends ClosedPackages {
 

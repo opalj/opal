@@ -21,10 +21,10 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
- * A [[APIBasedCallGraphAnalysis]] that ensures that whenever `processNewCaller` gets called,
+ * An [[APIBasedCallGraphAnalysis]] that ensures that whenever `processNewCaller` gets called,
  * some (interim) version of the three-address code is available in the property store.
  * For each update of [[org.opalj.tac.fpcf.properties.TACAI]] that actually contains a three-address
- * code, `processNewCaller` is invoked, i.e. it might be called multiple times for the same caller.
+ * code, `processNewCaller` is invoked, i.e., it might be called multiple times for the same caller.
  * Due to monotonicity required for all results, this is still sound.
  *
  * @author Florian Kuebler

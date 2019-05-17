@@ -30,8 +30,8 @@ import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
- * call sites and allows the analyses to retrieve the required [[PartialResult]]s for
- * [[Callers]] and [[Callees]].
+ * call sites and allows the analyses to retrieve the required [[PartialResult]]s for [[Callers]]
+ * and [[Callees]].
  *
  * @author Florian Kuebler
  * @author Dominik Helm
@@ -56,14 +56,14 @@ sealed trait CalleesAndCallers {
         dm: DeclaredMethod
     ): PartialResult[DeclaredMethod, Callees] = {
         PartialResult[DeclaredMethod, Callees](dm, Callees.key, {
-            case InterimUBP(_: Callees) if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty ⇒
+            case InterimUBP(_) if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty ⇒
                 None
 
             case InterimUBP(ub: Callees) ⇒
                 Some(InterimEUBP(
                     dm,
                     ub.updateWithCallees(
-                        directCallees, indirectCallees, incompleteCallSites, parameters, receivers
+                        directCallees, indirectCallees, incompleteCallSites, receivers, parameters
                     )
                 ))
 
@@ -76,7 +76,7 @@ sealed trait CalleesAndCallers {
                 Some(InterimEUBP(
                     dm,
                     new ConcreteCallees(
-                        directCallees, indirectCallees, incompleteCallSites, parameters, receivers
+                        directCallees, indirectCallees, incompleteCallSites, receivers, parameters
                     )
                 ))
 

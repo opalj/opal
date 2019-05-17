@@ -127,6 +127,16 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     ): Map[Int, Iterator[DeclaredMethod]]
 
     /**
+     * Returns for a given call site pc and indirect target method the receiver information.
+     * If the receiver can not be determined, the [[Option]] will be empty, otherwise it will
+     * contain all [[PCs]] and the the negative indices of parameters that may define the value of
+     * the receiver.
+     * The parameter at index 0 always corresponds to the *this* local and is `null` for static
+     * methods.
+     */
+    def indirectCallReceiver(pc: Int, callee: DeclaredMethod): Option[(ValueInformation, PCs)]
+
+    /**
      * Returns for a given call site pc and indirect target method the sequence of parameter
      * sources. If a parameter source can not be determined, the [[Option]] will be empty, otherwise
      * it will contain all PCs and the negative indices of parameters that may define the value of
@@ -140,16 +150,6 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
     )(implicit propertyStore: PropertyStore): Seq[Option[(ValueInformation, IntTrieSet)]]
 
     /**
-     * Returns for a given call site pc and indirect target method the receiver information.
-     * If the receiver can not be determined, the [[Option]] will be empty, otherwise it will
-     * contain all [[PCs]] and the the negative indices of parameters that may define the value of
-     * the receiver.
-     * The parameter at index 0 always corresponds to the *this* local and is `null` for static
-     * methods.
-     */
-    def indirectCallReceiver(pc: Int, callee: DeclaredMethod): Option[(ValueInformation, PCs)]
-
-    /**
      * Creates a copy of the current callees object, including the additional callee information
      * specified in the parameters.
      */
@@ -157,8 +157,8 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
         directCallees:          IntMap[IntTrieSet],
         indirectCallees:        IntMap[IntTrieSet],
         incompleteCallSites:    PCs,
-        indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]],
-        indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]]
+        indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]],
+        indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]
     ): Callees
 
     final def key: PropertyKey[Callees] = Callees.key
@@ -171,8 +171,8 @@ sealed class ConcreteCallees(
         private[this] val directCalleesIds:        IntMap[IntTrieSet],
         private[this] val indirectCalleesIds:      IntMap[IntTrieSet],
         private[this] val _incompleteCallSites:    PCs,
-        private[this] val _indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]] = IntMap.empty,
-        private[this] val _indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]] // = IntMap.empty
+        private[this] val _indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]],
+        private[this] val _indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]
 ) extends Callees {
 
     override def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator = {
@@ -204,7 +204,8 @@ sealed class ConcreteCallees(
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): Iterator[DeclaredMethod] = {
-        directCalleesIds.getOrElse(pc, IntTrieSet.empty).iterator.map[DeclaredMethod](declaredMethods.apply)
+        val directCalleeIds = directCalleesIds.getOrElse(pc, IntTrieSet.empty)
+        directCalleeIds.iterator.map[DeclaredMethod](declaredMethods.apply)
     }
 
     override def indirectCallees(
@@ -214,7 +215,8 @@ sealed class ConcreteCallees(
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): Iterator[DeclaredMethod] = {
-        indirectCalleesIds.getOrElse(pc, IntTrieSet.empty).iterator.map[DeclaredMethod](declaredMethods.apply)
+        val indirectCalleeIds = indirectCalleesIds.getOrElse(pc, IntTrieSet.empty)
+        indirectCalleeIds.iterator.map[DeclaredMethod](declaredMethods.apply)
     }
 
     override def numCallees(pc: Int)(implicit propertyStore: PropertyStore): Int = {
@@ -259,6 +261,12 @@ sealed class ConcreteCallees(
         }
     }
 
+    override def indirectCallReceiver(
+        pc: Opcode, callee: DeclaredMethod
+    ): Option[(ValueInformation, PCs)] = {
+        _indirectCallReceivers(pc)(callee.id)
+    }
+
     override def indirectCallParameters(
         pc:     Int,
         method: DeclaredMethod
@@ -273,22 +281,13 @@ sealed class ConcreteCallees(
         directCallees:          IntMap[IntTrieSet],
         indirectCallees:        IntMap[IntTrieSet],
         incompleteCallSites:    PCs,
-        indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]],
-        indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]]
+        indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]],
+        indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]
     ): Callees = {
         new ConcreteCallees(
             directCalleesIds.unionWith(directCallees, (_, l, r) ⇒ l ++ r),
             indirectCalleesIds.unionWith(indirectCallees, (_, l, r) ⇒ l ++ r),
             _incompleteCallSites ++ incompleteCallSites,
-            _indirectCallParameters.unionWith(
-                indirectCallParameters,
-                (_, r, l) ⇒ {
-                    r.unionWith(
-                        l,
-                        (_, _, _) ⇒ throw new UnknownError("Indirect callee derived by two analyses")
-                    )
-                }
-            ),
             _indirectCallReceivers.unionWith(
                 indirectCallReceivers,
                 (_, r, l) ⇒ {
@@ -297,13 +296,17 @@ sealed class ConcreteCallees(
                         (_, _, _) ⇒ throw new UnknownError("Indirect callee derived by two analyses")
                     )
                 }
+            ),
+            _indirectCallParameters.unionWith(
+                indirectCallParameters,
+                (_, r, l) ⇒ {
+                    r.unionWith(
+                        l,
+                        (_, _, _) ⇒ throw new UnknownError("Indirect callee derived by two analyses")
+                    )
+                }
             )
         )
-    }
-    override def indirectCallReceiver(
-        pc: Opcode, callee: DeclaredMethod
-    ): Option[(ValueInformation, PCs)] = {
-        _indirectCallReceivers(pc)(callee.id)
     }
 }
 
@@ -358,6 +361,10 @@ object NoCallees extends Callees {
         declaredMethods: DeclaredMethods
     ): IntMap[Iterator[DeclaredMethod]] = IntMap.empty
 
+    override def indirectCallReceiver(
+        pc: Opcode, callee: DeclaredMethod
+    ): Option[(ValueInformation, PCs)] = None
+
     override def indirectCallParameters(
         pc:     Int,
         method: DeclaredMethod
@@ -370,21 +377,17 @@ object NoCallees extends Callees {
         directCallees:          IntMap[IntTrieSet],
         indirectCallees:        IntMap[IntTrieSet],
         incompleteCallSites:    PCs,
-        indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]],
-        indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]]
+        indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]],
+        indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]
     ): ConcreteCallees = {
         new ConcreteCallees(
             directCallees,
             indirectCallees,
             incompleteCallSites,
-            indirectCallParameters,
-            indirectCallReceivers
+            indirectCallReceivers,
+            indirectCallParameters
         )
     }
-
-    override def indirectCallReceiver(
-        pc: Opcode, callee: DeclaredMethod
-    ): Option[(ValueInformation, PCs)] = None
 }
 
 object NoCalleesDueToNotReachableMethod extends Callees {
@@ -438,6 +441,10 @@ object NoCalleesDueToNotReachableMethod extends Callees {
         declaredMethods: DeclaredMethods
     ): IntMap[Iterator[DeclaredMethod]] = IntMap.empty
 
+    override def indirectCallReceiver(
+        pc: Opcode, callee: DeclaredMethod
+    ): Option[(ValueInformation, PCs)] = None
+
     override def indirectCallParameters(
         pc:     Int,
         method: DeclaredMethod
@@ -450,13 +457,9 @@ object NoCalleesDueToNotReachableMethod extends Callees {
         directCallees:          IntMap[IntTrieSet],
         indirectCallees:        IntMap[IntTrieSet],
         incompleteCallSites:    PCs,
-        indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]],
-        indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]]
+        indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]],
+        indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]
     ): Callees = throw new IllegalStateException("Unreachable methods can't be updated!")
-
-    override def indirectCallReceiver(
-        pc: Opcode, callee: DeclaredMethod
-    ): Option[(ValueInformation, PCs)] = None
 }
 
 object Callees extends CalleesPropertyMetaInformation {

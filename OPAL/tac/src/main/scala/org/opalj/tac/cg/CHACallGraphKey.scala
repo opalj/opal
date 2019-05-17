@@ -26,13 +26,11 @@ import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 
 /**
- * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on the class hierarchy (CHA).
+ * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on class hierarchy analysis (CHA).
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
- *
  * @author Florian Kuebler
- *
  */
 object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
@@ -40,7 +38,6 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         Seq(
             DeclaredMethodsKey,
             InitialEntryPointsKey,
-            InitialInstantiatedTypesKey,
             PropertyStoreKey,
             FPCFAnalysesManagerKey
         )
@@ -55,11 +52,12 @@ object CHACallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
         val config = project.config
 
-        // todo use registry here
+        // TODO use FPCFAnaylsesRegistry here
         val registeredModules = config.getStringList(
             "org.opalj.tac.cg.CallGraphKey.modules"
         ).asScala.flatMap(resolveAnalysisRunner(_))
 
+        // TODO make TACAI analysis configurable
         var analyses: List[ComputationSpecification[FPCFAnalysis]] =
             List(CHACallGraphAnalysisScheduler, LazyTACAIProvider)
 

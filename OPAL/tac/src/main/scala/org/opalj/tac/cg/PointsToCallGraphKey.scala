@@ -32,9 +32,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethodsPointsToAnaly
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
- *
  * @author Florian Kuebler
- *
  */
 object PointsToCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
@@ -42,7 +40,6 @@ object PointsToCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         Seq(
             DeclaredMethodsKey,
             InitialEntryPointsKey,
-            InitialInstantiatedTypesKey,
             PropertyStoreKey,
             FPCFAnalysesManagerKey
         )
@@ -57,11 +54,12 @@ object PointsToCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
         val config = project.config
 
-        // todo use registry here
+        // TODO use FPCFAnaylsesRegistry here
         val registeredModules = config.getStringList(
             "org.opalj.tac.cg.CallGraphKey.modules"
         ).asScala.flatMap(resolveAnalysisRunner(_))
 
+        // TODO make TACAI analysis configurable
         var analyses: List[ComputationSpecification[FPCFAnalysis]] =
             List(
                 PointsToBasedCallGraphScheduler,

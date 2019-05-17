@@ -23,6 +23,8 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Represents the state of a points-to based call graph analysis, while analyzing a certain method.
+ *
+ * @author Florian Kuebler
  */
 class PointsToBasedCGState(
         override val method:            DefinedMethod,

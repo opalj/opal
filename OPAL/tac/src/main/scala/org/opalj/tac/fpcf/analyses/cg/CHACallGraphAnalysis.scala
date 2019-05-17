@@ -48,6 +48,13 @@ class CHAState(
         if (_tacEP.isRefinable) Some(_tacEP) else None
 }
 
+/**
+ * A call graph based on Class Hierarchy Analysis (CHA).
+ * Virtual calls are resolved to all methods matching the declared type, name and descriptor of the
+ * call. Type information from abstract interpretation is taken into account, however.
+ *
+ * @author Florian Kuebler
+ */
 class CHACallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends CallGraphAnalysis {
