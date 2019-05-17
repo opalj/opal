@@ -7,18 +7,19 @@ package cg
 
 import org.opalj.log.Error
 import org.opalj.log.OPALLogger
-import org.opalj.log.OPALLogger.logOnce
-import org.opalj.log.Warn
+import org.opalj.collection.ForeachRefIterator
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
@@ -30,83 +31,58 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.DefinedMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
+
+class CHAState(
+        val method: DefinedMethod, private var _tacEP: EOptionP[Method, TACAI]
+) extends CGState {
+    override def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _tacEP.ub.tac.get
+
+    override def hasNonFinalCallSite: Boolean = false
+
+    override def hasOpenDependencies: Boolean = _tacEP.isRefinable
+
+    override def dependees: Traversable[SomeEOptionP] =
+        if (_tacEP.isRefinable) Some(_tacEP) else None
+}
 
 class CHACallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends ReachableMethodAnalysis {
+) extends CallGraphAnalysis {
+    override type State = CHAState
 
-    override def processMethod(
-        declaredMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
-        val tac = tacEP.ub.tac.get
-
-        // for each call site in the current method, the set of methods that might called
-        val calleesAndCallers = new DirectCalls()
-
-        // todo add calls to library targets
-        @inline def handleTgts(tgts: Set[Method], pc: Int): Unit = {
-            if (tgts.isEmpty) {
-                calleesAndCallers.addIncompleteCallSite(pc) // todo is this reasonable?
-            } else {
-                tgts.foreach { tgt ⇒
-                    calleesAndCallers.addCall(declaredMethod, declaredMethods(tgt), pc)
-                }
-            }
-        }
-        tac.stmts.foreach {
-            case stmt @ StaticFunctionCallStatement(call) ⇒
-                handleTgts(call.resolveCallTarget.toSet, stmt.pc)
-
-            case call: StaticMethodCall[DUVar[ValueInformation]] ⇒
-                handleTgts(call.resolveCallTarget.toSet, call.pc)
-
-            case stmt @ NonVirtualFunctionCallStatement(call) ⇒
-                handleTgts(
-                    call.resolveCallTarget(declaredMethod.declaringClassType.asObjectType).toSet,
-                    stmt.pc
-                )
-            case call: NonVirtualMethodCall[DUVar[ValueInformation]] ⇒
-                handleTgts(
-                    call.resolveCallTarget(declaredMethod.declaringClassType.asObjectType).toSet,
-                    call.pc
-                )
-
-            case stmt @ VirtualFunctionCallStatement(call) ⇒
-                handleTgts(
-                    call.resolveCallTargets(declaredMethod.declaringClassType.asObjectType).toSet,
-                    stmt.pc
-                )
-
-            case call: VirtualMethodCall[DUVar[ValueInformation]] ⇒
-                handleTgts(
-                    call.resolveCallTargets(declaredMethod.declaringClassType.asObjectType).toSet,
-                    call.pc
-                )
-
-            case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallSite(idc.pc)
-                logOnce(
-                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
-                )(p.logContext)
-
-            case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
-                calleesAndCallers.addIncompleteCallSite(idc.pc)
-                logOnce(
-                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
-                )(p.logContext)
-
-            case _ ⇒
-
-        }
-
-        if (tacEP.isFinal)
-            Results(calleesAndCallers.partialResults(declaredMethod))
-        else
-            Results(
-                InterimPartialResult(Some(tacEP), continuationForTAC(declaredMethod)),
-                calleesAndCallers.partialResults(declaredMethod)
+    override def handleImpreciseCall(
+        caller:                        DefinedMethod,
+        call:                          Call[V] with VirtualCall[V],
+        pc:                            Int,
+        specializedDeclaringClassType: ReferenceType,
+        potentialTargets:              ForeachRefIterator[ObjectType],
+        calleesAndCallers:             DirectCalls
+    )(implicit state: CHAState): Unit = {
+        for (tgt ← potentialTargets) {
+            val tgtR = project.instanceCall(
+                caller.declaringClassType.asObjectType, tgt, call.name, call.descriptor
             )
+            handleCall(
+                caller, call.name, call.descriptor, call.declaringClass, pc, tgtR, calleesAndCallers
+            )
+        }
+    }
+
+    override def c(state: CHAState)(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(_: TACAI) ⇒
+                processMethod(state.method, eps.asInstanceOf[EPS[Method, TACAI]])
+            case _ ⇒ throw new IllegalArgumentException(s"unexpected eps $eps")
+        }
+    }
+
+    override def createInitialState(
+        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
+    ): CHAState = {
+        new CHAState(definedMethod, tacEP)
     }
 }
 
