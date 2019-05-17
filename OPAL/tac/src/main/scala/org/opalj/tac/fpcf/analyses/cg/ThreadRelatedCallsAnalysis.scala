@@ -367,7 +367,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
  * @author Dominik Helm
  * @author Michael Reif
  */
-class ThreadRelatedCallsAnalysisScheduler private[analyses](
+class ThreadRelatedCallsAnalysisScheduler private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
     def process(p: SomeProject): PropertyComputationResult = {

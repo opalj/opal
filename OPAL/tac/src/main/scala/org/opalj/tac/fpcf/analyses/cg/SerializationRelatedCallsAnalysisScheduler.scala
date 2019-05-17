@@ -357,7 +357,7 @@ class OISReadObjectAnalysis private[analyses] (
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class SerializationRelatedCallsAnalysisScheduler private[analyses](
+class SerializationRelatedCallsAnalysisScheduler private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 

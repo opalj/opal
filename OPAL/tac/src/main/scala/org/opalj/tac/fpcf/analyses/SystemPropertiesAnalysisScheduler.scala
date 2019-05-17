@@ -32,7 +32,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 // todo: let it extend ReachableMethodsAnalysis
-class SystemPropertiesAnalysisScheduler private[analyses](
+class SystemPropertiesAnalysisScheduler private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
