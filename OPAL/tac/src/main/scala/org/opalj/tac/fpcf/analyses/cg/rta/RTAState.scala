@@ -12,7 +12,6 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
-import org.opalj.value.ValueInformation
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
@@ -26,34 +25,11 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 class RTAState(
-        val method:                                   DefinedMethod,
-        private[this] var _tacDependee:               EOptionP[Method, TACAI],
+        override val method:                          DefinedMethod,
+        override protected[this] var _tacDependee:    EOptionP[Method, TACAI],
         private[this] var _instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
 ) extends CGState {
     private[this] val _virtualCallSites: mutable.LongMap[Set[CallSiteT]] = mutable.LongMap.empty
-
-    /////////////////////////////////////////////
-    //                                         //
-    //          three-address code             //
-    //                                         //
-    /////////////////////////////////////////////
-
-    assert(_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined)
-
-    def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
-        _tacDependee = tacDependee
-    }
-
-    def tacDependee(): Option[EOptionP[Method, TACAI]] = {
-        if (_tacDependee.isRefinable)
-            Some(_tacDependee)
-        else
-            None
-    }
-
-    def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
-        _tacDependee.ub.tac.get
-    }
 
     /////////////////////////////////////////////
     //                                         //

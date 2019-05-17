@@ -20,7 +20,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.Method
@@ -36,16 +35,15 @@ import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 class CHAState(
-        val method: DefinedMethod, private var _tacEP: EOptionP[Method, TACAI]
+        val method:                                DefinedMethod,
+        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends CGState {
-    override def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _tacEP.ub.tac.get
 
     override def hasNonFinalCallSite: Boolean = false
 
-    override def hasOpenDependencies: Boolean = _tacEP.isRefinable
+    override def hasOpenDependencies: Boolean = _tacDependee.isRefinable
 
-    override def dependees: Traversable[SomeEOptionP] =
-        if (_tacEP.isRefinable) Some(_tacEP) else None
+    override def dependees: Traversable[SomeEOptionP] = tacDependee()
 }
 
 /**

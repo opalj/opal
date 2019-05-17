@@ -8,6 +8,7 @@ package cg
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.ForeachRefIterator
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -27,7 +28,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait CGState {
-    def tac: TACode[TACMethodParameter, DUVar[ValueInformation]]
 
     def method: DefinedMethod
 
@@ -37,6 +37,25 @@ trait CGState {
     def hasOpenDependencies: Boolean
 
     def dependees: Traversable[SomeEOptionP]
+
+    protected[this] var _tacDependee: EOptionP[Method, TACAI]
+
+    assert(_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined)
+
+    final def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
+        _tacDependee = tacDependee
+    }
+
+    final def tacDependee(): Option[EOptionP[Method, TACAI]] = {
+        if (_tacDependee.isRefinable)
+            Some(_tacDependee)
+        else
+            None
+    }
+
+    final def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
+        _tacDependee.ub.tac.get
+    }
 }
 
 trait CallGraphAnalysis extends ReachableMethodAnalysis {
@@ -148,7 +167,7 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
         val results = calleesAndCallers.partialResults(state.method)
 
         // if there are no virtual call-sites left, we can simply return the result
-        if (state.hasNonFinalCallSite || !state.hasOpenDependencies)
+        if (!state.hasNonFinalCallSite || !state.hasOpenDependencies)
             Results(results)
         else Results(
             InterimPartialResult(state.dependees, c(state)),
