@@ -36,16 +36,15 @@ import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 class CHAState(
-        val method: DefinedMethod, private var _tacEP: EOptionP[Method, TACAI]
+        val method:                                DefinedMethod,
+        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends CGState {
-    override def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = _tacEP.ub.tac.get
 
     override def hasNonFinalCallSite: Boolean = false
 
-    override def hasOpenDependencies: Boolean = _tacEP.isRefinable
+    override def hasOpenDependencies: Boolean = _tacDependee.isRefinable
 
-    override def dependees: Traversable[SomeEOptionP] =
-        if (_tacEP.isRefinable) Some(_tacEP) else None
+    override def dependees: Traversable[SomeEOptionP] = tacDependee()
 }
 
 class CHACallGraphAnalysis private[analyses] (

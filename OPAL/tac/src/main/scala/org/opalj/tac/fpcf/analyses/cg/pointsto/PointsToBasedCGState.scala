@@ -14,7 +14,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.value.ValueInformation
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
@@ -25,8 +24,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * Represents the state of a points-to based call graph analysis, while analyzing a certain method.
  */
 class PointsToBasedCGState(
-        override val method:            DefinedMethod,
-        private[this] var _tacDependee: EOptionP[Method, TACAI]
+        override val method:                       DefinedMethod,
+        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends CGState {
     // maps a definition site to the ids of the potential (not yet resolved) objecttypes
     private[this] val _virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = mutable.Map.empty
@@ -38,15 +37,6 @@ class PointsToBasedCGState(
 
     // maps a defsite to its result in the property store for the points-to set
     private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
-
-    override def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
-        assert(_tacDependee.ub.tac.isDefined)
-        _tacDependee.ub.tac.get
-    }
-
-    def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
-        _tacDependee = tacDependee
-    }
 
     def virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = {
         _virtualCallSites
