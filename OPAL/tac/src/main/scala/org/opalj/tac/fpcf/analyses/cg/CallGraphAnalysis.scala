@@ -148,7 +148,7 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
         val results = calleesAndCallers.partialResults(state.method)
 
         // if there are no virtual call-sites left, we can simply return the result
-        if (state.hasNonFinalCallSite || !state.hasOpenDependencies)
+        if (!state.hasNonFinalCallSite || !state.hasOpenDependencies)
             Results(results)
         else Results(
             InterimPartialResult(state.dependees, c(state)),

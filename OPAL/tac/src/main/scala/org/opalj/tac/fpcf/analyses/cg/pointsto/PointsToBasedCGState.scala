@@ -140,5 +140,5 @@ class PointsToBasedCGState(
         _defSitesToCallSites.getOrElse(defSite, Traversable.empty) // todo: ensure this is required
     }
 
-    override def hasNonFinalCallSite: Boolean = _virtualCallSites.isEmpty
+    override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty
 }
