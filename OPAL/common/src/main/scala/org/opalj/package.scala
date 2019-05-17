@@ -73,7 +73,7 @@ package object opalj {
         }
     }
 
-    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader)
+    final val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader)
 
     /** Non-elidable version of `assert`; only to be used in a guarded context. */
     def check(condition: Boolean): Unit = {
