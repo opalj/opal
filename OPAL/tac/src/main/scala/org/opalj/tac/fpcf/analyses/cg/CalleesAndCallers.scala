@@ -30,8 +30,8 @@ import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
- * call sites and allows the analyses to retrieve the required [[PartialResult]]s for [[Callers]]
- * and [[Callees]].
+ * call sites and allows the analyses to retrieve the required [[org.opalj.fpcf.PartialResult]]s for
+ * [[org.opalj.br.fpcf.cg.properties.Callers]] and [[org.opalj.br.fpcf.cg.properties.Callees]].
  *
  * @author Florian Kuebler
  * @author Dominik Helm

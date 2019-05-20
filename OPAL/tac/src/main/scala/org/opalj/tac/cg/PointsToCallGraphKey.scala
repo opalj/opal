@@ -27,7 +27,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisSchedul
 import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethodsPointsToAnalysisScheduler
 
 /**
- * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on the points-to analysis.
+ * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
+ * the points-to analysis.
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *

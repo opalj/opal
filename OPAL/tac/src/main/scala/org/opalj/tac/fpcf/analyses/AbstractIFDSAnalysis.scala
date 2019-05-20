@@ -177,17 +177,17 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param outgoingFacts Maps each basic block and successor node to the data flow facts valid at the beginning of the node.
      */
     class State(
-        val declaringClass:       ObjectType,
-        val method:               Method,
-        val source:               (DeclaredMethod, IFDSFact),
-        val code:                 Array[Stmt[V]],
-        val cfg:                  CFG[Stmt[V], TACStmts[V]],
-        var pendingIfdsCallSites: Map[(DeclaredMethod, IFDSFact), Set[(BasicBlock, Int)]],
-        var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]] = Map.empty,
-        var pendingCgCallSites:   Set[BasicBlock]                                                                               = Set.empty,
-        var cgDependency:         Option[SomeEOptionP]                                                                          = None,
-        var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                = Map.empty,
-        var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                  = Map.empty
+            val declaringClass:       ObjectType,
+            val method:               Method,
+            val source:               (DeclaredMethod, IFDSFact),
+            val code:                 Array[Stmt[V]],
+            val cfg:                  CFG[Stmt[V], TACStmts[V]],
+            var pendingIfdsCallSites: Map[(DeclaredMethod, IFDSFact), Set[(BasicBlock, Int)]],
+            var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]] = Map.empty,
+            var pendingCgCallSites:   Set[BasicBlock]                                                                               = Set.empty,
+            var cgDependency:         Option[SomeEOptionP]                                                                          = None,
+            var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                = Map.empty,
+            var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                  = Map.empty
     )
 
     /**

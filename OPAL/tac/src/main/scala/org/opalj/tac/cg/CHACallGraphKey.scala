@@ -25,7 +25,8 @@ import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 
 /**
- * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on class hierarchy analysis (CHA).
+ * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on class
+ * hierarchy analysis (CHA).
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *

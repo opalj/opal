@@ -306,10 +306,10 @@ object LibraryEntryPointsFinder
     with ConfigurationEntryPointsFinder
 
 /**
-* The MetaEntryPointsFinder is a conservative EntryPoints finder triggers all known finders.
-*
-* @author Michael Reif
-*/
+ * The MetaEntryPointsFinder is a conservative EntryPoints finder triggers all known finders.
+ *
+ * @author Michael Reif
+ */
 object MetaEntryPointsFinder
     extends ApplicationEntryPointsFinder
     with LibraryEntryPointsFinder

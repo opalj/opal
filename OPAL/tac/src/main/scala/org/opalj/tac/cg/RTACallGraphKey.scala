@@ -29,7 +29,8 @@ import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredConfiguredNativeMethodsInstan
 import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredInstantiatedTypesAnalysis
 
 /**
- * A [[ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type analysis (RTA).
+ * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type
+ * analysis (RTA).
  * Uses the call graph analyses modules specified in the config file under the key
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
