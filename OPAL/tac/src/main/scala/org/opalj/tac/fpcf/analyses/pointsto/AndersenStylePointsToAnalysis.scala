@@ -35,6 +35,7 @@ import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
@@ -157,7 +158,8 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     state.setOrUpdatePointsToSet(defSiteObject, pointsToSet)
                 }
 
-                for (target ← state.callees(ps).callees(pc)) {
+                val callees = state.callees(ps)
+                for (target ← callees.directCallees(pc)) {
                     val fps = formalParameters(target)
 
                     if (fps != null) {
@@ -170,13 +172,57 @@ class AndersenStylePointsToAnalysis private[analyses] (
                             )
                         }
 
-                        // handle params
+                        // in case of signature polymorphic methods, we give up
+                        if (call.params.size == target.descriptor.parametersCount) {
+                            // handle params
+                            for (i ← 0 until target.descriptor.parametersCount) {
+                                val fp = fps(i + 1)
+                                state.setOrUpdatePointsToSet(
+                                    fp, handleDefSites(fp, call.params(i).asVar.definedBy)
+                                )
+                            }
+                        } else {
+                            // todo: it should not be needed to mark it as incomplete
+                        }
+                    } else {
+                        state.addIncompletePointsToInfo(pc)
+                    }
+                }
+
+                // todo: reduce code duplication
+                for (target ← callees.indirectCallees(pc)) {
+                    val fps = formalParameters(target)
+
+                    if (fps != null) {
+
+                        // handle receiver for non static methods
+                        val receiverOpt = callees.indirectCallReceiver(pc, target)
+                        if (receiverOpt.isDefined) {
+                            val fp = fps(0)
+                            state.setOrUpdatePointsToSet(
+                                fp,
+                                handleDefSites(
+                                    fp, valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
+                                )
+                            )
+                        } else {
+                            // todo: distinguish between static methods and unavailable info
+                        }
+
+                        val indirectParams = callees.indirectCallParameters(pc, target)
                         for (i ← 0 until target.descriptor.parametersCount) {
                             val fp = fps(i + 1)
-                            // FIXME: This may fail on signature polymorphic methods as the actual parameter count (call.params) might differ from the target descriptor
-                            state.setOrUpdatePointsToSet(
-                                fp, handleDefSites(fp, call.params(i).asVar.definedBy)
-                            )
+                            val indirectParam = indirectParams(i)
+                            if (indirectParam.isDefined) {
+                                state.setOrUpdatePointsToSet(
+                                    fp,
+                                    handleDefSites(
+                                        fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+                                    )
+                                )
+                            } else {
+                                state.addIncompletePointsToInfo(pc)
+                            }
                         }
                     } else {
                         state.addIncompletePointsToInfo(pc)
