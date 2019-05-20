@@ -40,10 +40,6 @@ class CHAState(
 ) extends CGState {
 
     override def hasNonFinalCallSite: Boolean = false
-
-    override def hasOpenDependencies: Boolean = _tacDependee.isRefinable
-
-    override def dependees: Traversable[SomeEOptionP] = tacDependee()
 }
 
 /**
