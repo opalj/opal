@@ -33,7 +33,10 @@ trait TACBasedAnalysisState {
      * Inherited classes that introduce new dependencies must override this method and call add a
      * call to super!
      */
-    def dependees: Traversable[SomeEOptionP] = _tacDependee()
+    def dependees: Traversable[SomeEOptionP] = if (_tacDependee.isRefinable)
+        Some(_tacDependee)
+    else
+        None
 
     final def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
         _tacDependee = tacDependee
