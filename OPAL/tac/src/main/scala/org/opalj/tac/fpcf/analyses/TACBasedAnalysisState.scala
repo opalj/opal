@@ -35,7 +35,6 @@ trait TACBasedAnalysisState {
      */
     def dependees: Traversable[SomeEOptionP] = _tacDependee()
 
-
     final def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
         _tacDependee = tacDependee
     }

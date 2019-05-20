@@ -8,18 +8,15 @@ package cg
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.ForeachRefIterator
-import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.IsSObjectValue
-import org.opalj.value.ValueInformation
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
@@ -278,12 +275,12 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
                     val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
-                        val cfOption = project.classFile(subtype)
-                        cfOption.isDefined && {
-                            val cf = cfOption.get
-                            !cf.isInterfaceDeclaration && !cf.isAbstract
+                            val cfOption = project.classFile(subtype)
+                            cfOption.isDefined && {
+                                val cf = cfOption.get
+                                !cf.isInterfaceDeclaration && !cf.isAbstract
+                            }
                         }
-                    }
 
                     handleImpreciseCall(
                         caller,
