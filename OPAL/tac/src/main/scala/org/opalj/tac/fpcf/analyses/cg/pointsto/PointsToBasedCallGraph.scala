@@ -1,14 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.cg.pointsto
 
-import org.opalj.ai
-
 import org.opalj.log.Error
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.ForeachRefIterator
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -22,7 +19,6 @@ import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.fpcf.UBPS
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -35,16 +31,14 @@ import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.ReferenceType
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.VirtualCall
-import org.opalj.tac.fpcf.analyses.cg.CallSiteT
 import org.opalj.tac.Call
+import org.opalj.tac.VirtualCall
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysis
 import org.opalj.tac.fpcf.analyses.cg.DirectCalls
+import org.opalj.tac.fpcf.analyses.pointsto.PointsToBasedAnalysis
 
 /**
  * Uses the [[org.opalj.br.fpcf.pointsto.properties.PointsTo]] of
@@ -55,9 +49,7 @@ import org.opalj.tac.fpcf.analyses.cg.DirectCalls
  */
 class PointsToBasedCallGraph private[analyses] (
         final val project: SomeProject
-) extends CallGraphAnalysis {
-    private[this] val definitionSites = p.get(DefinitionSitesKey)
-    private[this] val formalParameters = p.get(VirtualFormalParametersKey)
+) extends CallGraphAnalysis with PointsToBasedAnalysis {
 
     override type State = PointsToBasedCGState
 
@@ -155,57 +147,6 @@ class PointsToBasedCallGraph private[analyses] (
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): PointsToBasedCGState = new PointsToBasedCGState(definedMethod, tacEP)
 
-    // todo: the next four methods are basically copy&paste of the points-to analysis -> refactor
-
-    @inline private[this] def toEntity(
-        defSite: Int
-    )(implicit state: PointsToBasedCGState): Entity = {
-        if (defSite < 0) {
-            formalParameters.apply(state.method)(-1 - defSite)
-        } else {
-            definitionSites(state.method.definedMethod, state.tac.stmts(defSite).pc)
-        }
-    }
-
-    @inline private[this] def handleEOptP(
-        callSite: CallSiteT, dependeeDefSite: Int
-    )(implicit state: PointsToBasedCGState): UIDSet[ObjectType] = {
-        if (ai.isImplicitOrExternalException(dependeeDefSite)) {
-            // todo -  we need to get the actual exception type here
-            UIDSet(ObjectType.Exception)
-        } else {
-            handleEOptP(callSite, toEntity(dependeeDefSite))
-        }
-    }
-
-    // todo: rename
-    @inline private[this] def handleEOptP(
-        callSite: CallSiteT, dependee: Entity
-    )(implicit state: PointsToBasedCGState): UIDSet[ObjectType] = {
-        val pointsToSetEOptP = state.getOrRetrievePointsToEPS(dependee, ps)
-        pointsToSetEOptP match {
-            case UBPS(pointsTo, isFinal) ⇒
-                if (!isFinal) state.addPointsToDependency(callSite, pointsToSetEOptP)
-                pointsTo.types
-
-            case _: EPK[Entity, PointsTo] ⇒
-                state.addPointsToDependency(callSite, pointsToSetEOptP)
-                UIDSet.empty
-        }
-    }
-
-    // todo: rename
-    @inline private[this] def handleDefSites(
-        callSite: CallSiteT, defSites: IntTrieSet
-    )(implicit state: PointsToBasedCGState): UIDSet[ObjectType] = {
-        var pointsToSet = UIDSet.empty[ObjectType]
-        for (defSite ← defSites) {
-            pointsToSet ++=
-                handleEOptP(callSite, defSite)
-
-        }
-        pointsToSet
-    }
 }
 
 object PointsToBasedCallGraphScheduler extends FPCFTriggeredAnalysisScheduler {

@@ -22,6 +22,18 @@ import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.cg.properties.NoCallees
 import org.opalj.tac.fpcf.properties.TACAI
 
+// todo: fill in implementation
+trait AbstractPointsToState {
+    def addPointsToDependency(
+        depender: Entity,
+        dependee: EOptionP[Entity, PointsTo]
+    ): Unit
+
+    def getOrRetrievePointsToEPS(
+        dependee: Entity, ps: PropertyStore
+    ): EOptionP[Entity, PointsTo]
+}
+
 /**
  * Encapsulates the state of the analysis, analyzing a certain method using the
  * [[org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysis]].
@@ -31,7 +43,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 class PointsToState private (
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends TACBasedAnalysisState {
+) extends TACBasedAnalysisState with AbstractPointsToState {
 
     private[this] val _pointsToSets: mutable.Map[Entity, UIDSet[ObjectType]] = mutable.Map.empty
 
@@ -76,7 +88,7 @@ class PointsToState private (
             (_calleesDependee.isDefined && _calleesDependee.get.isRefinable)
     }
 
-    def addPointsToDependency(
+    override def addPointsToDependency(
         depender: Entity,
         dependee: EOptionP[Entity, PointsTo]
     ): Unit = {
@@ -104,7 +116,7 @@ class PointsToState private (
         _dependees(eps.e) = eps
     }
 
-    def getOrRetrievePointsToEPS(
+    override def getOrRetrievePointsToEPS(
         dependee: Entity, ps: PropertyStore
     ): EOptionP[Entity, PointsTo] = {
         _dependees.getOrElse(dependee, ps(dependee, PointsTo.key))

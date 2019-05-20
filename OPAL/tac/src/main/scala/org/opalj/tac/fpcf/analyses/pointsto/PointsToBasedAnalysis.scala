@@ -1,0 +1,84 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj
+package tac
+package fpcf
+package analyses
+package pointsto
+
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.UBPS
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.pointsto.properties.PointsTo
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.tac.common.DefinitionSites
+import org.opalj.tac.common.DefinitionSitesKey
+
+trait PointsToBasedAnalysis extends FPCFAnalysis {
+
+    protected[this] val formalParameters: VirtualFormalParameters =
+        p.get(VirtualFormalParametersKey)
+
+    protected[this] val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
+
+    @inline protected[this] def toEntity(
+        defSite: Int
+    )(implicit state: TACBasedAnalysisState): Entity = {
+        if (defSite < 0) {
+            formalParameters.apply(state.method)(-1 - defSite)
+        } else {
+            definitionSites(state.method.definedMethod, state.tac.stmts(defSite).pc)
+        }
+    }
+
+    @inline protected[this] def handleEOptP(
+        depender: Entity, dependeeDefSite: Int
+    )(implicit state: TACBasedAnalysisState with AbstractPointsToState): UIDSet[ObjectType] = {
+        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
+            UIDSet(ObjectType.Exception) // todo ask what exception has been thrown
+        } else if (ai.isImmediateVMException(dependeeDefSite)) {
+            // todo -  we need to get the actual exception type here
+            UIDSet(ObjectType.Exception)
+        } else {
+            handleEOptP(depender, toEntity(dependeeDefSite))
+        }
+    }
+
+    // todo: rename
+    @inline protected[this] def handleEOptP(
+        depender: Entity, dependee: Entity
+    )(implicit state: TACBasedAnalysisState with AbstractPointsToState): UIDSet[ObjectType] = {
+        val pointsToSetEOptP = state.getOrRetrievePointsToEPS(dependee, ps)
+        pointsToSetEOptP match {
+            case UBPS(pointsTo: PointsTo, isFinal) ⇒
+                if (!isFinal) state.addPointsToDependency(depender, pointsToSetEOptP)
+                pointsTo.types
+
+            case _: EPK[Entity, PointsTo] ⇒
+                state.addPointsToDependency(depender, pointsToSetEOptP)
+                UIDSet.empty
+        }
+    }
+
+    // todo: rename
+    @inline protected[this] def handleDefSites(
+        e:        Entity,
+        defSites: IntTrieSet
+    )(
+        implicit
+        state: TACBasedAnalysisState with AbstractPointsToState
+    ): UIDSet[ObjectType] = {
+        var pointsToSet = UIDSet.empty[ObjectType]
+        for (defSite ← defSites) {
+            pointsToSet ++=
+                handleEOptP(e, defSite)
+
+        }
+
+        pointsToSet
+    }
+}

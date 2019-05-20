@@ -18,6 +18,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.ObjectType
+import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToState
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -28,7 +29,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 class PointsToBasedCGState(
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends CGState {
+) extends CGState with AbstractPointsToState {
     // maps a definition site to the ids of the potential (not yet resolved) objecttypes
     private[this] val _virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = mutable.Map.empty
 
@@ -73,7 +74,7 @@ class PointsToBasedCGState(
         }
     }
 
-    def getOrRetrievePointsToEPS(
+    override def getOrRetrievePointsToEPS(
         dependee: Entity, ps: PropertyStore
     ): EOptionP[Entity, PointsTo] = {
         _pointsToDependees.getOrElse(dependee, ps(dependee, PointsTo.key))
@@ -88,12 +89,15 @@ class PointsToBasedCGState(
         _pointsToDependees(eps.e) = eps
     }
 
-    def addPointsToDependency(
-        callSite: CallSiteT, pointsToSetEOptP: EOptionP[Entity, PointsTo]
+    override def addPointsToDependency(
+        depender: Entity, pointsToSetEOptP: EOptionP[Entity, PointsTo]
     ): Unit = {
+        val callSite = depender.asInstanceOf[CallSiteT]
         val defSite = pointsToSetEOptP.e
-        assert((!_defSitesToCallSites.contains(defSite) && !_callSiteToDefSites.contains(callSite) && !_pointsToDependees.contains(defSite)) ||
-            (!_defSitesToCallSites(defSite).contains(callSite) && !_callSiteToDefSites(callSite).contains(defSite)))
+        assert((!_defSitesToCallSites.contains(defSite) &&
+            !_callSiteToDefSites.contains(callSite) && !_pointsToDependees.contains(defSite)) ||
+            (!_defSitesToCallSites(defSite).contains(callSite) &&
+                !_callSiteToDefSites(callSite).contains(defSite)))
         _pointsToDependees(defSite) = pointsToSetEOptP
         val oldCallSites = _defSitesToCallSites.getOrElse(defSite, Set.empty)
         _defSitesToCallSites(defSite) = oldCallSites + callSite

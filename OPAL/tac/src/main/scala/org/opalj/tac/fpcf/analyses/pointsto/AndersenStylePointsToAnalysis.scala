@@ -7,7 +7,6 @@ package pointsto
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
@@ -34,10 +33,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.tac.common.DefinitionSites
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -56,10 +51,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class AndersenStylePointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends ReachableMethodAnalysis {
-
-    private val formalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
-    private val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
+) extends ReachableMethodAnalysis with PointsToBasedAnalysis {
 
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
@@ -80,13 +72,19 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 // handle receiver for non static methods
                 if (receiverOpt.isDefined) {
                     val fp = fps(0)
-                    handleDefSites(fp, receiverOpt.get.asVar.definedBy)
+                    state.setOrUpdatePointsToSet(
+                        fp,
+                        handleDefSites(fp, receiverOpt.get.asVar.definedBy)
+                    )
                 }
 
                 // handle params
                 for (i ← 0 until target.descriptor.parametersCount) {
                     val fp = fps(i + 1)
-                    handleDefSites(fp, call.params(i).asVar.definedBy)
+                    state.setOrUpdatePointsToSet(
+                        fp,
+                        handleDefSites(fp, call.params(i).asVar.definedBy)
+                    )
                 }
             } else {
                 state.addIncompletePointsToInfo(pc)
@@ -113,7 +111,9 @@ class AndersenStylePointsToAnalysis private[analyses] (
             // that case should not happen
             case Assignment(pc, targetVar, UVar(_, defSites)) if targetVar.value.isReferenceValue ⇒
                 val defSiteObject = definitionSites(method, pc)
-                handleDefSites(defSiteObject, defSites)
+                state.setOrUpdatePointsToSet(
+                    defSiteObject, handleDefSites(defSiteObject, defSites)
+                )
 
             case Assignment(pc, targetVar, GetField(_, declaringClass, name, fieldType, _)) if targetVar.value.isReferenceValue ⇒
                 val defSiteObject = definitionSites(method, pc)
@@ -165,14 +165,18 @@ class AndersenStylePointsToAnalysis private[analyses] (
                         // handle receiver for non static methods
                         if (receiverOpt.isDefined) {
                             val fp = fps(0)
-                            handleDefSites(fp, receiverOpt.get.asVar.definedBy)
+                            state.setOrUpdatePointsToSet(
+                                fp, handleDefSites(fp, receiverOpt.get.asVar.definedBy)
+                            )
                         }
 
                         // handle params
                         for (i ← 0 until target.descriptor.parametersCount) {
                             val fp = fps(i + 1)
                             // FIXME: This may fail on signature polymorphic methods as the actual parameter count (call.params) might differ from the target descriptor
-                            handleDefSites(fp, call.params(i).asVar.definedBy)
+                            state.setOrUpdatePointsToSet(
+                                fp, handleDefSites(fp, call.params(i).asVar.definedBy)
+                            )
                         }
                     } else {
                         state.addIncompletePointsToInfo(pc)
@@ -195,12 +199,16 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
             case ArrayStore(_, arrayRef, _, UVar(_, defSites)) if isArrayOfObjectType(arrayRef.asVar) ⇒
                 val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
-                handleDefSites(arrayBaseType, defSites)
+                state.setOrUpdatePointsToSet(
+                    arrayBaseType, handleDefSites(arrayBaseType, defSites)
+                )
 
             case PutField(pc, declaringClass, name, fieldType, _, UVar(_, defSites)) if fieldType.isObjectType ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
-                    handleDefSites(fieldOpt.get, defSites)
+                    state.setOrUpdatePointsToSet(
+                        fieldOpt.get, handleDefSites(fieldOpt.get, defSites)
+                    )
                 else {
                     state.addIncompletePointsToInfo(pc)
                 }
@@ -208,13 +216,17 @@ class AndersenStylePointsToAnalysis private[analyses] (
             case PutStatic(pc, declaringClass, name, fieldType, UVar(_, defSites)) if fieldType.isObjectType ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
-                    handleDefSites(fieldOpt.get, defSites)
+                    state.setOrUpdatePointsToSet(
+                        fieldOpt.get, handleDefSites(fieldOpt.get, defSites)
+                    )
                 else {
                     state.addIncompletePointsToInfo(pc)
                 }
 
             case ReturnValue(_, value @ UVar(_, defSites)) if value.value.isReferenceValue ⇒
-                handleDefSites(state.method, defSites)
+                state.setOrUpdatePointsToSet(
+                    state.method, handleDefSites(state.method, defSites)
+                )
 
             case _ ⇒
         }
@@ -286,63 +298,6 @@ class AndersenStylePointsToAnalysis private[analyses] (
         state.clearPointsToSet()
 
         Results(results)
-    }
-
-    @inline private[this] def toEntity(
-        defSite: Int
-    )(implicit state: PointsToState): Entity = {
-        if (defSite < 0) {
-            formalParameters.apply(state.method)(-1 - defSite)
-        } else {
-            definitionSites(state.method.definedMethod, state.tac.stmts(defSite).pc)
-        }
-    }
-
-    @inline private[this] def handleEOptP(
-        depender: Entity, dependeeDefSite: Int
-    )(implicit state: PointsToState): UIDSet[ObjectType] = {
-        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            UIDSet(ObjectType.Exception) // todo ask what exception has been thrown
-        } else if (ai.isImmediateVMException(dependeeDefSite)) {
-            // todo -  we need to get the actual exception type here
-            UIDSet(ObjectType.Exception)
-        } else {
-            handleEOptP(depender, toEntity(dependeeDefSite))
-        }
-    }
-
-    // todo: rename
-    @inline private[this] def handleEOptP(
-        depender: Entity, dependee: Entity
-    )(implicit state: PointsToState): UIDSet[ObjectType] = {
-        val pointsToSetEOptP = state.getOrRetrievePointsToEPS(dependee, ps)
-        pointsToSetEOptP match {
-            case UBPS(pointsTo, isFinal) ⇒
-                if (!isFinal) state.addPointsToDependency(depender, pointsToSetEOptP)
-                pointsTo.types
-
-            case _: EPK[Entity, PointsTo] ⇒
-                state.addPointsToDependency(depender, pointsToSetEOptP)
-                UIDSet.empty
-        }
-    }
-
-    // todo: rename
-    @inline private[this] def handleDefSites(
-        e:        Entity,
-        defSites: IntTrieSet
-    )(
-        implicit
-        state: PointsToState
-    ): Unit = {
-        var pointsToSet = UIDSet.empty[ObjectType]
-        for (defSite ← defSites) {
-            pointsToSet ++=
-                handleEOptP(e, defSite)
-
-        }
-
-        state.setOrUpdatePointsToSet(e, pointsToSet)
     }
 
     @inline private[this] def isArrayType(value: DUVar[ValueInformation]): Boolean = {
