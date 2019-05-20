@@ -22,7 +22,7 @@ sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
  * Represent the set of types (classes) that were loaded by the VM during execution of the
  * respective [[org.opalj.br.analyses.Project]] (which is the entity for this property).
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 sealed class LoadedClasses private[properties] (
         final val orderedClasses: List[ObjectType],
@@ -56,7 +56,6 @@ sealed class LoadedClasses private[properties] (
     // TODO Consider adding/using a bounded ForeachIterator?
     def drop(index: Int): Iterator[ObjectType] = {
         orderedClasses.iterator.take(classes.size - index)
-        orderedClasses.drop()
     }
 
     def size: Int = classes.size
