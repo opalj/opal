@@ -20,16 +20,18 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.cg.properties.NoCallees
-import org.opalj.tac.fpcf.analyses.cg.CGState
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * Encapsulates the state of the analysis, analyzing a certain method.
+ * Encapsulates the state of the analysis, analyzing a certain method using the
+ * [[org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysis]].
+ *
+ * @author Florian Kuebler
  */
 class PointsToState private (
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends CGState {
+) extends TACBasedAnalysisState {
 
     private[this] val _pointsToSets: mutable.Map[Entity, UIDSet[ObjectType]] = mutable.Map.empty
 
@@ -63,13 +65,13 @@ class PointsToState private (
     }
 
     override def dependees: Traversable[EOptionP[Entity, Property]] = {
-        tacDependee() ++
+        super.dependees ++
             _dependees.values ++
             _calleesDependee.filter(_.isRefinable)
     }
 
     override def hasOpenDependencies: Boolean = {
-        tacDependee().isDefined ||
+        super.hasOpenDependencies ||
             _dependees.nonEmpty ||
             (_calleesDependee.isDefined && _calleesDependee.get.isRefinable)
     }
@@ -133,10 +135,6 @@ class PointsToState private (
     def addIncompletePointsToInfo(pc: Int): Unit = {
         // Todo: We need a mechanism to mark points-to sets as incomplete
     }
-
-    // todo separate CGState trait
-    override def hasNonFinalCallSite: Boolean = ???
-
 }
 
 object PointsToState {

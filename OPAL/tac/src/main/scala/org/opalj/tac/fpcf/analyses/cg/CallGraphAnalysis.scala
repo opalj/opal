@@ -27,37 +27,23 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
-trait CGState {
-
-    def method: DefinedMethod
-
+trait CGState extends TACBasedAnalysisState {
     // todo: merge in virtualcallsites
     def hasNonFinalCallSite: Boolean
-
-    def hasOpenDependencies: Boolean
-
-    def dependees: Traversable[SomeEOptionP]
-
-    protected[this] var _tacDependee: EOptionP[Method, TACAI]
-
-    assert(_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined)
-
-    final def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
-        _tacDependee = tacDependee
-    }
-
-    final def tacDependee(): Option[EOptionP[Method, TACAI]] = {
-        if (_tacDependee.isRefinable)
-            Some(_tacDependee)
-        else
-            None
-    }
-
-    final def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
-        _tacDependee.ub.tac.get
-    }
 }
 
+/**
+ * A base class for call graph analyses based on the FPCF framework.
+ * It uses the AI information of the three-address code to get the most precise information for
+ * virtual calls.
+ * `handleImpreciseCall` will be invoked for each virtual call, that could not be resolved
+ * precisely.
+ *
+ * @see [[org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysis]] or
+ *     [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis]] for example analyses.
+ *
+ * @author Florian Kuebler
+ */
 trait CallGraphAnalysis extends ReachableMethodAnalysis {
     type State <: CGState
 
@@ -292,12 +278,12 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
                     val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
-                            val cfOption = project.classFile(subtype)
-                            cfOption.isDefined && {
-                                val cf = cfOption.get
-                                !cf.isInterfaceDeclaration && !cf.isAbstract
-                            }
+                        val cfOption = project.classFile(subtype)
+                        cfOption.isDefined && {
+                            val cf = cfOption.get
+                            !cf.isInterfaceDeclaration && !cf.isAbstract
                         }
+                    }
 
                     handleImpreciseCall(
                         caller,

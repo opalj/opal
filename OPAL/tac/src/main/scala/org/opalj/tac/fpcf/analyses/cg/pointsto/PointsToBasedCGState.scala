@@ -117,15 +117,12 @@ class PointsToBasedCGState(
         _defSitesToCallSites.remove(defSite)
     }
 
-    def hasOpenDependencies: Boolean = {
-        _pointsToDependees.nonEmpty || _tacDependee.isRefinable
+    override def hasOpenDependencies: Boolean = {
+        super.hasOpenDependencies || _tacDependee.isRefinable
     }
 
-    def dependees: Traversable[SomeEOptionP] = {
-        if (_tacDependee.isFinal)
-            _pointsToDependees.values
-        else
-            Some(_tacDependee) ++ _pointsToDependees.values
+    override def dependees: Traversable[SomeEOptionP] = {
+        super.dependees ++ _pointsToDependees.values
     }
 
     def callSitesForDefSite(defSite: Entity): Traversable[CallSiteT] = {

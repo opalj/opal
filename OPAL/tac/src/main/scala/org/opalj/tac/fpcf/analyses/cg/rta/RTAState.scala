@@ -92,11 +92,11 @@ class RTAState(
     //                                         //
     /////////////////////////////////////////////
 
-    def hasOpenDependencies: Boolean = {
-        _tacDependee.isRefinable || _instantiatedTypesDependee.isRefinable
+    override def hasOpenDependencies: Boolean = {
+        super.hasOpenDependencies || _instantiatedTypesDependee.isRefinable
     }
 
-    def dependees: Iterable[EOptionP[Entity, Property]] = {
-        tacDependee ++ instantiatedTypesDependee
+    override def dependees: Traversable[EOptionP[Entity, Property]] = {
+        super.dependees ++ instantiatedTypesDependee
     }
 }
