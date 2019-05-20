@@ -15,11 +15,11 @@ import java.util.concurrent.atomic.AtomicLong
 /**
  * A ThreadPool that knows the `ThreadGroup` associated with its threads and that catches
  * exceptions if a thread crashes and reports them using the OPALLogger facility.
- * 
+ *
  * If the root cause of the exception should be related to the OPALLogger then the error
  * is written to `System.err`.
- * 
- * The pool uses demon threads to make sure that these threads never prevent the JVM from 
+ *
+ * The pool uses demon threads to make sure that these threads never prevent the JVM from
  * regular termination.
  *
  * @author Michael Eichberg

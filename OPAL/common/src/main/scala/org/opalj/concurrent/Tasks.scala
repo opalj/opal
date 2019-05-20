@@ -90,7 +90,7 @@ final class SequentialTasks[T](
 }
 
 /**
- * Executes the given function `process` for each submitted value of type `T`. 
+ * Executes the given function `process` for each submitted value of type `T`.
  * The `process` function can add further values that should be processed.
  *
  * @example
