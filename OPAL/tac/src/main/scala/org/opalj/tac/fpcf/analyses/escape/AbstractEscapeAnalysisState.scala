@@ -144,23 +144,6 @@ trait AbstractEscapeAnalysisState {
 }
 
 /**
- * Provides a cache for entities to which the [[InterProceduralEscapeAnalysis]] might depend to in
- * order to have consistent [[org.opalj.fpcf.EOptionP]] results for a single context until a
- * result is committed to the [[org.opalj.fpcf.PropertyStore]].
- */
-/*trait DependeeCache {
-    // TODO There is only ever one key in this map, the current method, so an Option should suffice
-    private[escape] val calleesCache: mutable.Map[DeclaredMethod, EOptionP[Entity, Callees]] =
-        mutable.Map()
-
-    private[escape] val dependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, EscapeProperty]] =
-        mutable.Map()
-
-    private[escape] val vdependeeCache: mutable.Map[VirtualFormalParameter, EOptionP[Entity, VirtualMethodEscapeProperty]] =
-        mutable.Map()
-}*/
-
-/**
  * Stores the parameters to which the analyses depends on, and whose functions return value is used
  * any further.
  */

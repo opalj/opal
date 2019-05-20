@@ -8,9 +8,8 @@ import net.ceedubs.ficus.Ficus._
 
 /**
  *
- * TODO
- * The ''key'' object to get a traversable of entry points. Entry points are particulary relevant to
- * construct call graphs.
+ * The ''key'' object to get a traversable of entry points. Entry points are particularly relevant
+ * to construct call graphs.
  * See [[InitialEntryPointsKey]] for further details.
  *
  * This ''key'' reflectively instantiates the analysis that determines the program's entry points.
