@@ -47,9 +47,9 @@ import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysis
 import org.opalj.tac.fpcf.analyses.cg.DirectCalls
 
 /**
- * Uses the [[PointsTo]] of [[org.opalj.tac.common.DefinitionSite]] and
- * [[org.opalj.br.analyses.VirtualFormalParameter]]s in order to determine the targets of virtual
- * method calls.
+ * Uses the [[org.opalj.br.fpcf.pointsto.properties.PointsTo]] of
+ * [[org.opalj.tac.common.DefinitionSite]] and[[org.opalj.br.analyses.VirtualFormalParameter]]s
+ * in order to determine the targets of virtual method calls.
  *
  * @author Florian Kuebler
  */

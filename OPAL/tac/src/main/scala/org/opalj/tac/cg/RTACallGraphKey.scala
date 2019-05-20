@@ -18,7 +18,8 @@ import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredInstantiatedTypesAnalysis
  * @see [[AbstractCallGraphKey]] for further details.
  *
  * If the [[org.opalj.br.analyses.cg.LibraryEntryPointsFinder]] is scheduled
- * the analysis will schedule [[EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis]].
+ * the analysis will schedule
+ * [[org.opalj.tac.fpcf.analyses.cg.rta.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis]].
  *
  * Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
  * and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before

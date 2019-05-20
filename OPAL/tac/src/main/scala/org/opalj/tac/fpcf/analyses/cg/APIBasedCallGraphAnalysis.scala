@@ -21,7 +21,8 @@ import org.opalj.br.fpcf.FPCFAnalysis
 /**
  * A trait for call graph analyses that model the result of the invocation a specific `apiMethod`.
  *
- * Each time a new caller of the `apiMethod` is found in the [[Callers]] property, `handleNewCaller`
+ * Each time a new caller of the [[apiMethod*]] is found in the
+ * [[org.opalj.br.fpcf.cg.properties.Callers]] property, [[handleNewCaller*]]
  * gets called.
  *
  * @note When `handleNewCaller` gets invoked, there is no guarantee that the caller's three-address
