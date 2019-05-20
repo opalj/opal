@@ -165,24 +165,24 @@ package object control {
      *
      * @param   data An array sorted in ascending order according to the test done by the
      *          comparator.
-     * @param   comparator A comparator which is used to search for the matching value.
-     *          If the comparator matches multiple values, the returned value is not
+     * @param   comparable A comparable which is used to search for the matching value.
+     *          If the object matches multiple values, the returned value is not
      *          precisely specified.
      */
     // TODO Rename: binarySearch
-    def find[T <: AnyRef](data: Array[T], comparator: Comparator[T]): Option[T] = {
-        find(data)(comparator.evaluate)
+    def find[T <: AnyRef](data: Array[T], comparable: Comparable[T]): Option[T] = {
+        find(data)(comparable.compareTo)
     }
 
     // TODO Rename: binarySearch
-    def find[T <: AnyRef](data: Array[T])(evaluate: T ⇒ Int): Option[T] = {
+    def find[T <: AnyRef](data: Array[T])(compareTo: T ⇒ Int): Option[T] = {
         @tailrec @inline def find(low: Int, high: Int): Option[T] = {
             if (high < low)
                 return None;
 
             val mid = (low + high) / 2 // <= will never overflow...(by constraint...)
             val e = data(mid)
-            val eComparison = evaluate(e)
+            val eComparison = compareTo(e)
             if (eComparison == 0) {
                 Some(e)
             } else if (eComparison < 0) {

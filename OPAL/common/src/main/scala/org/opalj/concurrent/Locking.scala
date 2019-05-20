@@ -10,8 +10,7 @@ import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
 
 /**
- * A basic facility to model shared and exclusive access to some functionality/data
- * structure.
+ * A basic facility to model shared and exclusive access to some functionality/data structure.
  *
  * ==Usage==
  * To use this generic locking facility you should mix in this trait.
@@ -23,14 +22,14 @@ trait Locking {
     private[this] val rwLock = new ReentrantReadWriteLock()
 
     /**
-     * Acquires the write lock associated with this instance and then executes
-     * the function `f`. Afterwards, the lock is released.
+     * Acquires the write lock associated with this instance and then executes the function `f`.
+     * Afterwards, the lock is released.
      */
     protected[this] def withWriteLock[B](f: ⇒ B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
-     * Acquires the read lock associated with this instance and then executes
-     * the function `f`. Afterwards, the lock is released.
+     * Acquires the read lock associated with this instance and then executes the function `f`.
+     * Afterwards, the lock is released.
      */
     protected[this] def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
 }
@@ -40,8 +39,8 @@ trait Locking {
 object Locking {
 
     /**
-     * Acquires the write lock associated with this instance and then executes
-     * the function `f`. Afterwards, the lock is released.
+     * Acquires the write lock associated with this instance and then executes the function `f`.
+     * Afterwards, the lock is released.
      */
     @inline final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
         val lock = rwLock.writeLock()
@@ -86,7 +85,7 @@ object Locking {
             if (allLocked) {
                 f
             } else {
-                // if we are here, something went so terribly wrong, that the performance
+                // If we reach this point, something went so terribly wrong, that the performance
                 // penalty of throwing an exception and immediately catching it, is a no-brainer...
                 throw error;
             }
@@ -99,8 +98,8 @@ object Locking {
     }
 
     /**
-     * Acquires the read lock and then executes
-     * the function `f`. Before returning the lock is always released.
+     * Acquires the read lock and then executes the function `f`.
+     * Before returning the lock is always released.
      */
     @inline final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
         val lock = rwLock.readLock()
@@ -113,9 +112,8 @@ object Locking {
     }
 
     /**
-     * Tries to acquire the read lock and then executes
-     * the function `f`; if the read lock cannot be acquired
-     * the given function `f` is not executed and `None` is returned.
+     * Tries to acquire the read lock and then executes the function `f`; if the read lock cannot
+     * be acquired the given function `f` is not executed and `None` is returned.
      *
      * If lock was acquired, it will always be released before the method returns.
      */
@@ -133,8 +131,8 @@ object Locking {
     }
 
     /**
-     * Acquires the lock and then executes
-     * the function `f`. Before returning the lock is always released.
+     * Acquires the lock and then executes the function `f`.
+     * Before returning the lock is always released.
      */
     @inline final def withLock[B](lock: ReentrantLock)(f: ⇒ B): B = {
         try {

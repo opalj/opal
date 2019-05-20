@@ -13,9 +13,14 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * A ThreadPool that knows the `ThreadGroup` associated with its threads and that
- * catches exceptions if a thread crashes and reports them using the OPALLogger
- * facility.
+ * A ThreadPool that knows the `ThreadGroup` associated with its threads and that catches
+ * exceptions if a thread crashes and reports them using the OPALLogger facility.
+ *
+ * If the root cause of the exception should be related to the OPALLogger then the error
+ * is written to `System.err`.
+ *
+ * The pool uses demon threads to make sure that these threads never prevent the JVM from
+ * regular termination.
  *
  * @author Michael Eichberg
  */
@@ -34,14 +39,13 @@ class OPALBoundedThreadPoolExecutor(
             val id = s"${nextID.incrementAndGet()}"
             val name = group.getName + s" - Thread $id"
             val t = new Thread(group, r, name)
-            // we are using demon threads to make sure that these
-            // threads never prevent the JVM from regular termination
             t.setDaemon(true)
             t.setUncaughtExceptionHandler(UncaughtExceptionHandler)
             t
         }
     }
 ) {
+
     override def afterExecute(r: Runnable, t: Throwable): Unit = {
         super.afterExecute(r, t)
         var e = t
@@ -62,4 +66,5 @@ class OPALBoundedThreadPoolExecutor(
             handleUncaughtException(e)
         }
     }
+
 }

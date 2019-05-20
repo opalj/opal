@@ -98,28 +98,28 @@ final class PKESequentialPropertyStore protected (
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
 
-    private[seq] def dependeesCount(epk: SomeEPK): Int = {
-        dependees(epk.pk.id).get(epk.e) match {
+    private[seq] def dependeesCount(eOptionP: SomeEOptionP): Int = {
+        dependees(eOptionP.pk.id).get(eOptionP.e) match {
             case Some(dependees) ⇒ dependees.size
-            case None            ⇒ 0
+            case _               ⇒ 0
         }
     }
 
-    private[seq] def dependees(epk: SomeEPK): Traversable[SomeEOptionP] = {
-        dependees(epk.pk.id).getOrElse(epk.e, Nil)
+    private[seq] def dependees(eOptionP: SomeEOptionP): Traversable[SomeEOptionP] = {
+        dependees(eOptionP.pk.id).getOrElse(eOptionP.e, Nil)
     }
 
-    private[seq] def dependersCount(epk: SomeEPK): Int = {
-        dependers(epk.pk.id).get(epk.e) match {
+    private[seq] def dependersCount(eOptionP: SomeEOptionP): Int = {
+        dependers(eOptionP.pk.id).get(eOptionP.e) match {
             case Some(dependers) ⇒ dependers.size
-            case None            ⇒ 0
+            case _               ⇒ 0
         }
     }
 
-    private[seq] def dependers(epk: SomeEPK): Traversable[SomeEPK] = {
-        dependers(epk.pk.id).get(epk.e) match {
+    private[seq] def dependers(eOptionP: SomeEOptionP): Traversable[SomeEPK] = {
+        dependers(eOptionP.pk.id).get(eOptionP.e) match {
             case Some(dependers) ⇒ dependers.keys
-            case None            ⇒ Nil
+            case _               ⇒ Nil
         }
     }
 
@@ -320,7 +320,7 @@ final class PKESequentialPropertyStore protected (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasksManager.pushInitialTask(new PropertyComputationTask(this, e, pc))
+        tasksManager.push(new PropertyComputationTask(this, e, pc))
     }
 
     override def doScheduleEagerComputationForEntity[E <: Entity](
@@ -329,7 +329,7 @@ final class PKESequentialPropertyStore protected (
         pc: PropertyComputation[E]
     ): Unit = handleExceptions {
         scheduledTasksCounter += 1
-        tasksManager.pushInitialTask(new PropertyComputationTask(this, e, pc))
+        tasksManager.push(new PropertyComputationTask(this, e, pc))
     }
 
     private[this] def removeDependerFromDependees(dependerEPK: SomeEPK): Unit = {
@@ -388,11 +388,6 @@ final class PKESequentialPropertyStore protected (
         }
         if (notificationRequired) {
             val isFinal = eps.isFinal
-            val bottomness =
-                if (eps.hasUBP && eps.ub.isOrderedProperty)
-                    eps.ub.asOrderedProperty.bottomness
-                else
-                    OrderedProperty.DefaultBottomness
             val theDependers = dependers(pkId).get(e)
             theDependers.foreach { dependersOfEPK ⇒
                 dependersOfEPK foreach { cHint ⇒
@@ -404,7 +399,7 @@ final class PKESequentialPropertyStore protected (
                             } else {
                                 new OnUpdateComputationTask(this, eps.toEPK, c)
                             }
-                        tasksManager.push(t, newDependees, dependersOfEPK.keys, bottomness, hint)
+                        tasksManager.push(t, eps, newDependees, dependersOfEPK.keys, hint)
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {
@@ -483,7 +478,7 @@ final class PKESequentialPropertyStore protected (
                 } else {
                     OnUpdateComputationTask(this, processedDependee.toEPK, c)
                 }
-                tasksManager.push(t, processedDependees, partialResults.map(pr ⇒ pr.epk))
+                tasksManager.push(t, partialResults.map(pr ⇒ pr.epk), processedDependees)
                 false
             } else {
                 true // <= no update
@@ -494,7 +489,8 @@ final class PKESequentialPropertyStore protected (
     private[this] def processDependeesOfInterimResult(
         initialEPS:       SomeEPS,
         initialDependees: Traversable[SomeEOptionP],
-        initialC:         OnUpdateContinuation
+        initialC:         OnUpdateContinuation,
+        initialHint:      PropertyComputationHint
     ): (SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation) = {
         // The idea is to stack/aggregate all changes in dependees.
         val e = initialEPS.e
@@ -529,14 +525,23 @@ final class PKESequentialPropertyStore protected (
                         case r ⇒
                             // Actually this shouldn't happen, though it is not a problem!
                             scheduledOnUpdateComputationsCounter += 1
-                            tasksManager.push(HandleResultTask(store, r), nextDependees, /*FIXME*/ Nil)
+                            tasksManager.push(HandleResultTask(store, r))
                             // The last comparable result still needs to be stored,
                             // but obviously, no further relevant computations need to be
                             // carried out.
                             nextDependees = Nil
                             nextC = null
                     }
-
+                    /*
+                        scheduledOnUpdateComputationsCounter += 1
+                        tasksManager.push(
+                            OnUpdateComputationTask(store, currentDependee.toEPK, initialC),
+                            initialEPS,
+                            initialDependees
+                        )
+                        nextDependees = Nil
+                        nextC = null
+                    */
                     true // <= abort processing current dependees
                 } else {
                     false
@@ -609,9 +614,11 @@ final class PKESequentialPropertyStore protected (
                 val eps = ir.eps
                 val dependees = ir.dependees
                 val c = ir.c
+                val hint = ir.hint
                 // 1. let's check if a dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
-                val (newEPS, newDependees, newC) = processDependeesOfInterimResult(eps, dependees, c)
+                val (newEPS, newDependees, newC) =
+                    processDependeesOfInterimResult(eps, dependees, c, hint)
 
                 assert(newEPS.e == eps.e)
                 assert(newEPS.pk == eps.pk)
@@ -804,25 +811,26 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         logContext: LogContext
     ): PKESequentialPropertyStore = {
         val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
-        val taskManagerId =
+        val config =
             contextMap.get(classOf[Config]) match {
-                case Some(config: Config) ⇒ config.getString(TasksManagerKey)
-                case _                    ⇒ "ManyDirectDependersLast" // <= default
+                case Some(config: Config) ⇒ config
+                case _                    ⇒ org.opalj.BaseConfig
             }
+        val taskManagerId = config.getString(TasksManagerKey)
         apply(taskManagerId)(contextMap)
     }
 
     final val Strategies = List(
-        "FIFO",
-        "LIFO",
         "ManyDirectDependenciesLast",
         "ManyDirectDependersLast",
         "ManyDependeesOfDirectDependersLast",
         "ManyDependeesAndDependersOfDirectDependersLast",
+        "FIFO",
+        "LIFO" /*,
         "ForwardAllDependeesLast",
         "ForwardAllDependeesFirst",
         "BackwardAllDependeesLast",
-        "BackwardAllDependeesFirst"
+        "BackwardAllDependeesFirst"*/
     )
 
     def apply(
@@ -833,44 +841,34 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         implicit
         logContext: LogContext
     ): PKESequentialPropertyStore = {
-        taskManagerId match {
+        val tasksManager: TasksManager = taskManagerId match {
 
-            case "FIFO" ⇒
-                new PKESequentialPropertyStore(context, new FIFOTasksManager)
+            case "FIFO"                       ⇒ new FIFOTasksManager
+            case "LIFO"                       ⇒ new LIFOTasksManager
 
-            case "LIFO" ⇒
-                new PKESequentialPropertyStore(context, new LIFOTasksManager)
-
-            case "ManyDirectDependenciesLast" ⇒
-                new PKESequentialPropertyStore(context, new ManyDirectDependenciesLastTasksManager)
-
-            case "ManyDirectDependersLast" ⇒
-                new PKESequentialPropertyStore(context, new ManyDirectDependersLastTasksManager)
-
+            case "ManyDirectDependenciesLast" ⇒ new ManyDirectDependenciesLastTasksManager
+            case "ManyDirectDependersLast"    ⇒ new ManyDirectDependersLastTasksManager
             case "ManyDependeesOfDirectDependersLast" ⇒
-                val taskManager = new ManyDependeesOfDirectDependersLastTasksManager
-                val ps = new PKESequentialPropertyStore(context, taskManager)
-                taskManager.setSeqPropertyStore(ps)
-                ps
-
+                new ManyDependeesOfDirectDependersLastTasksManager
             case "ManyDependeesAndDependersOfDirectDependersLast" ⇒
-                val taskManager = new ManyDependeesAndDependersOfDirectDependersLastTasksManager
-                val ps = new PKESequentialPropertyStore(context, taskManager)
-                taskManager.setSeqPropertyStore(ps)
-                ps
+                new ManyDependeesAndDependersOfDirectDependersLastTasksManager
 
             case "ForwardAllDependeesLast" | "ForwardAllDependeesFirst" |
                 "BackwardAllDependeesLast" | "BackwardAllDependeesFirst" ⇒
                 val forward = taskManagerId.startsWith("Forward")
                 val manyDependeeslast = taskManagerId.endsWith("Last")
-                val taskManager = new AllDependeesTasksManager(forward, manyDependeeslast)
-                val ps = new PKESequentialPropertyStore(context, taskManager)
-                taskManager.setSeqPropertyStore(ps)
-                ps
+                new AllDependeesTasksManager(forward, manyDependeeslast)
 
-            case _ ⇒
-                throw new IllegalArgumentException(s"unknown task manager $taskManagerId")
+            case _ ⇒ throw new IllegalArgumentException(s"unknown task manager $taskManagerId")
         }
 
+        val ps = new PKESequentialPropertyStore(context, tasksManager)
+        tasksManager match {
+            case propertyStoreDependentTaskManager: PropertyStoreDependentTasksManager ⇒
+                propertyStoreDependentTaskManager.setSeqPropertyStore(ps)
+                ps
+            case _ ⇒
+                ps
+        }
     }
 }

@@ -8,7 +8,7 @@ package seq
  *
  * @author Michael Eichberg
  */
-private[seq] sealed abstract class QualifiedTask extends (() ⇒ Unit) {
+sealed abstract class QualifiedTask extends (() ⇒ Unit) {
 
     /**
      * Returns `true` if and only if this task was definitively triggered
@@ -18,7 +18,7 @@ private[seq] sealed abstract class QualifiedTask extends (() ⇒ Unit) {
 
 }
 
-private[seq] final case class PropertyComputationTask[E <: Entity](
+final case class PropertyComputationTask[E <: Entity](
         ps: PropertyStore,
         e:  E,
         pc: PropertyComputation[E]
@@ -29,7 +29,7 @@ private[seq] final case class PropertyComputationTask[E <: Entity](
     override def isTriggeredByFinalProperty: Boolean = false
 }
 
-private[seq] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
+final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps: PropertyStore,
         r:  FinalEP[E, P],
         c:  OnUpdateContinuation
@@ -40,7 +40,7 @@ private[seq] final case class OnFinalUpdateComputationTask[E <: Entity, P <: Pro
     override def isTriggeredByFinalProperty: Boolean = true
 }
 
-private[seq] final case class OnUpdateComputationTask[E <: Entity, P <: Property](
+final case class OnUpdateComputationTask[E <: Entity, P <: Property](
         ps:  PropertyStore,
         epk: EPK[E, P],
         c:   OnUpdateContinuation
@@ -55,7 +55,7 @@ private[seq] final case class OnUpdateComputationTask[E <: Entity, P <: Property
 
 }
 
-private[seq] final case class HandleResultTask[E <: Entity, P <: Property](
+final case class HandleResultTask[E <: Entity, P <: Property](
         ps: PropertyStore,
         r:  PropertyComputationResult
 ) extends QualifiedTask {

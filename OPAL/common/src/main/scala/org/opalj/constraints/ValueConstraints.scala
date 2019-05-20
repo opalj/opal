@@ -12,7 +12,7 @@ trait ValueConstraint
 trait NumericValueConstraint extends ValueConstraint
 
 /**
- * States that the underlying, but unknown value is an element of the specified range of values.
+ * States that the underlying, unknown value is an element of the specified range of values.
  */
 case class NumericRange[@specialized(Int, Long, Float, Double, Boolean) T <: AnyVal](
         lowerBound: T,
@@ -24,7 +24,7 @@ object NumericRange {
 }
 
 /**
- * States that the underlying, but unknown value is an element of the specified set.
+ * States that the underlying, unknown value is an element of the specified set.
  */
 case class NumericSet[@specialized(Int, Long, Float, Double, Boolean) T <: AnyVal](
         values: Set[T]

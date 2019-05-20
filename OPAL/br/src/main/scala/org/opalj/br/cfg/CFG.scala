@@ -143,7 +143,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     }
 
     /**
-     * Computes the meet-over all paths solution for forward data-flow analyses.
+     * Computes the maximum fixed point solution for forward data-flow analyses.
      *
      * @param seed The initial facts associated with the first instruction (pc = 0).
      *
@@ -233,7 +233,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
     }
 
     /**
-     * Computes the meet-over all paths solution for forward data-flow analyses.
+     * Computes the maximum fixed point solution for backward data-flow analyses.
      *
      * @param seed The initial facts associated with instructions which lead to (ab)normal
      *        returns.
@@ -298,13 +298,19 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                     val newPredPCFacts = join(predPCFacts, newFacts)
                     if (newPredPCFacts ne predPCFacts) {
                         if (CFG.TraceDFSolver) {
-                            info("progress - df solver", s"[update] $pc -> $predId: $predPCFacts -> $newPredPCFacts")
+                            info(
+                                "progress - df solver",
+                                s"[update] $pc -> $predId: $predPCFacts -> $newPredPCFacts"
+                            )
                         }
                         exitFacts(predId) = newPredPCFacts
                         workList += predId
                     } else {
                         if (CFG.TraceDFSolver) {
-                            info("progress - df solver", s"[no update] $pc -> $predId: $predPCFacts -> $newPredPCFacts")
+                            info(
+                                "progress - df solver",
+                                s"[no update] $pc -> $predId: $predPCFacts -> $newPredPCFacts"
+                            )
                         }
                     }
                 }
@@ -318,12 +324,18 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
                     val newInitFacts = join(initFacts, newFacts)
                     if (newInitFacts ne initFacts) {
                         if (CFG.TraceDFSolver) {
-                            info("progress - df solver", s"[update] $pc -> -1: $initFacts -> $newInitFacts")
+                            info(
+                                "progress - df solver",
+                                s"[update] $pc -> -1: $initFacts -> $newInitFacts"
+                            )
                         }
                         initFacts = newFacts
                     } else {
                         if (CFG.TraceDFSolver) {
-                            info("progress - df solver", s"[no update] $pc -> -1: $initFacts -> $newFacts")
+                            info(
+                                "progress - df solver",
+                                s"[no update] $pc -> -1: $initFacts -> $newFacts"
+                            )
                         }
                     }
                 }

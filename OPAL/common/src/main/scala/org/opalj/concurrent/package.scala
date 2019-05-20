@@ -129,7 +129,7 @@ package object concurrent {
             } catch {
                 case t: Throwable ⇒
                     // We shouldn't use the OPALLogger here to ensure that we can report
-                    // Problems related to the logger!
+                    // problems related to the logger!
                     Console.err.println("[fatal] internal error when reporting errors: ")
                     t.printStackTrace(Console.err)
             }

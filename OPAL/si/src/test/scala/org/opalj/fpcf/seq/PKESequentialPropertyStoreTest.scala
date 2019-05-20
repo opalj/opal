@@ -27,7 +27,7 @@ class ManyDependenciesLastTaskskManagePKESequentialPropertyStoreTest
     extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore("ManyDependenciesLast")()
+        val s = PKESequentialPropertyStore("ManyDirectDependenciesLast")()
         s.suppressError = true
         s
     }
@@ -37,7 +37,7 @@ class ManyDependersLastTaskskManagePKESequentialPropertyStoreTest
     extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore("ManyDependersLast")()
+        val s = PKESequentialPropertyStore("ManyDirectDependersLast")()
         s.suppressError = true
         s
     }
@@ -47,7 +47,7 @@ class ManyDependeesOfDependersLastTaskskManagePKESequentialPropertyStoreTest
     extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore("ManyDependeesOfDependersLast")()
+        val s = PKESequentialPropertyStore("ManyDependeesOfDirectDependersLast")()
         s.suppressError = true
         s
     }
@@ -57,7 +57,7 @@ class ManyDependeesAndDependersOfDependersLastTaskskManagePKESequentialPropertyS
     extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore("ManyDependeesAndDependersOfDependersLast")()
+        val s = PKESequentialPropertyStore("ManyDependeesAndDependersOfDirectDependersLast")()
         s.suppressError = true
         s
     }

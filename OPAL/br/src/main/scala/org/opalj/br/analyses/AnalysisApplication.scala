@@ -90,7 +90,7 @@ trait AnalysisApplication {
                 "[-renderConfig (prints the configuration)]\n"+
                 "[-cp=<Directories or JAR/class files> (Default: the current folder.)]\n"+
                 "[-libcp=<Directories or JAR/class files>]\n"+
-                "[-projectConf=<project type specific configuration options)>]\n"+
+                "[-projectConfig=<project type specific configuration options)>]\n"+
                 "[-completelyLoadLibraries (the bodies of library methods are loaded)]\n"+
                 analysisSpecificParametersDescription
         )
@@ -110,7 +110,7 @@ trait AnalysisApplication {
         var unknownArgs = List.empty[String]
         var cp = IndexedSeq.empty[String]
         var libcp = IndexedSeq.empty[String]
-        var projectConf: Option[String] = None
+        var projectConfig: Option[String] = None
         var completelyLoadLibraries = false
         var renderConfig = false
 
@@ -129,8 +129,8 @@ trait AnalysisApplication {
                 libcp ++= splitLibCPath(arg)
             } else if (arg == "-completelyLoadLibraries") {
                 completelyLoadLibraries = true
-            } else if (arg.startsWith("-projectConf=")) {
-                projectConf = Some(arg.substring(13))
+            } else if (arg.startsWith("-projectConfig=")) {
+                projectConfig = Some(arg.substring(13))
             } else if (arg == "-renderConfig") {
                 renderConfig = true
             } else {
@@ -197,10 +197,10 @@ trait AnalysisApplication {
         //
         val project: Project[URL] = try {
             val config =
-                if (projectConf.isEmpty)
+                if (projectConfig.isEmpty)
                     ConfigFactory.load()
                 else
-                    ConfigFactory.load(projectConf.get)
+                    ConfigFactory.load(projectConfig.get)
             setupProject(cpFiles, libcpFiles, completelyLoadLibraries, config)
         } catch {
             case ct: ControlThrowable ⇒ throw ct;
