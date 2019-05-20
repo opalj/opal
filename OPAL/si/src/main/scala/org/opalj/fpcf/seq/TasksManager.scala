@@ -8,7 +8,7 @@ import scala.collection.mutable
 import java.util.ArrayDeque
 import java.util.PriorityQueue
 
-private[seq] sealed trait TasksManager {
+trait TasksManager {
 
     def push(task: QualifiedTask): Unit
 
