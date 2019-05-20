@@ -10,7 +10,7 @@ object StringUtil {
 
     /**
      * Returns Strings that a given expression may evaluate to.
-     * Identifies local use of String constants and Strings loaded from Properties objects.
+     * Identifies local use of String constants.
      */
     def getPossibleStrings(
         value: Expr[V],

@@ -296,8 +296,13 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                         if (call.name == "getConstructor") {
                             matchers += PublicMethodMatcher
                         }
-                        matchers += MatcherUtil.retrieveParameterTypesBasedMethodMatcher(params.head, pc, stmts, cfg)
-                        matchers += MatcherUtil.retrieveClassBasedMethodMatcher(receiver, pc, stmts, project)
+
+                        matchers += MatcherUtil.retrieveExactClassBasedMethodMatcher(
+                            receiver, pc, stmts, project
+                        )
+                        matchers += MatcherUtil.retrieveParameterTypesBasedMethodMatcher(
+                            params.head, pc, stmts, cfg
+                        )
 
                     /*
                      * TODO: case ArrayLoad(_, _, arrayRef) ⇒ // here we could handle getConstructors
@@ -396,13 +401,22 @@ class MethodInvokeAnalysis private[analyses] (
                     case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredMethod" | "getMethod", _, receiver, params) ⇒
                         if (call.name == "getMethod") {
                             matchers += PublicMethodMatcher
+                            matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
+                                receiver, pc, stmts, project
+                            )
+                        } else {
+                            matchers += MatcherUtil.retrieveExactClassBasedMethodMatcher(
+                                receiver, pc, stmts, project
+                            )
                         }
 
-                        matchers += MatcherUtil.retrieveNameBasedMethodMatcher(params.head, pc, stmts)
+                        matchers += MatcherUtil.retrieveNameBasedMethodMatcher(
+                            params.head, pc, stmts
+                        )
 
-                        matchers += MatcherUtil.retrieveParameterTypesBasedMethodMatcher(params(1), pc, stmts, cfg)
-
-                        matchers += MatcherUtil.retrieveClassBasedMethodMatcher(receiver, pc, stmts, project)
+                        matchers += MatcherUtil.retrieveParameterTypesBasedMethodMatcher(
+                            params(1), pc, stmts, cfg
+                        )
 
                     /*case ArrayLoad(_, _, arrayRef) ⇒*/
                     // TODO here we can handle getMethods

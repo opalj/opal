@@ -7,7 +7,6 @@ package cg
 import net.ceedubs.ficus.Ficus._
 
 /**
- *
  * The ''key'' object to get a traversable of entry points. Entry points are particularly relevant
  * to construct call graphs.
  * See [[InitialEntryPointsKey]] for further details.

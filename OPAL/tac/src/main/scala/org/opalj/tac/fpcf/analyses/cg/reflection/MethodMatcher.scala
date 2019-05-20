@@ -20,6 +20,10 @@ import org.opalj.br.BaseType
 import org.opalj.br.ClassHierarchy
 
 /**
+ * Used to determine whether a certain method should be considered as a target for a reflective
+ * call site. These call sites should be resolved by chaining matchers in
+ * [[MethodMatching.getPossibleMethods*]].
+ *
  * @author Florian Kuebler
  */
 trait MethodMatcher {
@@ -42,7 +46,6 @@ final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends Metho
     override def priority: Int = 2
 }
 
-// todo we may need a exactly in this class filter (for getDeclaredMethod)
 class ClassBasedMethodMatcher(val possibleClasses: Set[ObjectType]) extends MethodMatcher {
 
     // TODO use weakHashMap to cache methods per project (for the contains check)
@@ -51,6 +54,19 @@ class ClassBasedMethodMatcher(val possibleClasses: Set[ObjectType]) extends Meth
             // for static methods and constructors
             // todo what about "inherited" static methods
             p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
+    }
+
+    override def initialMethods(implicit p: SomeProject): Iterator[Method] = methods.iterator
+
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = initialMethods.contains(m)
+
+    override def priority: Int = 1
+}
+
+class ExactClassBasedMethodMatcher(val possibleClasses: Set[ObjectType]) extends MethodMatcher {
+    // TODO use weakHashMap to cache methods per project (for the contains check)
+    private[this] def methods(implicit p: SomeProject) = possibleClasses.flatMap { c ⇒
+        p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
     }
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = methods.iterator
@@ -127,7 +143,6 @@ class ActualParamBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatc
     override def priority: UShort = 3
 }
 
-// todo rename as this is only for the first argument of Method.invoke
 class ActualReceiverBasedMethodMatcher(val receiver: IsReferenceValue) extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {
         implicit val ch: ClassHierarchy = p.classHierarchy

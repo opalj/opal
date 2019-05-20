@@ -32,6 +32,26 @@ object MatcherUtil {
         )
     }
 
+    private[reflection] def retrieveExactClassBasedMethodMatcher(
+        ref:     Expr[V],
+        pc:      Int,
+        stmts:   Array[Stmt[V]],
+        project: SomeProject
+    )(
+        implicit
+        incompleteCallSites: IncompleteCallSites,
+        highSoundness:       Boolean
+    ): MethodMatcher = {
+        val typesOpt =
+            TypesUtil.getPossibleTypes(ref, pc, stmts, project).map(_.map(_.asObjectType)).map(_.toSet)
+
+        retrieveSuitableMatcher[Set[ObjectType]](
+            typesOpt,
+            pc,
+            v ⇒ new ExactClassBasedMethodMatcher(v)
+        )
+    }
+
     /**
      * Given an optional value of type `A` and a `factory` method for a [[MethodMatcher]],
      * it creates a method matcher (using the factory) if the value in `v` is defined.
