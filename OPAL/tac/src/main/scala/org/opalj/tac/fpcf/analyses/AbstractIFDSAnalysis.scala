@@ -177,17 +177,17 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
      * @param outgoingFacts Maps each basic block and successor node to the data flow facts valid at the beginning of the node.
      */
     class State(
-            val declaringClass:       ObjectType,
-            val method:               Method,
-            val source:               (DeclaredMethod, IFDSFact),
-            val code:                 Array[Stmt[V]],
-            val cfg:                  CFG[Stmt[V], TACStmts[V]],
-            var pendingIfdsCallSites: Map[(DeclaredMethod, IFDSFact), Set[(BasicBlock, Int)]],
-            var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]] = Map.empty,
-            var pendingCgCallSites:   Set[BasicBlock]                                                                               = Set.empty,
-            var cgDependency:         Option[SomeEOptionP]                                                                          = None,
-            var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                = Map.empty,
-            var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                  = Map.empty
+        val declaringClass:       ObjectType,
+        val method:               Method,
+        val source:               (DeclaredMethod, IFDSFact),
+        val code:                 Array[Stmt[V]],
+        val cfg:                  CFG[Stmt[V], TACStmts[V]],
+        var pendingIfdsCallSites: Map[(DeclaredMethod, IFDSFact), Set[(BasicBlock, Int)]],
+        var pendingIfdsDependees: Map[(DeclaredMethod, IFDSFact), EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]] = Map.empty,
+        var pendingCgCallSites:   Set[BasicBlock]                                                                               = Set.empty,
+        var cgDependency:         Option[SomeEOptionP]                                                                          = None,
+        var incomingFacts:        Map[BasicBlock, Set[IFDSFact]]                                                                = Map.empty,
+        var outgoingFacts:        Map[BasicBlock, Map[CFGNode, Set[IFDSFact]]]                                                  = Map.empty
     )
 
     /**
@@ -226,7 +226,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 );
 
             case tac ⇒
-                throw new UnknownError(s"can't handle intermediate TACs ($tac)")
+                throw new UnknownError(s"can't handle intermediate TACs ($tac)");
         }
 
         // Start processing at the start of the cfg with the given source fact
@@ -348,12 +348,13 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             if (dependees.isEmpty) {
                 dependees = Seq(state.cgDependency.get)
             } else {
-                // We only implement what is required by the propery store!
+                // We only implement what is required by the propery store/interface
                 new Iterable[SomeEOptionP] {
                     override def iterator: Iterator[SomeEOptionP] = {
+                        // This method is actually not called by the property store...
                         Iterator.single(state.cgDependency.get) ++ dependees.toIterator
                     }
-                    override def foreach[U](f: (SomeEOptionP) ⇒ U): Unit = {
+                    override def foreach[U](f: SomeEOptionP ⇒ U): Unit = {
                         f(state.cgDependency.get)
                         dependees.foreach(f)
                     }
@@ -392,7 +393,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             case FinalE(e: (DeclaredMethod, IFDSFact) @unchecked) ⇒ reAnalyzeCalls(state.pendingIfdsCallSites(e), e._1.definedMethod, Some(e._2))
 
             case interimEUBP @ InterimEUBP(e: (DeclaredMethod, IFDSFact) @unchecked, ub: IFDSProperty[IFDSFact]) ⇒
-                if (ub.flows.values.filter(!_.isInstanceOf[AbstractIFDSNullFact]).isEmpty) {
+                if (ub.flows.values.forall(_.isInstanceOf[AbstractIFDSNullFact])) {
                     // Do not re-analyze the caller if we only get the null fact.
                     // Update the pendingIfdsDependee entry to the new interim result.
                     state.pendingIfdsDependees += e → interimEUBP.asInstanceOf[EOptionP[(DeclaredMethod, IFDSFact), IFDSProperty[IFDSFact]]]
