@@ -22,8 +22,6 @@ import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.PointsToCallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisScheduler
-//import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-//import org.opalj.tac.fpcf.analyses.TACAITransformer
 
 /**
  * Computes a call graph and reports its size.
@@ -33,7 +31,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisSchedul
  *  -algorithm=RTA for an RTA-based call graph
  *
  * Please also specify whether the target (-cp=) is an application or a library using "-projectConf=".
- * TODO: See ApplicationProject.conf or LibraryProject.conf
+ * Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf` can be used here.
  *
  * Furthermore, it can be used to print the callees or callers of specific methods.
  * To do so, add -callers=m, where m is the method name/signature using Java notation, as parameter
