@@ -192,7 +192,7 @@ class LoadedClassesAnalysis(
         if (isNewLoadedClass(methodDCT)) {
             // todo only for interfaces with default methods
             newLoadedClasses ++=
-                ch.allSupertypes(methodDCT, true).filterNot(currentLoadedClasses.contains)
+                ch.allSupertypes(methodDCT, reflexive = true).filterNot(currentLoadedClasses.contains)
         }
 
         if (method.body.isDefined) {
