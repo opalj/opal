@@ -13,7 +13,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.value.ValueInformation
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DeclaredMethod
@@ -21,15 +20,16 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.cg.properties.NoCallees
+import org.opalj.tac.fpcf.analyses.cg.CGState
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Encapsulates the state of the analysis, analyzing a certain method.
  */
 class PointsToState private (
-        private[pointsto] val method:   DefinedMethod,
-        private[this] var _tacDependee: Option[EOptionP[Method, TACAI]]
-) {
+        override val method:                       DefinedMethod,
+        override protected[this] var _tacDependee: EOptionP[Method, TACAI]
+) extends CGState {
 
     private[this] val _pointsToSets: mutable.Map[Entity, UIDSet[ObjectType]] = mutable.Map.empty
 
@@ -43,7 +43,7 @@ class PointsToState private (
 
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
-    private[pointsto] def callees(ps: PropertyStore): Callees = {
+    def callees(ps: PropertyStore): Callees = {
         val calleesProperty = if (_calleesDependee.isDefined) {
 
             _calleesDependee.get
@@ -58,33 +58,23 @@ class PointsToState private (
         else calleesProperty.ub
     }
 
-    private[pointsto] def updateCalleesDependee(newCallees: EPS[DeclaredMethod, Callees]): Unit = {
+    def updateCalleesDependee(newCallees: EPS[DeclaredMethod, Callees]): Unit = {
         _calleesDependee = Some(newCallees)
     }
 
-    private[pointsto] def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
-        assert(_tacDependee.isDefined)
-        assert(_tacDependee.get.ub.tac.isDefined)
-        _tacDependee.get.ub.tac.get
-    }
-
-    private[pointsto] def dependees: Traversable[EOptionP[Entity, Property]] = {
-        _tacDependee.filterNot(_.isFinal) ++
+    override def dependees: Traversable[EOptionP[Entity, Property]] = {
+        tacDependee() ++
             _dependees.values ++
             _calleesDependee.filter(_.isRefinable)
     }
 
-    private[pointsto] def hasOpenDependees: Boolean = {
-        !_tacDependee.forall(_.isFinal) ||
+    override def hasOpenDependencies: Boolean = {
+        tacDependee().isDefined ||
             _dependees.nonEmpty ||
             (_calleesDependee.isDefined && _calleesDependee.get.isRefinable)
     }
 
-    private[pointsto] def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
-        _tacDependee = Some(tacDependee)
-    }
-
-    private[pointsto] def addPointsToDependency(
+    def addPointsToDependency(
         depender: Entity,
         dependee: EOptionP[Entity, PointsTo]
     ): Unit = {
@@ -94,7 +84,7 @@ class PointsToState private (
         assert(_dependees.contains(dependee.e) && _dependeeToDependers.contains(dependee.e))
     }
 
-    private[pointsto] def removePointsToDependee(eps: EPS[Entity, PointsTo]): Unit = {
+    def removePointsToDependee(eps: EPS[Entity, PointsTo]): Unit = {
         val dependee = eps.e
         assert(_dependees.contains(dependee))
         _dependees.remove(dependee)
@@ -108,17 +98,17 @@ class PointsToState private (
         }
     }
 
-    private[pointsto] def updatePointsToDependee(eps: EOptionP[Entity, PointsTo]): Unit = {
+    def updatePointsToDependee(eps: EOptionP[Entity, PointsTo]): Unit = {
         _dependees(eps.e) = eps
     }
 
-    private[pointsto] def getOrRetrievePointsToEPS(
+    def getOrRetrievePointsToEPS(
         dependee: Entity, ps: PropertyStore
     ): EOptionP[Entity, PointsTo] = {
         _dependees.getOrElse(dependee, ps(dependee, PointsTo.key))
     }
 
-    private[pointsto] def setOrUpdatePointsToSet(e: Entity, p2s: UIDSet[ObjectType]): Unit = {
+    def setOrUpdatePointsToSet(e: Entity, p2s: UIDSet[ObjectType]): Unit = {
         if (_pointsToSets.contains(e)) {
             val newPointsToSet = _pointsToSets(e) ++ p2s
             _pointsToSets(e) = newPointsToSet
@@ -127,22 +117,26 @@ class PointsToState private (
         }
     }
 
-    private[pointsto] def clearPointsToSet(): Unit = {
+    def clearPointsToSet(): Unit = {
         _pointsToSets.clear()
     }
 
-    private[pointsto] def pointsToSets: Iterator[(Entity, UIDSet[ObjectType])] = {
+    def pointsToSets: Iterator[(Entity, UIDSet[ObjectType])] = {
         _pointsToSets.iterator
     }
 
-    private[pointsto] def dependersOf(dependee: Entity): Traversable[Entity] = _dependeeToDependers(dependee)
+    def dependersOf(dependee: Entity): Traversable[Entity] = _dependeeToDependers(dependee)
 
-    private[pointsto] def hasDependees(potentialDepender: Entity): Boolean =
+    def hasDependees(potentialDepender: Entity): Boolean =
         _dependerToDependees.contains(potentialDepender)
 
-    private[pointsto] def addIncompletePointsToInfo(pc: Int): Unit = {
+    def addIncompletePointsToInfo(pc: Int): Unit = {
         // Todo: We need a mechanism to mark points-to sets as incomplete
     }
+
+    // todo separate CGState trait
+    override def hasNonFinalCallSite: Boolean = ???
+
 }
 
 object PointsToState {
@@ -150,6 +144,6 @@ object PointsToState {
         method:      DefinedMethod,
         tacDependee: EOptionP[Method, TACAI]
     ): PointsToState = {
-        new PointsToState(method, Some(tacDependee))
+        new PointsToState(method, tacDependee)
     }
 }

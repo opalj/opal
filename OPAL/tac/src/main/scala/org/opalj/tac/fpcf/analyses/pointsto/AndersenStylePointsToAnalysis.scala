@@ -265,7 +265,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
         state: PointsToState
     ): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
-        if (state.hasOpenDependees) results += InterimPartialResult(state.dependees, c(state))
+        if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
 
         for ((e, pointsToSet) ← state.pointsToSets) {
             results += PartialResult[Entity, PointsTo](e, PointsTo.key, {
