@@ -90,12 +90,12 @@ final class SequentialTasks[T](
 }
 
 /**
- * Executes the given function `process` for each submitted value of
- * type `T`. The `process` function can add further values that should be processed.
+ * Executes the given function `process` for each submitted value of type `T`. 
+ * The `process` function can add further values that should be processed.
  *
  * @example
  * {{{
- * val tasks = new Tasks[T] { (tasks : Tasks[T], t : T) ⇒
+ * val tasks = Tasks[T] { (tasks : Tasks[T], t : T) ⇒
  *          // do something with t
  *          if (<some condition>) { tasks.submit(nextT) }
  *      }
