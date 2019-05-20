@@ -56,13 +56,10 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     /**
      * For the given project, it registers to the [[org.opalj.br.fpcf.cg.properties.LoadedClasses]]
-     * and the [[org.opalj.br.fpcf.cg.properties.InstantiatedTypes]] and ensures that:
-     *     1. For each loaded class, its static initializer is called (see
-     *     [[org.opalj.br.fpcf.cg.properties.Callers]])
-     *     2. For each instantiated type, the type is also a loaded class
+     * and ensures that for each loaded class, its static initializer is called (see
+     * [[org.opalj.br.fpcf.cg.properties.Callers]])
      */
-    // FIXME "register to" doesn't make sense, here!
-    def registerToInstantiatedTypesAndLoadedClasses(p: SomeProject): PropertyComputationResult = {
+    def analyze(p: SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {
             case FinalP(loadedClasses)                          ⇒ None → Some(loadedClasses)
             case eps @ InterimUBP(loadedClasses: LoadedClasses) ⇒ Some(eps) → Some(loadedClasses)
@@ -163,7 +160,7 @@ object StaticInitializerAnalysisScheduler extends BasicFPCFEagerAnalysisSchedule
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new StaticInitializerAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(
-            analysis.registerToInstantiatedTypesAndLoadedClasses
+            analysis.analyze
         )
         analysis
     }
