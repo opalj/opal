@@ -27,7 +27,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
-// todo: let it extend ReachableMethodsAnalysis
 class SystemPropertiesAnalysisScheduler private[analyses] (
         final val project: SomeProject
 ) extends ReachableMethodAnalysis {
