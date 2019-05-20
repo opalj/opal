@@ -106,11 +106,9 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 val defSite = definitionSites(method, pc)
                 state.setOrUpdatePointsToSet(defSite, UIDSet(t))
 
-            case Assignment(pc, _, NewArray(_, _, _)) ⇒
+            case Assignment(pc, _, NewArray(_, _, tpe)) if tpe.elementType.isObjectType ⇒
                 val defSite = definitionSites(method, pc)
-
-                // todo: use correct type
-                state.setOrUpdatePointsToSet(defSite, UIDSet(ObjectType.Object))
+                state.setOrUpdatePointsToSet(defSite, UIDSet(tpe.elementType.asObjectType))
 
             // that case should not happen
             case Assignment(pc, targetVar, UVar(_, defSites)) if targetVar.value.isReferenceValue ⇒
@@ -270,11 +268,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
         if (state.hasOpenDependees) results += InterimPartialResult(state.dependees, c(state))
 
         for ((e, pointsToSet) ← state.pointsToSets) {
-            // todo: ensure isFinal is set correctly and set FinalEPs
-            //val isFinal = e.isInstanceOf[DefinitionSite] && !state.hasDependees(e)
             results += PartialResult[Entity, PointsTo](e, PointsTo.key, {
-                //case _: EPK[Entity, PointsTo] if isFinal ⇒
-                //    Some(FinalEP(e, PointsTo(pointsToSet)))
 
                 case _: EPK[Entity, PointsTo] ⇒
                     Some(InterimEUBP(e, PointsTo(pointsToSet)))
@@ -283,9 +277,6 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     // IMPROVE: only process new Types
                     val newPointsTo = ub.updated(pointsToSet)
                     if (newPointsTo.numElements != ub.numElements)
-                        //if (isFinal)
-                        //    Some(FinalEP(e, newPointsTo))
-                        //else
                         Some(InterimEUBP(e, newPointsTo))
                     else
                         None
