@@ -4,7 +4,9 @@ package tac
 package cg
 
 import org.opalj.fpcf.ComputationSpecification
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.analyses.cg.rta.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
@@ -30,6 +32,10 @@ import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredInstantiatedTypesAnalysis
  * @author Florian Kuebler
  */
 object RTACallGraphKey extends AbstractCallGraphKey {
+
+    override protected def requirements: ProjectInformationKeys = {
+        super.requirements :+ InitialInstantiatedTypesKey
+    }
 
     override protected def callGraphSchedulers(
         project: SomeProject
