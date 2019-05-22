@@ -18,10 +18,12 @@ object PropertyComputationHint {
 case object DefaultPropertyComputation extends PropertyComputationHint
 
 /**
- * The property computation is extremely cheap. Therefore, the computation can/should be
- * processed right away, because it is extremely unlikely that we will gain anything
- * from parallelization or postponing the computation.
- * Here, `cheap` means that the computation requires ''at most a few hundred bytecode instructions''
- * overall and that the computation in particular '''will not query further properties'''.
+ * The property computation is extremely cheap (at most a few dozen bytecode operations). 
+ * Therefore, the property store may process the computation right away, because it is 
+ * extremely unlikely that we will gain anythingfrom parallelization or postponing 
+ * the computation. 
+ * 
+ * Please note, that even if a computation is very cheap dependees may not be triggered
+ * immediately by the property store. 
  */
 case object CheapPropertyComputation extends PropertyComputationHint
