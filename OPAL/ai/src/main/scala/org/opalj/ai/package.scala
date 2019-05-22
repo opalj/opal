@@ -3,9 +3,6 @@ package org.opalj
 
 import scala.language.existentials
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-
 import scala.collection.AbstractIterator
 
 import org.opalj.log.GlobalLogContext
@@ -57,12 +54,6 @@ package object ai {
             case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
         }
     }
-
-    // We want to make sure that the class loader is used which potentially can
-    // find the config files; the libraries (e.g., Typesafe Config) may have
-    // been loaded using the parent class loader and, hence, may not be able to
-    // find the config files at all.
-    val BaseConfig: Config = ConfigFactory.load(this.getClass.getClassLoader())
 
     /**
      * Type alias that can be used if the AI can use all kinds of domains.

@@ -4,7 +4,6 @@ package bi
 package reader
 
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -36,7 +35,7 @@ trait ClassFileReaderConfiguration {
      * The `Config` object that will be used to read the configuration settings for
      * reading in class files.
      */
-    implicit val config: Config = ConfigFactory.load()
+    implicit val config: Config = BaseConfig
 
     /**
      * If `true` method bodies are never loaded.

@@ -7,7 +7,6 @@ import java.util.Properties
 import java.io.FileInputStream
 
 import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 
 import scala.collection.JavaConverters._
@@ -43,7 +42,7 @@ object ShowConfiguration {
     def main(args: Array[String]): Unit = {
         import Console.err
 
-        val config: Config = ConfigFactory.load()
+        val config: Config = BaseConfig
 
         if (args.contains("-config")) {
             println(s"\nContext Configuration (application/reference.conf): ")
