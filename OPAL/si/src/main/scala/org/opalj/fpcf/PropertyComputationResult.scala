@@ -152,7 +152,7 @@ final class InterimResult[P >: Null <: Property] private (
         if (dependees.isEmpty) {
             throw new IllegalArgumentException(
                 s"intermediate result without dependencies: $this"+
-                    " (use PartialResult for collaboratively computed results)"
+                    " (use PartialResults for collaboratively computed results)"
             )
         }
 
