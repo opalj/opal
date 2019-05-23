@@ -150,12 +150,13 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
         val results = calleesAndCallers.partialResults(state.method)
 
         // if there are no virtual call-sites left, we can simply return the result
-        if (!state.hasNonFinalCallSite || !state.hasOpenDependencies)
+        if (state.hasNonFinalCallSite || state.hasOpenDependencies)
+            Results(
+                InterimPartialResult(state.dependees, c(state)),
+                results
+            )
+        else
             Results(results)
-        else Results(
-            InterimPartialResult(state.dependees, c(state)),
-            results
-        )
     }
 
     protected final def handleCall(
@@ -275,12 +276,12 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
                     val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
-                            val cfOption = project.classFile(subtype)
-                            cfOption.isDefined && {
-                                val cf = cfOption.get
-                                !cf.isInterfaceDeclaration && !cf.isAbstract
-                            }
+                        val cfOption = project.classFile(subtype)
+                        cfOption.isDefined && {
+                            val cf = cfOption.get
+                            !cf.isInterfaceDeclaration && !cf.isAbstract
                         }
+                    }
 
                     handleImpreciseCall(
                         caller,
