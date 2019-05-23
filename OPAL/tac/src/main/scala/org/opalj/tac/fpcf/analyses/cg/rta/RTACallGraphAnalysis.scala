@@ -8,35 +8,20 @@ package rta
 
 import scala.language.existentials
 
-import org.opalj.log.Error
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.logOnce
 import org.opalj.collection.ForeachRefIterator
-import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -207,68 +192,9 @@ class RTACallGraphAnalysis private[analyses] (
 
 }
 
-object RTACallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+object RTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
-    override type InitializationData = Null
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(InstantiatedTypes)
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        InstantiatedTypes,
-        Callees,
-        Callers,
-        TACAI
-    )
-
-    override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callees, Callers)
-
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    /**
-     * Updates the caller properties of the initial entry points
-     * ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) to be called from an unknown context.
-     * This will trigger the computation of the callees for these methods (see `processMethod`).
-     */
-    def processEntryPoints(p: SomeProject, ps: PropertyStore): Unit = {
-        implicit val logContext: LogContext = p.logContext
-        val declaredMethods = p.get(DeclaredMethodsKey)
-        val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
-
-        if (entryPoints.isEmpty)
-            logOnce(Error("project configuration", "the project has no entry points"))
-
-        entryPoints.foreach { ep ⇒
-            ps.preInitialize(ep, Callers.key) {
-                case _: EPK[_, _] ⇒
-                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub: Callers) ⇒
-                    InterimEUBP(ep, ub.updatedWithUnknownContext())
-                case r ⇒
-                    throw new IllegalStateException(s"unexpected eps $r")
-            }
-        }
-    }
-
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        processEntryPoints(p, ps)
-        null
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): RTACallGraphAnalysis = {
-        val analysis = new RTACallGraphAnalysis(p)
-        // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
-        analysis
-    }
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-
-    override def triggeredBy: PropertyKind = Callers
+    override def initializeAnalysis(p: SomeProject): CallGraphAnalysis = new RTACallGraphAnalysis(p)
 }

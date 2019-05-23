@@ -1,32 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.cg.pointsto
 
-import org.opalj.log.Error
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger.logOnce
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBPS
-import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -37,6 +22,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.Call
 import org.opalj.tac.VirtualCall
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysis
+import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.DirectCalls
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToBasedAnalysis
 
@@ -149,62 +135,11 @@ class PointsToBasedCallGraph private[analyses] (
 
 }
 
-object PointsToBasedCallGraphScheduler extends FPCFTriggeredAnalysisScheduler {
-    override type InitializationData = Null
+object PointsToBasedCallGraphScheduler extends CallGraphAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        PointsTo, Callees, Callers, TACAI
-    )
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(PointsTo)
 
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        Callees, Callers
-    )
-
-    override def register(p: SomeProject, ps: PropertyStore, i: Null): PointsToBasedCallGraph = {
-        val analysis = new PointsToBasedCallGraph(p)
-        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
-        analysis
+    override def initializeAnalysis(p: SomeProject): CallGraphAnalysis = {
+        new PointsToBasedCallGraph(p)
     }
-
-    /**
-     * Updates the caller properties of the initial entry points
-     * ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) to be called from an unknown context.
-     * This will trigger the computation of the callees for these methods (see `processMethod`).
-     */
-    def processEntryPoints(p: SomeProject, ps: PropertyStore): Unit = {
-        implicit val logContext: LogContext = p.logContext
-        val declaredMethods = p.get(DeclaredMethodsKey)
-        val entryPoints = p.get(InitialEntryPointsKey).map(declaredMethods.apply)
-
-        if (entryPoints.isEmpty)
-            logOnce(Error("project configuration", "the project has no entry points"))
-
-        entryPoints.foreach { ep ⇒
-            ps.preInitialize(ep, Callers.key) {
-                case _: EPK[_, _] ⇒
-                    InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub: Callers) ⇒
-                    InterimEUBP(ep, ub.updatedWithUnknownContext())
-                case r ⇒
-                    throw new IllegalStateException(s"unexpected eps $r")
-            }
-        }
-    }
-
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        processEntryPoints(p, ps)
-        null
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseCompletion(
-        p: SomeProject, ps: PropertyStore, analysis: FPCFAnalysis
-    ): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def triggeredBy: PropertyKind = Callers
 }
