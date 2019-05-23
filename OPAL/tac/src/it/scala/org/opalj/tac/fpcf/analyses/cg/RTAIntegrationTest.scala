@@ -46,14 +46,6 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
     }
 
     def checkProject(projectName: String, project: SomeProject): Unit = {
-        /*val project =
-            Project(
-                ClassFiles(locateTestResources("/classfiles/Flashcards 0.4 - target 1.6.jar", "bi")),
-                //ClassFiles(locateTestResources("/classfiles/Columbus 2008_10_16 - target 1.5.jar", "bi")),
-                Traversable.empty,
-                libraryClassFilesAreInterfacesOnly = true
-            )*/
-
         implicit val propertyStore: PropertyStore = project.get(PropertyStoreKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -63,65 +55,6 @@ class RTAIntegrationTest extends FlatSpec with Matchers {
             checkBidirectionCallerCallee
         }
     }
-
-    // TODO: In the current version, we can not compare the CG to the one from SOOT
-    /*it should "consists of calls that are also present in Soots CHA" in {
-        //val callSites = retrieveCallSites("/columbus1_5_SOOT_CHA.json")
-        val callSites = retrieveCallSites("/flashchards_SOOT_CHA_MODIFIED.json")
-
-        for {
-            m ← project.allMethodsWithBody
-            dm = declaredMethods(m)
-            computedCallees = propertyStore(dm, Callees.key).asFinal.p
-            (pc, computedTargets) ← computedCallees.directCallSites()
-        } {
-            val body = m.body.get
-            val instr = body.instructions(pc).asMethodInvocationInstruction
-            val declaredMethod = convertInstr(instr)
-
-            val line = body.lineNumber(pc).get
-
-            val overApproximatedCallSites = callSites.callSites.filter {
-                case CallSite(dt, l, caller, _) ⇒
-                    l == line &&
-                        caller == convertMethod(dm) &&
-                        dt.name == declaredMethod.name &&
-                        dt.parameterTypes == declaredMethod.parameterTypes &&
-                        dt.returnType == declaredMethod.returnType
-            }
-            assert(overApproximatedCallSites.nonEmpty)
-
-            val overApproximatedTgts = overApproximatedCallSites.flatMap(_.targets)
-            computedTargets.foreach { computedTgt ⇒
-                assert(overApproximatedTgts.contains(convertMethod(computedTgt)))
-            }
-
-        }
-    }
-
-    it should "contain all calls from Soots SPARK" in {
-        val callSites = retrieveCallSites("/flashchards_SOOT_SPARK_MODIFIED.json").callSites
-        for {
-            m ← project.allMethodsWithBody
-            dm = declaredMethods(m)
-            methodRepresentation = convertMethod(dm)
-            FinalP(computedCallees) = propertyStore(dm, Callees.key).asFinal
-            CallSite(declaredTgt, line, _, tgts) ← callSites.filter(_.method == methodRepresentation)
-            computedCallSites = computedCallees.directCallSites().filter {
-                case (pc, computedTgt) ⇒
-                    m.body.get.lineNumber(pc).get == line &&
-                        computedTgt.nonEmpty && computedTgt.next.name == declaredTgt.name // todo
-                // also use retType + paramTypes
-            }.toList
-            tgt ← tgts
-        } {
-            val containsCall = computedCallSites.exists(cs ⇒ cs._2.exists(computedTgt ⇒ convertMethod(computedTgt) == tgt))
-            assert(
-                containsCall,
-                s"missed call $line: ${tgt.returnType} ${tgt.name} ${tgt.parameterTypes} \n in: \n\t${dm.declaringClassType} ${dm.definedMethod} \nto \n\t${tgt.declaringClass} \ncomputed calls: \n\t $computedCallSites"
-            )
-        }
-    }*/
 
     def checkBidirectionCallerCallee(
         implicit

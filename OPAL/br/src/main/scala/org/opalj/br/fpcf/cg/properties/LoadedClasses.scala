@@ -77,9 +77,9 @@ object LoadedClasses extends LoadedClassesMetaInformation {
         val name = "opalj.LoadedClasses"
         PropertyKey.create(
             name,
-            // FIXME The following doesn't seem to make sense... there will always be at least one class, doesn't it?
             (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoLoadedClasses
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                    throw new IllegalStateException(s"there must always be at least one loaded class")
                 case _ ⇒
                     throw new IllegalStateException(s"analysis required for property: $name")
             }

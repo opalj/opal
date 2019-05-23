@@ -198,7 +198,7 @@ class LoadedClassesAnalysis(
         if (method.body.isDefined) {
             for (stmt ← stmts) {
                 stmt match {
-                    // todo is dc sufficient enough
+                    // todo is dc sufficient enough?
                     case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
                         newLoadedClasses += dc
                     case Assignment(_, _, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒

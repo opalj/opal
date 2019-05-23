@@ -337,7 +337,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
             name,
             ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
         )
-        // todo refactor
+
         if (tgt.hasValue) {
             vmReachableMethods.addVMReachableMethod(declaredMethods(tgt.value))
         } else {
@@ -353,7 +353,6 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
 
             vmReachableMethods.addIncompleteCallSite(pc)
             vmReachableMethods.addVMReachableMethod(declTgt)
-
         }
     }
 }

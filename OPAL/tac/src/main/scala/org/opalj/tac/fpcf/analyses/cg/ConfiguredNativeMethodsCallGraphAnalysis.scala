@@ -29,9 +29,17 @@ import org.opalj.tac.fpcf.analyses.pointsto.MethodDescription
 
 /**
  * Add calls from configured native methods to the call graph.
+ * Calls can be specialized under the config key [[configKey]].
  *
- * TODO: example
- * TODO: refer to the config file
+ * @example specify that `registerNatives` will call `initializeSystemClass`.
+ * {
+ *  cf = "java/lang/System",
+ *  name = "registerNatives",
+ *  desc = "()V",
+ *  methodInvocations = [
+ *      { cf = "java/lang/System", name = "initializeSystemClass", desc = "()V" }
+ *  ]
+ * }
  *
  * @author Florian Kuebler
  */
@@ -39,13 +47,15 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
+    val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
+
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private[this] implicit val virtualFormalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
 
     // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
         ConfiguredNativeMethods.reader.read(
-            p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
+            p.config, configKey
         ).nativeMethods.map { v ⇒ (v.method, v.methodInvocations) }.toMap
     }
 

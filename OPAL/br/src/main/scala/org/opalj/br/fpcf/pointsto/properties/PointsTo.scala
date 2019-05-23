@@ -21,6 +21,7 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Florian Kuebler
  */
+// todo: we should definition sites instead of just the types
 sealed trait PointsToPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = PointsTo

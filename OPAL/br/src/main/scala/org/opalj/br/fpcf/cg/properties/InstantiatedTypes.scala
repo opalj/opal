@@ -21,6 +21,7 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Florian Kuebler
  */
+// todo code duplication in [[LoadedClasses]]
 sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = InstantiatedTypes
@@ -55,6 +56,7 @@ case class InstantiatedTypes private[properties] (
     /**
      * Will return the instantiated types added most recently, dropping the `index` oldest ones.
      */
+    // TODO Consider adding/using a bounded ForeachIterator?
     def drop(index: Int): Iterator[ObjectType] = {
         orderedTypes.iterator.take(types.size - index)
     }
