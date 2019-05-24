@@ -26,9 +26,11 @@ import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisSchedul
 /**
  * Computes a call graph and reports its size.
  *
- * Please specify the call-graph algorithm:
+ * You can specify the call-graph algorithm:
  *  -algorithm=CHA for an CHA-based call graph
  *  -algorithm=RTA for an RTA-based call graph
+ *  -algorithm=PointsTo for a points-to based call graph
+ * The default algorithm is RTA.
  *
  * Please also specify whether the target (-cp=) is an application or a library using "-projectConf=".
  * Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf` can be used here.
@@ -36,9 +38,6 @@ import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisSchedul
  * Furthermore, it can be used to print the callees or callers of specific methods.
  * To do so, add -callers=m, where m is the method name/signature using Java notation, as parameter
  * (for callees use -callees=m).
- *
- * The default algorithm is an RTA.
- * Use -algorithm=CHA to compute a CHA-based call graph.
  *
  * @author Florian Kuebler
  */
@@ -51,15 +50,17 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-mode=app|library]"+"[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"
+        "[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"
     }
+
+    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
             parameters.filter { p ⇒
-                !p.startsWith("-callers=") &&
+                !p.matches(algorithmRegex.regex) &&
+                    !p.startsWith("-callers=") &&
                     !p.startsWith("-callees=") &&
-                    !p.startsWith("-algorithm=") &&
                     !p.startsWith("-writeCG=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
@@ -73,30 +74,23 @@ object CallGraph extends ProjectAnalysisApplication {
     ): BasicReport = {
         var calleesSigs: List[String] = Nil
         var callersSigs: List[String] = Nil
-        var cgAlgorithm: Option[String] = None
+        var cgAlgorithm: String = "RTA"
         var cgFile: Option[String] = None
 
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
-        val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
         val writeCGRegex = "-writeCG=(.*)".r
 
         parameters.foreach {
             case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
             case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
-            case algorithmRegex(algo) ⇒
-                if (cgAlgorithm.isEmpty)
-                    cgAlgorithm = Some(algo)
-                else throw new IllegalArgumentException("-algorithm was set twice")
+            case algorithmRegex(algo)    ⇒ cgAlgorithm = algo
             case writeCGRegex(fileName) ⇒
                 if (cgFile.isEmpty)
                     cgFile = Some(fileName)
                 else throw new IllegalArgumentException("-writeCG was set twice")
 
         }
-
-        if (cgAlgorithm.isEmpty)
-            throw new IllegalArgumentException("-algorithm was not set")
 
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
@@ -106,13 +100,13 @@ object CallGraph extends ProjectAnalysisApplication {
 
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
-        val cg = cgAlgorithm.get match {
+        val cg = cgAlgorithm match {
             case "CHA"      ⇒ project.get(CHACallGraphKey)
             case "RTA"      ⇒ project.get(RTACallGraphKey)
             case "PointsTo" ⇒ project.get(PointsToCallGraphKey)
         }
 
-        if (cgAlgorithm.get != "PointsTo") {
+        if (cgAlgorithm != "PointsTo") {
             val manager = project.get(FPCFAnalysesManagerKey)
             manager.runAll(AndersenStylePointsToAnalysisScheduler)
         }
