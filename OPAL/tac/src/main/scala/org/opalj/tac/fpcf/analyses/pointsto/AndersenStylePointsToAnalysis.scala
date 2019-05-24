@@ -40,6 +40,8 @@ import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
  * The analysis is field-based, array-based and context-insensitive.
+ * As the analysis is build on top of the [[org.opalj.tac.TACAI]], it is (implicitly)
+ * flow-sensitive (which is not the case for pure andersen-style).
  *
  * Points-to sets may be attached to the following entities:
  *  - [[org.opalj.tac.common.DefinitionSite]] for local variables.
@@ -57,8 +59,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        implicit val state: PointsToState = PointsToState(definedMethod, tacEP)
-        doProcessMethod
+        doProcessMethod(PointsToState(definedMethod, tacEP))
     }
 
     private[this] def handleCall(
@@ -347,6 +348,12 @@ class AndersenStylePointsToAnalysis private[analyses] (
     }
 
     @inline private[this] def isArrayType(value: DUVar[ValueInformation]): Boolean = {
+        // TODO ME: This operation is potentially "unnecessarily expensive" -
+        // I suggest that we add respective methods to ValueInformation.
+        // More important, however, is the question of "NullValues"
+        // - currently the result would be "false".
+        // However, if you have a value where isNull is unknown the result could be true
+        // - what result do you expect in this case and why?
         value.value.isReferenceValue && {
             val lub = value.value.asReferenceValue.leastUpperType
             lub.isDefined && lub.get.isArrayType

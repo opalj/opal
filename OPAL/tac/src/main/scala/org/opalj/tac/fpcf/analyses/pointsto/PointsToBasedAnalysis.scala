@@ -18,6 +18,11 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 
+/**
+ * Defines a trait with convenience methods often required by points-to based analyses.
+ *
+ * @author Florian Kuebler
+ */
 trait PointsToBasedAnalysis extends FPCFAnalysis {
 
     protected[this] val formalParameters: VirtualFormalParameters =
