@@ -8,9 +8,6 @@ package cg
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
@@ -53,14 +50,6 @@ class CHACallGraphAnalysis private[analyses] (
             handleCall(
                 caller, call.name, call.descriptor, call.declaringClass, pc, tgtR, calleesAndCallers
             )
-        }
-    }
-
-    override def c(state: CHAState)(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(_: TACAI) ⇒
-                processMethod(state.method, eps.asInstanceOf[EPS[Method, TACAI]])
-            case _ ⇒ throw new IllegalArgumentException(s"unexpected eps $eps")
         }
     }
 

@@ -6,11 +6,9 @@ import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBPS
-import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DefinedMethod
@@ -86,13 +84,6 @@ class PointsToBasedCallGraph private[analyses] (
     override def c(
         state: PointsToBasedCGState
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
-            state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
-            processMethod(state, new DirectCalls())
-
-        case UBP(_: TACAI) ⇒
-            InterimPartialResult(Some(eps), c(state))
-
         case EUBPS(e, ub: PointsTo, isFinal) ⇒
             val relevantCallSites = state.callSitesForDefSite(e)
 
@@ -127,6 +118,8 @@ class PointsToBasedCallGraph private[analyses] (
                 state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsTo]])
             }
             returnResult(calls)(state)
+
+        case _ ⇒ super.c(state)(eps)
     }
 
     override def createInitialState(

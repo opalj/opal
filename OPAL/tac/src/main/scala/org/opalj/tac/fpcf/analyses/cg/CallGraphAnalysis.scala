@@ -13,6 +13,7 @@ import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsSArrayValue
@@ -60,9 +61,25 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit
 
-    def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult
-
     def createInitialState(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): State
+
+    /**
+     * Handles updates for the three-address code.
+     * Subclasses that might have other dependencies must override this method and should call
+     * `super.c(...)` for updates of other property kinds then the new one.
+     *
+     * @see [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis.c*]] for an example.
+     */
+    def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
+            state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
+
+            // we only want to add the new calls, so we create a fresh object
+            processMethod(state, new DirectCalls())
+
+        case UBP(_: TACAI) ⇒
+            throw new IllegalStateException("there was already a tac defined")
+    }
 
     protected final def processMethod(
         state: State, calls: DirectCalls
@@ -276,12 +293,12 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
                     val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                         ov.theUpperTypeBound, reflexive = true
                     ).filter { subtype ⇒
-                        val cfOption = project.classFile(subtype)
-                        cfOption.isDefined && {
-                            val cf = cfOption.get
-                            !cf.isInterfaceDeclaration && !cf.isAbstract
+                            val cfOption = project.classFile(subtype)
+                            cfOption.isDefined && {
+                                val cf = cfOption.get
+                                !cf.isInterfaceDeclaration && !cf.isAbstract
+                            }
                         }
-                    }
 
                     handleImpreciseCall(
                         caller,

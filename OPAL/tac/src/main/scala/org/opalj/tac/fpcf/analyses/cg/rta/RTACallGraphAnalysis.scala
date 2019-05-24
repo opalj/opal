@@ -10,7 +10,6 @@ import scala.language.existentials
 
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.SomeEPS
@@ -48,16 +47,6 @@ class RTACallGraphAnalysis private[analyses] (
     override type State = RTAState
 
     override def c(state: RTAState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
-            state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
-
-            // we only want to add the new calls, so we create a fresh object
-            processMethod(state, new DirectCalls())
-
-        case UBP(_: TACAI) ⇒
-            InterimPartialResult(
-                Some(eps), c(state)
-            )
         case UBP(_: InstantiatedTypes) ⇒
             val seenTypes = state.instantiatedTypesUB.size
 
@@ -71,6 +60,8 @@ class RTACallGraphAnalysis private[analyses] (
             handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
 
             returnResult(calleesAndCallers)(state)
+
+        case _ ⇒ super.c(state)(eps)
     }
 
     override def createInitialState(
