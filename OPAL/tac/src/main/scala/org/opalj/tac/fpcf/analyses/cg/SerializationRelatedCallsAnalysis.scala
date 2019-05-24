@@ -370,7 +370,7 @@ class OISReadObjectAnalysis private[analyses] (
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class SerializationRelatedCallsAnalysisScheduler private[analyses] (
+class SerializationRelatedCallsAnalysis private[analyses](
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -383,7 +383,7 @@ class SerializationRelatedCallsAnalysisScheduler private[analyses] (
     }
 }
 
-object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFEagerAnalysisScheduler {
+object SerializationRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
@@ -399,7 +399,7 @@ object TriggeredSerializationRelatedCallsAnalysis extends BasicFPCFEagerAnalysis
 
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
 
-        val analysis = new SerializationRelatedCallsAnalysisScheduler(p)
+        val analysis = new SerializationRelatedCallsAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }

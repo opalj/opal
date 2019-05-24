@@ -231,7 +231,7 @@ object InstantiatedTypesAnalysis {
     }
 }
 
-object TriggeredInstantiatedTypesAnalysis extends FPCFTriggeredAnalysisScheduler {
+object InstantiatedTypesAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override type InitializationData = Null
 

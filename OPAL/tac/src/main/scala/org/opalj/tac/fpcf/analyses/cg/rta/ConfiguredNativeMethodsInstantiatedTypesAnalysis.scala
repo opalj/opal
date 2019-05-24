@@ -108,7 +108,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
     }
 }
 
-object TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callers, InstantiatedTypes)
 

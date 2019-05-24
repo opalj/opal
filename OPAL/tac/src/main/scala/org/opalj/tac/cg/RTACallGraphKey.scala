@@ -10,8 +10,8 @@ import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.analyses.cg.rta.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.rta.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type
@@ -49,14 +49,14 @@ object RTACallGraphKey extends AbstractCallGraphKey {
             List(
                 EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis,
                 RTACallGraphAnalysisScheduler,
-                TriggeredInstantiatedTypesAnalysis,
-                TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
+                InstantiatedTypesAnalysisScheduler,
+                ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
             )
         else
             List(
                 RTACallGraphAnalysisScheduler,
-                TriggeredInstantiatedTypesAnalysis,
-                TriggeredConfiguredNativeMethodsInstantiatedTypesAnalysis
+                InstantiatedTypesAnalysisScheduler,
+                ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
             )
     }
 }
