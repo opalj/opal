@@ -1,5 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.cg
+package org.opalj
+package tac
+package fpcf
+package analyses
+package cg
 
 import org.opalj.collection.immutable.RefArray
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -9,8 +13,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.value.IsReferenceValue
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -21,13 +25,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.Method
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.Assignment
-import org.opalj.tac.Expr
-import org.opalj.tac.New
-import org.opalj.tac.NonVirtualMethodCall
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 
 class ThreadStartAnalysis private[analyses] (
         final val project: SomeProject, final val threadStartMethod: DeclaredMethod
