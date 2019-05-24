@@ -139,7 +139,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
             case Assignment(pc, _, ArrayLoad(_, _, arrayRef)) if isArrayOfObjectType(arrayRef.asVar) ⇒
                 val defSiteObject = definitionSites(method, pc)
-                val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
+                val arrayBaseType = arrayElementTypeAsObjectType(arrayRef.asVar)
                 state.setOrUpdatePointsToSet(
                     defSiteObject,
                     handleEOptP(defSiteObject, arrayBaseType)
@@ -244,7 +244,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
             case ArrayStore(_, arrayRef, _, UVar(_, defSites)) if isArrayOfObjectType(arrayRef.asVar) ⇒
-                val arrayBaseType = getArrayBaseObjectType(arrayRef.asVar)
+                val arrayBaseType = arrayElementTypeAsObjectType(arrayRef.asVar)
                 state.setOrUpdatePointsToSet(
                     arrayBaseType, handleDefSites(arrayBaseType, defSites)
                 )
@@ -360,7 +360,9 @@ class AndersenStylePointsToAnalysis private[analyses] (
         }
     }
 
-    @inline private[this] def getArrayBaseObjectType(value: DUVar[ValueInformation]): ObjectType = {
+    @inline private[this] def arrayElementTypeAsObjectType(
+        value: DUVar[ValueInformation]
+    ): ObjectType = {
         value.value.asReferenceValue.leastUpperType.get.asArrayType.elementType.asObjectType
     }
 }
@@ -375,7 +377,7 @@ object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisSched
         TACAI
     )
 
-    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(PointsTo)
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(PropertyBounds.ub(PointsTo))
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
