@@ -5,6 +5,7 @@ package ba
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.IntRefPair
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l0.TypeCheckingDomain
@@ -61,10 +62,25 @@ class CodeAttributeBuilder[T] private[ba] (
     }
 
     /**
-     * Return an iterator over the code array; hence, will return `null` values whenever
+     * Returns an iterator over the code array; hence, will return `null` values whenever
      * an instruction requires more than one byte in the array!
      */
     def bytecodeInstructions: Iterator[Instruction] = instructions.iterator
+
+    def instructionsLength : Int = instructions.length
+
+    def instruction(index : Int) : Instruction = instructions(index)
+
+    def foreachInstructionWithIndex[U] (f : IntRefPair[Instruction] => U) : Unit = {
+    val instructions = this.instructions
+        var i = 0
+        val max = instructions.length
+        while (i < max) {
+            val instruction = instructions(i)
+            if(instruction ne null) f (IntRefPair(i,instruction))
+            i += 1
+        }
+    }
 
     /**
      * Defines the max_stack value.
