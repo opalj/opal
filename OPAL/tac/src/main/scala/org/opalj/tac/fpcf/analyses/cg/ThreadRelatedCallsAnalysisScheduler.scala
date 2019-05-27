@@ -363,7 +363,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
  * @author Dominik Helm
  * @author Michael Reif
  */
-class ThreadRelatedCallsAnalysisScheduler private[analyses] (
+class ThreadRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
     def process(p: SomeProject): PropertyComputationResult = {
@@ -432,8 +432,8 @@ object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSchedul
 
     override def start(
         p: SomeProject, ps: PropertyStore, unused: Null
-    ): ThreadRelatedCallsAnalysisScheduler = {
-        val analysis = new ThreadRelatedCallsAnalysisScheduler(p)
+    ): ThreadRelatedCallsAnalysis = {
+        val analysis = new ThreadRelatedCallsAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }
