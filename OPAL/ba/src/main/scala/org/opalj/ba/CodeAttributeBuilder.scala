@@ -67,17 +67,17 @@ class CodeAttributeBuilder[T] private[ba] (
      */
     def bytecodeInstructions: Iterator[Instruction] = instructions.iterator
 
-    def instructionsLength : Int = instructions.length
+    def instructionsLength: Int = instructions.length
 
-    def instruction(index : Int) : Instruction = instructions(index)
+    def instruction(index: Int): Instruction = instructions(index)
 
-    def foreachInstructionWithIndex[U] (f : IntRefPair[Instruction] => U) : Unit = {
-    val instructions = this.instructions
+    def foreachInstructionWithIndex[U](f: IntRefPair[Instruction] ⇒ U): Unit = {
+        val instructions = this.instructions
         var i = 0
         val max = instructions.length
         while (i < max) {
             val instruction = instructions(i)
-            if(instruction ne null) f (IntRefPair(i,instruction))
+            if (instruction ne null) f(IntRefPair(i, instruction))
             i += 1
         }
     }
