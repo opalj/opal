@@ -16,7 +16,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-trait TACBasedAnalysisState {
+trait TACAIBasedAnalysisState {
 
     def method: DefinedMethod
 
@@ -33,10 +33,10 @@ trait TACBasedAnalysisState {
      * Inherited classes that introduce new dependencies must override this method and call add a
      * call to super!
      */
-    def dependees: Traversable[SomeEOptionP] = if (_tacDependee.isRefinable)
-        Some(_tacDependee)
+    def dependees: List[SomeEOptionP] = if (_tacDependee.isRefinable)
+        List(_tacDependee)
     else
-        None
+        Nil
 
     final def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
         _tacDependee = tacDependee

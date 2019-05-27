@@ -285,7 +285,7 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                 MatcherUtil.constructorMatcher,
                 MatcherUtil.retrieveSuitableNonEssentialMatcher[Seq[V]](
                     actualParamsNewInstanceOpt,
-                    v ⇒ new ActualParamBasedMethodMatcher(v)
+                    v ⇒ new ActualParameterBasedMethodMatcher(v)
                 )
             )
 
@@ -383,10 +383,10 @@ class MethodInvokeAnalysis private[analyses] (
 
         method.asVar.definedBy.foreach { index ⇒
             var matchers: Set[MethodMatcher] = Set(
-                MatcherUtil.retrieveSuitableMatcher[Seq[V]](
+                MatcherUtil.retrieveSuitableMatcher[IndexedSeq[V]](
                     methodInvokeActualParamsOpt,
                     pc,
-                    v ⇒ new ActualParamBasedMethodMatcher(v)
+                    v ⇒ new ActualParameterBasedMethodMatcher(v)
                 ),
                 MatcherUtil.retrieveSuitableMatcher[V](
                     methodInvokeReceiver,

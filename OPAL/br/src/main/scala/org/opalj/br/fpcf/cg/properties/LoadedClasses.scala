@@ -51,11 +51,10 @@ sealed class LoadedClasses private[properties] (
     }
 
     /**
-     * Will return the loaded classes added most recently, dropping the `index` oldest ones.
+     * Will return the loaded classes added most recently, dropping the `num` oldest ones.
      */
-    // TODO Consider adding/using a bounded ForeachIterator?
-    def drop(index: Int): Iterator[ObjectType] = {
-        orderedClasses.iterator.take(classes.size - index)
+    def dropOldest(num: Int): Iterator[ObjectType] = {
+        orderedClasses.iterator.take(classes.size - num)
     }
 
     def size: Int = classes.size

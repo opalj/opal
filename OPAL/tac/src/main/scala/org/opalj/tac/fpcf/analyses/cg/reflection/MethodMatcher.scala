@@ -6,18 +6,20 @@ package analyses
 package cg
 package reflection
 
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsPrimitiveValue
+import org.opalj.value.IsReferenceValue
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.immutable.RefArray
-import org.opalj.value.IsPrimitiveValue
-import org.opalj.value.IsReferenceValue
 import org.opalj.br.BaseType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ReferenceType
 
 /**
  * Used to determine whether a certain method should be considered as a target for a reflective
@@ -48,30 +50,32 @@ final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends Metho
 
 class ClassBasedMethodMatcher(val possibleClasses: Set[ObjectType]) extends MethodMatcher {
 
-    // TODO use weakHashMap to cache methods per project (for the contains check)
-    private[this] def methods(implicit p: SomeProject) = possibleClasses.flatMap { c ⇒
+    private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c ⇒
         p.instanceMethods.getOrElse(c, ConstArray.empty).map(_.method) ++
             // for static methods and constructors
-            // todo what about "inherited" static methods
+            // todo what about "inherited" static methods?
+            // TODO use a ProjectInformationKey or to cache methods per project
+            // (for the contains check)
             p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
     }
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = methods.iterator
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = initialMethods.contains(m)
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = methods.contains(m)
 
     override def priority: Int = 1
 }
 
 class ExactClassBasedMethodMatcher(val possibleClasses: Set[ObjectType]) extends MethodMatcher {
-    // TODO use weakHashMap to cache methods per project (for the contains check)
-    private[this] def methods(implicit p: SomeProject) = possibleClasses.flatMap { c ⇒
+    // TODO use a ProjectInformationKey or to cache methods per project
+    // (for the contains check)
+    private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c ⇒
         p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
     }
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = methods.iterator
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = initialMethods.contains(m)
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = methods.contains(m)
 
     override def priority: Int = 1
 }
@@ -103,38 +107,42 @@ class ParameterTypesBasedMethodMatcher(val parameterTypes: FieldTypes) extends M
     override def priority: UShort = 3
 }
 
-class ActualParamBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatcher {
+class ActualParameterBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatcher {
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] =
         p.allMethods.iterator.filter(contains)
 
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
         implicit val ch: ClassHierarchy = p.classHierarchy
+        // IMPROVE: actualParams.size is actual O(n) in some cases, making it an IndexedSeq would
+        // however require to change it in `Call` in TACAI.
         m.descriptor.parametersCount == actualParams.size &&
+            // IMPROVE: m.descriptor.parameterTypes.iterator.zip...
+            // therefor, we need to actualParams.map(...) as RefIterator
             m.descriptor.parameterTypes.zip(actualParams.map(_.value)).forall {
-                // IMPROVE Make matchers nicer
                 // the actual type is null and the declared type is a ref type
-                case (pType, v) if pType.isReferenceType && v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
-                    // todo here we would need the declared type information
+                case (_: ReferenceType, _: IsNullValue) ⇒
+                    // TODO here we would need the declared type information
                     true
                 // declared type and actual type are reference types and assignable
-                case (pType, v) if pType.isReferenceType && v.isReferenceValue ⇒
-                    v.asReferenceValue.isValueASubtypeOf(pType.asReferenceType).isYesOrUnknown
+                case (pType: ReferenceType, v: IsReferenceValue) ⇒
+                    v.isValueASubtypeOf(pType).isYesOrUnknown
 
                 // declared type and actual type are base types and the same type
                 case (pType: BaseType, v: IsPrimitiveValue[_]) ⇒ v.primitiveType eq pType
 
                 // the actual type is null and the declared type is a base type
-                case (pType: BaseType, v) if v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
+                case (_: BaseType, _: IsNullValue) ⇒
                     false
 
                 // declared type is base type, actual type might be a boxed value
-                case (pType, v) if pType.isBaseType && v.isReferenceValue ⇒
-                    v.asReferenceValue.isValueASubtypeOf(pType.asBaseType.WrapperType).isYesOrUnknown
+                case (pType: BaseType, v: IsReferenceValue) ⇒
+                    v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
 
                 // actual type is base type, declared type might be a boxed type
-                case (pType: ObjectType, v) if v.isPrimitiveValue ⇒
-                    pType.isPrimitiveTypeWrapperOf(v.asPrimitiveValue.primitiveType)
+                case (pType: ObjectType, v: IsPrimitiveValue[_]) ⇒
+                    pType.isPrimitiveTypeWrapperOf(v.primitiveType)
+
                 case _ ⇒
                     false
             }

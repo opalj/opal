@@ -32,7 +32,7 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
 
     @inline protected[this] def toEntity(
         defSite: Int
-    )(implicit state: TACBasedAnalysisState): Entity = {
+    )(implicit state: TACAIBasedAnalysisState): Entity = {
         if (defSite < 0) {
             formalParameters.apply(state.method)(-1 - defSite)
         } else {
@@ -42,7 +42,7 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
 
     @inline protected[this] def handleEOptP(
         depender: Entity, dependeeDefSite: Int
-    )(implicit state: TACBasedAnalysisState with AbstractPointsToState): UIDSet[ObjectType] = {
+    )(implicit state: AbstractPointsToState): UIDSet[ObjectType] = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
             UIDSet(ObjectType.Exception) // todo ask what exception has been thrown
         } else if (ai.isImmediateVMException(dependeeDefSite)) {
@@ -56,7 +56,7 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
     // todo: rename
     @inline protected[this] def handleEOptP(
         depender: Entity, dependee: Entity
-    )(implicit state: TACBasedAnalysisState with AbstractPointsToState): UIDSet[ObjectType] = {
+    )(implicit state: AbstractPointsToState): UIDSet[ObjectType] = {
         val pointsToSetEOptP = state.getOrRetrievePointsToEPS(dependee, ps)
         pointsToSetEOptP match {
             case UBPS(pointsTo: PointsTo, isFinal) ⇒
@@ -75,15 +75,10 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
         defSites: IntTrieSet
     )(
         implicit
-        state: TACBasedAnalysisState with AbstractPointsToState
+        state: AbstractPointsToState
     ): UIDSet[ObjectType] = {
-        var pointsToSet = UIDSet.empty[ObjectType]
-        for (defSite ← defSites) {
-            pointsToSet ++=
-                handleEOptP(e, defSite)
-
+        defSites.foldLeft(UIDSet.empty[ObjectType]) { (pointsToSet, defSite) ⇒
+            pointsToSet ++ handleEOptP(e, defSite)
         }
-
-        pointsToSet
     }
 }

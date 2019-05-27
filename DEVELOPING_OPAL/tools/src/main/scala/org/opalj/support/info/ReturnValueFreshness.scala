@@ -31,7 +31,7 @@ object ReturnValueFreshness extends ProjectAnalysisApplication {
 
     override def description: String = {
         "Describes whether a method returns a value that is allocated in that method or its "+
-            "callees and only has escape state \"Escape Via Return\""
+            "callees and only has escape state EscapeViaReturn"
     }
 
     override def doAnalyze(
@@ -47,8 +47,6 @@ object ReturnValueFreshness extends ProjectAnalysisApplication {
             LazyFieldLocalityAnalysis,
             EagerReturnValueFreshnessAnalysis
         )
-
-        // TODO Provide more useful information about the entities and then add tests
 
         val fresh = ps.finalEntities(FreshReturnValue).toSeq
         val notFresh = ps.finalEntities(NoFreshReturnValue).toSeq

@@ -16,8 +16,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 
 /**
- * For a given [[org.opalj.br.DeclaredMethod]], and for each call site (represented by the PC), the set of methods
- * that are possible call targets.
+ * For a given [[org.opalj.br.DeclaredMethod]], and for each call site (represented by the PC),
+ * the set of methods that are possible call targets.
  *
  * @author Florian Kuebler
  */
@@ -34,7 +34,14 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
 
     def size: Int
 
-    def callers(implicit declaredMethods: DeclaredMethods): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )]
+    def isEmpty: Boolean
+
+    def nonEmpty: Boolean
+
+    def callers(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )]
 
     /**
      * Returns a new callers object, containing all callers of `this` object and a call from
@@ -82,6 +89,10 @@ sealed trait CallersWithoutVMLevelCall extends Callers {
 sealed trait EmptyConcreteCallers extends Callers {
     final override def size: Int = 0
 
+    final override def isEmpty: Boolean = true
+
+    final override def nonEmpty: Boolean = false
+
     final override def callers(
         implicit
         declaredMethods: DeclaredMethods
@@ -125,6 +136,10 @@ object OnlyVMCallersAndWithUnknownContext
 sealed trait CallersImplementation extends Callers {
     val encodedCallers: LongTrieSet /* MethodId + PC*/
     final override def size: Int = encodedCallers.size
+
+    final override def isEmpty: Boolean = encodedCallers.isEmpty
+
+    final override def nonEmpty: Boolean = encodedCallers.nonEmpty
 
     final override def callers(
         implicit

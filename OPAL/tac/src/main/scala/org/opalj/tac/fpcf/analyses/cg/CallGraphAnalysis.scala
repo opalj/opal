@@ -25,7 +25,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
-trait CGState extends TACBasedAnalysisState {
+trait CGState extends TACAIBasedAnalysisState {
     // todo: merge in virtualcallsites
     def hasNonFinalCallSite: Boolean
 }
@@ -44,22 +44,6 @@ trait CGState extends TACBasedAnalysisState {
  */
 trait CallGraphAnalysis extends ReachableMethodAnalysis {
     type State <: CGState
-
-    override final def processMethod(
-        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
-    ): ProperPropertyComputationResult = {
-        val state = createInitialState(definedMethod, tacEP)
-        processMethod(state, new DirectCalls())
-    }
-
-    def handleImpreciseCall(
-        caller:                        DefinedMethod,
-        call:                          Call[V] with VirtualCall[V],
-        pc:                            Int,
-        specializedDeclaringClassType: ReferenceType,
-        potentialTargets:              ForeachRefIterator[ObjectType],
-        calleesAndCallers:             DirectCalls
-    )(implicit state: State): Unit
 
     def createInitialState(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): State
 
@@ -80,6 +64,22 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
         case UBP(_: TACAI) ⇒
             throw new IllegalStateException("there was already a tac defined")
     }
+
+    override final def processMethod(
+        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
+        val state = createInitialState(definedMethod, tacEP)
+        processMethod(state, new DirectCalls())
+    }
+
+    def handleImpreciseCall(
+        caller:                        DefinedMethod,
+        call:                          Call[V] with VirtualCall[V],
+        pc:                            Int,
+        specializedDeclaringClassType: ReferenceType,
+        potentialTargets:              ForeachRefIterator[ObjectType],
+        calleesAndCallers:             DirectCalls
+    )(implicit state: State): Unit
 
     protected final def processMethod(
         state: State, calls: DirectCalls

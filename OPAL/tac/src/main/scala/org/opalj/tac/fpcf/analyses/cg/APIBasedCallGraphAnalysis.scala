@@ -19,7 +19,8 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.FPCFAnalysis
 
 /**
- * A trait for call graph analyses that model the result of the invocation a specific `apiMethod`.
+ * A trait for call graph analyses that model the result of the invocation of a specific
+ * `apiMethod`.
  *
  * Each time a new caller of the [[apiMethod*]] is found in the
  * [[org.opalj.br.fpcf.cg.properties.Callers]] property, [[handleNewCaller*]]
@@ -55,10 +56,14 @@ trait APIBasedCallGraphAnalysis extends FPCFAnalysis {
                 // IMPROVE: use better design in order to get new callers
                 var newSeenCallers = seenCallers
                 var results: List[ProperPropertyComputationResult] = Nil
-                if (callersUB.size != 0) {
+                if (callersUB.nonEmpty) {
                     for ((caller, pc, isDirect) ← callersUB.callers) {
-                        // we can not analyze virtual methods
-                        if (!newSeenCallers.contains((caller, pc, isDirect)) && caller.hasSingleDefinedMethod) {
+                        // the call graph is only computed for virtual and single defined methods
+                        assert(caller.isVirtualOrHasSingleDefinedMethod)
+
+                        // we can not analyze virtual methods, as we do not have their bytecode
+                        if (!newSeenCallers.contains((caller, pc, isDirect)) &&
+                            caller.hasSingleDefinedMethod) {
                             newSeenCallers += ((caller, pc, isDirect))
 
                             results ::= handleNewCaller(caller.asDefinedMethod, pc, isDirect)

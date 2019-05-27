@@ -370,7 +370,7 @@ class OISReadObjectAnalysis private[analyses] (
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-class SerializationRelatedCallsAnalysis private[analyses](
+class SerializationRelatedCallsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 

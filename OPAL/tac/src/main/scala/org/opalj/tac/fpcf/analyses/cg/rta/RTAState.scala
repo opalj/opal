@@ -29,7 +29,7 @@ class RTAState(
         override protected[this] var _tacDependee:    EOptionP[Method, TACAI],
         private[this] var _instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
 ) extends CGState {
-    private[this] val _virtualCallSites: mutable.LongMap[Set[CallSiteT]] = mutable.LongMap.empty
+    private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSiteT]] = mutable.LongMap.empty
 
     /////////////////////////////////////////////
     //                                         //
@@ -59,7 +59,7 @@ class RTAState(
 
     def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ObjectType] = {
         if (_instantiatedTypesDependee.hasUBP) {
-            _instantiatedTypesDependee.ub.drop(seenTypes)
+            _instantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {
             UIDSet.empty
         }
@@ -74,12 +74,16 @@ class RTAState(
     override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty
 
     def addVirtualCallSite(objectType: ObjectType, callSite: CallSiteT): Unit = {
-        val oldVal = _virtualCallSites.getOrElse(objectType.id.toLong, Set.empty)
-        _virtualCallSites.update(objectType.id.toLong, oldVal + callSite)
+        val oldValOpt = _virtualCallSites.get(objectType.id.toLong)
+        if (oldValOpt.isDefined)
+            oldValOpt.get += callSite
+        else {
+            _virtualCallSites += (objectType.id.toLong → mutable.Set(callSite))
+        }
     }
 
-    def getVirtualCallSites(objectType: ObjectType): Option[Set[CallSiteT]] = {
-        _virtualCallSites.get(objectType.id.toLong)
+    def getVirtualCallSites(objectType: ObjectType): scala.collection.Set[CallSiteT] = {
+        _virtualCallSites.getOrElse(objectType.id.toLong, scala.collection.Set.empty)
     }
 
     def removeCallSite(instantiatedType: ObjectType): Unit = {
@@ -93,10 +97,13 @@ class RTAState(
     /////////////////////////////////////////////
 
     override def hasOpenDependencies: Boolean = {
-        super.hasOpenDependencies || _instantiatedTypesDependee.isRefinable
+        _instantiatedTypesDependee.isRefinable || super.hasOpenDependencies
     }
 
-    override def dependees: Traversable[EOptionP[Entity, Property]] = {
-        super.dependees ++ instantiatedTypesDependee
+    override def dependees: List[EOptionP[Entity, Property]] = {
+        if (instantiatedTypesDependee().isDefined)
+            instantiatedTypesDependee().get :: super.dependees
+        else
+            super.dependees
     }
 }

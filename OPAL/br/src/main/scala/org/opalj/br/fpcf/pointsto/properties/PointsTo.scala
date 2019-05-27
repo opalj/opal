@@ -21,7 +21,7 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Florian Kuebler
  */
-// todo: we should definition sites instead of just the types
+// TODO: we should definition sites (real points-to sets) instead of just the types
 sealed trait PointsToPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = PointsTo
@@ -47,17 +47,21 @@ case class PointsTo private[properties] (
 
     def updated(newTypes: Set[ObjectType]): PointsTo = {
         var newOrderedTypes = orderedTypes
-        for { t ← newTypes if !types.contains(t) } {
-            newOrderedTypes ::= t
+        var typesUnion = types
+        for (t ← newTypes) {
+            if (!types.contains(t)) {
+                newOrderedTypes ::= t
+                typesUnion += t
+            }
         }
-        new PointsTo(newOrderedTypes, types ++ newTypes)
+        new PointsTo(newOrderedTypes, typesUnion)
     }
 
     /**
-     * Will return the types added most recently, dropping the `index` oldest ones.
+     * Will return the types added most recently, dropping the `num` oldest ones.
      */
-    def drop(index: Int): Iterator[ObjectType] = {
-        orderedTypes.iterator.take(types.size - index)
+    def dropOldest(num: Int): Iterator[ObjectType] = {
+        orderedTypes.iterator.take(types.size - num)
     }
 
     def numElements: Int = types.size
@@ -65,7 +69,7 @@ case class PointsTo private[properties] (
     override def equals(obj: Any): Boolean = {
         obj match {
             case that: PointsTo ⇒
-                that.numElements == this.numElements && orderedTypes == orderedTypes
+                that.numElements == this.numElements && that.orderedTypes == this.orderedTypes
             case _ ⇒ false
         }
     }

@@ -326,7 +326,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
         if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
 
-        for ((e, pointsToSet) ← state.pointsToSets) {
+        for ((e, pointsToSet) ← state.pointsToSetsIterator) {
             results += PartialResult[Entity, PointsTo](e, PointsTo.key, {
 
                 case _: EPK[Entity, PointsTo] ⇒

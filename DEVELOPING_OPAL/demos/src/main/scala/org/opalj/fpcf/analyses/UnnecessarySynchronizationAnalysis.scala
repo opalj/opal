@@ -28,14 +28,16 @@ import org.opalj.tac.fpcf.properties.TACAI
 /**
  * Finds object references in monitorenter instructions that do not escape their thread.
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
 
-    override def title: String = "Finds unnecessary usages of synchronization"
+    override def title: String = {
+        "Unnecessary Synchronization Analysis"
+    }
 
     override def description: String = {
-        "Finds unnecessary usages of synchronization"
+        "Finds synchronized(o){ ... } statements where the object o does not escape the thread."
     }
 
     override def doAnalyze(

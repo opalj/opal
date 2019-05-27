@@ -125,12 +125,15 @@ class PointsToBasedCGState(
         super.hasOpenDependencies || _tacDependee.isRefinable
     }
 
-    override def dependees: Traversable[SomeEOptionP] = {
-        super.dependees ++ _pointsToDependees.values
+    override def dependees: List[SomeEOptionP] = {
+        // TODO: maybe use more efficient implementation (e.g. using an immutable map)
+        var allDependees = super.dependees
+        _pointsToDependees.valuesIterator.foreach(d ⇒ allDependees ::= d)
+        allDependees
     }
 
     def callSitesForDefSite(defSite: Entity): Traversable[CallSiteT] = {
-        _defSitesToCallSites.getOrElse(defSite, Traversable.empty) // todo: ensure this is required
+        _defSitesToCallSites.getOrElse(defSite, Traversable.empty) // TODO: ensure this is required
     }
 
     override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty

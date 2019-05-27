@@ -60,7 +60,9 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
  * @author Florian Kuebler
  */
 trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinder {
-    private val packagesToExclude = Set("com/sun", "sun", "oracle", "jdk", "java", "com/oracle")
+    private val packagesToExclude = Set(
+        "com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax"
+    )
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
         super.collectEntryPoints(project).filterNot { ep ⇒

@@ -32,6 +32,10 @@ import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
  */
 trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
+    /**
+     * Lists the call graph specific schedulers that must be run to compute the respective call
+     * graph.
+     */
     protected def callGraphSchedulers(
         project: SomeProject
     ): Traversable[ComputationSpecification[FPCFAnalysis]]
@@ -55,7 +59,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         val config = project.config
 
         // TODO use FPCFAnaylsesRegistry here
-        val registeredModules = config.getStringList(
+        val registeredAnalyses = config.getStringList(
             "org.opalj.tac.cg.CallGraphKey.modules"
         ).asScala.flatMap(resolveAnalysisRunner(_))
 
@@ -66,7 +70,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             )
 
         analyses ++= callGraphSchedulers(project)
-        analyses ++= registeredModules
+        analyses ++= registeredAnalyses
 
         manager.runAll(analyses)
 
@@ -74,16 +78,16 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     }
 
     private[this] def resolveAnalysisRunner(
-        fqn: String
+        className: String
     )(implicit logContext: LogContext): Option[FPCFAnalysisScheduler] = {
         val mirror = runtimeMirror(getClass.getClassLoader)
         try {
-            val module = mirror.staticModule(fqn)
+            val module = mirror.staticModule(className)
             import mirror.reflectModule
             Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
         } catch {
             case sre: ScalaReflectionException ⇒
-                error("call graph", s"cannot find analysis scheduler $fqn", sre)
+                error("call graph", s"cannot find analysis scheduler $className", sre)
                 None
             case cce: ClassCastException ⇒
                 error("call graph", "analysis scheduler class is invalid", cce)

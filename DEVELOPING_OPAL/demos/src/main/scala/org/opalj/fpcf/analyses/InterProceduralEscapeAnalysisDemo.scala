@@ -45,7 +45,7 @@ object InterProceduralEscapeAnalysisDemo extends ProjectAnalysisApplication {
     override def title: String = "determines escape information"
 
     override def description: String = {
-        "Determines escape information for every allocation site and every formal parameter"
+        "Determines escape information for every allocation site and every formal parameter."
     }
 
     override def doAnalyze(

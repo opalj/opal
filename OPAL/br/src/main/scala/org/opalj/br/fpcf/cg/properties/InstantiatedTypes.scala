@@ -54,11 +54,10 @@ case class InstantiatedTypes private[properties] (
     }
 
     /**
-     * Will return the instantiated types added most recently, dropping the `index` oldest ones.
+     * Will return the instantiated types added most recently, dropping the `num` oldest ones.
      */
-    // TODO Consider adding/using a bounded ForeachIterator?
-    def drop(index: Int): Iterator[ObjectType] = {
-        orderedTypes.iterator.take(types.size - index)
+    def dropOldest(num: Int): Iterator[ObjectType] = {
+        orderedTypes.iterator.take(types.size - num)
     }
 
     def numElements: Int = types.size

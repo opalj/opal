@@ -4,6 +4,7 @@ package tac
 package cg
 
 import org.opalj.collection.IntIterator
+import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DeclaredMethod
@@ -29,6 +30,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
     }
 
     def calleesOf(m: DeclaredMethod): Iterator[(Int, Iterator[DeclaredMethod])] = {
+        // IMPROVE: avoid inefficient boxing operations
         ps(m, Callees.key).ub.callSites().toIterator
     }
 
@@ -52,6 +54,10 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
         ps(m, Callees.key).ub.incompleteCallSites
     }
 
+    /**
+     * For the given method it returns all callers, including the pc of the call-site and a flag,
+     * indicating whether the call was direct (true) or indirect (false).
+     */
     def callersOf(m: DeclaredMethod): TraversableOnce[(DeclaredMethod, Int, Boolean)] = {
         ps(m, Callers.key).ub.callers
     }
@@ -70,12 +76,14 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
 
     def reachableMethods(): Iterator[DeclaredMethod] = {
         val callersProperties = ps.entities(Callers.key)
-
-        callersProperties.filterNot(_.ub eq NoCallers).map(_.e.asInstanceOf[DeclaredMethod])
+        callersProperties.collect {
+            case EUBP(dm: DeclaredMethod, ub: Callers) if ub ne NoCallers ⇒ dm
+        }
     }
 
     lazy val numEdges: Int = {
         val callers = ps.entities(Callers.key).map(_.ub.callers)
+        // IMPROVE: efficiently calculate the sum
         callers.map(_.size).sum
     }
 }

@@ -59,7 +59,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
             case UBPS(initialTypes: InstantiatedTypes, isFinal) ⇒
                 (
-                    analyzeTypes(initialTypes.drop(numProcessedTypes)),
+                    analyzeTypes(initialTypes.dropOldest(numProcessedTypes)),
                     isFinal,
                     initialTypes.types.size
                 )

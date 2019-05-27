@@ -50,8 +50,6 @@ object FieldLocality extends ProjectAnalysisApplication {
         val getter = ps.finalEntities(LocalFieldWithGetter).toSeq
         val extGetter = ps.finalEntities(ExtensibleLocalFieldWithGetter).toSeq
 
-        // TODO Provide more useful information about the entities and then add tests
-
         val message =
             s"""|# of local fields: ${local.size}
                 |# of not local fields: ${nolocal.size}
