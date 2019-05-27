@@ -55,7 +55,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
         val configuredAnalysis = project.config.as[Option[String]](key)
         val entryPointFinder = configuredAnalysis
         if (entryPointFinder.isEmpty) {
-            throw new IllegalArgumentException("No InitialEntryPointsKey configuration available; Entry Points cannot be computed!")
+            throw new IllegalArgumentException(s"entry points cannot be computed due to missing configuration of $key")
         }
 
         val fqn = entryPointFinder.get
