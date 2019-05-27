@@ -1,8 +1,11 @@
 # Changes
 
 ## Upcoming (3.0.0)
+
+- added a preliminary IFDS framework
+- the Hermes and BugPicker UI projects were deleted (JavaFX was removed from the JDK 11 which makes the overall development and deplyoment process to cost intensive)
 - Hermes was promoted to a real project: TOOLS/hermes
-- renamed `DefaultOneStepAnalysis` to `ProjectAnalysisApplication`
+- renamed `DefaultOneStepAnalysis` to `ProjectAnalysisApplication`; added a new subclass `MethodAnalysisApplication` to facilitate the developmen of respective analysis
 - added support for analyses using the monotone framework; the monotone framework itself was added to `CFG`
 - the three-address code has been moved to its own subproject (`ThreeAddressCode`) in the folder OPAL/tac
 - fixed the name of the static analysis infrastructure project (the name of the project on Maven Central has changed)
