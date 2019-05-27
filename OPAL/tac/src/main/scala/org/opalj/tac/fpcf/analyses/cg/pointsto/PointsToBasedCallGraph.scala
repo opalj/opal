@@ -52,7 +52,7 @@ class PointsToBasedCallGraph private[analyses] (
     )(implicit state: PointsToBasedCGState): Unit = {
         val callerType = caller.definedMethod.classFile.thisType
         val callSite = (pc, call.name, call.descriptor, call.declaringClass)
-        val pointsToSet = handleDefSites(callSite, call.receiver.asVar.definedBy)
+        val pointsToSet = currentPointsTo(callSite, call.receiver.asVar.definedBy)
 
         var types = IntTrieSet.empty
 

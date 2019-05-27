@@ -120,13 +120,21 @@ class PointsToState private (
     def removePointsToDependee(eps: EPS[Entity, PointsTo]): Unit = {
         val dependee = eps.e
         assert(_dependees.contains(dependee))
-        _dependees.remove(dependee)
+        //
+        if (_dependees.remove(dependee).isEmpty)
+            throw new RuntimeException(s"failed to remove dependee: $dependee")
+
         val dependers = _dependeeToDependers(dependee)
-        _dependeeToDependers.remove(dependee)
+
+        if (_dependeeToDependers.remove(dependee).isEmpty)
+            throw new RuntimeException(s"failed to remove dependee: $dependee")
+
         for (depender ← dependers) {
             val dependees = _dependerToDependees(depender)
             if (dependees.remove(dependee) && dependees.isEmpty)
-                _dependerToDependees.remove(depender)
+                if (_dependerToDependees.remove(depender).isEmpty) {
+                    throw new RuntimeException(s"failed to remove depender: $depender")
+                }
         }
     }
 

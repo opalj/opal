@@ -36,10 +36,10 @@ object MethodHandlesUtil {
             ),
             new NameBasedMethodMatcher(Set(name)),
             if (receiver.isArrayType) new ClassBasedMethodMatcher(
-                Set(ObjectType.Object)
+                Set(ObjectType.Object), false
             )
             else new ClassBasedMethodMatcher(
-                Set(receiver.asObjectType)
+                Set(receiver.asObjectType), false
             )
         )
     }
@@ -57,7 +57,7 @@ object MethodHandlesUtil {
         project:       SomeProject
     )(implicit incompleteCallSites: IncompleteCallSites, highSoundness: Boolean): Seq[MethodMatcher] = {
         Seq(
-            MatcherUtil.retrieveClassBasedMethodMatcher(refc, pc, stmts, project),
+            MatcherUtil.retrieveClassBasedMethodMatcher(refc, pc, stmts, project, false),
             MatcherUtil.retrieveNameBasedMethodMatcher(name, pc, stmts),
             retrieveDescriptorBasedMethodMatcher(
                 descriptorOpt, methodType, pc, isStatic, isConstructor, stmts, cfg, project

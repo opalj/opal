@@ -40,7 +40,7 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
         }
     }
 
-    @inline protected[this] def handleEOptP(
+    @inline protected[this] def currentPointsTo(
         depender: Entity, dependeeDefSite: Int
     )(implicit state: AbstractPointsToState): UIDSet[ObjectType] = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
@@ -49,12 +49,11 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
             // todo -  we need to get the actual exception type here
             UIDSet(ObjectType.Exception)
         } else {
-            handleEOptP(depender, toEntity(dependeeDefSite))
+            currentPointsTo(depender, toEntity(dependeeDefSite))
         }
     }
 
-    // todo: rename
-    @inline protected[this] def handleEOptP(
+    @inline protected[this] def currentPointsTo(
         depender: Entity, dependee: Entity
     )(implicit state: AbstractPointsToState): UIDSet[ObjectType] = {
         val pointsToSetEOptP = state.getOrRetrievePointsToEPS(dependee, ps)
@@ -69,16 +68,15 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
         }
     }
 
-    // todo: rename
-    @inline protected[this] def handleDefSites(
-        e:        Entity,
+    @inline protected[this] def currentPointsTo(
+        depender: Entity,
         defSites: IntTrieSet
     )(
         implicit
         state: AbstractPointsToState
     ): UIDSet[ObjectType] = {
         defSites.foldLeft(UIDSet.empty[ObjectType]) { (pointsToSet, defSite) ⇒
-            pointsToSet ++ handleEOptP(e, defSite)
+            pointsToSet ++ currentPointsTo(depender, defSite)
         }
     }
 }

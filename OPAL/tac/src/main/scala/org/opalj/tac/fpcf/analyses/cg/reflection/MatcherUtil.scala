@@ -13,10 +13,11 @@ import org.opalj.br.cfg.CFG
 
 object MatcherUtil {
     private[reflection] def retrieveClassBasedMethodMatcher(
-        ref:     Expr[V],
-        pc:      Int,
-        stmts:   Array[Stmt[V]],
-        project: SomeProject
+        ref:                       Expr[V],
+        pc:                        Int,
+        stmts:                     Array[Stmt[V]],
+        project:                   SomeProject,
+        onlyMethodsExactlyInClass: Boolean
     )(
         implicit
         incompleteCallSites: IncompleteCallSites,
@@ -28,27 +29,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,
             pc,
-            v ⇒ new ClassBasedMethodMatcher(v)
-        )
-    }
-
-    private[reflection] def retrieveExactClassBasedMethodMatcher(
-        ref:     Expr[V],
-        pc:      Int,
-        stmts:   Array[Stmt[V]],
-        project: SomeProject
-    )(
-        implicit
-        incompleteCallSites: IncompleteCallSites,
-        highSoundness:       Boolean
-    ): MethodMatcher = {
-        val typesOpt =
-            TypesUtil.getPossibleTypes(ref, pc, stmts, project).map(_.map(_.asObjectType)).map(_.toSet)
-
-        retrieveSuitableMatcher[Set[ObjectType]](
-            typesOpt,
-            pc,
-            v ⇒ new ExactClassBasedMethodMatcher(v)
+            v ⇒ new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
         )
     }
 

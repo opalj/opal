@@ -226,7 +226,9 @@ class ClassNewInstanceAnalysis private[analyses] (
             new ParameterTypesBasedMethodMatcher(RefArray.empty)
         )
 
-        matchers += MatcherUtil.retrieveClassBasedMethodMatcher(classExpr, pc, stmts, project)
+        matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
+            classExpr, pc, stmts, project, onlyMethodsExactlyInClass = false
+        )
 
         addCalls(caller, pc, None, Seq.empty, matchers)
     }
@@ -297,8 +299,8 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                             matchers += PublicMethodMatcher
                         }
 
-                        matchers += MatcherUtil.retrieveExactClassBasedMethodMatcher(
-                            receiver, pc, stmts, project
+                        matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
+                            receiver, pc, stmts, project, onlyMethodsExactlyInClass = true
                         )
                         matchers += MatcherUtil.retrieveParameterTypesBasedMethodMatcher(
                             params.head, pc, stmts, cfg
@@ -383,7 +385,7 @@ class MethodInvokeAnalysis private[analyses] (
 
         method.asVar.definedBy.foreach { index ⇒
             var matchers: Set[MethodMatcher] = Set(
-                MatcherUtil.retrieveSuitableMatcher[IndexedSeq[V]](
+                MatcherUtil.retrieveSuitableMatcher[Seq[V]](
                     methodInvokeActualParamsOpt,
                     pc,
                     v ⇒ new ActualParameterBasedMethodMatcher(v)
@@ -402,11 +404,11 @@ class MethodInvokeAnalysis private[analyses] (
                         if (call.name == "getMethod") {
                             matchers += PublicMethodMatcher
                             matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
-                                receiver, pc, stmts, project
+                                receiver, pc, stmts, project, onlyMethodsExactlyInClass = false
                             )
                         } else {
-                            matchers += MatcherUtil.retrieveExactClassBasedMethodMatcher(
-                                receiver, pc, stmts, project
+                            matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
+                                receiver, pc, stmts, project, onlyMethodsExactlyInClass = true
                             )
                         }
 
@@ -604,7 +606,9 @@ class MethodHandleInvokeAnalysis private[analyses] (
 
                             matchers += MatcherUtil.constructorMatcher
 
-                            matchers += MatcherUtil.retrieveClassBasedMethodMatcher(refc, pc, stmts, project)
+                            matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
+                                refc, pc, stmts, project, onlyMethodsExactlyInClass = false
+                            )
 
                             matchers += MethodHandlesUtil.retrieveDescriptorBasedMethodMatcher(
                                 descriptor,

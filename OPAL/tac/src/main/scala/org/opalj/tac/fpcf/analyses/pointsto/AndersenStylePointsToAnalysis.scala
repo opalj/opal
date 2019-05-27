@@ -76,7 +76,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     val fp = fps(0)
                     state.setOrUpdatePointsToSet(
                         fp,
-                        handleDefSites(fp, receiverOpt.get.asVar.definedBy)
+                        currentPointsTo(fp, receiverOpt.get.asVar.definedBy)
                     )
                 }
 
@@ -85,7 +85,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     val fp = fps(i + 1)
                     state.setOrUpdatePointsToSet(
                         fp,
-                        handleDefSites(fp, call.params(i).asVar.definedBy)
+                        currentPointsTo(fp, call.params(i).asVar.definedBy)
                     )
                 }
             } else {
@@ -114,7 +114,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
             case Assignment(pc, targetVar, UVar(_, defSites)) if targetVar.value.isReferenceValue ⇒
                 val defSiteObject = definitionSites(method, pc)
                 state.setOrUpdatePointsToSet(
-                    defSiteObject, handleDefSites(defSiteObject, defSites)
+                    defSiteObject, currentPointsTo(defSiteObject, defSites)
                 )
 
             case Assignment(pc, targetVar, GetField(_, declaringClass, name, fieldType, _)) if targetVar.value.isReferenceValue ⇒
@@ -123,7 +123,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 if (fieldOpt.isDefined) {
                     state.setOrUpdatePointsToSet(
                         defSiteObject,
-                        handleEOptP(defSiteObject, fieldOpt.get)
+                        currentPointsTo(defSiteObject, fieldOpt.get)
                     )
                 } else {
                     state.addIncompletePointsToInfo(pc)
@@ -133,7 +133,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 val defSiteObject = definitionSites(method, pc)
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    state.setOrUpdatePointsToSet(defSiteObject, handleEOptP(defSiteObject, fieldOpt.get))
+                    state.setOrUpdatePointsToSet(defSiteObject, currentPointsTo(defSiteObject, fieldOpt.get))
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
@@ -143,7 +143,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 val arrayBaseType = arrayElementTypeAsObjectType(arrayRef.asVar)
                 state.setOrUpdatePointsToSet(
                     defSiteObject,
-                    handleEOptP(defSiteObject, arrayBaseType)
+                    currentPointsTo(defSiteObject, arrayBaseType)
                 )
 
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
@@ -153,7 +153,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 if (targetVar.value.isReferenceValue) {
                     var pointsToSet = UIDSet.empty[ObjectType]
                     for (target ← targets) {
-                        pointsToSet ++= handleEOptP(defSiteObject, target)
+                        pointsToSet ++= currentPointsTo(defSiteObject, target)
                     }
 
                     state.setOrUpdatePointsToSet(defSiteObject, pointsToSet)
@@ -169,7 +169,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                         if (receiverOpt.isDefined) {
                             val fp = fps(0)
                             state.setOrUpdatePointsToSet(
-                                fp, handleDefSites(fp, receiverOpt.get.asVar.definedBy)
+                                fp, currentPointsTo(fp, receiverOpt.get.asVar.definedBy)
                             )
                         }
 
@@ -179,7 +179,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                             for (i ← 0 until target.descriptor.parametersCount) {
                                 val fp = fps(i + 1)
                                 state.setOrUpdatePointsToSet(
-                                    fp, handleDefSites(fp, call.params(i).asVar.definedBy)
+                                    fp, currentPointsTo(fp, call.params(i).asVar.definedBy)
                                 )
                             }
                         } else {
@@ -202,7 +202,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                             val fp = fps(0)
                             state.setOrUpdatePointsToSet(
                                 fp,
-                                handleDefSites(
+                                currentPointsTo(
                                     fp, valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
                                 )
                             )
@@ -217,7 +217,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                             if (indirectParam.isDefined) {
                                 state.setOrUpdatePointsToSet(
                                     fp,
-                                    handleDefSites(
+                                    currentPointsTo(
                                         fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
                                     )
                                 )
@@ -247,14 +247,14 @@ class AndersenStylePointsToAnalysis private[analyses] (
             case ArrayStore(_, arrayRef, _, UVar(_, defSites)) if isArrayOfObjectType(arrayRef.asVar) ⇒
                 val arrayBaseType = arrayElementTypeAsObjectType(arrayRef.asVar)
                 state.setOrUpdatePointsToSet(
-                    arrayBaseType, handleDefSites(arrayBaseType, defSites)
+                    arrayBaseType, currentPointsTo(arrayBaseType, defSites)
                 )
 
             case PutField(pc, declaringClass, name, fieldType, _, UVar(_, defSites)) if fieldType.isObjectType ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
                     state.setOrUpdatePointsToSet(
-                        fieldOpt.get, handleDefSites(fieldOpt.get, defSites)
+                        fieldOpt.get, currentPointsTo(fieldOpt.get, defSites)
                     )
                 else {
                     state.addIncompletePointsToInfo(pc)
@@ -264,7 +264,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
                     state.setOrUpdatePointsToSet(
-                        fieldOpt.get, handleDefSites(fieldOpt.get, defSites)
+                        fieldOpt.get, currentPointsTo(fieldOpt.get, defSites)
                     )
                 else {
                     state.addIncompletePointsToInfo(pc)
@@ -272,7 +272,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
             case ReturnValue(_, value @ UVar(_, defSites)) if value.value.isReferenceValue ⇒
                 state.setOrUpdatePointsToSet(
-                    state.method, handleDefSites(state.method, defSites)
+                    state.method, currentPointsTo(state.method, defSites)
                 )
 
             case _ ⇒

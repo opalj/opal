@@ -48,29 +48,18 @@ final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends Metho
     override def priority: Int = 2
 }
 
-class ClassBasedMethodMatcher(val possibleClasses: Set[ObjectType]) extends MethodMatcher {
+class ClassBasedMethodMatcher(val possibleClasses: Set[ObjectType], val onlyMethodsExactlyInClass: Boolean) extends MethodMatcher {
 
-    private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c ⇒
-        p.instanceMethods.getOrElse(c, ConstArray.empty).map(_.method) ++
-            // for static methods and constructors
-            // todo what about "inherited" static methods?
-            // TODO use a ProjectInformationKey or to cache methods per project
-            // (for the contains check)
-            p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
-    }
-
-    override def initialMethods(implicit p: SomeProject): Iterator[Method] = methods.iterator
-
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = methods.contains(m)
-
-    override def priority: Int = 1
-}
-
-class ExactClassBasedMethodMatcher(val possibleClasses: Set[ObjectType]) extends MethodMatcher {
     // TODO use a ProjectInformationKey or to cache methods per project
     // (for the contains check)
     private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c ⇒
-        p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
+        // todo what about "inherited" static methods?
+        val methodsInClassFile = p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
+        if (onlyMethodsExactlyInClass)
+            methodsInClassFile
+        else
+            methodsInClassFile ++ p.instanceMethods.getOrElse(c, ConstArray.empty).map(_.method)
+
     }
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = methods.iterator
