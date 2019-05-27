@@ -20,7 +20,7 @@ object Dependencies {
     val ficus = "1.4.5"
     val commonstext = "1.6"
     val txtmark = "0.16"
-    val jacksonDF = "2.9.8"
+    val jacksonDF = "2.9.9"
     val fastutil = "8.2.2"
     val chocosolver = "4.10.0"
 
