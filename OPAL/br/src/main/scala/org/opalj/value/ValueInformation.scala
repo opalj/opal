@@ -71,6 +71,14 @@ trait ValueInformation {
     def asReferenceValue: IsReferenceValue = throw new ClassCastException();
 
     /**
+     * Returns `Yes` if the value is _not null_ and the least upper type bound is an `ArrayType`;
+     * the value is `Unknown` if the least upper type bound is `ArrayType` but the value may be null;
+     * in all other cases `No` is returned; in particular if the value is known to be null. `No`
+     * is also returned if the value's type is `Object` or `Seriablizable` or `Cloneable`.
+     */
+    def isArrayValue: Answer
+
+    /**
      * The computational type of the value if this object represents a legal value.
      *
      * The precise computational type is, e.g., needed to calculate the effect
@@ -154,6 +162,8 @@ trait IsIllegalValue extends ValueInformation {
 
     final override def isReferenceValue: Boolean = throw new IllegalStateException("illegal value")
 
+    final override def isArrayValue: Answer = No
+
     final override def computationalType: ComputationalType = {
         throw new IllegalStateException("illegal value")
     }
@@ -182,6 +192,8 @@ object TheVoidValue extends KnownValue {
 
     override def isReferenceValue: Boolean = false
 
+    override def isArrayValue: Answer = No
+
     override def computationalType: ComputationalType = throw new IllegalStateException("void")
 
     override def hasCategory2ComputationalType: Boolean = false
@@ -208,6 +220,8 @@ trait IsReturnAddressValue extends KnownTypedValue {
     final override def isPrimitiveValue: Boolean = false
 
     final override def isReferenceValue: Boolean = false
+
+    final override def isArrayValue: Answer = No
 
     final override def computationalType: ComputationalType = ComputationalTypeReturnAddress
 
@@ -258,6 +272,8 @@ sealed trait IsPrimitiveValue[T <: BaseType]
     final override def isPrimitiveValue: Boolean = true
 
     final override def asPrimitiveValue: IsPrimitiveValue[T] = this
+
+    final override def isArrayValue: Answer = No
 
     def primitiveType: T
 
@@ -584,6 +600,8 @@ trait IsBaseReferenceValue extends IsReferenceValue {
 
 trait IsNullValue extends IsBaseReferenceValue {
 
+    final override def isArrayValue: Answer = No
+
     final override def isNull: Answer = Yes
     final override def isPrecise: Boolean = true
     final override def upperTypeBound: UIDSet[_ <: ReferenceType] = UIDSet.empty
@@ -615,6 +633,8 @@ trait IsMObjectValue extends IsBaseReferenceValue {
      * may contain at most one class type.
      */
     override def upperTypeBound: UIDSet[ObjectType]
+
+    final override def isArrayValue: Answer = No
 
     assert(upperTypeBound.size > 1)
 
@@ -708,6 +728,8 @@ trait IsSReferenceValue[T <: ReferenceType] extends IsBaseReferenceValue {
 
 trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
 
+    final override def isArrayValue: Answer = No
+
     override def isValueASubtypeOf(
         supertype: ReferenceType
     )(
@@ -787,6 +809,8 @@ case class AProperSObjectValue(
 }
 
 trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
+
+    final override def isArrayValue: Answer = isNull.negate // isNull is either "No" or "Unknown"
 
     override def isValueASubtypeOf(
         supertype: ReferenceType
@@ -1026,7 +1050,15 @@ case class AMultipleReferenceValue(
         leastUpperType: Option[ReferenceType] // None in case of "null"
 ) extends IsMultipleReferenceValue {
 
+    assert((isNull.isYes && leastUpperType.isEmpty) || (isNull.isNoOrUnknown && leastUpperType.isDefined))
     assert(baseValues.forall(_.getClass.getPackage.getName == ("org.opalj.value")))
+
+    final override def isArrayValue: Answer = {
+        leastUpperType match {
+            case Some(_: ArrayType) ⇒ isNull.negate // isNull is either No or unknown
+            case _                  ⇒ No
+        }
+    }
 
     override def toCanonicalForm: IsReferenceValue = this
     override def toString: String = {
