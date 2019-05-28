@@ -25,8 +25,7 @@ trait TasksManager {
         task:             QualifiedTask,
         eOptionP:         SomeEOptionP, // the current eOptionP to which the task is related
         dependees:        Traversable[SomeEOptionP], // the dependees of the eOptionP
-        currentDependers: Traversable[SomeEPK],
-        hint:             PropertyComputationHint   = DefaultPropertyComputation
+        currentDependers: Traversable[SomeEPK]
     ): Unit
 
     def push(
@@ -58,8 +57,7 @@ private[seq] final class LIFOTasksManager extends TasksManager {
         task:             QualifiedTask,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK],
-        hint:             PropertyComputationHint
+        currentDependers: Traversable[SomeEPK]
     ): Unit = {
         this.tasks.addFirst(task)
     }
@@ -103,8 +101,7 @@ private[seq] final class FIFOTasksManager extends TasksManager {
         task:             QualifiedTask,
         eOptionPs:        SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK],
-        hint:             PropertyComputationHint
+        currentDependers: Traversable[SomeEPK]
     ): Unit = {
         this.tasks.addLast(task)
     }
@@ -169,8 +166,7 @@ private[seq] final class ManyDirectDependenciesLastTasksManager
         task:             QualifiedTask,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK],
-        hint:             PropertyComputationHint
+        currentDependers: Traversable[SomeEPK]
     ): Unit = {
         val weight = Math.max(1, dependees.size) * Math.max(1, currentDependers.size)
         this.tasks.add(new WeightedQualifiedTask(task, weight))
@@ -218,8 +214,7 @@ private[seq] final class ManyDirectDependersLastTasksManager
         task:             QualifiedTask,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK],
-        hint:             PropertyComputationHint
+        currentDependers: Traversable[SomeEPK]
     ): Unit = {
         this.tasks.add(new WeightedQualifiedTask(task, currentDependers.size))
     }
@@ -263,12 +258,10 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         task:             QualifiedTask,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK],
-        hint:             PropertyComputationHint
+        currentDependers: Traversable[SomeEPK]
     ): Unit = {
         var weight = 0
         currentDependers foreach { epk ⇒ weight += ps.dependeesCount(epk) }
-        if (hint == CheapPropertyComputation) weight -= 1
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
@@ -313,8 +306,7 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksMana
         task:             QualifiedTask,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK],
-        hint:             PropertyComputationHint
+        currentDependers: Traversable[SomeEPK]
     ): Unit = {
         var weight = 0
         currentDependers foreach { epk ⇒
@@ -404,8 +396,7 @@ private[seq] final class AllDependeesTasksManager(
         task:             QualifiedTask,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK],
-        hint:             PropertyComputationHint
+        currentDependers: Traversable[SomeEPK]
     ): Unit = {
         var weight =
             if (forward) {
