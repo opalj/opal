@@ -14,6 +14,7 @@ import org.scalatest.Matchers
 
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.io.writeAndOpen
+import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.bi.TestResources
 import org.opalj.br.{TestSupport ⇒ BRTestSupport}
@@ -38,7 +39,7 @@ import org.opalj.ai.util.XHTML
  */
 abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec with Matchers {
 
-    private[this] implicit val logContext = GlobalLogContext
+    private[this] implicit val logContext: LogContext = GlobalLogContext
 
     type AnalyzedDomain <: Domain
 

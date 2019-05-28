@@ -45,7 +45,7 @@ trait OPALLogger {
  * ===Basic===
  * E.g., using the global context and the convenience methods.
  * {{{
- * implicit val logContext = org.opalj.log.GlobalContext
+ * implicit val logContext : LogContext = org.opalj.log.GlobalContext
  * OPALLogger.info("project", "the project is garbage collected")
  * }}}
  * or
@@ -55,7 +55,7 @@ trait OPALLogger {
  * ===Advanced===
  * Logging a message only once.
  * {{{
- * implicit val logContext = org.opalj.log.GlobalContext
+ * implicit val logContext : LogContext = org.opalj.log.GlobalContext
  * OPALLogger.logOnce(Warn("project configuration", "the method cannot be resolved"))
  * }}}
  *

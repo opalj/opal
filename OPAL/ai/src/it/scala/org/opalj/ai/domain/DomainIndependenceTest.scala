@@ -7,8 +7,10 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
-import org.opalj.br.Code
+
+import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
+import org.opalj.br.Code
 
 /**
  * This system test(suite) just loads a very large number of class files and performs
@@ -27,7 +29,7 @@ import org.opalj.log.GlobalLogContext
 @RunWith(classOf[JUnitRunner])
 class DomainIndependenceTest extends FlatSpec with Matchers {
 
-    private[this] implicit val logContext = GlobalLogContext
+    private[this] implicit val logContext: LogContext = GlobalLogContext
 
     // We use this domain for the comparison of the values; it has the same
     // expressive power as the other domains.

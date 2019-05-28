@@ -5,6 +5,7 @@ import scala.language.existentials
 
 import scala.collection.AbstractIterator
 
+import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.util.AnyToAnyThis
@@ -45,7 +46,7 @@ package object ai {
     final val FrameworkName = "OPAL Abstract Interpretation Framework"
 
     {
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         import OPALLogger.info
         try {
             assert(false) // <= tests whether assertions are on or off...

@@ -3,6 +3,7 @@ package org.opalj
 package de
 
 import org.opalj.log.OPALLogger
+import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.BasicLogMessage
 import org.opalj.bytecode.BytecodeProcessingFailedException
@@ -1023,7 +1024,7 @@ private object DependencyExtractor {
         if (!incompleteHandlingOfInvokedynamicWasLogged) this.synchronized {
             if (!incompleteHandlingOfInvokedynamicWasLogged) {
                 incompleteHandlingOfInvokedynamicWasLogged = true
-                implicit val logContext = GlobalLogContext
+                implicit val logContext: LogContext = GlobalLogContext
                 OPALLogger.log(BasicLogMessage(message = incompleteHandlingOfInvokedynamicMessage))
             }
         }

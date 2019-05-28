@@ -10,6 +10,7 @@ import java.util.Arrays
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
 
+import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.IntTrieSet
@@ -167,7 +168,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         join: (Facts, Facts) ⇒ Facts
     ): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
 
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
 
         val instructions = code.instructions
         val codeSize = instructions.length
@@ -263,7 +264,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         join: (Facts, Facts) ⇒ Facts
     ): (Array[Facts], /*init*/ Facts) = {
 
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
 
         val instructions = code.instructions
         val codeSize = instructions.length
