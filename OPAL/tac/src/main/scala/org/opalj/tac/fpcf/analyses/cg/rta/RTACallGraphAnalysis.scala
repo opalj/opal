@@ -38,7 +38,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class RTACallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends CallGraphAnalysis {
+) extends AbstractCallGraphAnalysis {
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
 
@@ -105,6 +105,7 @@ class RTACallGraphAnalysis private[analyses] (
             }
         }
 
+        // TODO: Document what happens here
         if (specializedDeclaringClassType.isObjectType) {
             val declType = specializedDeclaringClassType.asObjectType
 
@@ -185,5 +186,5 @@ object RTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(InstantiatedTypes)
 
-    override def initializeAnalysis(p: SomeProject): CallGraphAnalysis = new RTACallGraphAnalysis(p)
+    override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = new RTACallGraphAnalysis(p)
 }

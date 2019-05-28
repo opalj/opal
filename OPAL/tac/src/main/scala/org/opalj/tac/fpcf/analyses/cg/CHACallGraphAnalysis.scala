@@ -32,7 +32,7 @@ class CHAState(
  */
 class CHACallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends CallGraphAnalysis {
+) extends AbstractCallGraphAnalysis {
     override type State = CHAState
 
     override def handleImpreciseCall(
@@ -61,5 +61,5 @@ class CHACallGraphAnalysis private[analyses] (
 }
 
 object CHACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
-    override def initializeAnalysis(p: SomeProject): CallGraphAnalysis = new CHACallGraphAnalysis(p)
+    override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = new CHACallGraphAnalysis(p)
 }

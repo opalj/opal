@@ -56,12 +56,12 @@ import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
  */
 class AndersenStylePointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends ReachableMethodAnalysis with PointsToBasedAnalysis {
+) extends ReachableMethodAnalysis with AbstractPointsToBasedAnalysis[Entity] {
 
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        doProcessMethod(PointsToState(definedMethod, tacEP))
+        doProcessMethod(new PointsToState(definedMethod, tacEP))
     }
 
     private[this] def handleCall(
@@ -265,7 +265,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case PutStatic(pc, declaringClass, name, fieldType, UVar(_, defSites)) if fieldType.isObjectType ⇒
+            case PutStatic(pc, declaringClass, name, fieldType: ObjectType, UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
                     state.setOrUpdatePointsToSet(
@@ -275,7 +275,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case ReturnValue(_, value @ UVar(_, defSites)) if value.value.isReferenceValue ⇒
+            case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) ⇒
                 state.setOrUpdatePointsToSet(
                     state.method, currentPointsTo(state.method, defSites)
                 )
@@ -306,10 +306,11 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     state.setOrUpdatePointsToSet(depender, pointsTo.types)
                 }
 
-                if (isFinal)
-                    state.removePointsToDependee(eps.asInstanceOf[EPS[Entity, PointsTo]])
-                else
-                    state.updatePointsToDependee(eps.asInstanceOf[EPS[Entity, PointsTo]])
+                if (isFinal) {
+                    state.removePointsToDependee(eps.e)
+                } else {
+                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsTo]])
+                }
 
                 returnResult(state)
 

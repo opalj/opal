@@ -6,7 +6,7 @@ package cg
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.analyses.cg.pointsto.PointsToBasedCallGraphScheduler
+import org.opalj.tac.fpcf.analyses.cg.pointsto.PointsToBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethodsPointsToAnalysisScheduler
 
@@ -22,7 +22,7 @@ object PointsToCallGraphKey extends AbstractCallGraphKey {
         project: SomeProject
     ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
         List(
-            PointsToBasedCallGraphScheduler,
+            PointsToBasedCallGraphAnalysisScheduler,
             AndersenStylePointsToAnalysisScheduler,
             ConfiguredNativeMethodsPointsToAnalysisScheduler
         )

@@ -26,7 +26,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait CGState extends TACAIBasedAnalysisState {
-    // todo: merge in virtualcallsites
+
     def hasNonFinalCallSite: Boolean
 }
 
@@ -42,7 +42,7 @@ trait CGState extends TACAIBasedAnalysisState {
  *
  * @author Florian Kuebler
  */
-trait CallGraphAnalysis extends ReachableMethodAnalysis {
+trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     type State <: CGState
 
     def createInitialState(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): State
@@ -166,8 +166,9 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
     )(implicit state: State): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.method)
 
-        // if there are no virtual call-sites left, we can simply return the result
-        if (state.hasNonFinalCallSite || state.hasOpenDependencies)
+        // FIXME: This won't work for refinable TACs as state.hasNonFinalCallSite may return false
+        //  even if an update for the tac might add a non-final call site
+        if (state.hasNonFinalCallSite && state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(state)),
                 results
@@ -248,7 +249,7 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: State): Unit = {
-        // todo: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
+        // TODO: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
         val callerType = caller.definedMethod.classFile.thisType
 
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
@@ -336,7 +337,7 @@ trait CallGraphAnalysis extends ReachableMethodAnalysis {
                     calleesAndCallers
                 )
             case _: IsNullValue ⇒
-            // todo: do not ignore the implicit calls to NullPointerException.<init>
+            // TODO: do not ignore the implicit calls to NullPointerException.<init>
         }
     }
 }

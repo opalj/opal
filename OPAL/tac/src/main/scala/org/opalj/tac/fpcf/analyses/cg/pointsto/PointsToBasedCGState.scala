@@ -9,14 +9,9 @@ package pointsto
 import scala.collection.mutable
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToState
 import org.opalj.tac.fpcf.properties.TACAI
@@ -29,27 +24,16 @@ import org.opalj.tac.fpcf.properties.TACAI
 class PointsToBasedCGState(
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends CGState with AbstractPointsToState {
+) extends CGState with AbstractPointsToState[CallSiteT] {
+
     // maps a definition site to the ids of the potential (not yet resolved) objecttypes
     private[this] val _virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = mutable.Map.empty
-
-    // maps a defsite to the callsites for which it is being used
-    // this is only done if the defsite is used within a call and its points-to set is not final
-    private[this] val _defSitesToCallSites: mutable.Map[Entity, Set[CallSiteT]] = mutable.Map.empty
-    private[this] val _callSiteToDefSites: mutable.Map[CallSiteT, Set[Entity]] = mutable.Map.empty
-
-    // maps a defsite to its result in the property store for the points-to set
-    private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
-
-    def virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = {
-        _virtualCallSites
-    }
 
     def typesForCallSite(callSite: CallSiteT): IntTrieSet = {
         _virtualCallSites(callSite)
     }
 
-    def initialPotentialTypesOfCallSite(
+    def setPotentialTypesOfCallSite(
         callSite: CallSiteT, potentialTypes: IntTrieSet
     ): Unit = {
         assert(!_virtualCallSites.contains(callSite))
@@ -57,83 +41,14 @@ class PointsToBasedCGState(
     }
 
     def removeTypeForCallSite(callSite: CallSiteT, instantiatedType: ObjectType): Unit = {
+        assert(_virtualCallSites(callSite).contains(instantiatedType.id))
         val typesLeft = _virtualCallSites(callSite) - instantiatedType.id
         if (typesLeft.isEmpty) {
             _virtualCallSites -= callSite
-            for (defSite ← _callSiteToDefSites(callSite)) {
-                val newCallSites = _defSitesToCallSites(defSite) - callSite
-                if (newCallSites.isEmpty)
-                    removePointsToDependency(defSite)
-                else
-                    _defSitesToCallSites(defSite) = newCallSites
-            }
-            _callSiteToDefSites.remove(callSite)
-            // todo here we should also remove all dependencies for this call-site
+            removePointsToDepender(callSite)
         } else {
             _virtualCallSites(callSite) = typesLeft
         }
-    }
-
-    override def getOrRetrievePointsToEPS(
-        dependee: Entity, ps: PropertyStore
-    ): EOptionP[Entity, PointsTo] = {
-        _pointsToDependees.getOrElse(dependee, ps(dependee, PointsTo.key))
-    }
-
-    def getPointsToEPS(dependee: Entity): EOptionP[Entity, PointsTo] = {
-        _pointsToDependees(dependee)
-    }
-
-    def updatePointsToDependency(eps: EPS[Entity, PointsTo]): Unit = {
-        assert(_pointsToDependees.contains(eps.e))
-        _pointsToDependees(eps.e) = eps
-    }
-
-    override def addPointsToDependency(
-        depender: Entity, pointsToSetEOptP: EOptionP[Entity, PointsTo]
-    ): Unit = {
-        val callSite = depender.asInstanceOf[CallSiteT]
-        val defSite = pointsToSetEOptP.e
-        assert((!_defSitesToCallSites.contains(defSite) &&
-            !_callSiteToDefSites.contains(callSite) && !_pointsToDependees.contains(defSite)) ||
-            (!_defSitesToCallSites(defSite).contains(callSite) &&
-                !_callSiteToDefSites(callSite).contains(defSite)))
-        _pointsToDependees(defSite) = pointsToSetEOptP
-        val oldCallSites = _defSitesToCallSites.getOrElse(defSite, Set.empty)
-        _defSitesToCallSites(defSite) = oldCallSites + callSite
-
-        val oldDefSites = _callSiteToDefSites.getOrElse(callSite, Set.empty)
-        _callSiteToDefSites(callSite) = oldDefSites + defSite
-    }
-
-    def removePointsToDependency(defSite: Entity): Unit = {
-        assert(_pointsToDependees.contains(defSite))
-        assert(_defSitesToCallSites.contains(defSite))
-        _pointsToDependees.remove(defSite)
-        for (callSite ← _defSitesToCallSites(defSite)) {
-            val newDefSites = _callSiteToDefSites(callSite) - defSite
-            if (newDefSites.isEmpty) {
-                _callSiteToDefSites.remove(callSite)
-            } else {
-                _callSiteToDefSites(callSite) = newDefSites
-            }
-        }
-        _defSitesToCallSites.remove(defSite)
-    }
-
-    override def hasOpenDependencies: Boolean = {
-        super.hasOpenDependencies || _tacDependee.isRefinable
-    }
-
-    override def dependees: List[SomeEOptionP] = {
-        // TODO: maybe use more efficient implementation (e.g. using an immutable map)
-        var allDependees = super.dependees
-        _pointsToDependees.valuesIterator.foreach(d ⇒ allDependees ::= d)
-        allDependees
-    }
-
-    def callSitesForDefSite(defSite: Entity): Traversable[CallSiteT] = {
-        _defSitesToCallSites.getOrElse(defSite, Traversable.empty) // TODO: ensure this is required
     }
 
     override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty

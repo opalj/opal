@@ -8,8 +8,7 @@ package pointsto
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.UBPS
+import org.opalj.fpcf.EOptionP
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
@@ -23,7 +22,7 @@ import org.opalj.tac.common.DefinitionSitesKey
  *
  * @author Florian Kuebler
  */
-trait PointsToBasedAnalysis extends FPCFAnalysis {
+trait AbstractPointsToBasedAnalysis[Depender] extends FPCFAnalysis {
 
     protected[this] val formalParameters: VirtualFormalParameters =
         p.get(VirtualFormalParametersKey)
@@ -41,12 +40,13 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
     }
 
     @inline protected[this] def currentPointsTo(
-        depender: Entity, dependeeDefSite: Int
-    )(implicit state: AbstractPointsToState): UIDSet[ObjectType] = {
+        depender: Depender, dependeeDefSite: Int
+    )(implicit state: AbstractPointsToState[Depender]): UIDSet[ObjectType] = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            UIDSet(ObjectType.Exception) // todo ask what exception has been thrown
+            // FIXME ask what exception has been thrown
+            UIDSet(ObjectType.Exception)
         } else if (ai.isImmediateVMException(dependeeDefSite)) {
-            // todo -  we need to get the actual exception type here
+            // FIXME -  we need to get the actual exception type here
             UIDSet(ObjectType.Exception)
         } else {
             currentPointsTo(depender, toEntity(dependeeDefSite))
@@ -54,26 +54,37 @@ trait PointsToBasedAnalysis extends FPCFAnalysis {
     }
 
     @inline protected[this] def currentPointsTo(
-        depender: Entity, dependee: Entity
-    )(implicit state: AbstractPointsToState): UIDSet[ObjectType] = {
-        val pointsToSetEOptP = state.getOrRetrievePointsToEPS(dependee, ps)
-        pointsToSetEOptP match {
-            case UBPS(pointsTo: PointsTo, isFinal) ⇒
-                if (!isFinal) state.addPointsToDependency(depender, pointsToSetEOptP)
-                pointsTo.types
+        depender: Depender, dependee: Entity
+    )(implicit state: AbstractPointsToState[Depender]): UIDSet[ObjectType] = {
+        if (state.hasPointsToDependee(dependee)) {
+            val p2s = state.getPointsToProperty(dependee)
 
-            case _: EPK[Entity, PointsTo] ⇒
-                state.addPointsToDependency(depender, pointsToSetEOptP)
-                UIDSet.empty
+            // It might be the case that there a dependency for that points-to state in the state
+            // from another depender.
+            if (!state.hasPointsToDependency(depender, dependee)) {
+                state.addPointsToDependency(depender, p2s)
+            }
+
+            pointsToUB(p2s)
+        } else {
+            val p2s = propertyStore(dependee, PointsTo.key)
+            if (p2s.isRefinable) {
+                state.addPointsToDependency(depender, p2s)
+            }
+            pointsToUB(p2s)
         }
     }
 
+    @inline private[this] def pointsToUB(eOptP: EOptionP[Entity, PointsTo]): UIDSet[ObjectType] = {
+        if (eOptP.hasUBP) eOptP.ub.types else UIDSet.empty
+    }
+
     @inline protected[this] def currentPointsTo(
-        depender: Entity,
+        depender: Depender,
         defSites: IntTrieSet
     )(
         implicit
-        state: AbstractPointsToState
+        state: AbstractPointsToState[Depender]
     ): UIDSet[ObjectType] = {
         defSites.foldLeft(UIDSet.empty[ObjectType]) { (pointsToSet, defSite) ⇒
             pointsToSet ++ currentPointsTo(depender, defSite)

@@ -26,7 +26,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 trait CallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
-    def initializeAnalysis(p: SomeProject): CallGraphAnalysis
+    def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
@@ -72,7 +72,7 @@ trait CallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
-    override def register(p: SomeProject, ps: PropertyStore, unused: Null): CallGraphAnalysis = {
+    override def register(p: SomeProject, ps: PropertyStore, unused: Null): AbstractCallGraphAnalysis = {
         val analysis = initializeAnalysis(p)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis

@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.cg.pointsto
 
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBPS
@@ -19,10 +19,11 @@ import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.Call
 import org.opalj.tac.VirtualCall
-import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysis
+import org.opalj.tac.fpcf.analyses.cg.AbstractCallGraphAnalysis
 import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.CallSiteT
 import org.opalj.tac.fpcf.analyses.cg.DirectCalls
-import org.opalj.tac.fpcf.analyses.pointsto.PointsToBasedAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 
 /**
  * Uses the [[org.opalj.br.fpcf.pointsto.properties.PointsTo]] of
@@ -31,9 +32,9 @@ import org.opalj.tac.fpcf.analyses.pointsto.PointsToBasedAnalysis
  *
  * @author Florian Kuebler
  */
-class PointsToBasedCallGraph private[analyses] (
+class PointsToBasedCallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends CallGraphAnalysis with PointsToBasedAnalysis {
+) extends AbstractCallGraphAnalysis with AbstractPointsToBasedAnalysis[CallSiteT] {
 
     override type State = PointsToBasedCGState
 
@@ -44,14 +45,17 @@ class PointsToBasedCallGraph private[analyses] (
      * type bounds for the receiver.
      */
     override def handleImpreciseCall(
-        caller: DefinedMethod,
-        call:   Call[V] with VirtualCall[V],
-        pc:     Int, specializedDeclaringClassType: ReferenceType,
-        potentialTargets:  ForeachRefIterator[ObjectType],
-        calleesAndCallers: DirectCalls
+        caller:                        DefinedMethod,
+        call:                          Call[V] with VirtualCall[V],
+        pc:                            Int,
+        specializedDeclaringClassType: ReferenceType,
+        potentialTargets:              ForeachRefIterator[ObjectType],
+        calleesAndCallers:             DirectCalls
     )(implicit state: PointsToBasedCGState): Unit = {
         val callerType = caller.definedMethod.classFile.thisType
         val callSite = (pc, call.name, call.descriptor, call.declaringClass)
+
+        // get the upper bound of the pointsToSet and creates a dependency if needed
         val pointsToSet = currentPointsTo(callSite, call.receiver.asVar.definedBy)
 
         var types = IntTrieSet.empty
@@ -77,7 +81,7 @@ class PointsToBasedCallGraph private[analyses] (
                 types += newType.id
             }
         }
-        state.initialPotentialTypesOfCallSite(callSite, types)
+        state.setPotentialTypesOfCallSite(callSite, types)
 
     }
 
@@ -85,14 +89,16 @@ class PointsToBasedCallGraph private[analyses] (
         state: PointsToBasedCGState
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case EUBPS(e, ub: PointsTo, isFinal) ⇒
-            val relevantCallSites = state.callSitesForDefSite(e)
+            val relevantCallSites = state.dependersOf(e)
 
             // ensures, that we only add new calls
             val calls = new DirectCalls()
 
+            val oldEOptP = state.getPointsToProperty(eps.e)
+            val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
+
+            // perform the update for the new types
             for (callSite ← relevantCallSites) {
-                val oldEOptP = state.getPointsToEPS(eps.e)
-                val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
                 val typesLeft = state.typesForCallSite(callSite)
                 for (newType ← ub.dropOldest(seenTypes)) {
                     if (typesLeft.contains(newType.id)) {
@@ -108,15 +114,19 @@ class PointsToBasedCallGraph private[analyses] (
                             state.method, name, descriptor, declaredType, pc, tgtR, calls
                         )
                     }
-
                 }
             }
 
-            if (isFinal) {
-                state.removePointsToDependency(e)
-            } else {
-                state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsTo]])
+            // removeTypesForCallSite might have made the dependency obsolete, so only update or
+            // remove it, if we still need updates for that type
+            if (state.hasPointsToDependee(eps.e)) {
+                if (isFinal) {
+                    state.removePointsToDependee(e)
+                } else {
+                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsTo]])
+                }
             }
+
             returnResult(calls)(state)
 
         case _ ⇒ super.c(state)(eps)
@@ -128,11 +138,11 @@ class PointsToBasedCallGraph private[analyses] (
 
 }
 
-object PointsToBasedCallGraphScheduler extends CallGraphAnalysisScheduler {
+object PointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(PointsTo)
 
-    override def initializeAnalysis(p: SomeProject): CallGraphAnalysis = {
-        new PointsToBasedCallGraph(p)
+    override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = {
+        new PointsToBasedCallGraphAnalysis(p)
     }
 }
