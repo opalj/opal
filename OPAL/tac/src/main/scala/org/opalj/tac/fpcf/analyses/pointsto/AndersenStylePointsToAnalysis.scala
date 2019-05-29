@@ -211,7 +211,6 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
             case Assignment(pc, targetVar, _: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
-
                 state.setOrUpdatePointsToSet(defSite, UIDSet.empty)
 
             case Assignment(_, DVar(av: IsSArrayValue, _), _) if av.theUpperTypeBound.elementType.isObjectType ⇒
