@@ -64,11 +64,13 @@ class AndersenStylePointsToAnalysis private[analyses] (
         doProcessMethod(new PointsToState(definedMethod, tacEP))
     }
 
+    // maps the points-to set of actual parameters (including *this*) the the formal parameters
     private[this] def handleCall(
         call: Call[DUVar[ValueInformation]], pc: Int
     )(implicit state: PointsToState): Unit = {
-        val targets = state.callees(ps).callees(pc)
-        for (target ← targets) {
+        val tac = state.tac
+        val callees = state.callees(ps)
+        for (target ← callees.directCallees(pc)) {
             val fps = formalParameters(target)
 
             if (fps != null) {
@@ -77,18 +79,61 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 if (receiverOpt.isDefined) {
                     val fp = fps(0)
                     state.setOrUpdatePointsToSet(
-                        fp,
-                        currentPointsTo(fp, receiverOpt.get.asVar.definedBy)
+                        fp, currentPointsTo(fp, receiverOpt.get.asVar.definedBy)
                     )
                 }
 
-                // handle params
-                for (i ← 0 until target.descriptor.parametersCount) {
-                    val fp = fps(i + 1)
+                // in case of signature polymorphic methods, we give up
+                if (call.params.size == target.descriptor.parametersCount) {
+                    // handle params
+                    for (i ← 0 until target.descriptor.parametersCount) {
+                        val fp = fps(i + 1)
+                        state.setOrUpdatePointsToSet(
+                            fp, currentPointsTo(fp, call.params(i).asVar.definedBy)
+                        )
+                    }
+                } else {
+                    // todo: it should not be needed to mark it as incomplete
+                }
+            } else {
+                state.addIncompletePointsToInfo(pc)
+            }
+        }
+
+        // todo: reduce code duplication
+        for (target ← callees.indirectCallees(pc)) {
+            val fps = formalParameters(target)
+
+            if (fps != null) {
+
+                // handle receiver for non static methods
+                val receiverOpt = callees.indirectCallReceiver(pc, target)
+                if (receiverOpt.isDefined) {
+                    val fp = fps(0)
                     state.setOrUpdatePointsToSet(
                         fp,
-                        currentPointsTo(fp, call.params(i).asVar.definedBy)
+                        currentPointsTo(
+                            fp, valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
+                        )
                     )
+                } else {
+                    // todo: distinguish between static methods and unavailable info
+                }
+
+                val indirectParams = callees.indirectCallParameters(pc, target)
+                for (i ← 0 until target.descriptor.parametersCount) {
+                    val fp = fps(i + 1)
+                    val indirectParam = indirectParams(i)
+                    if (indirectParam.isDefined) {
+                        state.setOrUpdatePointsToSet(
+                            fp,
+                            currentPointsTo(
+                                fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+                            )
+                        )
+                    } else {
+                        state.addIncompletePointsToInfo(pc)
+                    }
                 }
             } else {
                 state.addIncompletePointsToInfo(pc)
@@ -148,6 +193,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     currentPointsTo(defSiteObject, arrayBaseType)
                 )
 
+            // TODO: Use handleCall here
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
                 val targets = state.callees(ps).callees(pc)
                 val defSiteObject = definitionSites(method, pc)
@@ -161,76 +207,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                     state.setOrUpdatePointsToSet(defSiteObject, pointsToSet)
                 }
 
-                val callees = state.callees(ps)
-                for (target ← callees.directCallees(pc)) {
-                    val fps = formalParameters(target)
-
-                    if (fps != null) {
-                        val receiverOpt = call.receiverOption
-                        // handle receiver for non static methods
-                        if (receiverOpt.isDefined) {
-                            val fp = fps(0)
-                            state.setOrUpdatePointsToSet(
-                                fp, currentPointsTo(fp, receiverOpt.get.asVar.definedBy)
-                            )
-                        }
-
-                        // in case of signature polymorphic methods, we give up
-                        if (call.params.size == target.descriptor.parametersCount) {
-                            // handle params
-                            for (i ← 0 until target.descriptor.parametersCount) {
-                                val fp = fps(i + 1)
-                                state.setOrUpdatePointsToSet(
-                                    fp, currentPointsTo(fp, call.params(i).asVar.definedBy)
-                                )
-                            }
-                        } else {
-                            // todo: it should not be needed to mark it as incomplete
-                        }
-                    } else {
-                        state.addIncompletePointsToInfo(pc)
-                    }
-                }
-
-                // todo: reduce code duplication
-                for (target ← callees.indirectCallees(pc)) {
-                    val fps = formalParameters(target)
-
-                    if (fps != null) {
-
-                        // handle receiver for non static methods
-                        val receiverOpt = callees.indirectCallReceiver(pc, target)
-                        if (receiverOpt.isDefined) {
-                            val fp = fps(0)
-                            state.setOrUpdatePointsToSet(
-                                fp,
-                                currentPointsTo(
-                                    fp, valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
-                                )
-                            )
-                        } else {
-                            // todo: distinguish between static methods and unavailable info
-                        }
-
-                        val indirectParams = callees.indirectCallParameters(pc, target)
-                        for (i ← 0 until target.descriptor.parametersCount) {
-                            val fp = fps(i + 1)
-                            val indirectParam = indirectParams(i)
-                            if (indirectParam.isDefined) {
-                                state.setOrUpdatePointsToSet(
-                                    fp,
-                                    currentPointsTo(
-                                        fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
-                                    )
-                                )
-                            } else {
-                                state.addIncompletePointsToInfo(pc)
-                            }
-                        }
-                    } else {
-                        state.addIncompletePointsToInfo(pc)
-                    }
-                }
+                handleCall(call, pc)
 
             case Assignment(pc, targetVar, _: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
