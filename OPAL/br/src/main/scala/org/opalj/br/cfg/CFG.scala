@@ -9,6 +9,8 @@ import java.util.Arrays
 
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.AbstractIterator
+
+import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.IntTrieSet
@@ -16,6 +18,7 @@ import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.mutable.FixedSizedHashIDMap
 import org.opalj.collection.mutable.IntArrayStack
 import org.opalj.graphs.DefaultMutableNode
+import org.opalj.graphs.DominatorTree
 import org.opalj.graphs.Node
 
 /**
@@ -165,7 +168,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         join: (Facts, Facts) ⇒ Facts
     ): (Array[Facts], /*normal return*/ Facts, /*abnormal return*/ Facts) = {
 
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
 
         val instructions = code.instructions
         val codeSize = instructions.length
@@ -261,7 +264,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         join: (Facts, Facts) ⇒ Facts
     ): (Array[Facts], /*init*/ Facts) = {
 
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
 
         val instructions = code.instructions
         val codeSize = instructions.length
@@ -542,6 +545,21 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         } else {
             f(code.pcOfPreviousInstruction(pc))
         }
+    }
+
+    /**
+     * @return Returns the dominator tree of this CFG.
+     *
+     * @see [[DominatorTree.apply]]
+     */
+    def dominatorTree: DominatorTree = {
+        DominatorTree(
+            0,
+            basicBlocks.head.predecessors.nonEmpty,
+            foreachSuccessor,
+            foreachPredecessor,
+            basicBlocks.last.endPC
+        )
     }
 
     /**

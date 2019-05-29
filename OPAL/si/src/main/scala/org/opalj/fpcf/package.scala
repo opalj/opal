@@ -120,7 +120,7 @@ package object fpcf {
      */
     final type Continuation[P <: Property] = (Entity, P) ⇒ PropertyComputationResult
 
-    final type SomeContinuation = Continuation[_ <: Property]
+    // final type SomeContinuation = Continuation[_ <: Property]
 
     final type SomePropertyKey = PropertyKey[_ <: Property]
 

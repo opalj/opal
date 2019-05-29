@@ -85,6 +85,21 @@ object LoadLocalVariableInstruction {
     }
 
     /**
+     * Returns the `xLoad` instruction that puts value stored at the given index with
+     * the specified computational type on top of the stack.
+     */
+    def apply(computationalType: ComputationalType, lvIndex: Int): LoadLocalVariableInstruction = {
+        computationalType match {
+            case ComputationalTypeInt           ⇒ ILOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeFloat         ⇒ FLOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeLong          ⇒ LLOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeDouble        ⇒ DLOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeReference     ⇒ ALOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeReturnAddress ⇒ ALOAD.canonicalRepresentation(lvIndex)
+        }
+    }
+
+    /**
      * Extracts the computational type and index of the accessed local variable.
      */
     def unapply(li: LoadLocalVariableInstruction): Option[(ComputationalType, Int)] = {

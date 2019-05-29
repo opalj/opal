@@ -48,6 +48,7 @@ import org.opalj.br.instructions._
  * is encountered. It also does not perform any significant control-/data-flow analyses.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
 class L0PurityAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
 
@@ -261,7 +262,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         // All parameters either have to be base types or have to be immutable.
         // IMPROVE Use plain object type once we use ObjectType in the store!
-        var referenceTypes = method.parameterTypes.iterator.collect[ObjectType] {
+        var referenceTypedParameters = method.parameterTypes.iterator.collect[ObjectType] {
             case t: ObjectType ⇒ t
             case _: ArrayType  ⇒ return Result(definedMethod, ImpureByAnalysis);
         }
@@ -272,11 +273,11 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
             return Result(definedMethod, ImpureByAnalysis);
         }
         if (methodReturnType.isObjectType) {
-            referenceTypes ++= Iterator(methodReturnType.asObjectType)
+            referenceTypedParameters ++= Iterator(methodReturnType.asObjectType)
         }
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
-        referenceTypes foreach { e ⇒
+        referenceTypedParameters foreach { e ⇒
             propertyStore(e, TypeImmutability.key) match {
                 case FinalP(ImmutableType) ⇒ /*everything is Ok*/
                 case _: FinalEP[_, _] ⇒
@@ -313,7 +314,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
     def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
 
-        // If thhis is not the method's declaration, but a non-overwritten method in a subtype,
+        // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if (method.classFile.thisType ne definedMethod.declaringClassType)
             return baseMethodPurity(definedMethod);

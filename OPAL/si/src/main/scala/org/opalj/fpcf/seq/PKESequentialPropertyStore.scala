@@ -392,6 +392,7 @@ final class PKESequentialPropertyStore protected (
             theDependers.foreach { dependersOfEPK ⇒
                 dependersOfEPK foreach { cHint ⇒
                     val (dependerEPK, (c, hint)) = cHint
+                    if (hint == CheapPropertyComputation) println("hint not used")
                     if (isFinal || !suppressInterimUpdates(dependerEPK.pk.id)(pkId)) {
                         val t: QualifiedTask =
                             if (isFinal) {
@@ -399,7 +400,7 @@ final class PKESequentialPropertyStore protected (
                             } else {
                                 new OnUpdateComputationTask(this, eps.toEPK, c)
                             }
-                        tasksManager.push(t, eps, newDependees, dependersOfEPK.keys, hint)
+                        tasksManager.push(t, eps, newDependees, dependersOfEPK.keys)
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {

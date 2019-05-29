@@ -35,6 +35,14 @@ object MavenPublishing {
             <id>reif</id>
             <name>Michael Reif</name>
         </developer>
+        <developer>
+            <id>errt</id>
+            <name>Dominik Helm</name>
+        </developer>        
+        <developer>
+          <id>kuebler</id>
+          <name>Florian Kübler</name>
+        </developer>                
     </developers>
   }
 

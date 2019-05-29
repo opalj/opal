@@ -52,8 +52,13 @@ final class VirtualFormalParameter(val method: DeclaredMethod, val origin: Int) 
 
 object VirtualFormalParameter {
 
-    def apply(method: DeclaredMethod, origin: Int): VirtualFormalParameter = new VirtualFormalParameter(method, origin)
+    def apply(method: DeclaredMethod, origin: Int): VirtualFormalParameter = {
+        new VirtualFormalParameter(method, origin)
+    }
 
-    def unapply(fp: VirtualFormalParameter): Some[(DeclaredMethod, Int)] = Some((fp.method, fp.origin))
+    // TODO Using RefIntPair to avoid (un)boxing.
+    def unapply(fp: VirtualFormalParameter): Some[(DeclaredMethod, Int)] = {
+        Some((fp.method, fp.origin))
+    }
 
 }

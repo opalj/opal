@@ -5,6 +5,7 @@ package bc
 import java.io.File
 
 import org.opalj.io.write
+import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.da._
@@ -16,7 +17,7 @@ import org.opalj.da._
  */
 object MethodFilter {
 
-    implicit val logContext = GlobalLogContext
+    implicit val logContext: LogContext = GlobalLogContext
 
     private final val Usage =
         "Usage: java …MethodFilter \n"+
@@ -26,7 +27,6 @@ object MethodFilter {
             "Example:\n\tjava …Disassembler /Library/jre/lib/rt.jar java/util/ArrayList +toString"
 
     def main(args: Array[String]): Unit = {
-
         if (args.length != 3) {
             println(Usage)
             sys.exit(-1)

@@ -1118,6 +1118,16 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
                 Some(classHierarchy.joinReferenceTypesUntilSingleUpperBound(upperTypeBound))
         }
 
+        final override def isArrayValue: Answer = {
+            // Please recall that the upperTypeBound contains exactly one value if the value
+            // may be an ArrayValue. (There are no union types related to array values.)
+            isNull match {
+                case Yes     ⇒ No
+                case Unknown ⇒ if (upperTypeBound.head.isArrayType) Unknown else No
+                case No      ⇒ if (upperTypeBound.head.isArrayType) Yes else No
+            }
+        }
+
         override def baseValues: Traversable[DomainSingleOriginReferenceValue] = values
 
         override def allValues: Traversable[DomainSingleOriginReferenceValue] = values

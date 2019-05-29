@@ -131,7 +131,12 @@ lazy val `OPAL` = (project in file("."))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(hermes, hermes_ui, validate, demos, incubation,tools)
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(
+      hermes,
+      validate,
+      demos,
+      tools
+    )
   )
   .aggregate(
     common,
@@ -149,10 +154,8 @@ lazy val `OPAL` = (project in file("."))
     //  bp, (just temporarily...)
     tools,
     hermes,
-    hermes_ui, // Not deployed to maven central
     validate, // Not deployed to maven central
-    demos, // Not deployed to maven central
-    incubation // Not deployed to maven central
+    demos // Not deployed to maven central
   )
 
 /*******************************************************************************
@@ -402,38 +405,6 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
     fork in run := true
   )
   .dependsOn(framework)
-  .configs(IntegrationTest)
-
-lazy val hermes_ui = `HermesUI`
-lazy val `HermesUI` = (project in file("TOOLS/hermes_ui"))
-  .settings(buildSettings: _*)
-  .enablePlugins(JavaFxPlugin)
-  .settings(
-    name := "Hermes UI",
-    javaFxMainClass := "org.opalj.hermes.Hermes",
-    publishArtifact := false,
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Hermes UI"),
-    libraryDependencies ++= Dependencies.hermesJFXUI,
-    fork in run := true
-  )
-  .dependsOn(hermes % "it->it;it->test;test->test;compile->compile")
-  .configs(IntegrationTest)
-
-lazy val incubation = `Incubation`
-lazy val `Incubation` = (project in file("OPAL/incubation"))
-  .settings(buildSettings: _*)
-  .settings(
-    name := "Incubation",
-    publishArtifact := false,
-    // INCUBATION CODE IS NEVER EVEN CONSIDERED TO BE ALPHA QUALITY
-    version := "ALWAYS-SNAPSHOT",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("Incubation"),
-    fork in run := true
-  )
-  .dependsOn(
-    av % "it->it;it->test;test->test;compile->compile",
-    ba % "it->it;it->test;test->test;compile->compile"
-  )
   .configs(IntegrationTest)
 
 /* ***************************************************************************

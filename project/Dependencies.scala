@@ -20,13 +20,10 @@ object Dependencies {
     val ficus = "1.4.5"
     val commonstext = "1.6"
     val txtmark = "0.16"
-    val jacksonDF = "2.9.8"
+    val jacksonDF = "2.9.9"
     val fastutil = "8.2.2"
-    val chocosolver = "4.10.0"
 
     val openjfx = "12.0.1"
-    val controlsfx = "11.0.0"
-    val scalafx = "12.0.1-R17"
   }
 
   object library {
@@ -49,27 +46,14 @@ object Dependencies {
     val scalaparsercombinators = "org.scala-lang.modules" %% "scala-parser-combinators" % version.scalaparsercombinators
     val txtmark = "es.nitaur.markdown"                    % "txtmark"                   % version.txtmark withSources () withJavadoc ()
     val jacksonDF = "com.fasterxml.jackson.dataformat"    % "jackson-dataformat-csv"    % version.jacksonDF withSources () withJavadoc ()
-    val chocosolver = "org.choco-solver"                  % "choco-solver"              % version.chocosolver withSources () withJavadoc ()
     val fastutil = "it.unimi.dsi"                         % "fastutil"                  % version.fastutil withSources () withJavadoc ()
     val javafxBase = "org.openjfx" % "javafx-base" % version.openjfx classifier osName
 
-    val javafxUI = Seq(
-      "controls",
-      "fxml",
-      "graphics",
-      "media",
-      "swing",
-      "web"
-    ).map(m ⇒ "org.openjfx" % s"javafx-$m" % version.openjfx classifier osName)
-    val scalafx = "org.scalafx"       %% "scalafx"   % version.scalafx withSources () withJavadoc ()
-    val controlsfx = "org.controlsfx" % "controlsfx" % version.controlsfx withSources () withJavadoc ()
-
-    // --- test libraries
+    // --- test related dependencies
 
     val junit = "junit"               % "junit"       % version.junit      % "test,it"
     val scalatest = "org.scalatest"   %% "scalatest"  % version.scalatest  % "test,it"
     val scalacheck = "org.scalacheck" %% "scalacheck" % version.scalacheck % "test,it"
-
   }
 
   import library._
@@ -82,7 +66,6 @@ object Dependencies {
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
   val tools = Seq(txtmark, jacksonDF)
-  val hermes = Seq(txtmark, jacksonDF, chocosolver, javafxBase)
-  val hermesJFXUI = /* hermes ++: */ scalafx +: controlsfx +: javafxUI 
+  val hermes = Seq(txtmark, jacksonDF, javafxBase)
 
 }

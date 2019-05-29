@@ -1699,7 +1699,7 @@ object Project {
         projectFile: File,
         libraryFile: File
     ): Project[URL] = {
-        implicit val logContext = GlobalLogContext
+        implicit val logContext: LogContext = GlobalLogContext
         val libraries: Traversable[(ClassFile, URL)] =
             if (!libraryFile.exists) {
                 OPALLogger.error("project configuration", s"$libraryFile does not exist")

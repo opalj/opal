@@ -37,7 +37,7 @@ case object Info extends Level {
 
     def id: String = "info"
 
-    def value: Int = 0
+    final val value: Int = 0
 }
 /**
  * Factory for warn level log messages.
@@ -56,7 +56,7 @@ case object Warn extends Level {
 
     def id: String = "warn"
 
-    def value: Int = 1000
+    final val value: Int = 1000
 }
 
 /**
@@ -89,7 +89,7 @@ case object Error extends Level {
 
     def id: String = "error"
 
-    def value: Int = Int.MaxValue - 1000
+    final val value: Int = Int.MaxValue - 1000
 }
 
 case object Fatal extends Level {
@@ -104,5 +104,5 @@ case object Fatal extends Level {
 
     def id: String = "fatal"
 
-    def value: Int = Int.MaxValue
+    final val value: Int = Int.MaxValue
 }
