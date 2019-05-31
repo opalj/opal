@@ -1,8 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.rta.{InstantiatedTypesAnalysisScheduler, RTACallGraphAnalysisScheduler}
+import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.

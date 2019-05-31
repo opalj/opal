@@ -1,13 +1,26 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.callgraph
+package org.opalj
+package fpcf
+package properties
+package callgraph
 
-import org.opalj.br.analyses.{DeclaredMethods, DeclaredMethodsKey, Project}
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ArrayValue
+import org.opalj.br.ClassValue
+import org.opalj.br.DefinedMethod
+import org.opalj.br.ElementValue
+import org.opalj.br.ElementValuePair
+import org.opalj.br.FieldType
+import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.br.StringValue
+import org.opalj.br.VoidType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.{AnnotationLike, ArrayValue, ClassValue, DefinedMethod, ElementValue, ElementValuePair, FieldType, MethodDescriptor, ObjectType, StringValue, VoidType}
 import org.opalj.collection.immutable.RefArray
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
-import org.opalj.fpcf.{Property, PropertyStore}
 
 class DirectCallMatcher extends AbstractPropertyMatcher {
 
@@ -67,7 +80,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         // If the list of specified analyses is empty, we assume the annotation applies to all
         // call graph algorithms, so we don't exit early.
         if (analyses.nonEmpty && !analyses.exists(as.contains))
-            return None
+            return None;
 
         implicit val ps: PropertyStore = p.get(PropertyStoreKey)
         implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
