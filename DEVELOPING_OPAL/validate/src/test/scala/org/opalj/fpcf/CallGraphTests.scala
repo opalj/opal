@@ -5,6 +5,8 @@ package fpcf
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
@@ -19,10 +21,14 @@ class CallGraphTests extends PropertiesTest {
     override def createConfig(): Config = {
         val baseConfig = super.createConfig()
         // For these tests, we want to restrict entry points to "main" methods.
+        // Also, no types should be instantiated by default.
         baseConfig.withValue(
             InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
-        )
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
+            )
     }
 
     describe("the RTA call graph analysis is executed") {

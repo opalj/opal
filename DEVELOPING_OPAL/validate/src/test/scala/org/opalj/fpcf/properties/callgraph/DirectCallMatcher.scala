@@ -88,13 +88,13 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         val calleesP = {
             properties.find(_.isInstanceOf[Callees]) match {
                 case Some(property) ⇒ property.asInstanceOf[Callees]
-                case None           ⇒ return Some("Callees property is missing.")
+                case None           ⇒ return Some("Callees property is missing.");
             }
         }
 
         val callsiteCode = entity.asInstanceOf[DefinedMethod].definedMethod.body match {
             case Some(code) ⇒ code
-            case None       ⇒ return Some("Code of call site is not available.")
+            case None       ⇒ return Some("Code of call site is not available.");
         }
 
         // Retrieve all calls resolved by the call graph algorithm.
