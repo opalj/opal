@@ -233,11 +233,11 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
             case PutField(pc, declaringClass, name, fieldType: ObjectType, _, UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined)
+                if (fieldOpt.isDefined) {
                     state.setOrUpdatePointsToSet(
                         fieldOpt.get, currentPointsTo(fieldOpt.get, defSites)
                     )
-                else {
+                } else {
                     state.addIncompletePointsToInfo(pc)
                 }
 
