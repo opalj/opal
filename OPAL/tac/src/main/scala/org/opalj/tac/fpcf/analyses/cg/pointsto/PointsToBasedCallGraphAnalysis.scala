@@ -117,8 +117,8 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
                 }
             }
 
-            // removeTypesForCallSite might have made the dependency obsolete, so only update or
-            // remove it, if we still need updates for that type
+            // The method removeTypesForCallSite might have made the dependency obsolete, so only
+            // update or remove it, if we still need updates for that type.
             if (state.hasPointsToDependee(eps.e)) {
                 if (isFinal) {
                     state.removePointsToDependee(e)
