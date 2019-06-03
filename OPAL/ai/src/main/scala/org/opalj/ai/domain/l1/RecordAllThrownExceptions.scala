@@ -5,6 +5,7 @@ package domain
 package l1
 
 import scala.collection.Set
+import scala.collection.immutable.{Set ⇒ ImmutableSet}
 
 /**
  * Records '''all''' exception values thrown by a method. I.e., for each instruction that
@@ -23,7 +24,7 @@ trait RecordAllThrownExceptions extends domain.RecordThrownExceptions {
     ): ThrownException = {
         value match {
             case DomainMultipleReferenceValuesTag(value)   ⇒ value.values
-            case DomainSingleOriginReferenceValueTag(sorv) ⇒ Set.empty + sorv
+            case DomainSingleOriginReferenceValueTag(sorv) ⇒ ImmutableSet.empty + sorv
         }
     }
 
