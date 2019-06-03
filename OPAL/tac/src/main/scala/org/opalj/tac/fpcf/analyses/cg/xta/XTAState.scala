@@ -6,18 +6,18 @@ package analyses
 package cg
 package xta
 
-import scala.collection.mutable
-
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Property
 import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Property
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.collection.mutable
 
 /**
  * Manages the state used by the [[XTACallGraphAnalysis]].
@@ -27,11 +27,25 @@ import org.opalj.tac.fpcf.properties.TACAI
 class XTAState(
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
-        // TODO SomeProject --> DefinedMethod
-        private[this] var _instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
-// TODO: dependency to InstantiatedTypes of fields it reads --> update own set on update
-// TODO: store fields it writes --> update types when own types receive an update
-// TODO: store methods it calls --> bi-directional dataflow
+        // TODO A.B.: is that even a dependee?? we build this ourselves per-method!
+        // maybe if other analyses update this, it is one? E.g. InstantiatedTypesAnalysis due to constructors
+        private[this] var _ownInstantiatedTypesDependee: EOptionP[DefinedMethod, InstantiatedTypes],
+
+        // dependees for callees ...
+        // we need these to find potential new data flows
+        // TODO A.B. I'm quite sure we only need callees
+
+        // TODO A.B. Can this depencency become final?
+        // TODO A.B. Maybe only if there are no possible additional virtual call sites?
+        private[this] var _calleeDependee: EOptionP[DefinedMethod, Callees],
+
+        // TODO A.B. These should be removed once they're final, right?
+        // TODO A.B. Can they become final? Probably not!
+        private[this] var _calleeInstantiatedTypesDependees:
+            Map[DefinedMethod, EOptionP[DefinedMethod, InstantiatedTypes]],
+
+        // TODO A.B.: dependency to InstantiatedTypes of fields it reads --> update own set on update
+        // TODO A.B.: store fields it writes --> update types when own types receive an update
 ) extends CGState {
     private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSiteT]] = mutable.LongMap.empty
 
@@ -41,31 +55,43 @@ class XTAState(
     //                                         //
     /////////////////////////////////////////////
 
-    def updateInstantiatedTypesDependee(
-        instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
+    // NOTE A.B. "own instantiated types": is the method's set of available
+
+    def updateOwnInstantiatedTypesDependee(
+        ownInstantiatedTypesDependee: EOptionP[DefinedMethod, InstantiatedTypes]
     ): Unit = {
-        _instantiatedTypesDependee = instantiatedTypesDependee
+        _ownInstantiatedTypesDependee = ownInstantiatedTypesDependee
     }
 
-    def instantiatedTypesDependee(): Option[EOptionP[SomeProject, InstantiatedTypes]] = {
-        if (_instantiatedTypesDependee.isRefinable)
-            Some(_instantiatedTypesDependee)
+    def ownInstantiatedTypesDependee(): Option[EOptionP[DefinedMethod, InstantiatedTypes]] = {
+        if (_ownInstantiatedTypesDependee.isRefinable)
+            Some(_ownInstantiatedTypesDependee)
         else
             None
     }
 
-    def instantiatedTypesUB: UIDSet[ObjectType] = {
-        if (_instantiatedTypesDependee.hasUBP)
-            _instantiatedTypesDependee.ub.types
+    def ownInstantiatedTypesUB: UIDSet[ObjectType] = {
+        if (_ownInstantiatedTypesDependee.hasUBP)
+            _ownInstantiatedTypesDependee.ub.types
         else
             UIDSet.empty
     }
 
     def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ObjectType] = {
-        if (_instantiatedTypesDependee.hasUBP) {
-            _instantiatedTypesDependee.ub.dropOldest(seenTypes)
+        if (_ownInstantiatedTypesDependee.hasUBP) {
+            _ownInstantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {
             UIDSet.empty
+        }
+    }
+
+    // Callee stuff
+
+    def calleeDependee(): Option[EOptionP[DefinedMethod, Callees]] = {
+        if (_calleeDependee.isRefinable) {
+            Some(_calleeDependee)
+        } else {
+            None
         }
     }
 
@@ -101,13 +127,23 @@ class XTAState(
     /////////////////////////////////////////////
 
     override def hasOpenDependencies: Boolean = {
-        _instantiatedTypesDependee.isRefinable || super.hasOpenDependencies
+        super.hasOpenDependencies ||
+          _ownInstantiatedTypesDependee.isRefinable ||
+          _calleeInstantiatedTypesDependees.nonEmpty
     }
 
     override def dependees: List[EOptionP[Entity, Property]] = {
-        if (instantiatedTypesDependee().isDefined)
-            instantiatedTypesDependee().get :: super.dependees
-        else
-            super.dependees
+        var dependees = super.dependees
+
+        if (ownInstantiatedTypesDependee().isDefined)
+            dependees ::= ownInstantiatedTypesDependee().get
+
+        if (calleeDependee().isDefined)
+            dependees ::= calleeDependee().get
+
+        if (_calleeInstantiatedTypesDependees.nonEmpty)
+            dependees ++= _calleeInstantiatedTypesDependees.values
+
+        dependees
     }
 }

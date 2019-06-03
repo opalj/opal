@@ -70,7 +70,7 @@ class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) 
 
         val instantiatedTypes = code.instructions.flatMap({
             case NEW(declType) ⇒ Some(declType)
-            case _ ⇒ None
+            case _             ⇒ None
         })
 
         if (instantiatedTypes.isEmpty) {
