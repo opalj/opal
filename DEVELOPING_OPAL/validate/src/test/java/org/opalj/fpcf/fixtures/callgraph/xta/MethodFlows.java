@@ -2,9 +2,6 @@
 package org.opalj.fpcf.fixtures.callgraph.xta;
 
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;
-import org.opalj.fpcf.properties.callgraph.DirectCall;
-import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysis;
-import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis;
 
 /**
  * Testing type data flow between methods for XTA.
