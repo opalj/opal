@@ -5,8 +5,6 @@ package fpcf
 package pointsto
 package properties
 
-import scala.collection.Set
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -28,10 +26,10 @@ sealed trait PointsToPropertyMetaInformation extends PropertyMetaInformation {
 }
 
 case class PointsTo private[properties] (
-        private val orderedTypes: List[ObjectType],
-        types:                    UIDSet[ObjectType]
+    private val orderedTypes: List[ObjectType],
+    types:                    UIDSet[ObjectType]
 ) extends OrderedProperty
-    with PointsToPropertyMetaInformation {
+        with PointsToPropertyMetaInformation {
 
     assert(orderedTypes == null || orderedTypes.size == types.size)
 
@@ -45,7 +43,7 @@ case class PointsTo private[properties] (
         }
     }
 
-    def updated(newTypes: Set[ObjectType]): PointsTo = {
+    def updated(newTypes: TraversableOnce[ObjectType]): PointsTo = {
         var newOrderedTypes = orderedTypes
         var typesUnion = types
         for (t ← newTypes) {

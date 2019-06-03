@@ -37,7 +37,7 @@ sealed class LoadedClasses private[properties] (
         }
     }
 
-    def updated(newClasses: Set[ObjectType]): LoadedClasses = {
+    def updated(newClasses: TraversableOnce[ObjectType]): LoadedClasses = {
         var updatedOrderedClasses = orderedClasses
         var updatedClasses = classes
         for { c ← newClasses } {

@@ -5,7 +5,6 @@ package fpcf
 package cg
 package properties
 
-import scala.collection.Set
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
@@ -45,7 +44,7 @@ case class InstantiatedTypes private[properties] (
         }
     }
 
-    def updated(newTypes: Set[ObjectType]): InstantiatedTypes = {
+    def updated(newTypes: TraversableOnce[ObjectType]): InstantiatedTypes = {
         var newOrderedTypes = orderedTypes
         for { t ← newTypes if !types.contains(t) } {
             newOrderedTypes ::= t
