@@ -5,7 +5,6 @@ package fpcf
 package cg
 package properties
 
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -78,7 +77,7 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
         PropertyKey.create(
             name,
             (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoTypes
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoInstantiatedTypes
                 case _ ⇒
                     throw new IllegalStateException(s"No analysis is scheduled for property: $name")
             }
@@ -86,4 +85,4 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     }
 }
 
-object NoTypes extends InstantiatedTypes(List.empty, UIDSet.empty)
+object NoInstantiatedTypes extends InstantiatedTypes(List.empty, UIDSet.empty)

@@ -16,6 +16,7 @@ import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
@@ -30,17 +31,20 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.pointsto.properties.PointsTo
+import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.pointsto.properties.NoTypes
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
+ * It uses [[TypeBasedPointsToSet]] as points-to sets, i.e. does not differentiate allocation sites for
+ * the same types.
  * The analysis is field-based, array-based and context-insensitive.
  * As the analysis is build on top of the [[org.opalj.tac.TACAI]], it is (implicitly)
  * flow-sensitive (which is not the case for pure andersen-style).
@@ -54,20 +58,20 @@ import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
  *
  * @author Florian Kuebler
  */
-class AndersenStylePointsToAnalysis private[analyses] (
+class TypeBasedPointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends ReachableMethodAnalysis with AbstractPointsToBasedAnalysis[Entity] {
+) extends ReachableMethodAnalysis with AbstractPointsToBasedAnalysis[Entity, TypeBasedPointsToSet] {
 
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        doProcessMethod(new PointsToState(definedMethod, tacEP))
+        doProcessMethod(new TypeBasedPointsToState(definedMethod, tacEP))
     }
 
     // maps the points-to set of actual parameters (including *this*) the the formal parameters
     private[this] def handleCall(
         call: Call[DUVar[ValueInformation]], pc: Int
-    )(implicit state: PointsToState): Unit = {
+    )(implicit state: TypeBasedPointsToState): Unit = {
         val tac = state.tac
         val callees = state.callees(ps)
         for (target ← callees.directCallees(pc)) {
@@ -143,7 +147,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
     private[this] def doProcessMethod(
         implicit
-        state: PointsToState
+        state: TypeBasedPointsToState
     ): ProperPropertyComputationResult = {
         val tac = state.tac
         val method = state.method.definedMethod
@@ -199,19 +203,17 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 val defSiteObject = definitionSites(method, pc)
 
                 if (targetVar.value.isReferenceValue) {
-                    var pointsToSet = UIDSet.empty[ObjectType]
-                    for (target ← targets) {
-                        pointsToSet ++= currentPointsTo(defSiteObject, target)
-                    }
-
-                    state.setOrUpdatePointsToSet(defSiteObject, pointsToSet)
+                    state.setOrUpdatePointsToSet(
+                        defSiteObject,
+                        targets.map(currentPointsTo(defSiteObject, _))
+                    )
                 }
 
                 handleCall(call, pc)
 
             case Assignment(pc, targetVar, _: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(defSite, UIDSet.empty)
+                state.setOrUpdatePointsToSet(defSite, UIDSet.empty[ObjectType])
 
             case Assignment(_, DVar(av: IsSArrayValue, _), _) if av.theUpperTypeBound.elementType.isObjectType ⇒
                 throw new IllegalArgumentException(s"unexpected assignment: $stmt")
@@ -268,7 +270,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
      * The continuation function. It handles updates for the methods tac, callees and for points-to
      * sets.
      */
-    private[this] def c(state: PointsToState)(eps: SomeEPS): ProperPropertyComputationResult = {
+    private[this] def c(state: TypeBasedPointsToState)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
@@ -277,7 +279,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
             case UBP(_: TACAI) ⇒
                 InterimPartialResult(Some(eps), c(state))
 
-            case UBPS(pointsTo: PointsTo, isFinal) ⇒
+            case UBPS(pointsTo: TypeBasedPointsToSet, isFinal) ⇒
                 for (depender ← state.dependersOf(eps.e)) {
                     state.setOrUpdatePointsToSet(depender, pointsTo.types)
                 }
@@ -285,7 +287,7 @@ class AndersenStylePointsToAnalysis private[analyses] (
                 if (isFinal) {
                     state.removePointsToDependee(eps.e)
                 } else {
-                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsTo]])
+                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, TypeBasedPointsToSet]])
                 }
 
                 returnResult(state)
@@ -303,16 +305,16 @@ class AndersenStylePointsToAnalysis private[analyses] (
      */
     @inline private[this] def returnResult(
         implicit
-        state: PointsToState
+        state: TypeBasedPointsToState
     ): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
         if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
 
         for ((e, pointsToSet) ← state.pointsToSetsIterator) {
-            results += PartialResult[Entity, PointsTo](e, PointsTo.key, {
+            results += PartialResult[Entity, TypeBasedPointsToSet](e, TypeBasedPointsToSet.key, {
 
-                case _: EPK[Entity, PointsTo] ⇒
-                    Some(InterimEUBP(e, PointsTo(pointsToSet)))
+                case _: EPK[Entity, TypeBasedPointsToSet] ⇒
+                    Some(InterimEUBP(e, TypeBasedPointsToSet(pointsToSet)))
 
                 case UBP(ub) ⇒
                     // IMPROVE: only process new Types
@@ -328,6 +330,12 @@ class AndersenStylePointsToAnalysis private[analyses] (
 
         Results(results)
     }
+
+    override protected[this] val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
+        TypeBasedPointsToSet.key
+    }
+
+    override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 }
 
 object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
@@ -336,11 +344,11 @@ object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisSched
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
         Callees,
-        PointsTo,
+        TypeBasedPointsToSet,
         TACAI
     )
 
-    override def derivesCollaboratively: Set[PropertyBounds] = Set(PropertyBounds.ub(PointsTo))
+    override def derivesCollaboratively: Set[PropertyBounds] = Set(PropertyBounds.ub(TypeBasedPointsToSet))
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
@@ -352,8 +360,8 @@ object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisSched
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
-    ): AndersenStylePointsToAnalysis = {
-        val analysis = new AndersenStylePointsToAnalysis(p)
+    ): TypeBasedPointsToAnalysis = {
+        val analysis = new TypeBasedPointsToAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis

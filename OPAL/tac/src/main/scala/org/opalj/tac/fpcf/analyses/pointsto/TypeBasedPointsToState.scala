@@ -22,18 +22,19 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.cg.properties.NoCallees
+import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Encapsulates the state of the analysis, analyzing a certain method using the
- * [[org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysis]].
+ * [[org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysis]].
  *
  * @author Florian Kuebler
  */
-class PointsToState(
+class TypeBasedPointsToState(
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends AbstractPointsToState[Entity] {
+) extends AbstractPointsToState[Entity, TypeBasedPointsToSet] {
 
     private[this] val _pointsToSets: mutable.Map[Entity, UIDSet[ObjectType]] = mutable.Map.empty
 
@@ -79,6 +80,16 @@ class PointsToState(
             _pointsToSets(e) = newPointsToSet
         } else {
             _pointsToSets(e) = pointsToSet
+        }
+    }
+
+    def setOrUpdatePointsToSet(e: Entity, pointsToSet: TypeBasedPointsToSet): Unit = {
+        setOrUpdatePointsToSet(e, pointsToSet.types)
+    }
+
+    def setOrUpdatePointsToSet(e: Entity, pointsToSets: Iterator[TypeBasedPointsToSet]): Unit = {
+        pointsToSets.foreach { pointsToSet ⇒
+            setOrUpdatePointsToSet(e, pointsToSet.types)
         }
     }
 

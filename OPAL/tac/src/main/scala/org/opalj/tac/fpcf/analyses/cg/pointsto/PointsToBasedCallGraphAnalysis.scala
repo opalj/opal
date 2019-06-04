@@ -8,13 +8,16 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.pointsto.properties.PointsTo
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.pointsto.properties.NoTypes
+import org.opalj.br.fpcf.pointsto.properties.PointsToSetLike
+import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.Call
@@ -26,7 +29,7 @@ import org.opalj.tac.fpcf.analyses.cg.DirectCalls
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 
 /**
- * Uses the [[org.opalj.br.fpcf.pointsto.properties.PointsTo]] of
+ * Uses the [[org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet]] of
  * [[org.opalj.tac.common.DefinitionSite]] and[[org.opalj.br.analyses.VirtualFormalParameter]]s
  * in order to determine the targets of virtual method calls.
  *
@@ -34,7 +37,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
  */
 class PointsToBasedCallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends AbstractCallGraphAnalysis with AbstractPointsToBasedAnalysis[CallSiteT] {
+) extends AbstractCallGraphAnalysis with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSetLike] {
 
     override type State = PointsToBasedCGState
 
@@ -88,7 +91,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
     override def c(
         state: PointsToBasedCGState
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBPS(e, ub: PointsTo, isFinal) ⇒
+        case EUBPS(e, ub: PointsToSetLike, isFinal) ⇒
             val relevantCallSites = state.dependersOf(e)
 
             // ensures, that we only add new calls
@@ -100,7 +103,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
             // perform the update for the new types
             for (callSite ← relevantCallSites) {
                 val typesLeft = state.typesForCallSite(callSite)
-                for (newType ← ub.dropOldest(seenTypes)) {
+                for (newType ← ub.dropOldestTypes(seenTypes)) {
                     if (typesLeft.contains(newType.id)) {
                         state.removeTypeForCallSite(callSite, newType)
                         val (pc, name, descriptor, declaredType) = callSite
@@ -123,7 +126,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
                 if (isFinal) {
                     state.removePointsToDependee(e)
                 } else {
-                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsTo]])
+                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSetLike]])
                 }
             }
 
@@ -136,11 +139,16 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): PointsToBasedCGState = new PointsToBasedCGState(definedMethod, tacEP)
 
+    override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSetLike] = {
+        TypeBasedPointsToSet.key
+    }
+
+    override protected def emptyPointsToSet: PointsToSetLike = NoTypes
 }
 
 object PointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(PointsTo)
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(TypeBasedPointsToSet)
 
     override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = {
         new PointsToBasedCallGraphAnalysis(p)

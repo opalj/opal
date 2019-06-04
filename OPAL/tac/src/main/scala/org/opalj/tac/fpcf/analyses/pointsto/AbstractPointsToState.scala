@@ -11,18 +11,21 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.br.fpcf.pointsto.properties.PointsTo
+import org.opalj.br.fpcf.pointsto.properties.PointsToSetLike
 
 /**
  * Interface for state classes of points-to based analyses that declares functionality to handle
- * dependencies of [[org.opalj.br.fpcf.pointsto.properties.PointsTo]] objects.
+ * dependencies of [[org.opalj.br.fpcf.pointsto.properties.PointsToSetLike]] objects.
  *
  * @author Florian Kuebler
  */
-trait AbstractPointsToState[Depender] extends TACAIBasedAnalysisState {
+trait AbstractPointsToState[Depender, PointsToSet <: PointsToSetLike]
+    extends TACAIBasedAnalysisState {
 
     // maps a defsite to its result in the property store for the points-to set
-    private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsTo]] = mutable.Map.empty
+    private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsToSet]] = {
+        mutable.Map.empty
+    }
 
     // We organize the dependencies to points-to states within a bijective mapping of
     // dependers (the use sites) and their dependees (the respective definition sites).
@@ -40,7 +43,7 @@ trait AbstractPointsToState[Depender] extends TACAIBasedAnalysisState {
 
     final def addPointsToDependency(
         depender: Depender,
-        dependee: EOptionP[Entity, PointsTo]
+        dependee: EOptionP[Entity, PointsToSet]
     ): Unit = {
         assert(
             !_dependeeToDependers.contains(dependee.e) ||
@@ -108,11 +111,11 @@ trait AbstractPointsToState[Depender] extends TACAIBasedAnalysisState {
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
     }
 
-    final def getPointsToProperty(dependee: Entity): EOptionP[Entity, PointsTo] = {
+    final def getPointsToProperty(dependee: Entity): EOptionP[Entity, PointsToSet] = {
         _pointsToDependees(dependee)
     }
 
-    final def updatePointsToDependency(eps: EPS[Entity, PointsTo]): Unit = {
+    final def updatePointsToDependency(eps: EPS[Entity, PointsToSet]): Unit = {
         assert(_pointsToDependees.contains(eps.e))
         _pointsToDependees(eps.e) = eps
     }
@@ -125,8 +128,8 @@ trait AbstractPointsToState[Depender] extends TACAIBasedAnalysisState {
 
     final def hasPointsToDependees: Boolean = {
         assert(
-            (_pointsToDependees.nonEmpty && _dependeeToDependers.nonEmpty && _dependerToDependees.nonEmpty) ||
-                (_pointsToDependees.isEmpty && _dependeeToDependers.isEmpty && _dependerToDependees.isEmpty)
+            (_pointsToDependees.isEmpty == _dependeeToDependers.isEmpty) &&
+                (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)
         )
         _pointsToDependees.nonEmpty
     }

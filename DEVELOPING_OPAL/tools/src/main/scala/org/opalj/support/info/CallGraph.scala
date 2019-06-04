@@ -15,7 +15,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.pointsto.properties.PointsTo
+import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
@@ -111,7 +111,7 @@ object CallGraph extends ProjectAnalysisApplication {
             manager.runAll(AndersenStylePointsToAnalysisScheduler)
         }
 
-        println(ps.entities(PointsTo.key).size)
+        println(ps.entities(TypeBasedPointsToSet.key).size)
 
         val reachableMethods = cg.reachableMethods().toTraversable
 

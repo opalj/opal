@@ -13,6 +13,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.pointsto.properties.PointsToSetLike
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToState
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -24,7 +25,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 class PointsToBasedCGState(
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends CGState with AbstractPointsToState[CallSiteT] {
+) extends CGState with AbstractPointsToState[CallSiteT, PointsToSetLike] {
 
     // maps a definition site to the ids of the potential (not yet resolved) objecttypes
     private[this] val _virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = mutable.Map.empty

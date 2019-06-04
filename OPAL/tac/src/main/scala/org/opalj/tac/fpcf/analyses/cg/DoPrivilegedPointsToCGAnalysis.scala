@@ -26,7 +26,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.pointsto.properties.PointsTo
+import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.Callers
@@ -39,7 +39,7 @@ import org.opalj.br.ObjectType
  * parameter and returns the result of this call.
  * This analysis manages the entries for [[org.opalj.br.fpcf.cg.properties.Callees]] and
  * [[org.opalj.br.fpcf.cg.properties.Callers]] as well as the
- * [[org.opalj.br.fpcf.pointsto.properties.PointsTo]] mappings.
+ * [[org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet]] mappings.
  *
  * TODO: This analysis is very specific to the points-to analysis. It should also work for the other
  * analyses.
@@ -62,7 +62,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         if (fps == null)
             return Results();
         val fp = fps(1)
-        val pointsToParam = ps(fp, PointsTo.key)
+        val pointsToParam = ps(fp, TypeBasedPointsToSet.key)
 
         Results(methodMapping(pointsToParam, 0))
     }
@@ -70,21 +70,21 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     def continuationForParameterValue(
         seenTypes: Int
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBP(_: VirtualFormalParameter, _: PointsTo) ⇒
-            methodMapping(eps.asInstanceOf[EPS[VirtualFormalParameter, PointsTo]], seenTypes)
+        case EUBP(_: VirtualFormalParameter, _: TypeBasedPointsToSet) ⇒
+            methodMapping(eps.asInstanceOf[EPS[VirtualFormalParameter, TypeBasedPointsToSet]], seenTypes)
         case _ ⇒
             throw new IllegalStateException(s"unexpected update $eps")
     }
 
     def methodMapping(
-        pointsTo: EOptionP[VirtualFormalParameter, PointsTo], seenTypes: Int
+        pointsTo: EOptionP[VirtualFormalParameter, TypeBasedPointsToSet], seenTypes: Int
     ): ProperPropertyComputationResult = {
 
         val calls = new DirectCalls()
         var results: List[ProperPropertyComputationResult] = Nil
 
         val newSeenTypes = if (pointsTo.hasUBP) {
-            for (t ← pointsTo.ub.dropOldest(seenTypes)) {
+            for (t ← pointsTo.ub.dropOldestTypes(seenTypes)) {
                 val callR = p.instanceCall(
                     sourceMethod.declaringClassType.asObjectType,
                     t,
@@ -99,19 +99,19 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                     // 2. The points-to set of *this* of the target method should contain all information
                     // from the points-to set of the first parameter of the source method.
                     val tgtThis = formalParameters(tgtMethod)(0)
-                    results ::= PartialResult[VirtualFormalParameter, PointsTo](tgtThis, PointsTo.key, {
-                        case UBP(ub: PointsTo) ⇒
+                    results ::= PartialResult[VirtualFormalParameter, TypeBasedPointsToSet](tgtThis, TypeBasedPointsToSet.key, {
+                        case UBP(ub: TypeBasedPointsToSet) ⇒
                             Some(InterimEUBP(
                                 tgtThis,
-                                ub.updated(pointsTo.ub.dropOldest(seenTypes))
+                                ub.updated(pointsTo.ub.dropOldestTypes(seenTypes))
                             ))
 
-                        case _: EPK[VirtualFormalParameter, PointsTo] ⇒
+                        case _: EPK[VirtualFormalParameter, TypeBasedPointsToSet] ⇒
                             Some(InterimEUBP(tgtThis, pointsTo.ub))
                     })
 
                     // 3. Map the return value back to the source method
-                    val returnPointsTo = ps(tgtMethod, PointsTo.key)
+                    val returnPointsTo = ps(tgtMethod, TypeBasedPointsToSet.key)
                     results ::= returnMapping(returnPointsTo, 0)
 
                 } else {
@@ -134,13 +134,13 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     }
 
     def returnMapping(
-        returnPointsTo: EOptionP[DeclaredMethod, PointsTo], numSeenTypes: Int
+        returnPointsTo: EOptionP[DeclaredMethod, TypeBasedPointsToSet], numSeenTypes: Int
     ): ProperPropertyComputationResult = {
         var results: List[ProperPropertyComputationResult] = Nil
         val newNumSeenTypes = if (returnPointsTo.hasUBP) {
-            results ::= PartialResult[DeclaredMethod, PointsTo](sourceMethod, PointsTo.key, {
-                case UBP(ub: PointsTo) ⇒
-                    Some(InterimEUBP(sourceMethod, ub.updated(returnPointsTo.ub.dropOldest(numSeenTypes))))
+            results ::= PartialResult[DeclaredMethod, TypeBasedPointsToSet](sourceMethod, TypeBasedPointsToSet.key, {
+                case UBP(ub: TypeBasedPointsToSet) ⇒
+                    Some(InterimEUBP(sourceMethod, ub.updated(returnPointsTo.ub.dropOldestTypes(numSeenTypes))))
 
                 case _: EPK[_, _] ⇒
                     Some(InterimEUBP(sourceMethod, returnPointsTo.ub))
@@ -163,8 +163,8 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         seenTypes: Int
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         // join the return values of all invoked methods
-        case EUBP(_: DeclaredMethod, _: PointsTo) ⇒
-            returnMapping(eps.asInstanceOf[EPS[DeclaredMethod, PointsTo]], seenTypes)
+        case EUBP(_: DeclaredMethod, _: TypeBasedPointsToSet) ⇒
+            returnMapping(eps.asInstanceOf[EPS[DeclaredMethod, TypeBasedPointsToSet]], seenTypes)
 
         case _ ⇒
             throw new IllegalStateException(s"unexpected update $eps")
@@ -310,10 +310,10 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
 object DoPrivilegedPointsToCGAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(PointsTo))
+    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(TypeBasedPointsToSet))
 
     override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(PointsTo, Callers, Callees)
+        PropertyBounds.ubs(TypeBasedPointsToSet, Callers, Callees)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
