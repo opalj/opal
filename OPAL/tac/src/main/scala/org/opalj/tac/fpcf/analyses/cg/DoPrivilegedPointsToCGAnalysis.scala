@@ -58,9 +58,10 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
 
         // take the first parameter
         val fps = formalParameters(sourceMethod)
+        // this happens e.g. for java <= 7
         if (fps == null)
-            println()
-        val fp = formalParameters(sourceMethod)(1)
+            return Results();
+        val fp = fps(1)
         val pointsToParam = ps(fp, PointsTo.key)
 
         Results(methodMapping(pointsToParam, 0))
