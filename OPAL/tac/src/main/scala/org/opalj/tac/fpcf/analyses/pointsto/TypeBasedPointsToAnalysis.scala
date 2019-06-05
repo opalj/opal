@@ -7,6 +7,8 @@ package pointsto
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.opalj.log.OPALLogger.logOnce
+import org.opalj.log.Warn
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
@@ -40,6 +42,7 @@ import org.opalj.br.fpcf.pointsto.properties.NoTypes
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
+import org.opalj.tac.fpcf.analyses.cg.V
 
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
@@ -214,6 +217,24 @@ class TypeBasedPointsToAnalysis private[analyses] (
             case Assignment(pc, targetVar, _: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
                 state.setOrUpdatePointsToSet(defSite, UIDSet.empty[ObjectType])
+
+            case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) ⇒
+                state.addIncompletePointsToInfo(pc)
+                logOnce(
+                    Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
+                )
+
+            case ExprStmt(pc, idc: InvokedynamicFunctionCall[V]) ⇒
+                state.addIncompletePointsToInfo(pc)
+                logOnce(
+                    Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
+                )
+
+            case idc: InvokedynamicMethodCall[_] ⇒
+                state.addIncompletePointsToInfo(idc.pc)
+                logOnce(
+                    Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
+                )
 
             case Assignment(_, DVar(av: IsSArrayValue, _), _) if av.theUpperTypeBound.elementType.isObjectType ⇒
                 throw new IllegalArgumentException(s"unexpected assignment: $stmt")
