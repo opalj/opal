@@ -44,6 +44,10 @@ import org.opalj.br.ObjectType
  * TODO: This analysis is very specific to the points-to analysis. It should also work for the other
  * analyses.
  *
+ * TODO: The current implementation won't work if the JDK is not included. In order to perform the
+ * analysis even if the method is a [[org.opalj.br.VirtualDeclaredMethod]], the
+ * [[org.opalj.br.analyses.VirtualFormalParameter]]s must also be present for those methods.
+ *
  * @author Florian Kuebler
  */
 class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
@@ -55,12 +59,8 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     private[this] val declaredMethods = p.get(DeclaredMethodsKey)
 
     def analyze(): ProperPropertyComputationResult = {
-
         // take the first parameter
         val fps = formalParameters(sourceMethod)
-        // this happens e.g. for java <= 7
-        if (fps == null)
-            return Results();
         val fp = fps(1)
         val pointsToParam = ps(fp, TypeBasedPointsToSet.key)
 
@@ -200,7 +200,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             "doPrivileged",
             MethodDescriptor(privilegedActionType, ObjectType.Object)
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged1, runMethod, p).analyze()
+        if (doPrivileged1.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged1, runMethod, p).analyze()
 
         val doPrivileged2 = declaredMethods(
             accessControllerType,
@@ -212,7 +213,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
                 ObjectType.Object
             )
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged2, runMethod, p).analyze()
+        if (doPrivileged2.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged2, runMethod, p).analyze()
 
         val doPrivileged3 = declaredMethods(
             accessControllerType,
@@ -224,7 +226,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
                 ObjectType.Object
             )
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged3, runMethod, p).analyze()
+        if (doPrivileged3.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged3, runMethod, p).analyze()
 
         val doPrivileged4 = declaredMethods(
             accessControllerType,
@@ -233,7 +236,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             "doPrivileged",
             MethodDescriptor(privilegedExceptionActionType, ObjectType.Object)
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged4, runMethod, p).analyze()
+        if (doPrivileged4.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged4, runMethod, p).analyze()
 
         val doPrivileged5 = declaredMethods(
             accessControllerType,
@@ -245,7 +249,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
                 ObjectType.Object
             )
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged5, runMethod, p).analyze()
+        if (doPrivileged5.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged5, runMethod, p).analyze()
 
         val doPrivileged6 = declaredMethods(
             accessControllerType,
@@ -257,7 +262,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
                 ObjectType.Object
             )
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged6, runMethod, p).analyze()
+        if (doPrivileged6.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged6, runMethod, p).analyze()
 
         val doPrivilegedWithCombiner1 = declaredMethods(
             accessControllerType,
@@ -266,7 +272,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             "doPrivilegedWithCombiner",
             MethodDescriptor(privilegedActionType, ObjectType.Object)
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner1, runMethod, p).analyze()
+        if (doPrivilegedWithCombiner1.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner1, runMethod, p).analyze()
 
         val doPrivilegedWithCombiner2 = declaredMethods(
             accessControllerType,
@@ -278,7 +285,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
                 ObjectType.Object
             )
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner2, runMethod, p).analyze()
+        if (doPrivilegedWithCombiner2.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner2, runMethod, p).analyze()
 
         val doPrivilegedWithCombiner3 = declaredMethods(
             accessControllerType,
@@ -290,7 +298,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
                 ObjectType.Object
             )
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner3, runMethod, p).analyze()
+        if (doPrivilegedWithCombiner3.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner3, runMethod, p).analyze()
 
         val doPrivilegedWithCombiner4 = declaredMethods(
             accessControllerType,
@@ -302,7 +311,8 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
                 ObjectType.Object
             )
         )
-        results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner4, runMethod, p).analyze()
+        if (doPrivilegedWithCombiner4.hasSingleDefinedMethod)
+            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner4, runMethod, p).analyze()
 
         Results(results)
     }
