@@ -5,6 +5,7 @@ package fpcf
 package cg
 package properties
 
+import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -76,9 +77,10 @@ object LoadedClasses extends LoadedClassesMetaInformation {
         val name = "opalj.LoadedClasses"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+            (ps: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
                 case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
-                    throw new IllegalStateException(s"there must always be at least one loaded class")
+                    OPALLogger.error("call graph analysis", "there was no class loaded")(ps.logContext)
+                    NoLoadedClasses
                 case _ ⇒
                     throw new IllegalStateException(s"analysis required for property: $name")
             }
