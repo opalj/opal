@@ -26,20 +26,20 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 
 /**
  * On each call of the [[sourceMethod*]] it will call the [[declaredTargetMethod*]] upon its first
  * parameter and returns the result of this call.
- * This analysis manages the entries for [[org.opalj.br.fpcf.cg.properties.Callees]] and
- * [[org.opalj.br.fpcf.cg.properties.Callers]] as well as the
- * [[org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet]] mappings.
+ * This analysis manages the entries for [[Callees]] and
+ * [[Callers]] as well as the
+ * [[TypeBasedPointsToSet]] mappings.
  *
  * TODO: This analysis is very specific to the points-to analysis. It should also work for the other
  * analyses.

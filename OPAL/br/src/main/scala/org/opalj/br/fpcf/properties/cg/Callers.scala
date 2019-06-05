@@ -2,8 +2,8 @@
 package org.opalj
 package br
 package fpcf
-package cg
 package properties
+package cg
 
 import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.fpcf.Entity

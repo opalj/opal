@@ -21,7 +21,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
@@ -54,6 +53,7 @@ import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.cfg.ExitNode
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.PCs
 import org.opalj.ai.ValueOrigin
 import org.opalj.tac.common.DefinitionSiteLike

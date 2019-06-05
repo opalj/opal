@@ -37,9 +37,9 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.IFDSProperty
 import org.opalj.tac.fpcf.properties.IFDSPropertyMetaInformation

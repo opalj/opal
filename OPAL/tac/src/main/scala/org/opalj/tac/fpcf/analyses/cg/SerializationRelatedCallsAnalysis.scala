@@ -15,7 +15,6 @@ import org.opalj.fpcf.Results
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementReferenceType
@@ -25,7 +24,8 @@ import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.ObjectType
 import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
 import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
-import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**

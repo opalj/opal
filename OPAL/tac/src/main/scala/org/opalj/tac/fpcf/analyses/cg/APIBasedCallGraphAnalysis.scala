@@ -13,17 +13,17 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
 
 /**
  * A trait for call graph analyses that model the result of the invocation of a specific
  * `apiMethod`.
  *
  * Each time a new caller of the [[apiMethod*]] is found in the
- * [[org.opalj.br.fpcf.cg.properties.Callers]] property, [[handleNewCaller*]]
+ * [[Callers]] property, [[handleNewCaller*]]
  * gets called.
  *
  * @note When `handleNewCaller` gets invoked, there is no guarantee that the caller's three-address

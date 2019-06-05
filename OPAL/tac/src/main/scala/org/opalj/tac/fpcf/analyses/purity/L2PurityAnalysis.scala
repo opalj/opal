@@ -36,7 +36,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.CompileTimePure
@@ -64,11 +63,12 @@ import org.opalj.br.fpcf.properties.UsesNoStaticData
 import org.opalj.br.fpcf.properties.UsesVaryingData
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
 

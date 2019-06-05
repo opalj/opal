@@ -25,15 +25,15 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.LoadedClasses
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.LoadedClasses
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * For a reachable methods (see [[org.opalj.br.fpcf.cg.properties.Callers]]) this class computes the
+ * For a reachable methods (see [[Callers]]) this class computes the
  * classes that are being loaded (e.g. due to static field accesses).
  *
  * @author Florian Kuebler
@@ -43,7 +43,7 @@ class LoadedClassesAnalysis(
 ) extends FPCFAnalysis {
     /**
      * If the method in `callersOfMethod` has no callers
-     * ([[org.opalj.br.fpcf.cg.properties.NoCallers]]), it is not reachable, and its declaring class
+     * ([[NoCallers]]), it is not reachable, and its declaring class
      * will not be loaded (at least not via this call).
      *
      * If it is not yet known, we register a dependency to it.
@@ -134,7 +134,7 @@ class LoadedClassesAnalysis(
 
             case _: EPK[_, _] ⇒
                 Some(
-                    InterimEUBP(project, LoadedClasses(newLoadedClasses))
+                    InterimEUBP(project, org.opalj.br.fpcf.properties.cg.LoadedClasses(newLoadedClasses))
                 )
 
             case r ⇒

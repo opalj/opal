@@ -20,13 +20,13 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * A rapid type call graph analysis (RTA). For a given [[org.opalj.br.Method]] it computes the set
- * of outgoing call edges ([[org.opalj.br.fpcf.cg.properties.Callees]]). Furthermore, it updates the
- * [[org.opalj.br.fpcf.cg.properties.Callers]].
+ * of outgoing call edges ([[org.opalj.br.fpcf.properties.cg.Callees]]). Furthermore, it updates the
+ * [[org.opalj.br.fpcf.properties.cg.Callers]].
  *
  * This analysis does not handle features such as JVM calls to static initializers or finalize
  * calls.
@@ -140,13 +140,13 @@ class RTACallGraphAnalysis private[analyses] (
 
     /**
      * Computes the calls from the given method
-     * ([[org.opalj.br.fpcf.cg.properties.Callees]] property) and updates the
-     * [[org.opalj.br.fpcf.cg.properties.Callers]].
+     * ([[org.opalj.br.fpcf.properties.cg.Callees]] property) and updates the
+     * [[org.opalj.br.fpcf.properties.cg.Callers]].
      *
      * Whenever a `declaredMethod` becomes reachable (the caller property is set initially),
      * this method is called.
      * In case the method never becomes reachable, the fallback
-     * [[org.opalj.br.fpcf.cg.properties.NoCallers]] will be used by the framework and this method
+     * [[org.opalj.br.fpcf.properties.cg.NoCallers]] will be used by the framework and this method
      * returns [[org.opalj.fpcf.NoResult]].
      */
 

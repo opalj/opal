@@ -2,8 +2,8 @@
 package org.opalj
 package br
 package fpcf
-package pointsto
 package properties
+package pointsto
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
@@ -26,11 +26,11 @@ sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInf
 }
 
 case class TypeBasedPointsToSet private[properties] (
-    private val orderedTypes: List[ObjectType],
-    override val types:       UIDSet[ObjectType]
+        private val orderedTypes: List[ObjectType],
+        override val types:       UIDSet[ObjectType]
 ) extends PointsToSetLike[ObjectType]
-        with OrderedProperty
-        with TypeBasedPointsToSetPropertyMetaInformation {
+    with OrderedProperty
+    with TypeBasedPointsToSetPropertyMetaInformation {
 
     assert(orderedTypes == null || orderedTypes.size == types.size)
 
@@ -57,9 +57,17 @@ case class TypeBasedPointsToSet private[properties] (
     }
 
     /**
-     * Will return the types added most recently, dropping the `seenElements` oldest ones.
+     * As for the [[TypeBasedPointsToSet]] the elements are already the types, it is the same as
+     * [[dropOldestTypes*]].
      */
     override def dropOldest(seenElements: Int): Iterator[ObjectType] = {
+        dropOldestTypes(seenElements)
+    }
+
+    /**
+     * Will return the types added most recently, dropping the `seenElements` oldest ones.
+     */
+    override def dropOldestTypes(seenElements: Opcode): Iterator[ObjectType] = {
         orderedTypes.iterator.take(types.size - seenElements)
     }
 
@@ -74,6 +82,7 @@ case class TypeBasedPointsToSet private[properties] (
     }
 
     override def hashCode: Int = types.hashCode() * 31
+
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {

@@ -22,11 +22,11 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * Computes the set of finalize methods that are being called by the VM during the execution of the

@@ -27,9 +27,6 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.LoadedClasses
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
@@ -43,6 +40,9 @@ import org.opalj.br.NewInvokeSpecialMethodHandle
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.BooleanType
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.TACAI
 
 sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedCallGraphAnalysis {
@@ -113,7 +113,7 @@ class ClassForNameAnalysis private[analyses] (
                         None
 
                 case EPK(p, _) ⇒
-                    Some(InterimEUBP(p, LoadedClasses(_newLoadedClasses)))
+                    Some(InterimEUBP(p, org.opalj.br.fpcf.properties.cg.LoadedClasses(_newLoadedClasses)))
 
                 case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
             })

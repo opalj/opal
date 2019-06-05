@@ -13,10 +13,10 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.PointsToCallGraphKey

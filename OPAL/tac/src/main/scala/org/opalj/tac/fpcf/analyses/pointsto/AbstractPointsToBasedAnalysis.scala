@@ -12,7 +12,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.pointsto.properties.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 
@@ -21,7 +21,7 @@ import org.opalj.tac.common.DefinitionSitesKey
  *
  * @author Florian Kuebler
  */
-trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike] extends FPCFAnalysis {
+trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike[_]] extends FPCFAnalysis {
 
     protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet]
     protected[this] def emptyPointsToSet: PointsToSet

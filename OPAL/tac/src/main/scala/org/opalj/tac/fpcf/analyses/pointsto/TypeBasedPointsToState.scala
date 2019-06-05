@@ -16,13 +16,13 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.cg.properties.NoCallees
-import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**

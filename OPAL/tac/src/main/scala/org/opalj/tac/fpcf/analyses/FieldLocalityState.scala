@@ -15,10 +15,10 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.PCs
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldLocality
 import org.opalj.br.fpcf.properties.LocalField
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.fpcf.properties.TACAI
 

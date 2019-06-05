@@ -22,8 +22,6 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
@@ -31,7 +29,9 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 
 /**
  * In a library analysis scenario, this analysis complements the call graph by marking public

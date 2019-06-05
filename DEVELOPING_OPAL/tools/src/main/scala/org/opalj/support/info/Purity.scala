@@ -32,8 +32,6 @@ import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.ContextuallyPure
 import org.opalj.br.fpcf.properties.ContextuallySideEffectFree
@@ -50,6 +48,8 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse

@@ -15,23 +15,23 @@ import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.cg.properties.CallersOnlyWithConcreteCallers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.ConcreteCallees
-import org.opalj.br.fpcf.cg.properties.NoCallees
-import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
+import org.opalj.br.fpcf.properties.cg.ConcreteCallees
+import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
  * call sites and allows the analyses to retrieve the required [[org.opalj.fpcf.PartialResult]]s for
- * [[org.opalj.br.fpcf.cg.properties.Callers]] and [[org.opalj.br.fpcf.cg.properties.Callees]].
+ * [[Callers]] and [[Callees]].
  *
  * @author Florian Kuebler
  * @author Dominik Helm

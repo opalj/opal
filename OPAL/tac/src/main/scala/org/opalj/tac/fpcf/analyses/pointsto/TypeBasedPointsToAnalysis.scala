@@ -32,13 +32,13 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.pointsto.properties.NoTypes
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.NoTypes
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
@@ -335,7 +335,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
             results += PartialResult[Entity, TypeBasedPointsToSet](e, TypeBasedPointsToSet.key, {
 
                 case _: EPK[Entity, TypeBasedPointsToSet] ⇒
-                    Some(InterimEUBP(e, TypeBasedPointsToSet(pointsToSet)))
+                    Some(InterimEUBP(e, org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet(pointsToSet)))
 
                 case UBP(ub) ⇒
                     // IMPROVE: only process new Types

@@ -11,15 +11,15 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.SomeEOptionP
-import org.opalj.br.fpcf.pointsto.properties.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 
 /**
  * Interface for state classes of points-to based analyses that declares functionality to handle
- * dependencies of [[org.opalj.br.fpcf.pointsto.properties.PointsToSetLike]] objects.
+ * dependencies of [[PointsToSetLike]] objects.
  *
  * @author Florian Kuebler
  */
-trait AbstractPointsToState[Depender, PointsToSet <: PointsToSetLike]
+trait AbstractPointsToState[Depender, PointsToSet <: PointsToSetLike[_]]
     extends TACAIBasedAnalysisState {
 
     // maps a defsite to its result in the property store for the points-to set

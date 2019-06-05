@@ -14,13 +14,13 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**

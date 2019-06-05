@@ -26,7 +26,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBPS
 import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.FieldMutability
@@ -51,6 +50,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.ConfiguredPurity
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
