@@ -29,13 +29,13 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.PCAndInstruction
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.NEW
 
 /**
@@ -256,7 +256,7 @@ object InstantiatedTypesAnalysisScheduler extends FPCFTriggeredAnalysisScheduler
         val initialInstantiatedTypes = UIDSet(p.get(InitialInstantiatedTypesKey).toSeq: _*)
 
         ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
-            case _: EPK[_, _] ⇒ InterimEUBP(p, InstantiatedTypes(initialInstantiatedTypes))
+            case _: EPK[_, _] ⇒ InterimEUBP(p, org.opalj.br.fpcf.properties.cg.InstantiatedTypes(initialInstantiatedTypes))
             case eps          ⇒ throw new IllegalStateException(s"unexpected property: $eps")
         }
 

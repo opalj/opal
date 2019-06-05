@@ -20,9 +20,9 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.Callers
 import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.PointsToCallGraphKey

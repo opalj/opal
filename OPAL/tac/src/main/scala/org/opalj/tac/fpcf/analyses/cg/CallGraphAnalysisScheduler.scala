@@ -16,11 +16,11 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait CallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {

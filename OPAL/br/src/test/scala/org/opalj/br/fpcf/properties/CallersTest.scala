@@ -14,13 +14,13 @@ import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.cg.properties.CallersImplWithOtherCalls
-import org.opalj.br.fpcf.cg.properties.CallersOnlyWithConcreteCallers
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.NoCallers
-import org.opalj.br.fpcf.cg.properties.OnlyCallersWithUnknownContext
-import org.opalj.br.fpcf.cg.properties.OnlyVMCallersAndWithUnknownContext
-import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.CallersImplWithOtherCalls
+import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.br.fpcf.properties.cg.OnlyVMCallersAndWithUnknownContext
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 @RunWith(classOf[JUnitRunner])

@@ -8,15 +8,15 @@ import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 
 /**
  * The proxy class for all call-graph related properties.
  * All information will be queried from the property store ([[org.opalj.fpcf.PropertyStore]]),
- * therefore, all values for [[org.opalj.br.fpcf.cg.properties.Callees]] and
- * [[org.opalj.br.fpcf.cg.properties.Callers]] in the property store must be final when
+ * therefore, all values for [[Callees]] and
+ * [[Callers]] in the property store must be final when
  * instantiating this class.
  *
  * @author Florian Kuebler

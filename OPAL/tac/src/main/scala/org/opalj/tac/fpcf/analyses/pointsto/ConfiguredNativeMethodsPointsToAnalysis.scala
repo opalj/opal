@@ -30,16 +30,16 @@ import org.opalj.fpcf.UBPS
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.pointsto.properties.TypeBasedPointsToSet
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.DefinedMethod
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 
 /**
  * Applies the impact of preconfigured native methods to the points-to analysis.
@@ -140,7 +140,7 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
                         Some(InterimEUBP(lhs, newUB))
                     }
                 case _: EPK[Entity, TypeBasedPointsToSet] ⇒
-                    Some(InterimEUBP(lhs, TypeBasedPointsToSet(newPointsTo)))
+                    Some(InterimEUBP(lhs, org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet(newPointsTo)))
 
                 case fep: FinalEP[Entity, TypeBasedPointsToSet] ⇒
                     throw new IllegalStateException(s"unexpected final value $fep")

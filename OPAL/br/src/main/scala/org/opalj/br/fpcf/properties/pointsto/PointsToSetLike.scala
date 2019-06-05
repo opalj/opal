@@ -2,8 +2,8 @@
 package org.opalj
 package br
 package fpcf
-package pointsto
 package properties
+package pointsto
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Property
@@ -17,6 +17,8 @@ import org.opalj.fpcf.Property
 trait PointsToSetLike[PointsToElements] extends Property {
 
     def dropOldest(seenElements: Int): Iterator[PointsToElements]
+
+    def dropOldestTypes(seenElements: Int): Iterator[ObjectType]
 
     def numElements: Int
 

@@ -21,8 +21,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.OnlyVMLevelCallers
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
@@ -30,14 +28,16 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.LoadedClasses
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.LoadedClasses
+import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * Extends the call graph analysis (e.g. [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis]]
  * ) to include calls to static initializers from within the JVM for each loaded class
- * ([[org.opalj.br.fpcf.cg.properties.LoadedClasses]]).
- * This requires the [[org.opalj.br.fpcf.cg.properties.LoadedClasses]] to be computed, e.g. by the
+ * ([[LoadedClasses]]).
+ * This requires the [[LoadedClasses]] to be computed, e.g. by the
  * [[LoadedClassesAnalysis]].
  *
  * @author Florian Kuebler
@@ -55,9 +55,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     )
 
     /**
-     * For the given project, it registers to the [[org.opalj.br.fpcf.cg.properties.LoadedClasses]]
+     * For the given project, it registers to the [[LoadedClasses]]
      * and ensures that for each loaded class, its static initializer is called (see
-     * [[org.opalj.br.fpcf.cg.properties.Callers]])
+     * [[Callers]])
      */
     def analyze(p: SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {

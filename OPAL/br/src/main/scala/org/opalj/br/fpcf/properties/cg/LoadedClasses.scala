@@ -2,8 +2,8 @@
 package org.opalj
 package br
 package fpcf
-package cg
 package properties
+package cg
 
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.UIDSet
