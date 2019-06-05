@@ -44,7 +44,7 @@ case class TypeBasedPointsToSet private[properties] (
         }
     }
 
-    override def updated(newTypes: TraversableOnce[ObjectType]): TypeBasedPointsToSet = {
+    override def included(newTypes: TraversableOnce[ObjectType]): TypeBasedPointsToSet = {
         var newOrderedTypes = orderedTypes
         var typesUnion = types
         for (t ← newTypes) {
@@ -56,27 +56,23 @@ case class TypeBasedPointsToSet private[properties] (
         new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
     }
 
-    /**
-     * As for the [[TypeBasedPointsToSet]] the elements are already the types, it is the same as
-     * [[dropOldestTypes*]].
-     */
-    override def dropOldest(seenElements: Int): Iterator[ObjectType] = {
-        dropOldestTypes(seenElements)
-    }
+    override def included(
+        other: TypeBasedPointsToSet
+    ): TypeBasedPointsToSet = included(other.types)
 
     /**
      * Will return the types added most recently, dropping the `seenElements` oldest ones.
      */
-    override def dropOldestTypes(seenElements: Opcode): Iterator[ObjectType] = {
-        orderedTypes.iterator.take(types.size - seenElements)
+    override def dropOldestTypes(seenTypes: Int): Iterator[ObjectType] = {
+        orderedTypes.iterator.take(types.size - seenTypes)
     }
 
-    override def numElements: Int = types.size
+    override def numTypes: Int = types.size
 
     override def equals(obj: Any): Boolean = {
         obj match {
             case that: TypeBasedPointsToSet ⇒
-                that.numElements == this.numElements && that.orderedTypes == this.orderedTypes
+                that.numTypes == this.numTypes && that.orderedTypes == this.orderedTypes
             case _ ⇒ false
         }
     }

@@ -14,15 +14,17 @@ import org.opalj.fpcf.Property
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-trait PointsToSetLike[PointsToElements] extends Property {
+trait PointsToSetLike[ElementType] extends Property {
 
-    def dropOldest(seenElements: Int): Iterator[PointsToElements]
+    type Self <: PointsToSetLike[ElementType]
 
     def dropOldestTypes(seenElements: Int): Iterator[ObjectType]
 
-    def numElements: Int
+    def numTypes: Int
 
     def types: UIDSet[ObjectType]
 
-    def updated(newElements: TraversableOnce[PointsToElements]): PointsToSetLike[PointsToElements]
+    def included(other: Self): Self
+
+    def included(newElements: TraversableOnce[ElementType]): Self
 }

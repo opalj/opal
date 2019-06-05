@@ -6,6 +6,7 @@ package analyses
 package cg
 
 import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -71,7 +72,10 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         seenTypes: Int
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case EUBP(_: VirtualFormalParameter, _: TypeBasedPointsToSet) ⇒
-            methodMapping(eps.asInstanceOf[EPS[VirtualFormalParameter, TypeBasedPointsToSet]], seenTypes)
+            methodMapping(
+                eps.asInstanceOf[EPS[VirtualFormalParameter, TypeBasedPointsToSet]],
+                seenTypes
+            )
         case _ ⇒
             throw new IllegalStateException(s"unexpected update $eps")
     }
@@ -84,7 +88,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         var results: List[ProperPropertyComputationResult] = Nil
 
         val newSeenTypes = if (pointsTo.hasUBP) {
-            for (t ← pointsTo.ub.dropOldest(seenTypes)) {
+            for (t ← pointsTo.ub.dropOldestTypes(seenTypes)) {
                 val callR = p.instanceCall(
                     sourceMethod.declaringClassType.asObjectType,
                     t,
@@ -96,19 +100,26 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                     val tgtMethod = declaredMethods(callR.value)
                     calls.addCall(sourceMethod, tgtMethod, 0)
 
-                    // 2. The points-to set of *this* of the target method should contain all information
-                    // from the points-to set of the first parameter of the source method.
+                    // 2. The points-to set of *this* of the target method should contain all
+                    // information from the points-to set of the first parameter of the source
+                    // method.
                     val tgtThis = formalParameters(tgtMethod)(0)
-                    results ::= PartialResult[VirtualFormalParameter, TypeBasedPointsToSet](tgtThis, TypeBasedPointsToSet.key, {
-                        case UBP(ub: TypeBasedPointsToSet) ⇒
-                            Some(InterimEUBP(
-                                tgtThis,
-                                ub.updated(pointsTo.ub.dropOldest(seenTypes))
-                            ))
+                    results ::= PartialResult[VirtualFormalParameter, TypeBasedPointsToSet](
+                        tgtThis,
+                        TypeBasedPointsToSet.key,
+                        {
+                            case UBP(ub: TypeBasedPointsToSet) ⇒
+                                val newUB = ub.included(TypeBasedPointsToSet(UIDSet(t)))
+                                if (newUB eq ub) {
+                                    None
+                                } else {
+                                    Some(InterimEUBP(tgtThis, newUB))
+                                }
 
-                        case _: EPK[VirtualFormalParameter, TypeBasedPointsToSet] ⇒
-                            Some(InterimEUBP(tgtThis, pointsTo.ub))
-                    })
+                            case _: EPK[VirtualFormalParameter, TypeBasedPointsToSet] ⇒
+                                Some(InterimEUBP(tgtThis, TypeBasedPointsToSet(UIDSet(t))))
+                        }
+                    )
 
                     // 3. Map the return value back to the source method
                     val returnPointsTo = ps(tgtMethod, TypeBasedPointsToSet.key)
@@ -118,7 +129,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                     calls.addIncompleteCallSite(0)
                 }
             }
-            pointsTo.ub.numElements
+            pointsTo.ub.numTypes
         } else {
             0
         }
@@ -138,14 +149,23 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     ): ProperPropertyComputationResult = {
         var results: List[ProperPropertyComputationResult] = Nil
         val newNumSeenTypes = if (returnPointsTo.hasUBP) {
-            results ::= PartialResult[DeclaredMethod, TypeBasedPointsToSet](sourceMethod, TypeBasedPointsToSet.key, {
-                case UBP(ub: TypeBasedPointsToSet) ⇒
-                    Some(InterimEUBP(sourceMethod, ub.updated(returnPointsTo.ub.dropOldest(numSeenTypes))))
+            results ::= PartialResult[DeclaredMethod, TypeBasedPointsToSet](
+                sourceMethod,
+                TypeBasedPointsToSet.key,
+                {
+                    case UBP(ub: TypeBasedPointsToSet) ⇒
+                        val newUB = ub.included(returnPointsTo.ub)
+                        if (newUB eq ub) {
+                            None
+                        } else {
+                            Some(InterimEUBP(sourceMethod, newUB))
+                        }
 
-                case _: EPK[_, _] ⇒
-                    Some(InterimEUBP(sourceMethod, returnPointsTo.ub))
-            })
-            returnPointsTo.ub.numElements
+                    case _: EPK[_, _] ⇒
+                        Some(InterimEUBP(sourceMethod, returnPointsTo.ub))
+                }
+            )
+            returnPointsTo.ub.numTypes
         } else {
             0
         }
