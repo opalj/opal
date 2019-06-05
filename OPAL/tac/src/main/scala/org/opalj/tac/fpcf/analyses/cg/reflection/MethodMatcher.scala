@@ -48,9 +48,12 @@ final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends Metho
     override def priority: Int = 2
 }
 
-class ClassBasedMethodMatcher(val possibleClasses: Set[ObjectType], val onlyMethodsExactlyInClass: Boolean) extends MethodMatcher {
+class ClassBasedMethodMatcher(
+        val possibleClasses:           Set[ObjectType],
+        val onlyMethodsExactlyInClass: Boolean
+) extends MethodMatcher {
 
-    // TODO use a ProjectInformationKey or to cache methods per project
+    // TODO use a ProjectInformationKey or WeakHashMap to cache methods per project
     // (for the contains check)
     private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c ⇒
         // todo what about "inherited" static methods?
