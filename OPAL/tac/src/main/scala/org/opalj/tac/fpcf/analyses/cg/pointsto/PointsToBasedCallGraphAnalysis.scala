@@ -98,7 +98,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
             val calls = new DirectCalls()
 
             val oldEOptP = state.getPointsToProperty(eps.e)
-            val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
+            val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
             // perform the update for the new types
             for (callSite ← relevantCallSites) {

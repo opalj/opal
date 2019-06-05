@@ -77,14 +77,17 @@ class TypeBasedPointsToAnalysis private[analyses] (
     )(implicit state: TypeBasedPointsToState): Unit = {
         val tac = state.tac
         val callees = state.callees(ps)
+        val receiverOpt = call.receiverOption
         for (target ← callees.directCallees(pc)) {
             val fps = formalParameters(target)
 
             if (fps != null) {
-                val receiverOpt = call.receiverOption
                 // handle receiver for non static methods
                 if (receiverOpt.isDefined) {
                     val fp = fps(0)
+                    // IMPROVE: Here we copy all points-to entries of the receiver into the *this*
+                    // of the target methods. It would be only needed to do so for the ones that led
+                    // to the call.
                     state.setOrUpdatePointsToSet(
                         fp, currentPointsTo(fp, receiverOpt.get.asVar.definedBy)
                     )
@@ -335,12 +338,12 @@ class TypeBasedPointsToAnalysis private[analyses] (
             results += PartialResult[Entity, TypeBasedPointsToSet](e, TypeBasedPointsToSet.key, {
 
                 case _: EPK[Entity, TypeBasedPointsToSet] ⇒
-                    Some(InterimEUBP(e, org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet(pointsToSet)))
+                    Some(InterimEUBP(e, TypeBasedPointsToSet(pointsToSet)))
 
                 case UBP(ub) ⇒
                     // IMPROVE: only process new Types
-                    val newPointsTo = ub.updated(pointsToSet)
-                    if (newPointsTo.numElements != ub.numElements)
+                    val newPointsTo = ub.included(pointsToSet)
+                    if (newPointsTo.numTypes != ub.numTypes)
                         Some(InterimEUBP(e, newPointsTo))
                     else
                         None
