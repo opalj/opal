@@ -25,7 +25,6 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
-import org.opalj.tac.cg.PointsToCallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
@@ -36,7 +35,10 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
         val project = projectFactory()
 
         // FIXME: Loading the config does not work from here, which result in exceptions being thrown
-        checkProject(name, Project.recreate(project, ConfigFactory.load("LibraryProject.conf")))
+        checkProject(
+            name,
+            Project.recreate(project, ConfigFactory.load("LibraryProject.conf"))
+        )
     }
 
     def checkProject(projectName: String, project: SomeProject): Unit = {
@@ -55,15 +57,15 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
         }
         val rtaPS = rtaProject.get(PropertyStoreKey)
 
-        val pointsToProject = project.recreate {
+        /*val pointsToProject = project.recreate {
             case DeclaredMethodsKey.uniqueId ⇒ true
             case _                           ⇒ false
         }
         val pointsToPS = pointsToProject.get(PropertyStoreKey)
-
+*/
         val cha = chaProject.get(CHACallGraphKey)
         val rta = rtaProject.get(RTACallGraphKey)
-        val pointsTo = pointsToProject.get(PointsToCallGraphKey)
+        //val pointsTo = pointsToProject.get(PointsToCallGraphKey)
 
         behavior of s"the CHA call graph analysis on $projectName"
         it should s"have matching callers and callees" in {
@@ -78,7 +80,7 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
             checkMorePrecise(cha, rta)
         }
 
-        behavior of s"the points-to call graph analysis on $projectName"
+        /*behavior of s"the points-to call graph analysis on $projectName"
         it should s"have matching callers and callees" in {
             checkBidirectionCallerCallee(pointsToPS)
         }
@@ -87,7 +89,7 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
         }
         it should s"be more precise than the RTA" in {
             checkMorePrecise(rta, pointsTo)
-        }
+        }*/
 
     }
 
