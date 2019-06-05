@@ -103,7 +103,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
             // perform the update for the new types
             for (callSite ← relevantCallSites) {
                 val typesLeft = state.typesForCallSite(callSite)
-                for (newType ← ub.dropOldestTypes(seenTypes)) {
+                for (newType ← ub.dropOldest(seenTypes)) {
                     if (typesLeft.contains(newType.id)) {
                         state.removeTypeForCallSite(callSite, newType)
                         val (pc, name, descriptor, declaredType) = callSite

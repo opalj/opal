@@ -84,7 +84,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         var results: List[ProperPropertyComputationResult] = Nil
 
         val newSeenTypes = if (pointsTo.hasUBP) {
-            for (t ← pointsTo.ub.dropOldestTypes(seenTypes)) {
+            for (t ← pointsTo.ub.dropOldest(seenTypes)) {
                 val callR = p.instanceCall(
                     sourceMethod.declaringClassType.asObjectType,
                     t,
@@ -103,7 +103,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                         case UBP(ub: TypeBasedPointsToSet) ⇒
                             Some(InterimEUBP(
                                 tgtThis,
-                                ub.updated(pointsTo.ub.dropOldestTypes(seenTypes))
+                                ub.updated(pointsTo.ub.dropOldest(seenTypes))
                             ))
 
                         case _: EPK[VirtualFormalParameter, TypeBasedPointsToSet] ⇒
@@ -140,7 +140,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         val newNumSeenTypes = if (returnPointsTo.hasUBP) {
             results ::= PartialResult[DeclaredMethod, TypeBasedPointsToSet](sourceMethod, TypeBasedPointsToSet.key, {
                 case UBP(ub: TypeBasedPointsToSet) ⇒
-                    Some(InterimEUBP(sourceMethod, ub.updated(returnPointsTo.ub.dropOldestTypes(numSeenTypes))))
+                    Some(InterimEUBP(sourceMethod, ub.updated(returnPointsTo.ub.dropOldest(numSeenTypes))))
 
                 case _: EPK[_, _] ⇒
                     Some(InterimEUBP(sourceMethod, returnPointsTo.ub))

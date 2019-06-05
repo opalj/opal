@@ -5,6 +5,7 @@ package fpcf
 package pointsto
 package properties
 
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Property
 
 /**
@@ -13,9 +14,13 @@ import org.opalj.fpcf.Property
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-trait PointsToSetLike extends Property {
+trait PointsToSetLike[PointsToElements] extends Property {
 
-    def dropOldestTypes(seenElements: Int): Iterator[ObjectType]
+    def dropOldest(seenElements: Int): Iterator[PointsToElements]
 
     def numElements: Int
+
+    def types: UIDSet[ObjectType]
+
+    def updated(newElements: TraversableOnce[PointsToElements]): PointsToSetLike[PointsToElements]
 }

@@ -26,11 +26,11 @@ sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInf
 }
 
 case class TypeBasedPointsToSet private[properties] (
-        private val orderedTypes: List[ObjectType],
-        types:                    UIDSet[ObjectType]
-) extends PointsToSetLike
-    with OrderedProperty
-    with TypeBasedPointsToSetPropertyMetaInformation {
+    private val orderedTypes: List[ObjectType],
+    override val types:       UIDSet[ObjectType]
+) extends PointsToSetLike[ObjectType]
+        with OrderedProperty
+        with TypeBasedPointsToSetPropertyMetaInformation {
 
     assert(orderedTypes == null || orderedTypes.size == types.size)
 
@@ -44,7 +44,7 @@ case class TypeBasedPointsToSet private[properties] (
         }
     }
 
-    def updated(newTypes: TraversableOnce[ObjectType]): TypeBasedPointsToSet = {
+    override def updated(newTypes: TraversableOnce[ObjectType]): TypeBasedPointsToSet = {
         var newOrderedTypes = orderedTypes
         var typesUnion = types
         for (t ← newTypes) {
@@ -59,7 +59,7 @@ case class TypeBasedPointsToSet private[properties] (
     /**
      * Will return the types added most recently, dropping the `seenElements` oldest ones.
      */
-    override def dropOldestTypes(seenElements: Int): Iterator[ObjectType] = {
+    override def dropOldest(seenElements: Int): Iterator[ObjectType] = {
         orderedTypes.iterator.take(types.size - seenElements)
     }
 
