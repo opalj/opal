@@ -15,10 +15,18 @@ import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -46,38 +54,123 @@ class XTACallGraphAnalysis private[analyses] (
     override type State = XTAState
 
     override def c(state: XTAState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        // TODO A.B. for XTA, we need to know which entity the update came from
+
         case EUBP(e: DefinedMethod, _: InstantiatedTypes) ⇒
-            // TODO think through the code below...
-            val seenTypes = state.ownInstantiatedTypesUB.size
+            if (e == state.method) {
+                handleUpdateOfOwnTypeSet(state, eps.asInstanceOf[EPS[DefinedMethod, InstantiatedTypes]])
+            } else {
+                handleUpdateOfCalleeTypeSet(state, eps.asInstanceOf[EPS[DefinedMethod, InstantiatedTypes]])
+            }
 
-            state.updateOwnInstantiatedTypesDependee(
-                eps.asInstanceOf[EPS[DefinedMethod, InstantiatedTypes]]
-            )
+        case EUBP(e: DefinedMethod, callees: Callees) ⇒
+            val allCallees = getCalleeDefinedMethods(callees)
 
-            // we only want to add the new calls, so we create a fresh object
-            val calleesAndCallers = new DirectCalls()
+            val alreadySeenCallees = state.seenCallees
 
-            handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
+            val newCallees = allCallees diff alreadySeenCallees
 
-            returnResult(calleesAndCallers)(state)
+            // TODO AB improve this
+            state.updateSeenCallees(allCallees)
 
-        case EUBP(e: DefinedMethod, callees: Callees) =>
-            // TODO A.B. how to handle callees update?
-            // how can I get the new callees? do I need to?
+            for (newCallee ← newCallees) {
+                // TODO AB handle forward and backward flow for new callee!
+                val calleeInstantiatedTypesDependee = propertyStore(newCallee, InstantiatedTypes.key)
+                state.updateCalleeInstantiatedTypesDependee(calleeInstantiatedTypesDependee)
+            }
+
             returnResult(new DirectCalls)(state)
 
         case _ ⇒ super.c(state)(eps)
     }
 
+    /**
+     * As soon as the own type set updates, we can immediately re-check the known virtual call-sites within the
+     * method for new targets.
+     *
+     * @param state State of the analysis for the current method.
+     * @param eps Update of the own type set.
+     * @return FPCF results..
+     */
+    def handleUpdateOfOwnTypeSet(state: XTAState, eps: EPS[DefinedMethod, InstantiatedTypes]): ProperPropertyComputationResult = {
+        // TODO AB think through the code below...
+
+        // TODO AB forward flow (to callees) should be handled here!
+
+        val seenTypes = state.ownInstantiatedTypesUB.size
+
+        state.updateOwnInstantiatedTypesDependee(eps)
+
+        // we only want to add the new calls, so we create a fresh object
+        val calleesAndCallers = new DirectCalls()
+
+        handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
+
+        returnResult(calleesAndCallers)(state)
+    }
+
+    def handleUpdateOfCalleeTypeSet(state: XTAState, eps: EPS[DefinedMethod, InstantiatedTypes]): ProperPropertyComputationResult = {
+
+        val updatedCallee = eps.e
+        val seenTypes = state.calleeSeenTypes(updatedCallee)
+
+        state.updateCalleeInstantiatedTypesDependee(eps)
+
+        val newTypes = eps.ub.dropOldest(seenTypes)
+
+        // TODO AB Check if this is sufficient.
+        // TODO AB No backward flow if the return value is not used in state.method.
+        val returnTypeOfCallee = updatedCallee.definedMethod.returnType.asObjectType
+        newTypes.filter(t ⇒ t.isSubtypeOf(returnTypeOfCallee))
+
+        if (newTypes.nonEmpty) {
+            Results(
+                InterimPartialResult(state.dependees, c(state)),
+                typeFlowPartialResult(state.method, UIDSet(newTypes.toSeq: _*))
+            )
+        } else {
+            InterimPartialResult(state.dependees, c(state))
+        }
+
+    }
+
+    def typeFlowPartialResult(method: DefinedMethod, newTypes: UIDSet[ObjectType]): PartialResult[DefinedMethod, InstantiatedTypes] = {
+        PartialResult[DefinedMethod, InstantiatedTypes](
+            method,
+            InstantiatedTypes.key,
+            updateInstantiatedTypes(method, newTypes)
+        )
+    }
+
+    // for now: mostly copied from InstantiatedTypesAnalysis
+    def updateInstantiatedTypes(
+        method:               DefinedMethod,
+        newInstantiatedTypes: UIDSet[ObjectType]
+    )(
+        eop: EOptionP[DefinedMethod, InstantiatedTypes]
+    ): Option[EPS[DefinedMethod, InstantiatedTypes]] = eop match {
+        case InterimUBP(ub: InstantiatedTypes) ⇒
+            val newUB = ub.updated(newInstantiatedTypes)
+            if (newUB.types.size > ub.types.size)
+                Some(InterimEUBP(method, newUB))
+            else
+                None
+
+        case _: EPK[_, _] ⇒
+            throw new IllegalStateException(
+                "the instantiated types property should be pre initialized"
+            )
+
+        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+    }
+
     def getCalleeDefinedMethods(callees: Callees): Set[DefinedMethod] = {
-        // TODO A.B. check efficiency...
+        // TODO AB check efficiency...
         val calleeMethods = mutable.Set[DefinedMethod]()
         for {
-            pc <- callees.callSitePCs
-            callee <- callees.callees(pc)
+            pc ← callees.callSitePCs
+            callee ← callees.callees(pc)
         } {
-          calleeMethods += callee.asDefinedMethod
+            calleeMethods += callee.asDefinedMethod
         }
         calleeMethods.toSet
     }
@@ -85,11 +178,11 @@ class XTACallGraphAnalysis private[analyses] (
     override def createInitialState(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): XTAState = {
-        // TODO A.B. for XTA, do we even know these?
+        // TODO AB for XTA, do we even know these?
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(definedMethod, InstantiatedTypes.key)
         val calleesEOptP = propertyStore(definedMethod, Callees.key)
-        new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP, Map())
+        new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP)
     }
 
     override def handleImpreciseCall(
@@ -192,7 +285,7 @@ class XTACallGraphAnalysis private[analyses] (
 
 object XTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(InstantiatedTypes)
+    override def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(InstantiatedTypes, Callees)
 
     override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = new XTACallGraphAnalysis(p)
 }

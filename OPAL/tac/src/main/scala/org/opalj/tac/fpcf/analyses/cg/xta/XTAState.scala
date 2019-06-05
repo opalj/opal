@@ -27,26 +27,38 @@ import scala.collection.mutable
 class XTAState(
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
-        // TODO A.B.: is that even a dependee?? we build this ourselves per-method!
+        // TODO AB: is that even a dependee?? we build this ourselves per-method!
         // maybe if other analyses update this, it is one? E.g. InstantiatedTypesAnalysis due to constructors
         private[this] var _ownInstantiatedTypesDependee: EOptionP[DefinedMethod, InstantiatedTypes],
 
         // dependees for callees ...
         // we need these to find potential new data flows
-        // TODO A.B. I'm quite sure we only need callees
+        // TODO AB I'm quite sure we only need callees
 
-        // TODO A.B. Can this depencency become final?
-        // TODO A.B. Maybe only if there are no possible additional virtual call sites?
+        // TODO AB Can this depencency become final?
+        // TODO AB Maybe only if there are no possible additional virtual call sites?
         private[this] var _calleeDependee: EOptionP[DefinedMethod, Callees],
-
-        // TODO A.B. These should be removed once they're final, right?
-        // TODO A.B. Can they become final? Probably not!
-        private[this] var _calleeInstantiatedTypesDependees:
-            Map[DefinedMethod, EOptionP[DefinedMethod, InstantiatedTypes]],
-
-        // TODO A.B.: dependency to InstantiatedTypes of fields it reads --> update own set on update
-        // TODO A.B.: store fields it writes --> update types when own types receive an update
 ) extends CGState {
+
+    // TODO AB more efficient data type for this?
+    // TODO AB there is possibly a good way to optimize this away since we create all new callees ourselves
+    // TODO AB maybe we also need to store the PC of the callsite here.
+    private[this] var _seenCallees: mutable.Set[DefinedMethod] = mutable.Set.empty
+
+    // TODO AB is there a better data type for this?
+    private[this] var _calleeSeenTypes: mutable.LongMap[Int] = mutable.LongMap.empty
+
+    // TODO AB These should be removed once they're final, right?
+    // TODO AB Can they become final? Probably not!
+    // TODO AB Does this have to be a map?
+    private[this] var _calleeInstantiatedTypesDependees:
+        mutable.Map[DefinedMethod, EOptionP[DefinedMethod, InstantiatedTypes]]
+            = mutable.Map.empty
+
+
+    // TODO AB: dependency to InstantiatedTypes of fields it reads --> update own set on update
+    // TODO AB: store fields it writes --> update types when own types receive an update
+
     private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSiteT]] = mutable.LongMap.empty
 
     /////////////////////////////////////////////
@@ -55,7 +67,7 @@ class XTAState(
     //                                         //
     /////////////////////////////////////////////
 
-    // NOTE A.B. "own instantiated types": is the method's set of available
+    // NOTE AB "own instantiated types": is the method's set of available
 
     def updateOwnInstantiatedTypesDependee(
         ownInstantiatedTypesDependee: EOptionP[DefinedMethod, InstantiatedTypes]
@@ -93,6 +105,30 @@ class XTAState(
         } else {
             None
         }
+    }
+
+    def seenCallees: Set[DefinedMethod] = {
+        // TODO AB not efficient?
+        _seenCallees.toSet
+    }
+
+    def updateSeenCallees(newCallees: Set[DefinedMethod]): Unit = {
+        _seenCallees ++= newCallees
+    }
+
+    def calleeSeenTypes(callee: DefinedMethod): Int = {
+        _calleeSeenTypes(callee.id.toLong)
+    }
+
+    def updateCalleeSeenTypes(callee: DefinedMethod, numberOfTypes: Int): Unit = {
+        assert(numberOfTypes >= _calleeSeenTypes.getOrElse(callee.id.toLong, 0))
+        _calleeSeenTypes.update(callee.id.toLong, numberOfTypes)
+    }
+
+    def updateCalleeInstantiatedTypesDependee(
+        eps: EOptionP[DefinedMethod, InstantiatedTypes]
+    ): Unit = {
+        _calleeInstantiatedTypesDependees.update(eps.e, eps)
     }
 
     /////////////////////////////////////////////
