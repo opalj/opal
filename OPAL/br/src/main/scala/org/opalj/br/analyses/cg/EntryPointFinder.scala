@@ -245,7 +245,15 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                                 )
                         }
 
-                        assert(methods.forall(_.body.isDefined), "A method without body has been identified as entry point")
+                        if (methods.exists(_.body.isEmpty)) {
+                            OPALLogger.warn(
+                                "project configuration",
+                                s"$typeName has an empty method $name); "+
+                                    "entry point ignored"
+                            )
+                            methods = methods.filter(_.body.isDefined)
+                        }
+
                         entryPoints = entryPoints ++ methods
 
                     case None if !isSubtype ⇒
