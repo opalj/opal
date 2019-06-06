@@ -207,7 +207,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
         val declaredMethods = p.get(DeclaredMethodsKey)
         val runMethod = declaredMethods(
             privilegedActionType,
-            "",
+            "java/security",
             privilegedActionType,
             "run",
             MethodDescriptor.JustReturnsObject
@@ -215,7 +215,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivileged1 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(privilegedActionType, ObjectType.Object)
@@ -225,7 +225,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivileged2 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
@@ -238,7 +238,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivileged3 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
@@ -251,7 +251,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivileged4 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(privilegedExceptionActionType, ObjectType.Object)
@@ -261,7 +261,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivileged5 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
@@ -274,7 +274,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivileged6 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivileged",
             MethodDescriptor(
@@ -287,7 +287,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivilegedWithCombiner1 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(privilegedActionType, ObjectType.Object)
@@ -297,7 +297,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivilegedWithCombiner2 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
@@ -310,7 +310,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivilegedWithCombiner3 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
@@ -323,7 +323,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 
         val doPrivilegedWithCombiner4 = declaredMethods(
             accessControllerType,
-            "",
+            "java/security",
             accessControllerType,
             "doPrivilegedWithCombiner",
             MethodDescriptor(
