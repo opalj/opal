@@ -133,7 +133,7 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
             Some(PartialResult[Entity, TypeBasedPointsToSet](lhs, TypeBasedPointsToSet.key, {
                 case InterimUBP(ub: TypeBasedPointsToSet) ⇒
                     // here we assert that updated returns the identity if pts is already contained
-                    val newUB = ub.included(newPointsTo)
+                    val newUB = ub.included(newPointsTo, newPointsTo)
                     if (newUB eq ub) {
                         None
                     } else {

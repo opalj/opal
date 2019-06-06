@@ -65,16 +65,18 @@ class TypeBasedPointsToAnalysis private[analyses] (
         final val project: SomeProject
 ) extends ReachableMethodAnalysis with AbstractPointsToBasedAnalysis[Entity, TypeBasedPointsToSet] {
 
+    override type State = PointsToAnalysisState[TypeBasedPointsToSet]
+
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        doProcessMethod(new TypeBasedPointsToState(definedMethod, tacEP))
+        doProcessMethod(new PointsToAnalysisState[TypeBasedPointsToSet](definedMethod, tacEP))
     }
 
     // maps the points-to set of actual parameters (including *this*) the the formal parameters
     private[this] def handleCall(
         call: Call[DUVar[ValueInformation]], pc: Int
-    )(implicit state: TypeBasedPointsToState): Unit = {
+    )(implicit state: State): Unit = {
         val tac = state.tac
         val callees = state.callees(ps)
         val receiverOpt = call.receiverOption
@@ -153,7 +155,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
 
     private[this] def doProcessMethod(
         implicit
-        state: TypeBasedPointsToState
+        state: State
     ): ProperPropertyComputationResult = {
         val tac = state.tac
         val method = state.method.definedMethod
@@ -161,11 +163,11 @@ class TypeBasedPointsToAnalysis private[analyses] (
         for (stmt ← tac.stmts) stmt match {
             case Assignment(pc, _, New(_, t)) ⇒
                 val defSite = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(defSite, UIDSet(t))
+                state.setOrUpdatePointsToSet(defSite, TypeBasedPointsToSet(UIDSet(t)))
 
             case Assignment(pc, _, NewArray(_, _, tpe)) if tpe.elementType.isObjectType ⇒
                 val defSite = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(defSite, UIDSet(tpe.elementType.asObjectType))
+                state.setOrUpdatePointsToSet(defSite, TypeBasedPointsToSet(UIDSet(tpe.elementType.asObjectType)))
 
             // that case should not happen
             case Assignment(pc, DVar(_: IsReferenceValue, _), UVar(_, defSites)) ⇒
@@ -219,7 +221,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
 
             case Assignment(pc, targetVar, _: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(defSite, UIDSet.empty[ObjectType])
+                state.setOrUpdatePointsToSet(defSite, NoTypes)
 
             case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) ⇒
                 state.addIncompletePointsToInfo(pc)
@@ -294,7 +296,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
      * The continuation function. It handles updates for the methods tac, callees and for points-to
      * sets.
      */
-    private[this] def c(state: TypeBasedPointsToState)(eps: SomeEPS): ProperPropertyComputationResult = {
+    private[this] def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
                 state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
@@ -305,7 +307,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
 
             case UBPS(pointsTo: TypeBasedPointsToSet, isFinal) ⇒
                 for (depender ← state.dependersOf(eps.e)) {
-                    state.setOrUpdatePointsToSet(depender, pointsTo.types)
+                    state.setOrUpdatePointsToSet(depender, pointsTo)
                 }
 
                 if (isFinal) {
@@ -329,7 +331,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
      */
     @inline private[this] def returnResult(
         implicit
-        state: TypeBasedPointsToState
+        state: State
     ): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
         if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
@@ -338,7 +340,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
             results += PartialResult[Entity, TypeBasedPointsToSet](e, TypeBasedPointsToSet.key, {
 
                 case _: EPK[Entity, TypeBasedPointsToSet] ⇒
-                    Some(InterimEUBP(e, TypeBasedPointsToSet(pointsToSet)))
+                    Some(InterimEUBP(e, pointsToSet))
 
                 case UBP(ub) ⇒
                     // IMPROVE: only process new Types
