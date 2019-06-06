@@ -10,7 +10,6 @@ import scala.collection.mutable
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -19,10 +18,9 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.NoCallees
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -31,12 +29,12 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-class TypeBasedPointsToState(
+class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends AbstractPointsToState[Entity, TypeBasedPointsToSet] {
+) extends AbstractPointsToState[Entity, PointsToSet] {
 
-    private[this] val _pointsToSets: mutable.Map[Entity, UIDSet[ObjectType]] = mutable.Map.empty
+    private[this] val _pointsToSets: mutable.Map[Entity, PointsToSet] = mutable.Map.empty
 
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
@@ -74,22 +72,19 @@ class TypeBasedPointsToState(
             super.hasOpenDependencies
     }
 
-    def setOrUpdatePointsToSet(e: Entity, pointsToSet: UIDSet[ObjectType]): Unit = {
+    def setOrUpdatePointsToSet(e: Entity, pointsToSet: PointsToSet): Unit = {
         if (_pointsToSets.contains(e)) {
-            val newPointsToSet = _pointsToSets(e) ++ pointsToSet
+            val oldPointsToSet = _pointsToSets(e)
+            val newPointsToSet = oldPointsToSet.included(pointsToSet)
             _pointsToSets(e) = newPointsToSet
         } else {
             _pointsToSets(e) = pointsToSet
         }
     }
 
-    def setOrUpdatePointsToSet(e: Entity, pointsToSet: TypeBasedPointsToSet): Unit = {
-        setOrUpdatePointsToSet(e, pointsToSet.types)
-    }
-
-    def setOrUpdatePointsToSet(e: Entity, pointsToSets: Iterator[TypeBasedPointsToSet]): Unit = {
+    def setOrUpdatePointsToSet(e: Entity, pointsToSets: Iterator[PointsToSet]): Unit = {
         pointsToSets.foreach { pointsToSet ⇒
-            setOrUpdatePointsToSet(e, pointsToSet.types)
+            setOrUpdatePointsToSet(e, pointsToSet)
         }
     }
 
@@ -97,7 +92,7 @@ class TypeBasedPointsToState(
         _pointsToSets.clear()
     }
 
-    def pointsToSetsIterator: Iterator[(Entity, UIDSet[ObjectType])] = {
+    def pointsToSetsIterator: Iterator[(Entity, PointsToSet)] = {
         _pointsToSets.iterator
     }
 

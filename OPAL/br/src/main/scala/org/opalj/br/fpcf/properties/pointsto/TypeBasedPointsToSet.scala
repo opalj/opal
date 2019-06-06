@@ -26,11 +26,11 @@ sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInf
 }
 
 case class TypeBasedPointsToSet private[properties] (
-        private val orderedTypes: List[ObjectType],
-        override val types:       UIDSet[ObjectType]
-) extends PointsToSetLike[ObjectType]
-    with OrderedProperty
-    with TypeBasedPointsToSetPropertyMetaInformation {
+    private val orderedTypes: List[ObjectType],
+    override val types:       UIDSet[ObjectType]
+) extends PointsToSetLike[ObjectType, UIDSet[ObjectType], TypeBasedPointsToSet]
+        with OrderedProperty
+        with TypeBasedPointsToSetPropertyMetaInformation {
 
     assert(orderedTypes == null || orderedTypes.size == types.size)
 
@@ -44,7 +44,9 @@ case class TypeBasedPointsToSet private[properties] (
         }
     }
 
-    override def included(newTypes: TraversableOnce[ObjectType]): TypeBasedPointsToSet = {
+    override def included(
+        newTypes: TraversableOnce[ObjectType], unused: TraversableOnce[ObjectType]
+    ): TypeBasedPointsToSet = {
         var newOrderedTypes = orderedTypes
         var typesUnion = types
         for (t ← newTypes) {
@@ -58,7 +60,7 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def included(
         other: TypeBasedPointsToSet
-    ): TypeBasedPointsToSet = included(other.types)
+    ): TypeBasedPointsToSet = included(other.types, other.types)
 
     /**
      * Will return the types added most recently, dropping the `seenElements` oldest ones.
@@ -68,6 +70,8 @@ case class TypeBasedPointsToSet private[properties] (
     }
 
     override def numTypes: Int = types.size
+
+    override def elements: UIDSet[ObjectType] = types
 
     override def equals(obj: Any): Boolean = {
         obj match {

@@ -37,7 +37,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
  */
 class PointsToBasedCallGraphAnalysis private[analyses] (
         final val project: SomeProject
-) extends AbstractCallGraphAnalysis with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSetLike[_]] {
+) extends AbstractCallGraphAnalysis with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSetLike[_, _, _]] {
 
     override type State = PointsToBasedCGState
 
@@ -91,7 +91,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
     override def c(
         state: PointsToBasedCGState
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBPS(e, ub: PointsToSetLike[_], isFinal) ⇒
+        case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
             val relevantCallSites = state.dependersOf(e)
 
             // ensures, that we only add new calls
@@ -126,7 +126,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
                 if (isFinal) {
                     state.removePointsToDependee(e)
                 } else {
-                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSetLike[_]]])
+                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSetLike[_, _, _]]])
                 }
             }
 
@@ -139,11 +139,12 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): PointsToBasedCGState = new PointsToBasedCGState(definedMethod, tacEP)
 
-    override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSetLike[_]] = {
+    override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSetLike[_, _, _]] = {
         TypeBasedPointsToSet.key
     }
 
-    override protected def emptyPointsToSet: PointsToSetLike[_] = NoTypes
+    // todo, why do we need this here?
+    override protected def emptyPointsToSet: PointsToSetLike[_, _, _] = NoTypes
 }
 
 object PointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {

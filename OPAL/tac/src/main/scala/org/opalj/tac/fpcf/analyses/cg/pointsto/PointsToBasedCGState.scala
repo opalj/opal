@@ -25,7 +25,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 class PointsToBasedCGState(
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends CGState with AbstractPointsToState[CallSiteT, PointsToSetLike[_]] {
+) extends CGState with AbstractPointsToState[CallSiteT, PointsToSetLike[_, _, _]] {
 
     // maps a definition site to the ids of the potential (not yet resolved) objecttypes
     private[this] val _virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = mutable.Map.empty

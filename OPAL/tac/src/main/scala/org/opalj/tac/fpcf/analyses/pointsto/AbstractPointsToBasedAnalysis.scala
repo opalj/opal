@@ -21,7 +21,9 @@ import org.opalj.tac.common.DefinitionSitesKey
  *
  * @author Florian Kuebler
  */
-trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike[_]] extends FPCFAnalysis {
+trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike[_, _, _]] extends FPCFAnalysis {
+
+    type State <: AbstractPointsToState[Depender, PointsToSet]
 
     protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet]
     protected[this] def emptyPointsToSet: PointsToSet
@@ -43,7 +45,7 @@ trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike[_]]
 
     @inline protected[this] def currentPointsTo(
         depender: Depender, dependeeDefSite: Int
-    )(implicit state: AbstractPointsToState[Depender, PointsToSet]): PointsToSet = {
+    )(implicit state: State): PointsToSet = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
             // FIXME ask what exception has been thrown
             emptyPointsToSet
@@ -57,7 +59,7 @@ trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike[_]]
 
     @inline protected[this] def currentPointsTo(
         depender: Depender, dependee: Entity
-    )(implicit state: AbstractPointsToState[Depender, PointsToSet]): PointsToSet = {
+    )(implicit state: State): PointsToSet = {
         if (state.hasPointsToDependee(dependee)) {
             val p2s = state.getPointsToProperty(dependee)
 
@@ -81,7 +83,7 @@ trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike[_]]
         defSites: IntTrieSet
     )(
         implicit
-        state: AbstractPointsToState[Depender, PointsToSet]
+        state: State
     ): Iterator[PointsToSet] = {
         defSites.iterator.map[PointsToSet](currentPointsTo(depender, _))
     }
