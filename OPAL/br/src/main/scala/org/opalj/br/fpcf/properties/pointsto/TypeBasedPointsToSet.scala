@@ -45,11 +45,11 @@ case class TypeBasedPointsToSet private[properties] (
     }
 
     override def included(
-        newTypes: TraversableOnce[ObjectType], unused: TraversableOnce[ObjectType]
+        other: TypeBasedPointsToSet
     ): TypeBasedPointsToSet = {
         var newOrderedTypes = orderedTypes
         var typesUnion = types
-        for (t ← newTypes) {
+        for (t ← other.types) {
             if (!types.contains(t)) {
                 newOrderedTypes ::= t
                 typesUnion += t
@@ -57,10 +57,6 @@ case class TypeBasedPointsToSet private[properties] (
         }
         new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
     }
-
-    override def included(
-        other: TypeBasedPointsToSet
-    ): TypeBasedPointsToSet = included(other.types, other.types)
 
     /**
      * Will return the types added most recently, dropping the `seenElements` oldest ones.

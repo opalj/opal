@@ -39,6 +39,7 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 
 /**
@@ -101,17 +102,16 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
         for (PointsToRelation(lhs, rhs) ← data) {
             rhs match {
                 case asd: AllocationSiteDescription ⇒
-                    val pts = UIDSet(ObjectType(asd.instantiatedType))
+                    val pts = TypeBasedPointsToSet(UIDSet(ObjectType(asd.instantiatedType)))
                     results += createPartialResultOpt(lhs.entity, pts).get
                 case _ ⇒
                     val pointsToEOptP = propertyStore(rhs.entity, TypeBasedPointsToSet.key)
 
                     // the points-to set associated with the rhs
-                    val pts: UIDSet[ObjectType] =
-                        if (pointsToEOptP.hasUBP)
-                            pointsToEOptP.ub.types
-                        else
-                            UIDSet.empty
+                    val pts = if (pointsToEOptP.hasUBP)
+                        pointsToEOptP.ub
+                    else
+                        NoTypes
 
                     // only create a partial result if there is some information to apply
                     // partial result that updates the points-to information
@@ -128,19 +128,19 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
         Results(results)
     }
 
-    private[this] def createPartialResultOpt(lhs: Entity, newPointsTo: UIDSet[ObjectType]) = {
-        if (newPointsTo.nonEmpty) {
+    private[this] def createPartialResultOpt(lhs: Entity, newPointsTo: TypeBasedPointsToSet) = {
+        if (newPointsTo.numTypes > 0) {
             Some(PartialResult[Entity, TypeBasedPointsToSet](lhs, TypeBasedPointsToSet.key, {
                 case InterimUBP(ub: TypeBasedPointsToSet) ⇒
                     // here we assert that updated returns the identity if pts is already contained
-                    val newUB = ub.included(newPointsTo, newPointsTo)
+                    val newUB = ub.included(newPointsTo)
                     if (newUB eq ub) {
                         None
                     } else {
                         Some(InterimEUBP(lhs, newUB))
                     }
                 case _: EPK[Entity, TypeBasedPointsToSet] ⇒
-                    Some(InterimEUBP(lhs, org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet(newPointsTo)))
+                    Some(InterimEUBP(lhs, newPointsTo))
 
                 case fep: FinalEP[Entity, TypeBasedPointsToSet] ⇒
                     throw new IllegalStateException(s"unexpected final value $fep")
