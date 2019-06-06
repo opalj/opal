@@ -15,7 +15,6 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
@@ -28,11 +27,12 @@ import org.opalj.br.fpcf.properties.VirtualMethodEscapeProperty
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 
 /**
  * Adds inter-procedural behavior to escape analyses.
- * Uses the call graph associated with the [[org.opalj.br.fpcf.cg.properties.Callees]] properties.
+ * Uses the call graph associated with the [[Callees]] properties.
  * It queries the escape state of the [[org.opalj.br.analyses.VirtualFormalParameter]] of the
  * targets.
  *
@@ -189,9 +189,9 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
              */
             for {
                 indirectCallee ← callees.indirectCallees(pc)
-                // parameters(0) is the param of the defSite
+                indirectCallReceiver = callees.indirectCallReceiver(pc, indirectCallee)
                 indirectCallParams = callees.indirectCallParameters(pc, indirectCallee)
-                (Some(uvar), i) ← indirectCallParams.zipWithIndex
+                (Some(uvar), i) ← (indirectCallReceiver +: indirectCallParams).zipWithIndex
                 indirectCallParam = uVarForDefSites(uvar, state.tacai.get.pcToIndex)
                 if state.usesDefSite(indirectCallParam)
             } {

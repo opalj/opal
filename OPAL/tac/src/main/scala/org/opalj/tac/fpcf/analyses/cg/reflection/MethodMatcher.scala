@@ -6,21 +6,27 @@ package analyses
 package cg
 package reflection
 
+import org.opalj.collection.immutable.ConstArray
+import org.opalj.collection.immutable.RefArray
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsPrimitiveValue
+import org.opalj.value.IsReferenceValue
 import org.opalj.br.FieldTypes
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.ProjectIndexKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.collection.immutable.ConstArray
-import org.opalj.collection.immutable.RefArray
-import org.opalj.value.IsPrimitiveValue
-import org.opalj.value.IsReferenceValue
 import org.opalj.br.BaseType
 import org.opalj.br.ClassHierarchy
+import org.opalj.br.ReferenceType
 
 /**
- * @author Florian Kübler
+ * Used to determine whether a certain method should be considered as a target for a reflective
+ * call site. These call sites should be resolved by chaining matchers in
+ * [[MethodMatching.getPossibleMethods*]].
+ *
+ * @author Florian Kuebler
  */
 trait MethodMatcher {
     def initialMethods(implicit p: SomeProject): Iterator[Method]
@@ -42,20 +48,26 @@ final class NameBasedMethodMatcher(val possibleNames: Set[String]) extends Metho
     override def priority: Int = 2
 }
 
-// todo we may need a exactly in this class filter (for getDeclaredMethod)
-class ClassBasedMethodMatcher(val possibleClasses: Set[ObjectType]) extends MethodMatcher {
+class ClassBasedMethodMatcher(
+        val possibleClasses:           Set[ObjectType],
+        val onlyMethodsExactlyInClass: Boolean
+) extends MethodMatcher {
 
-    // TODO use weakHashMap to cache methods per project (for the contains check)
-    private[this] def methods(implicit p: SomeProject) = possibleClasses.flatMap { c ⇒
-        p.instanceMethods.getOrElse(c, ConstArray.empty).map(_.method) ++
-            // for static methods and constructors
-            // todo what about "inherited" static methods
-            p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
+    // TODO use a ProjectInformationKey or WeakHashMap to cache methods per project
+    // (for the contains check)
+    private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c ⇒
+        // todo what about "inherited" static methods?
+        val methodsInClassFile = p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
+        if (onlyMethodsExactlyInClass)
+            methodsInClassFile
+        else
+            methodsInClassFile ++ p.instanceMethods.getOrElse(c, ConstArray.empty).map(_.method)
+
     }
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = methods.iterator
 
-    override def contains(m: Method)(implicit p: SomeProject): Boolean = initialMethods.contains(m)
+    override def contains(m: Method)(implicit p: SomeProject): Boolean = methods.contains(m)
 
     override def priority: Int = 1
 }
@@ -87,38 +99,42 @@ class ParameterTypesBasedMethodMatcher(val parameterTypes: FieldTypes) extends M
     override def priority: UShort = 3
 }
 
-class ActualParamBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatcher {
+class ActualParameterBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatcher {
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] =
         p.allMethods.iterator.filter(contains)
 
     override def contains(m: Method)(implicit p: SomeProject): Boolean = {
         implicit val ch: ClassHierarchy = p.classHierarchy
+        // IMPROVE: actualParams.size is actual O(n) in some cases, making it an IndexedSeq would
+        // however require to change it in `Call` in TACAI.
         m.descriptor.parametersCount == actualParams.size &&
+            // IMPROVE: m.descriptor.parameterTypes.iterator.zip...
+            // therefor, we need to actualParams.map(...) as RefIterator
             m.descriptor.parameterTypes.zip(actualParams.map(_.value)).forall {
-                // IMPROVE Make matchers nicer
                 // the actual type is null and the declared type is a ref type
-                case (pType, v) if pType.isReferenceType && v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
-                    // todo here we would need the declared type information
+                case (_: ReferenceType, _: IsNullValue) ⇒
+                    // TODO here we would need the declared type information
                     true
                 // declared type and actual type are reference types and assignable
-                case (pType, v) if pType.isReferenceType && v.isReferenceValue ⇒
-                    v.asReferenceValue.isValueASubtypeOf(pType.asReferenceType).isYesOrUnknown
+                case (pType: ReferenceType, v: IsReferenceValue) ⇒
+                    v.isValueASubtypeOf(pType).isYesOrUnknown
 
                 // declared type and actual type are base types and the same type
                 case (pType: BaseType, v: IsPrimitiveValue[_]) ⇒ v.primitiveType eq pType
 
                 // the actual type is null and the declared type is a base type
-                case (pType: BaseType, v) if v.isReferenceValue && v.asReferenceValue.isNull.isYes ⇒
+                case (_: BaseType, _: IsNullValue) ⇒
                     false
 
                 // declared type is base type, actual type might be a boxed value
-                case (pType, v) if pType.isBaseType && v.isReferenceValue ⇒
-                    v.asReferenceValue.isValueASubtypeOf(pType.asBaseType.WrapperType).isYesOrUnknown
+                case (pType: BaseType, v: IsReferenceValue) ⇒
+                    v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
 
                 // actual type is base type, declared type might be a boxed type
-                case (pType: ObjectType, v) if v.isPrimitiveValue ⇒
-                    pType.isPrimitiveTypeWrapperOf(v.asPrimitiveValue.primitiveType)
+                case (pType: ObjectType, v: IsPrimitiveValue[_]) ⇒
+                    pType.isPrimitiveTypeWrapperOf(v.primitiveType)
+
                 case _ ⇒
                     false
             }
@@ -127,7 +143,6 @@ class ActualParamBasedMethodMatcher(val actualParams: Seq[V]) extends MethodMatc
     override def priority: UShort = 3
 }
 
-// todo rename as this is only for the first argument of Method.invoke
 class ActualReceiverBasedMethodMatcher(val receiver: IsReferenceValue) extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {
         implicit val ch: ClassHierarchy = p.classHierarchy

@@ -69,7 +69,6 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
                 val ctx = createContext(fp, -1, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
             case VirtualFormalParameter(_, _) ⇒
-                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
         }
     }

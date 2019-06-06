@@ -8,10 +8,10 @@ import java.net.URL
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
 import org.opalj.util.PerformanceEvaluation.time
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.br.analyses.BasicReport
+import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
@@ -26,42 +26,26 @@ import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
 import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 
 /**
  * A small demo that shows how to use the
  * [[org.opalj.tac.fpcf.analyses.escape.InterProceduralEscapeAnalysis]] and what are the results of it.
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  */
 object InterProceduralEscapeAnalysisDemo extends ProjectAnalysisApplication {
 
     override def title: String = "determines escape information"
 
     override def description: String = {
-        "Determines escape information for every allocation site and every formal parameter"
+        "Determines escape information for every allocation site and every formal parameter."
     }
 
     override def doAnalyze(
@@ -83,28 +67,7 @@ object InterProceduralEscapeAnalysisDemo extends ProjectAnalysisApplication {
 
         val manager = project.get(FPCFAnalysesManagerKey)
         time {
-            manager.runAll(
-                RTACallGraphAnalysisScheduler,
-                TriggeredStaticInitializerAnalysis,
-                TriggeredLoadedClassesAnalysis,
-                TriggeredFinalizerAnalysisScheduler,
-                TriggeredThreadRelatedCallsAnalysis,
-                TriggeredSerializationRelatedCallsAnalysis,
-                TriggeredReflectionRelatedCallsAnalysis,
-                TriggeredInstantiatedTypesAnalysis,
-                TriggeredConfiguredNativeMethodsAnalysis,
-                TriggeredSystemPropertiesAnalysis,
-                LazyCalleesAnalysis(
-                    Set(
-                        StandardInvokeCallees,
-                        SerializationRelatedCallees,
-                        ReflectionRelatedCallees,
-                        ThreadRelatedIncompleteCallSites
-                    )
-                ),
-                LazyL0BaseAIAnalysis,
-                TACAITransformer
-            )
+            project.get(RTACallGraphKey)
         } { t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
         time {
             manager.runAll(EagerInterProceduralEscapeAnalysis)

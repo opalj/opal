@@ -28,31 +28,17 @@ import org.opalj.fpcf.SomePropertyKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.TestSupport.allBIProjects
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysesRegistry
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l1
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
 
 /**
  * Simple test to ensure that the FPFC analyses do not cause exceptions and that their results
@@ -95,32 +81,9 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                     PropertyStore.updateDebug(true)
                     ps = p.get(PropertyStoreKey)
 
-                    val manager = p.get(FPCFAnalysesManagerKey)
-
                     time {
                         // todo do not want to run this for every setting
-                        manager.runAll(
-                            RTACallGraphAnalysisScheduler,
-                            TriggeredStaticInitializerAnalysis,
-                            TriggeredLoadedClassesAnalysis,
-                            TriggeredFinalizerAnalysisScheduler,
-                            TriggeredThreadRelatedCallsAnalysis,
-                            TriggeredSerializationRelatedCallsAnalysis,
-                            TriggeredReflectionRelatedCallsAnalysis,
-                            TriggeredInstantiatedTypesAnalysis,
-                            TriggeredConfiguredNativeMethodsAnalysis,
-                            TriggeredSystemPropertiesAnalysis,
-                            LazyCalleesAnalysis(
-                                Set(
-                                    StandardInvokeCallees,
-                                    SerializationRelatedCallees,
-                                    ReflectionRelatedCallees,
-                                    ThreadRelatedIncompleteCallSites
-                                )
-                            ),
-                            LazyL0BaseAIAnalysis,
-                            TACAITransformer
-                        )
+                        p.get(RTACallGraphKey)
                     } { t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}") }
 
                     time { p.get(FPCFAnalysesManagerKey).runAll(analyses) }(reportAnalysisTime)

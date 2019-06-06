@@ -25,16 +25,16 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.cg.properties.LoadedClasses
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.NoCallers
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.LoadedClasses
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * For a reachable methods (see [[org.opalj.br.fpcf.cg.properties.CallersProperty]]) this class
- * computes the classes that are being loaded (e.g. due to static field accesses).
+ * For a reachable methods (see [[Callers]]) this class computes the
+ * classes that are being loaded (e.g. due to static field accesses).
  *
  * @author Florian Kuebler
  */
@@ -43,7 +43,7 @@ class LoadedClassesAnalysis(
 ) extends FPCFAnalysis {
     /**
      * If the method in `callersOfMethod` has no callers
-     * ([[org.opalj.br.fpcf.cg.properties.NoCallers]]), it is not reachable, and its declaring class
+     * ([[NoCallers]]), it is not reachable, and its declaring class
      * will not be loaded (at least not via this call).
      *
      * If it is not yet known, we register a dependency to it.
@@ -57,7 +57,7 @@ class LoadedClassesAnalysis(
     def handleCaller(
         declaredMethod: DeclaredMethod
     ): PropertyComputationResult = {
-        val callersOfMethod = propertyStore(declaredMethod, CallersProperty.key)
+        val callersOfMethod = propertyStore(declaredMethod, Callers.key)
         callersOfMethod match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
@@ -95,6 +95,7 @@ class LoadedClassesAnalysis(
                 }
         }
     }
+
     private[this] def continuationForTAC(
         method: DeclaredMethod
     )(eps: SomeEPS): PropertyComputationResult = {
@@ -122,7 +123,7 @@ class LoadedClassesAnalysis(
         def update(
             eop: EOptionP[_, LoadedClasses]
         ): Option[EPS[SomeProject, LoadedClasses]] = eop match {
-            case InterimUBP(ub) ⇒
+            case InterimUBP(ub: LoadedClasses) ⇒
                 val newUb = ub.classes ++ newLoadedClasses
                 // due to monotonicity:
                 // the size check sufficiently replaces the subset check
@@ -133,7 +134,7 @@ class LoadedClassesAnalysis(
 
             case _: EPK[_, _] ⇒
                 Some(
-                    InterimEUBP(project, LoadedClasses(newLoadedClasses))
+                    InterimEUBP(project, org.opalj.br.fpcf.properties.cg.LoadedClasses(newLoadedClasses))
                 )
 
             case r ⇒
@@ -191,13 +192,13 @@ class LoadedClassesAnalysis(
         if (isNewLoadedClass(methodDCT)) {
             // todo only for interfaces with default methods
             newLoadedClasses ++=
-                ch.allSupertypes(methodDCT, true).filterNot(currentLoadedClasses.contains)
+                ch.allSupertypes(methodDCT, reflexive = true).filterNot(currentLoadedClasses.contains)
         }
 
         if (method.body.isDefined) {
             for (stmt ← stmts) {
                 stmt match {
-                    // todo is dc sufficient enough
+                    // todo is dc sufficient enough?
                     case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
                         newLoadedClasses += dc
                     case Assignment(_, _, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
@@ -213,15 +214,15 @@ class LoadedClassesAnalysis(
     }
 }
 
-object TriggeredLoadedClassesAnalysis extends BasicFPCFTriggeredAnalysisScheduler {
+object LoadedClassesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         LoadedClasses,
-        CallersProperty,
+        Callers,
         TACAI
     )
 
-    override def triggeredBy: PropertyKey[CallersProperty] = CallersProperty.key
+    override def triggeredBy: PropertyKey[Callers] = Callers.key
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 

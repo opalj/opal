@@ -20,9 +20,9 @@ import org.opalj.log.OPALLogger.error
  *
  * @example
  *      {{{
- *      org.opalj.br.analyses {
+ *      org.opalj.br.analyses.cg {
  *          ClosedPackagesKey {
- *              analysis = "org.opalj.br.analyses.ClosedPackagesConfiguration"
+ *              analysis = "org.opalj.br.analyses.cg.ClosedPackagesConfiguration"
  *              closedPackages = "java(/.*)*"
  *          }
  *      }

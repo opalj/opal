@@ -27,16 +27,16 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.properties.GlobalEscape
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.ai.ValueOrigin
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
@@ -116,12 +116,10 @@ class InterProceduralEscapeAnalysis private[analyses] (
                 handleEscapeState(propertyStore(parameterOfBase, EscapeProperty.key))
 
             case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
-                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
             // parameters of base types are not considered
             case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType ⇒
-                //TODO IntermediateResult(fp, GlobalEscape, AtMost(NoEscape), Seq.empty, (_) ⇒ throw new RuntimeException())
                 Result(fp, AtMost(NoEscape))
 
             case VirtualFormalParameter(dm: DefinedMethod, i) ⇒
@@ -175,7 +173,7 @@ object EagerInterProceduralEscapeAnalysis
         val declaredMethods = p.get(DeclaredMethodsKey)
 
         val methods = declaredMethods.declaredMethods
-        val callersProperties = ps(methods.toTraversable, CallersProperty)
+        val callersProperties = ps(methods.toTraversable, Callers)
         assert(callersProperties.forall(_.isFinal))
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map(_.e).toSet
@@ -194,7 +192,7 @@ object EagerInterProceduralEscapeAnalysis
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
-    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(CallersProperty)
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(Callers)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }

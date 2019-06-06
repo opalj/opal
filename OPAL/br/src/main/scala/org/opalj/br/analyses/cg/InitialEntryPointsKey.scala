@@ -7,10 +7,8 @@ package cg
 import net.ceedubs.ficus.Ficus._
 
 /**
- *
- * TODO
- * The ''key'' object to get a traversable of entry points. Entry points are particulary relevant to
- * construct call graphs.
+ * The ''key'' object to get a traversable of entry points. Entry points are particularly relevant
+ * to construct call graphs.
  * See [[InitialEntryPointsKey]] for further details.
  *
  * This ''key'' reflectively instantiates the analysis that determines the program's entry points.
@@ -22,9 +20,9 @@ import net.ceedubs.ficus.Ficus._
  *
  * @example
  *      {{{
- *      org.opalj.br.analyses {
+ *      org.opalj.br.analyses.cg {
  *          InitialEntryPointKey {
- *              analysis = "org.opalj.br.analyses.ApplicationEntryPointFinder"
+ *              analysis = "org.opalj.br.analyses.cg.ApplicationEntryPointFinder"
  *          }
  *      }
  *      }}}
@@ -57,7 +55,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
         val configuredAnalysis = project.config.as[Option[String]](key)
         val entryPointFinder = configuredAnalysis
         if (entryPointFinder.isEmpty) {
-            throw new IllegalArgumentException("No InitialEntryPointsKey configuration available; Entry Points cannot be computed!")
+            throw new IllegalArgumentException(s"entry points cannot be computed due to missing configuration of $key")
         }
 
         val fqn = entryPointFinder.get
