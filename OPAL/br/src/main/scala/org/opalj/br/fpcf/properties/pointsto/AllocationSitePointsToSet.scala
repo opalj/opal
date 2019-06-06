@@ -52,27 +52,6 @@ case class AllocationSitePointsToSet private[pointsto] (
 
     override def numTypes: Int = types.size
 
-    override def included(
-        newElements: TraversableOnce[AllocationSite], typesToAdd: TraversableOnce[ObjectType]
-    ): AllocationSitePointsToSet = {
-        var newAllocationSites = elements
-        var newTypes = types
-        var newOrderedTypes = orderedTypes
-
-        newElements.foreach { allocationSite ⇒
-            newAllocationSites += allocationSite
-        }
-
-        typesToAdd.foreach { newType ⇒
-            if (!newTypes.contains(newType)) {
-                newTypes += newType
-                newOrderedTypes ::= newType
-            }
-        }
-
-        new AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
-    }
-
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         val newAllocationSites = elements ++ other.elements
         var newTypes = types
