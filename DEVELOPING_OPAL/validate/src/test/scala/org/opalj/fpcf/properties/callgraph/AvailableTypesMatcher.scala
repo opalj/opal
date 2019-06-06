@@ -28,7 +28,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
         val instantiatedTypes = {
             properties.find(_.isInstanceOf[InstantiatedTypes]) match {
                 case Some(prop) ⇒ prop.asInstanceOf[InstantiatedTypes].types
-                case None       ⇒ return Some(s"Required property InstantiatedTypes not computed for $entity.");
+                case None       ⇒ return Some(s"Expected property InstantiatedTypes not computed for $entity.");
             }
         }.toSet
 
@@ -36,7 +36,8 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
             getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "value").asArrayValue.values
                 .map(ev ⇒ ev.asStringValue.value)
 
-        val expectedTypes = expectedTypeNames.map(tn ⇒ ObjectType(tn)).toSet
+        // TODO AB substring due to types being defined like "L...;", maybe should use different annotation format
+        val expectedTypes = expectedTypeNames.map(tn ⇒ ObjectType(tn.substring(1, tn.length - 1))).toSet
 
         val missingTypes = expectedTypes diff instantiatedTypes
         val additionalTypes = instantiatedTypes diff expectedTypes

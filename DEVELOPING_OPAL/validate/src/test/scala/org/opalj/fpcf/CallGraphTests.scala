@@ -6,9 +6,14 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.ConstructorCallInstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.XTACallGraphAnalysisScheduler
+
+import scala.collection.JavaConverters._
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.
@@ -27,6 +32,21 @@ class CallGraphTests extends PropertiesTest {
         ).withValue(
                 InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
+            )
+
+        configuredEntryPoint(baseConfig, "org/opalj/fpcf/fixtures/callgraph/xta/MethodFlows", "main")
+    }
+
+    // for testing
+    // TODO AB remove later
+    private def configuredEntryPoint(cfg: Config, declClass: String, name: String): Config = {
+        val ep = ConfigValueFactory.fromMap(Map("declaringClass" -> declClass, "name" -> name).asJava)
+        cfg.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ConfigurationEntryPointsFinder")
+        ).withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"entryPoints",
+                ConfigValueFactory.fromIterable(Seq(ep).asJava)
             )
     }
 
@@ -54,6 +74,25 @@ class CallGraphTests extends PropertiesTest {
             as,
             declaredMethodsWithAnnotations(as.project),
             Set("Callees")
+        )
+    }
+
+    describe("the XTA call graph analysis is executed") {
+        val as = executeAnalyses(
+            Set(
+                ConstructorCallInstantiatedTypesAnalysisScheduler,
+                XTACallGraphAnalysisScheduler
+            )
+        )
+        as.propertyStore.shutdown()
+
+        val entitiesWithIT = as.propertyStore.entities(InstantiatedTypes.key).toArray
+        entitiesWithIT.toString()
+
+        validateProperties(
+            as,
+            declaredMethodsWithAnnotations(as.project),
+            Set("AvailableTypes")
         )
     }
 }

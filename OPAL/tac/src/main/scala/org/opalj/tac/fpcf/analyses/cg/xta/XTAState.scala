@@ -107,6 +107,10 @@ class XTAState(
         }
     }
 
+    def updateCalleeDependee(calleeDependee: EOptionP[DefinedMethod, Callees]): Unit = {
+        _calleeDependee = calleeDependee
+    }
+
     def seenCallees: Set[DefinedMethod] = {
         // TODO AB not efficient?
         _seenCallees.toSet
@@ -165,6 +169,7 @@ class XTAState(
     override def hasOpenDependencies: Boolean = {
         super.hasOpenDependencies ||
           _ownInstantiatedTypesDependee.isRefinable ||
+          _calleeDependee.isRefinable ||
           _calleeInstantiatedTypesDependees.nonEmpty
     }
 

@@ -62,7 +62,7 @@ object TestRunner {
  *
  * @author Andreas Bauer
  */
-// TODO A.B. replace later with a more sophisticated analysis (based on the RTA one)
+// TODO AB replace later with a more sophisticated analysis (based on the RTA one)
 class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) extends FPCFAnalysis {
 
     def processMethod(definedMethod: DefinedMethod): PropertyComputationResult = {

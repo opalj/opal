@@ -7,6 +7,7 @@ package cg
 package xta
 
 import org.opalj.br.DefinedMethod
+import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -15,6 +16,7 @@ import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -63,6 +65,8 @@ class XTACallGraphAnalysis private[analyses] (
             }
 
         case EUBP(e: DefinedMethod, callees: Callees) ⇒
+            state.updateCalleeDependee(eps.asInstanceOf[EPS[DefinedMethod, Callees]])
+
             val allCallees = getCalleeDefinedMethods(callees)
 
             val alreadySeenCallees = state.seenCallees
@@ -72,15 +76,32 @@ class XTACallGraphAnalysis private[analyses] (
             // TODO AB improve this
             state.updateSeenCallees(allCallees)
 
-            for (newCallee ← newCallees) {
-                // TODO AB handle forward and backward flow for new callee!
-                val calleeInstantiatedTypesDependee = propertyStore(newCallee, InstantiatedTypes.key)
-                state.updateCalleeInstantiatedTypesDependee(calleeInstantiatedTypesDependee)
+            val newTypeResults = newCallees.flatMap(handleNewCallee(state))
+
+            if (newTypeResults.nonEmpty) {
+                Results(
+                    InterimPartialResult(state.dependees, c(state)),
+                    newTypeResults
+                )
+            } else {
+                InterimPartialResult(state.dependees, c(state))
             }
 
-            returnResult(new DirectCalls)(state)
-
         case _ ⇒ super.c(state)(eps)
+    }
+
+    def handleNewCallee(state: XTAState)(newCallee: DefinedMethod): Iterable[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+        val calleeInstantiatedTypesDependee = propertyStore(newCallee, InstantiatedTypes.key)
+        state.updateCalleeInstantiatedTypesDependee(calleeInstantiatedTypesDependee)
+
+        if (calleeInstantiatedTypesDependee.hasUBP) {
+            val forwardResult = forwardFlow(state.method, newCallee, state.ownInstantiatedTypesUB)
+            val backwardResult = backwardFlow(state.method, newCallee, calleeInstantiatedTypesDependee.ub.types)
+
+            forwardResult ++ backwardResult
+        } else {
+            Seq.empty
+        }
     }
 
     /**
@@ -94,8 +115,6 @@ class XTACallGraphAnalysis private[analyses] (
     def handleUpdateOfOwnTypeSet(state: XTAState, eps: EPS[DefinedMethod, InstantiatedTypes]): ProperPropertyComputationResult = {
         // TODO AB think through the code below...
 
-        // TODO AB forward flow (to callees) should be handled here!
-
         val seenTypes = state.ownInstantiatedTypesUB.size
 
         state.updateOwnInstantiatedTypesDependee(eps)
@@ -105,32 +124,97 @@ class XTACallGraphAnalysis private[analyses] (
 
         handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
 
-        returnResult(calleesAndCallers)(state)
+        // TODO AB forward flow (to callees) should be handled here!
+        val newTypes = state.newInstantiatedTypes(seenTypes)
+        val forwardFlowResults = state.seenCallees.flatMap(c ⇒ forwardFlow(state.method, c, UIDSet(newTypes.toSeq: _*)))
+
+        returnResult(calleesAndCallers, forwardFlowResults)(state)
+    }
+
+    // TODO AB (mostly) copied from super-class since we need to make some adjustments
+    override protected def returnResult(
+                                calleesAndCallers: DirectCalls
+                              )(implicit state: State): ProperPropertyComputationResult = {
+        val results = calleesAndCallers.partialResults(state.method)
+
+        if (state.hasOpenDependencies)
+            Results(
+                InterimPartialResult(state.dependees, c(state)),
+                results
+            )
+        else
+            Results(results)
+    }
+
+    // TODO (mostly) copied from super-class
+    protected def returnResult(calleesAndCallers: DirectCalls, typeFlowPartialResults: TraversableOnce[PartialResult[DefinedMethod, InstantiatedTypes]])(implicit state: State): ProperPropertyComputationResult = {
+        val results = calleesAndCallers.partialResults(state.method)
+
+        // TODO AB is it possible to have no open dependencies in XTA? i don't think so!
+        // NOTE AB removed "state.hasNonFinalCallSite &&"
+        if (state.hasOpenDependencies)
+            Results(
+                InterimPartialResult(state.dependees, c(state)),
+                // TODO AB not efficient?
+                results.toIterator ++ typeFlowPartialResults
+            )
+        else
+            Results(results.toIterator ++ typeFlowPartialResults)
     }
 
     def handleUpdateOfCalleeTypeSet(state: XTAState, eps: EPS[DefinedMethod, InstantiatedTypes]): ProperPropertyComputationResult = {
+
+        // If a callee has type updates, maybe these new types flow back to this method (the caller).
 
         val updatedCallee = eps.e
         val seenTypes = state.calleeSeenTypes(updatedCallee)
 
         state.updateCalleeInstantiatedTypesDependee(eps)
 
-        val newTypes = eps.ub.dropOldest(seenTypes)
+        val newCalleeTypes = eps.ub.dropOldest(seenTypes)
 
-        // TODO AB Check if this is sufficient.
-        // TODO AB No backward flow if the return value is not used in state.method.
-        val returnTypeOfCallee = updatedCallee.definedMethod.returnType.asObjectType
-        newTypes.filter(t ⇒ t.isSubtypeOf(returnTypeOfCallee))
+        val backwardFlowResult = backwardFlow(state.method, updatedCallee, UIDSet(newCalleeTypes.toSeq: _*))
 
-        if (newTypes.nonEmpty) {
+        if (backwardFlowResult.isDefined) {
             Results(
                 InterimPartialResult(state.dependees, c(state)),
-                typeFlowPartialResult(state.method, UIDSet(newTypes.toSeq: _*))
+                backwardFlowResult.get
             )
         } else {
             InterimPartialResult(state.dependees, c(state))
         }
+    }
 
+    // calculate flow of new types from caller to callee
+    private def forwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCallerTypes: UIDSet[ObjectType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+
+        val allParameterTypes: RefArray[FieldType] = calleeMethod.definedMethod.parameterTypes
+        // TODO AB handle other types than ObjectTypes (e.g. arrays, primitive types like int?)
+        // TODO AB performance...; maybe cache this stuff somehow
+        val relevantParameterTypes = allParameterTypes.toSeq.filter(_.isObjectType).map(_.asObjectType)
+
+        val newTypes = newCallerTypes.filter(t ⇒ relevantParameterTypes.exists(p ⇒ t.isSubtypeOf(p)))
+
+        if (newTypes.nonEmpty)
+            Some(typeFlowPartialResult(calleeMethod, UIDSet(newTypes.toSeq: _*)))
+        else
+            None
+    }
+
+    // calculate flow of new types from callee to caller
+    private def backwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCalleeTypes: UIDSet[ObjectType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+
+        val returnTypeOfCallee = calleeMethod.definedMethod.returnType
+        if (!returnTypeOfCallee.isObjectType) {
+            return None;
+        }
+
+        val newTypes = newCalleeTypes.filter(t ⇒ t.isSubtypeOf(returnTypeOfCallee.asObjectType))
+
+        if (newTypes.nonEmpty)
+            Some(typeFlowPartialResult(callerMethod, UIDSet(newTypes.toSeq: _*)))
+        else
+            None
     }
 
     def typeFlowPartialResult(method: DefinedMethod, newTypes: UIDSet[ObjectType]): PartialResult[DefinedMethod, InstantiatedTypes] = {
