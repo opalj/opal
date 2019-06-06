@@ -25,8 +25,4 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
     def elements: PointsToSet
 
     def included(other: T): T
-
-    def included(
-        newElements: TraversableOnce[ElementType], newTypes: TraversableOnce[ObjectType]
-    ): T
 }
