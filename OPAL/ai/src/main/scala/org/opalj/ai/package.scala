@@ -70,7 +70,7 @@ package object ai {
 
     final type PCs = org.opalj.br.PCs
 
-    final def NoPCs : IntTrieSet = org.opalj.br.NoPCs
+    final def NoPCs: IntTrieSet = org.opalj.br.NoPCs
 
     /**
      * A `ValueOrigin` identifies the origin of a value within a method.

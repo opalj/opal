@@ -31,14 +31,14 @@ import org.opalj.br.Code
 sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequence[Stmt[V]] {
 
     /**
-    * The variables which store the method's explicit and implicit (`this` in case
-      * of an instance method) parameters.
-      * In case of the ai-based representation (TACAI - default representation),
-      * the variables are returned which store (the initial) parameters. If these variables
-      * are written and we have a loop which includes the very first instruction, the
-      * value will reflect this usage.
-      * In case of the naive representation it "just" contains the names of the
-      * registers which store the parameters.
+     * The variables which store the method's explicit and implicit (`this` in case
+     * of an instance method) parameters.
+     * In case of the ai-based representation (TACAI - default representation),
+     * the variables are returned which store (the initial) parameters. If these variables
+     * are written and we have a loop which includes the very first instruction, the
+     * value will reflect this usage.
+     * In case of the naive representation it "just" contains the names of the
+     * registers which store the parameters.
      */
     def params: Parameters[P]
 
