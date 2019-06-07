@@ -59,7 +59,7 @@ abstract class ClosedPackages extends (String ⇒ Boolean) {
  * To use this analysis set the config key:
  *  `org.opalj.br.analyses.cg.ClosedPackagesKey.analysis`
  * to
- *  `org.opalj.br.analyses.cg.[[ClosedCodeBase]]`
+ *  `org.opalj.br.analyses.cg.[[AllPackagesClosed]]`
  *
  * @note An application that uses reflection to load functionality at runtime has a
  *       well-defined extension point and is not a ''simple application'' in the above sense.
