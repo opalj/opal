@@ -4,6 +4,7 @@ package fpcf
 package properties
 package callgraph
 
+import org.opalj.collection.immutable.RefArray
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ArrayValue
 import org.opalj.br.ClassValue
@@ -19,8 +20,7 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.collection.immutable.RefArray
+import org.opalj.br.fpcf.properties.cg.Callees
 
 class DirectCallMatcher extends AbstractPropertyMatcher {
 

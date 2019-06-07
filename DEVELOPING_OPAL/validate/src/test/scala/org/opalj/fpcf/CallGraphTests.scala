@@ -2,8 +2,6 @@
 package org.opalj
 package fpcf
 
-import java.io.File
-
 import scala.collection.JavaConverters._
 
 import com.typesafe.config.Config
@@ -11,11 +9,6 @@ import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.tac.cg.CallGraph
-import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler

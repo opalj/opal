@@ -10,7 +10,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 
 /**
  * Matches AvailableTypes annotations to the values computed cooperatively by a
@@ -32,7 +32,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
             properties.find(_.isInstanceOf[InstantiatedTypes]) match {
                 case Some(prop) ⇒
                     prop.asInstanceOf[InstantiatedTypes].types
-                case None       ⇒
+                case None ⇒
                     implicit val ctx: LogContext = p.logContext
                     // TODO AB maybe this should be an error after all, re-check later
                     OPALLogger.warn("property matcher", s"Expected property InstantiatedTypes not computed for $entity.")

@@ -21,8 +21,8 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.cg.properties.Callers
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.instructions.NEW
 import org.opalj.br.Method
@@ -41,7 +41,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Andreas Bauer
  */
 // TODO AB replace later with a more sophisticated analysis (based on the RTA one)
-class ConstructorCallInstantiatedTypesAnalysis(final val project: SomeProject) extends ReachableMethodAnalysis {
+class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) extends ReachableMethodAnalysis {
 
     override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         val code = definedMethod.definedMethod.body.get
@@ -50,7 +50,6 @@ class ConstructorCallInstantiatedTypesAnalysis(final val project: SomeProject) e
             case NEW(declType) ⇒ Some(declType)
             case _             ⇒ None
         })
-
 
         PartialResult(
             definedMethod,
