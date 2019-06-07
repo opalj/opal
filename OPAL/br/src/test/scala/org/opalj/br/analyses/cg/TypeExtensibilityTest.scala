@@ -41,7 +41,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
         val closedConf = ConfigFactory.parseString(
             mergeConfigString(
                 ClassExtensibilityConfig.classExtensibilityAnalysis,
-                ClosedPackagesConfig.closedCodeBase
+                ClosedPackagesConfig.allPackagesClosed
             )
         )
 
@@ -83,7 +83,7 @@ class TypeExtensibilityTest extends FunSpec with Matchers {
 
         val configString = mergeConfigString(
             ClassExtensibilityConfig.classExtensibilityAnalysis,
-            ClosedPackagesConfig.closedCodeBase
+            ClosedPackagesConfig.allPackagesClosed
         )
 
         val config = ConfigFactory.parseString(configString)

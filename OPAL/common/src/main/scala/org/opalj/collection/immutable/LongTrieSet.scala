@@ -41,6 +41,15 @@ sealed abstract class LongTrieSet
 
     final override def subsetOf(other: LongTrieSet): Boolean = subsetOf(other, 0)
 
+    final override def equals(other: Any): Boolean = {
+        other match {
+            case that: LongTrieSet ⇒ this.equals(that)
+            case _                 ⇒ false
+        }
+    }
+
+    def equals(that: LongTrieSet): Boolean
+
     final override def toString: String = mkString("LongTrieSet(", ",", ")")
 
     /**
@@ -107,7 +116,7 @@ final class FilteredLongTrieSet(
     override def +(i: Long): LongTrieSet = filtered + i
     override def +!(value: Long): LongTrieSet = filtered +! value
     override def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B = filtered.foldLeft(z)(f)
-    override def equals(other: Any): Boolean = filtered.equals(other)
+    override def equals(other: LongTrieSet): Boolean = filtered.equals(other)
     override def hashCode: Int = filtered.hashCode()
 
     // Actually the following methods should never be called... in a sense they are dead.
@@ -157,12 +166,7 @@ case object EmptyLongTrieSet extends LongTrieSetL {
     override def forall(f: Long ⇒ Boolean): Boolean = true
     override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = this
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: LongTrieSet ⇒ that.isEmpty
-            case _                 ⇒ false
-        }
-    }
+    override def equals(that: LongTrieSet): Boolean = (this eq that) || that.isEmpty
 
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
 
@@ -201,10 +205,12 @@ final case class LongTrieSet1 private (i: Long) extends LongTrieSetL {
     override def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B = f(z, i)
     override def forall(f: Long ⇒ Boolean): Boolean = f(i)
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: LongTrieSet ⇒ that.isSingletonSet && this.i == that.head
-            case _                 ⇒ false
+    override def equals(other: LongTrieSet): Boolean = {
+        (this eq other) || {
+            other match {
+                case that: LongTrieSet1 ⇒ this.i == that.i
+                case that  ⇒ that.isSingletonSet && this.i == that.head
+            }
         }
     }
 
@@ -317,11 +323,12 @@ private[immutable] final class LongTrieSet2 private[immutable] (
         }
     }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: LongTrieSet2 ⇒ this.i1 == that.i1 && this.i2 == that.i2
-            case that: LongTrieSet  ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
-            case _                  ⇒ false
+    override def equals(other: LongTrieSet): Boolean = {
+        (other eq this) || {
+            other match {
+                case that: LongTrieSet2 ⇒ this.i1 == that.i1 && this.i2 == that.i2
+                case that  ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
+            }
         }
     }
 
@@ -424,14 +431,13 @@ private[immutable] final class LongTrieSet3 private[immutable] (
         }
     }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: LongTrieSet3 ⇒
-                this.i1 == that.i1 && this.i2 == that.i2 && this.i3 == that.i3
-            case that: LongTrieSet ⇒
-                that.size == 3 && that.contains(i1) && that.contains(i2) && that.contains(i3)
-            case _ ⇒
-                false
+    override def equals(other: LongTrieSet): Boolean = {
+        (other eq this) || { other match {
+                case that: LongTrieSet3 ⇒
+                    this.i1 == that.i1 && this.i2 == that.i2 && this.i3 == that.i3
+                case that ⇒
+                    that.size == 3 && that.contains(i1) && that.contains(i2) && that.contains(i3)
+            }
         }
     }
 
@@ -465,22 +471,17 @@ private[immutable] abstract class LongTrieSetNN extends LongTrieSet {
 
     final override def withFilter(p: Long ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
 
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case that: LongTrieSet ⇒
-                that.size == this.size && {
-                    // we have stable orderings!
-                    val thisIt = this.iterator
-                    val otherIt = that.iterator
-                    var allEqual = true
-                    while (thisIt.hasNext && allEqual) {
-                        allEqual = thisIt.next() == otherIt.next()
-                    }
-                    allEqual
-                }
-            case _ ⇒
-                false
-        }
+    final override def equals(that: LongTrieSet): Boolean = {
+        (that eq this) || (that.size == this.size && {
+            // we have stable orderings!
+            val thisIt = this.iterator
+            val otherIt = that.iterator
+            var allEqual = true
+            while (thisIt.hasNext && allEqual) {
+                allEqual = thisIt.next() == otherIt.next()
+            }
+            allEqual
+        })
     }
 
     final override def hashCode: Int = foldLeft(1)(31 * _ + JLong.hashCode(_))

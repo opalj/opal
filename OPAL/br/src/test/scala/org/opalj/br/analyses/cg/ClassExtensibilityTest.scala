@@ -74,7 +74,7 @@ class ClassExtensibilityTest extends FunSpec with Matchers {
 
         val configString = mergeConfigString(
             ClassExtensibilityConfig.classExtensibilityAnalysis,
-            ClosedPackagesConfig.closedCodeBase
+            ClosedPackagesConfig.allPackagesClosed
         )
 
         val config = ConfigFactory.parseString(configString)
@@ -131,7 +131,7 @@ class ClassExtensibilityTest extends FunSpec with Matchers {
 
         val confString = mergeConfigString(
             ClassExtensibilityConfig.configuredFinalClasses(forcedExtensibleClasses),
-            ClosedPackagesConfig.closedCodeBase
+            ClosedPackagesConfig.allPackagesClosed
         )
 
         val config = ConfigFactory.parseString(confString)
@@ -181,10 +181,10 @@ object ClosedPackagesConfig {
           |}
         """.stripMargin
 
-    val closedCodeBase =
+    val allPackagesClosed =
         """
           |org.opalj.br.analyses.cg.ClosedPackagesKey {
-          |    analysis = "org.opalj.br.analyses.cg.ClosedCodeBase"
+          |    analysis = "org.opalj.br.analyses.cg.AllPackagesClosed"
           |}
         """.stripMargin
 

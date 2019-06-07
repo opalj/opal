@@ -450,7 +450,7 @@ object Return {
 }
 
 /**
- * Models a no-operation. In general, a NOP operation can be pruned; however, in the TACAI
+ * Models a no-operation. In general, a NOP (no operation) can be pruned; however, in the TACAI
  * representation, if a NOP is the last statement of a basic block where the previous basic block
  * has multiple-successors then it may be the case that the NOP cannot be pruned, because it it
  * is required to keep the path alive. For example, given the following code:
@@ -466,11 +466,10 @@ object Return {
  * }
  * }}}
  *
- * In this case, the returned value is either i or j and therefore the UVar would directly encode that
- * information and therefore the assignments would be ignored. (The information can be recovered,
- * if needed, using the control-flow information.)
- *
- * @param pc
+ * In this case, the returned value is either i or j and therefore the UVar would directly encode
+ * that information and therefore the assignments would be ignored. (The information cannot be
+ * recovered! If needed a complete SSA representation would be required; TACAI only provides only
+ * an SSA-like representation!)
  */
 case class Nop(pc: Int) extends SimpleStmt {
 
