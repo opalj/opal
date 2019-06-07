@@ -26,12 +26,12 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 case class AllocationSitePointsToSet private[pointsto] (
-    override val elements:    LongTrieSet,
-    override val types:       UIDSet[ObjectType],
-    private val orderedTypes: List[ObjectType]
+        override val elements:    LongTrieSet,
+        override val types:       UIDSet[ObjectType],
+        private val orderedTypes: List[ObjectType]
 ) extends PointsToSetLike[AllocationSite, LongTrieSet, AllocationSitePointsToSet]
-        with OrderedProperty
-        with AllocationSitePointsToSetPropertyMetaInformation {
+    with OrderedProperty
+    with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 

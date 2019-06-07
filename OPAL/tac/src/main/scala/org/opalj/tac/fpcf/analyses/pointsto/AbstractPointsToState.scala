@@ -20,7 +20,7 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
  * @author Florian Kuebler
  */
 trait AbstractPointsToState[Depender, PointsToSet <: PointsToSetLike[_, _, _]]
-        extends TACAIBasedAnalysisState {
+    extends TACAIBasedAnalysisState {
 
     // maps a defsite to its result in the property store for the points-to set
     private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsToSet]] = {

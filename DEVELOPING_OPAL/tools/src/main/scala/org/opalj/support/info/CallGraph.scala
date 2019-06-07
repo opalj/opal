@@ -21,7 +21,7 @@ import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.PointsToCallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.pointsto.AndersenStylePointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 
 /**
  * Computes a call graph and reports its size.
@@ -108,7 +108,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
         if (cgAlgorithm != "PointsTo") {
             val manager = project.get(FPCFAnalysesManagerKey)
-            manager.runAll(AndersenStylePointsToAnalysisScheduler)
+            manager.runAll(TypeBasedPointsToAnalysisScheduler)
         }
 
         println(ps.entities(TypeBasedPointsToSet.key).size)
