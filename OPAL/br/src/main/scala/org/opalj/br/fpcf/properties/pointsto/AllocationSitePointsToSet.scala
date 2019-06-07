@@ -57,11 +57,14 @@ case class AllocationSitePointsToSet private[pointsto] (
         var newTypes = types
         var newOrderedTypes = orderedTypes
         other.orderedTypes.foreach { newType ⇒
-            if (!newTypes.contains(newType)) {
+            if (!types.contains(newType)) {
                 newTypes += newType
                 newOrderedTypes ::= newType
             }
         }
+        if ((elements eq newAllocationSites) && (newTypes eq types))
+            return this;
+
         new AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
@@ -71,7 +74,7 @@ case class AllocationSitePointsToSet private[pointsto] (
                 that.numTypes == this.numTypes &&
                     that.elements.size == this.elements.size &&
                     that.orderedTypes == this.orderedTypes &&
-                    that.elements == that.elements
+                    that.elements == this.elements
             case _ ⇒ false
         }
     }
@@ -96,4 +99,8 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 
 object NoAllocationSites extends AllocationSitePointsToSet(
     LongTrieSet.empty, UIDSet.empty, List.empty
-)
+) {
+    override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
+        other
+    }
+}

@@ -55,6 +55,10 @@ case class TypeBasedPointsToSet private[properties] (
                 typesUnion += t
             }
         }
+
+        if (types eq typesUnion)
+            return this;
+
         new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
     }
 

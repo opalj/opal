@@ -101,14 +101,22 @@ object CallGraph extends ProjectAnalysisApplication {
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
         val cg = cgAlgorithm match {
-            case "CHA"        ⇒ project.get(CHACallGraphKey)
-            case "RTA"        ⇒ project.get(RTACallGraphKey)
-            case "PointsToAS" ⇒ project.get(TypeBasedPointsToCallGraphKey)
-            case "PointsTo"   ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
+            case "CHA"         ⇒ project.get(CHACallGraphKey)
+            case "RTA"         ⇒ project.get(RTACallGraphKey)
+            case "PointsToASD" ⇒ project.get(TypeBasedPointsToCallGraphKey)
+            case "PointsTo"    ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
         }
 
-        println(ps.entities(AllocationSitePointsToSet.key).size)
-        println(ps.entities(TypeBasedPointsToSet.key).size)
+        val ptss = ps.entities(TypeBasedPointsToSet.key).toList
+        val statistic = ptss.groupBy(p ⇒ p.ub.elements.size).mapValues(_.size).toArray.sorted
+        println(statistic.mkString("\n"))
+
+        val ptss2 = ps.entities(AllocationSitePointsToSet.key).toList
+        val statistic2 = ptss2.groupBy(p ⇒ p.ub.elements.size).mapValues(_.size).toArray.sorted
+        println(statistic2.mkString("\n"))
+
+        println(ptss.size)
+        println(ptss2.size)
 
         val reachableMethods = cg.reachableMethods().toTraversable
 
