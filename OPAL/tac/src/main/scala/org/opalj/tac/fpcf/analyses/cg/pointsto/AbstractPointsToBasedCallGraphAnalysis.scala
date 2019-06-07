@@ -1,5 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.cg.pointsto
+package org.opalj
+package tac
+package fpcf
+package analyses
+package cg
+package pointsto
 
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.IntTrieSet
@@ -15,34 +20,29 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.tac.fpcf.analyses.cg.V
-import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.Call
-import org.opalj.tac.VirtualCall
-import org.opalj.tac.fpcf.analyses.cg.AbstractCallGraphAnalysis
-import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.CallSiteT
-import org.opalj.tac.fpcf.analyses.cg.DirectCalls
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * Uses the [[TypeBasedPointsToSet]] of
+ * Uses the [[PointsToSetLike]] of
  * [[org.opalj.tac.common.DefinitionSite]] and[[org.opalj.br.analyses.VirtualFormalParameter]]s
  * in order to determine the targets of virtual method calls.
  *
  * @author Florian Kuebler
  */
-class PointsToBasedCallGraphAnalysis private[analyses] (
-        final val project: SomeProject
-) extends AbstractCallGraphAnalysis with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSetLike[_, _, _]] {
+trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
+    extends AbstractCallGraphAnalysis
+    with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
 
-    override type State = PointsToBasedCGState
+    override type State = PointsToBasedCGState[PointsToSet]
 
     /**
-     * Computes the calles of the given `method` including the known effect of the `call` and
+     * Computes the calls of the given `method` including the known effect of the `call` and
      * the call sites associated ith this call (in order to process updates of instantiated types).
      * There can be multiple "call sites", in case the three-address code has computed multiple
      * type bounds for the receiver.
@@ -54,7 +54,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
         specializedDeclaringClassType: ReferenceType,
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
-    )(implicit state: PointsToBasedCGState): Unit = {
+    )(implicit state: State): Unit = {
         val callerType = caller.definedMethod.classFile.thisType
         val callSite = (pc, call.name, call.descriptor, call.declaringClass)
 
@@ -89,7 +89,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
     }
 
     override def c(
-        state: PointsToBasedCGState
+        state: State
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
             val relevantCallSites = state.dependersOf(e)
@@ -126,7 +126,7 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
                 if (isFinal) {
                     state.removePointsToDependee(e)
                 } else {
-                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSetLike[_, _, _]]])
+                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSet]])
                 }
             }
 
@@ -137,21 +137,49 @@ class PointsToBasedCallGraphAnalysis private[analyses] (
 
     override def createInitialState(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
-    ): PointsToBasedCGState = new PointsToBasedCGState(definedMethod, tacEP)
+    ): PointsToBasedCGState[PointsToSet] = {
+        new PointsToBasedCGState[PointsToSet](definedMethod, tacEP)
+    }
+}
 
-    override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSetLike[_, _, _]] = {
+class TypeBasedPointsToBasedCallGraphAnalysis private[pointsto] (
+        final val project: SomeProject
+) extends AbstractPointsToBasedCallGraphAnalysis[TypeBasedPointsToSet] {
+    override protected[this] val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
         TypeBasedPointsToSet.key
     }
 
-    // todo, why do we need this here?
-    override protected def emptyPointsToSet: PointsToSetLike[_, _, _] = NoTypes
+    override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 }
 
-object PointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
+object TypeBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(TypeBasedPointsToSet)
 
-    override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = {
-        new PointsToBasedCallGraphAnalysis(p)
+    override def initializeAnalysis(p: SomeProject): TypeBasedPointsToBasedCallGraphAnalysis = {
+        new TypeBasedPointsToBasedCallGraphAnalysis(p)
+    }
+}
+
+class AllocationSiteBasedPointsToBasedCallGraphAnalysis private[pointsto] (
+        final val project: SomeProject
+) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSet] {
+    override protected[this] val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {
+        AllocationSitePointsToSet.key
+    }
+
+    override protected def emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
+}
+
+object AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
+
+    override def uses: Set[PropertyBounds] = {
+        super.uses + PropertyBounds.ub(AllocationSitePointsToSet)
+    }
+
+    override def initializeAnalysis(
+        p: SomeProject
+    ): AllocationSiteBasedPointsToBasedCallGraphAnalysis = {
+        new AllocationSiteBasedPointsToBasedCallGraphAnalysis(p)
     }
 }

@@ -10,18 +10,18 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
-import org.opalj.tac.cg.PointsToCallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
+import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
 
 /**
  * Computes a call graph and reports its size.
@@ -101,16 +101,13 @@ object CallGraph extends ProjectAnalysisApplication {
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
         val cg = cgAlgorithm match {
-            case "CHA"      ⇒ project.get(CHACallGraphKey)
-            case "RTA"      ⇒ project.get(RTACallGraphKey)
-            case "PointsTo" ⇒ project.get(PointsToCallGraphKey)
+            case "CHA"        ⇒ project.get(CHACallGraphKey)
+            case "RTA"        ⇒ project.get(RTACallGraphKey)
+            case "PointsToAS" ⇒ project.get(TypeBasedPointsToCallGraphKey)
+            case "PointsTo"   ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
         }
 
-        if (cgAlgorithm != "PointsTo") {
-            val manager = project.get(FPCFAnalysesManagerKey)
-            manager.runAll(TypeBasedPointsToAnalysisScheduler)
-        }
-
+        println(ps.entities(AllocationSitePointsToSet.key).size)
         println(ps.entities(TypeBasedPointsToSet.key).size)
 
         val reachableMethods = cg.reachableMethods().toTraversable
