@@ -8,7 +8,7 @@ import org.opalj.fpcf.properties.callgraph.AvailableTypes;
  *
  * @author Andreas Bauer
  */
-public class MethodFlows {
+public class StaticMethodFlows {
     // The main enty point.
     public static void main(String[] args) {
         // Call the tests. No data-flow here that should influence the results.

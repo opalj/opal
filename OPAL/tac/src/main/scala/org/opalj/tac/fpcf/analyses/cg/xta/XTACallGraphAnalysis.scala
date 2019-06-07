@@ -98,8 +98,12 @@ class XTACallGraphAnalysis private[analyses] (
             val forwardResult = forwardFlow(state.method, newCallee, state.ownInstantiatedTypesUB)
             val backwardResult = backwardFlow(state.method, newCallee, calleeInstantiatedTypesDependee.ub.types)
 
+            state.updateCalleeSeenTypes(newCallee, calleeInstantiatedTypesDependee.ub.numElements)
+
             forwardResult ++ backwardResult
         } else {
+            state.updateCalleeSeenTypes(newCallee, 0)
+
             Seq.empty
         }
     }
@@ -125,16 +129,17 @@ class XTACallGraphAnalysis private[analyses] (
         handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
 
         // TODO AB forward flow (to callees) should be handled here!
-        val newTypes = state.newInstantiatedTypes(seenTypes)
-        val forwardFlowResults = state.seenCallees.flatMap(c ⇒ forwardFlow(state.method, c, UIDSet(newTypes.toSeq: _*)))
+        // TODO AB need to convert the interator immediately, since we can only use the iterator once
+        val newTypes = state.newInstantiatedTypes(seenTypes).toSeq
+        val forwardFlowResults = state.seenCallees.flatMap(c ⇒ forwardFlow(state.method, c, UIDSet(newTypes: _*)))
 
         returnResult(calleesAndCallers, forwardFlowResults)(state)
     }
 
     // TODO AB (mostly) copied from super-class since we need to make some adjustments
     override protected def returnResult(
-                                calleesAndCallers: DirectCalls
-                              )(implicit state: State): ProperPropertyComputationResult = {
+        calleesAndCallers: DirectCalls
+    )(implicit state: State): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.method)
 
         if (state.hasOpenDependencies)
@@ -240,9 +245,11 @@ class XTACallGraphAnalysis private[analyses] (
                 None
 
         case _: EPK[_, _] ⇒
-            throw new IllegalStateException(
-                "the instantiated types property should be pre initialized"
-            )
+            val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
+            Some(InterimEUBP(method, newUB))
+        //            throw new IllegalStateException(
+        //                "the instantiated types property should be pre initialized"
+        //            )
 
         case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
@@ -253,6 +260,7 @@ class XTACallGraphAnalysis private[analyses] (
         for {
             pc ← callees.callSitePCs
             callee ← callees.callees(pc)
+            if callee.hasSingleDefinedMethod // TODO AB bad, should work on DeclaredMethods...
         } {
             calleeMethods += callee.asDefinedMethod
         }

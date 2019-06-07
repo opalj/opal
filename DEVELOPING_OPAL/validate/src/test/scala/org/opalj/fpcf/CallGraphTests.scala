@@ -34,7 +34,7 @@ class CallGraphTests extends PropertiesTest {
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
             )
 
-        configuredEntryPoint(baseConfig, "org/opalj/fpcf/fixtures/callgraph/xta/MethodFlows", "main")
+        //configuredEntryPoint(baseConfig, "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows", "main")
     }
 
     // for testing
