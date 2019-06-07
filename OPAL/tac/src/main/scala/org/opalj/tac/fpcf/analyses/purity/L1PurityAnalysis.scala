@@ -31,7 +31,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldMutability
@@ -46,10 +45,11 @@ import org.opalj.br.fpcf.properties.VirtualMethodPurity
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.CallersProperty
-import org.opalj.br.fpcf.cg.properties.NoCallers
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -451,7 +451,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, CallersProperty.key).ub != NoCallers ⇒
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
                 dm.asDefinedMethod
         }
 
@@ -461,7 +461,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
         analysis
     }
 
-    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(CallersProperty)
+    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.finalP(Callers)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 

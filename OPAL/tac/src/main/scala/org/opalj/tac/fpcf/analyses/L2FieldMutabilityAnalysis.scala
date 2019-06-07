@@ -10,7 +10,6 @@ import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.DeclaredFinalField
 import org.opalj.br.fpcf.properties.EffectivelyFinalField
@@ -78,6 +77,7 @@ import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException

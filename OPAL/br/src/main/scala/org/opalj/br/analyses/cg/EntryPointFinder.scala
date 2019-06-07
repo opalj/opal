@@ -36,7 +36,7 @@ sealed trait EntryPointFinder {
  * @note If it is required to find only a specific main method as entry point, please use the
  *       configuration-based entry point finder.
  *
- *  @author Michael Reif
+ * @author Michael Reif
  */
 trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
@@ -47,6 +47,28 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
             case m: Method if m.isStatic
                 && (m.descriptor == MAIN_METHOD_DESCRIPTOR)
                 && (m.name == "main") ⇒ m
+        }
+    }
+}
+
+/**
+ * Similar to the [[ApplicationEntryPointsFinder]] this trait selects main methods as entry points
+ * for standard command line applications. It excludes, however, main methods found in the Java
+ * Runtime Environment to prevent analyses of applications where the JRE is included in the project
+ * from being polluted by these entry points that are not part of the application.
+ *
+ * @author Florian Kuebler
+ */
+trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinder {
+    private val packagesToExclude = Set(
+        "com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax"
+    )
+
+    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+        super.collectEntryPoints(project).filterNot { ep ⇒
+            packagesToExclude.exists { prefix ⇒
+                ep.declaringClassFile.thisType.packageName.startsWith(prefix)
+            }
         }
     }
 }
@@ -113,31 +135,31 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
 }
 
 /**
- * This trait provides an analysis that loads entry points from the given project configuration file.
+ * This trait provides an analysis that loads entry points from the project configuration file.
  *
  * All entry points must be configured under the following configuration key:
  *      **org.opalj.br.analyses.cg.InitialEntryPointsKey.entryPoints**
  *
  * Example:
  * {{{
- *        org.opalj.br.analyses {
+ *        org.opalj.br.analyses.cg {
  *            InitialEntryPointKey {
- *                analysis = "org.opalj.br.analyses.ConfigurationEntryPointsFinder"
- *                 entryPoints = [
- *                   {declaringClass = "java/util/List+", name = "add"},
- *                   {declaringClass = "java/util/List", name = "remove", descriptor = "(I)Z"}
- *                 ]
+ *                analysis = "org.opalj.br.analyses.cg.ConfigurationEntryPointsFinder"
+ *                entryPoints = [
+ *                  {declaringClass = "java/util/List+", name = "add"},
+ *                  {declaringClass = "java/util/List", name = "remove", descriptor = "(I)Z"}
+ *                ]
  *            }
  *        }
  *  }}}
  *
- * Please note that the first entry point, by adding the "=" to the declaring class' name, considers all
- * "add" methods from all subtypes independently form the respective method's descriptor. In constrast,
- * the second entry does specify a descriptor and does not consider list subtypes (by not suffixing a plus to
- * the declaringClass) which implies that only the remove method with this descriptor is considered as entry point.
+ * Please note that the first entry point, by adding the "+" to the declaring class' name, considers
+ * all "add" methods from all subtypes independently from the respective method's descriptor. In
+ * contrast, the second entry does specify a descriptor and does not consider List's subtypes (by
+ * not suffixing a plus to the declaringClass) which implies that only the remove method with this
+ * descriptor is considered as entry point.
  *
- *
- *  @author Michael Reif
+ * @author Michael Reif
  */
 trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
@@ -223,7 +245,15 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
                                 )
                         }
 
-                        assert(methods.forall(_.body.isDefined), "A method without body has been identified as entry point")
+                        if (methods.exists(_.body.isEmpty)) {
+                            OPALLogger.warn(
+                                "project configuration",
+                                s"$typeName has an empty method $name); "+
+                                    "entry point ignored"
+                            )
+                            methods = methods.filter(_.body.isDefined)
+                        }
+
                         entryPoints = entryPoints ++ methods
 
                     case None if !isSubtype ⇒
@@ -272,6 +302,10 @@ object ApplicationEntryPointsFinder
     extends ApplicationEntryPointsFinder
     with ConfigurationEntryPointsFinder
 
+object ApplicationWithoutJREEntryPointsFinder
+    extends ApplicationWithoutJREEntryPointsFinder
+    with ConfigurationEntryPointsFinder
+
 /**
  * The ApplicationEntryPointsFinder considers all main methods plus additionally configured entry points.
  *
@@ -281,11 +315,11 @@ object LibraryEntryPointsFinder
     extends LibraryEntryPointsFinder
     with ConfigurationEntryPointsFinder
 
-/*
-* The MetaEntryPointsFinder is a conservative EntryPoints finder triggers all known finders.
-*
-* @author Michael Reif
-*/
+/**
+ * The MetaEntryPointsFinder is a conservative EntryPoints finder triggers all known finders.
+ *
+ * @author Michael Reif
+ */
 object MetaEntryPointsFinder
     extends ApplicationEntryPointsFinder
     with LibraryEntryPointsFinder
@@ -293,7 +327,10 @@ object MetaEntryPointsFinder
 
 /**
  * The AllEntryPointsFinder considers all methods as entry points. It can be configured to consider
- * only project methods as entry points instead of project and library methods.
+ * only project methods as entry points instead of project and library methods by specifying
+ * **org.opalj.br.analyses.cg.InitialEntryPointsKey.AllEntryPointsFinder.projectMethodsOnly=true**.
+ *
+ * @author Dominik Helm
  */
 object AllEntryPointsFinder extends EntryPointFinder {
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {

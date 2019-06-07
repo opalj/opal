@@ -7,28 +7,13 @@ import java.net.URL
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.ai.domain.l2
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -43,6 +28,7 @@ class FieldMutabilityTests extends PropertiesTest {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             _ ⇒ Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
         }
+        p.get(RTACallGraphKey)
     }
 
     describe("no analysis is scheduled") {
@@ -55,9 +41,7 @@ class FieldMutabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL0FieldMutabilityAnalysis,
-                LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyL0BaseAIAnalysis,
-                TACAITransformer
+                LazyUnsoundPrematurelyReadFieldsAnalysis
             )
         )
         as.propertyStore.shutdown()
@@ -68,27 +52,8 @@ class FieldMutabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL1FieldMutabilityAnalysis,
-                RTACallGraphAnalysisScheduler,
-                TriggeredStaticInitializerAnalysis,
-                TriggeredLoadedClassesAnalysis,
-                TriggeredFinalizerAnalysisScheduler,
-                TriggeredThreadRelatedCallsAnalysis,
-                TriggeredSerializationRelatedCallsAnalysis,
-                TriggeredReflectionRelatedCallsAnalysis,
-                TriggeredInstantiatedTypesAnalysis,
-                TriggeredSystemPropertiesAnalysis,
-                LazyL0BaseAIAnalysis,
-                TACAITransformer,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyCalleesAnalysis(
-                    Set(
-                        StandardInvokeCallees,
-                        SerializationRelatedCallees,
-                        ReflectionRelatedCallees,
-                        ThreadRelatedIncompleteCallSites
-                    )
-                )
+                LazyInterProceduralEscapeAnalysis
             )
         )
         as.propertyStore.shutdown()
@@ -99,26 +64,9 @@ class FieldMutabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL2FieldMutabilityAnalysis,
-                RTACallGraphAnalysisScheduler,
-                TriggeredStaticInitializerAnalysis,
-                TriggeredLoadedClassesAnalysis,
-                TriggeredFinalizerAnalysisScheduler,
-                TriggeredThreadRelatedCallsAnalysis,
-                TriggeredSerializationRelatedCallsAnalysis,
-                TriggeredReflectionRelatedCallsAnalysis,
-                TriggeredInstantiatedTypesAnalysis,
-                TriggeredSystemPropertiesAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyL0BaseAIAnalysis,
-                TACAITransformer,
-                LazyCalleesAnalysis(Set(
-                    StandardInvokeCallees,
-                    SerializationRelatedCallees,
-                    ReflectionRelatedCallees,
-                    ThreadRelatedIncompleteCallSites
-                ))
+                LazyInterProceduralEscapeAnalysis
             )
         )
         as.propertyStore.shutdown()

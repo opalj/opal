@@ -19,7 +19,6 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
-import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.EscapeViaStaticField
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -362,13 +361,8 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         // if we do not depend on other entities, or are globally escaping, return the result
         // note: replace by global escape
         if (!state.hasDependees || state.mostRestrictiveProperty.isBottom) {
-            // that is, mostRestrictiveProperty is an AtMost
-            if (state.mostRestrictiveProperty.isInstanceOf[AtMost]) {
-                //TODO InterimResult(context.entity, GlobalEscape, state.mostRestrictiveProperty, Seq.empty, continuation)
-                Result(context.entity, state.mostRestrictiveProperty)
-            } else {
-                Result(context.entity, state.mostRestrictiveProperty)
-            }
+            Result(context.entity, state.mostRestrictiveProperty)
+
         } else {
             InterimResult(
                 context.entity,

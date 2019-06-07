@@ -6,34 +6,18 @@ package info
 import java.net.URL
 
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.FreshReturnValue
 import org.opalj.br.fpcf.properties.Getter
 import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.EagerReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredConfiguredNativeMethodsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
 
 /**
  * Computes return value freshness information; see
@@ -47,7 +31,7 @@ object ReturnValueFreshness extends ProjectAnalysisApplication {
 
     override def description: String = {
         "Describes whether a method returns a value that is allocated in that method or its "+
-            "callees and only has escape state \"Escape Via Return\""
+            "callees and only has escape state EscapeViaReturn"
     }
 
     override def doAnalyze(
@@ -56,34 +40,13 @@ object ReturnValueFreshness extends ProjectAnalysisApplication {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
+        project.get(RTACallGraphKey)
+
         val (ps, _ /*executed analyses*/ ) = project.get(FPCFAnalysesManagerKey).runAll(
-            LazyL0BaseAIAnalysis,
-            TACAITransformer, // LazyL0TACAIAnalysis,
-            /* Call Graph Analyses */
-            RTACallGraphAnalysisScheduler,
-            TriggeredStaticInitializerAnalysis,
-            TriggeredLoadedClassesAnalysis,
-            TriggeredFinalizerAnalysisScheduler,
-            TriggeredThreadRelatedCallsAnalysis,
-            TriggeredSerializationRelatedCallsAnalysis,
-            TriggeredReflectionRelatedCallsAnalysis,
-            TriggeredInstantiatedTypesAnalysis,
-            TriggeredConfiguredNativeMethodsAnalysis,
-            TriggeredSystemPropertiesAnalysis,
-            LazyCalleesAnalysis(
-                Set(
-                    StandardInvokeCallees,
-                    SerializationRelatedCallees,
-                    ReflectionRelatedCallees,
-                    ThreadRelatedIncompleteCallSites
-                )
-            ),
             LazyInterProceduralEscapeAnalysis,
             LazyFieldLocalityAnalysis,
             EagerReturnValueFreshnessAnalysis
         )
-
-        // TODO Provide more useful information about the entities and then add tests
 
         val fresh = ps.finalEntities(FreshReturnValue).toSeq
         val notFresh = ps.finalEntities(NoFreshReturnValue).toSeq

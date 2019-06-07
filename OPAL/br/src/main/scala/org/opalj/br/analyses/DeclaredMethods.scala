@@ -43,7 +43,12 @@ class DeclaredMethods(
         var method = dmSet.get(context)
         if (method != null) return method;
 
-        if ((runtimeType eq MethodHandle) || (runtimeType eq VarHandle)) {
+        if (((runtimeType eq MethodHandle) && (name == "invoke" || name == "invokeExact")) ||
+            ((runtimeType eq VarHandle) &&
+                (name.startsWith("compare") ||
+                    name.startsWith("get") ||
+                    name.startsWith("set") ||
+                    name.startsWith("weak")))) {
             method = dmSet.get(
                 new MethodContextQuery(
                     p,

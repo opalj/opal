@@ -83,7 +83,6 @@ object FPCFAnalysesRegistry {
                 error("FPCF registry", "analysis scheduler class is invalid", cce)
                 None
         }
-
     }
 
     private[this] case class AnalysisFactory(id: String, description: String, factory: String)

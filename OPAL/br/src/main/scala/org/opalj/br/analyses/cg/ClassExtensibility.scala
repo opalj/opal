@@ -129,7 +129,7 @@ class DefaultClassExtensibility(val project: SomeProject) extends AbstractClassE
  * @example The following example configuration would consider `java/util/Math` and
  *          `com/example/Type` as ''extensible''.
  *          {{{
- *          org.opalj.br.analyses.ClassExtensibilityKey.extensibleClasses =
+ *          org.opalj.br.analyses.cg.ClassExtensibilityKey.extensibleClasses =
  *              ["java/util/Math", "com/example/Type"]
  *          }}}
  */
@@ -156,7 +156,7 @@ class ConfiguredExtensibleClasses(val project: SomeProject) extends AbstractClas
  * @example The following example configuration would consider `java/util/Math` and
  *          `com/exmaple/Type` as ''not extensible''.
  *          {{{
- *          org.opalj.br.analyses.ClassExtensibilityKey.finalClasses =
+ *          org.opalj.br.analyses.cg.ClassExtensibilityKey.finalClasses =
  *              ["java/util/Math", "com/example/Type"]
  *          }}}
  */
