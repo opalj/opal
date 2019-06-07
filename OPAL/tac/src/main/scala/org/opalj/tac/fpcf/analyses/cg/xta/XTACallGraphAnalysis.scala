@@ -6,15 +6,8 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.DefinedMethod
-import org.opalj.br.FieldType
-import org.opalj.br.Method
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
+import scala.collection.mutable
+
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.UIDSet
@@ -30,9 +23,16 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
+import org.opalj.br.DefinedMethod
+import org.opalj.br.FieldType
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.fpcf.cg.properties.Callees
+import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.mutable
 
 /**
  * XTA is a dataflow-based call graph analysis which was introduced by Tip and Palsberg.
@@ -128,8 +128,7 @@ class XTACallGraphAnalysis private[analyses] (
 
         handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
 
-        // TODO AB forward flow (to callees) should be handled here!
-        // TODO AB need to convert the interator immediately, since we can only use the iterator once
+        // TODO AB we need to convert the interator immediately, since we can only use the iterator once
         val newTypes = state.newInstantiatedTypes(seenTypes).toSeq
         val forwardFlowResults = state.seenCallees.flatMap(c ⇒ forwardFlow(state.method, c, UIDSet(newTypes: _*)))
 
@@ -193,7 +192,7 @@ class XTACallGraphAnalysis private[analyses] (
     // calculate flow of new types from caller to callee
     private def forwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCallerTypes: UIDSet[ObjectType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
 
-        val allParameterTypes: RefArray[FieldType] = calleeMethod.definedMethod.parameterTypes
+        val allParameterTypes: RefArray[FieldType] = calleeMethod.descriptor.parameterTypes
         // TODO AB handle other types than ObjectTypes (e.g. arrays, primitive types like int?)
         // TODO AB performance...; maybe cache this stuff somehow
         val relevantParameterTypes = allParameterTypes.toSeq.filter(_.isObjectType).map(_.asObjectType)
@@ -209,7 +208,7 @@ class XTACallGraphAnalysis private[analyses] (
     // calculate flow of new types from callee to caller
     private def backwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCalleeTypes: UIDSet[ObjectType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
 
-        val returnTypeOfCallee = calleeMethod.definedMethod.returnType
+        val returnTypeOfCallee = calleeMethod.descriptor.returnType
         if (!returnTypeOfCallee.isObjectType) {
             return None;
         }

@@ -2,18 +2,25 @@
 package org.opalj
 package fpcf
 
+import java.io.File
+
+import scala.collection.JavaConverters._
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.tac.cg.CallGraph
+import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ConstructorCallInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTACallGraphAnalysisScheduler
-
-import scala.collection.JavaConverters._
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.
@@ -34,12 +41,12 @@ class CallGraphTests extends PropertiesTest {
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
             )
 
-        //configuredEntryPoint(baseConfig, "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows", "main")
+        //configuredEntryPoint(baseConfig, "org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows", "main")
     }
 
     // for testing
-    // TODO AB remove later
-    private def configuredEntryPoint(cfg: Config, declClass: String, name: String): Config = {
+    // TODO AB debug stuff, remove later
+    def configuredEntryPoint(cfg: Config, declClass: String, name: String): Config = {
         val ep = ConfigValueFactory.fromMap(Map("declaringClass" -> declClass, "name" -> name).asJava)
         cfg.withValue(
             InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
@@ -85,9 +92,6 @@ class CallGraphTests extends PropertiesTest {
             )
         )
         as.propertyStore.shutdown()
-
-        val entitiesWithIT = as.propertyStore.entities(InstantiatedTypes.key).toArray
-        entitiesWithIT.toString()
 
         validateProperties(
             as,

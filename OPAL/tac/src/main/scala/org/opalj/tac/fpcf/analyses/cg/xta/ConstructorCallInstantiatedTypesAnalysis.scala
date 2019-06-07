@@ -6,20 +6,6 @@ package analyses
 package cg
 package xta
 
-import java.net.URL
-
-import com.typesafe.config.ConfigFactory
-import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.Project
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
-import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -27,31 +13,20 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
-import org.opalj.log.GlobalLogContext
-
-// TODO A.B. remove later
-object TestRunner {
-    def main(args: Array[String]): Unit = {
-        val testJar = "C:/Users/Andreas/Dropbox/Masterarbeit/sample-java-library/out/artifacts/sample_java_library_jar/sample-java-library.jar"
-        implicit val project: Project[URL] = Project(new java.io.File(testJar), GlobalLogContext, ConfigFactory.load())
-
-        val manager = project.get(FPCFAnalysesManagerKey)
-        val ps = project.get(PropertyStoreKey)
-
-        manager.runAll(List(ConstructorCallInstantiatedTypesAnalysisScheduler))
-
-        ps.waitOnPhaseCompletion()
-
-        val epss = ps.entities(InstantiatedTypes.key)
-        for (eps ← epss) {
-            println(eps.e)
-            println(eps.ub.types.map(_.toJVMTypeName).mkString(", "))
-        }
-    }
-}
+import org.opalj.br.DefinedMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.cg.properties.Callers
+import org.opalj.br.fpcf.cg.properties.InstantiatedTypes
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.instructions.NEW
+import org.opalj.br.Method
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Updates InstantiatedTypes attached to a method for each constructor
@@ -60,12 +35,15 @@ object TestRunner {
  * This is a simple analysis which yields useful results for basic tests,
  * but it does not capture, e.g., indirect constructor calls through reflection.
  *
+ * The analysis is triggered for a method once it becomes reachable, i.e., a
+ * caller has been set. Thus, the property is not computed for unreachable methods.
+ *
  * @author Andreas Bauer
  */
 // TODO AB replace later with a more sophisticated analysis (based on the RTA one)
-class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) extends FPCFAnalysis {
+class ConstructorCallInstantiatedTypesAnalysis(final val project: SomeProject) extends ReachableMethodAnalysis {
 
-    def processMethod(definedMethod: DefinedMethod): PropertyComputationResult = {
+    override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         val code = definedMethod.definedMethod.body.get
 
         val instantiatedTypes = code.instructions.flatMap({
@@ -73,15 +51,12 @@ class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) 
             case _             ⇒ None
         })
 
-        if (instantiatedTypes.isEmpty) {
-            org.opalj.fpcf.NoResult
-        } else {
-            PartialResult(
-                definedMethod,
-                InstantiatedTypes.key,
-                update(definedMethod, UIDSet(instantiatedTypes.toSeq: _*))
-            )
-        }
+
+        PartialResult(
+            definedMethod,
+            InstantiatedTypes.key,
+            update(definedMethod, UIDSet(instantiatedTypes.toSeq: _*))
+        )
     }
 
     def update(
@@ -105,19 +80,15 @@ class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) 
     }
 }
 
-object ConstructorCallInstantiatedTypesAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
-
-    override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis = new ConstructorCallInstantiatedTypesAnalysis(p)
-        val declaredMethods = p.get(DeclaredMethodsKey)
-        val allMethods = p.allMethodsWithBody.map(declaredMethods.apply)
-        ps.scheduleEagerComputationsForEntities(allMethods)(analysis.processMethod)
+object ConstructorCallInstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+    override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
+        val analysis = new ConstructorCallInstantiatedTypesAnalysis(project)
+        propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
     override def uses: Set[PropertyBounds] = Set.empty
-
-    override def derivesEagerly: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
-
-    override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)
+    override def triggeredBy: PropertyKind = Callers.key
 }

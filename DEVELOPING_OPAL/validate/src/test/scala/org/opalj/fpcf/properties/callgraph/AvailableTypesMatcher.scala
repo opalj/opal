@@ -4,6 +4,9 @@ package fpcf
 package properties
 package callgraph
 
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -27,8 +30,13 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
 
         val instantiatedTypes = {
             properties.find(_.isInstanceOf[InstantiatedTypes]) match {
-                case Some(prop) ⇒ prop.asInstanceOf[InstantiatedTypes].types
-                case None       ⇒ return Some(s"Expected property InstantiatedTypes not computed for $entity.");
+                case Some(prop) ⇒
+                    prop.asInstanceOf[InstantiatedTypes].types
+                case None       ⇒
+                    implicit val ctx: LogContext = p.logContext
+                    // TODO AB maybe this should be an error after all, re-check later
+                    OPALLogger.warn("property matcher", s"Expected property InstantiatedTypes not computed for $entity.")
+                    UIDSet.empty[ObjectType]
             }
         }.toSet
 
