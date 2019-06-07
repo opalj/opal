@@ -364,7 +364,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
     override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 }
 
-object AndersenStylePointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+object TypeBasedPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(

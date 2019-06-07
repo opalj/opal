@@ -466,8 +466,8 @@ object Return {
  * }
  * }}}
  *
- * In this case, the returned value is either i or j and therefore the UVar would directly encode 
- * that information and therefore the assignments would be ignored. (The information cannot be 
+ * In this case, the returned value is either i or j and therefore the UVar would directly encode
+ * that information and therefore the assignments would be ignored. (The information cannot be
  * recovered! If needed a complete SSA representation would be required; TACAI only provides only
  * an SSA-like representation!)
  */
