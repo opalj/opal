@@ -166,7 +166,7 @@ case object EmptyLongTrieSet extends LongTrieSetL {
     override def forall(f: Long ⇒ Boolean): Boolean = true
     override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = this
 
-    override def equals(that: LongTrieSet): Boolean = (this eq that) || that.isEmpty
+    override def equals(that: LongTrieSet): Boolean = this eq that
 
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
 
