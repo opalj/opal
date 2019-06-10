@@ -7,12 +7,12 @@ package cg
 package xta
 
 import scala.collection.mutable
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -38,6 +38,13 @@ class XTAState(
         // TODO AB Can this depencency become final?
         // TODO AB Maybe only if there are no possible additional virtual call sites?
         private[this] var _calleeDependee: EOptionP[DefinedMethod, Callees],
+
+        // Field stuff
+        // TODO AB optimize...
+        private[this] var _readFields: Set[Field],
+        private[this] var _writtenFields: Set[Field],
+        // we only need type updates of fields the method READS
+        private[this] var _readFieldTypeDependees: mutable.Map[Field, EOptionP[Field, InstantiatedTypes]]
 ) extends CGState {
 
     // TODO AB more efficient data type for this?
@@ -55,6 +62,8 @@ class XTAState(
         mutable.Map[DefinedMethod, EOptionP[DefinedMethod, InstantiatedTypes]]
             = mutable.Map.empty
 
+    // functionally the same as calleeSeenTypes, but Field does not have an ID we can use
+    private[this] var _readFieldSeenTypes: mutable.Map[Field, Int] = mutable.Map.empty
 
     // TODO AB: dependency to InstantiatedTypes of fields it reads --> update own set on update
     // TODO AB: store fields it writes --> update types when own types receive an update
@@ -135,6 +144,28 @@ class XTAState(
         _calleeInstantiatedTypesDependees.update(eps.e, eps)
     }
 
+    // Field stuff
+
+    def writtenFields: Set[Field] = _writtenFields
+
+    def fieldIsRead(f: Field): Boolean = _readFields.contains(f)
+    def fieldIsWritten(f: Field): Boolean = _writtenFields.contains(f)
+
+    def updateAccessedFieldInstantiatedTypesDependee(
+        eps: EOptionP[Field, InstantiatedTypes]
+    ): Unit = {
+        _readFieldTypeDependees.update(eps.e, eps)
+    }
+
+    def fieldSeenTypes(field: Field): Int = {
+        _readFieldSeenTypes.getOrElse(field, 0)
+    }
+
+    def updateReadFieldSeenTypes(field: Field, numberOfTypes: Int): Unit = {
+        assert(numberOfTypes >= _readFieldSeenTypes.getOrElse(field, 0))
+        _readFieldSeenTypes.update(field, numberOfTypes)
+    }
+
     /////////////////////////////////////////////
     //                                         //
     //          virtual call sites             //
@@ -170,7 +201,8 @@ class XTAState(
         super.hasOpenDependencies ||
           _ownInstantiatedTypesDependee.isRefinable ||
           _calleeDependee.isRefinable ||
-          _calleeInstantiatedTypesDependees.nonEmpty
+          _calleeInstantiatedTypesDependees.nonEmpty ||
+          _readFieldTypeDependees.nonEmpty
     }
 
     override def dependees: List[EOptionP[Entity, Property]] = {
@@ -184,6 +216,9 @@ class XTAState(
 
         if (_calleeInstantiatedTypesDependees.nonEmpty)
             dependees ++= _calleeInstantiatedTypesDependees.values
+
+        if (_readFieldTypeDependees.nonEmpty)
+            dependees ++= _readFieldTypeDependees.values
 
         dependees
     }

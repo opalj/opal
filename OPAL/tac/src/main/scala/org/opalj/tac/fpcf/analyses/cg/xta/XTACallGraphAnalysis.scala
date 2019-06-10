@@ -6,24 +6,8 @@ package analyses
 package cg
 package xta
 
-import scala.collection.mutable
-
-import org.opalj.collection.ForeachRefIterator
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.PartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
 import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -32,7 +16,27 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.instructions.FieldReadAccess
+import org.opalj.br.instructions.FieldWriteAccess
+import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.collection.mutable
 
 /**
  * XTA is a dataflow-based call graph analysis which was introduced by Tip and Palsberg.
@@ -63,6 +67,9 @@ class XTACallGraphAnalysis private[analyses] (
             } else {
                 handleUpdateOfCalleeTypeSet(state, eps.asInstanceOf[EPS[DefinedMethod, InstantiatedTypes]])
             }
+
+        case EUBP(e: Field, _: InstantiatedTypes) ⇒
+            handleUpdateOfReadFieldTypeSet(state, eps.asInstanceOf[EPS[Field, InstantiatedTypes]])
 
         case EUBP(e: DefinedMethod, callees: Callees) ⇒
             state.updateCalleeDependee(eps.asInstanceOf[EPS[DefinedMethod, Callees]])
@@ -117,7 +124,6 @@ class XTACallGraphAnalysis private[analyses] (
      * @return FPCF results..
      */
     def handleUpdateOfOwnTypeSet(state: XTAState, eps: EPS[DefinedMethod, InstantiatedTypes]): ProperPropertyComputationResult = {
-        // TODO AB think through the code below...
 
         val seenTypes = state.ownInstantiatedTypesUB.size
 
@@ -128,19 +134,24 @@ class XTACallGraphAnalysis private[analyses] (
 
         handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
 
-        // TODO AB we need to convert the interator immediately, since we can only use the iterator once
+        // TODO AB we need to convert the iterator immediately, since we can only use the iterator once
         val newTypes = state.newInstantiatedTypes(seenTypes).toSeq
         val forwardFlowResults = state.seenCallees.flatMap(c ⇒ forwardFlow(state.method, c, UIDSet(newTypes: _*)))
 
-        returnResult(calleesAndCallers, forwardFlowResults)(state)
+        val flowToWrittenFields = state.writtenFields.flatMap(f ⇒ forwardFlowToWrittenField(f, UIDSet(newTypes: _*)))
+
+        returnResult(calleesAndCallers, forwardFlowResults, flowToWrittenFields)(state)
     }
 
     // TODO AB (mostly) copied from super-class since we need to make some adjustments
+    // this is the first returnResults called by the base class after TAC is available,
+    // we need to override and modify this since XTA has other requirements
     override protected def returnResult(
         calleesAndCallers: DirectCalls
     )(implicit state: State): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.method)
 
+        // NOTE AB removed "state.hasNonFinalCallSite &&"
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(state)),
@@ -151,19 +162,22 @@ class XTACallGraphAnalysis private[analyses] (
     }
 
     // TODO (mostly) copied from super-class
-    protected def returnResult(calleesAndCallers: DirectCalls, typeFlowPartialResults: TraversableOnce[PartialResult[DefinedMethod, InstantiatedTypes]])(implicit state: State): ProperPropertyComputationResult = {
+    protected def returnResult(
+        calleesAndCallers:           DirectCalls,
+        typeFlowPartialResults:      TraversableOnce[PartialResult[DefinedMethod, InstantiatedTypes]],
+        fieldTypeFlowPartialResults: TraversableOnce[PartialResult[Field, InstantiatedTypes]]
+    )(implicit state: State): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.method)
 
         // TODO AB is it possible to have no open dependencies in XTA? i don't think so!
-        // NOTE AB removed "state.hasNonFinalCallSite &&"
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(state)),
                 // TODO AB not efficient?
-                results.toIterator ++ typeFlowPartialResults
+                results.toIterator ++ typeFlowPartialResults ++ fieldTypeFlowPartialResults
             )
         else
-            Results(results.toIterator ++ typeFlowPartialResults)
+            Results(results.toIterator ++ typeFlowPartialResults ++ fieldTypeFlowPartialResults)
     }
 
     def handleUpdateOfCalleeTypeSet(state: XTAState, eps: EPS[DefinedMethod, InstantiatedTypes]): ProperPropertyComputationResult = {
@@ -176,6 +190,9 @@ class XTACallGraphAnalysis private[analyses] (
         state.updateCalleeInstantiatedTypesDependee(eps)
 
         val newCalleeTypes = eps.ub.dropOldest(seenTypes)
+
+        // TODO AB fix this!
+        //state.updateCalleeSeenTypes(updatedCallee, ???)
 
         val backwardFlowResult = backwardFlow(state.method, updatedCallee, UIDSet(newCalleeTypes.toSeq: _*))
 
@@ -205,6 +222,24 @@ class XTACallGraphAnalysis private[analyses] (
             None
     }
 
+    def forwardFlowToWrittenField(writtenField: Field, newTypesInMethod: UIDSet[ObjectType]): Option[PartialResult[Field, InstantiatedTypes]] = {
+        val fieldType = writtenField.fieldType
+
+        // TODO AB handle special cases
+        if (!fieldType.isObjectType) {
+            return None;
+        }
+
+        val fieldObjType = fieldType.asObjectType
+
+        val newTypes = newTypesInMethod.filter(t ⇒ t.isSubtypeOf(fieldObjType))
+
+        if (newTypes.nonEmpty)
+            Some(typeFlowPartialResult(writtenField, UIDSet(newTypes.toSeq: _*)))
+        else
+            None
+    }
+
     // calculate flow of new types from callee to caller
     private def backwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCalleeTypes: UIDSet[ObjectType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
 
@@ -221,34 +256,31 @@ class XTACallGraphAnalysis private[analyses] (
             None
     }
 
-    def typeFlowPartialResult(method: DefinedMethod, newTypes: UIDSet[ObjectType]): PartialResult[DefinedMethod, InstantiatedTypes] = {
-        PartialResult[DefinedMethod, InstantiatedTypes](
-            method,
+    def typeFlowPartialResult[E >: Null <: Entity](entity: E, newTypes: UIDSet[ObjectType]): PartialResult[E, InstantiatedTypes] = {
+        PartialResult[E, InstantiatedTypes](
+            entity,
             InstantiatedTypes.key,
-            updateInstantiatedTypes(method, newTypes)
+            updateInstantiatedTypes(entity, newTypes)
         )
     }
 
-    // for now: mostly copied from InstantiatedTypesAnalysis
-    def updateInstantiatedTypes(
-        method:               DefinedMethod,
+    // for now: mostly copied from InstantiatedTypesAnalysis; now generic so it works for methods and fields
+    def updateInstantiatedTypes[E >: Null <: Entity](
+        entity:               E,
         newInstantiatedTypes: UIDSet[ObjectType]
     )(
-        eop: EOptionP[DefinedMethod, InstantiatedTypes]
-    ): Option[EPS[DefinedMethod, InstantiatedTypes]] = eop match {
+        eop: EOptionP[E, InstantiatedTypes]
+    ): Option[EPS[E, InstantiatedTypes]] = eop match {
         case InterimUBP(ub: InstantiatedTypes) ⇒
             val newUB = ub.updated(newInstantiatedTypes)
             if (newUB.types.size > ub.types.size)
-                Some(InterimEUBP(method, newUB))
+                Some(InterimEUBP(entity, newUB))
             else
                 None
 
         case _: EPK[_, _] ⇒
             val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
-            Some(InterimEUBP(method, newUB))
-        //            throw new IllegalStateException(
-        //                "the instantiated types property should be pre initialized"
-        //            )
+            Some(InterimEUBP(entity, newUB))
 
         case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
@@ -269,11 +301,53 @@ class XTACallGraphAnalysis private[analyses] (
     override def createInitialState(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): XTAState = {
-        // TODO AB for XTA, do we even know these?
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(definedMethod, InstantiatedTypes.key)
         val calleesEOptP = propertyStore(definedMethod, Callees.key)
-        new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP)
+
+        // Dependees for data flow through fields.
+        // TODO AB optimize this...
+        val (readFields, writtenFields) = findAccessedFieldsInBytecode(definedMethod)
+        val readFieldTypeEOptPs = mutable.Map(readFields.map(f ⇒ f → propertyStore(f, InstantiatedTypes.key)).toSeq: _*)
+
+        new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP,
+            readFields, writtenFields, readFieldTypeEOptPs)
+    }
+
+    // TODO AB mostly a placeholder; likely it's better to get the accesses from TAC instead
+    def findAccessedFieldsInBytecode(method: DefinedMethod): (Set[Field], Set[Field]) = {
+        val code = method.definedMethod.body.get
+        val reads = code.instructions.flatMap {
+            case FieldReadAccess(objType, name, fieldType) ⇒
+                project.resolveFieldReference(objType, name, fieldType)
+            case _ ⇒
+                None
+        }.toSet
+        val writes = code.instructions.flatMap {
+            case FieldWriteAccess(objType, name, fieldType) ⇒
+                project.resolveFieldReference(objType, name, fieldType)
+            case _ ⇒
+                None
+        }.toSet
+
+        (reads, writes)
+    }
+
+    def handleUpdateOfReadFieldTypeSet(state: XTAState, eps: EPS[Field, InstantiatedTypes]): ProperPropertyComputationResult = {
+        val updatedField = eps.e
+
+        val seenTypes = state.fieldSeenTypes(updatedField)
+
+        state.updateAccessedFieldInstantiatedTypesDependee(eps)
+
+        val newReadFieldTypes = eps.ub.dropOldest(seenTypes)
+
+        val partialResult = typeFlowPartialResult(state.method, UIDSet(newReadFieldTypes.toSeq: _*))
+
+        Results(
+            InterimPartialResult(state.dependees, c(state)),
+            partialResult
+        )
     }
 
     override def handleImpreciseCall(
