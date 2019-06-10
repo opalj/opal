@@ -189,12 +189,11 @@ class XTACallGraphAnalysis private[analyses] (
 
         state.updateCalleeInstantiatedTypesDependee(eps)
 
-        val newCalleeTypes = eps.ub.dropOldest(seenTypes)
+        val newCalleeTypes = eps.ub.dropOldest(seenTypes).toSeq
 
-        // TODO AB fix this!
-        //state.updateCalleeSeenTypes(updatedCallee, ???)
+        state.updateCalleeSeenTypes(updatedCallee, seenTypes + newCalleeTypes.length)
 
-        val backwardFlowResult = backwardFlow(state.method, updatedCallee, UIDSet(newCalleeTypes.toSeq: _*))
+        val backwardFlowResult = backwardFlow(state.method, updatedCallee, UIDSet(newCalleeTypes: _*))
 
         if (backwardFlowResult.isDefined) {
             Results(
@@ -340,9 +339,11 @@ class XTACallGraphAnalysis private[analyses] (
 
         state.updateAccessedFieldInstantiatedTypesDependee(eps)
 
-        val newReadFieldTypes = eps.ub.dropOldest(seenTypes)
+        val newReadFieldTypes = eps.ub.dropOldest(seenTypes).toSeq
 
-        val partialResult = typeFlowPartialResult(state.method, UIDSet(newReadFieldTypes.toSeq: _*))
+        state.updateReadFieldSeenTypes(updatedField, seenTypes + newReadFieldTypes.length)
+
+        val partialResult = typeFlowPartialResult(state.method, UIDSet(newReadFieldTypes: _*))
 
         Results(
             InterimPartialResult(state.dependees, c(state)),
