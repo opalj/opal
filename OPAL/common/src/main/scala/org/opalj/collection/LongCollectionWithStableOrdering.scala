@@ -7,7 +7,10 @@ package org.opalj.collection
  *
  * @author Michael Eichberg
  */
-trait LongCollectionWithStableOrdering[T <: LongSet[T]] { longSet: T ⇒
+trait LongCollectionWithStableOrdering[T <: LongCollectionWithStableOrdering[T]] { this: T ⇒
+
+    def size: Int
+    def iterator: LongIterator
 
     def subsetOf(other: T): Boolean = {
         var thisSize = this.size
