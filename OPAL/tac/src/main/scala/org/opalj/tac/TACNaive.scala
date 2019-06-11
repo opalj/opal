@@ -55,7 +55,7 @@ object TACNaive {
         method:         Method,
         classHierarchy: ClassHierarchy,
         optimizations:  List[TACOptimization[Param, IdBasedVar, NaiveTACode[Param]]] = List.empty
-    ): TACode[Param, IdBasedVar] = {
+    ): NaiveTACode[Param] = {
 
         import BinaryArithmeticOperators._
         import RelationalOperators._
@@ -861,13 +861,13 @@ object TACNaive {
         // instructions now. In such a case (e.g., the rewriting of swap...) the additional
         // instructions will never cause any exceptions.
         finalStatements foreach { stmt ⇒
-            stmt.remapIndexes(pcToIndex, (_) ⇒ false /*CaughtException is not used by TACNaive*/ )
+            stmt.remapIndexes(pcToIndex, _ ⇒ false /*CaughtException is not used by TACNaive*/ )
         }
         val tacCode = finalStatements.toArray
         val tacCFG = cfg.mapPCsToIndexes[Stmt[IdBasedVar], TACStmts[IdBasedVar]](
             TACStmts(tacCode),
             pcToIndex,
-            (i) ⇒ i,
+            i ⇒ i,
             lastIndex = index - 1
         )
         def getStartAndEndIndex(

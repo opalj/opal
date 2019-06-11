@@ -316,6 +316,8 @@ object Results {
 
     private[fpcf] final val id = 5
 
+    def unapply(r: Results): Some[Results] = Some(r)
+
     def apply(results: ProperPropertyComputationResult*): Results = new Results {
         def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
     }

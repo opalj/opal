@@ -37,8 +37,8 @@ trait Configuration {
     def throwClassCastException: Boolean
 
     /**
-     * If `true` a `NullPointerExceptions` is thrown if the exception that is to be
-     * thrown is not not known to be null.
+     * If `true` a VM level `NullPointerExceptions` is thrown if the exception that is to be
+     * thrown may be null.
      *
      * @note Directly used by the [[AI]] itself.
      */

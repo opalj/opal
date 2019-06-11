@@ -16,6 +16,7 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
+import org.opalj.br.PC
 
 /**
  * Implementation of an abstract interpretation (ai) framework – also referred to as OPAL.
@@ -69,7 +70,7 @@ package object ai {
 
     final type PCs = org.opalj.br.PCs
 
-    final def NoPCs = org.opalj.br.NoPCs
+    final def NoPCs: IntTrieSet = org.opalj.br.NoPCs
 
     /**
      * A `ValueOrigin` identifies the origin of a value within a method.
@@ -219,7 +220,7 @@ package object ai {
      * @return The origin id of the value that is the result of the evaluation of the instruction
      *         with the given PC '''if the evaluation has failed'''!
      */
-    final def ValueOriginForImmediateVMException(pc: Int): Int = {
+    final def ValueOriginForImmediateVMException(pc: PC): ValueOrigin = {
         val origin = ImmediateVMExceptionsOriginOffset - pc
         assert(
             origin <= ImmediateVMExceptionsOriginOffset,
@@ -237,7 +238,7 @@ package object ai {
      *
      * @see [[ValueOriginForImmediateVMException]] for further information.
      */
-    final def pcOfImmediateVMException(valueOrigin: Int): Int = {
+    final def pcOfImmediateVMException(valueOrigin: ValueOrigin): PC = {
         assert(valueOrigin <= ImmediateVMExceptionsOriginOffset)
         -valueOrigin + ImmediateVMExceptionsOriginOffset
     }

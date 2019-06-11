@@ -166,7 +166,7 @@ case object EmptyLongTrieSet extends LongTrieSetL {
     override def forall(f: Long ⇒ Boolean): Boolean = true
     override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = this
 
-    override def equals(that: LongTrieSet): Boolean = (this eq that) || that.isEmpty
+    override def equals(that: LongTrieSet): Boolean = this eq that
 
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
 
@@ -209,7 +209,7 @@ final case class LongTrieSet1 private (i: Long) extends LongTrieSetL {
         (this eq other) || {
             other match {
                 case that: LongTrieSet1 ⇒ this.i == that.i
-                case that  ⇒ that.isSingletonSet && this.i == that.head
+                case that               ⇒ that.isSingletonSet && this.i == that.head
             }
         }
     }
@@ -327,7 +327,7 @@ private[immutable] final class LongTrieSet2 private[immutable] (
         (other eq this) || {
             other match {
                 case that: LongTrieSet2 ⇒ this.i1 == that.i1 && this.i2 == that.i2
-                case that  ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
+                case that               ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
             }
         }
     }
@@ -432,7 +432,8 @@ private[immutable] final class LongTrieSet3 private[immutable] (
     }
 
     override def equals(other: LongTrieSet): Boolean = {
-        (other eq this) || { other match {
+        (other eq this) || {
+            other match {
                 case that: LongTrieSet3 ⇒
                     this.i1 == that.i1 && this.i2 == that.i2 && this.i3 == that.i3
                 case that ⇒
@@ -473,6 +474,7 @@ private[immutable] abstract class LongTrieSetNN extends LongTrieSet {
 
     final override def equals(that: LongTrieSet): Boolean = {
         (that eq this) || (that.size == this.size && {
+            // IMPROVE Implement a comparison directly over the trie
             // we have stable orderings!
             val thisIt = this.iterator
             val otherIt = that.iterator

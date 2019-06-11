@@ -76,6 +76,15 @@ sealed abstract class IntTrieSet
             this.++!(that)
     }
 
+    final override def equals(other: Any): Boolean = {
+        other match {
+            case that: IntTrieSet ⇒ this.equals(that)
+            case _                ⇒ false
+        }
+    }
+
+    def equals(other: IntTrieSet): Boolean
+
     //
     // IMPLEMENTATION "INTERNAL" METHODS
     //
@@ -132,7 +141,7 @@ final class FilteredIntTrieSet(
     override def +(i: Int): IntTrieSet = filtered + i
     override def +!(value: Int): IntTrieSet = filtered +! value
     override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = filtered.foldLeft(z)(f)
-    override def equals(other: Any): Boolean = filtered.equals(other)
+    override def equals(other: IntTrieSet): Boolean = filtered.equals(other)
     override def hashCode: Int = filtered.hashCode()
 
     // Actually the following methods should never be called... in a sense they are dead.
@@ -185,13 +194,7 @@ case object EmptyIntTrieSet extends IntTrieSetL {
     override def flatMap(f: Int ⇒ IntTrieSet): IntTrieSet = this
     override def toChain: Chain[Int] = Naught
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: IntTrieSet ⇒ that.isEmpty
-            case _                ⇒ false
-        }
-    }
-
+    override def equals(other: IntTrieSet): Boolean = other eq this
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
 
     private[immutable] override def +(i: Int, level: Int): IntTrieSet = this.+(i)
@@ -238,11 +241,11 @@ final case class IntTrieSet1 private (i: Int) extends IntTrieSetL {
     override def forall(f: Int ⇒ Boolean): Boolean = f(i)
     override def toChain: Chain[Int] = new :&:[Int](i)
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: IntTrieSet ⇒ that.isSingletonSet && this.i == that.head
-            case _                ⇒ false
-        }
+    override def equals(other: IntTrieSet): Boolean = {
+        (other eq this) || (other match {
+            case that: IntTrieSet1 ⇒ this.i == that.i
+            case that              ⇒ that.isSingletonSet && this.i == that.head
+        })
     }
 
     override def hashCode: Int = 31 + i // compatible to Arrays.hashCode
@@ -406,12 +409,13 @@ private[immutable] final class IntTrieSet2 private[immutable] (
         }
     }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: IntTrieSet2 ⇒ this.i1 == that.i1 && this.i2 == that.i2
-            case that: IntTrieSet  ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
-            case _                 ⇒ false
-        }
+    override def equals(other: IntTrieSet): Boolean = {
+        (other eq this) || (
+            other match {
+                case that: IntTrieSet2 ⇒ this.i1 == that.i1 && this.i2 == that.i2
+                case that              ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
+            }
+        )
     }
 
     override def hashCode: Int = 31 * (31 + i1) + i2 // compatible to Arrays.hashCode
@@ -521,15 +525,15 @@ private[immutable] final class IntTrieSet3 private[immutable] (
         }
     }
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: IntTrieSet3 ⇒
-                this.i1 == that.i1 && this.i2 == that.i2 && this.i3 == that.i3
-            case that: IntTrieSet ⇒
-                that.size == 3 && that.contains(i1) && that.contains(i2) && that.contains(i3)
-            case _ ⇒
-                false
-        }
+    override def equals(other: IntTrieSet): Boolean = {
+        (other eq this) || (
+            other match {
+                case that: IntTrieSet3 ⇒
+                    this.i1 == that.i1 && this.i2 == that.i2 && this.i3 == that.i3
+                case that ⇒
+                    that.size == 3 && that.contains(i1) && that.contains(i2) && that.contains(i3)
+            }
+        )
     }
 
     override def hashCode: Int = 31 * (31 * (31 + i1) + i2) + i3 // compatible to Arrays.hashCode
@@ -567,22 +571,18 @@ private[immutable] abstract class IntTrieSetNN extends IntTrieSet {
         cb.result()
     }
 
-    final override def equals(other: Any): Boolean = {
-        other match {
-            case that: IntTrieSet ⇒
-                that.size == this.size && {
-                    // we have stable orderings!
-                    val thisIt = this.iterator
-                    val otherIt = that.iterator
-                    var allEqual = true
-                    while (thisIt.hasNext && allEqual) {
-                        allEqual = thisIt.next() == otherIt.next()
-                    }
-                    allEqual
-                }
-            case _ ⇒
-                false
-        }
+    final override def equals(that: IntTrieSet): Boolean = {
+        (that eq this) || (that.size == this.size && {
+            // IMPROVE Implement a comparison directly over the trie
+            // we have stable orderings!
+            val thisIt = this.iterator
+            val otherIt = that.iterator
+            var allEqual = true
+            while (thisIt.hasNext && allEqual) {
+                allEqual = thisIt.next() == otherIt.next()
+            }
+            allEqual
+        })
     }
 
     final override def hashCode: Int = foldLeft(1)(31 * _ + _)

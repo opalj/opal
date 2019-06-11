@@ -36,10 +36,10 @@
   <check enabled="true" class="org.scalastyle.scalariform.EmptyClassChecker" level="error"/>
   <check level="error" class="org.scalastyle.scalariform.NoWhitespaceBeforeLeftBracketChecker" enabled="true"/>
   <check level="error" class="org.scalastyle.scalariform.NoWhitespaceAfterLeftBracketChecker" enabled="true"/>
-  <check level="error" class="org.scalastyle.scalariform.CovariantEqualsChecker" enabled="true"/>
   <check level="error" class="org.scalastyle.scalariform.UppercaseLChecker" enabled="true"/>
   <check level="error" class="org.scalastyle.scalariform.SimplifyBooleanExpressionChecker" enabled="true"/>  
   <!-- DISABLED CHECKERS -->    
+  <check level="error" class="org.scalastyle.scalariform.CovariantEqualsChecker" enabled="false"/>
   <check level="error" class="org.scalastyle.scalariform.SpacesAfterPlusChecker" enabled="false"/>
   <check level="error" class="org.scalastyle.file.WhitespaceEndOfLineChecker" enabled="false"/>
   <check level="error" class="org.scalastyle.scalariform.SpacesBeforePlusChecker" enabled="false"/>

@@ -13,19 +13,14 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.Code
 
 /**
- * Contains the 3-address code of a method.
+ * Contains the 3-address code (like) representation of a method.
  *
- * @param params The variables which store the method's explicit and implicit (`this` in case
- *               of an instance method) parameters.
- *               In case of the ai-based representation (TACAI - default representation),
- *               the variables are returned which store (the initial) parameters. If these variables
- *               are written and we have a loop which includes the very first instruction, the
- *               value will reflect this usage.
- *               In case of the naive representation it "just" contains the names of the
- *               registers which store the parameters.
- * @param pcToIndex The mapping between the pcs of the original bytecode instructions to the
- *               index of the first statement that was generated for the bytecode instruction
- *               - if any. For details see `TACNaive` and `TACAI`
+ * OPAL offers multiple 3-address code like representations. One that is a one-to-one conversion
+ * of the bytecode and which does not provide higher-level information.
+ * Additionally, the (Base)TACAI represtation is offered that is targeted towards static analyses.
+ * The base TACAI representation does not preserve all information which would be required to
+ * regenerate the original code, but which greatly facilitates static analysis by making the
+ * end-to-end def-use chains directly available.
  *
  * @tparam V     The type of Vars used by the underlying code.
  *               Given that the stmts array is conceptually immutable - i.e., no client is allowed
@@ -35,8 +30,24 @@ import org.opalj.br.Code
  */
 sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequence[Stmt[V]] {
 
+    /**
+     * The variables which store the method's explicit and implicit (`this` in case
+     * of an instance method) parameters.
+     * In case of the ai-based representation (TACAI - default representation),
+     * the variables are returned which store (the initial) parameters. If these variables
+     * are written and we have a loop which includes the very first instruction, the
+     * value will reflect this usage.
+     * In case of the naive representation it "just" contains the names of the
+     * registers which store the parameters.
+     */
     def params: Parameters[P]
+
     def stmts: Array[Stmt[V]] // IMPROVE use ConstCovariantArray to make it possible to make V covariant!
+    /**
+     * The mapping between the pcs of the original bytecode instructions to the
+     * index of the first statement that was generated for the bytecode instruction -
+     * if any. For details see `TACNaive` and `TACAI`.
+     */
     def pcToIndex: Array[Int]
     def cfg: CFG[Stmt[V], TACStmts[V]]
     def exceptionHandlers: ExceptionHandlers
