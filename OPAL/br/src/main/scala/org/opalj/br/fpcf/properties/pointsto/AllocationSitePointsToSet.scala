@@ -28,9 +28,9 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 trait AllocationSitePointsToSet
-        extends PointsToSetLike[AllocationSite, LongTrieSet, AllocationSitePointsToSet]
-        with OrderedProperty
-        with AllocationSitePointsToSetPropertyMetaInformation {
+    extends PointsToSetLike[AllocationSite, LongTrieSet, AllocationSitePointsToSet]
+    with OrderedProperty
+    with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
@@ -58,7 +58,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         allocationSite2: AllocationSite,
         allocatedType2:  ObjectType
     ): AllocationSitePointsToSet = {
-        assert(allocatedType1 != allocatedType2)
+        assert(allocationSite1 != allocationSite2)
         AllocationSitePointsToSetN(
             LongTrieSet(allocationSite1, allocationSite2),
             List(allocationSite1, allocationSite2),
