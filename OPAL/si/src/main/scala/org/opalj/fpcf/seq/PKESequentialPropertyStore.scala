@@ -502,7 +502,7 @@ final class PKESequentialPropertyStore protected (
                                         continue = true
 
                                     case PartialResult(e, pk, u) ⇒
-                                        handlePartialResult(e,pk,u)
+                                        handlePartialResult(e, pk, u)
 
                                     case result ⇒
                                         handleOtherResult(result)
