@@ -170,8 +170,8 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         //  even if an update for the tac might add a non-final call site
         if (state.hasNonFinalCallSite && state.hasOpenDependencies)
             Results(
-                results,
-                InterimPartialResult(state.dependees, c(state))
+                InterimPartialResult(state.dependees, c(state)),
+                results
             )
         else
             Results(results)
