@@ -37,6 +37,8 @@ trait AbstractPointsToState[Depender, PointsToSet <: PointsToSetLike[_, _, _]]
         mutable.Map.empty
     }
 
+    val _dependeeCount: mutable.Map[Entity, Int] = mutable.Map.empty
+
     private[this] val _dependerToDependees: mutable.Map[Depender, mutable.Set[Entity]] = {
         mutable.Map.empty
     }

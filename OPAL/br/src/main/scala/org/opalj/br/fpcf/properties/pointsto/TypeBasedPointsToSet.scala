@@ -83,6 +83,13 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def hashCode: Int = types.hashCode() * 31
 
+    override def numElements: Int = types.size
+
+    override def dropOldestElements(seenElements: Int): Iterator[ObjectType] = dropOldestTypes(seenElements)
+
+    override def included(other: TypeBasedPointsToSet, seenElements: Int): TypeBasedPointsToSet = {
+        included(other) // todo: implement correct version
+    }
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {

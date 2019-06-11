@@ -16,13 +16,27 @@ import org.opalj.fpcf.Property
  */
 trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType, PointsToSet, T]] extends Property { self: T ⇒
 
-    def dropOldestTypes(seenElements: Int): Iterator[ObjectType]
+    def dropOldestTypes(seenTypes: Int): Iterator[ObjectType]
 
     def numTypes: Int
 
     def types: UIDSet[ObjectType]
 
+    def numElements: Int
+
     def elements: PointsToSet
 
+    def dropOldestElements(seenElements: Int): Iterator[ElementType]
+
     def included(other: T): T
+
+    def included(other: T, seenElements: Int): T
+
+    def includeOption(other: T): Option[T] = {
+        val newSet = this.included(other)
+        if (newSet eq this)
+            None
+        else
+            Some(newSet)
+    }
 }

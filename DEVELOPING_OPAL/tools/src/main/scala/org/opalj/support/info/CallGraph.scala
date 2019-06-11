@@ -6,6 +6,7 @@ package info
 import java.io.File
 import java.net.URL
 
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
@@ -17,11 +18,14 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 
 /**
  * Computes a call graph and reports its size.
@@ -104,8 +108,10 @@ object CallGraph extends ProjectAnalysisApplication {
             case "CHA"         ⇒ project.get(CHACallGraphKey)
             case "RTA"         ⇒ project.get(RTACallGraphKey)
             case "PointsToASD" ⇒ project.get(TypeBasedPointsToCallGraphKey)
-            case "PointsTo"    ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
+            case "PointsTo"    ⇒ project.get(RTACallGraphKey)
         }
+
+        project.get(FPCFAnalysesManagerKey).runAll(AllocationSiteBasedPointsToAnalysisScheduler)
 
         val ptss = ps.entities(TypeBasedPointsToSet.key).toList
         val statistic = ptss.groupBy(p ⇒ p.ub.elements.size).mapValues(_.size).toArray.sorted
@@ -117,6 +123,19 @@ object CallGraph extends ProjectAnalysisApplication {
 
         println(ptss.size)
         println(ptss2.size)
+
+        val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != RTACallGraphKey.uniqueId)
+        p2.get(RTACallGraphKey)
+        p2.get(FPCFAnalysesManagerKey).runAll(AllocationSiteBasedPointsToAnalysisScheduler)
+        val ps2 = p2.get(PropertyStoreKey)
+
+        for {
+            FinalEP(e, p) ← ptss2
+            ub2 = ps2(e, AllocationSitePointsToSet.key).ub
+            if p.elements.size != ub2.elements.size
+        } {
+            println(s"$e\n\t${ub2.elements.map[(DeclaredMethod, Int)](org.opalj.br.fpcf.properties.pointsto.longToAllocationSite)}\n\t${p.elements.map[(DeclaredMethod, Int)](org.opalj.br.fpcf.properties.pointsto.longToAllocationSite)}")
+        }
 
         val reachableMethods = cg.reachableMethods().toTraversable
 

@@ -42,6 +42,9 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
     extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
     with ReachableMethodAnalysis {
 
+    var count = 0
+    var usefull = 0
+
     def createPointsToSet(
         pc: Int, declaredMethod: DeclaredMethod, allocatedType: ObjectType
     ): PointsToSet
@@ -206,9 +209,14 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
 
                 handleCall(call, pc)
 
-            case Assignment(pc, targetVar, _: Const) if targetVar.value.isReferenceValue ⇒
+            case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(defSite, emptyPointsToSet)
+                state.setOrUpdatePointsToSet(
+                    defSite,
+                    if (const.isNullExpr) emptyPointsToSet
+                    // note, this is wrong for alias analyses
+                    else createPointsToSet(pc, state.method, const.tpe.asObjectType)
+                )
 
             case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) ⇒
                 state.addIncompletePointsToInfo(pc)
@@ -276,7 +284,7 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
 
         // todo: we have to handle the exceptions that might be thrown by this method
 
-        returnResult
+        returnResult(0)
     }
 
     /**
@@ -292,9 +300,18 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
             case UBP(_: TACAI) ⇒
                 InterimPartialResult(Some(eps), c(state))
 
+            case UBP(callees: Callees) ⇒
+                // todo instead of rerunning the complete analysis, get new calls for all pcs only
+
+                state.updateCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
+                doProcessMethod(state)
+
             case UBPS(pointsTo: PointsToSet @unchecked, isFinal) ⇒
+                val oldEOptP = state.getPointsToProperty(eps.e)
+                val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
+
                 for (depender ← state.dependersOf(eps.e)) {
-                    state.setOrUpdatePointsToSet(depender, pointsTo)
+                    state.setPointsToSet(depender, pointsTo)
                 }
 
                 if (isFinal) {
@@ -303,20 +320,14 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                     state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSet]])
                 }
 
-                returnResult(state)
-
-            case UBP(callees: Callees) ⇒
-                // todo instead of rerunning the complete analysis, get new calls for all pcs only
-
-                state.updateCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
-                doProcessMethod(state)
+                returnResult(seenElements)(state)
         }
     }
 
     /**
      * Constructs the [[org.opalj.fpcf.PropertyComputationResult]] associated with the state.
      */
-    @inline private[this] def returnResult(
+    @inline private[this] def returnResult(seenElements: Int)(
         implicit
         state: State
     ): ProperPropertyComputationResult = {
@@ -324,22 +335,33 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
         if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
 
         for ((e, pointsToSet) ← state.pointsToSetsIterator) {
-            results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](e, pointsToPropertyKey, {
+            if (pointsToSet ne emptyPointsToSet) {
+                results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](e, pointsToPropertyKey, {
 
-                case _: EPK[Entity, _] ⇒
-                    Some(InterimEUBP(e, pointsToSet))
+                    case _: EPK[Entity, _] ⇒
+                        if (usefull % 50000 == 0)
+                            println(s"usefull partial result #${usefull} - ${pointsToSet.numElements}")
+                        usefull += 1
+                        Some(InterimEUBP(e, pointsToSet))
 
-                case UBP(ub: PointsToSet @unchecked) ⇒
-                    // IMPROVE: only process new Types
-                    val newPointsTo = ub.included(pointsToSet)
-                    if (newPointsTo.numTypes != ub.numTypes)
-                        Some(InterimEUBP(e, newPointsTo))
-                    else
-                        None
+                    case UBP(ub: PointsToSet @unchecked) ⇒
+                        val newPointsTo = ub.included(pointsToSet, seenElements)
+                        if (newPointsTo ne ub) {
+                            if (usefull % 50000 == 0)
+                                println(s"usefull partial result #${usefull} - ${pointsToSet.numElements}")
+                            usefull += 1
+                            Some(InterimEUBP(e, newPointsTo))
+                        } else {
+                            if (count % 50000 == 0)
+                                println(s"useless partial result #${count} - ${pointsToSet.numElements}")
+                            count += 1
+                            None
+                        }
 
-                case eOptP ⇒
-                    throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-            })
+                    case eOptP ⇒
+                        throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
+                })
+            }
         }
 
         state.clearPointsToSet()

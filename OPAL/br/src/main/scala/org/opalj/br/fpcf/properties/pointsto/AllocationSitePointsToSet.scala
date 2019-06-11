@@ -26,9 +26,10 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 case class AllocationSitePointsToSet private[pointsto] (
-        override val elements:    LongTrieSet,
-        override val types:       UIDSet[ObjectType],
-        private val orderedTypes: List[ObjectType]
+        override val elements:       LongTrieSet,
+        private val orderedElements: List[Long],
+        override val types:          UIDSet[ObjectType],
+        private val orderedTypes:    List[ObjectType]
 ) extends PointsToSetLike[AllocationSite, LongTrieSet, AllocationSitePointsToSet]
     with OrderedProperty
     with AllocationSitePointsToSetPropertyMetaInformation {
@@ -53,19 +54,45 @@ case class AllocationSitePointsToSet private[pointsto] (
     override def numTypes: Int = types.size
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
-        val newAllocationSites = elements ++ other.elements
+        included(other, 0)
+    }
+
+    override def numElements: Int = elements.size
+
+    override def dropOldestElements(seenElements: Int): Iterator[AllocationSite] = {
+        orderedElements.iterator.take(elements.size - seenElements)
+    }
+
+    override def included(
+        other: AllocationSitePointsToSet, seenElements: Int
+    ): AllocationSitePointsToSet = {
+        var newAllocationSites = elements
+        var newOrderedAllocationSites = orderedElements
+        other.dropOldestElements(seenElements).foreach { e ⇒
+            val old = newAllocationSites
+            newAllocationSites += e
+            if (old ne newAllocationSites) {
+                newOrderedAllocationSites ::= e
+            }
+        }
+
         var newTypes = types
+        // IMPROVE: Somehow also use seenElements
         var newOrderedTypes = orderedTypes
         other.orderedTypes.foreach { newType ⇒
-            if (!types.contains(newType)) {
-                newTypes += newType
+            val old = newTypes
+            newTypes += newType
+            if (newTypes ne old) {
                 newOrderedTypes ::= newType
             }
         }
         if ((elements eq newAllocationSites) && (newTypes eq types))
             return this;
 
-        new AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
+        new AllocationSitePointsToSet(
+            newAllocationSites, newOrderedAllocationSites, newTypes, newOrderedTypes
+        )
+
     }
 
     override def equals(obj: Any): Boolean = {
@@ -98,7 +125,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 }
 
 object NoAllocationSites extends AllocationSitePointsToSet(
-    LongTrieSet.empty, UIDSet.empty, List.empty
+    LongTrieSet.empty, List.empty, UIDSet.empty, List.empty
 ) {
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         other
