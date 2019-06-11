@@ -468,7 +468,7 @@ final class PKESequentialPropertyStore protected (
             continue = false
 
             handlePartialResults(nextPartialResults) // this may have triggered some computations...
-            processedDependees exists { processedDependee ⇒
+            nextProcessedDependees exists { processedDependee ⇒
                 val processedDependeeE = processedDependee.e
                 val processedDependeePK = processedDependee.pk
                 val processedDependeePKId = processedDependeePK.id
@@ -485,7 +485,7 @@ final class PKESequentialPropertyStore protected (
                         }
                     }
                     // There were updates...
-                    c(currentDependee.asEPS) match {
+                    nextC(currentDependee.asEPS) match {
                         case InterimPartialResult(newPartialResults, newProcessedDependees, newC) ⇒
                             nextPartialResults = newPartialResults
                             nextProcessedDependees = newProcessedDependees
