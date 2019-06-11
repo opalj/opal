@@ -337,6 +337,16 @@ object Results {
     }
 
     def apply(
+        results: TraversableOnce[ProperPropertyComputationResult],
+        result:  ProperPropertyComputationResult
+    ) = new Results {
+        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
+            results.foreach(f)
+            f(result)
+        }
+    }
+
+    def apply(
         resultOption: Option[ProperPropertyComputationResult],
         results:      TraversableOnce[ProperPropertyComputationResult]
     ) = {
