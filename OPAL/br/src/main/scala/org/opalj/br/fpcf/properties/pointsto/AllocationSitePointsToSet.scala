@@ -26,13 +26,13 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 case class AllocationSitePointsToSet private[pointsto] (
-        override val elements:       LongTrieSet,
-        private val orderedElements: List[Long],
-        override val types:          UIDSet[ObjectType],
-        private val orderedTypes:    List[ObjectType]
+    override val elements:       LongTrieSet,
+    private val orderedElements: List[Long],
+    override val types:          UIDSet[ObjectType],
+    private val orderedTypes:    List[ObjectType]
 ) extends PointsToSetLike[AllocationSite, LongTrieSet, AllocationSitePointsToSet]
-    with OrderedProperty
-    with AllocationSitePointsToSetPropertyMetaInformation {
+        with OrderedProperty
+        with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
@@ -92,7 +92,6 @@ case class AllocationSitePointsToSet private[pointsto] (
         new AllocationSitePointsToSet(
             newAllocationSites, newOrderedAllocationSites, newTypes, newOrderedTypes
         )
-
     }
 
     override def equals(obj: Any): Boolean = {
@@ -128,6 +127,12 @@ object NoAllocationSites extends AllocationSitePointsToSet(
     LongTrieSet.empty, List.empty, UIDSet.empty, List.empty
 ) {
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
+        other
+    }
+
+    override def included(
+        other: AllocationSitePointsToSet, seenElements: Int
+    ): AllocationSitePointsToSet = {
         other
     }
 }

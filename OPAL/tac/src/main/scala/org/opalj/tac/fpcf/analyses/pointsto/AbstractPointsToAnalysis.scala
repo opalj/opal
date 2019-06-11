@@ -332,7 +332,6 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
         state: State
     ): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
-        if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
 
         for ((e, pointsToSet) ← state.pointsToSetsIterator) {
             if (pointsToSet ne emptyPointsToSet) {
@@ -363,6 +362,8 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                 })
             }
         }
+      
+        if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
 
         state.clearPointsToSet()
 
