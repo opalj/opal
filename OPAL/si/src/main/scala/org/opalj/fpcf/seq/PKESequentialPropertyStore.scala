@@ -500,6 +500,10 @@ final class PKESequentialPropertyStore protected (
                                         nextProcessedDependees = newProcessedDependees
                                         nextC = newC
                                         continue = true
+
+                                    case PartialResult(e, pk, u) ⇒
+                                        handlePartialResult(e,pk,u)
+
                                     case result ⇒
                                         handleOtherResult(result)
                                 }
