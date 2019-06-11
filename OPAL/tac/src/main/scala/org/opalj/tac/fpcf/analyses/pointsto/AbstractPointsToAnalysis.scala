@@ -362,7 +362,7 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                 })
             }
         }
-      
+
         if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
 
         state.clearPointsToSet()

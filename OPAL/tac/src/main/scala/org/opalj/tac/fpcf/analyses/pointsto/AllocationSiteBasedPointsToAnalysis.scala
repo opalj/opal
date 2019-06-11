@@ -5,8 +5,6 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.collection.immutable.LongTrieSet
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyKind
@@ -30,12 +28,7 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
         pc: Int, declaredMethod: DeclaredMethod, allocatedType: ObjectType
     ): AllocationSitePointsToSet = {
         val as = allocationSiteToLong(declaredMethod, pc)
-        AllocationSitePointsToSet(
-            LongTrieSet(as),
-            List(as),
-            UIDSet(allocatedType),
-            List(allocatedType)
-        )
+        AllocationSitePointsToSet(as, allocatedType)
     }
 
     override protected val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {
