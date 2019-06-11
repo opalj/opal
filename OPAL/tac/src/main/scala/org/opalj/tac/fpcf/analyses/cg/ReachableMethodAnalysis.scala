@@ -34,7 +34,8 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
     protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     final def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
-        (propertyStore(declaredMethod, Callers.key): @unchecked) match {
+        val callersEOptP = propertyStore(declaredMethod, Callers.key)
+        (callersEOptP: @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
                 return NoResult;
@@ -64,9 +65,9 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
 
         val tacEP = propertyStore(method, TACAI.key)
 
-        if (tacEP.hasUBP && tacEP.ub.tac.isDefined)
+        if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
             processMethod(declaredMethod.asDefinedMethod, tacEP.asEPS)
-        else {
+        } else {
             InterimPartialResult(Seq(tacEP), continuationForTAC(declaredMethod.asDefinedMethod))
         }
     }
@@ -77,11 +78,13 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
 
     protected def continuationForTAC(
         definedMethod: DefinedMethod
-    )(someEPS: SomeEPS): ProperPropertyComputationResult = someEPS match {
-        case UBP(tac: TACAI) if tac.tac.isDefined ⇒
-            processMethod(definedMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
-        case _ ⇒
-            throw new IllegalArgumentException(s"unexpected eps $someEPS")
+    )(someEPS: SomeEPS): ProperPropertyComputationResult = {
+        someEPS match {
+            case UBP(tac: TACAI) if tac.tac.isDefined ⇒
+                processMethod(definedMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
+            case _ ⇒
+                throw new IllegalArgumentException(s"unexpected eps $someEPS")
+        }
     }
 
 }
