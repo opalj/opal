@@ -18,6 +18,9 @@ public class StaticMethodFlows {
         parameterFlow();
         returnValueFlow();
         twoWayFlow();
+        arrayTest();
+        arrayTest2();
+        arrayTest3();
     }
 
     // === Test 1: ===
@@ -80,6 +83,93 @@ public class StaticMethodFlows {
         return obj1;
     }
 
+    // === Test 4: ===
+    // In this test, two different types are written to an array. The array is accessed in
+    // in arrayTest_sink, which should make both types available in this method.
+    // TODO Maybe A1[] should be an available type as well?
+    @AvailableTypes
+    public static void arrayTest() {
+        A1[] arr = new A1[2];
+        arrayTest_source1(arr);
+        arrayTest_source2(arr);
+        arrayTest_sink(arr);
+    }
+
+    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
+    public static void arrayTest_source1(A1[] arr) {
+        arr[0] = new A1();
+    }
+
+    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;"})
+    public static void arrayTest_source2(A1[] arr) {
+        arr[1] = new A2();
+    }
+
+    @AvailableTypes({
+            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
+            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;"})
+    public static void arrayTest_sink(A1[] arr) {
+        A1 obj = arr[0];
+    }
+
+    // === Test 5: ===
+    // Here, two different arrays flow into the sink separately. The result should be the same as
+    // above.
+    @AvailableTypes
+    public static void arrayTest2() {
+        A1[] arr = new A1[2];
+        A1[] arr2 = new A1[2];
+        arrayTest2_source1(arr);
+        arrayTest2_sink(arr);
+        arrayTest2_source2(arr2);
+        arrayTest2_sink(arr2);
+    }
+
+    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
+    public static void arrayTest2_source1(A1[] arr) {
+        arr[0] = new A1();
+    }
+
+    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;"})
+    public static void arrayTest2_source2(A1[] arr) {
+        arr[1] = new A2();
+    }
+
+    @AvailableTypes({
+            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
+            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;"})
+    public static void arrayTest2_sink(A1[] arr) {
+        A1 obj = arr[0];
+    }
+
+    // === Test 6: ===
+    // Here, two differently typed arrays flow into the sink.
+    @AvailableTypes
+    public static void arrayTest3() {
+        A1[] arr = new A1[2];
+        B1[] arr2 = new B1[2];
+        arrayTest3_source1(arr);
+        arrayTest3_sink(arr);
+        arrayTest3_source2(arr2);
+        arrayTest3_sink(arr2);
+    }
+
+    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
+    public static void arrayTest3_source1(A1[] arr) {
+        arr[0] = new A1();
+    }
+
+    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
+    public static void arrayTest3_source2(B1[] arr) {
+        arr[0] = new B1();
+    }
+
+    @AvailableTypes({
+            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
+            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
+    public static void arrayTest3_sink(Object[] arr) {
+        Object obj = arr[0];
+    }
     // === Test Class Hierarchy ===
 
     // First class hierarchy: A1 <-- A2
