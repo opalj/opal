@@ -60,8 +60,8 @@ trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike[_, 
     @inline protected[this] def currentPointsTo(
         depender: Depender, dependee: Entity
     )(implicit state: State): PointsToSet = {
-        if (state._localPointsToSet.contains(dependee)) {
-            state._localPointsToSet(dependee)
+        if (state.hasLocalPointsToSet(dependee)) {
+            state.localPointsToSet(dependee)
         } else if (state.hasPointsToDependee(dependee)) {
             val p2s = state.getPointsToProperty(dependee)
 

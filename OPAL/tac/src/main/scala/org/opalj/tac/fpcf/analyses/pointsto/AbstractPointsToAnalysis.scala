@@ -379,7 +379,7 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
             }
         }
 
-        for ((e, pointsToSet) ← state._localPointsToSet) {
+        for ((e, pointsToSet) ← state.localPointsToSetsIterator) {
             results += org.opalj.fpcf.Result(e, pointsToSet)
         }
 

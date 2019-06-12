@@ -23,9 +23,17 @@ import org.opalj.tac.common.DefinitionSite
 trait AbstractPointsToState[Depender, PointsToSet <: PointsToSetLike[_, _, _]]
     extends TACAIBasedAnalysisState {
 
-    // TODO move
-    /*private[this]*/ val _localPointsToSet: mutable.Map[Entity /*DefinitionSite*/ , PointsToSet] = {
+    // TODO move this
+    private[this] val _localPointsToSet: mutable.Map[Entity /*DefinitionSite*/ , PointsToSet] = {
         mutable.Map.empty
+    }
+
+    def hasLocalPointsToSet(e: Entity): Boolean = _localPointsToSet.contains(e)
+
+    def localPointsToSet(e: Entity): PointsToSet = _localPointsToSet(e)
+
+    def localPointsToSetsIterator: Iterator[(Entity, PointsToSet)] = {
+        _localPointsToSet.iterator
     }
 
     def setLocalPointsToSet(ds: DefinitionSite, pointsToSet: PointsToSet): Unit = {
