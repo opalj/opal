@@ -208,11 +208,7 @@ object EscapeProperty extends EscapePropertyMetaInformation {
 
     final val Name = "opalj.EscapeProperty"
 
-    final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(
-        Name,
-        AtMost(NoEscape),
-        fastTrack _
-    )
+    final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(        Name,        AtMost(NoEscape)    )
 
     private[this] def escapesViaReturnOrThrow(instruction: Instruction): Option[EscapeProperty] = {
         instruction.opcode match {
@@ -221,78 +217,6 @@ object EscapeProperty extends EscapePropertyMetaInformation {
             case _              ⇒ throw new IllegalArgumentException()
         }
     }
-
-    def fastTrack(ps: PropertyStore, e: Entity): Option[EscapeProperty] = e match {
-        case fp @ VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isDefined ⇒
-            val parameterIndex = fp.parameterIndex
-            if (parameterIndex >= 0 && dm.descriptor.parameterType(parameterIndex).isBaseType)
-                Some(NoEscape)
-            else {
-                val m = dm.definedMethod
-                val code = dm.definedMethod.body.get
-                code.codeSize match {
-                    case 1 ⇒
-                        Some(NoEscape)
-                    case 2 ⇒
-                        if (m.descriptor.returnType.isBaseType) {
-                            Some(NoEscape)
-                        } else {
-                            code.instructions(0).opcode match {
-                                case ACONST_NULL.opcode ⇒
-                                    Some(NoEscape)
-
-                                case ALOAD_0.opcode ⇒
-                                    if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 0) == parameterIndex)
-                                        escapesViaReturnOrThrow(code.instructions(1))
-                                    else
-                                        Some(NoEscape)
-
-                                case ALOAD_1.opcode ⇒
-                                    if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 1) == parameterIndex)
-                                        escapesViaReturnOrThrow(code.instructions(1))
-                                    else
-                                        Some(NoEscape)
-                                case ALOAD_2.opcode ⇒
-                                    if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 2) == parameterIndex)
-                                        escapesViaReturnOrThrow(code.instructions(1))
-                                    else
-                                        Some(NoEscape)
-                                case ALOAD_3.opcode ⇒
-                                    if (registerIndexToParameterIndex(m.isStatic, m.descriptor, 3) == parameterIndex)
-                                        escapesViaReturnOrThrow(code.instructions(1))
-                                    else
-                                        Some(NoEscape)
-                            }
-                        }
-                    case 3 ⇒
-                        code.instructions(0).opcode match {
-                            case BIPUSH.opcode | ILOAD.opcode | FLOAD.opcode |
-                                LLOAD.opcode | DLOAD.opcode | LDC.opcode ⇒
-                                Some(NoEscape)
-                            case ALOAD.opcode ⇒
-                                val index = code.instructions(0).asInstanceOf[ALOAD].lvIndex
-                                if (registerIndexToParameterIndex(m.isStatic, m.descriptor, index) == parameterIndex)
-                                    escapesViaReturnOrThrow(code.instructions(2))
-                                else
-                                    Some(NoEscape)
-                            case _ ⇒ None
-                        }
-                    case 4 ⇒
-                        code.instructions(0).opcode match {
-                            case LDC_W.opcode | LDC2_W.opcode | SIPUSH.opcode | GETSTATIC.opcode ⇒
-                                Some(NoEscape)
-                            case _ ⇒ None
-                        }
-
-                    case _ ⇒
-                        None
-                }
-
-            }
-        case _ ⇒
-            None
-    }
-
 }
 
 /**

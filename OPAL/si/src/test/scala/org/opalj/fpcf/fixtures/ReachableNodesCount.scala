@@ -12,8 +12,7 @@ object ReachableNodesCount {
     val Key: PropertyKey[ReachableNodesCount] =
         PropertyKey.create[Node, ReachableNodesCount](
             s"ReachableNodesCount",
-            (_: PropertyStore, _: FallbackReason, _: Node) ⇒ TooManyNodesReachable,
-            (ps: PropertyStore, e: Entity) ⇒ None
+            (_: PropertyStore, _: FallbackReason, _: Node) ⇒ TooManyNodesReachable
         )
 }
 

@@ -47,7 +47,6 @@ sealed abstract class PropertyStoreTest(
 
                 ps.quiescenceCount should be(0)
                 ps.scheduledTasksCount should be(0)
-                ps.fastTrackPropertiesCount should be(0)
                 ps.scheduledOnUpdateComputationsCount should be(0)
                 ps.isKnown("<DOES NOT EXIST>") should be(false)
                 ps.hasProperty("<DOES NOT EXIST>", Palindrome) should be(false)
@@ -71,7 +70,6 @@ sealed abstract class PropertyStoreTest(
 
                 ps.quiescenceCount should be(1)
                 ps.scheduledTasksCount should be(0)
-                ps.fastTrackPropertiesCount should be(0)
                 ps.scheduledOnUpdateComputationsCount should be(0)
                 ps.isKnown("<DOES NOT EXIST>") should be(false)
                 ps.hasProperty("<DOES NOT EXIST>", Palindrome) should be(false)
@@ -717,44 +715,6 @@ sealed abstract class PropertyStoreTest(
                     processedStrings.keySet should be(Set("aNOa", "aBa"))
                     ps.shutdown()
                 }
-
-            describe("support for fast track properties") {
-
-                it("should correctly handle lazy computations that support fast track properties") {
-                    val ps = createPropertyStore()
-                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
-
-                    if (ps.supportsFastTrackPropertyComputations) {
-
-                        ps.useFastTrackPropertyComputations = true
-                        assert(ps.useFastTrackPropertyComputations)
-
-                        import org.opalj.fpcf.fixtures.MarkerWithFastTrack._
-                        ps.setupPhase(Set(MarkerWithFastTrackKey), Set.empty)
-
-                        val entities = (1 to 50).map(i ⇒ "e"+i)
-                        // basically, we should ALWAYS get the result of the fast-track computation..
-                        ps.registerLazyPropertyComputation(
-                            MarkerWithFastTrackKey,
-                            (e: Entity) ⇒ {
-                                entities.filter(_ != e).foreach(ps.apply(_, MarkerWithFastTrackKey))
-                                Result(e, NotMarked)
-                            }
-                        )
-                        entities foreach { ps.force(_, MarkerWithFastTrackKey) }
-
-                        ps.waitOnPhaseCompletion()
-                        ps.setupPhase(Set.empty, Set.empty)
-
-                        entities foreach { e ⇒
-                            ps(e, MarkerWithFastTrackKey) should be(FinalEP(e, IsMarked))
-                        }
-                        MarkerWithFastTrack.fastTrackEvaluationsCount(ps) should be(50)
-                    }
-
-                    ps.shutdown()
-                }
-            }
 
             describe("handling of computations with multiple updates") {
 
@@ -1481,8 +1441,7 @@ sealed abstract class PropertyStoreTest(
                 val TreeLevelKey: PropertyKey[TreeLevel] = {
                     PropertyKey.create(
                         s"TreeLevel(t=${System.nanoTime()}",
-                        (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ ???,
-                        (ps: PropertyStore, e: Entity) ⇒ None
+                        (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ ???
                     )
                 }
                 case class TreeLevel(length: Int) extends Property {

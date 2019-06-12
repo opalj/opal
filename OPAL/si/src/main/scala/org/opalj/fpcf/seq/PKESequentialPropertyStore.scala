@@ -16,7 +16,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.OPALLogger.info
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
-import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 
 /**
  * A reasonably optimized, complete, but non-concurrent implementation of the property store.
@@ -35,14 +34,6 @@ final class PKESequentialPropertyStore protected (
     info("property store", s"using $tasksManager for managing tasks")
 
     import PKESequentialPropertyStore.EntityDependers
-
-    // --------------------------------------------------------------------------------------------
-    //
-    // CAPABILITIES
-    //
-    // --------------------------------------------------------------------------------------------
-
-    final def supportsFastTrackPropertyComputations: Boolean = true
 
     // --------------------------------------------------------------------------------------------
     //
@@ -66,18 +57,6 @@ final class PKESequentialPropertyStore protected (
 
     private[this] var quiescenceCounter = 0
     override def quiescenceCount: Int = quiescenceCounter
-
-    private[this] var fastTrackPropertiesCounter = 0
-    override def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter
-    override private[fpcf] def incrementFastTrackPropertiesCounter(): Unit = {
-        fastTrackPropertiesCounter += 1
-    }
-
-    private[this] var fastTrackPropertyComputationsCounter = 0
-    override def fastTrackPropertyComputationsCount: Int = fastTrackPropertyComputationsCounter
-    override private[fpcf] def incrementFastTrackPropertyComputationsCounter(): Unit = {
-        fastTrackPropertyComputationsCounter += 1
-    }
 
     // --------------------------------------------------------------------------------------------
     //
@@ -255,27 +234,13 @@ final class PKESequentialPropertyStore protected (
                         }
 
                     case lc: PropertyComputation[E] @unchecked ⇒
-                        val fastTrackPropertyOption: Option[P] =
-                            if (useFastTrackPropertyComputations) {
-                                fastTrackPropertyComputationsCounter += 1
-                                computeFastTrackPropertyBasedOnPKId[P](this, e, pkId)
-                            } else {
-                                None
-                            }
-                        fastTrackPropertyOption match {
-                            case Some(p) ⇒
-                                fastTrackPropertiesCounter += 1
-                                val finalP = FinalEP(e, p)
-                                update(finalP, Nil)
-                                finalP
-                            case None ⇒
-                                // associate e with EPK to ensure that we do not schedule
-                                // multiple (lazy) computations => the entity is now known
-                                ps(pkId).put(e, epk)
-                                scheduleLazyComputationForEntity(e)(lc)
-                                // return the "current" result
-                                epk
-                        }
+
+                        // associate e with EPK to ensure that we do not schedule
+                        // multiple (lazy) computations => the entity is now known
+                        ps(pkId).put(e, epk)
+                        scheduleLazyComputationForEntity(e)(lc)
+                        // return the "current" result
+                        epk
                 }
 
             case Some(eOptionP: EOptionP[E, P] @unchecked) ⇒

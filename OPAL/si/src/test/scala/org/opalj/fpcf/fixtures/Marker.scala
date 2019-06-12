@@ -12,10 +12,7 @@ object Marker {
     final val Key = {
         PropertyKey.create[Entity, MarkerProperty](
             "Marker",
-            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NotMarked,
-            // The fast-track property computation function is deliberately defined as
-            // always "failing".
-            (ps: PropertyStore, e: Entity) ⇒ None
+            (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ NotMarked
         )
     }
 

@@ -40,13 +40,6 @@ object PropertyKey {
         new Array[(PropertyStore, FallbackReason, Entity) ⇒ Property](SupportedPropertyKinds)
     }
 
-    /*
-     * @note [[PropertyKey]]s of simple properties don't have fastrack property computations.
-     */
-    private[this] val fastTrackPropertyComputations = {
-        new Array[(PropertyStore, Entity) ⇒ Option[Property]](SupportedPropertyKinds)
-    }
-
     private[this] val lastKeyId = new AtomicInteger(-1)
 
     private[this] def nextKeyId(): Int = {
@@ -85,32 +78,19 @@ object PropertyKey {
      *              value can be used. This is in particular relevant for properties which depend
      *              on the reachable code.
      *
-     * @param fastTrackPropertyComputation (Optionally) called by the property store if the property
-     *              is queried for the first time (see `PropertyStore.setupPhase`).
-     *              This method is expected to either provide
-     *              a precise analysis very fast or to not provide a result at all.
-     *              I.e., it is expected to derive only those properties that can trivially be
-     *              derived precisely. In general, the computation should succeed in at most
-     *              a few hundred steps. The computation must NOT query any properties and
-     *              must be idempotent.
-     *
      * @note This method is '''not thread-safe''' - the setup of the property store (e.g.,
      *       using the [[org.opalj.br.fpcf.FPCFAnalysesManager]] or an [[AnalysisScenario]] has to
      *       be done by the driver thread and therefore no synchronization is needed.)
      */
     def create[E <: Entity, P <: Property](
-        name:                         String,
-        fallbackPropertyComputation:  FallbackPropertyComputation[E, P],
-        fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P]
+        name:                        String,
+        fallbackPropertyComputation: FallbackPropertyComputation[E, P]
     ): PropertyKey[P] = {
         val thisKeyId = nextKeyId()
         setKeyName(thisKeyId, name)
 
         fallbackPropertyComputations(thisKeyId) =
             fallbackPropertyComputation.asInstanceOf[(PropertyStore, FallbackReason, Entity) ⇒ Property]
-
-        fastTrackPropertyComputations(thisKeyId) =
-            fastTrackPropertyComputation.asInstanceOf[(PropertyStore, Entity) ⇒ Option[Property]]
 
         val pk = new PropertyKey(thisKeyId)
         propertyKeys(thisKeyId) = pk
@@ -119,7 +99,7 @@ object PropertyKey {
     }
 
     def create[E <: Entity, P <: Property](name: String): PropertyKey[P] = {
-        create(name, fallbackPropertyComputation = null, fastTrackPropertyComputation = null)
+        create(name, fallbackPropertyComputation = null)
     }
 
     def create[E <: Entity, P <: Property](
@@ -127,23 +107,7 @@ object PropertyKey {
         fallbackProperty: P
     ): PropertyKey[P] = {
         val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty
-        create(name, fpc, fastTrackPropertyComputation = null)
-    }
-
-    def create[E <: Entity, P <: Property](
-        name:                        String,
-        fallbackPropertyComputation: FallbackPropertyComputation[E, P]
-    ): PropertyKey[P] = {
-        create(name, fallbackPropertyComputation, fastTrackPropertyComputation = null)
-    }
-
-    def create[E <: Entity, P <: Property](
-        name:                         String,
-        fallbackProperty:             P,
-        fastTrackPropertyComputation: (PropertyStore, E) ⇒ Option[P]
-    ): PropertyKey[P] = {
-        val fpc = (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ fallbackProperty
-        create(name, fpc, fastTrackPropertyComputation)
+        create(name, fpc)
     }
 
     //
@@ -192,58 +156,6 @@ object PropertyKey {
         if (fallbackComputation == null)
             throw new IllegalArgumentException("no fallback computation exists: "+name(pkId))
         fallbackComputation(ps, fr, e)
-    }
-
-    final def hasFastTrackProperty(propertyKind: PropertyKind): Boolean = {
-        hasFallbackBasedOnPKId(propertyKind.id)
-    }
-
-    final def hasFastTrackPropertyBasedOnPKId(pkId: Int): Boolean = {
-        fastTrackPropertyComputations(pkId) != null
-    }
-
-    /**
-     * @note This method is intended to be called by the framework. It is defined iff a
-     *       fast track property computation was registered.
-     */
-    def fastTrackProperty[P <: Property](
-        ps: PropertyStore,
-        e:  Entity,
-        pk: PropertyKey[P]
-    ): Option[P] = {
-        fastTrackPropertyBasedOnPKId(ps, e, pk.id).asInstanceOf[Option[P]]
-    }
-
-    private[fpcf] def fastTrackPropertyBasedOnPKId(
-        ps:   PropertyStore,
-        e:    Entity,
-        pkId: Int
-    ): Option[Property] = {
-        val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
-        if (fastTrackPropertyComputation == null)
-            throw new IllegalArgumentException("no fast track computation exists: "+name(pkId))
-        fastTrackPropertyComputation(ps, e)
-    }
-
-    private[fpcf] def computeFastTrackProperty[P <: Property](
-        ps: PropertyStore,
-        e:  Entity,
-        pk: PropertyKey[P]
-    ): Option[P] = {
-        computeFastTrackPropertyBasedOnPKId(ps, e, pk.id)
-    }
-    private[fpcf] def computeFastTrackPropertyBasedOnPKId[P <: Property](
-        ps:   PropertyStore,
-        e:    Entity,
-        pkId: Int
-    ): Option[P] = {
-        val fastTrackPropertyComputation = fastTrackPropertyComputations(pkId)
-        if (fastTrackPropertyComputation == null)
-            None
-        else {
-            ps.incrementFastTrackPropertyComputationsCounter()
-            fastTrackPropertyComputation(ps, e).asInstanceOf[Option[P]]
-        }
     }
 
     /**
