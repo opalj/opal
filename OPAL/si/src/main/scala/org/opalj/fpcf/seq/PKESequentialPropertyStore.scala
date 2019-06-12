@@ -33,6 +33,7 @@ final class PKESequentialPropertyStore protected (
 ) extends SeqPropertyStore { store ⇒
 
     info("property store", s"using $tasksManager for managing tasks")
+    info("property store", s"the MaxEvaluationDepth is $MaxEvaluationDepth")
 
     import PKESequentialPropertyStore.EntityDependers
 
