@@ -87,6 +87,10 @@ class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         _pointsToSets(e) = pointsToSet
     }
 
+    def hasPointsToSet(e: Entity): Boolean = {
+        _pointsToSets.contains(e)
+    }
+
     def setOrUpdatePointsToSet(e: Entity, pointsToSets: Iterator[PointsToSet]): Unit = {
         pointsToSets.foreach { pointsToSet ⇒
             setOrUpdatePointsToSet(e, pointsToSet)

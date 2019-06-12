@@ -12,6 +12,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.tac.common.DefinitionSite
 
 /**
  * Interface for state classes of points-to based analyses that declares functionality to handle
@@ -21,6 +22,16 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
  */
 trait AbstractPointsToState[Depender, PointsToSet <: PointsToSetLike[_, _, _]]
     extends TACAIBasedAnalysisState {
+
+    // TODO move
+    /*private[this]*/ val _localPointsToSet: mutable.Map[Entity /*DefinitionSite*/ , PointsToSet] = {
+        mutable.Map.empty
+    }
+
+    def setLocalPointsToSet(ds: DefinitionSite, pointsToSet: PointsToSet): Unit = {
+        assert(!_localPointsToSet.contains(ds))
+        _localPointsToSet(ds) = pointsToSet
+    }
 
     // maps a defsite to its result in the property store for the points-to set
     private[this] val _pointsToDependees: mutable.Map[Entity, EOptionP[Entity, PointsToSet]] = {
@@ -111,6 +122,11 @@ trait AbstractPointsToState[Depender, PointsToSet <: PointsToSetLike[_, _, _]]
 
     final def hasPointsToDependency(depender: Depender, dependee: Entity): Boolean = {
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
+    }
+
+    final def hasPointsToDependency(depender: Depender): Boolean = {
+        assert(!_dependerToDependees.contains(depender) || _dependerToDependees(depender).nonEmpty)
+        _dependerToDependees.contains(depender)
     }
 
     final def getPointsToProperty(dependee: Entity): EOptionP[Entity, PointsToSet] = {

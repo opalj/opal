@@ -12,6 +12,7 @@ import org.opalj.log.Warn
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
@@ -29,6 +30,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.analyses.cg.V
@@ -143,17 +145,29 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
     ): ProperPropertyComputationResult = {
         val tac = state.tac
         val method = state.method.definedMethod
+        if (method.returnType.isReferenceType) {
+            state.setPointsToSet(state.method, emptyPointsToSet)
+        }
 
         for (stmt ← tac.stmts) stmt match {
             case Assignment(pc, _, New(_, t)) ⇒
                 val defSite = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(defSite, createPointsToSet(pc, state.method, t))
+                state.setLocalPointsToSet(defSite, createPointsToSet(pc, state.method, t))
 
             case Assignment(pc, _, NewArray(_, _, tpe)) if tpe.elementType.isObjectType ⇒
                 val defSite = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(
+                state.setLocalPointsToSet(
                     defSite,
                     createPointsToSet(pc, state.method, tpe.elementType.asObjectType)
+                )
+
+            case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
+                val defSite = definitionSites(method, pc)
+                state.setLocalPointsToSet(
+                    defSite,
+                    if (const.isNullExpr) emptyPointsToSet
+                    // note, this is wrong for alias analyses
+                    else createPointsToSet(pc, state.method, const.tpe.asObjectType)
                 )
 
             // that case should not happen
@@ -208,15 +222,6 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                 }
 
                 handleCall(call, pc)
-
-            case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
-                val defSite = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(
-                    defSite,
-                    if (const.isNullExpr) emptyPointsToSet
-                    // note, this is wrong for alias analyses
-                    else createPointsToSet(pc, state.method, const.tpe.asObjectType)
-                )
 
             case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) ⇒
                 state.addIncompletePointsToInfo(pc)
@@ -309,6 +314,8 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
             case UBPS(pointsTo: PointsToSet @unchecked, isFinal) ⇒
                 val oldEOptP = state.getPointsToProperty(eps.e)
                 val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
+                if (seenElements > pointsTo.numElements)
+                    println()
 
                 for (depender ← state.dependersOf(eps.e)) {
                     state.setPointsToSet(depender, pointsTo)
@@ -335,21 +342,30 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
 
         for ((e, pointsToSet) ← state.pointsToSetsIterator) {
             if (pointsToSet ne emptyPointsToSet) {
+                val isFinal = (e.isInstanceOf[DefinitionSite] || e.isInstanceOf[DefinedMethod] /*TODO: || Exception*/ ) &&
+                    !state.hasPointsToDependency(e)
+
                 results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](e, pointsToPropertyKey, {
 
                     case _: EPK[Entity, _] ⇒
                         if (usefull % 50000 == 0)
-                            println(s"usefull partial result #${usefull} - ${pointsToSet.numElements}")
+                            println(s"useful partial result #${usefull} - ${pointsToSet.numElements}")
                         usefull += 1
-                        Some(InterimEUBP(e, pointsToSet))
+                        if (isFinal)
+                            Some(FinalEP(e, pointsToSet))
+                        else
+                            Some(InterimEUBP(e, pointsToSet))
 
                     case UBP(ub: PointsToSet @unchecked) ⇒
                         val newPointsTo = ub.included(pointsToSet, seenElements)
                         if (newPointsTo ne ub) {
                             if (usefull % 50000 == 0)
-                                println(s"usefull partial result #${usefull} - ${pointsToSet.numElements}")
+                                println(s"useful partial result #${usefull} - ${pointsToSet.numElements}")
                             usefull += 1
-                            Some(InterimEUBP(e, newPointsTo))
+                            if (isFinal)
+                                Some(FinalEP(e, newPointsTo))
+                            else
+                                Some(InterimEUBP(e, newPointsTo))
                         } else {
                             if (count % 50000 == 0)
                                 println(s"useless partial result #${count} - ${pointsToSet.numElements}")
@@ -361,6 +377,10 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                         throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
                 })
             }
+        }
+
+        for ((e, pointsToSet) ← state._localPointsToSet) {
+            results += org.opalj.fpcf.Result(e, pointsToSet)
         }
 
         if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
