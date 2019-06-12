@@ -61,6 +61,15 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
             def next(): Long = f(self.next())
         }
     }
+
+    override def take(n: Int): LongIterator = {
+        new LongIterator {
+            private[this] var i: Int = 0
+            def hasNext: Boolean = self.hasNext && i < n
+            def next(): Long = { i += 1; self.next() }
+        }
+    }
+
     def map(f: Long ⇒ Int): IntIterator = new IntIterator {
         def hasNext: Boolean = self.hasNext
         def next(): Int = f(self.next())

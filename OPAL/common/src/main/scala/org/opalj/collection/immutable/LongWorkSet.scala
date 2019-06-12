@@ -6,7 +6,7 @@ package org.opalj.collection.immutable
  *
  * @author Michael Eichberg
  */
-trait LongWorkSet[T <: LongWorkSet[T]] { longSet: T ⇒
+trait LongWorkSet[T <: LongWorkSet[T]] { this: T ⇒
 
     /**
      * Gets a value and returns the new set without that value.
