@@ -7,20 +7,6 @@ package properties
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.instructions.AALOAD
-import org.opalj.br.instructions.ACONST_NULL
-import org.opalj.br.instructions.ALOAD
-import org.opalj.br.instructions.ALOAD_0
-import org.opalj.br.instructions.ALOAD_1
-import org.opalj.br.instructions.ALOAD_2
-import org.opalj.br.instructions.ALOAD_3
-import org.opalj.br.instructions.ARETURN
-import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.LDC
-import org.opalj.br.instructions.LDC_W
-import org.opalj.br.instructions.NEWARRAY
 
 sealed trait ReturnValueFreshnessPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = ReturnValueFreshness
@@ -59,19 +45,6 @@ object ReturnValueFreshness extends ReturnValueFreshnessPropertyMetaInformation 
         // fallback value
         NoFreshReturnValue
     )
-    
-    private[this] def normalAndAbnormalReturn(
-        instr: Instruction
-    ): Option[ReturnValueFreshness] = instr.opcode match {
-        case ATHROW.opcode ⇒
-            Some(FreshReturnValue)
-
-        case ARETURN.opcode ⇒
-            Some(NoFreshReturnValue)
-
-        case _ ⇒
-            throw new IllegalArgumentException(s"unexpected instruction $instr")
-    }
 
 }
 

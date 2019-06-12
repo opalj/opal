@@ -10,7 +10,6 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.fpcf.properties.Purity.ContextuallyPureFlags
 import org.opalj.br.fpcf.properties.Purity.ContextuallySideEffectFreeFlags
 import org.opalj.br.fpcf.properties.Purity.ImpureFlags
@@ -20,20 +19,6 @@ import org.opalj.br.fpcf.properties.Purity.NotCompileTimePure
 import org.opalj.br.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.br.fpcf.properties.Purity.PureFlags
 import org.opalj.br.fpcf.properties.Purity.SideEffectFreeFlags
-import org.opalj.br.instructions.PrimitiveLDC
-import org.opalj.br.instructions.SIPUSH
-import org.opalj.br.instructions.BIPUSH
-import org.opalj.br.instructions.LDC
-import org.opalj.br.instructions.LDC_W
-import org.opalj.br.instructions.LDC2_W
-import org.opalj.br.instructions.ALOAD
-import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.br.instructions.DLOAD
-import org.opalj.br.instructions.FLOAD
-import org.opalj.br.instructions.ILOAD
-import org.opalj.br.instructions.LLOAD
-import org.opalj.br.instructions.NEWARRAY
-import org.opalj.br.instructions.PUTSTATIC
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -201,7 +186,7 @@ object Purity extends PurityPropertyMetaInformation {
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
      */
-    final val key = PropertyKey.create[DeclaredMethod, Purity](        "Purity",        ImpureByLackOfInformation    )
+    final val key = PropertyKey.create[DeclaredMethod, Purity]("Purity", ImpureByLackOfInformation)
 
     final val NotCompileTimePure = 0x1
     final val IsNonDeterministic = 0x2

@@ -11,27 +11,6 @@ import org.opalj.fpcf.ExplicitlyNamedProperty
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.instructions.ACONST_NULL
-import org.opalj.br.instructions.ALOAD
-import org.opalj.br.instructions.ALOAD_0
-import org.opalj.br.instructions.ALOAD_1
-import org.opalj.br.instructions.ALOAD_2
-import org.opalj.br.instructions.ALOAD_3
-import org.opalj.br.instructions.ARETURN
-import org.opalj.br.instructions.ATHROW
-import org.opalj.br.instructions.BIPUSH
-import org.opalj.br.instructions.DLOAD
-import org.opalj.br.instructions.FLOAD
-import org.opalj.br.instructions.GETSTATIC
-import org.opalj.br.instructions.ILOAD
-import org.opalj.br.instructions.Instruction
-import org.opalj.br.instructions.LDC
-import org.opalj.br.instructions.LDC2_W
-import org.opalj.br.instructions.LDC_W
-import org.opalj.br.instructions.LLOAD
-import org.opalj.br.instructions.SIPUSH
 
 sealed trait EscapePropertyMetaInformation extends PropertyMetaInformation {
 
@@ -208,15 +187,8 @@ object EscapeProperty extends EscapePropertyMetaInformation {
 
     final val Name = "opalj.EscapeProperty"
 
-    final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(        Name,        AtMost(NoEscape)    )
+    final lazy val key: PropertyKey[EscapeProperty] = PropertyKey.create(Name, AtMost(NoEscape))
 
-    private[this] def escapesViaReturnOrThrow(instruction: Instruction): Option[EscapeProperty] = {
-        instruction.opcode match {
-            case ARETURN.opcode ⇒ Some(EscapeViaReturn)
-            case ATHROW.opcode  ⇒ Some(EscapeViaAbnormalReturn)
-            case _              ⇒ throw new IllegalArgumentException()
-        }
-    }
 }
 
 /**
