@@ -1795,7 +1795,10 @@ abstract class PropertyStoreTestWithDebugging(
                         val nodeC = Node("c")
                         val nodeD = Node("d")
 
-                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+                        info(
+                            s"PropertyStore(MaxEvaluationDepth=${ps.MaxEvaluationDepth})"+
+                                s"@${System.identityHashCode(ps).toHexString}"
+                        )
 
                         ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
