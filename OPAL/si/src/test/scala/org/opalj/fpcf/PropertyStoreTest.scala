@@ -1709,151 +1709,149 @@ abstract class PropertyStoreTestWithDebugging(
                 ps.shutdown()
             }
 
-            {
+            it("should catch non-monotonic updates related to the lower bound") {
                 val ps = createPropertyStore()
                 if (ps.MaxEvaluationDepth == 0) {
-                    it("should catch non-monotonic updates related to the lower bound") {
-                        assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
 
-                        var count = 0
-                        val nodeA = Node("a")
-                        val nodeB = Node("b")
-                        val nodeC = Node("c")
-                        val nodeD = Node("d")
+                    assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
 
-                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+                    var count = 0
+                    val nodeA = Node("a")
+                    val nodeB = Node("b")
+                    val nodeC = Node("c")
+                    val nodeD = Node("d")
 
-                        ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                        def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
-                            n match {
-                                case `nodeA` ⇒
-                                    Result(nodeA, ReachableNodesCount(50))
-                                case `nodeB` ⇒
-                                    InterimResult(
-                                        n,
-                                        ReachableNodesCount(100), // <= invalid refinement of lower bound!
-                                        ReachableNodesCount(count),
-                                        List(ps(nodeD, ReachableNodesCount.Key)),
-                                        c(nodeB), pch
-                                    )
-                            }
-                        }
+                    ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
-                        def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
+                    def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
+                        n match {
                             case `nodeA` ⇒
-                                val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                                InterimResult(
-                                    nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
-                                    List(bEOptionP),
-                                    c(nodeA), pch
-                                )
-
+                                Result(nodeA, ReachableNodesCount(50))
                             case `nodeB` ⇒
-                                val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
-                                count += 1
                                 InterimResult(
-                                    n, ReachableNodesCount(100 - count), ReachableNodesCount(count),
-                                    List(cEOptionP),
+                                    n,
+                                    ReachableNodesCount(100), // <= invalid refinement of lower bound!
+                                    ReachableNodesCount(count),
+                                    List(ps(nodeD, ReachableNodesCount.Key)),
                                     c(nodeB), pch
                                 )
-
-                            case `nodeC` ⇒
-                                new Result(nodeC, ReachableNodesCount(0))
-
-                            case `nodeD` ⇒
-                                new Result(nodeD, ReachableNodesCount(0))
                         }
-
-                        ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
-                        try {
-                            ps.force(nodeA, ReachableNodesCount.Key)
-                            ps.waitOnPhaseCompletion()
-                            fail("invalid update not detected")
-                        } catch {
-                            case iae: IllegalArgumentException if iae.getMessage.contains("illegal update") ⇒
-                            // OK - EXPECTED
-                            case e: Throwable ⇒
-                                e.printStackTrace()
-                                fail(e.getMessage)
-                        }
-
                     }
+
+                    def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
+                        case `nodeA` ⇒
+                            val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
+                            InterimResult(
+                                nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
+                                List(bEOptionP),
+                                c(nodeA), pch
+                            )
+
+                        case `nodeB` ⇒
+                            val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
+                            count += 1
+                            InterimResult(
+                                n, ReachableNodesCount(100 - count), ReachableNodesCount(count),
+                                List(cEOptionP),
+                                c(nodeB), pch
+                            )
+
+                        case `nodeC` ⇒
+                            new Result(nodeC, ReachableNodesCount(0))
+
+                        case `nodeD` ⇒
+                            new Result(nodeD, ReachableNodesCount(0))
+                    }
+
+                    ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
+                    try {
+                        ps.force(nodeA, ReachableNodesCount.Key)
+                        ps.waitOnPhaseCompletion()
+                        fail("invalid update not detected")
+                    } catch {
+                        case iae: IllegalArgumentException if iae.getMessage.contains("illegal update") ⇒
+                        // OK - EXPECTED
+                        case e: Throwable ⇒
+                            e.printStackTrace()
+                            fail(e.getMessage)
+                    }
+
                 }
                 ps.shutdown()
             }
 
-            {
+            it("should catch non-monotonic updates related to the upper bound") {
                 val ps = createPropertyStore()
                 if (ps.MaxEvaluationDepth == 0) {
-                    it("should catch non-monotonic updates related to the upper bound") {
-                        assert(PropertyStore.Debug, "debugging is turned off")
 
-                        var count = 0
-                        val nodeA = Node("a")
-                        val nodeB = Node("b")
-                        val nodeC = Node("c")
-                        val nodeD = Node("d")
+                    assert(PropertyStore.Debug, "debugging is turned off")
 
-                        info(
-                            s"PropertyStore(MaxEvaluationDepth=${ps.MaxEvaluationDepth})"+
-                                s"@${System.identityHashCode(ps).toHexString}"
-                        )
+                    var count = 0
+                    val nodeA = Node("a")
+                    val nodeB = Node("b")
+                    val nodeC = Node("c")
+                    val nodeD = Node("d")
 
-                        ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+                    info(
+                        s"PropertyStore(MaxEvaluationDepth=${ps.MaxEvaluationDepth})"+
+                            s"@${System.identityHashCode(ps).toHexString}"
+                    )
 
-                        def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
-                            n match {
-                                case `nodeA` ⇒
-                                    Result(nodeA, ReachableNodesCount(50))
-                                case `nodeB` ⇒
-                                    InterimResult(
-                                        n,
-                                        ReachableNodesCount(100 - count),
-                                        ReachableNodesCount(0), // <= invalid refinement of upper bound!
-                                        List(ps(nodeD, ReachableNodesCount.Key)),
-                                        c(nodeB), pch
-                                    )
-                            }
-                        }
+                    ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
 
-                        def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
+                    def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
+                        n match {
                             case `nodeA` ⇒
-                                val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                                InterimResult(
-                                    nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
-                                    List(bEOptionP),
-                                    c(nodeA), pch
-                                )
-
+                                Result(nodeA, ReachableNodesCount(50))
                             case `nodeB` ⇒
-                                val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
-                                count += 1
                                 InterimResult(
-                                    n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
-                                    List(cEOptionP),
+                                    n,
+                                    ReachableNodesCount(100 - count),
+                                    ReachableNodesCount(0), // <= invalid refinement of upper bound!
+                                    List(ps(nodeD, ReachableNodesCount.Key)),
                                     c(nodeB), pch
                                 )
-
-                            case `nodeC` ⇒ new Result(nodeC, ReachableNodesCount(0))
-
-                            case `nodeD` ⇒ new Result(nodeD, ReachableNodesCount(0))
                         }
-
-                        ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
-                        try {
-                            ps.force(nodeA, ReachableNodesCount.Key)
-                            ps.waitOnPhaseCompletion()
-                            fail("invalid update not detected")
-                        } catch {
-                            case iae: IllegalArgumentException if iae.getMessage.contains("illegal update") ⇒
-                            // OK - EXPECTED
-                            case e: Throwable ⇒
-                                e.printStackTrace()
-                                fail(e.getMessage)
-                        }
-
                     }
+
+                    def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
+                        case `nodeA` ⇒
+                            val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
+                            InterimResult(
+                                nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
+                                List(bEOptionP),
+                                c(nodeA), pch
+                            )
+
+                        case `nodeB` ⇒
+                            val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
+                            count += 1
+                            InterimResult(
+                                n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
+                                List(cEOptionP),
+                                c(nodeB), pch
+                            )
+
+                        case `nodeC` ⇒ new Result(nodeC, ReachableNodesCount(0))
+
+                        case `nodeD` ⇒ new Result(nodeD, ReachableNodesCount(0))
+                    }
+
+                    ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
+                    try {
+                        ps.force(nodeA, ReachableNodesCount.Key)
+                        ps.waitOnPhaseCompletion()
+                        fail("invalid update not detected")
+                    } catch {
+                        case iae: IllegalArgumentException if iae.getMessage.contains("illegal update") ⇒
+                        // OK - EXPECTED
+                        case e: Throwable ⇒
+                            e.printStackTrace()
+                            fail(e.getMessage)
+                    }
+
                 }
                 ps.shutdown()
             }
