@@ -200,23 +200,16 @@ final class PKESequentialPropertyStore protected (
                                 // of the required kind; let's check if we can invoke it now or
                                 // have to invoke it later.
                                 val (sourcePK, transform) = transformerSpecification
-                                val sourceEOptionP = ps(sourcePK.id).get(e)
-                                if (sourceEOptionP.isDefined && sourceEOptionP.get.isFinal) {
-                                    val FinalP(sourceP) = sourceEOptionP.get
+                                val sourceEPK = EPK(e, sourcePK)
+                                // We have to "apply" to ensure that all necessary lazy analyses
+                                // get triggered
+                                val sourceEOptionP = apply(sourceEPK)
+                                if (sourceEOptionP.isFinal) {
+                                    val FinalP(sourceP) = sourceEOptionP
                                     val finalEP = transform(e, sourceP).asInstanceOf[FinalEP[E, P]]
                                     update(finalEP, Nil)
                                     return finalEP;
                                 } else {
-                                    val sourceEPK = EPK(e, sourcePK)
-                                    if (sourceEOptionP.isEmpty) {
-                                        // We have to "apply" to ensure that all necessary lazy analyses
-                                        // get triggered; however, we don't want eager evaluation here
-                                        // (at least for the time being)
-                                        val currentEvaluationDepth = evaluationDepth
-                                        evaluationDepth = MaxEvaluationDepth
-                                        apply(sourceEPK)
-                                        evaluationDepth = currentEvaluationDepth
-                                    }
                                     // Add this transformer as a depender to the transformer's
                                     // source; this works, because notifications about intermediate
                                     // values are suppressed.
