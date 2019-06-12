@@ -24,8 +24,9 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore protected (
-        final val ctx:          Map[Class[_], AnyRef],
-        final val tasksManager: TasksManager
+        final val ctx:                Map[Class[_], AnyRef],
+        final val tasksManager:       TasksManager,
+        final val MaxEvaluationDepth: Int
 )(
         implicit
         val logContext: LogContext
@@ -63,6 +64,8 @@ final class PKESequentialPropertyStore protected (
     // CORE DATA STRUCTURES
     //
     // --------------------------------------------------------------------------------------------
+
+    private[this] var evaluationDepth: Int = 0
 
     // If the map's value is an epk a lazy analysis was started if it exists.
     private[this] val ps: Array[mutable.AnyRefMap[Entity, SomeEOptionP]] = {
@@ -184,7 +187,8 @@ final class PKESequentialPropertyStore protected (
         e:    E,
         pkId: Int
     ): EOptionP[E, P] = {
-        ps(pkId).get(e) match {
+        val epss = ps(pkId)
+        epss.get(e) match {
             case None ⇒
                 // the entity is unknown ...
                 lazyComputations(pkId) match {
@@ -206,8 +210,12 @@ final class PKESequentialPropertyStore protected (
                                     val sourceEPK = EPK(e, sourcePK)
                                     if (sourceEOptionP.isEmpty) {
                                         // We have to "apply" to ensure that all necessary lazy analyses
-                                        // get triggered!
+                                        // get triggered; however, we don't want eager evaluation here
+                                        // (at least for the time being)
+                                        val currentEvaluationDepth = evaluationDepth
+                                        evaluationDepth = MaxEvaluationDepth
                                         apply(sourceEPK)
+                                        evaluationDepth = currentEvaluationDepth
                                     }
                                     // Add this transformer as a depender to the transformer's
                                     // source; this works, because notifications about intermediate
@@ -225,7 +233,7 @@ final class PKESequentialPropertyStore protected (
                                     dependees(pkId).put(e, List(sourceEPK))
                                 }
                             }
-                            ps(pkId).put(e, epk)
+                            epss.put(e, epk)
                             epk
                         } else {
                             val finalEP = computeFallback(e, pkId)
@@ -236,11 +244,20 @@ final class PKESequentialPropertyStore protected (
                     case lc: PropertyComputation[E] @unchecked ⇒
 
                         // associate e with EPK to ensure that we do not schedule
-                        // multiple (lazy) computations => the entity is now known
-                        ps(pkId).put(e, epk)
-                        scheduleLazyComputationForEntity(e)(lc)
-                        // return the "current" result
-                        epk
+                        // multiple (lazy) computations and that we do not run in cycles
+                        // => the entity is now known
+                        epss.put(e, epk)
+                        if (evaluationDepth < MaxEvaluationDepth) {
+                            evaluationDepth += 1
+                            handleResult(lc(e))
+                            evaluationDepth -= 1
+                            // we now have a new result (at least an EPK)
+                            epss.get(e).get.asInstanceOf[EOptionP[E, P]]
+                        } else {
+                            scheduleLazyComputationForEntity(e)(lc)
+                            // return the "current" result
+                            epk
+                        }
                 }
 
             case Some(eOptionP: EOptionP[E, P] @unchecked) ⇒
@@ -830,6 +847,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
     final type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
 
     final val TasksManagerKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.TasksManager"
+    final val MaxEvaluationDepthKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.MaxEvaluationDepth"
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
@@ -844,7 +862,8 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
                 case _                    ⇒ org.opalj.BaseConfig
             }
         val taskManagerId = config.getString(TasksManagerKey)
-        apply(taskManagerId)(contextMap)
+        val maxEvaluationDepth = config.getInt(MaxEvaluationDepthKey)
+        apply(taskManagerId, maxEvaluationDepth)(contextMap)
     }
 
     final val Strategies = List(
@@ -861,7 +880,8 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
     )
 
     def apply(
-        taskManagerId: String
+        taskManagerId:      String,
+        maxEvaluationDepth: Int
     )(
         context: Map[Class[_], AnyRef] = Map.empty
     )(
@@ -889,7 +909,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
             case _ ⇒ throw new IllegalArgumentException(s"unknown task manager $taskManagerId")
         }
 
-        val ps = new PKESequentialPropertyStore(context, tasksManager)
+        val ps = new PKESequentialPropertyStore(context, tasksManager, maxEvaluationDepth)
         tasksManager match {
             case propertyStoreDependentTaskManager: PropertyStoreDependentTasksManager ⇒
                 propertyStoreDependentTaskManager.setSeqPropertyStore(ps)

@@ -19,6 +19,8 @@ class BasePropertyStoreMockup extends PropertyStore {
     // Methods which are not required by the following tests...
     //
 
+    override def MaxEvaluationDepth: Int = ???
+
     override def shutdown(): Unit = ???
 
     override def toString(printProperties: Boolean): String = ???

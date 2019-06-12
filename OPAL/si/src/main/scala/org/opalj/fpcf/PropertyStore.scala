@@ -283,6 +283,8 @@ abstract class PropertyStore {
     //
     //
 
+    def MaxEvaluationDepth: Int
+
     /**
      * If a property is queried for which we have no value, then this information is used
      * to determine which kind of fallback is required.
