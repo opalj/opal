@@ -88,7 +88,8 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         var results: List[ProperPropertyComputationResult] = Nil
 
         val newSeenTypes = if (pointsTo.hasUBP) {
-            for (t ← pointsTo.ub.dropOldestTypes(seenTypes)) {
+            val ub = pointsTo.ub
+            ub.forNewestNTypes(ub.numTypes - seenTypes) { t ⇒
                 val callR = p.instanceCall(
                     sourceMethod.declaringClassType.asObjectType,
                     t,

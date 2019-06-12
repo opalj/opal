@@ -103,7 +103,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
             // perform the update for the new types
             for (callSite ← relevantCallSites) {
                 val typesLeft = state.typesForCallSite(callSite)
-                for (newType ← ub.dropOldestTypes(seenElements)) {
+                ub.forNewestNTypes(ub.numTypes - seenElements) { newType ⇒
                     if (typesLeft.contains(newType.id)) {
                         state.removeTypeForCallSite(callSite, newType)
                         val (pc, name, descriptor, declaredType) = callSite

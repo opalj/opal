@@ -5,6 +5,7 @@ package fpcf
 package properties
 package pointsto
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -26,7 +27,7 @@ sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInf
 }
 
 case class TypeBasedPointsToSet private[properties] (
-        private val orderedTypes: List[ObjectType],
+        private val orderedTypes: Chain[ObjectType],
         override val types:       UIDSet[ObjectType]
 ) extends PointsToSetLike[ObjectType, UIDSet[ObjectType], TypeBasedPointsToSet]
     with OrderedProperty
@@ -51,7 +52,7 @@ case class TypeBasedPointsToSet private[properties] (
         var typesUnion = types
         for (t ← other.types) {
             if (!types.contains(t)) {
-                newOrderedTypes ::= t
+                newOrderedTypes :&:= t
                 typesUnion += t
             }
         }
@@ -60,13 +61,6 @@ case class TypeBasedPointsToSet private[properties] (
             return this;
 
         new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
-    }
-
-    /**
-     * Will return the types added most recently, dropping the `seenElements` oldest ones.
-     */
-    override def dropOldestTypes(seenTypes: Int): Iterator[ObjectType] = {
-        orderedTypes.iterator.take(types.size - seenTypes)
     }
 
     override def numTypes: Int = types.size
@@ -85,10 +79,17 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def numElements: Int = types.size
 
-    override def dropOldestElements(seenElements: Int): Iterator[ObjectType] = dropOldestTypes(seenElements)
-
     override def included(other: TypeBasedPointsToSet, seenElements: Int): TypeBasedPointsToSet = {
         included(other) // todo: implement correct version
+    }
+
+    override def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit = {
+        orderedTypes.forFirstN(n)(f)
+    }
+
+    // here, the elements are the types
+    override def forNewestNElements[U](n: Int)(f: ObjectType ⇒ U): Unit = {
+        orderedTypes.forFirstN(n)(f)
     }
 }
 
@@ -98,7 +99,7 @@ object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation 
         initialPointsTo: UIDSet[ObjectType]
     ): TypeBasedPointsToSet = {
         new TypeBasedPointsToSet(
-            initialPointsTo.toList,
+            initialPointsTo.foldLeft(Chain.empty[ObjectType])((l, t) ⇒ t :&: l),
             initialPointsTo
         )
     }
@@ -116,4 +117,4 @@ object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation 
     }
 }
 
-object NoTypes extends TypeBasedPointsToSet(List.empty, UIDSet.empty)
+object NoTypes extends TypeBasedPointsToSet(Chain.empty, UIDSet.empty)

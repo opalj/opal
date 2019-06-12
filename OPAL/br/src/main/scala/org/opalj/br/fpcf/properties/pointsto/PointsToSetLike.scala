@@ -16,7 +16,7 @@ import org.opalj.fpcf.Property
  */
 trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType, PointsToSet, T]] extends Property { self: T ⇒
 
-    def dropOldestTypes(seenTypes: Int): Iterator[ObjectType]
+    def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit
 
     def numTypes: Int
 
@@ -26,7 +26,7 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def elements: PointsToSet
 
-    def dropOldestElements(seenElements: Int): Iterator[ElementType]
+    def forNewestNElements[U](n: Int)(f: ElementType ⇒ U): Unit
 
     def included(other: T): T
 
