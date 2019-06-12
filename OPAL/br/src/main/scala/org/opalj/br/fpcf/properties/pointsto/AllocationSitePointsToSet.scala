@@ -65,9 +65,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         assert(allocationSite1 != allocationSite2)
         AllocationSitePointsToSetN(
             LongTrieSet(allocationSite1, allocationSite2),
-            allocationSite1 +: allocationSite2 +: EmptyLongList,
+            allocationSite2 +: allocationSite1 +: EmptyLongList,
             UIDSet(allocatedType1, allocatedType2),
-            allocatedType1 :&: allocatedType2 :&: Naught
+            allocatedType2 :&: allocatedType1 :&: Naught
         )
     }
 
@@ -231,8 +231,26 @@ case class AllocationSitePointsToSet1(
             case NoAllocationSites ⇒
                 this
 
+            case AllocationSitePointsToSetN(otherAllocationSites, otherOrderedAllocationSites, otherTypes, otherOrderedTypes) ⇒
+                var newOrderedAllocations = allocationSite +: EmptyLongList
+                otherOrderedAllocationSites.foreach { as ⇒
+                    if (as != allocationSite) {
+                        newOrderedAllocations +:= as
+                    }
+                }
+
+                val newOrderedTypes = otherOrderedTypes.foldLeft(allocatedType :&: Naught) { (l, at) ⇒
+                    if (at ne allocatedType) at :&: l else l
+                }
+
+                AllocationSitePointsToSetN(
+                    otherAllocationSites + allocationSite,
+                    newOrderedAllocations,
+                    otherTypes + allocatedType,
+                    newOrderedTypes
+                )
             case _ ⇒
-                other.included(this)
+                throw new IllegalArgumentException(s"unexpected list $other")
         }
     }
 
