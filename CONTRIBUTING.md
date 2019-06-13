@@ -12,10 +12,10 @@ The link to the copyright information (BSD License) was added to the file at the
 Author information was added where appropriate. It is important to be able to identify the author of some code to know where to get help/to know who is responsible.
 
 ## Tested
-All existing unit and integration tests were successfully executed. Sufficient tests for the new code are included (use `Scalatest`. or `ScalaCheck` for the development and use `scoverage` for checking the coverage; the tests should check all features(!) and should have a coverage that is close to 100%.
+All existing unit and integration tests were successfully executed. Sufficient tests for the new code are included (use `Scalatest` or `ScalaCheck` for the development and use `scoverage` for checking the coverage; the tests should check all features(!) and should have a coverage that is close to 100%.
 
 ## Formatted
-The code is formatted using the same settings and style as the rest of the code (use the "Scalariform settings" as a basis); use the `sbt compileAll` command to ensure basic formatting!
+The code is formatted using the same settings and style as the rest of the code; use the `sbt compileAll` command to ensure basic formatting!
 
 ## Documented
 The code is reasonably documented.
@@ -23,15 +23,13 @@ The code is reasonably documented.
 ## Code Conventions
 Ensure that the code conventions w.r.t. naming and formatting are followed. 
 
-Note, that some formatting conventions used by OPAL are not enforced by scalariform. In particular, **a line should not have more than 100 chars** (unless Scalariform always reformats the code such that the line has more than 100 chars which is, e.g., often the case for type declarations).
-
 ## One Import Per Line
-We do not use Scala's feature to import multiple classes/objects from the same package using the corresponding syntax (e.g., `import scala.collcation.immutable.{HashMap,LinkedList,Stack}`). Using such imports does not play well with certain editors. 
+Do not use Scala's feature to import multiple classes/objects from the same package using the corresponding syntax (e.g., `import scala.collcation.immutable.{HashMap,LinkedList,Stack}`). Using such imports does not play well with certain editors. 
 
 (This behavior can be configured in *IntelliJ*)
 
 ## Do Not Use Wildcard Imports
-Do not used wildcard imports, e.g., `import scala.collection._`, unless you import a huge (> 64) number of classes. Such imports are very brittle and can lead to strange behavior.
+Do not used wildcard imports, e.g., `import scala.collection._`, unless you import a huge (> 48) number of classes for the same package. Such imports are very brittle and can lead to strange behavior.
 
 (This behavior can be configured in *IntelliJ*)
 
