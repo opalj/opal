@@ -30,6 +30,8 @@ sealed abstract class LongLinkedTrieSet
 object LongLinkedTrieSet {
 
     def empty: LongLinkedTrieSet = EmptyLongLinkedTrieSet
+
+    final private[immutable] val IncreaseBranchingFactor: Boolean = true
 }
 
 case object EmptyLongLinkedTrieSet extends LongLinkedTrieSet {
@@ -158,6 +160,8 @@ final private[immutable] case class LongLinkedTrieSetL(
 /** The inner nodes of the trie set. */
 private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrieSetNN {
 
+    import LongLinkedTrieSet.IncreaseBranchingFactor
+
     final override private[immutable] def isN: Boolean = true
     final override private[immutable] def isL: Boolean = false
 
@@ -206,22 +210,13 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
             if (_1 == null) {
                 new LongLinkedTrieSetN2(this._0, l)
             } else {
-                /* without increasing the branching factor:
-                val oldRight = this._1
-                val newRight = oldRight + (level + 1, size, l)
-                if (oldRight ne newRight) {
-                    new LongLinkedTrieSetN2(this._0, newRight)
-                } else {
-                    this
-                }
-                */
-                val old_1 = this._1
                 val new_1 = old_1 + (level + 1, size, l)
                 if (old_1 ne new_1) {
                     // We have an update, let's check if we want to move to a node with a higher
                     // branching factor; we do so if – assuming a reasonably balanced trie – we
                     // expect that most references to the successor nodes are used.
                     if (level % 2 == 0 && size > (1 << (level + 2))) {
+                    if (IncreaseBranchingFactor && level % 2 == 0 && size > (1 << (level + 2))) {
                         val _1 = new_1.asInstanceOf[LongLinkedTrieSetN2Like]
                         val _01: LongLinkedTrieSetNN = _1._0
                         val _11: LongLinkedTrieSetNN = _1._1
