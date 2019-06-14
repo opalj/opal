@@ -17,7 +17,6 @@
  1. force the recreation of the OPAL Docker Container
  
 ## Optional Steps
- 1. check if sbt-perf should be updated
  1. update BugPicker
  1. update OPAL-Disassembler ATOM Plug-in 
  
