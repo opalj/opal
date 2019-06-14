@@ -261,7 +261,6 @@ final private[immutable] class LongLinkedTrieSetN2(
         var _1: LongLinkedTrieSetNN // a tree node or a leaf node
 ) extends LongLinkedTrieSetN2Like {
 
-
     override private[immutable] def +=!(level: Int, l: LongLinkedTrieSetL): LongLinkedTrieSetNN = {
         if (((l.value >> level) & 1) == 0) {
             this._0 = _0.+=!(level + 1, l)
@@ -283,7 +282,6 @@ final private[immutable] class LongLinkedTrieSetN2(
 final private[immutable] class LongLinkedTrieSetN_0(
         var _0: LongLinkedTrieSetNN // a tree node, a leaf node or null
 ) extends LongLinkedTrieSetN2Like {
-
 
     override def _1: LongLinkedTrieSetNN = null
 
