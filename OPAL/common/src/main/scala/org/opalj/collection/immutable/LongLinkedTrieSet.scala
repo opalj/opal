@@ -30,8 +30,6 @@ sealed abstract class LongLinkedTrieSet
 object LongLinkedTrieSet {
 
     def empty: LongLinkedTrieSet = EmptyLongLinkedTrieSet
-
-    final private[immutable] val IncreaseBranchingFactor: Boolean = true
 }
 
 case object EmptyLongLinkedTrieSet extends LongLinkedTrieSet {
@@ -160,8 +158,6 @@ final private[immutable] case class LongLinkedTrieSetL(
 /** The inner nodes of the trie set. */
 private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrieSetNN {
 
-    import LongLinkedTrieSet.IncreaseBranchingFactor
-
     final override private[immutable] def isN: Boolean = true
     final override private[immutable] def isL: Boolean = false
 
@@ -216,7 +212,6 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
                     // branching factor; we do so if – assuming a reasonably balanced trie – we
                     // expect that most references to the successor nodes are used.
                     if (level % 2 == 0 && size > (1 << (level + 2))) {
-                    if (IncreaseBranchingFactor && level % 2 == 0 && size > (1 << (level + 2))) {
                         val _1 = new_1.asInstanceOf[LongLinkedTrieSetN2Like]
                         val _01: LongLinkedTrieSetNN = _1._0
                         val _11: LongLinkedTrieSetNN = _1._1
