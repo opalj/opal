@@ -92,37 +92,65 @@ object LongLinkedTrieSetProperties extends Properties("LongLinkedTrieSet") {
 class LongLinkedTrieSetTest extends FunSpec with Matchers {
 
     describe("contains") {
-        it("for sets with four values with many leading zeros") {
-            val ls = org.opalj.collection.immutable.LongLinkedTrieSet1(128l) + 16l + 32l + 64l
-            assert(ls.contains(128l))
-            assert(ls.contains(16l))
-            assert(ls.contains(32l))
-            assert(ls.contains(64l))
 
-            assert(!ls.contains(8l))
-            assert(!ls.contains(-16l))
-            assert(!ls.contains(15l))
-            assert(!ls.contains(0l))
-            assert(!ls.contains(1l))
-            assert(!ls.contains(2l))
+        it("[regression] should return true for all values of the test fixture:"+
+            "(-103806,-99428,-15784,-6124,48020)") {
+            val d = List[Long](-103806, -99428, -15784, -6124, 48020)
+
+            val llts = d.foldLeft(LongLinkedTrieSet.empty)((c, n) ⇒ c + n)
+            var notFound = List.empty[Long]
+            d.foreach(v ⇒ if (!llts.contains(v)) notFound ::= v)
+            if (notFound.nonEmpty)
+                fail(s"; lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
+        }
+
+        it("[regression] should return true for all values of the test fixture:"+
+            "(-134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213,"+
+            "-20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875)") {
+            // we had a regression given the follwing set
+            val d = List[Long](
+                -134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213,
+                -20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875
+            )
+
+            val llts = d.foldLeft(LongLinkedTrieSet.empty)((c, n) ⇒ c + n)
+            var notFound = List.empty[Long]
+            d.foreach(v ⇒ if (!llts.contains(v)) notFound ::= v)
+            if (notFound.nonEmpty)
+                fail(s"; lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
+        }
+
+        it("for sets with four values with many leading zeros") {
+            val ls = org.opalj.collection.immutable.LongLinkedTrieSet1(128L) + 16L + 32L + 64L
+            assert(ls.contains(128L))
+            assert(ls.contains(16L))
+            assert(ls.contains(32L))
+            assert(ls.contains(64L))
+
+            assert(!ls.contains(8L))
+            assert(!ls.contains(-16L))
+            assert(!ls.contains(15L))
+            assert(!ls.contains(0L))
+            assert(!ls.contains(1L))
+            assert(!ls.contains(2L))
         }
 
         it("for sets with four values with many leading ones") {
-            val ls = org.opalj.collection.immutable.LongLinkedTrieSet1(7l) + 15l + 31l + 63l
-            assert(ls.contains(7l))
-            assert(ls.contains(15l))
-            assert(ls.contains(31l))
-            assert(ls.contains(63l))
+            val ls = org.opalj.collection.immutable.LongLinkedTrieSet1(7L) + 15L + 31L + 63L
+            assert(ls.contains(7L))
+            assert(ls.contains(15L))
+            assert(ls.contains(31L))
+            assert(ls.contains(63L))
 
-            assert(!ls.contains(128l))
-            assert(!ls.contains(16l))
-            assert(!ls.contains(32l))
-            assert(!ls.contains(64l))
-            assert(!ls.contains(8l))
-            assert(!ls.contains(-16l))
-            assert(!ls.contains(0l))
-            assert(!ls.contains(1l))
-            assert(!ls.contains(2l))
+            assert(!ls.contains(128L))
+            assert(!ls.contains(16L))
+            assert(!ls.contains(32L))
+            assert(!ls.contains(64L))
+            assert(!ls.contains(8L))
+            assert(!ls.contains(-16L))
+            assert(!ls.contains(0L))
+            assert(!ls.contains(1L))
+            assert(!ls.contains(2L))
         }
     }
 }
