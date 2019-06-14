@@ -7,7 +7,11 @@ package cg
 package pointsto
 
 import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
@@ -17,12 +21,17 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.tac.common.DefinitionSites
+import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.toEntity
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -30,13 +39,22 @@ import org.opalj.tac.fpcf.properties.TACAI
  * [[org.opalj.tac.common.DefinitionSite]] and[[org.opalj.br.analyses.VirtualFormalParameter]]s
  * in order to determine the targets of virtual method calls.
  *
+ * TODO: This analysis is currently copy&paste and should be refactored
+ *
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
     extends AbstractCallGraphAnalysis
     with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
 
-    type State = PointsToBasedCGState[PointsToSet]
+    protected[this] implicit val formalParameters: VirtualFormalParameters = {
+        p.get(VirtualFormalParametersKey)
+    }
+    protected[this] implicit val definitionSites: DefinitionSites = {
+        p.get(DefinitionSitesKey)
+    }
+
+    override type State = PointsToBasedCGState[PointsToSet]
 
     /**
      * Computes the calls of the given `method` including the known effect of the `call` and
@@ -52,16 +70,16 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit = {
-        /*val callerType = caller.definedMethod.classFile.thisType
+        val callerType = caller.definedMethod.classFile.thisType
         val callSite = (pc, call.name, call.descriptor, call.declaringClass)
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
-        val pointsToSet = currentPointsTo(callSite, call.receiver.asVar.definedBy)
+        val pointsToSet: PointsToSet = currentPointsTo(callSite, call.receiver.asVar.definedBy)
 
         var types = IntTrieSet.empty
 
         for (newType ← potentialTargets) {
-            if (pointsToSet.contains(newType)) {
+            if (pointsToSet.types.contains(newType)) {
                 val tgtR = project.instanceCall(
                     callerType,
                     newType,
@@ -81,23 +99,72 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                 types += newType.id
             }
         }
-        state.setPotentialTypesOfCallSite(callSite, types)*/
-        ???
+        state.setPotentialTypesOfCallSite(callSite, types)
+    }
 
+    @inline protected[this] def currentPointsTo(
+        depender: CallSiteT, dependeeDefSite: Int
+    )(implicit state: State): PointsToSet = {
+        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
+            // FIXME ask what exception has been thrown
+            emptyPointsToSet
+        } else if (ai.isImmediateVMException(dependeeDefSite)) {
+            // FIXME -  we need to get the actual exception type here
+            emptyPointsToSet
+        } else {
+            currentPointsTo(depender, toEntity(dependeeDefSite, state.method, state.tac.stmts))
+        }
+    }
+
+    @inline protected[this] def currentPointsTo(
+        depender: CallSiteT, dependee: Entity
+    )(implicit state: State): PointsToSet = {
+        if (state.hasPointsToDependee(dependee)) {
+            val p2s = state.getPointsToProperty(dependee)
+
+            // It might be the case that there a dependency for that points-to state in the state
+            // from another depender.
+            if (!state.hasPointsToDependency(depender, dependee)) {
+                state.addPointsToDependency(depender, p2s)
+            }
+            pointsToUB(p2s)
+        } else {
+            val p2s = propertyStore(dependee, pointsToPropertyKey)
+            if (p2s.isRefinable) {
+                state.addPointsToDependency(depender, p2s)
+            }
+            pointsToUB(p2s)
+        }
+    }
+
+    @inline protected[this] def currentPointsTo(
+        depender: CallSiteT,
+        defSites: IntTrieSet
+    )(
+        implicit
+        state: State
+    ): Iterator[PointsToSet] = {
+        defSites.iterator.map[PointsToSet](currentPointsTo(depender, _))
+    }
+
+    @inline private[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
+        if (eOptP.hasUBP)
+            eOptP.ub
+        else
+            emptyPointsToSet
     }
 
     override def c(
         state: State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
-        /*
         eps match {
             case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
-                val relevantCallSites = state.dependersOf(e)
+                val relevantCallSites: TraversableOnce[CallSiteT] = state.dependersOf(e)
 
                 // ensures, that we only add new calls
                 val calls = new DirectCalls()
 
-                val oldEOptP = state.getPointsToProperty(eps.e)
+                val oldEOptP: EOptionP[Entity, PointsToSet] = state.getPointsToProperty(eps.e)
                 val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
                 // perform the update for the new types
@@ -133,8 +200,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                 returnResult(calls)(state)
 
             case _ ⇒ super.c(state)(eps)
-        }*/
-        ???
+        }
     }
 
     override def createInitialState(
