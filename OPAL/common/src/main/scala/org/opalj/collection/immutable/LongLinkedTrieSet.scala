@@ -138,11 +138,11 @@ final private[immutable] case class LongLinkedTrieSetL(
     }
 
     private[immutable] def +(level: Int, size: Int, l: LongLinkedTrieSetL): LongLinkedTrieSetNN = {
-        if (value == l.value)
+        val thisValue = this.value
+        if (thisValue == l.value)
             return this;
 
-        val LorR = (this.value >> level) & 1
-        if (LorR == 0) {
+        if (((thisValue >> level) & 1) == 0) {
             val trie = new LongLinkedTrieSetN_0(this)
             trie + (level, size, l)
         } else {
@@ -167,10 +167,10 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
 
     private[immutable] def +(level: Int, size: Int, l: LongLinkedTrieSetL): LongLinkedTrieSetNN = {
         if (((l.value >> level) & 1) == 0) {
-            if (_0 == null) {
+            val old_0 = this._0
+            if (old_0 == null) {
                 new LongLinkedTrieSetN2(l, this._1)
             } else {
-                val old_0 = this._0
                 val new_0 = old_0 + (level + 1, size, l)
                 if (old_0 ne new_0) {
                     // We have an update, let's check if we want to move to a node with a higher
@@ -203,7 +203,8 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
                 }
             }
         } else {
-            if (_1 == null) {
+            val old_1 = this._1
+            if (old_1 == null) {
                 new LongLinkedTrieSetN2(this._0, l)
             } else {
                 val new_1 = old_1 + (level + 1, size, l)
@@ -303,7 +304,6 @@ final private[immutable] class LongLinkedTrieSetN_0(
 final private[immutable] class LongLinkedTrieSetN_1(
         var _1: LongLinkedTrieSetNN // a tree node, a leaf node or null
 ) extends LongLinkedTrieSetN2Like {
-
 
     override def _0: LongLinkedTrieSetNN = null
 
