@@ -3,6 +3,9 @@ package org.opalj
 package fpcf
 
 import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintWriter
+import java.nio.file.Paths
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -21,12 +24,16 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
 import org.opalj.tac.AITACode
 import org.opalj.tac.ComputeTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.cg.CallGraphSerializer
+import org.opalj.tac.cg.CHACallGraphKey
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
@@ -37,12 +44,61 @@ import org.opalj.tac.fpcf.analyses.cg.xta.XTACallGraphAnalysisScheduler
 // TODO AB for debugging; remove later
 object CGTestRunner {
     def main(args: Array[String]): Unit = {
-        val testJar = "C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\testjars\\bantamc-gruppe7.jar"
-        val outFile = "C:/Users/Andreas/Dropbox/Masterarbeit/junk/bantam_xta.json"
-        val project = Project(new File(testJar), GlobalLogContext, ConfigFactory.load())
-        val cg = project.get(XTACallGraphKey)
+        def getArgOrElse(index: Int, alt: String): String = {
+            if (index >= args.length)
+                alt
+            else
+                args(index)
+        }
+
+        val testJar = getArgOrElse(0, "C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\testjars\\bantamc-gruppe7.jar")
+
+        val testFile = new File(testJar)
+        val testFileName = testFile.getName
+
+        val algo = getArgOrElse(1, "rta")
+        val algoKey = algo match {
+            case "cha" ⇒ CHACallGraphKey
+            case "rta" ⇒ RTACallGraphKey
+            case "xta" ⇒ XTACallGraphKey
+            case _ ⇒ sys.error("cg algorithm must be cha, rta, or xta!")
+        }
+
+        val defaultOutDir = "C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\rta-vs-xta"
+        val outDir = getArgOrElse(2, defaultOutDir)
+
+        val outFileName = s"$testFileName-$algo.json"
+        val outFile = Paths.get(outDir, outFileName).toFile
+
+        // Application mode!
+        val cfg = ConfigFactory.load().withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
+        ).withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
+        )
+
+        val project = Project(new File(testJar), GlobalLogContext, cfg)
+        val cg = project.get(algoKey)
+
+        // Dump per-entity types for XTA.
+        if (algo == "xta") {
+            val typesOutFile = Paths.get(outDir, s"$testFileName-xta-types.txt").toFile
+            val writer = new PrintWriter(new FileOutputStream(typesOutFile))
+            val ps = project.get(PropertyStoreKey)
+            for (e <- ps.entities(InstantiatedTypes.key)) {
+                writer.println(s"${e.e} (isFinal: ${e.isFinal})")
+                for (t ← ps(e.e, InstantiatedTypes.key).ub.types)
+                    writer.println(s"-> $t")
+                writer.println()
+            }
+            writer.flush()
+            writer.close()
+        }
+
         implicit val dm: DeclaredMethods = project.get(DeclaredMethodsKey)
-        CallGraphSerializer.writeCG(cg, new File(outFile))
+        CallGraphSerializer.writeCG(cg, outFile)
     }
 }
 
