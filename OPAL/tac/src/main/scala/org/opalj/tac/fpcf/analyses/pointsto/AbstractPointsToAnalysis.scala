@@ -9,18 +9,22 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.fpcf.UBPS
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.ValueInformation
@@ -29,8 +33,12 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.common.DefinitionSites
+import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.analyses.cg.V
@@ -40,18 +48,22 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
+trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet]]
     extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
     with ReachableMethodAnalysis {
 
-    var count = 0
-    var usefull = 0
+    protected[this] implicit val formalParameters: VirtualFormalParameters = {
+        p.get(VirtualFormalParametersKey)
+    }
+    protected[this] implicit val definitionSites: DefinitionSites = {
+        p.get(DefinitionSitesKey)
+    }
 
     def createPointsToSet(
         pc: Int, declaredMethod: DeclaredMethod, allocatedType: ObjectType
     ): PointsToSet
 
-    override type State = PointsToAnalysisState[PointsToSet]
+    type State = PointsToAnalysisState[PointsToSet]
 
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
@@ -64,8 +76,9 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
         call: Call[DUVar[ValueInformation]], pc: Int
     )(implicit state: State): Unit = {
         val tac = state.tac
-        val callees = state.callees(ps)
+        val callees: Callees = state.callees(ps)
         val receiverOpt = call.receiverOption
+
         for (target ← callees.directCallees(pc)) {
             val fps = formalParameters(target)
 
@@ -76,8 +89,8 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                     // IMPROVE: Here we copy all points-to entries of the receiver into the *this*
                     // of the target methods. It would be only needed to do so for the ones that led
                     // to the call.
-                    state.setOrUpdatePointsToSet(
-                        fp, currentPointsTo(fp, receiverOpt.get.asVar.definedBy)
+                    state.includeSharedPointsToSets(
+                        fp, currentPointsToOfDefSites(fp, receiverOpt.get.asVar.definedBy)
                     )
                 }
 
@@ -86,12 +99,12 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                     // handle params
                     for (i ← 0 until target.descriptor.parametersCount) {
                         val fp = fps(i + 1)
-                        state.setOrUpdatePointsToSet(
-                            fp, currentPointsTo(fp, call.params(i).asVar.definedBy)
+                        state.includeSharedPointsToSets(
+                            fp, currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy)
                         )
                     }
                 } else {
-                    // todo: it should not be needed to mark it as incomplete
+                    // it is not needed to mark it as incomplete here
                 }
             } else {
                 state.addIncompletePointsToInfo(pc)
@@ -103,14 +116,13 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
             val fps = formalParameters(target)
 
             if (fps != null) {
-
                 // handle receiver for non static methods
                 val receiverOpt = callees.indirectCallReceiver(pc, target)
                 if (receiverOpt.isDefined) {
                     val fp = fps(0)
-                    state.setOrUpdatePointsToSet(
+                    state.includeSharedPointsToSets(
                         fp,
-                        currentPointsTo(
+                        currentPointsToOfDefSites(
                             fp, valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
                         )
                     )
@@ -123,9 +135,9 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                     val fp = fps(i + 1)
                     val indirectParam = indirectParams(i)
                     if (indirectParam.isDefined) {
-                        state.setOrUpdatePointsToSet(
+                        state.includeSharedPointsToSets(
                             fp,
-                            currentPointsTo(
+                            currentPointsToOfDefSites(
                                 fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
                             )
                         )
@@ -143,27 +155,30 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
         implicit
         state: State
     ): ProperPropertyComputationResult = {
+
+        if (state.hasTACDependee)
+            throw new IllegalStateException("points to analysis does not support refinement based tac")
         val tac = state.tac
         val method = state.method.definedMethod
         if (method.returnType.isReferenceType) {
-            state.setPointsToSet(state.method, emptyPointsToSet)
+            state.setLocalPointsToSet(state.method, emptyPointsToSet)
         }
 
         for (stmt ← tac.stmts) stmt match {
             case Assignment(pc, _, New(_, t)) ⇒
                 val defSite = definitionSites(method, pc)
-                state.setLocalPointsToSet(defSite, createPointsToSet(pc, state.method, t))
+                state.setAllocationSitePointsToSet(defSite, createPointsToSet(pc, state.method, t))
 
             case Assignment(pc, _, NewArray(_, _, tpe)) if tpe.elementType.isObjectType ⇒
                 val defSite = definitionSites(method, pc)
-                state.setLocalPointsToSet(
+                state.setAllocationSitePointsToSet(
                     defSite,
                     createPointsToSet(pc, state.method, tpe.elementType.asObjectType)
                 )
 
             case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
-                state.setLocalPointsToSet(
+                state.setAllocationSitePointsToSet(
                     defSite,
                     if (const.isNullExpr) emptyPointsToSet
                     // note, this is wrong for alias analyses
@@ -173,15 +188,15 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
             // that case should not happen
             case Assignment(pc, DVar(_: IsReferenceValue, _), UVar(_, defSites)) ⇒
                 val defSiteObject = definitionSites(method, pc)
-                state.setOrUpdatePointsToSet(
-                    defSiteObject, currentPointsTo(defSiteObject, defSites)
+                state.includeLocalPointsToSets(
+                    defSiteObject, currentPointsToOfDefSites(defSiteObject, defSites)
                 )
 
             case Assignment(pc, DVar(_: IsReferenceValue, _), GetField(_, declaringClass, name, fieldType, _)) ⇒
                 val defSiteObject = definitionSites(method, pc)
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    state.setOrUpdatePointsToSet(
+                    state.includeLocalPointsToSet(
                         defSiteObject,
                         currentPointsTo(defSiteObject, fieldOpt.get)
                     )
@@ -193,7 +208,7 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
                 val defSiteObject = definitionSites(method, pc)
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    state.setOrUpdatePointsToSet(
+                    state.includeLocalPointsToSet(
                         defSiteObject,
                         currentPointsTo(defSiteObject, fieldOpt.get)
                     )
@@ -204,18 +219,23 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
             case Assignment(pc, _, ArrayLoad(_, _, UVar(av: IsSArrayValue, _))) if av.theUpperTypeBound.elementType.isObjectType ⇒
                 val defSiteObject = definitionSites(method, pc)
                 val arrayBaseType = av.theUpperTypeBound.elementType
-                state.setOrUpdatePointsToSet(
+                state.includeLocalPointsToSet(
                     defSiteObject,
                     currentPointsTo(defSiteObject, arrayBaseType)
                 )
 
-            // TODO: Use handleCall here
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
-                val targets = state.callees(ps).callees(pc)
+                val callees: Callees = state.callees(ps)
+                val targets = callees.callees(pc)
                 val defSiteObject = definitionSites(method, pc)
 
+                if (state.hasCalleesDepenedee) {
+                    state.addDependee(defSiteObject, state.calleesDependee)
+                }
                 if (targetVar.value.isReferenceValue) {
-                    state.setOrUpdatePointsToSet(
+                    if (pc == 13 && state.method.name == "caseAAlt" && state.method.declaringClassType.toString.contains("DepthFirstAdapter"))
+                        println()
+                    state.includeLocalPointsToSets(
                         defSiteObject,
                         targets.map(currentPointsTo(defSiteObject, _))
                     )
@@ -255,15 +275,15 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
 
             case ArrayStore(_, UVar(av: IsSArrayValue, _), _, UVar(_, defSites)) if av.theUpperTypeBound.elementType.isReferenceType ⇒
                 val arrayBaseType = av.theUpperTypeBound.elementType
-                state.setOrUpdatePointsToSet(
-                    arrayBaseType, currentPointsTo(arrayBaseType, defSites)
+                state.includeSharedPointsToSets(
+                    arrayBaseType, currentPointsToOfDefSites(arrayBaseType, defSites)
                 )
 
             case PutField(pc, declaringClass, name, fieldType: ObjectType, _, UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    state.setOrUpdatePointsToSet(
-                        fieldOpt.get, currentPointsTo(fieldOpt.get, defSites)
+                    state.includeSharedPointsToSets(
+                        fieldOpt.get, currentPointsToOfDefSites(fieldOpt.get, defSites)
                     )
                 } else {
                     state.addIncompletePointsToInfo(pc)
@@ -272,16 +292,16 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
             case PutStatic(pc, declaringClass, name, fieldType: ObjectType, UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
-                    state.setOrUpdatePointsToSet(
-                        fieldOpt.get, currentPointsTo(fieldOpt.get, defSites)
+                    state.includeSharedPointsToSets(
+                        fieldOpt.get, currentPointsToOfDefSites(fieldOpt.get, defSites)
                     )
                 else {
                     state.addIncompletePointsToInfo(pc)
                 }
 
             case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) ⇒
-                state.setOrUpdatePointsToSet(
-                    state.method, currentPointsTo(state.method, defSites)
+                state.includeLocalPointsToSets(
+                    state.method, currentPointsToOfDefSites(state.method, defSites)
                 )
 
             case _ ⇒
@@ -289,87 +309,45 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
 
         // todo: we have to handle the exceptions that might be thrown by this method
 
-        returnResult(0)
-    }
-
-    /**
-     * The continuation function. It handles updates for the methods tac, callees and for points-to
-     * sets.
-     */
-    private[this] def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
-                state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
-                doProcessMethod(state)
-
-            case UBP(_: TACAI) ⇒
-                InterimPartialResult(Some(eps), c(state))
-
-            case UBP(callees: Callees) ⇒
-                // todo instead of rerunning the complete analysis, get new calls for all pcs only
-
-                state.updateCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
-                doProcessMethod(state)
-
-            case UBPS(pointsTo: PointsToSet @unchecked, isFinal) ⇒
-                val oldEOptP = state.getPointsToProperty(eps.e)
-                val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-                if (seenElements > pointsTo.numElements)
-                    println()
-
-                for (depender ← state.dependersOf(eps.e)) {
-                    state.setPointsToSet(depender, pointsTo)
-                }
-
-                if (isFinal) {
-                    state.removePointsToDependee(eps.e)
-                } else {
-                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSet]])
-                }
-
-                returnResult(seenElements)(state)
-        }
-    }
-
-    /**
-     * Constructs the [[org.opalj.fpcf.PropertyComputationResult]] associated with the state.
-     */
-    @inline private[this] def returnResult(seenElements: Int)(
-        implicit
-        state: State
-    ): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
 
-        for ((e, pointsToSet) ← state.pointsToSetsIterator) {
+        for ((e, pointsToSet) ← state.allocationSitePointsToSetsIterator) {
+            results += Result(e, pointsToSet)
+        }
+
+        for ((e, pointsToSet) ← state.localPointsToSetsIterator) {
+            if (state.hasDependees(e)) {
+                val dependees = state.dependeesOf(e)
+                results += InterimResult.forUB(
+                    e,
+                    pointsToSet,
+                    dependees.values,
+                    continuationForLocal(e, dependees, pointsToSet)
+                )
+            } else {
+                results += Result(e, pointsToSet)
+            }
+        }
+
+        for ((e, pointsToSet) ← state.sharedPointsToSetsIterator) {
+            // The shared entities are not affected by changes of the tac and use partial results.
+            // Thus, we could simply recompute them on updates for the tac
+            if (state.hasDependees(e)) {
+                val dependees = state.dependeesOf(e)
+                results += InterimPartialResult(
+                    dependees.values, continuationForShared(e, dependees)
+                )
+            }
             if (pointsToSet ne emptyPointsToSet) {
-                val isFinal = (e.isInstanceOf[DefinitionSite] || e.isInstanceOf[DefinedMethod] /*TODO: || Exception*/ ) &&
-                    !state.hasPointsToDependency(e)
-
                 results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](e, pointsToPropertyKey, {
-
                     case _: EPK[Entity, _] ⇒
-                        if (usefull % 50000 == 0)
-                            println(s"useful partial result #${usefull} - ${pointsToSet.numElements}")
-                        usefull += 1
-                        if (isFinal)
-                            Some(FinalEP(e, pointsToSet))
-                        else
-                            Some(InterimEUBP(e, pointsToSet))
+                        Some(InterimEUBP(e, pointsToSet))
 
                     case UBP(ub: PointsToSet @unchecked) ⇒
-                        val newPointsTo = ub.included(pointsToSet, seenElements)
+                        val newPointsTo = ub.included(pointsToSet, 0)
                         if (newPointsTo ne ub) {
-                            if (usefull % 50000 == 0)
-                                println(s"useful partial result #${usefull} - ${pointsToSet.numElements}")
-                            usefull += 1
-                            if (isFinal)
-                                Some(FinalEP(e, newPointsTo))
-                            else
-                                Some(InterimEUBP(e, newPointsTo))
+                            Some(InterimEUBP(e, newPointsTo))
                         } else {
-                            if (count % 50000 == 0)
-                                println(s"useless partial result #${count} - ${pointsToSet.numElements}")
-                            count += 1
                             None
                         }
 
@@ -379,14 +357,227 @@ trait AbstractPointsToAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]
             }
         }
 
-        for ((e, pointsToSet) ← state.localPointsToSetsIterator) {
-            results += org.opalj.fpcf.Result(e, pointsToSet)
+        if (state.hasCalleesDepenedee) {
+            ???
+            // todo: for new call targets, contribute to the points to sets of the formal parameters
         }
 
-        if (state.hasOpenDependencies) results += InterimPartialResult(state.dependees, c(state))
-
-        state.clearPointsToSet()
-
         Results(results)
+    }
+
+    private[this] def updatedDependees(
+        eps: SomeEPS, oldDependees: Map[SomeEPK, SomeEOptionP]
+    ): Map[SomeEPK, SomeEOptionP] = {
+        val epk = eps.toEPK
+        if (eps.isRefinable) {
+            oldDependees + (epk → eps)
+        } else {
+            oldDependees - epk
+        }
+    }
+
+    private[this] def updatedPointsToSet(
+        oldPointsToSet:         PointsToSet,
+        newDependeePointsToSet: PointsToSet,
+        dependee:               SomeEPS,
+        oldDependees:           Map[SomeEPK, SomeEOptionP]
+    ): PointsToSet = {
+        val oldDependeePointsTo = oldDependees(dependee.toEPK) match {
+            case UBP(ub: PointsToSet @unchecked) ⇒ ub
+            case _: EPK[_, PointsToSet]          ⇒ emptyPointsToSet
+            case _                               ⇒ throw new IllegalArgumentException(s"unexpected dependee")
+        }
+
+        val newPointsToUB: PointsToSet = if (oldDependeePointsTo eq oldPointsToSet) {
+            newDependeePointsToSet
+        } else {
+            val seenElements = oldDependeePointsTo.numElements
+            oldPointsToSet.included(newDependeePointsToSet, seenElements)
+        }
+        newPointsToUB
+    }
+
+    private[this] def continuationForLocal(
+        e: Entity, dependees: Map[SomeEPK, SomeEOptionP], pointsToSetUB: PointsToSet
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
+                val newDependees = updatedDependees(eps, dependees)
+                val newPointsToUB = updatedPointsToSet(
+                    pointsToSetUB,
+                    newDependeePointsTo,
+                    eps,
+                    dependees
+                )
+
+                if (newDependees.isEmpty) {
+                    Result(e, newPointsToUB)
+                } else {
+                    InterimResult.forUB(
+                        e,
+                        newPointsToUB,
+                        newDependees.values,
+                        continuationForLocal(e, newDependees, newPointsToUB)
+                    )
+                }
+            case UBP(callees: Callees) ⇒
+                // this will never happen for method return values
+                val defSite = e.asInstanceOf[DefinitionSite]
+                /* TODO: Only handle new callees
+                val oldCallees = dependees(eps.toEPK) match {
+
+                    case UBP(ub: Callees)   ⇒ ub
+                    case _: EPK[_, Callees] ⇒ NoCallees
+                    case _ ⇒ throw new IllegalArgumentException(s"unexpected dependee")
+                }
+                oldCallees.callees(defSite.pc)
+                */
+                val results = ArrayBuffer.empty[ProperPropertyComputationResult]
+                val tgts = callees.callees(defSite.pc)
+
+                val newDependees = updatedDependees(eps, dependees)
+                val newPointsToSet = pointsToSetUB
+                tgts.foreach { target ⇒
+                    // todo handle call:
+                    // add the returnsites to the pointsToSet
+                    ???
+                }
+
+                if (newDependees.nonEmpty) {
+                    results += InterimResult.forUB(
+                        defSite,
+                        newPointsToSet,
+                        newDependees.values,
+                        continuationForLocal(defSite, newDependees, newPointsToSet)
+                    )
+                } else {
+                    results += Result(defSite, newPointsToSet)
+                }
+
+                Results(results)
+                ???
+            case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
+        }
+    }
+
+    private[this] def continuationForShared(
+        e: Entity, dependees: Map[SomeEPK, SomeEOptionP]
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
+                val newDependees = updatedDependees(eps, dependees)
+
+                if (newDependeePointsTo ne emptyPointsToSet) {
+                    val pr = PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+                        e, pointsToPropertyKey, {
+                        case UBP(ub: PointsToSet @unchecked) ⇒
+                            val newPointsToSet = updatedPointsToSet(
+                                ub,
+                                newDependeePointsTo,
+                                eps,
+                                dependees
+                            )
+
+                            if (newPointsToSet ne ub) {
+                                Some(InterimEUBP(e, newPointsToSet))
+                            } else {
+                                None
+                            }
+
+                        case _: EPK[Entity, _] ⇒
+                            Some(InterimEUBP(e, newDependeePointsTo))
+
+                        case eOptP ⇒
+                            throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
+                    }
+                    )
+
+                    if (newDependees.nonEmpty) {
+                        val ipr = InterimPartialResult(
+                            newDependees.values, continuationForShared(e, newDependees)
+                        )
+                        Results(pr, ipr)
+                    } else {
+                        pr
+                    }
+                } else if (newDependees.nonEmpty) {
+                    InterimPartialResult(
+                        newDependees.values,
+                        continuationForShared(e, newDependees)
+                    )
+                } else {
+                    Results()
+                }
+            case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
+        }
+    }
+
+    @inline private[this] def currentPointsTo(
+        depender: Entity, dependeeDefSite: Int
+    )(implicit state: State): PointsToSet = {
+        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
+            // FIXME ask what exception has been thrown
+            emptyPointsToSet
+        } else if (ai.isImmediateVMException(dependeeDefSite)) {
+            // FIXME -  we need to get the actual exception type here
+            emptyPointsToSet
+        } else {
+            currentPointsTo(depender, toEntity(dependeeDefSite, state.method, state.tac.stmts))
+        }
+    }
+
+    @inline private[this] def currentPointsTo(
+        depender: Entity, dependee: Entity
+    )(implicit state: State): PointsToSet = {
+        dependee match {
+            case ds: DefinitionSite if state.hasAllocationSitePointsToSet(ds) ⇒
+                state.allocationSitePointsToSet(ds)
+
+            case ds: DefinitionSite if state.hasLocalPointsToSet(ds) ⇒
+                if (!state.hasDependency(depender, dependee)) {
+                    val p2s = propertyStore(dependee, pointsToPropertyKey)
+                    assert(p2s.isEPK)
+                    state.addDependee(depender, p2s)
+                }
+
+                /*
+                // TODO: It might be even more efficient to forward the dependencies.
+                // However, this requires the continuation functions to handle Callees
+                if (state.hasDependees(ds))
+                    state.plainDependeesOf(ds).foreach(state.addDependee(depender, _))
+                 */
+
+                state.localPointsToSet(ds)
+            case _ ⇒
+                val p2s = if (state.hasDependency(depender, dependee)) {
+                    // IMPROVE: add a method to the state
+                    state.dependeesOf(depender)(EPK(dependee, pointsToPropertyKey))
+                } else {
+                    val p2s = propertyStore(dependee, pointsToPropertyKey)
+                    if (p2s.isRefinable) {
+                        state.addDependee(depender, p2s)
+                    }
+                    p2s
+                }
+                pointsToUB(p2s.asInstanceOf[EOptionP[Entity, PointsToSet]])
+
+        }
+    }
+
+    @inline private[this] def currentPointsToOfDefSites(
+        depender: Entity,
+        defSites: IntTrieSet
+    )(
+        implicit
+        state: State
+    ): Iterator[PointsToSet] = {
+        defSites.iterator.map[PointsToSet](currentPointsTo(depender, _))
+    }
+
+    @inline private[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
+        if (eOptP.hasUBP)
+            eOptP.ub
+        else
+            emptyPointsToSet
     }
 }

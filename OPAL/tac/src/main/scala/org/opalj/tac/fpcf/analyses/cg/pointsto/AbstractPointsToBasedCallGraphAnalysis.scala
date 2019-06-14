@@ -7,10 +7,7 @@ package cg
 package pointsto
 
 import org.opalj.collection.ForeachRefIterator
-import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.EUBPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
@@ -39,7 +36,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     extends AbstractCallGraphAnalysis
     with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
 
-    override type State = PointsToBasedCGState[PointsToSet]
+    type State = PointsToBasedCGState[PointsToSet]
 
     /**
      * Computes the calls of the given `method` including the known effect of the `call` and
@@ -55,7 +52,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit = {
-        val callerType = caller.definedMethod.classFile.thisType
+        /*val callerType = caller.definedMethod.classFile.thisType
         val callSite = (pc, call.name, call.descriptor, call.declaringClass)
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
@@ -84,55 +81,60 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                 types += newType.id
             }
         }
-        state.setPotentialTypesOfCallSite(callSite, types)
+        state.setPotentialTypesOfCallSite(callSite, types)*/
+        ???
 
     }
 
     override def c(
         state: State
-    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
-            val relevantCallSites = state.dependersOf(e)
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        /*
+        eps match {
+            case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
+                val relevantCallSites = state.dependersOf(e)
 
-            // ensures, that we only add new calls
-            val calls = new DirectCalls()
+                // ensures, that we only add new calls
+                val calls = new DirectCalls()
 
-            val oldEOptP = state.getPointsToProperty(eps.e)
-            val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
+                val oldEOptP = state.getPointsToProperty(eps.e)
+                val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
-            // perform the update for the new types
-            for (callSite ← relevantCallSites) {
-                val typesLeft = state.typesForCallSite(callSite)
-                ub.forNewestNTypes(ub.numTypes - seenElements) { newType ⇒
-                    if (typesLeft.contains(newType.id)) {
-                        state.removeTypeForCallSite(callSite, newType)
-                        val (pc, name, descriptor, declaredType) = callSite
-                        val tgtR = project.instanceCall(
-                            state.method.declaringClassType.asObjectType,
-                            newType,
-                            name,
-                            descriptor
-                        )
-                        handleCall(
-                            state.method, name, descriptor, declaredType, pc, tgtR, calls
-                        )
+                // perform the update for the new types
+                for (callSite ← relevantCallSites) {
+                    val typesLeft = state.typesForCallSite(callSite)
+                    ub.forNewestNTypes(ub.numTypes - seenElements) { newType ⇒
+                        if (typesLeft.contains(newType.id)) {
+                            state.removeTypeForCallSite(callSite, newType)
+                            val (pc, name, descriptor, declaredType) = callSite
+                            val tgtR = project.instanceCall(
+                                state.method.declaringClassType.asObjectType,
+                                newType,
+                                name,
+                                descriptor
+                            )
+                            handleCall(
+                                state.method, name, descriptor, declaredType, pc, tgtR, calls
+                            )
+                        }
                     }
                 }
-            }
 
-            // The method removeTypesForCallSite might have made the dependency obsolete, so only
-            // update or remove it, if we still need updates for that type.
-            if (state.hasPointsToDependee(eps.e)) {
-                if (isFinal) {
-                    state.removePointsToDependee(e)
-                } else {
-                    state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSet]])
+                // The method removeTypesForCallSite might have made the dependency obsolete, so only
+                // update or remove it, if we still need updates for that type.
+                if (state.hasPointsToDependee(eps.e)) {
+                    if (isFinal) {
+                        state.removePointsToDependee(e)
+                    } else {
+                        state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSet]])
+                    }
                 }
-            }
 
-            returnResult(calls)(state)
+                returnResult(calls)(state)
 
-        case _ ⇒ super.c(state)(eps)
+            case _ ⇒ super.c(state)(eps)
+        }*/
+        ???
     }
 
     override def createInitialState(
