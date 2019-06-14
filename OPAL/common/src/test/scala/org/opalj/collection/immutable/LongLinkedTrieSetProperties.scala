@@ -100,31 +100,21 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
 
     describe("contains") {
 
-        it("[regression] should return true for all values of the test fixture:"+
-            "(-103806,-99428,-15784,-6124,48020)") {
-            val d = List[Long](-103806, -99428, -15784, -6124, 48020)
+        val fixtures = List[List[Long]](
+            List[Long](-149831, -143246, -110997, -103241, -100192, -91362, -14553, -10397, -2126, -628, 8184, 13255, 39973),
+            List[Long](-103806, -99428, -15784, -6124, 48020),
+            List[Long](-134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213, -20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875)
+        )
 
-            val llts = d.foldLeft(LongLinkedTrieSet.empty)((c, n) ⇒ c + n)
-            var notFound = List.empty[Long]
-            d.foreach(v ⇒ if (!llts.contains(v)) notFound ::= v)
-            if (notFound.nonEmpty)
-                fail(s"; lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
-        }
+        for { fixture ← fixtures } {
+            it("[regression] should return true for all values of the test fixture: "+fixture) {
+                val llts = fixture.foldLeft(LongLinkedTrieSet.empty)((c, n) ⇒ c + n)
+                var notFound = List.empty[Long]
+                fixture.foreach(v ⇒ if (!llts.contains(v)) notFound ::= v)
+                if (notFound.nonEmpty)
+                    fail(s"; lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
+            }
 
-        it("[regression] should return true for all values of the test fixture:"+
-            "(-134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213,"+
-            "-20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875)") {
-            // we had a regression given the follwing set
-            val d = List[Long](
-                -134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213,
-                -20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875
-            )
-
-            val llts = d.foldLeft(LongLinkedTrieSet.empty)((c, n) ⇒ c + n)
-            var notFound = List.empty[Long]
-            d.foreach(v ⇒ if (!llts.contains(v)) notFound ::= v)
-            if (notFound.nonEmpty)
-                fail(s"; lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
         }
 
         it("for sets with four values with many leading zeros") {

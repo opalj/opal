@@ -2,6 +2,8 @@
 package org.opalj.collection
 package immutable
 
+import java.lang.{Long ⇒ JLong}
+
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the
  * insertion order.
@@ -142,21 +144,45 @@ final private[immutable] case class LongLinkedTrieSetL(
         if (thisValue == lValue)
             return this;
 
-        if (((thisValue >> level) & 1) == 0) {
-            if (((lValue >> level) & 1) == 0) {
-                val trie = new LongLinkedTrieSetN_0(this)
-                trie +=! (level, l)
-            } else {
-                new LongLinkedTrieSetN2(this, l)
-            }
-        } else {
-            if (((lValue >> level) & 1) == 1) {
-                val trie = new LongLinkedTrieSetN_1(this)
-                trie +=! (level, l)
-            } else {
-                new LongLinkedTrieSetN2(l, this)
-            }
+        // let's check if there is some sharing
+        val thisValueShifted = thisValue >> level
+        val lValueShifted = lValue >> level
+        JLong.numberOfTrailingZeros(thisValueShifted ^ lValueShifted) match {
+            case 0 ⇒
+                if ((thisValueShifted & 1) == 0) {
+                    if (level % 2 == 0 && size > (1 << (level + 1))) {
+                        var _00: LongLinkedTrieSetNN = null
+                        var _01: LongLinkedTrieSetNN = null
+                        var _10: LongLinkedTrieSetNN = null
+                        var _11: LongLinkedTrieSetNN = null
+                        if (((thisValueShifted >> 1) & 1) == 0) _00 = this else _10 = this
+                        if (((lValueShifted >> 1) & 1) == 0) _01 = l else _11 = l
+                        new LongLinkedTrieSetN4(_00, _01, _10, _11)
+                    } else {
+                        new LongLinkedTrieSetN2(this, l)
+                    }
+                } else {
+                    new LongLinkedTrieSetN2(l, this)
+                }
+            case 1 ⇒
+                if ((thisValueShifted & 1) == 0) {
+                    val trie = new LongLinkedTrieSetN_0(this)
+                    trie +=! (level, l)
+                } else {
+                    val trie = new LongLinkedTrieSetN_1(this)
+                    trie +=! (level, l)
+                }
+            case sharing ⇒
+              //  println("Sharing: "+sharing)
+                if ((thisValueShifted & 1) == 0) {
+                    val trie = new LongLinkedTrieSetN_0(this)
+                    trie +=! (level, l)
+                } else {
+                    val trie = new LongLinkedTrieSetN_1(this)
+                    trie +=! (level, l)
+                }
         }
+
     }
 
     def toString(level: Int): String = s"L(${value.toBinaryString}=$value)"
@@ -184,10 +210,8 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
                     // We have an update, let's check if we want to move to a node with a higher
                     // branching factor; we do so if – assuming a reasonably balanced trie – we
                     // expect that most references to the successor nodes are used.
-                    if (level % 2 == 0 && size > (1 << (level + 2))) {
+                    if (false && level % 2 == 0 && size > (1 << (level + 2))) {
                         val _0 = new_0.asInstanceOf[LongLinkedTrieSetN2Like]
-                        val _00: LongLinkedTrieSetNN = _0._0
-                        val _10: LongLinkedTrieSetNN = _0._1
                         var _01: LongLinkedTrieSetNN = null
                         var _11: LongLinkedTrieSetNN = null
                         _1 match {
@@ -202,7 +226,7 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
                                 }
                             case null ⇒ // nothing to do
                         }
-                        new LongLinkedTrieSetN4(_00, _01, _10, _11)
+                        new LongLinkedTrieSetN4(_0._0, _01, _0._1, _11)
                     } else {
                         LongLinkedTrieSetN2Like(new_0, this._1)
                     }
@@ -220,10 +244,8 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
                     // We have an update, let's check if we want to move to a node with a higher
                     // branching factor; we do so if – assuming a reasonably balanced trie – we
                     // expect that most references to the successor nodes are used.
-                    if (level % 2 == 0 && size > (1 << (level + 2))) {
+                    if (false && level % 2 == 0 && size > (1 << (level + 2))) {
                         val _1 = new_1.asInstanceOf[LongLinkedTrieSetN2Like]
-                        val _01: LongLinkedTrieSetNN = _1._0
-                        val _11: LongLinkedTrieSetNN = _1._1
                         var _00: LongLinkedTrieSetNN = null
                         var _10: LongLinkedTrieSetNN = null
                         _0 match {
@@ -238,7 +260,7 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
                                 }
                             case null ⇒ // nothing to do
                         }
-                        new LongLinkedTrieSetN4(_00, _01, _10, _11)
+                        new LongLinkedTrieSetN4(_00, _1._0, _10, _1._1)
                     } else {
                         LongLinkedTrieSetN2Like(this._0, new_1)
                     }
