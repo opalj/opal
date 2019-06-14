@@ -373,7 +373,8 @@ final private[immutable] class LongLinkedTrieSetN4(
 
     private[immutable] def +(level: Int, size: Int, l: LongLinkedTrieSetL): LongLinkedTrieSetNN = {
         // Basic assumption: the trie is nearly balanced...
-        ((l.value >> level) & 3) match {
+        val pattern = (l.value >> level) & 3
+        (pattern.toInt: @switch) match {
             case 0 ⇒
                 if (_00 == null) {
                     new LongLinkedTrieSetN4(l, this._01, this._10, this._11)
