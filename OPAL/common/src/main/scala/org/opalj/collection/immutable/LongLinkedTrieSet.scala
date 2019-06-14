@@ -253,16 +253,16 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
 
 private[immutable] object LongLinkedTrieSetN2Like {
 
-  def apply ( _0: LongLinkedTrieSetNN, _1: LongLinkedTrieSetNN) :  LongLinkedTrieSetN2Like = {
-    assert(!(_0 == null && _1 == null))
-    if(_0 == null) {
-        new LongLinkedTrieSetN_1(_1)
-    } else if (_1 == null) {
-        new LongLinkedTrieSetN_0(_0)
-    } else {
-        new LongLinkedTrieSetN2(_0,_1)
+    def apply(_0: LongLinkedTrieSetNN, _1: LongLinkedTrieSetNN): LongLinkedTrieSetN2Like = {
+        assert(!(_0 == null && _1 == null))
+        if (_0 == null) {
+            new LongLinkedTrieSetN_1(_1)
+        } else if (_1 == null) {
+            new LongLinkedTrieSetN_0(_0)
+        } else {
+            new LongLinkedTrieSetN2(_0, _1)
+        }
     }
-  }
 }
 
 /** The inner nodes of the trie set. */
@@ -326,7 +326,7 @@ final private[immutable] class LongLinkedTrieSetN_1(
         if (((l.value >> level) & 1) == 0) {
             new LongLinkedTrieSetN2(l, _1)
         } else {
-                this._1 = this._1.+=!(level + 1, l)
+            this._1 = this._1.+=!(level + 1, l)
             this
         }
     }
@@ -346,7 +346,7 @@ final private[immutable] class LongLinkedTrieSetN4(
     override private[immutable] def isL: Boolean = false
 
     override private[immutable] def +=!(level: Int, l: LongLinkedTrieSetL): LongLinkedTrieSetNN = {
-      throw new UnknownError("only to be used internally when creating an overall set of 4 values")
+        throw new UnknownError("only to be used internally when creating an overall set of 4 values")
     }
 
     private[immutable] def +(level: Int, size: Int, l: LongLinkedTrieSetL): LongLinkedTrieSetNN = {
@@ -426,10 +426,6 @@ private[immutable] class DefaultLongLinkedTrieSet(
     final override def isEmpty: Boolean = false
     final override def isSingletonSet: Boolean = false
 
-    final override def toString: String = {
-        s"LongLinkedTrieSet(#=$size,trie=\n${trie.toString(0)}\n)"
-    }
-
     final override def contains(v: Long): Boolean = {
         var key = v
         var node = trie
@@ -508,6 +504,21 @@ private[immutable] class DefaultLongLinkedTrieSet(
         this.l = newL
 
         this.trie = this.trie.+=!(0, newL)
+    }
+
+    final override def equals(other: Any): Boolean = {
+        other match {
+            case that: DefaultLongLinkedTrieSet ⇒ this.iterator.sameValues(that.iterator)
+            case _                              ⇒ false
+        }
+    }
+
+    final override def hashCode(): Int = {
+        iterator.foldLeft(0)((hashCode, v) ⇒ (hashCode * 31) + java.lang.Long.hashCode(v))
+    }
+
+    final override def toString: String = {
+        s"LongLinkedTrieSet(#=$size,trie=\n${trie.toString(0)}\n)"
     }
 
 }
