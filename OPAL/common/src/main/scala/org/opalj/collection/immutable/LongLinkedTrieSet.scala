@@ -254,7 +254,6 @@ private[immutable] abstract class LongLinkedTrieSetN2Like extends LongLinkedTrie
 private[immutable] object LongLinkedTrieSetN2Like {
 
     def apply(_0: LongLinkedTrieSetNN, _1: LongLinkedTrieSetNN): LongLinkedTrieSetN2Like = {
-        assert(!(_0 == null && _1 == null))
         if (_0 == null) {
             new LongLinkedTrieSetN_1(_1)
         } else if (_1 == null) {
@@ -271,8 +270,6 @@ final private[immutable] class LongLinkedTrieSetN2(
         var _1: LongLinkedTrieSetNN // a tree node or a leaf node
 ) extends LongLinkedTrieSetN2Like {
 
-    assert(_0 != null)
-    assert(_1 != null)
 
     override private[immutable] def +=!(level: Int, l: LongLinkedTrieSetL): LongLinkedTrieSetNN = {
         if (((l.value >> level) & 1) == 0) {
@@ -296,7 +293,6 @@ final private[immutable] class LongLinkedTrieSetN_0(
         var _0: LongLinkedTrieSetNN // a tree node, a leaf node or null
 ) extends LongLinkedTrieSetN2Like {
 
-    assert(_0 != null)
 
     override def _1: LongLinkedTrieSetNN = null
 
@@ -318,7 +314,6 @@ final private[immutable] class LongLinkedTrieSetN_1(
         var _1: LongLinkedTrieSetNN // a tree node, a leaf node or null
 ) extends LongLinkedTrieSetN2Like {
 
-    assert(_1 != null)
 
     override def _0: LongLinkedTrieSetNN = null
 
