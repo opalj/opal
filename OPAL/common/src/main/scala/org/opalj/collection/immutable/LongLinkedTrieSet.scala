@@ -127,8 +127,7 @@ final private[immutable] case class LongLinkedTrieSetL(
     override private[immutable] def +=!(level: Int, l: LongLinkedTrieSetL): LongLinkedTrieSetNN = {
         val thisValue = this.value
 
-        val LorR = (thisValue >> level) & 1
-        if (LorR == 0) {
+        if (((thisValue >> level) & 1) == 0) {
             val trie = new LongLinkedTrieSetN_0(this)
             trie.+=!(level, l)
         } else {
