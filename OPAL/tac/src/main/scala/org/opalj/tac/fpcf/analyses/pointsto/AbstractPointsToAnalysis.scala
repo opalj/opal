@@ -233,8 +233,6 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                     state.addDependee(defSiteObject, state.calleesDependee)
                 }
                 if (targetVar.value.isReferenceValue) {
-                    if (pc == 13 && state.method.name == "caseAAlt" && state.method.declaringClassType.toString.contains("DepthFirstAdapter"))
-                        println()
                     state.includeLocalPointsToSets(
                         defSiteObject,
                         targets.map(currentPointsTo(defSiteObject, _))
@@ -423,24 +421,23 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
             case UBP(callees: Callees) ⇒
                 // this will never happen for method return values
                 val defSite = e.asInstanceOf[DefinitionSite]
-                /* TODO: Only handle new callees
-                val oldCallees = dependees(eps.toEPK) match {
-
-                    case UBP(ub: Callees)   ⇒ ub
-                    case _: EPK[_, Callees] ⇒ NoCallees
-                    case _ ⇒ throw new IllegalArgumentException(s"unexpected dependee")
-                }
-                oldCallees.callees(defSite.pc)
-                */
+                // TODO: Only handle new callees
                 val results = ArrayBuffer.empty[ProperPropertyComputationResult]
                 val tgts = callees.callees(defSite.pc)
 
-                val newDependees = updatedDependees(eps, dependees)
-                val newPointsToSet = pointsToSetUB
+                var newDependees = updatedDependees(eps, dependees)
+                var newPointsToSet = pointsToSetUB
                 tgts.foreach { target ⇒
-                    // todo handle call:
-                    // add the returnsites to the pointsToSet
-                    ???
+                    // if we already have a dependency to that method, we do not need to process it
+                    // otherwise, it might still be the case that we processed it before but it is
+                    // final and thus not part of dependees anymore
+                    if (!dependees.contains(EPK(target, pointsToPropertyKey))) {
+                        val p2s = ps(target, pointsToPropertyKey)
+                        if (p2s.isRefinable) {
+                            newDependees += (p2s.toEPK → p2s)
+                        }
+                        newPointsToSet = newPointsToSet.included(pointsToUB(p2s))
+                    }
                 }
 
                 if (newDependees.nonEmpty) {
@@ -455,7 +452,6 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                 }
 
                 Results(results)
-                ???
             case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
         }
     }
@@ -560,7 +556,6 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                     p2s
                 }
                 pointsToUB(p2s.asInstanceOf[EOptionP[Entity, PointsToSet]])
-
         }
     }
 
