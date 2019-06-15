@@ -11,6 +11,8 @@ import org.scalatest.junit.JUnitRunner
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
+import org.opalj.util.PerformanceEvaluation
+
 object LongLinkedTrieSetProperties extends Properties("LongLinkedTrieSet") {
 
     val r = new java.util.Random()
@@ -86,12 +88,13 @@ object LongLinkedTrieSetProperties extends Properties("LongLinkedTrieSet") {
         s == newS
     }
 
+    /*
     property("equals and hashCode") = forAll { s: IntArraySet ⇒
         val its1 = s.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
         val its2 = s.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
         its1 == its2 &&
             its1.hashCode() == its2.hashCode()
-    }
+    }*/
 
 }
 
@@ -148,6 +151,30 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
             assert(!ls.contains(0L))
             assert(!ls.contains(1L))
             assert(!ls.contains(2L))
+        }
+    }
+
+    describe("performance") {
+        it("creation and contains check should finish in reasonable time (all values are positive)") {
+            var sizeOfAllSets: Long = 0L
+            var largestSet: Long = 0L
+            PerformanceEvaluation.time {
+                val seed = System.nanoTime()
+                val rngGen = new java.util.Random(seed)
+                // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
+                for { i ← 1 to 3333 } rngGen.nextLong();
+
+                val rngQuery = new java.util.Random(seed)
+                for { runs ← 1 to 10000 } {
+                    var s = org.opalj.collection.immutable.LongLinkedTrieSet.empty
+                    for { i ← 1 to runs } {
+                        s += Math.abs(rngGen.nextLong())
+                        s.contains(Math.abs(rngQuery.nextLong()))
+                    }
+                    largestSet = Math.max(largestSet, s.size.toLong)
+                    sizeOfAllSets += s.size
+                }
+            } { t ⇒ info(s"${t.toSeconds} to create 10000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
     }
 }
