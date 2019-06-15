@@ -177,11 +177,17 @@ final private[immutable] case class LongLinkedTrieSetL(
                 }
             case 1 ⇒
                 if ((thisValueShifted & 1) == 0) {
-                    val trie = new LongLinkedTrieSetN_0(this)
-                    trie +=! (level, l)
+                    if ((thisValueShifted >> 1 & 1) == 0) {
+                        new LongLinkedTrieSetN_0(new LongLinkedTrieSetN2(this, l))
+                    } else {
+                        new LongLinkedTrieSetN_0(new LongLinkedTrieSetN2(l, this))
+                    }
                 } else {
-                    val trie = new LongLinkedTrieSetN_1(this)
-                    trie +=! (level, l)
+                    if ((thisValueShifted >> 1 & 1) == 0) {
+                        new LongLinkedTrieSetN_1(new LongLinkedTrieSetN2(this, l))
+                    } else {
+                        new LongLinkedTrieSetN_1(new LongLinkedTrieSetN2(l, this))
+                    }
                 }
             case sharing ⇒
                 //  println("Sharing: "+sharing)
