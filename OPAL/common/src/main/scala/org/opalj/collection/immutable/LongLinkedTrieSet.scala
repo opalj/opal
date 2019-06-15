@@ -17,8 +17,7 @@ import java.lang.{Long ⇒ JLong}
  *
  * @author Michael Eichberg
  */
-sealed abstract class LongLinkedTrieSet
-    extends LongCollectionWithStableOrdering[LongLinkedTrieSet] {
+sealed abstract class LongLinkedTrieSet {
 
     def size: Int
     def isEmpty: Boolean

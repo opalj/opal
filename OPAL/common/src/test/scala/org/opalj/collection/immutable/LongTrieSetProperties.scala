@@ -91,16 +91,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
             (its eq (s.foldLeft(its)(_ + _.toLong)))
     }
 
-    property("create LongTrieSet from Set[Long] (TraversableOnce) using ++") = forAll { s: Set[Long] ⇒
-        val its = EmptyLongTrieSet ++ s
-        (its.size == s.size) :| "matching size" &&
-            (its.isEmpty == s.isEmpty) &&
-            (its.nonEmpty == s.nonEmpty) &&
-            (its.hasMultipleElements == (s.size > 1)) &&
-            (its.isSingletonSet == (s.size == 1)) &&
-            (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
-    }
-
     property("create LongTrieSet from List (i.e., with duplicates)") = forAll { l: List[Long] ⇒
         val its = l.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _)
         val lWithoutDuplicates = l.toSet.toList
@@ -318,21 +308,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         its.filter(i ⇒ false) eq EmptyLongTrieSet
     }
 
-    property("withFilter") = forAll { ss: (IntArraySet, IntArraySet) ⇒
-        val (s1: IntArraySet, s2: IntArraySet) = ss
-        val its1 = s1.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val its2 = s2.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        var evaluated = false
-        val newits = its1.withFilter(i ⇒ { evaluated = true; !its2.contains(i) })
-        val news = s1.withFilter(!s2.contains(_))
-        !evaluated :| "not eagerly evaluated" &&
-            news.forall(i ⇒ newits.exists(newi ⇒ newi == i)) :| "exists check" &&
-            (news.forall(i ⇒ newits.contains(i.toLong)) && newits.forall(l ⇒ news.contains(l.toInt))) :| "contains check" &&
-            news.forall(i ⇒ newits.iterator.contains(i.toLong)) :| s"iterator.contains $news vs. $newits" &&
-            newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "iterator.forall" &&
-            news.forall(i ⇒ newits.iterator.contains(i.toLong)) && newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "LongIterator"
-    }
-
 }
 
 @RunWith(classOf[JUnitRunner])
@@ -488,7 +463,8 @@ class LongTrieSetTest extends FunSpec with Matchers {
             assert(!s8a.subsetOf(s8b))
             assert(!s8b.subsetOf(s8a))
 
-            val s18 = LongTrieSet.empty ++ List[Long](-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533, -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
+            val l = List[Long](-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533, -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
+            val s18 = l.foldLeft(LongTrieSet.empty)(_ + _)
             val s18_plus_m1 = s18 + (-1L)
             assert(s18.subsetOf(s18_plus_m1), s"$s18 expected to be subset of $s18_plus_m1")
 
@@ -609,29 +585,6 @@ class LongTrieSetTest extends FunSpec with Matchers {
 
             val s3 = s2.filter(_ != 131072)
             assert(s3.contains(16384))
-            assert(s3.contains(65536))
-            assert(!s3.contains(131072))
-        }
-
-        it("it should be possible to lazily filter the values step by step") {
-            val s1 = s.withFilter(_ != 8192)
-            assert(!s1.contains(8192))
-            assert(s1.contains(16384))
-            assert(s1.contains(32768))
-            assert(s1.contains(65536))
-            assert(s1.contains(131072))
-
-            val s2 = s1.withFilter(_ != 32768)
-            assert(!s2.contains(8192))
-            assert(s2.contains(16384))
-            assert(!s2.contains(32768))
-            assert(s2.contains(65536))
-            assert(s2.contains(131072))
-
-            val s3 = s2.withFilter(_ != 131072)
-            assert(!s3.contains(8192))
-            assert(s3.contains(16384))
-            assert(!s3.contains(32768))
             assert(s3.contains(65536))
             assert(!s3.contains(131072))
         }

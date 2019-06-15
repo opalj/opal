@@ -33,13 +33,12 @@ sealed abstract class LongTrieSet
         r
     }
 
-    /** Returns some value and removes it from this set. */
-    def headAndTail: LongRefPair[LongTrieSet]
-
-    def filter(p: Long ⇒ Boolean): LongTrieSet
-    override def withFilter(p: Long ⇒ Boolean): LongTrieSet
-
-    final override def subsetOf(other: LongTrieSet): Boolean = subsetOf(other, 0)
+    final def ++(that: LongTrieSet): LongTrieSet = {
+        if (this.size > that.size)
+            that.foldLeft(this)(_ + _) // we expand `this` since `this` is larger
+        else
+            this.foldLeft(that)(_ + _) // we expand `that`
+    }
 
     final override def equals(other: Any): Boolean = {
         other match {
@@ -52,8 +51,12 @@ sealed abstract class LongTrieSet
 
     final override def toString: String = mkString("LongTrieSet(", ",", ")")
 
+    //
+    // UNSAFE METHODS
+    //
+
     /**
-     * Tries to add the given method to this trie set by ''mutating the set if possible''.
+     * Tries to add the given method to ''this'' trie set by ''mutating the set if possible''.
      * Due to the internal organization, mutating the set is not always possible. In this case, a
      * new set containing the new value is returned. Hence, the return value ''must not'' be
      * ignored!
@@ -66,80 +69,31 @@ sealed abstract class LongTrieSet
     final def ++!(that: LongTrieSet): LongTrieSet = {
         that.foldLeft(this)(_ +! _) // We have to expand `this`!
     }
+
     //
     // IMPLEMENTATION "INTERNAL" METHODS
     //
 
-    private[immutable] def +(i: Long, level: Long): LongTrieSet
-    private[immutable] def +!(i: Long, level: Long): LongTrieSet
-    private[immutable] def -(i: Long, key: Long): LongTrieSet
     private[immutable] def contains(value: Long, key: Long): Boolean
     private[immutable] def subsetOf(other: LongTrieSet, level: Long): Boolean
 
+    private[immutable] def +(i: Long, level: Long): LongTrieSet
+    private[immutable] def +!(i: Long, level: Long): LongTrieSet
+
+    private[immutable] def -(i: Long, key: Long): LongTrieSet
     /** Ensures that this set is represented using its canonical representation. */
     private[immutable] def constringe(): LongTrieSet
 }
 
-final class FilteredLongTrieSet(
-        private val s: LongTrieSet,
-        private val p: Long ⇒ Boolean
-) extends LongTrieSet {
-
-    override def iterator: LongIterator = s.iterator.withFilter(p)
-
-    override def foreach[U](f: Long ⇒ U): Unit = s.foreach { i ⇒ if (p(i)) f(i) }
-    override def map(f: Long ⇒ Long): LongTrieSet = {
-        s.foldLeft(EmptyLongTrieSet: LongTrieSet) { (c, i) ⇒ if (p(i)) c +! f(i) else c }
-    }
-    override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = {
-        s.flatMap(i ⇒ if (p(i)) f(i) else EmptyLongTrieSet)
-    }
-    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = {
-        new FilteredLongTrieSet(s, i ⇒ p(i) && this.p(i))
-    }
-
-    override def exists(p: Long ⇒ Boolean): Boolean = s.exists(i ⇒ this.p(i) && p(i))
-    override def forall(f: Long ⇒ Boolean): Boolean = s.forall(i ⇒ !this.p(i) || f(i))
-    override def contains(value: Long): Boolean = p(value) && s.contains(value)
-
-    private[this] lazy val filtered: LongTrieSet = s.filter(p)
-
-    override def intersect(other: LongTrieSet): LongTrieSet = filtered.intersect(other)
-    override def filter(p: Long ⇒ Boolean): LongTrieSet = filtered.filter(p)
-    override def isSingletonSet: Boolean = filtered.isSingletonSet
-    override def hasMultipleElements: Boolean = filtered.hasMultipleElements
-    override def isEmpty: Boolean = filtered.isEmpty
-    override def size: Int = filtered.size
-    override def head: Long = filtered.head
-    override def headAndTail: LongRefPair[LongTrieSet] = filtered.headAndTail
-    override def -(i: Long): LongTrieSet = filtered - i
-    override def +(i: Long): LongTrieSet = filtered + i
-    override def +!(value: Long): LongTrieSet = filtered +! value
-    override def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B = filtered.foldLeft(z)(f)
-    override def equals(other: LongTrieSet): Boolean = filtered.equals(other)
-    override def hashCode: Int = filtered.hashCode()
-
-    // Actually the following methods should never be called... in a sense they are dead.
-    private[immutable] override def constringe(): LongTrieSet = filtered.constringe()
-    private[immutable] override def -(i: Long, key: Long): LongTrieSet = filtered - (i, key)
-    private[immutable] override def +(i: Long, level: Long): LongTrieSet = filtered + (i, level)
-    private[immutable] override def +!(i: Long, level: Long): LongTrieSet = filtered +! (i, level)
-    private[immutable] override def contains(value: Long, key: Long): Boolean = {
-        filtered.contains(value, key)
-    }
-    private[immutable] override def subsetOf(other: LongTrieSet, level: Long): Boolean = {
-        filtered.subsetOf(other, level)
-    }
-}
-
-/** The (potential) leaves of an LongTrie. */
+/** The (potential) leaves of a LongTrie. */
 private[immutable] sealed abstract class LongTrieSetL extends LongTrieSet {
 
-    final override private[immutable] def -(i: Long, key: Long): LongTrieSet = this.-(i)
-    final override private[immutable] def constringe(): LongTrieSet = this
     final override private[immutable] def contains(value: Long, key: Long): Boolean = {
         this.contains(value)
     }
+
+    final override private[immutable] def -(i: Long, key: Long): LongTrieSet = this.-(i)
+    final override private[immutable] def constringe(): LongTrieSet = this
 }
 
 case object EmptyLongTrieSet extends LongTrieSetL {
@@ -153,11 +107,9 @@ case object EmptyLongTrieSet extends LongTrieSetL {
     }
     override def foreach[U](f: Long ⇒ U): Unit = {}
     override def filter(p: Long ⇒ Boolean): LongTrieSet = this
-    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = this
     override def map(f: Long ⇒ Long): LongTrieSet = this
     override def -(i: Long): this.type = this
     override def +(i: Long): LongTrieSet1 = LongTrieSet1(i)
-    override def +!(i: Long): LongTrieSet = LongTrieSet1(i)
     override def intersect(other: LongTrieSet): LongTrieSet = this
     override def iterator: LongIterator = LongIterator.empty
     override def contains(value: Long): Boolean = false
@@ -167,23 +119,30 @@ case object EmptyLongTrieSet extends LongTrieSetL {
     override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = this
 
     override def equals(that: LongTrieSet): Boolean = this eq that
-
     override def hashCode: Int = 0 // compatible to Arrays.hashCode
 
-    private[immutable] override def +(i: Long, level: Long): LongTrieSet = this.+(i)
-    private[immutable] override def +!(i: Long, level: Long): LongTrieSet = this.+!(i)
-    private[immutable] override def subsetOf(other: LongTrieSet, level: Long): Boolean = true
+    //
+    // UNSAFE METHODS
+    //
+    override def +!(i: Long): LongTrieSet = LongTrieSet1(i)
+
+    //
+    // IMPLEMENTATION "INTERNAL" METHODS
+    //
+    override private[immutable] def subsetOf(other: LongTrieSet, level: Long): Boolean = true
+
+    override private[immutable] def +(i: Long, level: Long): LongTrieSet = this.+(i)
+    override private[immutable] def +!(i: Long, level: Long): LongTrieSet = this.+!(i)
 }
 
-final case class LongTrieSet1 private (i: Long) extends LongTrieSetL {
+final class LongTrieSet1 private (val i: Long) extends LongTrieSetL {
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = true
     override def hasMultipleElements: Boolean = false
     override def size: Int = 1
     override def foreach[U](f: Long ⇒ U): Unit = { f(i) }
-    override def headAndTail: LongRefPair[LongTrieSet] = LongRefPair(i, LongTrieSet.empty)
+    override def headAndTail: LongRefPair[LongTrieSet] = LongRefPair(i, EmptyLongTrieSet)
     override def filter(p: Long ⇒ Boolean): LongTrieSet = if (p(i)) this else EmptyLongTrieSet
-    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
     override def map(f: Long ⇒ Long): LongTrieSet = {
         val newI = f(i)
         if (newI != i)
@@ -195,7 +154,7 @@ final case class LongTrieSet1 private (i: Long) extends LongTrieSetL {
     override def head: Long = i
     override def -(i: Long): LongTrieSet = if (this.i != i) this else EmptyLongTrieSet
     override def +(i: Long): LongTrieSet = if (this.i == i) this else LongTrieSet.from(this.i, i)
-    override def +!(i: Long): LongTrieSet = this + i
+
     override def iterator: LongIterator = LongIterator(i)
     override def intersect(other: LongTrieSet): LongTrieSet = {
         if (other.contains(this.i)) this else EmptyLongTrieSet
@@ -213,14 +172,24 @@ final case class LongTrieSet1 private (i: Long) extends LongTrieSetL {
             }
         }
     }
-
     override def hashCode: Int = 31 + JLong.hashCode(i) // compatible to Arrays.hashCode
 
-    override private[immutable] def +(i: Long, level: Long): LongTrieSet = this.+(i)
-    override private[immutable] def +!(i: Long, level: Long): LongTrieSet = this.+!(i)
+    //
+    // UNSAFE METHODS
+    //
+
+    override def +!(i: Long): LongTrieSet = this + i
+
+    //
+    // IMPLEMENTATION "INTERNAL" METHODS
+    //
     override private[immutable] def subsetOf(other: LongTrieSet, level: Long): Boolean = {
         other.contains(i, i >>> level)
     }
+
+    override private[immutable] def +(i: Long, level: Long): LongTrieSet = this.+(i)
+    override private[immutable] def +!(i: Long, level: Long): LongTrieSet = this.+!(i)
+
 }
 
 object LongTrieSet1 {
@@ -230,12 +199,11 @@ object LongTrieSet1 {
 }
 
 /**
- * Represents an ordered set of two values where i1 has to be smaller than i2.
+ * Represents an ordered - w.r.t. the binary representation - set of two values.
  */
 private[immutable] final class LongTrieSet2 private[immutable] (
         val i1: Long, val i2: Long
 ) extends LongTrieSetL {
-
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false
     override def hasMultipleElements: Boolean = true
@@ -257,7 +225,6 @@ private[immutable] final class LongTrieSet2 private[immutable] (
                 EmptyLongTrieSet
         }
     }
-    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
     override def map(f: Long ⇒ Long): LongTrieSet = {
         val i1 = this.i1
         val newI1 = f(i1)
@@ -282,7 +249,7 @@ private[immutable] final class LongTrieSet2 private[immutable] (
         else
             LongTrieSet.from(i1, i2, i)
     }
-    override def +!(i: Long): LongTrieSet = this + i
+
     override def intersect(other: LongTrieSet): LongTrieSet = {
         other.size match {
             case 0 ⇒ other
@@ -306,6 +273,17 @@ private[immutable] final class LongTrieSet2 private[immutable] (
     override def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B = f(f(z, i1), i2)
     override def forall(f: Long ⇒ Boolean): Boolean = f(i1) && f(i2)
 
+    override def equals(other: LongTrieSet): Boolean = {
+        (other eq this) || {
+            other match {
+                case that: LongTrieSet2 ⇒ this.i1 == that.i1 && this.i2 == that.i2
+                case that               ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
+            }
+        }
+    }
+    override def hashCode: Int = 31 * (31 + JLong.hashCode(i1)) + JLong.hashCode(i2) // compatible to Arrays.hashCode
+
+    override def +!(i: Long): LongTrieSet = this + i
     override private[immutable] def subsetOf(other: LongTrieSet, level: Long): Boolean = {
         other.size match {
             case 0 | 1 ⇒
@@ -322,17 +300,6 @@ private[immutable] final class LongTrieSet2 private[immutable] (
                 other.contains(i1, i1 >>> level) && other.contains(i2, i2 >>> level)
         }
     }
-
-    override def equals(other: LongTrieSet): Boolean = {
-        (other eq this) || {
-            other match {
-                case that: LongTrieSet2 ⇒ this.i1 == that.i1 && this.i2 == that.i2
-                case that               ⇒ that.size == 2 && that.contains(i1) && that.contains(i2)
-            }
-        }
-    }
-
-    override def hashCode: Int = 31 * (31 + JLong.hashCode(i1)) + JLong.hashCode(i2) // compatible to Arrays.hashCode
 
     override private[immutable] def +(i: Long, level: Long): LongTrieSet = this.+(i)
     override private[immutable] def +!(i: Long, level: Long): LongTrieSet = this.+!(i)
@@ -383,7 +350,6 @@ private[immutable] final class LongTrieSet3 private[immutable] (
             }
         }
     }
-    override def withFilter(p: Long ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
     override def map(f: Long ⇒ Long): LongTrieSet = {
         val i1 = this.i1
         val newI1 = f(i1)
@@ -453,6 +419,7 @@ private[immutable] final class LongTrieSet3 private[immutable] (
         else
             LongTrieSet.from(i, i1, i2, i3, level)
     }
+
     override private[immutable] def +!(i: Long, level: Long): LongTrieSet = this.+(i, level)
 }
 
@@ -469,8 +436,6 @@ private[immutable] abstract class LongTrieSetNN extends LongTrieSet {
     final override def flatMap(f: Long ⇒ LongTrieSet): LongTrieSet = {
         foldLeft(EmptyLongTrieSet: LongTrieSet)(_ ++! f(_))
     }
-
-    final override def withFilter(p: Long ⇒ Boolean): LongTrieSet = new FilteredLongTrieSet(this, p)
 
     final override def equals(that: LongTrieSet): Boolean = {
         (that eq this) || (that.size == this.size && {
