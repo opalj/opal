@@ -81,3 +81,21 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
     final def mkString(in: String): String = mkString("", in, "")
 
 }
+
+object LongSet {
+
+    @inline def bitMask(length: Int): Long = {
+        (1L << length) - 1
+    }
+
+    final val BitMasks: Array[Long] = {
+        val bitMasks = new Array[Long](64)
+        var i = 1
+        while (i < 64) {
+            bitMasks(i) = (1L << i) - 1
+            i += 1
+        }
+        bitMasks
+    }
+
+}
