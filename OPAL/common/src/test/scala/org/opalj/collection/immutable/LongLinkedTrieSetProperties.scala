@@ -157,22 +157,25 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
 
     describe("performance") {
         it("creation and contains check should finish in reasonable time (all values are positive)") {
-            var sizeOfAllSets: Long = 0L
-            var largestSet: Long = 0L
-            PerformanceEvaluation.time {
-                val seed = System.nanoTime()
-                val rngGen = new java.util.Random(seed)
-                // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
-                for { i ← 1 to 3333 } rngGen.nextLong();
+            var sizeOfAllSets: Int = 0
+            var largestSet: Int = 0
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+            val rngQuery = new java.util.Random(seed)
+            // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
+            for { i ← 1 to 3333 } rngGen.nextLong();
+            val setValues = (for { i ← 1 to 10000 } yield rngGen.nextLong()).toArray
+            val queryValues = (for { i ← 1 to 10000 } yield rngQuery.nextLong()).toArray
 
-                val rngQuery = new java.util.Random(seed)
-                for { runs ← 1 to 10000 } {
+            PerformanceEvaluation.time {
+                for { runs ← 0 until 10000 } {
                     var s = org.opalj.collection.immutable.LongLinkedTrieSet.empty
+                    var hits = 0
                     for { i ← 1 to runs } {
-                        s += Math.abs(rngGen.nextLong())
-                        s.contains(Math.abs(rngQuery.nextLong()))
+                        s += setValues(i)
+                        if (s.contains(queryValues(i))) hits += 1
                     }
-                    largestSet = Math.max(largestSet, s.size.toLong)
+                    largestSet = Math.max(largestSet, s.size)
                     sizeOfAllSets += s.size
                 }
             } { t ⇒ info(s"${t.toSeconds} to create 10000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }

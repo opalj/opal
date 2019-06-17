@@ -116,7 +116,8 @@ private[immutable] abstract class LongLinkedTrieSetNode {
 
     /**
      * Returns true if the node only references leaf nodes or if the node just represents a single
-     * path.
+     * path; hence, it is possible to merge the node with the node at one level up without having
+     * to update the entire tree.
      */
     def canFold: Boolean
 

@@ -12,6 +12,8 @@ import org.scalacheck.Arbitrary
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
+import org.opalj.util.PerformanceEvaluation
+
 /**
  * Tests `LongTrieSet` by creating a standard Scala Set and comparing
  * the results of the respective functions.
@@ -637,6 +639,33 @@ class LongTrieSetTest extends FunSpec with Matchers {
             val its1ItSet = its1.iterator.toSet
             val its2ItSet = its2.iterator.toSet
             assert(its1ItSet.subsetOf(its2ItSet))
+        }
+    }
+
+    describe("performance") {
+        it("creation and contains check should finish in reasonable time (all values are positive)") {
+            var sizeOfAllSets: Int = 0
+            var largestSet: Int = 0
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+            val rngQuery = new java.util.Random(seed)
+            // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
+            for { i ← 1 to 3333 } rngGen.nextLong();
+            val setValues = (for { i ← 1 to 10000 } yield rngGen.nextLong()).toArray
+            val queryValues = (for { i ← 1 to 10000 } yield rngQuery.nextLong()).toArray
+
+            PerformanceEvaluation.time {
+                for { runs ← 0 until 10000 } {
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
+                    var hits = 0
+                    for { i ← 1 to runs } {
+                        s += setValues(i)
+                        if (s.contains(queryValues(i))) hits += 1
+                    }
+                    largestSet = Math.max(largestSet, s.size)
+                    sizeOfAllSets += s.size
+                }
+            } { t ⇒ info(s"${t.toSeconds} to create 10000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
     }
 }
