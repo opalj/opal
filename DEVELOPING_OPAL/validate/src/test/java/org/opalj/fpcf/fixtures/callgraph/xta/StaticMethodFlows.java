@@ -21,6 +21,7 @@ public class StaticMethodFlows {
         arrayTest();
         arrayTest2();
         arrayTest3();
+        recursionTest();
     }
 
     // === Test 1: ===
@@ -170,6 +171,21 @@ public class StaticMethodFlows {
     public static void arrayTest3_sink(Object[] arr) {
         Object obj = arr[0];
     }
+
+
+    // === Recursive methods ===
+
+    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
+    public static void recursionTest() {
+        recursiveMethod(new A1());
+    }
+
+    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
+    public static void recursiveMethod(A1 a) {
+        // This will not terminate obviously, but that shouldn't matter for the static analysis.
+        recursiveMethod(a);
+    }
+
     // === Test Class Hierarchy ===
 
     // First class hierarchy: A1 <-- A2

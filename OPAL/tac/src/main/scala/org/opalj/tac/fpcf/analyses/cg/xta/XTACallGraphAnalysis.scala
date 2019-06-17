@@ -98,6 +98,12 @@ class XTACallGraphAnalysis private[analyses] (
     }
 
     def handleNewCallee(state: XTAState)(newCallee: DefinedMethod): Iterable[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+        // If the new callee is the method itself, that means it is recursive. We ignore these cases
+        // since there is no relevant type flow.
+        if (newCallee == state.method) {
+            return Seq.empty;
+        }
+
         val calleeInstantiatedTypesDependee = propertyStore(newCallee, InstantiatedTypes.key)
         state.updateCalleeInstantiatedTypesDependee(calleeInstantiatedTypesDependee)
 

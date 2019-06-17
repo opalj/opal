@@ -38,6 +38,14 @@ import org.opalj.tac.cg.XTACallGraphKey
 // TODO AB for debugging/evaluation; remove later
 object CGTestRunner {
     def main(args: Array[String]): Unit = {
+        execute(
+            "C:\\mthesis\\xcorpus\\data\\qualitas_corpus_20130901\\sablecc-3.2\\project\\bin.zip",
+            "xta",
+            "C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\rta-vs-xta"
+        )
+    }
+
+    def main1(args: Array[String]): Unit = {
         def getArgOrElse(index: Int, alt: String): String = {
             if (index >= args.length)
                 alt
@@ -47,19 +55,29 @@ object CGTestRunner {
 
         val testJar = getArgOrElse(0, "C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\testjars\\bantamc-gruppe7.jar")
 
-        val testFile = new File(testJar)
-        val testFileName = testFile.getName
+        val algo = getArgOrElse(1, "xta")
 
-        val algo = getArgOrElse(1, "rta")
+        val defaultOutDir = "C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\rta-vs-xta"
+        val outDir = getArgOrElse(2, defaultOutDir)
+
+        execute(testJar, algo, outDir)
+    }
+
+    def execute(testJar: String, algo: String, outDir: String): Unit = {
+        val testFile = new File(testJar)
+        val testFileName =
+            if (testFile.getName == "bin.zip") { // for xcorpus projects
+                testFile.getParentFile.getParentFile.getName
+            } else {
+                testFile.getName
+            }
+
         val algoKey = algo match {
             case "cha" ⇒ CHACallGraphKey
             case "rta" ⇒ RTACallGraphKey
             case "xta" ⇒ XTACallGraphKey
             case _     ⇒ sys.error("cg algorithm must be cha, rta, or xta!")
         }
-
-        val defaultOutDir = "C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\rta-vs-xta"
-        val outDir = getArgOrElse(2, defaultOutDir)
 
         val outFileName = s"$testFileName-$algo.json"
         val outFile = Paths.get(outDir, outFileName).toFile
