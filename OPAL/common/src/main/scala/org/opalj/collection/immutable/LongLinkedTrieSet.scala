@@ -23,6 +23,7 @@ sealed abstract class LongLinkedTrieSet {
     def isSingletonSet: Boolean
     def contains(v: Long): Boolean
     def foreach[U](f: Long ⇒ U): Unit
+    def foldLeft[T](op: T)(f: (T, Long) ⇒ T): T
     def forFirstN[U](n: Int)(f: Long ⇒ U): Unit
     def head: Long
     def iterator: LongIterator
@@ -33,6 +34,17 @@ object LongLinkedTrieSet {
 
     def empty: LongLinkedTrieSet = EmptyLongLinkedTrieSet
 
+    def apply(v: Long): LongLinkedTrieSet = {
+        new LongLinkedTrieSet1(v)
+    }
+
+    def apply(vNewer: Long, vOlder: Long): LongLinkedTrieSet = {
+        if (vNewer == vOlder)
+            new LongLinkedTrieSet1(vNewer)
+        else
+            new LongLinkedTrieSet2(vNewer, vOlder)
+    }
+
 }
 
 case object EmptyLongLinkedTrieSet extends LongLinkedTrieSet {
@@ -41,6 +53,7 @@ case object EmptyLongLinkedTrieSet extends LongLinkedTrieSet {
     final override def isSingletonSet: Boolean = false
     final override def contains(v: Long): Boolean = false
     final override def foreach[U](f: Long ⇒ U): Unit = { /*nothing to do*/ }
+    final override def foldLeft[T](op: T)(f: (T, Long) ⇒ T): T = op
     final override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = { /*nothing to do*/ }
     final override def head: Long = throw new UnsupportedOperationException
     final override def iterator: LongIterator = LongIterator.empty
@@ -53,6 +66,7 @@ final case class LongLinkedTrieSet1(v1: Long) extends LongLinkedTrieSet {
     final override def isSingletonSet: Boolean = true
     final override def contains(v: Long): Boolean = v == v1
     final override def foreach[U](f: Long ⇒ U): Unit = f(v1)
+    final override def foldLeft[T](op: T)(f: (T, Long) ⇒ T): T = f(op, v1)
     final override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = if (n > 0) f(v1)
     final override def head: Long = v1
     final override def iterator: LongIterator = LongIterator(v1)
@@ -67,6 +81,7 @@ final private[immutable] case class LongLinkedTrieSet2(v1: Long, v2: Long) exten
     final override def isSingletonSet: Boolean = false
     final override def contains(v: Long): Boolean = v == v1 || v == v2
     final override def foreach[U](f: Long ⇒ U): Unit = { f(v1); f(v2) }
+    final override def foldLeft[T](op: T)(f: (T, Long) ⇒ T): T = f(f(op, v1), v2)
     final override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
         if (n > 0) f(v1)
         if (n > 1) f(v2)
@@ -84,6 +99,7 @@ final private[immutable] case class LongLinkedTrieSet3(v1: Long, v2: Long, v3: L
     final override def isSingletonSet: Boolean = false
     final override def contains(v: Long): Boolean = v == v1 || v == v2 || v == v3
     final override def foreach[U](f: Long ⇒ U): Unit = { f(v1); f(v2); f(v3) }
+    final override def foldLeft[T](op: T)(f: (T, Long) ⇒ T): T = f(f(f(op, v1), v2), v3)
     final override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
         if (n > 0) f(v1)
         if (n > 1) f(v2)
@@ -607,6 +623,17 @@ private[immutable] class LargeLongLinkedTrieSet(
             currentL = currentL.next
             f(v)
         }
+    }
+
+    final override def foldLeft[T](op: T)(f: (T, Long) ⇒ T): T = {
+        var r = op
+        var currentL = set.l
+        while (currentL ne null) {
+            val v = currentL.value
+            currentL = currentL.next
+            r = f(r, v)
+        }
+        r
     }
 
     final override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
