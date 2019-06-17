@@ -162,6 +162,10 @@ class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         _calleesDependee.nonEmpty && _calleesDependee.get.isRefinable
     }
 
+    def setCalleesDependee(calleeDependee: EOptionP[DeclaredMethod, Callees]): Unit = {
+        _calleesDependee = Some(calleeDependee)
+    }
+
     def calleesDependee: EOptionP[DeclaredMethod, Callees] = _calleesDependee.get
 
     def addIncompletePointsToInfo(pc: Int)(implicit logContext: LogContext): Unit = {

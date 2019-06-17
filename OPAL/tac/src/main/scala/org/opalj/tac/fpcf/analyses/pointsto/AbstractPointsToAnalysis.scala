@@ -79,7 +79,6 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBPS(newCallees: Callees, isFinal) ⇒
-                val results = ArrayBuffer.empty[ProperPropertyComputationResult]
                 val tac = state.tac
                 val oldCallees = if (oldCalleeEOptP.hasUBP) oldCalleeEOptP.ub else NoCallees
                 for {
@@ -87,11 +86,28 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                     target ← targets
                 } {
                     if (!oldCallees.containsDirectCall(pc, target)) {
-                        handleDirectCall(
-                            tac.stmts(tac.pcToIndex(pc)).asInstanceOf[Call[DUVar[ValueInformation]]],
-                            pc,
-                            target
-                        )(state)
+                        val call = tac.stmts(tac.pcToIndex(pc)) match {
+                            case call: Call[DUVar[ValueInformation]] @unchecked ⇒
+                                call
+                            case Assignment(_, targetVar, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
+
+                                val defSiteObject = definitionSites(state.method.definedMethod, pc)
+
+                                if (!isFinal) {
+                                    state.addDependee(defSiteObject, eps)
+                                }
+                                if (targetVar.value.isReferenceValue) {
+                                    state.includeLocalPointsToSet(
+                                        defSiteObject,
+                                        currentPointsTo(defSiteObject, target)(state)
+                                    )
+                                }
+                                call
+                            case ExprStmt(_, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
+                                call
+                            case e ⇒ throw new IllegalArgumentException(s"unexpected stmt $e")
+                        }
+                        handleDirectCall(call, pc, target)(state)
                     }
                 }
                 for {
@@ -102,42 +118,10 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                         handleIndirectCall(pc, target, newCallees, tac)(state)
                     }
                 }
-                if (!isFinal) {
-                    results += InterimPartialResult(
-                        Some(eps),
-                        continuationForCallees(
-                            eps.asInstanceOf[EPS[DeclaredMethod, Callees]],
-                            new PointsToAnalysisState[PointsToSet](state.method, state.tacDependee)
-                        )
-                    )
-                }
 
-                for ((fp, pointsToSet) ← state.sharedPointsToSetsIterator) {
-                    if (state.hasDependees(fp)) {
-                        val dependees = state.dependeesOf(fp)
-                        results += InterimPartialResult(
-                            dependees.values, continuationForShared(fp, dependees)
-                        )
-                    }
-                    if (pointsToSet ne emptyPointsToSet) {
-                        results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](fp, pointsToPropertyKey, {
-                            case _: EPK[Entity, _] ⇒
-                                Some(InterimEUBP(fp, pointsToSet))
+                state.setCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
 
-                            case UBP(ub: PointsToSet @unchecked) ⇒
-                                val newPointsTo = ub.included(pointsToSet, 0)
-                                if (newPointsTo ne ub) {
-                                    Some(InterimEUBP(fp, newPointsTo))
-                                } else {
-                                    None
-                                }
-
-                            case eOptP ⇒
-                                throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-                        })
-                    }
-                }
-                Results(results)
+                returnResult(state)
             case _ ⇒ throw new IllegalArgumentException(s"unexpected eps $eps")
         }
     }
@@ -324,7 +308,6 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                         targets.map(currentPointsTo(defSiteObject, _))
                     )
                 }
-
                 handleCall(call, pc)
 
             case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) ⇒
@@ -393,6 +376,10 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
 
         // todo: we have to handle the exceptions that might be thrown by this method
 
+        returnResult(state)
+    }
+
+    private[this] def returnResult(state: State): ProperPropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
 
         for ((e, pointsToSet) ← state.allocationSitePointsToSetsIterator) {
