@@ -21,7 +21,7 @@ sealed abstract class LongTrieSetB8 {
 
 object LongTrieSetB8 {
     val empty: LongTrieSetB8 = new LargeLongTrieSetB8(0, null)
-    def apply(v: Long) = new LargeLongTrieSetB8(1, new JLong(v))
+    def apply(v: Long) = new LargeLongTrieSetB8(1, JLong.valueOf(v))
 }
 
 final private[immutable] class LargeLongTrieSetB8Node(
@@ -157,7 +157,7 @@ final private[immutable] case class LargeLongTrieSetB8 private[immutable] (
                 }
 
             case null ⇒
-                new LargeLongTrieSetB8(1, new JLong(v))
+                new LargeLongTrieSetB8(1, JLong.valueOf(v))
         }
     }
 
