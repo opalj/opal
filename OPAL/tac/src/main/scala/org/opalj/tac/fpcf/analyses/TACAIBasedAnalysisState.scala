@@ -48,7 +48,6 @@ trait TACAIBasedAnalysisState {
     }
 
     final def tacDependee: EOptionP[Method, TACAI] = {
-        assert(_tacDependee.isRefinable)
         _tacDependee
     }
 

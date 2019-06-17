@@ -117,7 +117,7 @@ class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     ): Unit = {
         assert(
             !_dependerToDependees.contains(depender) ||
-                !_dependerToDependees(depender).exists(_.e == dependee.e)
+                !_dependerToDependees(depender).exists(other ⇒ other.e == dependee.e && other.pk == dependee.pk)
         )
         if (_dependerToDependees.contains(depender)) {
             _dependerToDependees(depender) += dependee
@@ -127,9 +127,9 @@ class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     }
 
     // IMPROVE: potentially inefficient exists check
-    final def hasDependency(depender: Entity, dependee: Entity): Boolean = {
+    final def hasDependency(depender: Entity, dependee: SomeEPK): Boolean = {
         _dependerToDependees.contains(depender) &&
-            _dependerToDependees(depender).exists(_.e == dependee)
+            _dependerToDependees(depender).exists(other ⇒ other.e == dependee.e && other.pk == dependee.pk)
     }
 
     // IMPROVE: make it efficient

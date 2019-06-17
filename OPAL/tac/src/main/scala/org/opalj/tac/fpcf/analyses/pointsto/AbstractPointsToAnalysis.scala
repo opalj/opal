@@ -36,6 +36,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.properties.cg.NoCallees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
@@ -50,8 +51,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet]]
-        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-        with ReachableMethodAnalysis {
+    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+    with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -73,13 +74,14 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
     }
 
     def continuationForCallees(
-        oldCallees: Callees,
-        state:      State
+        oldCalleeEOptP: EOptionP[DeclaredMethod, Callees],
+        state:          State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBPS(newCallees: Callees, isFinal) ⇒
                 val results = ArrayBuffer.empty[ProperPropertyComputationResult]
                 val tac = state.tac
+                val oldCallees = if (oldCalleeEOptP.hasUBP) oldCalleeEOptP.ub else NoCallees
                 for {
                     (pc, targets) ← newCallees.directCallSites()
                     target ← targets
@@ -104,7 +106,7 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                     results += InterimPartialResult(
                         Some(eps),
                         continuationForCallees(
-                            newCallees,
+                            eps.asInstanceOf[EPS[DeclaredMethod, Callees]],
                             new PointsToAnalysisState[PointsToSet](state.method, state.tacDependee)
                         )
                     )
@@ -440,8 +442,14 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
         }
 
         if (state.hasCalleesDepenedee) {
-            ???
-            // todo: for new call targets, contribute to the points to sets of the formal parameters
+            val calleesDependee = state.calleesDependee
+            results += InterimPartialResult(
+                Some(calleesDependee),
+                continuationForCallees(
+                    calleesDependee,
+                    new PointsToAnalysisState[PointsToSet](state.method, state.tacDependee)
+                )
+            )
         }
 
         Results(results)
@@ -614,7 +622,7 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                 state.allocationSitePointsToSet(ds)
 
             case ds: DefinitionSite if state.hasLocalPointsToSet(ds) ⇒
-                if (!state.hasDependency(depender, dependee)) {
+                if (!state.hasDependency(depender, EPK(dependee, pointsToPropertyKey))) {
                     val p2s = propertyStore(dependee, pointsToPropertyKey)
                     assert(p2s.isEPK)
                     state.addDependee(depender, p2s)
@@ -629,9 +637,10 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
 
                 state.localPointsToSet(ds)
             case _ ⇒
-                val p2s = if (state.hasDependency(depender, dependee)) {
+                val epk = EPK(dependee, pointsToPropertyKey)
+                val p2s = if (state.hasDependency(depender, epk)) {
                     // IMPROVE: add a method to the state
-                    state.dependeesOf(depender)(EPK(dependee, pointsToPropertyKey))
+                    state.dependeesOf(depender)(epk)
                 } else {
                     val p2s = propertyStore(dependee, pointsToPropertyKey)
                     if (p2s.isRefinable) {
