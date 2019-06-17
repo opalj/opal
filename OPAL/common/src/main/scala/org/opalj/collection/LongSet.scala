@@ -92,7 +92,7 @@ object LongSet {
         val bitMasks = new Array[Long](64)
         var i = 1
         while (i < 64) {
-            bitMasks(i) = (1L << i) - 1
+            bitMasks(i) = (1L << i) - 1L
             i += 1
         }
         bitMasks
