@@ -69,9 +69,9 @@ object CGTestRunner {
             InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
             ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationEntryPointsFinder")
         ).withValue(
-            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
-        )
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
+            )
 
         val project = Project(new File(testJar), GlobalLogContext, cfg)
         val cg = project.get(algoKey)

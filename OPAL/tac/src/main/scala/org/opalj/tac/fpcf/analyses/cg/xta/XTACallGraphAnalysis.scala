@@ -208,7 +208,18 @@ class XTACallGraphAnalysis private[analyses] (
     // calculate flow of new types from caller to callee
     private def forwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCallerTypes: UIDSet[ObjectType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
 
-        val allParameterTypes: RefArray[FieldType] = calleeMethod.descriptor.parameterTypes
+        // Note: Not only virtual methods, since the this pointer can also flow through private methods
+        // which are called via invokespecial and are thus not considered "virtual" methods.
+        val hasImplicitThisParameter = calleeMethod.definedMethod.isNotStatic
+
+        val allParameterTypes: RefArray[FieldType] =
+            if (hasImplicitThisParameter) {
+                val implicitThisParamTypeUB = calleeMethod.declaringClassType.asFieldType
+                implicitThisParamTypeUB +: calleeMethod.descriptor.parameterTypes
+            } else {
+                calleeMethod.descriptor.parameterTypes
+            }
+
         // TODO AB handle other types than ObjectTypes (e.g. arrays, primitive types like int?)
         // TODO AB performance...; maybe cache this stuff somehow
         val relevantParameterTypes = allParameterTypes.toSeq.filter(_.isObjectType).map(_.asObjectType)

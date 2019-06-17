@@ -38,7 +38,9 @@ public class DynamicMethodFlows {
     }
 
     private static class A1 extends A {
-        @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1;")
+        @AvailableTypes({
+                "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1;", // "this"
+                "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1;"})
         public B foo() {
             return new B1();
         }
@@ -60,7 +62,9 @@ public class DynamicMethodFlows {
     }
 
     private static class B1 extends B {
-        @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1;")
+        @AvailableTypes({
+                "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1;",
+                "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1;"}) // "this"
         public void foo(A obj) {
             // ...
         }
