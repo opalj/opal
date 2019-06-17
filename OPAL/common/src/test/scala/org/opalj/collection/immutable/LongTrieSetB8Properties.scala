@@ -169,5 +169,23 @@ class LongTrieSetB8Test extends FunSpec with Matchers {
                 }
             } { t ⇒ info(s"${t.toSeconds} to create 10000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
+
+        it("memory usage") {
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+
+            val allSets = PerformanceEvaluation.memory {
+                for {
+                    set ← 0 until 2500
+                } yield {
+                    var s = org.opalj.collection.immutable.LongTrieSetB8.empty
+                    for { i ← 0 until 10000 } {
+                        s += rngGen.nextLong()
+                    }
+                    s
+                }
+            } { mu ⇒ info(s"required $mu bytes for 1000 sets with ~10000 elements each") }
+            info(s"overall size: ${allSets.map(_.size).sum}")
+        }
     }
 }
