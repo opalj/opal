@@ -104,6 +104,7 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
     describe("contains") {
 
         val fixtures = List[List[Long]](
+            List[Long](-92276, -76687, -1003, 39908),
             List[Long](-149831, -143246, -110997, -103241, -100192, -91362, -14553, -10397, -2126, -628, 8184, 13255, 39973),
             List[Long](-103806, -99428, -15784, -6124, 48020),
             List[Long](-134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213, -20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875)
@@ -115,7 +116,7 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
                 var notFound = List.empty[Long]
                 fixture.foreach(v ⇒ if (!llts.contains(v)) notFound ::= v)
                 if (notFound.nonEmpty)
-                    fail(s"; lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
+                    fail(s"lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
             }
 
         }
