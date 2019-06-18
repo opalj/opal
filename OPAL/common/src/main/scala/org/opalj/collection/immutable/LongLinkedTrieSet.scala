@@ -5,6 +5,8 @@ package immutable
 import scala.annotation.switch
 
 import java.lang.{Long ⇒ JLong}
+import java.lang.Long.{hashCode ⇒ lHashCode}
+import java.lang.Math.abs
 
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the
@@ -94,9 +96,18 @@ final private[immutable] case class LongLinkedTrieSet3(v1: Long, v2: Long, v3: L
     final override def +(v: Long): LongLinkedTrieSet = {
         if (v != v1 && v != v2 && v != v3) {
             // We have to ensure that we keep the order!
+            /*
             val v3N = new LongLinkedTrieSetL(v3)
             val v2N = new LongLinkedTrieSetL(v2, v3N)
             val set = new LargeLongLinkedTrieSet(2, v3N + (v2N, 0), v2N)
+            set += v1
+            set += v
+            set
+
+           */
+            val set = new LargeLongLinkedTrieSet()
+            set += v3
+            set += v2
             set += v1
             set += v
             set
@@ -552,6 +563,7 @@ final private[immutable] class LongLinkedTrieSetN4(
     }
 }
 
+/*
 private[immutable] class LargeLongLinkedTrieSet(
         var size: Int,
         var trie: LongLinkedTrieSetNode,
@@ -666,6 +678,160 @@ private[immutable] class LargeLongLinkedTrieSet(
 
     final override def toString: String = {
         s"LongLinkedTrieSet(#$size,trie=\n${trie.toString(0)}\n)"
+    }
+
+}
+*/
+
+private[immutable] class LargeLongLinkedTrieSet(
+        var size:  Int                          = 0,
+        val tries: Array[LongLinkedTrieSetNode] = new Array(32),
+        var l:     LongLinkedTrieSetL           = null // points to the latest element that was added...
+) extends LongLinkedTrieSet { set ⇒
+
+    final override def isEmpty: Boolean = size == 0
+    final override def isSingletonSet: Boolean = size == 1
+
+    final override def contains(v: Long): Boolean = {
+        val trie = tries(Math.abs(JLong.hashCode(v)) % 32)
+        if (trie == null) return false;
+
+        var key = v
+        var node = trie
+        do {
+            // Type based switch (proofed to be faster than introducing node ids and using them...):
+            node match {
+                case n: LongLinkedTrieSetNShared ⇒
+                    val sharedBits = n.sharedBits
+                    val length = n.length
+                    if ((key & LongSet.BitMasks(length)) == sharedBits) {
+                        node = n.n
+                        key = key >> n.length
+                    } else {
+                        return false;
+                    }
+                case n: LongLinkedTrieSetN2 ⇒
+                    if ((key & 1L) == 0L) {
+                        node = n._0
+                    } else {
+                        node = n._1
+                    }
+                    key = key >> 1
+                case n: LongLinkedTrieSetN4 ⇒
+                    ((key & 3L /*binary:11*/ ).toInt: @switch) match {
+                        case 0 ⇒ node = n._0
+                        case 1 ⇒ node = n._1
+                        case 2 ⇒ node = n._2
+                        case 3 ⇒ node = n._3
+                    }
+                    key = key >> 2
+                case l: LongLinkedTrieSetL ⇒
+                    return v == l.value;
+            }
+        } while (node ne null)
+        false
+    }
+
+    final override def head: Long = {
+        val thisL = this.l
+        if (thisL eq null)
+            throw new IllegalStateException("the set is empty");
+
+        this.l.value
+    }
+
+    final override def foreach[U](f: Long ⇒ U): Unit = {
+        var currentL = set.l
+        while (currentL ne null) {
+            val v = currentL.value
+            currentL = currentL.next
+            f(v)
+        }
+    }
+
+    final override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
+        var i = 0
+        var currentL = set.l
+        while (i < n && (currentL ne null)) {
+            val v = currentL.value
+            currentL = currentL.next
+            f(v)
+            i += 1
+        }
+    }
+
+    final override def iterator: LongIterator = new LongIterator {
+        private[this] var currentL = set.l
+        override def hasNext: Boolean = currentL ne null
+        override def next: Long = {
+            val v = currentL.value
+            currentL = currentL.next
+            v
+        }
+    }
+
+    final override def +(v: Long): LargeLongLinkedTrieSet = {
+        val trieId = abs(lHashCode(v)) % 32
+        val oldTrie = tries(trieId)
+        if (oldTrie == null) {
+            val newTries = tries.clone()
+            val newTrie = new LongLinkedTrieSetL(v, this.l)
+            newTries(trieId) = newTrie
+            new LargeLongLinkedTrieSet(size + 1, newTries, newTrie)
+        } else {
+            val newL = LongLinkedTrieSetL(v, this.l)
+            val newTrie = oldTrie + (newL, 0)
+            if (oldTrie ne newTrie) {
+                val newTries = tries.clone()
+                newTries(trieId) = newTrie
+                new LargeLongLinkedTrieSet(size + 1, newTries, newL)
+            } else {
+                this
+            }
+        }
+    }
+
+    /** Adds the given value that must not be part of this set(!) to this set by mutating it(!). */
+    final private[immutable] def +=(v: Long): Unit = {
+        val trieId = abs(lHashCode(v)) % 32
+        val oldTrie = tries(trieId)
+        if (oldTrie == null) {
+            val newL = new LongLinkedTrieSetL(v, this.l)
+            tries(trieId) = newL
+            this.l = newL
+            size += 1
+        } else {
+            val newL = LongLinkedTrieSetL(v, this.l)
+            val newTrie = oldTrie + (newL, 0)
+            if (oldTrie ne newTrie) {
+                tries(trieId) = newTrie
+                this.l = newL
+                size += 1
+            }
+        }
+    }
+
+    final override def equals(other: Any): Boolean = {
+        other match {
+            case that: LargeLongLinkedTrieSet ⇒ this.iterator.sameValues(that.iterator)
+            case _                            ⇒ false
+        }
+    }
+
+    final override def hashCode(): Int = {
+        iterator.foldLeft(0)((hashCode, v) ⇒ (hashCode * 31) + java.lang.Long.hashCode(v))
+    }
+
+    final override def toString: String = {
+        val triesString =
+            tries.
+                zipWithIndex.
+                map { e ⇒
+                    val (trie, index) = e
+                    s"[$index] "+(if (trie ne null) trie.toString(0) else "N/A")
+                }.
+                mkString("\n")
+        s"LongLinkedTrieSet(#$size,tries=\n$triesString\n)"
     }
 
 }
