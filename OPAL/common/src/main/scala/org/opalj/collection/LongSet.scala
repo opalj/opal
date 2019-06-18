@@ -12,11 +12,14 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
 
     def isEmpty: Boolean
     def nonEmpty: Boolean = !isEmpty
-    /** Tests if this set has exactly one element (complexity: O(1)). */
+    /**
+     * Tests if this set has exactly one element (complexity: O(1)).
+     */
     def isSingletonSet: Boolean
-    /** Tests if this set has more than one element (complexity: O(1)). */
+    /**
+     * Tests if this set has more than one element (complexity: O(1)).
+     */
     def hasMultipleElements: Boolean
-
     /**
      * The size of the set; may not be a constant operation; if possible use isEmpty, nonEmpty,
      * etc.; or lookup the complexity in the concrete data structures.
@@ -24,13 +27,23 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
     def size: Int
 
     def foreach[U](f: Long ⇒ U): Unit
-    def withFilter(p: Long ⇒ Boolean): T
+
+    def filter(p: Long ⇒ Boolean): T
+
     def map(f: Long ⇒ Long): T
+    def map[S <: IntSet[S]](start: S)(f: Long ⇒ Int): S = foldLeft(start)(_ + f(_))
     def map[A <: AnyRef](f: Long ⇒ A): Set[A] = foldLeft(Set.empty[A])(_ + f(_))
+    final def transform[B, To](f: Long ⇒ B, b: Builder[B, To]): To = {
+        foreach(i ⇒ b += f(i))
+        b.result()
+    }
+
     def flatMap(f: Long ⇒ T): T
+
     def foldLeft[B](z: B)(f: (B, Long) ⇒ B): B
 
     def head: Long
+
     def contains(value: Long): Boolean
     def exists(p: Long ⇒ Boolean): Boolean
     def forall(f: Long ⇒ Boolean): Boolean
@@ -40,34 +53,17 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
     /** Adds the given value to this set; returns `this` if this set already contains the value. */
     def +(i: Long): T
 
-    final def --(is: TraversableOnce[Long]): T = {
-        var r = this
-        is.foreach { i ⇒ r -= i }
-        r
-    }
     final def --(is: LongSet[_]): T = {
         var r = this
         is.foreach { i ⇒ r -= i }
         r
     }
 
-    final def ++(that: T): T = {
-        if (this.size > that.size)
-            that.foldLeft(this)(_ + _) // we expand `this` since `this` is larger
-        else
-            this.foldLeft(that)(_ + _) // we expand `that`
-    }
-
-    final def ++(that: TraversableOnce[Long]): T = that.foldLeft(this)(_ + _)
+    def ++(that: T): T
 
     final def ++(that: LongIterator): T = that.foldLeft(this)(_ + _)
 
     def iterator: LongIterator
-
-    final def transform[B, To](f: Long ⇒ B, b: Builder[B, To]): To = {
-        foreach(i ⇒ b += f(i))
-        b.result()
-    }
 
     final def mkString(pre: String, in: String, post: String): String = {
         val sb = new StringBuilder(pre)
@@ -83,5 +79,23 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
     }
 
     final def mkString(in: String): String = mkString("", in, "")
+
+}
+
+object LongSet {
+
+    @inline def bitMask(length: Int): Long = {
+        (1L << length) - 1
+    }
+
+    final val BitMasks: Array[Long] = {
+        val bitMasks = new Array[Long](64)
+        var i = 1
+        while (i < 64) {
+            bitMasks(i) = (1L << i) - 1L
+            i += 1
+        }
+        bitMasks
+    }
 
 }

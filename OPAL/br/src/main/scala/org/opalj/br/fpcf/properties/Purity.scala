@@ -10,7 +10,6 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
-import org.opalj.fpcf.PropertyStore
 import org.opalj.br.fpcf.properties.Purity.ContextuallyPureFlags
 import org.opalj.br.fpcf.properties.Purity.ContextuallySideEffectFreeFlags
 import org.opalj.br.fpcf.properties.Purity.ImpureFlags
@@ -20,20 +19,6 @@ import org.opalj.br.fpcf.properties.Purity.NotCompileTimePure
 import org.opalj.br.fpcf.properties.Purity.PerformsDomainSpecificOperations
 import org.opalj.br.fpcf.properties.Purity.PureFlags
 import org.opalj.br.fpcf.properties.Purity.SideEffectFreeFlags
-import org.opalj.br.instructions.PrimitiveLDC
-import org.opalj.br.instructions.SIPUSH
-import org.opalj.br.instructions.BIPUSH
-import org.opalj.br.instructions.LDC
-import org.opalj.br.instructions.LDC_W
-import org.opalj.br.instructions.LDC2_W
-import org.opalj.br.instructions.ALOAD
-import org.opalj.br.instructions.ANEWARRAY
-import org.opalj.br.instructions.DLOAD
-import org.opalj.br.instructions.FLOAD
-import org.opalj.br.instructions.ILOAD
-import org.opalj.br.instructions.LLOAD
-import org.opalj.br.instructions.NEWARRAY
-import org.opalj.br.instructions.PUTSTATIC
 
 sealed trait PurityPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -197,104 +182,11 @@ sealed abstract class Purity
 
 object Purity extends PurityPropertyMetaInformation {
 
-    def fastTrack(ps: PropertyStore, dm: DeclaredMethod): Option[Purity] = {
-        if (!dm.hasSingleDefinedMethod)
-            Some(ImpureByLackOfInformation)
-        else if (dm.definedMethod.classFile.thisType ne dm.declaringClassType)
-            None
-        else {
-            val method = dm.definedMethod
-            val body = method.body
-            if (body.isEmpty)
-                Some(ImpureByAnalysis)
-            else
-                fastTrackForConcreteMethod(dm.definedMethod)
-        }
-    }
-
-    def fastTrackForConcreteMethod(method: Method): Option[Purity] = {
-        if (method.isSynchronized && method.isStatic) {
-            // Synchronized static methods are impure because locking of the associated monitor is
-            // observable globally
-            return Some(ImpureByAnalysis);
-        }
-
-        val code = method.body.get
-        val instructions = code.instructions
-        code.codeSize match {
-            // In the following cases, we can distinguish a number of patterns,
-            // which are definitively always pure:
-
-            case 1 | 2 ⇒
-                // A method with this size can't throw a _new_ exception or have a control-flow
-                // statement. Given that the method has to return a value/throw a value the
-                // only preceding instruction could be load or const instruction.
-                Some(CompileTimePure);
-
-            case 3 ⇒
-                val firstInstruction = instructions(0)
-                firstInstruction.opcode match {
-                    case LDC.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
-                        Some(CompileTimePure);
-                    case BIPUSH.opcode |
-                        ILOAD.opcode | FLOAD.opcode | ALOAD.opcode |
-                        LLOAD.opcode | DLOAD.opcode ⇒
-                        Some(CompileTimePure);
-                    case _ ⇒
-                        // The patterns handled above are:
-                        //      LoadPrimitveConstant - return
-                        //      BIPUSH - return
-                        //      (I|A|L|D|F)LOAD - (I|A|L|D|F)return
-                        // The patterns not handled above are (e.g):
-                        //      (Frequent)  LoadClass|LoadMethodType|LoadMethodHandle - return
-                        //      (Very rare) ALOAD_1, ARRAYLENGTH, IRETURN
-                        None
-                }
-
-            case 4 ⇒
-                val secondInstruction = instructions(1)
-                if (secondInstruction != null && secondInstruction.opcode == NEWARRAY.opcode)
-                    Some(CompileTimePure)
-                else {
-                    val firstInstruction = instructions(0)
-                    firstInstruction.opcode match {
-                        case LDC_W.opcode if firstInstruction.isInstanceOf[PrimitiveLDC[_]] ⇒
-                            Some(CompileTimePure)
-                        case LDC2_W.opcode | SIPUSH.opcode ⇒
-                            Some(CompileTimePure)
-                        case _ ⇒
-                            None
-                    }
-                }
-
-            case 5 ⇒
-                val secondInstruction = instructions(1)
-                if (secondInstruction != null) {
-                    secondInstruction.opcode match {
-                        case ANEWARRAY.opcode ⇒
-                            Some(CompileTimePure)
-                        case PUTSTATIC.opcode ⇒
-                            Some(ImpureByAnalysis)
-                        case _ ⇒
-                            None
-                    }
-                } else
-                    None
-
-            case _ ⇒
-                None
-        }
-    }
-
     /**
      * The key associated with every purity property. The name is "Purity"; the fallback is
      * "Impure".
      */
-    final val key = PropertyKey.create[DeclaredMethod, Purity](
-        "Purity",
-        ImpureByLackOfInformation,
-        fastTrackPropertyComputation = fastTrack _
-    )
+    final val key = PropertyKey.create[DeclaredMethod, Purity]("Purity", ImpureByLackOfInformation)
 
     final val NotCompileTimePure = 0x1
     final val IsNonDeterministic = 0x2

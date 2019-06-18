@@ -19,9 +19,9 @@ class BasePropertyStoreMockup extends PropertyStore {
     // Methods which are not required by the following tests...
     //
 
-    override def shutdown(): Unit = ???
+    override def MaxEvaluationDepth: Int = ???
 
-    override def supportsFastTrackPropertyComputations: Boolean = ???
+    override def shutdown(): Unit = ???
 
     override def toString(printProperties: Boolean): String = ???
 
@@ -30,14 +30,6 @@ class BasePropertyStoreMockup extends PropertyStore {
     override def scheduledOnUpdateComputationsCount: Int = ???
 
     override def quiescenceCount: Int = ???
-
-    override def fastTrackPropertiesCount: Int = ???
-
-    override def incrementFastTrackPropertiesCounter(): Unit = ???
-
-    override def fastTrackPropertyComputationsCount: Int = ???
-
-    override def incrementFastTrackPropertyComputationsCounter(): Unit = ???
 
     override def fallbacksUsedForComputedPropertiesCount: Int = ???
 

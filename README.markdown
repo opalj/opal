@@ -42,7 +42,7 @@ OPAL also comes with a growing number of tools that are intended to help develop
 The following applies to the "Master/Develop" branch.
 
 OPAL uses SBT as its build tool and working with OPAL is particularly easy using the SBT console.
-Make sure that you have Java 8 at least update 171, Scala 2.12.8 and SBT 1.2.8 installed and running and that SBT can use at least 3GB of RAM (-Xmx3G). Download a recent snapshot of OPAL or clone the repository.
+Make sure that you have Java 8 at least update 171, Scala 2.12.8 and SBT 1.2.8 installed and running and that SBT can use at least 4GB of RAM (-Xmx4G). Download a recent snapshot of OPAL or clone the repository.
 Go to OPAL's root folder.
 
 * Call `sbt cleanBuild`. This compiles all core projects (including tests), generates the project-wide ScalaDoc documentation and publishes the project to your local ivy directory.
@@ -59,9 +59,9 @@ You are ready to go.
 
 When you encounter problems to build OPAL, please consider the following options.
 
- - Windows users have to adapt the __global__ sbt options such that it does work with UTF-8. To achieve this you have to add the JVM parameter `-Dfile.encoding=UTF8` to the sbt's _sbtopts_ and _sbtconfig.txt_ file that is located in the sbt installation directory.
- - The OPAL developer tools subproject depends on JavaFX and therefore, if you want to build everything, the JavaFX libraries need to be on the class path. This is always the case when you use the Oracle JDK. If you want to use the OpenJDK you have to configure this manually!
- - To increase the heap size on Windows (using sbt 0.13.15) it is necessary to set the `-mem` option in the the sbtopts file in, e.g., `C:/Program Files (x86)/sbt/conf`. For example, `-mem 3072` is generally sufficient for executing `sbt test`. For running the integration test suite (`sbt it:test`) 6GB are recommended. If you prefer not to set the memory limit globally, you can create a file `.jvmopts` in OPAL's root directory containing a respective JVM parameter, e.g., "-Xmx3072M". (Note, that the default sbt executable doesn't support the `-mem` option directly.)
+ - Ensure that the correct file encoding is used by your editor/sbt/... All files use UTF-8 
+   enconding. (This is in particular relevant when you are using Windows.)
+ - Increase the heap size; to build an run all tests you should give sbt at least 12GB.
 
 ## Using OPAL
 To get started, go to the webpage of the project [The OPAL Project](http://www.opal-project.de) and go to *Articles and Tutorials*. Additionally, the code in the `Demos` project contain a very large number of short(er) examples that demonstrate how to solve commonly recurring tasks and most examples can directly be executed.

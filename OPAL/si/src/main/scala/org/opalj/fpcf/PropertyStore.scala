@@ -217,10 +217,6 @@ abstract class PropertyStore {
 
     final val traceSuppressedNotifications: Boolean = PropertyStore.TraceSuppressedNotifications // TODO Rename to "TraceSuppressedNotifications"
 
-    def supportsFastTrackPropertyComputations: Boolean
-
-    @volatile var useFastTrackPropertyComputations: Boolean = true
-
     /**
      * Returns a consistent snapshot of the stored properties.
      *
@@ -250,14 +246,6 @@ abstract class PropertyStore {
     /** The number of times the property store reached quiescence. */
     def quiescenceCount: Int
 
-    /** The number of properties that were successfully computed using a fast-track. */
-    def fastTrackPropertiesCount: Int
-    private[fpcf] def incrementFastTrackPropertiesCounter(): Unit
-
-    /** The number of fast-track property computations that were execute. */
-    def fastTrackPropertyComputationsCount: Int
-    private[fpcf] def incrementFastTrackPropertyComputationsCounter(): Unit
-
     /**
      * The number of times a fallback property was computed for an entity though an (eager)
      * analysis was actually scheduled.
@@ -278,10 +266,6 @@ abstract class PropertyStore {
                         scheduledTasksCount,
                     "scheduled on update computations" ->
                         scheduledOnUpdateComputationsCount,
-                    "fast-track properties" ->
-                        fastTrackPropertiesCount,
-                    "fast-track property computations" ->
-                        fastTrackPropertyComputationsCount,
                     "computations of fallback properties for computed properties" ->
                         fallbacksUsedForComputedPropertiesCount
                 )
@@ -298,6 +282,8 @@ abstract class PropertyStore {
     // CORE FUNCTIONALITY
     //
     //
+
+    def MaxEvaluationDepth: Int
 
     /**
      * If a property is queried for which we have no value, then this information is used

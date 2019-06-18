@@ -161,7 +161,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         returnResult(calls)(state)
     }
 
-    protected final def returnResult(
+    protected[this] def returnResult(
         calleesAndCallers: DirectCalls
     )(implicit state: State): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.method)

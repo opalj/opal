@@ -47,7 +47,6 @@ sealed abstract class PropertyStoreTest(
 
                 ps.quiescenceCount should be(0)
                 ps.scheduledTasksCount should be(0)
-                ps.fastTrackPropertiesCount should be(0)
                 ps.scheduledOnUpdateComputationsCount should be(0)
                 ps.isKnown("<DOES NOT EXIST>") should be(false)
                 ps.hasProperty("<DOES NOT EXIST>", Palindrome) should be(false)
@@ -71,7 +70,6 @@ sealed abstract class PropertyStoreTest(
 
                 ps.quiescenceCount should be(1)
                 ps.scheduledTasksCount should be(0)
-                ps.fastTrackPropertiesCount should be(0)
                 ps.scheduledOnUpdateComputationsCount should be(0)
                 ps.isKnown("<DOES NOT EXIST>") should be(false)
                 ps.hasProperty("<DOES NOT EXIST>", Palindrome) should be(false)
@@ -473,7 +471,12 @@ sealed abstract class PropertyStoreTest(
                         Result(e, p)
                     }
                 )
-                ps("aba", pk) should be(EPK("aba", pk))
+
+                if (ps.MaxEvaluationDepth == 0)
+                    ps("aba", pk) should be(EPK("aba", pk))
+                else
+                    ps("aba", pk) should be(FinalEP("aba", Palindrome))
+
                 ps.waitOnPhaseCompletion()
                 ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
 
@@ -498,9 +501,13 @@ sealed abstract class PropertyStoreTest(
                         Result(e, p)
                     }
                 )
-                ps("aba", pk) should be(EPK("aba", pk))
-                ps("aba", pk) // just trigger it again...
-                ps("aba", pk) // just trigger it again...
+                if (ps.MaxEvaluationDepth == 0) {
+                    ps("aba", pk) should be(EPK("aba", pk))
+                    ps("aba", pk) // just trigger it again...
+                    ps("aba", pk) // just trigger it again...
+                } else {
+                    ps("aba", pk) should be(FinalEP("aba", Palindrome))
+                }
 
                 ps.waitOnPhaseCompletion()
                 ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
@@ -512,97 +519,101 @@ sealed abstract class PropertyStoreTest(
                 ps.shutdown()
             }
 
-            it("should complete the computation of dependent lazy computations before the phase ends") {
+            {
                 val ps = createPropertyStore()
-                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+                if (ps.MaxEvaluationDepth == 0) {
+                    it("should complete the computation of dependent lazy computations before the phase ends") {
 
-                ps.set("dummyymmud", Palindrome)
-                ps.set("dummyBADymmud", NoPalindrome)
-                ps.set("dummyymmud", SuperPalindrome)
-                ps.set("dummyBADymmud", NoSuperPalindrome)
+                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey), Set.empty)
+                        ps.set("dummyymmud", Palindrome)
+                        ps.set("dummyBADymmud", NoPalindrome)
+                        ps.set("dummyymmud", SuperPalindrome)
+                        ps.set("dummyBADymmud", NoSuperPalindrome)
 
-                val invocationCount = new AtomicInteger(0)
-                ps.registerLazyPropertyComputation(
-                    PalindromeKey,
-                    (e: Entity) ⇒ {
-                        invocationCount.incrementAndGet()
-                        val p = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
-                        Result(e, p)
-                    }
-                )
-                ps.registerLazyPropertyComputation(
-                    SuperPalindromeKey,
-                    (e: Entity) ⇒ {
-                        invocationCount.incrementAndGet()
+                        ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey), Set.empty)
 
-                        val initiallyExpectedEP = EPK(e, PalindromeKey)
-                        ps(e, PalindromeKey) should be(initiallyExpectedEP)
-
-                        InterimResult(
-                            e, NoSuperPalindrome, SuperPalindrome,
-                            Seq(initiallyExpectedEP),
-                            eps ⇒ {
-                                if (eps.lb == Palindrome /*&& ...*/ )
-                                    Result(e, SuperPalindrome)
-                                else
-                                    Result(e, NoSuperPalindrome)
-                            },
-                            pch
+                        val invocationCount = new AtomicInteger(0)
+                        ps.registerLazyPropertyComputation(
+                            PalindromeKey,
+                            (e: Entity) ⇒ {
+                                invocationCount.incrementAndGet()
+                                val p = if (e.toString.reverse == e.toString) Palindrome else NoPalindrome
+                                Result(e, p)
+                            }
                         )
-                    }
-                )
-                ps.scheduleEagerComputationForEntity("e") { e: String ⇒
-                    val initiallyExpectedEP = EPK("e", SuperPalindromeKey)
-                    ps("e", SuperPalindromeKey) should be(initiallyExpectedEP)
-                    InterimResult(
-                        "e", Marker.NotMarked, Marker.IsMarked,
-                        Seq(initiallyExpectedEP),
-                        eps ⇒ {
-                            // Depending on the scheduling, we can have a final result here as well.
-                            if (eps.isFinal) {
-                                if (eps.lb == SuperPalindrome)
-                                    Result(e, Marker.IsMarked)
-                                else
-                                    Result(e, Marker.NotMarked)
-                            } else
-                                InterimResult(
-                                    "e", Marker.NotMarked, Marker.IsMarked,
-                                    Seq(eps),
-                                    eps ⇒ {
-                                        if (!eps.isFinal)
-                                            fail("unexpected non final value")
+                        ps.registerLazyPropertyComputation(
+                            SuperPalindromeKey,
+                            (e: Entity) ⇒ {
+                                invocationCount.incrementAndGet()
 
+                                val initiallyExpectedEP = EPK(e, PalindromeKey)
+                                ps(e, PalindromeKey) should be(initiallyExpectedEP)
+
+                                InterimResult(
+                                    e, NoSuperPalindrome, SuperPalindrome,
+                                    Seq(initiallyExpectedEP),
+                                    eps ⇒ {
+                                        if (eps.lb == Palindrome /*&& ...*/ )
+                                            Result(e, SuperPalindrome)
+                                        else
+                                            Result(e, NoSuperPalindrome)
+                                    },
+                                    pch
+                                )
+                            }
+                        )
+                        ps.scheduleEagerComputationForEntity("e") { e: String ⇒
+                            val initiallyExpectedEP = EPK("e", SuperPalindromeKey)
+                            ps("e", SuperPalindromeKey) should be(initiallyExpectedEP)
+                            InterimResult(
+                                "e", Marker.NotMarked, Marker.IsMarked,
+                                Seq(initiallyExpectedEP),
+                                eps ⇒ {
+                                    // Depending on the scheduling, we can have a final result here as well.
+                                    if (eps.isFinal) {
                                         if (eps.lb == SuperPalindrome)
                                             Result(e, Marker.IsMarked)
                                         else
                                             Result(e, Marker.NotMarked)
-                                    },
-                                    pch
-                                )
+                                    } else
+                                        InterimResult(
+                                            "e", Marker.NotMarked, Marker.IsMarked,
+                                            Seq(eps),
+                                            eps ⇒ {
+                                                if (!eps.isFinal)
+                                                    fail("unexpected non final value")
+
+                                                if (eps.lb == SuperPalindrome)
+                                                    Result(e, Marker.IsMarked)
+                                                else
+                                                    Result(e, Marker.NotMarked)
+                                            },
+                                            pch
+                                        )
+                                }
+                            )
                         }
-                    )
+                        ps.waitOnPhaseCompletion()
+
+                        ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
+
+                        ps("e", PalindromeKey) should be(FinalEP("e", Palindrome))
+                        ps("e", SuperPalindromeKey) should be(FinalEP("e", SuperPalindrome))
+                        ps("e", Marker.Key) should be(FinalEP("e", Marker.IsMarked))
+
+                        ps("dummyymmud", PalindromeKey) should be(FinalEP("dummyymmud", Palindrome))
+                        ps("dummyBADymmud", PalindromeKey) should be(FinalEP("dummyBADymmud", NoPalindrome))
+
+                        ps("dummyymmud", SuperPalindromeKey) should be(
+                            FinalEP("dummyymmud", SuperPalindrome)
+                        )
+                        ps("dummyBADymmud", SuperPalindromeKey) should be(
+                            FinalEP("dummyBADymmud", NoSuperPalindrome)
+                        )
+                    }
+                    ps.shutdown()
                 }
-                ps.waitOnPhaseCompletion()
-
-                ps.setupPhase(Set.empty, Set.empty) // <= not strictly required, but a best practice
-
-                ps("e", PalindromeKey) should be(FinalEP("e", Palindrome))
-                ps("e", SuperPalindromeKey) should be(FinalEP("e", SuperPalindrome))
-                ps("e", Marker.Key) should be(FinalEP("e", Marker.IsMarked))
-
-                ps("dummyymmud", PalindromeKey) should be(FinalEP("dummyymmud", Palindrome))
-                ps("dummyBADymmud", PalindromeKey) should be(FinalEP("dummyBADymmud", NoPalindrome))
-
-                ps("dummyymmud", SuperPalindromeKey) should be(
-                    FinalEP("dummyymmud", SuperPalindrome)
-                )
-                ps("dummyBADymmud", SuperPalindromeKey) should be(
-                    FinalEP("dummyBADymmud", NoSuperPalindrome)
-                )
-
-                ps.shutdown()
             }
 
             it("should correctly handle PartialResults") {
@@ -717,44 +728,6 @@ sealed abstract class PropertyStoreTest(
                     processedStrings.keySet should be(Set("aNOa", "aBa"))
                     ps.shutdown()
                 }
-
-            describe("support for fast track properties") {
-
-                it("should correctly handle lazy computations that support fast track properties") {
-                    val ps = createPropertyStore()
-                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
-
-                    if (ps.supportsFastTrackPropertyComputations) {
-
-                        ps.useFastTrackPropertyComputations = true
-                        assert(ps.useFastTrackPropertyComputations)
-
-                        import org.opalj.fpcf.fixtures.MarkerWithFastTrack._
-                        ps.setupPhase(Set(MarkerWithFastTrackKey), Set.empty)
-
-                        val entities = (1 to 50).map(i ⇒ "e"+i)
-                        // basically, we should ALWAYS get the result of the fast-track computation..
-                        ps.registerLazyPropertyComputation(
-                            MarkerWithFastTrackKey,
-                            (e: Entity) ⇒ {
-                                entities.filter(_ != e).foreach(ps.apply(_, MarkerWithFastTrackKey))
-                                Result(e, NotMarked)
-                            }
-                        )
-                        entities foreach { ps.force(_, MarkerWithFastTrackKey) }
-
-                        ps.waitOnPhaseCompletion()
-                        ps.setupPhase(Set.empty, Set.empty)
-
-                        entities foreach { e ⇒
-                            ps(e, MarkerWithFastTrackKey) should be(FinalEP(e, IsMarked))
-                        }
-                        MarkerWithFastTrack.fastTrackEvaluationsCount(ps) should be(50)
-                    }
-
-                    ps.shutdown()
-                }
-            }
 
             describe("handling of computations with multiple updates") {
 
@@ -1481,8 +1454,7 @@ sealed abstract class PropertyStoreTest(
                 val TreeLevelKey: PropertyKey[TreeLevel] = {
                     PropertyKey.create(
                         s"TreeLevel(t=${System.nanoTime()}",
-                        (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ ???,
-                        (ps: PropertyStore, e: Entity) ⇒ None
+                        (ps: PropertyStore, reason: FallbackReason, e: Entity) ⇒ ???
                     )
                 }
                 case class TreeLevel(length: Int) extends Property {
@@ -1621,7 +1593,7 @@ sealed abstract class PropertyStoreTest(
             it("should be possible to execute an analysis which analyzes a huge circle to compute the upper bound only") {
                 import scala.collection.mutable
 
-                val testSizes = Set(1, 5, 50)
+                val testSizes = Set(1, 5, 50, 1000)
                 for (testSize ← testSizes) {
                     // 1. we create a ((very) long) chain
                     val firstNode = Node(0.toString)
@@ -1738,207 +1710,220 @@ abstract class PropertyStoreTestWithDebugging(
             }
 
             it("should catch non-monotonic updates related to the lower bound") {
-                assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
-
-                var count = 0
-                val nodeA = Node("a")
-                val nodeB = Node("b")
-                val nodeC = Node("c")
-                val nodeD = Node("d")
-
                 val ps = createPropertyStore()
-                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+                if (ps.MaxEvaluationDepth == 0) {
 
-                ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+                    assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
 
-                def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
-                    n match {
+                    var count = 0
+                    val nodeA = Node("a")
+                    val nodeB = Node("b")
+                    val nodeC = Node("c")
+                    val nodeD = Node("d")
+
+                    info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+
+                    ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+
+                    def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
+                        n match {
+                            case `nodeA` ⇒
+                                Result(nodeA, ReachableNodesCount(50))
+                            case `nodeB` ⇒
+                                InterimResult(
+                                    n,
+                                    ReachableNodesCount(100), // <= invalid refinement of lower bound!
+                                    ReachableNodesCount(count),
+                                    List(ps(nodeD, ReachableNodesCount.Key)),
+                                    c(nodeB), pch
+                                )
+                        }
+                    }
+
+                    def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
                         case `nodeA` ⇒
-                            Result(nodeA, ReachableNodesCount(50))
-                        case `nodeB` ⇒
+                            val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
                             InterimResult(
-                                n,
-                                ReachableNodesCount(100), // <= invalid refinement of lower bound!
-                                ReachableNodesCount(count),
-                                List(ps(nodeD, ReachableNodesCount.Key)),
+                                nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
+                                List(bEOptionP),
+                                c(nodeA), pch
+                            )
+
+                        case `nodeB` ⇒
+                            val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
+                            count += 1
+                            InterimResult(
+                                n, ReachableNodesCount(100 - count), ReachableNodesCount(count),
+                                List(cEOptionP),
                                 c(nodeB), pch
                             )
+
+                        case `nodeC` ⇒
+                            new Result(nodeC, ReachableNodesCount(0))
+
+                        case `nodeD` ⇒
+                            new Result(nodeD, ReachableNodesCount(0))
                     }
+
+                    ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
+                    try {
+                        ps.force(nodeA, ReachableNodesCount.Key)
+                        ps.waitOnPhaseCompletion()
+                        fail("invalid update not detected")
+                    } catch {
+                        case iae: IllegalArgumentException if iae.getMessage.contains("illegal update") ⇒
+                        // OK - EXPECTED
+                        case e: Throwable ⇒
+                            e.printStackTrace()
+                            fail(e.getMessage)
+                    }
+
                 }
-
-                def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
-                    case `nodeA` ⇒
-                        val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        InterimResult(
-                            nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
-                            List(bEOptionP),
-                            c(nodeA), pch
-                        )
-
-                    case `nodeB` ⇒
-                        val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
-                        count += 1
-                        InterimResult(
-                            n, ReachableNodesCount(100 - count), ReachableNodesCount(count),
-                            List(cEOptionP),
-                            c(nodeB), pch
-                        )
-
-                    case `nodeC` ⇒
-                        new Result(nodeC, ReachableNodesCount(0))
-
-                    case `nodeD` ⇒
-                        new Result(nodeD, ReachableNodesCount(0))
-                }
-
-                ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
-                try {
-                    ps.force(nodeA, ReachableNodesCount.Key)
-                    ps.waitOnPhaseCompletion()
-                    fail("invalid update not detected")
-                } catch {
-                    case iae: IllegalArgumentException if iae.getMessage.contains("illegal update") ⇒
-                    // OK - EXPECTED
-                    case e: Throwable ⇒
-                        e.printStackTrace()
-                        fail(e.getMessage)
-                }
-
                 ps.shutdown()
             }
 
             it("should catch non-monotonic updates related to the upper bound") {
-                assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
-
-                var count = 0
-                val nodeA = Node("a")
-                val nodeB = Node("b")
-                val nodeC = Node("c")
-                val nodeD = Node("d")
-
                 val ps = createPropertyStore()
-                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+                if (ps.MaxEvaluationDepth == 0) {
 
-                ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+                    assert(PropertyStore.Debug, "debugging is turned off")
 
-                def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
-                    n match {
+                    var count = 0
+                    val nodeA = Node("a")
+                    val nodeB = Node("b")
+                    val nodeC = Node("c")
+                    val nodeD = Node("d")
+
+                    info(
+                        s"PropertyStore(MaxEvaluationDepth=${ps.MaxEvaluationDepth})"+
+                            s"@${System.identityHashCode(ps).toHexString}"
+                    )
+
+                    ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+
+                    def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
+                        n match {
+                            case `nodeA` ⇒
+                                Result(nodeA, ReachableNodesCount(50))
+                            case `nodeB` ⇒
+                                InterimResult(
+                                    n,
+                                    ReachableNodesCount(100 - count),
+                                    ReachableNodesCount(0), // <= invalid refinement of upper bound!
+                                    List(ps(nodeD, ReachableNodesCount.Key)),
+                                    c(nodeB), pch
+                                )
+                        }
+                    }
+
+                    def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
                         case `nodeA` ⇒
-                            Result(nodeA, ReachableNodesCount(50))
-                        case `nodeB` ⇒
+                            val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
                             InterimResult(
-                                n,
-                                ReachableNodesCount(100 - count),
-                                ReachableNodesCount(0), // <= invalid refinement of upper bound!
-                                List(ps(nodeD, ReachableNodesCount.Key)),
+                                nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
+                                List(bEOptionP),
+                                c(nodeA), pch
+                            )
+
+                        case `nodeB` ⇒
+                            val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
+                            count += 1
+                            InterimResult(
+                                n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
+                                List(cEOptionP),
                                 c(nodeB), pch
                             )
+
+                        case `nodeC` ⇒ new Result(nodeC, ReachableNodesCount(0))
+
+                        case `nodeD` ⇒ new Result(nodeD, ReachableNodesCount(0))
                     }
+
+                    ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
+                    try {
+                        ps.force(nodeA, ReachableNodesCount.Key)
+                        ps.waitOnPhaseCompletion()
+                        fail("invalid update not detected")
+                    } catch {
+                        case iae: IllegalArgumentException if iae.getMessage.contains("illegal update") ⇒
+                        // OK - EXPECTED
+                        case e: Throwable ⇒
+                            e.printStackTrace()
+                            fail(e.getMessage)
+                    }
+
                 }
-
-                def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
-                    case `nodeA` ⇒
-                        val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        InterimResult(
-                            nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
-                            List(bEOptionP),
-                            c(nodeA), pch
-                        )
-
-                    case `nodeB` ⇒
-                        val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
-                        count += 1
-                        InterimResult(
-                            n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
-                            List(cEOptionP),
-                            c(nodeB), pch
-                        )
-
-                    case `nodeC` ⇒ new Result(nodeC, ReachableNodesCount(0))
-
-                    case `nodeD` ⇒ new Result(nodeD, ReachableNodesCount(0))
-                }
-
-                ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
-                try {
-                    ps.force(nodeA, ReachableNodesCount.Key)
-                    ps.waitOnPhaseCompletion()
-                    fail("invalid update not detected")
-                } catch {
-                    case iae: IllegalArgumentException if iae.getMessage.contains("illegal update") ⇒
-                    // OK - EXPECTED
-                    case e: Throwable ⇒
-                        e.printStackTrace()
-                        fail(e.getMessage)
-                }
-
                 ps.shutdown()
             }
 
-            it("should catch updates when the upper bound is lower than the lower bound") {
-                assert(PropertyStore.Debug, "debugging is turned off") // test the pre-state
-                var count = 0
-                val nodeA = Node("a")
-                val nodeB = Node("b")
-                val nodeC = Node("c")
-                val nodeD = Node("d")
-
+            {
                 val ps = createPropertyStore()
-                info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
+                if (ps.MaxEvaluationDepth == 0) {
+                    it("should catch updates when the upper bound is lower than the lower bound") {
+                        assert(PropertyStore.Debug, "debugging is turned off")
+                        var count = 0
+                        val nodeA = Node("a")
+                        val nodeB = Node("b")
+                        val nodeC = Node("c")
+                        val nodeD = Node("d")
 
-                ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+                        info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
-                def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
-                    n match {
-                        case `nodeA` ⇒
-                            new Result(nodeA, ReachableNodesCount(50))
-                        case `nodeB` ⇒
-                            InterimResult(
-                                n,
-                                ReachableNodesCount(40),
-                                ReachableNodesCount(50),
-                                List(ps(nodeD, ReachableNodesCount.Key)),
-                                c(nodeB), pch
-                            )
+                        ps.setupPhase(Set(ReachableNodesCount.Key), Set.empty)
+
+                        def c(n: Node)(eOptP: SomeEOptionP): ProperPropertyComputationResult = {
+                            n match {
+                                case `nodeA` ⇒
+                                    new Result(nodeA, ReachableNodesCount(50))
+                                case `nodeB` ⇒
+                                    InterimResult(
+                                        n,
+                                        ReachableNodesCount(40),
+                                        ReachableNodesCount(50),
+                                        List(ps(nodeD, ReachableNodesCount.Key)),
+                                        c(nodeB), pch
+                                    )
+                            }
+                        }
+
+                        def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
+                            case `nodeA` ⇒
+                                val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
+                                InterimResult(
+                                    nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
+                                    List(bEOptionP),
+                                    c(nodeA), pch
+                                )
+
+                            case `nodeB` ⇒
+                                val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
+                                count += 1
+                                InterimResult(
+                                    n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
+                                    List(cEOptionP),
+                                    c(nodeB), pch
+                                )
+
+                            case `nodeC` ⇒ new Result(nodeC, ReachableNodesCount(0))
+
+                            case `nodeD` ⇒ new Result(nodeD, ReachableNodesCount(0))
+                        }
+
+                        ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
+                        try {
+                            ps.force(nodeA, ReachableNodesCount.Key)
+                            ps.waitOnPhaseCompletion()
+                            fail("invalid update not detected")
+                        } catch {
+                            case iae: IllegalArgumentException if iae.getMessage.contains("is not equal or better than") ⇒
+                            // OK - EXPECTED
+                            case e: Throwable ⇒
+                                e.printStackTrace()
+                                fail(e.getMessage)
+                        }
+
                     }
                 }
-
-                def lazyAnalysis(n: Node): ProperPropertyComputationResult = n match {
-                    case `nodeA` ⇒
-                        val bEOptionP = ps(nodeB, ReachableNodesCount.Key)
-                        InterimResult(
-                            nodeA, ReachableNodesCount(20), ReachableNodesCount(0),
-                            List(bEOptionP),
-                            c(nodeA), pch
-                        )
-
-                    case `nodeB` ⇒
-                        val cEOptionP = ps(nodeC, ReachableNodesCount.Key)
-                        count += 1
-                        InterimResult(
-                            n, ReachableNodesCount(100 - count), ReachableNodesCount(10),
-                            List(cEOptionP),
-                            c(nodeB), pch
-                        )
-
-                    case `nodeC` ⇒ new Result(nodeC, ReachableNodesCount(0))
-
-                    case `nodeD` ⇒ new Result(nodeD, ReachableNodesCount(0))
-                }
-
-                ps.registerLazyPropertyComputation(ReachableNodesCount.Key, lazyAnalysis)
-                try {
-                    ps.force(nodeA, ReachableNodesCount.Key)
-                    ps.waitOnPhaseCompletion()
-                    fail("invalid update not detected")
-                } catch {
-                    case iae: IllegalArgumentException if iae.getMessage.contains("is not equal or better than") ⇒
-                    // OK - EXPECTED
-                    case e: Throwable ⇒
-                        e.printStackTrace()
-                        fail(e.getMessage)
-                }
-
                 ps.shutdown()
             }
         }

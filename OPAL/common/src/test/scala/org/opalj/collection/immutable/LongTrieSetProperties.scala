@@ -12,6 +12,8 @@ import org.scalacheck.Arbitrary
 import org.scalatest.Matchers
 import org.scalatest.FunSpec
 
+import org.opalj.util.PerformanceEvaluation
+
 /**
  * Tests `LongTrieSet` by creating a standard Scala Set and comparing
  * the results of the respective functions.
@@ -89,16 +91,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         val its = s.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _.toLong)
         (its.size == s.size) :| "matching size" &&
             (its eq (s.foldLeft(its)(_ + _.toLong)))
-    }
-
-    property("create LongTrieSet from Set[Long] (TraversableOnce) using ++") = forAll { s: Set[Long] ⇒
-        val its = EmptyLongTrieSet ++ s
-        (its.size == s.size) :| "matching size" &&
-            (its.isEmpty == s.isEmpty) &&
-            (its.nonEmpty == s.nonEmpty) &&
-            (its.hasMultipleElements == (s.size > 1)) &&
-            (its.isSingletonSet == (s.size == 1)) &&
-            (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
 
     property("create LongTrieSet from List (i.e., with duplicates)") = forAll { l: List[Long] ⇒
@@ -318,21 +310,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         its.filter(i ⇒ false) eq EmptyLongTrieSet
     }
 
-    property("withFilter") = forAll { ss: (IntArraySet, IntArraySet) ⇒
-        val (s1: IntArraySet, s2: IntArraySet) = ss
-        val its1 = s1.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val its2 = s2.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        var evaluated = false
-        val newits = its1.withFilter(i ⇒ { evaluated = true; !its2.contains(i) })
-        val news = s1.withFilter(!s2.contains(_))
-        !evaluated :| "not eagerly evaluated" &&
-            news.forall(i ⇒ newits.exists(newi ⇒ newi == i)) :| "exists check" &&
-            (news.forall(i ⇒ newits.contains(i.toLong)) && newits.forall(l ⇒ news.contains(l.toInt))) :| "contains check" &&
-            news.forall(i ⇒ newits.iterator.contains(i.toLong)) :| s"iterator.contains $news vs. $newits" &&
-            newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "iterator.forall" &&
-            news.forall(i ⇒ newits.iterator.contains(i.toLong)) && newits.iterator.forall(l ⇒ news.contains(l.toInt)) :| "LongIterator"
-    }
-
 }
 
 @RunWith(classOf[JUnitRunner])
@@ -488,7 +465,8 @@ class LongTrieSetTest extends FunSpec with Matchers {
             assert(!s8a.subsetOf(s8b))
             assert(!s8b.subsetOf(s8a))
 
-            val s18 = LongTrieSet.empty ++ List[Long](-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533, -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
+            val l = List[Long](-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533, -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
+            val s18 = l.foldLeft(LongTrieSet.empty)(_ + _)
             val s18_plus_m1 = s18 + (-1L)
             assert(s18.subsetOf(s18_plus_m1), s"$s18 expected to be subset of $s18_plus_m1")
 
@@ -612,29 +590,6 @@ class LongTrieSetTest extends FunSpec with Matchers {
             assert(s3.contains(65536))
             assert(!s3.contains(131072))
         }
-
-        it("it should be possible to lazily filter the values step by step") {
-            val s1 = s.withFilter(_ != 8192)
-            assert(!s1.contains(8192))
-            assert(s1.contains(16384))
-            assert(s1.contains(32768))
-            assert(s1.contains(65536))
-            assert(s1.contains(131072))
-
-            val s2 = s1.withFilter(_ != 32768)
-            assert(!s2.contains(8192))
-            assert(s2.contains(16384))
-            assert(!s2.contains(32768))
-            assert(s2.contains(65536))
-            assert(s2.contains(131072))
-
-            val s3 = s2.withFilter(_ != 131072)
-            assert(!s3.contains(8192))
-            assert(s3.contains(16384))
-            assert(!s3.contains(32768))
-            assert(s3.contains(65536))
-            assert(!s3.contains(131072))
-        }
     }
 
     describe("filtering a LongTrieSet where the values share a very long prefix path") {
@@ -684,6 +639,102 @@ class LongTrieSetTest extends FunSpec with Matchers {
             val its1ItSet = its1.iterator.toSet
             val its2ItSet = its2.iterator.toSet
             assert(its1ItSet.subsetOf(its2ItSet))
+        }
+    }
+
+    describe("performance") {
+
+        it("for small sets (up to 6 elements) creation and contains check should finish in reasonable time (all values are positive)") {
+            var sizeOfAllSets: Int = 0
+            var largestSet: Int = 0
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+            val rngQuery = new java.util.Random(seed)
+            // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
+            for { i ← 1 to 3 } rngGen.nextLong();
+            val setValues = (for { i ← 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i ← 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
+
+            PerformanceEvaluation.time {
+                for { runs ← 0 until 10000000 } {
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
+                    var hits = 0
+                    for { i ← 0 until rngGen.nextInt(7) } {
+                        s += setValues(i)
+                        if (s.contains(queryValues(i))) hits += 1
+                    }
+                    largestSet = Math.max(largestSet, s.size)
+                    sizeOfAllSets += s.size
+                }
+            } { t ⇒ info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+        }
+
+        it("for small sets (up to 24 elements) creation and contains check should finish in reasonable time (all values are positive)") {
+            var sizeOfAllSets: Int = 0
+            var largestSet: Int = 0
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+            val rngQuery = new java.util.Random(seed)
+            // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
+            for { i ← 1 to 16 } rngGen.nextLong();
+            val setValues = (for { i ← 1 to 10000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i ← 1 to 10000 } yield Math.abs(rngQuery.nextLong())).toArray
+
+            PerformanceEvaluation.time {
+                for { runs ← 0 until 1000000 } {
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
+                    var hits = 0
+                    for { i ← 0 until rngGen.nextInt(25) } {
+                        s += setValues(i)
+                        if (s.contains(queryValues(i))) hits += 1
+                    }
+                    largestSet = Math.max(largestSet, s.size)
+                    sizeOfAllSets += s.size
+                }
+            } { t ⇒ info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+        }
+
+        it("for sets with up to 10000 elements creation and contains check should finish in reasonable time") {
+            var sizeOfAllSets: Int = 0
+            var largestSet: Int = 0
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+            val rngQuery = new java.util.Random(seed)
+            // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
+            for { i ← 1 to 3333 } rngGen.nextLong();
+            val setValues = (for { i ← 1 to 10000 } yield rngGen.nextLong()).toArray
+            val queryValues = (for { i ← 1 to 10000 } yield rngQuery.nextLong()).toArray
+
+            PerformanceEvaluation.time {
+                for { runs ← 0 until 10000 } {
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
+                    var hits = 0
+                    for { i ← 1 to runs } {
+                        s += setValues(i)
+                        if (s.contains(queryValues(i))) hits += 1
+                    }
+                    largestSet = Math.max(largestSet, s.size)
+                    sizeOfAllSets += s.size
+                }
+            } { t ⇒ info(s"${t.toSeconds} to create 10_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+        }
+
+        it("memory usage") {
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+
+            val allSets = PerformanceEvaluation.memory {
+                for {
+                    set ← 0 until 2500
+                } yield {
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
+                    for { i ← 0 until 10000 } {
+                        s += rngGen.nextLong()
+                    }
+                    s
+                }
+            } { mu ⇒ info(s"required $mu bytes for 1000 sets with ~10000 elements each") }
+            info(s"overall size: ${allSets.map(_.size).sum}")
         }
     }
 }
