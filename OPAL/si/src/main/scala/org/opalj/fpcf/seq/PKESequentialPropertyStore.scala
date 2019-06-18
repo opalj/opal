@@ -366,8 +366,8 @@ final class PKESequentialPropertyStore protected (
             val theDependers = dependers(pkId).get(e)
             theDependers.foreach { dependersOfEPK ⇒
                 dependersOfEPK foreach { cHint ⇒
-                    val (dependerEPK, (c, hint)) = cHint
-                    if (hint == CheapPropertyComputation) println("hint not used")
+                    val (dependerEPK, (c, _hint)) = cHint
+                    // IMPROVE Give the PropertyComputationHint a (new) meaningful semantics
                     if (isFinal || !suppressInterimUpdates(dependerEPK.pk.id)(pkId)) {
                         val t: QualifiedTask =
                             if (isFinal) {
@@ -444,12 +444,14 @@ final class PKESequentialPropertyStore protected (
             continue = false
 
             handlePartialResults(nextPartialResults) // this may have triggered some computations...
+
             nextProcessedDependees exists { processedDependee ⇒
                 val processedDependeeE = processedDependee.e
                 val processedDependeePK = processedDependee.pk
                 val processedDependeePKId = processedDependeePK.id
                 val currentDependee = ps(processedDependeePKId)(processedDependeeE)
                 if (currentDependee.isUpdatedComparedTo(processedDependee)) {
+
                     def handleOtherResult(result: PropertyComputationResult): Unit = {
                         // this shouldn't happen... too often
                         scheduledOnUpdateComputationsCounter += 1
@@ -462,6 +464,7 @@ final class PKESequentialPropertyStore protected (
                     }
                     // There were updates...
                     nextC(currentDependee.asEPS) match {
+
                         case InterimPartialResult(newPartialResults, newProcessedDependees, newC) ⇒
                             nextPartialResults = newPartialResults
                             nextProcessedDependees = newProcessedDependees
@@ -479,6 +482,19 @@ final class PKESequentialPropertyStore protected (
                                         nextC = newC
                                         continue = true
 
+                                    /*case InterimResult(newEPS @ SomeEPS(`e`, `pk`), newDependees, newC, _) ⇒
+                                        nextEPS = newEPS
+                                        nextC = newC
+                                        nextDependees = newDependees
+                                        continue = true*/
+
+                                    case r: Result ⇒
+                                        update(r.finalEP, Nil)
+                                        if (!continue) {
+                                            nextProcessedDependees = null
+                                            nextC = null
+                                        }
+
                                     case PartialResult(e, pk, u) ⇒
                                         handlePartialResult(e, pk, u)
 
@@ -487,7 +503,8 @@ final class PKESequentialPropertyStore protected (
                                 }
                             }
 
-                        case result ⇒ handleOtherResult(result)
+                        case result ⇒
+                            handleOtherResult(result)
                     }
                     true
                 } else {
