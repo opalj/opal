@@ -25,7 +25,6 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.fpcf.UBPS
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.ValueInformation
@@ -71,142 +70,6 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         doProcessMethod(new PointsToAnalysisState[PointsToSet](definedMethod, tacEP))
-    }
-
-    def continuationForCallees(
-        oldCalleeEOptP: EOptionP[DeclaredMethod, Callees],
-        state:          State
-    )(eps: SomeEPS): ProperPropertyComputationResult = {
-        eps match {
-            case UBP(newCallees: Callees) ⇒
-                val tac = state.tac
-                val oldCallees = if (oldCalleeEOptP.hasUBP) oldCalleeEOptP.ub else NoCallees
-                for {
-                    (pc, targets) ← newCallees.directCallSites()
-                    target ← targets
-                } {
-                    if (!oldCallees.containsDirectCall(pc, target)) {
-                        val call = tac.stmts(tac.pcToIndex(pc)) match {
-                            case call: Call[DUVar[ValueInformation]] @unchecked ⇒
-                                call
-                            case Assignment(_, _, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
-                                call
-                            case ExprStmt(_, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
-                                call
-                            case e ⇒ throw new IllegalArgumentException(s"unexpected stmt $e")
-                        }
-                        handleDirectCall(call, pc, target)(state)
-                    }
-                }
-                for {
-                    (pc, targets) ← newCallees.indirectCallSites()
-                    target ← targets
-                } {
-                    if (!oldCallees.containsIndirectCall(pc, target)) {
-                        handleIndirectCall(pc, target, newCallees, tac)(state)
-                    }
-                }
-
-                state.setCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
-
-                returnResult(state)
-            case _ ⇒ throw new IllegalArgumentException(s"unexpected eps $eps")
-        }
-    }
-
-    // maps the points-to set of actual parameters (including *this*) the the formal parameters
-    private[this] def handleCall(
-        call: Call[DUVar[ValueInformation]], pc: Int
-    )(implicit state: State): Unit = {
-        val tac = state.tac
-        val callees: Callees = state.callees(ps)
-
-        for (target ← callees.directCallees(pc)) {
-            handleDirectCall(call, pc, target)
-        }
-
-        // todo: reduce code duplication
-        for (target ← callees.indirectCallees(pc)) {
-            handleIndirectCall(pc, target, callees, tac)
-        }
-    }
-
-    private def handleIndirectCall(
-        pc:      Int,
-        target:  DeclaredMethod,
-        callees: Callees,
-        tac:     TACode[TACMethodParameter, DUVar[ValueInformation]]
-    )(implicit state: State): Unit = {
-        val fps = formalParameters(target)
-
-        if (fps != null) {
-            // handle receiver for non static methods
-            val receiverOpt = callees.indirectCallReceiver(pc, target)
-            if (receiverOpt.isDefined) {
-                val fp = fps(0)
-                state.includeSharedPointsToSets(
-                    fp,
-                    currentPointsToOfDefSites(
-                        fp, valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
-                    )
-                )
-            } else {
-                // todo: distinguish between static methods and unavailable info
-            }
-
-            val indirectParams = callees.indirectCallParameters(pc, target)
-            for (i ← 0 until target.descriptor.parametersCount) {
-                val fp = fps(i + 1)
-                val indirectParam = indirectParams(i)
-                if (indirectParam.isDefined) {
-                    state.includeSharedPointsToSets(
-                        fp,
-                        currentPointsToOfDefSites(
-                            fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
-                        )
-                    )
-                } else {
-                    state.addIncompletePointsToInfo(pc)
-                }
-            }
-        } else {
-            state.addIncompletePointsToInfo(pc)
-        }
-    }
-
-    private[this] def handleDirectCall(
-        call: Call[DUVar[ValueInformation]], pc: Int, target: DeclaredMethod
-    )(implicit state: State): Unit = {
-        val receiverOpt: Option[Expr[DUVar[ValueInformation]]] = call.receiverOption
-        val fps = formalParameters(target)
-
-        if (fps != null) {
-            // handle receiver for non static methods
-            if (receiverOpt.isDefined) {
-                val fp = fps(0)
-                // IMPROVE: Here we copy all points-to entries of the receiver into the *this*
-                // of the target methods. It would be only needed to do so for the ones that led
-                // to the call.
-                state.includeSharedPointsToSets(
-                    fp, currentPointsToOfDefSites(fp, receiverOpt.get.asVar.definedBy)
-                )
-            }
-
-            // in case of signature polymorphic methods, we give up
-            if (call.params.size == target.descriptor.parametersCount) {
-                // handle params
-                for (i ← 0 until target.descriptor.parametersCount) {
-                    val fp = fps(i + 1)
-                    state.includeSharedPointsToSets(
-                        fp, currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy)
-                    )
-                }
-            } else {
-                // it is not needed to mark it as incomplete here
-            }
-        } else {
-            state.addIncompletePointsToInfo(pc)
-        }
     }
 
     private[this] def doProcessMethod(
@@ -366,6 +229,101 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
         // todo: we have to handle the exceptions that might be thrown by this method
 
         returnResult(state)
+    }
+
+    // maps the points-to set of actual parameters (including *this*) the the formal parameters
+    private[this] def handleCall(
+        call: Call[DUVar[ValueInformation]], pc: Int
+    )(implicit state: State): Unit = {
+        val tac = state.tac
+        val callees: Callees = state.callees(ps)
+
+        for (target ← callees.directCallees(pc)) {
+            handleDirectCall(call, pc, target)
+        }
+
+        // todo: reduce code duplication
+        for (target ← callees.indirectCallees(pc)) {
+            handleIndirectCall(pc, target, callees, tac)
+        }
+    }
+
+    private def handleIndirectCall(
+        pc:      Int,
+        target:  DeclaredMethod,
+        callees: Callees,
+        tac:     TACode[TACMethodParameter, DUVar[ValueInformation]]
+    )(implicit state: State): Unit = {
+        val fps = formalParameters(target)
+
+        if (fps != null) {
+            // handle receiver for non static methods
+            val receiverOpt = callees.indirectCallReceiver(pc, target)
+            if (receiverOpt.isDefined) {
+                val fp = fps(0)
+                state.includeSharedPointsToSets(
+                    fp,
+                    currentPointsToOfDefSites(
+                        fp, valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
+                    )
+                )
+            } else {
+                // todo: distinguish between static methods and unavailable info
+            }
+
+            val indirectParams = callees.indirectCallParameters(pc, target)
+            for (i ← 0 until target.descriptor.parametersCount) {
+                val fp = fps(i + 1)
+                val indirectParam = indirectParams(i)
+                if (indirectParam.isDefined) {
+                    state.includeSharedPointsToSets(
+                        fp,
+                        currentPointsToOfDefSites(
+                            fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+                        )
+                    )
+                } else {
+                    state.addIncompletePointsToInfo(pc)
+                }
+            }
+        } else {
+            state.addIncompletePointsToInfo(pc)
+        }
+    }
+
+    private[this] def handleDirectCall(
+        call: Call[DUVar[ValueInformation]], pc: Int, target: DeclaredMethod
+    )(implicit state: State): Unit = {
+        val receiverOpt: Option[Expr[DUVar[ValueInformation]]] = call.receiverOption
+        val fps = formalParameters(target)
+
+        if (fps != null) {
+            // handle receiver for non static methods
+            if (receiverOpt.isDefined) {
+                val fp = fps(0)
+                // IMPROVE: Here we copy all points-to entries of the receiver into the *this*
+                // of the target methods. It would be only needed to do so for the ones that led
+                // to the call.
+                state.includeSharedPointsToSets(
+                    fp, currentPointsToOfDefSites(fp, receiverOpt.get.asVar.definedBy)
+                )
+            }
+
+            // in case of signature polymorphic methods, we give up
+            if (call.params.size == target.descriptor.parametersCount) {
+                // handle params
+                for (i ← 0 until target.descriptor.parametersCount) {
+                    val fp = fps(i + 1)
+                    state.includeSharedPointsToSets(
+                        fp, currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy)
+                    )
+                }
+            } else {
+                // it is not needed to mark it as incomplete here
+            }
+        } else {
+            state.addIncompletePointsToInfo(pc)
+        }
     }
 
     private[this] def returnResult(state: State): ProperPropertyComputationResult = {
@@ -574,6 +532,47 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                 }
 
             case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
+        }
+    }
+
+    def continuationForCallees(
+        oldCalleeEOptP: EOptionP[DeclaredMethod, Callees],
+        state:          State
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(newCallees: Callees) ⇒
+                val tac = state.tac
+                val oldCallees = if (oldCalleeEOptP.hasUBP) oldCalleeEOptP.ub else NoCallees
+                for {
+                    (pc, targets) ← newCallees.directCallSites()
+                    target ← targets
+                } {
+                    if (!oldCallees.containsDirectCall(pc, target)) {
+                        val call = tac.stmts(tac.pcToIndex(pc)) match {
+                            case call: Call[DUVar[ValueInformation]] @unchecked ⇒
+                                call
+                            case Assignment(_, _, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
+                                call
+                            case ExprStmt(_, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
+                                call
+                            case e ⇒ throw new IllegalArgumentException(s"unexpected stmt $e")
+                        }
+                        handleDirectCall(call, pc, target)(state)
+                    }
+                }
+                for {
+                    (pc, targets) ← newCallees.indirectCallSites()
+                    target ← targets
+                } {
+                    if (!oldCallees.containsIndirectCall(pc, target)) {
+                        handleIndirectCall(pc, target, newCallees, tac)(state)
+                    }
+                }
+
+                state.setCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
+
+                returnResult(state)
+            case _ ⇒ throw new IllegalArgumentException(s"unexpected eps $eps")
         }
     }
 
