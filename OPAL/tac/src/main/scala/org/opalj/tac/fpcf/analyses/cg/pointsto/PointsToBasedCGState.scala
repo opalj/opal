@@ -43,9 +43,6 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     private[this] val _dependeeToDependers: mutable.Map[Entity, mutable.Set[CallSiteT]] = {
         mutable.Map.empty
     }
-
-    val _dependeeCount: mutable.Map[Entity, Int] = mutable.Map.empty
-
     private[this] val _dependerToDependees: mutable.Map[CallSiteT, mutable.Set[Entity]] = {
         mutable.Map.empty
     }
@@ -104,6 +101,8 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
             if (_dependeeToDependers(dependee).isEmpty) {
                 removePointsToDependee(dependee)
             }
+            assert((!_dependeeToDependers.contains(dependee) && !_pointsToDependees.contains(dependee)) ||
+                (_dependeeToDependers(dependee).nonEmpty && _pointsToDependees.contains(dependee)))
         }
 
         // now we can delete the depender
@@ -112,7 +111,20 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         }
     }
 
+    final def removeTypeForCallSite(callSite: CallSiteT, instantiatedType: ObjectType): Unit = {
+        if (!_virtualCallSites.contains(callSite))
+            assert(_virtualCallSites(callSite).contains(instantiatedType.id))
+        val typesLeft = _virtualCallSites(callSite) - instantiatedType.id
+        if (typesLeft.isEmpty) {
+            _virtualCallSites -= callSite
+            removePointsToDepender(callSite)
+        } else {
+            _virtualCallSites(callSite) = typesLeft
+        }
+    }
+
     final def hasPointsToDependee(dependee: Entity): Boolean = {
+        assert(!_dependeeToDependers.contains(dependee) || _dependeeToDependers(dependee).nonEmpty)
         _pointsToDependees.contains(dependee)
     }
 
@@ -120,9 +132,28 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
     }
 
-    final def hasPointsToDependency(depender: CallSiteT): Boolean = {
-        assert(!_dependerToDependees.contains(depender) || _dependerToDependees(depender).nonEmpty)
-        _dependerToDependees.contains(depender)
+    final def hasPointsToDependees: Boolean = {
+        assert(
+            (_pointsToDependees.isEmpty == _dependeeToDependers.isEmpty) &&
+                (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)
+        )
+        _pointsToDependees.nonEmpty
+    }
+
+    override def hasOpenDependencies: Boolean = {
+        hasPointsToDependees || super.hasOpenDependencies
+    }
+
+    override def dependees: List[SomeEOptionP] = {
+        // IMPROVE: make it more efficient (maybe use immutable map and join traversables)
+        var allDependees = super.dependees
+
+        _pointsToDependees.valuesIterator.foreach { d ⇒
+            assert(_dependeeToDependers.contains(d.e))
+            allDependees ::= d
+        }
+
+        allDependees
     }
 
     final def getPointsToProperty(dependee: Entity): EOptionP[Entity, PointsToSet] = {
@@ -135,30 +166,10 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     }
 
     // IMPROVE: In order to be thread-safe, we return an immutable copy of the set.
-    //  However, this is very inefficient!
+    // However, this is very inefficient!
+    // The size of the sets is typically 1 or 2, but there are outliers with up to 100 elements.
     final def dependersOf(dependee: Entity): Set[CallSiteT] = {
         _dependeeToDependers(dependee).toSet
-    }
-
-    final def hasPointsToDependees: Boolean = {
-        assert(
-            (_pointsToDependees.isEmpty == _dependeeToDependers.isEmpty) &&
-                (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)
-        )
-        _pointsToDependees.nonEmpty
-    }
-
-    override def dependees: List[SomeEOptionP] = {
-        // IMPROVE: make it more efficient (maybe use immutable map and join traversables)
-        var allDependees = super.dependees
-
-        _pointsToDependees.valuesIterator.foreach(d ⇒ allDependees ::= d)
-
-        allDependees
-    }
-
-    override def hasOpenDependencies: Boolean = {
-        hasPointsToDependees || super.hasOpenDependencies
     }
 
     // maps a definition site to the ids of the potential (not yet resolved) objecttypes
@@ -173,17 +184,6 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     ): Unit = {
         assert(!_virtualCallSites.contains(callSite))
         _virtualCallSites(callSite) = potentialTypes
-    }
-
-    def removeTypeForCallSite(callSite: CallSiteT, instantiatedType: ObjectType): Unit = {
-        assert(_virtualCallSites(callSite).contains(instantiatedType.id))
-        val typesLeft = _virtualCallSites(callSite) - instantiatedType.id
-        if (typesLeft.isEmpty) {
-            _virtualCallSites -= callSite
-            removePointsToDepender(callSite)
-        } else {
-            _virtualCallSites(callSite) = typesLeft
-        }
     }
 
     override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty
