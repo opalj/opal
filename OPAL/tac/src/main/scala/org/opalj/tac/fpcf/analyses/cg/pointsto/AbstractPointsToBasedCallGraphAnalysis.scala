@@ -45,8 +45,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
-        extends AbstractCallGraphAnalysis
-        with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
+    extends AbstractCallGraphAnalysis
+    with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
