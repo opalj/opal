@@ -469,9 +469,11 @@ final class PKESequentialPropertyStore protected (
                             continue = true
 
                         case Results(results) ⇒
+                            var interimPartialResultsCount = 0
                             results.foreach { result ⇒
                                 result match {
-                                    case InterimPartialResult(newPartialResults, newProcessedDependees, newC) ⇒
+                                    case InterimPartialResult(newPartialResults, newProcessedDependees, newC) if interimPartialResultsCount == 0 ⇒
+                                        interimPartialResultsCount += 1
                                         nextPartialResults = newPartialResults
                                         nextProcessedDependees = newProcessedDependees
                                         nextC = newC
