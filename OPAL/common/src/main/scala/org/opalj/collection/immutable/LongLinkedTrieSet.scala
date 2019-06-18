@@ -573,6 +573,8 @@ final private[immutable] class LongLinkedTrieSetN4(
 
 object LargeLongLinkedTrieSet {
     final val InitialBucketsCount = 16
+
+    def initialBucketsCount: Int = InitialBucketsCount
 }
 
 private[immutable] class LargeLongLinkedTrieSet(
@@ -585,7 +587,7 @@ private[immutable] class LargeLongLinkedTrieSet(
     final override def isSingletonSet: Boolean = size == 1
 
     final override def contains(v: Long): Boolean = {
-      val tries = this.tries
+        val tries = this.tries
         val trie = tries(Math.abs(JLong.hashCode(v)) % tries.length)
         if (trie == null) return false;
 
@@ -675,30 +677,62 @@ private[immutable] class LargeLongLinkedTrieSet(
     }
 
     final override def +(v: Long): LargeLongLinkedTrieSet = {
-      val tries = this.tries
+        def extend(s: LargeLongLinkedTrieSet, newL: LongLinkedTrieSetL): Unit = {
+            val tries = s.tries
+            val trieId = abs(lHashCode(newL.value)) % tries.length
+            val oldTrie = tries(trieId)
+            if (oldTrie == null) {
+                tries(trieId) = newL
+            } else {
+                tries(trieId) = oldTrie + (newL, 0)
+            }
+        }
+
+        def rehash(newSize: Int, newL: LongLinkedTrieSetL, bucketsCount: Int): LargeLongLinkedTrieSet = {
+            val newLLLTS = new LargeLongLinkedTrieSet(newSize, new Array(bucketsCount), newL)
+            var currentL = newL
+            while (currentL ne null) {
+                extend(newLLLTS, currentL)
+                currentL = currentL.next
+            }
+            newLLLTS
+        }
+
+        val tries = this.tries
         val trieId = abs(lHashCode(v)) % tries.length
         val oldTrie = tries(trieId)
         if (oldTrie == null) {
-            val newTries = tries.clone()
-            val newTrie = new LongLinkedTrieSetL(v, this.l)
-            newTries(trieId) = newTrie
-            new LargeLongLinkedTrieSet(size + 1, newTries, newTrie)
+            val newSize = size + 1
+            val newL = new LongLinkedTrieSetL(v, this.l)
+            newSize match {
+                case 24 ⇒ rehash(newSize, newL, 32)
+                case 48 ⇒ rehash(newSize, newL, 64)
+                case _ ⇒
+                    val newTries = tries.clone()
+                    newTries(trieId) = newL
+                    new LargeLongLinkedTrieSet(newSize, newTries, newL)
+            }
         } else {
             val newL = LongLinkedTrieSetL(v, this.l)
             val newTrie = oldTrie + (newL, 0)
             if (oldTrie ne newTrie) {
-                val newTries = tries.clone()
-                newTries(trieId) = newTrie
-                new LargeLongLinkedTrieSet(size + 1, newTries, newL)
+                val newSize = size + 1
+                newSize match {
+                    case 24 ⇒ rehash(newSize, newL, 32)
+                    case 48 ⇒ rehash(newSize, newL, 64)
+                    case _ ⇒
+                        val newTries = tries.clone()
+                        newTries(trieId) = newTrie
+                        new LargeLongLinkedTrieSet(newSize, newTries, newL)
+                }
             } else {
                 this
             }
         }
     }
 
-    /** Adds the given value that must not be part of this set(!) to this set by mutating it(!). */
     final private[immutable] def +=(v: Long): Unit = {
-      val tries = this.tries
+        val tries = this.tries
         val trieId = abs(lHashCode(v)) % tries.length
         val oldTrie = tries(trieId)
         if (oldTrie == null) {

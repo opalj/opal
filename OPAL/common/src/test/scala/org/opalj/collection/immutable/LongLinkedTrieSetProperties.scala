@@ -155,9 +155,9 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
         }
     }
 
-    describe("performance") {
+    describe(s"performance (#buckets: ${LargeLongLinkedTrieSet.initialBucketsCount})") {
 
-        it("for small sets (up to 6 elements) creation and contains check should finish in reasonable time (all values are positive)") {
+        it("for small sets (up to 8 elements) creation and contains check should finish in reasonable time (all values are positive)") {
             var sizeOfAllSets: Int = 0
             var largestSet: Int = 0
             val seed = 123456789L
@@ -172,7 +172,7 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
                 for { runs ← 0 until 10000000 } {
                     var s = org.opalj.collection.immutable.LongLinkedTrieSet.empty
                     var hits = 0
-                    for { i ← 0 until rngGen.nextInt(7) } {
+                    for { i ← 0 to rngGen.nextInt(8) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -182,7 +182,32 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
             } { t ⇒ info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
 
-        it("for small sets (up to 24 elements) creation and contains check should finish in reasonable time (all values are positive)") {
+        it("for small sets (8 to 16 elements) creation and contains check should finish in reasonable time (all values are positive)") {
+            var sizeOfAllSets: Int = 0
+            var largestSet: Int = 0
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+            val rngQuery = new java.util.Random(seed)
+            // Let's ensure that the rngGen is ahead of the query one to ensure that some additions are useless...
+            for { i ← 1 to 3 } rngGen.nextLong();
+            val setValues = (for { i ← 1 to 1000 } yield Math.abs(rngGen.nextLong())).toArray
+            val queryValues = (for { i ← 1 to 1000 } yield Math.abs(rngQuery.nextLong())).toArray
+
+            PerformanceEvaluation.time {
+                for { runs ← 0 until 10000000 } {
+                    var s = org.opalj.collection.immutable.LongLinkedTrieSet.empty
+                    var hits = 0
+                    for { i ← 0 to 8 + rngGen.nextInt(8) } {
+                        s += setValues(i)
+                        if (s.contains(queryValues(i))) hits += 1
+                    }
+                    largestSet = Math.max(largestSet, s.size)
+                    sizeOfAllSets += s.size
+                }
+            } { t ⇒ info(s"${t.toSeconds} to create 1_000_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
+        }
+
+        it("for small sets (16 to 32 elements) creation and contains check should finish in reasonable time (all values are positive)") {
             var sizeOfAllSets: Int = 0
             var largestSet: Int = 0
             val seed = 123456789L
@@ -197,7 +222,7 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
                 for { runs ← 0 until 1000000 } {
                     var s = org.opalj.collection.immutable.LongLinkedTrieSet.empty
                     var hits = 0
-                    for { i ← 0 until rngGen.nextInt(25) } {
+                    for { i ← 0 to 16 + rngGen.nextInt(16) } {
                         s += setValues(i)
                         if (s.contains(queryValues(i))) hits += 1
                     }
@@ -241,7 +266,7 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
                     set ← 0 until 2500
                 } yield {
                     var s = org.opalj.collection.immutable.LongLinkedTrieSet.empty
-                    for { i ← 0 until 10000 } {
+                    for { i ← 0 to 10000 } {
                         s += rngGen.nextLong()
                     }
                     s

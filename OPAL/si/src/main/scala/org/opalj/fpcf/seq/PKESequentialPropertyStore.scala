@@ -653,9 +653,10 @@ final class PKESequentialPropertyStore protected (
                 handlePartialResult(e, pk, u)
 
             case InterimPartialResult.id ⇒
-                val InterimPartialResult(prs, dependees, c) = r
+                val InterimPartialResult(prs, processedDependees, c) = r
                 // 1. let's check if a new dependee is already updated...
-                val (newDependees, newC) = processDependeesOfInterimPartialResult(prs, dependees, c)
+                val (newDependees, newC) =
+                    processDependeesOfInterimPartialResult(prs, processedDependees, c)
 
                 // 2. register depender/dependees relation
                 if (newC ne null) {
