@@ -463,6 +463,9 @@ final class PKESequentialPropertyStore protected (
                         }
                     }
                     // There were updates...
+                    if (debug) {
+                        trace("analysis progress", s"calling continuation: ${nextC.hashCode().toHexString}")
+                    }
                     nextC(currentDependee.asEPS) match {
 
                         case InterimPartialResult(newPartialResults, newProcessedDependees, newC) ⇒
@@ -568,6 +571,9 @@ final class PKESequentialPropertyStore protected (
                 val nextDependeePKId = nextDependeePK.id
                 val currentDependee = ps(nextDependeePKId)(nextDependeeE)
                 if (currentDependee.isUpdatedComparedTo(nextDependee)) {
+                    if (debug) {
+                        trace("analysis progress", s"calling continuation: ${nextC.hashCode().toHexString}")
+                    }
                     nextC(currentDependee.asEPS) match {
                         case InterimResult(newEPS @ SomeEPS(`e`, `pk`), newDependees, newC, _) ⇒
                             nextEPS = newEPS
@@ -613,6 +619,10 @@ final class PKESequentialPropertyStore protected (
 
     override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
 
+        if (debug) {
+            trace("analysis progress", s"handling result: $r")
+        }
+
         r.id match {
 
             case NoResult.id ⇒
@@ -643,10 +653,9 @@ final class PKESequentialPropertyStore protected (
                 handlePartialResult(e, pk, u)
 
             case InterimPartialResult.id ⇒
-                val InterimPartialResult(prs, processedDependees, c) = r
+                val InterimPartialResult(prs, dependees, c) = r
                 // 1. let's check if a new dependee is already updated...
-                val (newProcessedDependees, newC) =
-                    processDependeesOfInterimPartialResult(prs, processedDependees, c)
+                val (newDependees, newC) = processDependeesOfInterimPartialResult(prs, dependees, c)
 
                 // 2. register depender/dependees relation
                 if (newC ne null) {
@@ -654,16 +663,16 @@ final class PKESequentialPropertyStore protected (
                     // The most current value of every dependee was taken into account
                     // register with the (!) dependees.
                     val dependerAK = EPK(sourceE, AnalysisKey)
-                    newProcessedDependees foreach { dependee ⇒
+                    newDependees foreach { dependee ⇒
                         val dependeeDependers =
                             dependers(dependee.pk.id).getOrElseUpdate(dependee.e, AnyRefMap.empty)
                         dependeeDependers += (dependerAK, (newC, DefaultPropertyComputation))
                     }
-                    dependees(AnalysisKeyId).put(sourceE, newProcessedDependees)
+                    dependees(AnalysisKeyId).put(sourceE, newDependees)
                 } else {
                     // There was an update and we already scheduled the computation... hence,
                     // we have no live dependees any more.
-                    assert(newProcessedDependees == null || newProcessedDependees.isEmpty)
+                    assert(newDependees == null || newDependees.isEmpty)
                 }
 
             case InterimResult.id ⇒
