@@ -10,7 +10,6 @@ import org.opalj.collection.immutable.EmptyLongList
 import org.opalj.collection.immutable.EmptyLongTrieSet
 import org.opalj.collection.immutable.LongList
 import org.opalj.collection.immutable.LongTrieSet
-import org.opalj.collection.immutable.LongTrieSet1
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
@@ -79,9 +78,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
                 assert(types.isEmpty)
                 NoAllocationSites
 
-            case LongTrieSet1(as) ⇒
+            case _ if allocationSites.size == 1 ⇒
                 assert(types.size == 1)
-                AllocationSitePointsToSet1(as, types.head)
+                AllocationSitePointsToSet1(allocationSites.head, types.head)
 
             case _ ⇒
                 val orderedAllocationSites = allocationSites.foldLeft(LongList.empty) { (l, as) ⇒
