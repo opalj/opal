@@ -195,6 +195,7 @@ final class LongTrieSet1 private (val i: Long) extends LongTrieSetL {
 object LongTrieSet1 {
 
     def apply(v: Long) = new LongTrieSet1(v)
+    def unapply(s: LongTrieSet1): Some[Long] = Some(s.i)
 
 }
 
