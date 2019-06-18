@@ -78,7 +78,7 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
         state:          State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case UBPS(newCallees: Callees, isFinal) ⇒
+            case UBP(newCallees: Callees) ⇒
                 val tac = state.tac
                 val oldCallees = if (oldCalleeEOptP.hasUBP) oldCalleeEOptP.ub else NoCallees
                 for {
@@ -89,7 +89,7 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                         val call = tac.stmts(tac.pcToIndex(pc)) match {
                             case call: Call[DUVar[ValueInformation]] @unchecked ⇒
                                 call
-                            case Assignment(_, targetVar, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
+                            case Assignment(_, _, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
                                 call
                             case ExprStmt(_, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
                                 call
