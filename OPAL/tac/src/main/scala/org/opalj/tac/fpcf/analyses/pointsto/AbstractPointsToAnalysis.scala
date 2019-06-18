@@ -90,18 +90,6 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                             case call: Call[DUVar[ValueInformation]] @unchecked ⇒
                                 call
                             case Assignment(_, targetVar, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
-
-                                val defSiteObject = definitionSites(state.method.definedMethod, pc)
-
-                                if (!isFinal) {
-                                    state.addDependee(defSiteObject, eps)
-                                }
-                                if (targetVar.value.isReferenceValue) {
-                                    state.includeLocalPointsToSet(
-                                        defSiteObject,
-                                        currentPointsTo(defSiteObject, target)(state)
-                                    )
-                                }
                                 call
                             case ExprStmt(_, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
                                 call
@@ -300,6 +288,7 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                 val defSiteObject = definitionSites(method, pc)
 
                 if (state.hasCalleesDepenedee) {
+                    state.includeLocalPointsToSet(defSiteObject, emptyPointsToSet)
                     state.addDependee(defSiteObject, state.calleesDependee)
                 }
                 if (targetVar.value.isReferenceValue) {
@@ -583,6 +572,7 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                 } else {
                     Results()
                 }
+
             case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
         }
     }
