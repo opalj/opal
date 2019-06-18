@@ -15,6 +15,7 @@ import org.opalj.fpcf.EUBPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
@@ -44,8 +45,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
-    extends AbstractCallGraphAnalysis
-    with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
+        extends AbstractCallGraphAnalysis
+        with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -74,12 +75,13 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         val callSite = (pc, call.name, call.descriptor, call.declaringClass)
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
-        val pointsToSet: PointsToSet = currentPointsTo(callSite, call.receiver.asVar.definedBy)
+        val pointsToSet: PointsToSet = currentPointsToDefSites(callSite, call.receiver.asVar.definedBy).foldLeft(emptyPointsToSet)((r, l) ⇒ r.included(l))
 
         var types = IntTrieSet.empty
 
         for (newType ← potentialTargets) {
             if (pointsToSet.types.contains(newType)) {
+
                 val tgtR = project.instanceCall(
                     callerType,
                     newType,
@@ -102,7 +104,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         state.setPotentialTypesOfCallSite(callSite, types)
     }
 
-    @inline protected[this] def currentPointsTo(
+    @inline protected[this] def currentPointsToDefSite(
         depender: CallSiteT, dependeeDefSite: Int
     )(implicit state: State): PointsToSet = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
@@ -137,14 +139,14 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         }
     }
 
-    @inline protected[this] def currentPointsTo(
+    @inline protected[this] def currentPointsToDefSites(
         depender: CallSiteT,
         defSites: IntTrieSet
     )(
         implicit
         state: State
     ): Iterator[PointsToSet] = {
-        defSites.iterator.map[PointsToSet](currentPointsTo(depender, _))
+        defSites.iterator.map[PointsToSet](currentPointsToDefSite(depender, _))
     }
 
     @inline private[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
@@ -159,7 +161,11 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
-                val relevantCallSites: TraversableOnce[CallSiteT] = state.dependersOf(e)
+                if (!state.hasPointsToDependee(e))
+                    // TODO: there seems to be a problem in the property store causing continuations
+                    //  to be called twice.
+                    return Results();
+                val relevantCallSites = state.dependersOf(e)
 
                 // ensures, that we only add new calls
                 val calls = new DirectCalls()
@@ -189,7 +195,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
 
                 // The method removeTypesForCallSite might have made the dependency obsolete, so only
                 // update or remove it, if we still need updates for that type.
-                if (state.hasPointsToDependee(eps.e)) {
+                if (state.hasPointsToDependee(e)) {
                     if (isFinal) {
                         state.removePointsToDependee(e)
                     } else {
@@ -199,7 +205,8 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
 
                 returnResult(calls)(state)
 
-            case _ ⇒ super.c(state)(eps)
+            case _ ⇒
+                super.c(state)(eps)
         }
     }
 
