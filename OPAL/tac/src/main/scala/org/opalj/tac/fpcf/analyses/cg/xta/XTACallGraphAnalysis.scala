@@ -35,8 +35,9 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.properties.TACAI
-
 import scala.collection.mutable
+
+import org.opalj.log.OPALLogger
 
 /**
  * XTA is a dataflow-based call graph analysis which was introduced by Tip and Palsberg.
@@ -326,6 +327,13 @@ class XTACallGraphAnalysis private[analyses] (
         val (readFields, writtenFields) = findAccessedFieldsInBytecode(definedMethod)
         val readFieldTypeEOptPs = mutable.Map(readFields.map(f ⇒ f → propertyStore(f, InstantiatedTypes.key)).toSeq: _*)
 
+        // If we already know types at this point and the method writes to fields, we possibly already
+        // have some results here.
+        if (instantiatedTypesEOptP.hasUBP && writtenFields.nonEmpty) {
+            // TODO AB fix this bug, likely requires adjustments to the base class
+            OPALLogger.warn("xta", "initial types already available, propagation to written field(s) not possible!")
+        }
+
         new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP,
             readFields, writtenFields, readFieldTypeEOptPs)
     }
@@ -468,7 +476,13 @@ class XTACallGraphAnalysis private[analyses] (
 
 object XTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = super.uses ++ PropertyBounds.ubs(InstantiatedTypes, Callees)
+    // TODO AB handle assignment of initial instantiated types here! (see superclass)
+
+    override def uses: Set[PropertyBounds] =
+        super.uses ++ PropertyBounds.ubs(InstantiatedTypes, Callees)
+
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        super.derivesCollaboratively ++ PropertyBounds.ubs(InstantiatedTypes)
 
     override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = new XTACallGraphAnalysis(p)
 }
