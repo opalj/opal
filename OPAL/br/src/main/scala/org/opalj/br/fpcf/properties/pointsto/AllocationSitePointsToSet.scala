@@ -7,7 +7,6 @@ package pointsto
 
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.EmptyLongList
-import org.opalj.collection.immutable.EmptyLongTrieSet
 import org.opalj.collection.immutable.LongList
 import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.collection.immutable.Naught
@@ -56,41 +55,21 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
     }
 
     def apply(
-        allocationSite1: AllocationSite,
-        allocatedType1:  ObjectType,
-        allocationSite2: AllocationSite,
-        allocatedType2:  ObjectType
+        allocationSiteNew: AllocationSite,
+        allocatedTypeNew:  ObjectType,
+        allocationSiteOld: AllocationSite,
+        allocatedTypeOld:  ObjectType
     ): AllocationSitePointsToSet = {
-        assert(allocationSite1 != allocationSite2)
+        assert(allocationSiteOld != allocationSiteNew)
         AllocationSitePointsToSetN(
-            LongTrieSet(allocationSite1, allocationSite2),
-            allocationSite2 +: allocationSite1 +: EmptyLongList,
-            UIDSet(allocatedType1, allocatedType2),
-            allocatedType2 :&: allocatedType1 :&: Naught
+            LongTrieSet(allocationSiteOld, allocationSiteNew),
+            allocationSiteNew +: allocationSiteOld +: EmptyLongList,
+            UIDSet(allocatedTypeOld, allocatedTypeNew),
+            if (allocatedTypeNew != allocatedTypeOld)
+                allocatedTypeNew :&: allocatedTypeOld :&: Naught
+            else
+                allocatedTypeNew :&: Naught
         )
-    }
-
-    def apply(
-        allocationSites: LongTrieSet, types: UIDSet[ObjectType]
-    ): AllocationSitePointsToSet = {
-        allocationSites match {
-            case EmptyLongTrieSet ⇒
-                assert(types.isEmpty)
-                NoAllocationSites
-
-            case _ if allocationSites.size == 1 ⇒
-                assert(types.size == 1)
-                AllocationSitePointsToSet1(allocationSites.head, types.head)
-
-            case _ ⇒
-                val orderedAllocationSites = allocationSites.foldLeft(LongList.empty) { (l, as) ⇒
-                    as +: l
-                }
-                val orderedTypes = types.foldLeft(Chain.empty[ObjectType]) { (l, t) ⇒ t :&: l }
-                AllocationSitePointsToSetN(
-                    allocationSites, orderedAllocationSites, types, orderedTypes
-                )
-        }
     }
 
     final val key: PropertyKey[AllocationSitePointsToSet] = {
@@ -224,7 +203,7 @@ case class AllocationSitePointsToSet1(
 
             case AllocationSitePointsToSet1(otherAllocationSite, otherAllocatedType) ⇒
                 AllocationSitePointsToSet(
-                    allocationSite, allocatedType, otherAllocationSite, otherAllocatedType
+                    otherAllocationSite, otherAllocatedType, allocationSite, allocatedType
                 )
 
             case NoAllocationSites ⇒
@@ -239,7 +218,7 @@ case class AllocationSitePointsToSet1(
                 }
 
                 val newOrderedTypes = otherOrderedTypes.foldLeft(allocatedType :&: Naught) { (l, at) ⇒
-                    if (at ne allocatedType) at :&: l else l
+                    if (at != allocatedType) at :&: l else l
                 }
 
                 AllocationSitePointsToSetN(
@@ -256,7 +235,9 @@ case class AllocationSitePointsToSet1(
     override def included(
         other: AllocationSitePointsToSet, seenElements: Int
     ): AllocationSitePointsToSet = {
-        // TODO: is it okay to ignore the seenElements from other?
+        assert(seenElements >= 0 && seenElements <= other.numElements)
+        // Note, that we can not assert, that seenElements is between 0 and 1, as this can
+        // happen by unordered partial results.
         included(other)
     }
 
