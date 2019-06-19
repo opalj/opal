@@ -38,4 +38,6 @@ case class DefinitionSite(method: Method, pc: Int) extends DefinitionSiteLike {
     }
 
     override def toString: String = s"DefinitionSite(m=${method.toJava}, pc=$pc"
+
+    override def hashCode(): Int = method.hashCode() ^ pc
 }
