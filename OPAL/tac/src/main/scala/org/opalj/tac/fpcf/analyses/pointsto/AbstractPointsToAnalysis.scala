@@ -577,20 +577,6 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
     }
 
     @inline private[this] def currentPointsTo(
-        depender: Entity, dependeeDefSite: Int
-    )(implicit state: State): PointsToSet = {
-        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            // FIXME ask what exception has been thrown
-            emptyPointsToSet
-        } else if (ai.isImmediateVMException(dependeeDefSite)) {
-            // FIXME -  we need to get the actual exception type here
-            emptyPointsToSet
-        } else {
-            currentPointsTo(depender, toEntity(dependeeDefSite, state.method, state.tac.stmts))
-        }
-    }
-
-    @inline private[this] def currentPointsTo(
         depender: Entity, dependee: Entity
     )(implicit state: State): PointsToSet = {
         dependee match {
@@ -635,7 +621,21 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
         implicit
         state: State
     ): Iterator[PointsToSet] = {
-        defSites.iterator.map[PointsToSet](currentPointsTo(depender, _))
+        defSites.iterator.map[PointsToSet](currentPointsToDefSite(depender, _))
+    }
+
+    @inline private[this] def currentPointsToDefSite(
+        depender: Entity, dependeeDefSite: Int
+    )(implicit state: State): PointsToSet = {
+        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
+            // FIXME ask what exception has been thrown
+            emptyPointsToSet
+        } else if (ai.isImmediateVMException(dependeeDefSite)) {
+            // FIXME -  we need to get the actual exception type here
+            emptyPointsToSet
+        } else {
+            currentPointsTo(depender, toEntity(dependeeDefSite, state.method, state.tac.stmts))
+        }
     }
 
     @inline private[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
