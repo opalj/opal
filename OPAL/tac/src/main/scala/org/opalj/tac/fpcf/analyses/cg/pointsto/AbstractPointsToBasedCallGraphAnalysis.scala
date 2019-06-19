@@ -75,13 +75,13 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         val callSite = (pc, call.name, call.descriptor, call.declaringClass)
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
-        val pointsToSet: PointsToSet = currentPointsToDefSites(callSite, call.receiver.asVar.definedBy).foldLeft(emptyPointsToSet)((r, l) ⇒ r.included(l))
+        val currentPointsToSets = currentPointsToDefSites(callSite, call.receiver.asVar.definedBy)
+        val pointsToSet = currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) ⇒ r.included(l) }
 
         var types = IntTrieSet.empty
 
         for (newType ← potentialTargets) {
             if (pointsToSet.types.contains(newType)) {
-
                 val tgtR = project.instanceCall(
                     callerType,
                     newType,
