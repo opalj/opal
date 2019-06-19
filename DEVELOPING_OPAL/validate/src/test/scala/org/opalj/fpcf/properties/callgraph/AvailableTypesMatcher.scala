@@ -11,6 +11,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.ReferenceType
 
 /**
  * Matches AvailableTypes annotations to the values computed cooperatively by a
@@ -36,7 +37,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
                     implicit val ctx: LogContext = p.logContext
                     // TODO AB maybe this should be an error after all, re-check later
                     OPALLogger.warn("property matcher", s"Expected property InstantiatedTypes not computed for $entity.")
-                    UIDSet.empty[ObjectType]
+                    UIDSet.empty[ReferenceType]
             }
         }.toSet
 
@@ -45,7 +46,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
                 .map(ev ⇒ ev.asStringValue.value)
 
         // TODO AB substring due to types being defined like "L...;", maybe should use different annotation format
-        val expectedTypes = expectedTypeNames.map(tn ⇒ ObjectType(tn.substring(1, tn.length - 1))).toSet
+        val expectedTypes = expectedTypeNames.map(tn ⇒ ReferenceType(tn.substring(1, tn.length - 1))).toSet
 
         val missingTypes = expectedTypes diff instantiatedTypes
         val additionalTypes = instantiatedTypes diff expectedTypes

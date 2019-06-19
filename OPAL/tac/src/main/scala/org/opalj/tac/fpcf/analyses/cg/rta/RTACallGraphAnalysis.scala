@@ -154,8 +154,8 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] def handleVirtualCallSites(
         calleesAndCallers: DirectCalls, seenTypes: Int
     )(implicit state: RTAState): Unit = {
-        state.newInstantiatedTypes(seenTypes).foreach { instantiatedType ⇒
-            val callSites = state.getVirtualCallSites(instantiatedType)
+        state.newInstantiatedTypes(seenTypes).filter(_.isObjectType).foreach { instantiatedType ⇒
+            val callSites = state.getVirtualCallSites(instantiatedType.asObjectType)
             callSites.foreach { callSite ⇒
                 val (pc, name, descr, declaringClass) = callSite
                 val tgtR = project.instanceCall(
@@ -176,7 +176,7 @@ class RTACallGraphAnalysis private[analyses] (
                 )
             }
 
-            state.removeCallSite(instantiatedType)
+            state.removeCallSite(instantiatedType.asObjectType)
         }
     }
 

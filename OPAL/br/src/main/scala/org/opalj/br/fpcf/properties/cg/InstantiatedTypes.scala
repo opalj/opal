@@ -26,8 +26,8 @@ sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInform
 }
 
 case class InstantiatedTypes private[properties] (
-        private val orderedTypes: List[ObjectType],
-        types:                    UIDSet[ObjectType]
+        private val orderedTypes: List[ReferenceType],
+        types:                    UIDSet[ReferenceType]
 ) extends OrderedProperty
     with InstantiatedTypesPropertyMetaInformation {
 
@@ -43,7 +43,7 @@ case class InstantiatedTypes private[properties] (
         }
     }
 
-    def updated(newTypes: TraversableOnce[ObjectType]): InstantiatedTypes = {
+    def updated(newTypes: TraversableOnce[ReferenceType]): InstantiatedTypes = {
         var newOrderedTypes = orderedTypes
         for { t ← newTypes if !types.contains(t) } {
             newOrderedTypes ::= t
@@ -54,7 +54,7 @@ case class InstantiatedTypes private[properties] (
     /**
      * Will return the instantiated types added most recently, dropping the `num` oldest ones.
      */
-    def dropOldest(num: Int): Iterator[ObjectType] = {
+    def dropOldest(num: Int): Iterator[ReferenceType] = {
         orderedTypes.iterator.take(types.size - num)
     }
 
@@ -64,7 +64,7 @@ case class InstantiatedTypes private[properties] (
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
 
     def apply(
-        initialInstantiatedTypes: UIDSet[ObjectType]
+        initialInstantiatedTypes: UIDSet[ReferenceType]
     ): InstantiatedTypes = {
         new InstantiatedTypes(
             initialInstantiatedTypes.toList,

@@ -26,6 +26,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteDescription
 import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethods
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToRelation
@@ -51,7 +52,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     def getInstantiatedTypesUB(
         instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes]
-    ): UIDSet[ObjectType] = {
+    ): UIDSet[ReferenceType] = {
         instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
             case _              ⇒ UIDSet.empty

@@ -24,13 +24,13 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Florian Kuebler
  */
-object InitialInstantiatedTypesKey extends ProjectInformationKey[Traversable[ObjectType], Nothing] {
+object InitialInstantiatedTypesKey extends ProjectInformationKey[Traversable[ReferenceType], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey."
 
     def requirements = Seq(ClosedPackagesKey)
 
-    override protected def compute(project: SomeProject): Traversable[ObjectType] = {
+    override protected def compute(project: SomeProject): Traversable[ReferenceType] = {
         val key = ConfigKeyPrefix+"analysis"
         val configuredAnalysis = project.config.as[Option[String]](key)
         if (configuredAnalysis.isEmpty) {

@@ -213,7 +213,7 @@ class XTACallGraphAnalysis private[analyses] (
     }
 
     // calculate flow of new types from caller to callee
-    private def forwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCallerTypes: UIDSet[ObjectType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+    private def forwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCallerTypes: UIDSet[ReferenceType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
 
         // Note: Not only virtual methods, since the this pointer can also flow through private methods
         // which are called via invokespecial and are thus not considered "virtual" methods.
@@ -231,7 +231,7 @@ class XTACallGraphAnalysis private[analyses] (
         // TODO AB performance...; maybe cache this stuff somehow
         val relevantParameterTypes = allParameterTypes.toSeq.filter(_.isObjectType).map(_.asObjectType)
 
-        val newTypes = newCallerTypes.filter(t ⇒ relevantParameterTypes.exists(p ⇒ t.isSubtypeOf(p)))
+        val newTypes = newCallerTypes.filter(t ⇒ t.isObjectType && relevantParameterTypes.exists(p ⇒ t.asObjectType.isSubtypeOf(p)))
 
         if (newTypes.nonEmpty)
             Some(typeFlowPartialResult(calleeMethod, UIDSet(newTypes.toSeq: _*)))
@@ -239,7 +239,7 @@ class XTACallGraphAnalysis private[analyses] (
             None
     }
 
-    def forwardFlowToWrittenField(writtenField: Field, newTypesInMethod: UIDSet[ObjectType]): Option[PartialResult[Field, InstantiatedTypes]] = {
+    def forwardFlowToWrittenField(writtenField: Field, newTypesInMethod: UIDSet[ReferenceType]): Option[PartialResult[Field, InstantiatedTypes]] = {
         val fieldType = writtenField.fieldType
 
         // TODO AB handle special cases
@@ -249,7 +249,7 @@ class XTACallGraphAnalysis private[analyses] (
 
         val fieldObjType = fieldType.asObjectType
 
-        val newTypes = newTypesInMethod.filter(t ⇒ t.isSubtypeOf(fieldObjType))
+        val newTypes = newTypesInMethod.filter(t ⇒ t.isObjectType && t.asObjectType.isSubtypeOf(fieldObjType))
 
         if (newTypes.nonEmpty)
             Some(typeFlowPartialResult(writtenField, UIDSet(newTypes.toSeq: _*)))
@@ -258,14 +258,14 @@ class XTACallGraphAnalysis private[analyses] (
     }
 
     // calculate flow of new types from callee to caller
-    private def backwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCalleeTypes: UIDSet[ObjectType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+    private def backwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCalleeTypes: UIDSet[ReferenceType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
 
         val returnTypeOfCallee = calleeMethod.descriptor.returnType
         if (!returnTypeOfCallee.isObjectType) {
             return None;
         }
 
-        val newTypes = newCalleeTypes.filter(t ⇒ t.isSubtypeOf(returnTypeOfCallee.asObjectType))
+        val newTypes = newCalleeTypes.filter(t ⇒ t.isObjectType && t.asObjectType.isSubtypeOf(returnTypeOfCallee.asObjectType))
 
         if (newTypes.nonEmpty)
             Some(typeFlowPartialResult(callerMethod, UIDSet(newTypes.toSeq: _*)))
@@ -273,7 +273,7 @@ class XTACallGraphAnalysis private[analyses] (
             None
     }
 
-    def typeFlowPartialResult[E >: Null <: Entity](entity: E, newTypes: UIDSet[ObjectType]): PartialResult[E, InstantiatedTypes] = {
+    def typeFlowPartialResult[E >: Null <: Entity](entity: E, newTypes: UIDSet[ReferenceType]): PartialResult[E, InstantiatedTypes] = {
         PartialResult[E, InstantiatedTypes](
             entity,
             InstantiatedTypes.key,
@@ -284,7 +284,7 @@ class XTACallGraphAnalysis private[analyses] (
     // for now: mostly copied from InstantiatedTypesAnalysis; now generic so it works for methods and fields
     def updateInstantiatedTypes[E >: Null <: Entity](
         entity:               E,
-        newInstantiatedTypes: UIDSet[ObjectType]
+        newInstantiatedTypes: UIDSet[ReferenceType]
     )(
         eop: EOptionP[E, InstantiatedTypes]
     ): Option[EPS[E, InstantiatedTypes]] = eop match {
@@ -446,8 +446,8 @@ class XTACallGraphAnalysis private[analyses] (
     private[this] def handleVirtualCallSites(
         calleesAndCallers: DirectCalls, seenTypes: Int
     )(implicit state: XTAState): Unit = {
-        state.newInstantiatedTypes(seenTypes).foreach { instantiatedType ⇒
-            val callSites = state.getVirtualCallSites(instantiatedType)
+        state.newInstantiatedTypes(seenTypes).filter(_.isObjectType).foreach { instantiatedType ⇒
+            val callSites = state.getVirtualCallSites(instantiatedType.asObjectType)
             callSites.foreach { callSite ⇒
                 val (pc, name, descr, declaringClass) = callSite
                 val tgtR = project.instanceCall(
@@ -468,7 +468,7 @@ class XTACallGraphAnalysis private[analyses] (
                 )
             }
 
-            state.removeCallSite(instantiatedType)
+            state.removeCallSite(instantiatedType.asObjectType)
         }
     }
 

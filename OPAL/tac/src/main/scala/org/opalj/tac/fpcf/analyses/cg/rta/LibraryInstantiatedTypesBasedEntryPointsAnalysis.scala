@@ -32,6 +32,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
+import org.opalj.br.ReferenceType
 
 /**
  * In a library analysis scenario, this analysis complements the call graph by marking public
@@ -93,11 +94,13 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         }
     }
 
-    def analyzeTypes(types: Iterator[ObjectType]): Iterator[DeclaredMethod] = {
-        types.flatMap { ot ⇒
-            project.classFile(ot).map { cf ⇒
-                cf.methodsWithBody.filter(m ⇒ !m.isStatic && m.isPublic)
-            }.getOrElse(RefIterator.empty)
+    def analyzeTypes(types: Iterator[ReferenceType]): Iterator[DeclaredMethod] = {
+        types.flatMap {
+            case ot: ObjectType ⇒
+                project.classFile(ot).map { cf ⇒
+                    cf.methodsWithBody.filter(m ⇒ !m.isStatic && m.isPublic)
+                }.getOrElse(RefIterator.empty)
+            case _ ⇒ RefIterator.empty
         }.map(declaredMethods(_))
     }
 

@@ -7,6 +7,7 @@ package cg
 package xta
 
 import scala.collection.mutable
+
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -17,6 +18,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -91,14 +93,14 @@ class XTAState(
             None
     }
 
-    def ownInstantiatedTypesUB: UIDSet[ObjectType] = {
+    def ownInstantiatedTypesUB: UIDSet[ReferenceType] = {
         if (_ownInstantiatedTypesDependee.hasUBP)
             _ownInstantiatedTypesDependee.ub.types
         else
             UIDSet.empty
     }
 
-    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ObjectType] = {
+    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ReferenceType] = {
         if (_ownInstantiatedTypesDependee.hasUBP) {
             _ownInstantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {

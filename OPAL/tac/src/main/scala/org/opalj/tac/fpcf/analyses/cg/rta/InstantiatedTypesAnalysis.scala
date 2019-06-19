@@ -38,6 +38,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.NEW
+import org.opalj.br.ReferenceType
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -76,7 +77,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-        val instantiatedTypesUB: UIDSet[ObjectType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
+        val instantiatedTypesUB: UIDSet[ReferenceType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
 
         val declaredType = declaredMethod.declaringClassType.asObjectType
 
@@ -201,7 +202,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     def getInstantiatedTypesUB(
         instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes]
-    ): UIDSet[ObjectType] = {
+    ): UIDSet[ReferenceType] = {
         instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
             case _              ⇒ UIDSet.empty

@@ -18,7 +18,6 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -26,6 +25,7 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.instructions.NEW
 import org.opalj.br.Method
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -60,7 +60,7 @@ class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) 
 
     def update(
         method:               DefinedMethod,
-        newInstantiatedTypes: UIDSet[ObjectType]
+        newInstantiatedTypes: UIDSet[ReferenceType]
     )(
         eop: EOptionP[DefinedMethod, InstantiatedTypes]
     ): Option[EPS[DefinedMethod, InstantiatedTypes]] = eop match {
