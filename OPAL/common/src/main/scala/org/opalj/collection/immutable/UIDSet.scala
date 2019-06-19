@@ -406,10 +406,12 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
     override def equals(other: Any): Boolean = {
         other match {
             case that: UIDSet[_] ⇒
-                that.size == 3 &&
-                    that.containsId(value1.id) &&
-                    that.containsId(value2.id) &&
-                    that.containsId(value3.id)
+                (that eq this) || {
+                    that.size == 3 &&
+                        that.containsId(value1.id) &&
+                        that.containsId(value2.id) &&
+                        that.containsId(value3.id)
+                }
             case _ ⇒ false
         }
     }
@@ -971,8 +973,10 @@ final class UIDTrieSetInnerNode[T <: UID] private[immutable] (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: UIDSet[_] ⇒ that.size == theSize && this.forall(e ⇒ that.containsId(e.id))
-            case _               ⇒ false
+            case that: UIDSet[_] ⇒
+                (that eq this) ||
+                    (that.size == theSize && this.forall(e ⇒ that.containsId(e.id)))
+            case _ ⇒ false
         }
     }
 
