@@ -6,9 +6,8 @@ package properties
 package pointsto
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.EmptyLongList
-import org.opalj.collection.immutable.LongList
-import org.opalj.collection.immutable.LongTrieSet
+import org.opalj.collection.immutable.LongLinkedTrieSet
+import org.opalj.collection.immutable.LongLinkedTrieSet1
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
@@ -30,7 +29,7 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 trait AllocationSitePointsToSet
-    extends PointsToSetLike[AllocationSite, LongTrieSet, AllocationSitePointsToSet]
+    extends PointsToSetLike[AllocationSite, LongLinkedTrieSet, AllocationSitePointsToSet]
     with OrderedProperty
     with AllocationSitePointsToSetPropertyMetaInformation {
 
@@ -61,9 +60,8 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         allocatedTypeOld:  ObjectType
     ): AllocationSitePointsToSet = {
         assert(allocationSiteOld != allocationSiteNew)
-        AllocationSitePointsToSetN(
-            LongTrieSet(allocationSiteOld, allocationSiteNew),
-            allocationSiteNew +: allocationSiteOld +: EmptyLongList,
+        new AllocationSitePointsToSetN(
+            LongLinkedTrieSet(allocationSiteNew, allocationSiteOld),
             UIDSet(allocatedTypeOld, allocatedTypeNew),
             if (allocatedTypeNew != allocatedTypeOld)
                 allocatedTypeNew :&: allocatedTypeOld :&: Naught
@@ -86,10 +84,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 }
 
 case class AllocationSitePointsToSetN private[pointsto] (
-        override val elements:       LongTrieSet,
-        private val orderedElements: LongList,
-        override val types:          UIDSet[ObjectType],
-        private val orderedTypes:    Chain[ObjectType]
+        override val elements:    LongLinkedTrieSet,
+        override val types:       UIDSet[ObjectType],
+        private val orderedTypes: Chain[ObjectType]
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
@@ -104,15 +101,8 @@ case class AllocationSitePointsToSetN private[pointsto] (
         other: AllocationSitePointsToSet, seenElements: Int
     ): AllocationSitePointsToSet = {
         var newAllocationSites = elements
-        var newOrderedAllocationSites = orderedElements
 
-        other.forNewestNElements(other.numElements - seenElements)(e ⇒ {
-            val old = newAllocationSites
-            newAllocationSites += e
-            if (old ne newAllocationSites) {
-                newOrderedAllocationSites +:= e
-            }
-        })
+        other.forNewestNElements(other.numElements - seenElements)(newAllocationSites += _)
 
         var newTypes = types
         // IMPROVE: Somehow also use seenElements
@@ -129,7 +119,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
             return this;
 
         new AllocationSitePointsToSetN(
-            newAllocationSites, newOrderedAllocationSites, newTypes, newOrderedTypes
+            newAllocationSites, newTypes, newOrderedTypes
         )
     }
 
@@ -151,7 +141,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
     }
 
     override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = {
-        orderedElements.forFirstN(n, f)
+        elements.forFirstN(n)(f)
     }
 }
 
@@ -173,7 +163,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 
     override def numElements: Int = 0
 
-    override def elements: LongTrieSet = LongTrieSet.empty
+    override def elements: LongLinkedTrieSet = LongLinkedTrieSet.empty
 
     override def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit = {
         assert(n == 0)
@@ -194,7 +184,7 @@ case class AllocationSitePointsToSet1(
 
     override def numElements: Int = 1
 
-    override def elements: LongTrieSet = LongTrieSet(allocationSite)
+    override def elements: LongLinkedTrieSet = LongLinkedTrieSet1(allocationSite)
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         other match {
@@ -209,11 +199,12 @@ case class AllocationSitePointsToSet1(
             case NoAllocationSites ⇒
                 this
 
-            case AllocationSitePointsToSetN(otherAllocationSites, otherOrderedAllocationSites, otherTypes, otherOrderedTypes) ⇒
-                var newOrderedAllocations = allocationSite +: EmptyLongList
-                otherOrderedAllocationSites.foreach { as ⇒
+            case AllocationSitePointsToSetN(otherAllocationSites, otherTypes, otherOrderedTypes) ⇒
+                val newAllocations = otherAllocationSites.foldLeft(elements) { (l, as) ⇒
                     if (as != allocationSite) {
-                        newOrderedAllocations +:= as
+                        l + as
+                    } else {
+                        l
                     }
                 }
 
@@ -222,8 +213,7 @@ case class AllocationSitePointsToSet1(
                 }
 
                 AllocationSitePointsToSetN(
-                    otherAllocationSites + allocationSite,
-                    newOrderedAllocations,
+                    newAllocations,
                     otherTypes + allocatedType,
                     newOrderedTypes
                 )
