@@ -20,16 +20,16 @@ public class FieldFlows {
         staticFieldFlowTest_Read();
     }
 
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1")
     private static A field;
 
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1")
     private static void staticFieldFlowTest_Write() {
         A obj = new A1();
         field = obj;
     }
 
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1")
     private static void staticFieldFlowTest_Read() {
         A obj = field;
     }

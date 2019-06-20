@@ -9,15 +9,15 @@ public class DynamicMethodFlows {
         dynamicTest();
     }
 
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1")
     public static void dynamicTest() {
         A obj1 = new A1();
         dynamicTest_callsite(obj1);
     }
 
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1"})
     public static void dynamicTest_callsite(A a) {
         // A1 flows from dynamicTest(), we know that the following dynamic dispatch can only
         // resolve to A1.foo(). This is more precise than RTA and CHA, which would resolve the
@@ -39,8 +39,8 @@ public class DynamicMethodFlows {
 
     private static class A1 extends A {
         @AvailableTypes({
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1;", // "this"
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1;"})
+                "org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1", // "this"
+                "org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1"})
         public B foo() {
             return new B1();
         }
@@ -63,8 +63,8 @@ public class DynamicMethodFlows {
 
     private static class B1 extends B {
         @AvailableTypes({
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1;",
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1;"}) // "this"
+                "org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$A1",
+                "org/opalj/fpcf/fixtures/callgraph/xta/DynamicMethodFlows$B1"}) // "this"
         public void foo(A obj) {
             // ...
         }

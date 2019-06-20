@@ -11,7 +11,7 @@ import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 public class StaticMethodFlows {
     // The main enty point. The annotation ensures that no values flow back since the return
     // type is void.
-    // TODO AB It's possible that this method is going to have types through the args parameter.
+    // TODO AB It's possible that this method is going to receive types through the args parameter.
     @AvailableTypes()
     public static void main(String[] args) {
         // Call the tests. No data-flow here that should influence the results.
@@ -29,8 +29,8 @@ public class StaticMethodFlows {
     // A2 and B2 are available because of the constructor calls.
     // The respective subsets should flow to the data sinks.
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2"})
     public static void parameterFlow() {
         A1 obj1 = new A2();
         parameterFlow_sinkA(obj1);
@@ -38,12 +38,12 @@ public class StaticMethodFlows {
         parameterFlow_sinkB(obj2);
     }
 
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2")
     public static void parameterFlow_sinkA(A1 obj) {
         // ...
     }
 
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2")
     public static void parameterFlow_sinkB(B1 obj) {
         // ...
     }
@@ -52,14 +52,14 @@ public class StaticMethodFlows {
     // Data flow from callee to caller, through return value.
     // The source method constructs objects of type A2 and B2, but
     // only A2 flows back to the caller since B2 is not a subtype of A1.
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2")
     public static void returnValueFlow() {
         A1 obj = returnValueFlow_Source();
     }
 
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2"})
     public static A1 returnValueFlow_Source() {
         A1 obj1 = new A2();
         B1 obj2 = new B2();
@@ -69,16 +69,16 @@ public class StaticMethodFlows {
     // === Test 3: ===
     // Data flows in both directions.
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2"})
     public static void twoWayFlow() {
         A1 obj1 = new A2();
         B1 obj2 = twoWayFlow_SourceAndSink(obj1);
     }
 
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2"})
     public static B1 twoWayFlow_SourceAndSink(A1 obj) {
         B1 obj1 = new B2();
         return obj1;
@@ -96,19 +96,19 @@ public class StaticMethodFlows {
         arrayTest_sink(arr);
     }
 
-    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
+    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1"})
     public static void arrayTest_source1(A1[] arr) {
         arr[0] = new A1();
     }
 
-    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;"})
+    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2"})
     public static void arrayTest_source2(A1[] arr) {
         arr[1] = new A2();
     }
 
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2"})
     public static void arrayTest_sink(A1[] arr) {
         A1 obj = arr[0];
     }
@@ -126,12 +126,12 @@ public class StaticMethodFlows {
         arrayTest2_sink(arr2);
     }
 
-    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
+    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1"})
     public static void arrayTest2_source1(A1[] arr) {
         arr[0] = new A1();
     }
 
-    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;"})
+    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2"})
     public static void arrayTest2_source2(A1[] arr) {
         arr[1] = new A2();
     }
@@ -155,19 +155,19 @@ public class StaticMethodFlows {
         arrayTest3_sink(arr2);
     }
 
-    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
+    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1"})
     public static void arrayTest3_source1(A1[] arr) {
         arr[0] = new A1();
     }
 
-    @AvailableTypes({"Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
+    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1"})
     public static void arrayTest3_source2(B1[] arr) {
         arr[0] = new B1();
     }
 
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1"})
     public static void arrayTest3_sink(Object[] arr) {
         Object obj = arr[0];
     }
@@ -175,12 +175,12 @@ public class StaticMethodFlows {
 
     // === Recursive methods ===
 
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1")
     public static void recursionTest() {
         recursiveMethod(new A1());
     }
 
-    @AvailableTypes("Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1")
     public static void recursiveMethod(A1 a) {
         // This will not terminate obviously, but that shouldn't matter for the static analysis.
         recursiveMethod(a);

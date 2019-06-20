@@ -5,8 +5,8 @@ import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 public class ThisPointerFlow {
 
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B"})
     public static void main(String[] args) {
         A obj = new A1();
         obj.foo(new B());
@@ -20,8 +20,8 @@ public class ThisPointerFlow {
         }
 
         @AvailableTypes({
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1;",
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B;"})
+                "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1",
+                "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B"})
         void bar(B obj) {
             this.baz(obj);
         }
@@ -32,8 +32,8 @@ public class ThisPointerFlow {
 
     private static class A1 extends A {
         @AvailableTypes({
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1;",
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B;"})
+                "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1",
+                "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B"})
         void foo(B b) {
             // This is not a virtual call site since foo2 is private (uses invokespecial instruction).
             // "this" pointer and types should also flow through the private method.
@@ -41,15 +41,15 @@ public class ThisPointerFlow {
         }
 
         @AvailableTypes({
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1;",
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B;"})
+                "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1",
+                "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B"})
         private void foo2(B b) {
             this.bar(b);
         }
 
         @AvailableTypes({
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1;",
-                "Lorg/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B;"})
+                "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1",
+                "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B"})
         void baz(B b) {
             // ...
         }

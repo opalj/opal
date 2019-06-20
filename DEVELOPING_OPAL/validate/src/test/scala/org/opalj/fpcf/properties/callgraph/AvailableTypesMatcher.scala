@@ -45,8 +45,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
             getValue(p, a.annotationType.asObjectType, a.elementValuePairs, "value").asArrayValue.values
                 .map(ev ⇒ ev.asStringValue.value)
 
-        // TODO AB substring due to types being defined like "L...;", maybe should use different annotation format
-        val expectedTypes = expectedTypeNames.map(tn ⇒ ReferenceType(tn.substring(1, tn.length - 1))).toSet
+        val expectedTypes = expectedTypeNames.map(ReferenceType(_)).toSet
 
         val missingTypes = expectedTypes diff instantiatedTypes
         val additionalTypes = instantiatedTypes diff expectedTypes
