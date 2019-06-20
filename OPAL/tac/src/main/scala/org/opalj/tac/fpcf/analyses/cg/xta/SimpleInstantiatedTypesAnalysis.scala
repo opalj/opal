@@ -26,6 +26,7 @@ import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.instructions.NEW
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
+import org.opalj.br.instructions.CreateNewArrayInstruction
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -36,28 +37,35 @@ import org.opalj.tac.fpcf.properties.TACAI
  * but it does not capture, e.g., indirect constructor calls through reflection.
  *
  * The analysis is triggered for a method once it becomes reachable, i.e., a
- * caller has been set. Thus, the property is not computed for unreachable methods.
+ * caller has been added. Thus, the property is not computed for unreachable methods.
  *
  * @author Andreas Bauer
  */
 // TODO AB replace later with a more sophisticated analysis (based on the RTA one)
-class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) extends ReachableMethodAnalysis {
+class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends ReachableMethodAnalysis {
 
     override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         val code = definedMethod.definedMethod.body.get
 
-        val instantiatedTypes = code.instructions.flatMap({
+        val instantiatedObjectTypes = code.instructions.flatMap({
             case NEW(declType) ⇒ Some(declType)
             case _             ⇒ None
+        })
+
+        // We only care about arrays of reference types.
+        val instantiatedArrays = code.instructions.flatMap({
+            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType ⇒ Some(arr.arrayType)
+            case _ ⇒ None
         })
 
         PartialResult(
             definedMethod,
             InstantiatedTypes.key,
-            update(definedMethod, UIDSet(instantiatedTypes.toSeq: _*))
+            update(definedMethod, UIDSet((instantiatedObjectTypes ++ instantiatedArrays).toSeq: _*))
         )
     }
 
+    // TODO AB code duplication; something like this appears in many places
     def update(
         method:               DefinedMethod,
         newInstantiatedTypes: UIDSet[ReferenceType]
@@ -79,9 +87,9 @@ class ConstructorCallInstantiatedTypesAnalysis( final val project: SomeProject) 
     }
 }
 
-object ConstructorCallInstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+object SimpleInstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis = new ConstructorCallInstantiatedTypesAnalysis(project)
+        val analysis = new SimpleInstantiatedTypesAnalysis(project)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }

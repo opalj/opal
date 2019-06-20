@@ -8,7 +8,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.analyses.cg.xta.ConstructorCallInstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTACallGraphAnalysisScheduler
 
 /**
@@ -32,7 +32,7 @@ object XTACallGraphKey extends AbstractCallGraphKey {
     ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
         // TODO AB configure this properly depending on library/application (see RTA key)
         List(
-            ConstructorCallInstantiatedTypesAnalysisScheduler,
+            SimpleInstantiatedTypesAnalysisScheduler,
             XTACallGraphAnalysisScheduler
         )
     }

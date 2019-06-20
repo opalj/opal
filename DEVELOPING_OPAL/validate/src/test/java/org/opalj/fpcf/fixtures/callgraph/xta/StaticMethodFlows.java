@@ -87,8 +87,7 @@ public class StaticMethodFlows {
     // === Test 4: ===
     // In this test, two different types are written to an array. The array is accessed in
     // in arrayTest_sink, which should make both types available in this method.
-    // TODO Maybe A1[] should be an available type as well?
-    @AvailableTypes
+    @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
     public static void arrayTest() {
         A1[] arr = new A1[2];
         arrayTest_source1(arr);
@@ -116,7 +115,7 @@ public class StaticMethodFlows {
     // === Test 5: ===
     // Here, two different arrays flow into the sink separately. The result should be the same as
     // above.
-    @AvailableTypes
+    @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
     public static void arrayTest2() {
         A1[] arr = new A1[2];
         A1[] arr2 = new A1[2];
@@ -145,7 +144,9 @@ public class StaticMethodFlows {
 
     // === Test 6: ===
     // Here, two differently typed arrays flow into the sink.
-    @AvailableTypes
+    @AvailableTypes({
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
     public static void arrayTest3() {
         A1[] arr = new A1[2];
         B1[] arr2 = new B1[2];

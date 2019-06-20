@@ -12,7 +12,7 @@ import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.xta.ConstructorCallInstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTACallGraphAnalysisScheduler
 
 /**
@@ -80,7 +80,7 @@ class CallGraphTests extends PropertiesTest {
     describe("the XTA call graph analysis is executed") {
         val as = executeAnalyses(
             Set(
-                ConstructorCallInstantiatedTypesAnalysisScheduler,
+                SimpleInstantiatedTypesAnalysisScheduler,
                 XTACallGraphAnalysisScheduler
             )
         )
