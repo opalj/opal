@@ -89,33 +89,50 @@ public class StaticMethodFlows {
     // in arrayTest_sink, which should make both types available in this method.
     @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
     public static void arrayTest() {
-        A1[] arr = new A1[2];
+        // Array is allocated in another method in order to test backward flow of the array type as well.
+        A1[] arr = arrayTest_alloc();
         arrayTest_source1(arr);
         arrayTest_source2(arr);
         arrayTest_sink(arr);
     }
 
-    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1"})
+    @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
+    public static A1[] arrayTest_alloc() {
+        // These are not arrays of object types, therefore they should not be tracked.
+        int[] foo = new int[10];
+        int[][] foo2 = new int[10][10];
+
+        return new A1[2];
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest_source1(A1[] arr) {
         arr[0] = new A1();
     }
 
-    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2"})
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest_source2(A1[] arr) {
         arr[1] = new A2();
     }
 
     @AvailableTypes({
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest_sink(A1[] arr) {
         A1 obj = arr[0];
     }
 
     // === Test 5: ===
-    // Here, two different arrays flow into the sink separately. The result should be the same as
+    // Here, two differently typed arrays flow into the sink separately. The result should be the same as
     // above.
-    @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
+    @AvailableTypes({
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest2() {
         A1[] arr = new A1[2];
         A1[] arr2 = new A1[2];
@@ -125,19 +142,24 @@ public class StaticMethodFlows {
         arrayTest2_sink(arr2);
     }
 
-    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1"})
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest2_source1(A1[] arr) {
         arr[0] = new A1();
     }
 
-    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2"})
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest2_source2(A1[] arr) {
         arr[1] = new A2();
     }
 
     @AvailableTypes({
             "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;"})
+            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest2_sink(A1[] arr) {
         A1 obj = arr[0];
     }
@@ -156,19 +178,25 @@ public class StaticMethodFlows {
         arrayTest3_sink(arr2);
     }
 
-    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1"})
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest3_source1(A1[] arr) {
         arr[0] = new A1();
     }
 
-    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1"})
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
     public static void arrayTest3_source2(B1[] arr) {
         arr[0] = new B1();
     }
 
     @AvailableTypes({
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest3_sink(Object[] arr) {
         Object obj = arr[0];
     }

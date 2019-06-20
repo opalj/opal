@@ -227,11 +227,11 @@ class XTACallGraphAnalysis private[analyses] (
                 calleeMethod.descriptor.parameterTypes
             }
 
-        // TODO AB handle other types than ObjectTypes (e.g. arrays, primitive types like int?)
-        // TODO AB performance...; maybe cache this stuff somehow
-        val relevantParameterTypes = allParameterTypes.toSeq.filter(_.isObjectType).map(_.asObjectType)
+        // TODO AB performance..., maybe we can cache this stuff somehow
+        val relevantParameterTypes = allParameterTypes.toSeq.filter(_.isReferenceType).map(_.asReferenceType)
 
-        val newTypes = newCallerTypes.filter(t ⇒ t.isObjectType && relevantParameterTypes.exists(p ⇒ t.asObjectType.isSubtypeOf(p)))
+        val newTypes = newCallerTypes.filter(t ⇒
+            relevantParameterTypes.exists(p ⇒ classHierarchy.isSubtypeOf(t, p)))
 
         if (newTypes.nonEmpty)
             Some(typeFlowPartialResult(calleeMethod, UIDSet(newTypes.toSeq: _*)))
@@ -242,14 +242,12 @@ class XTACallGraphAnalysis private[analyses] (
     def forwardFlowToWrittenField(writtenField: Field, newTypesInMethod: UIDSet[ReferenceType]): Option[PartialResult[Field, InstantiatedTypes]] = {
         val fieldType = writtenField.fieldType
 
-        // TODO AB handle special cases
-        if (!fieldType.isObjectType) {
+        // TODO AB this can be optimized since we never need to handle these fields
+        if (!fieldType.isReferenceType) {
             return None;
         }
 
-        val fieldObjType = fieldType.asObjectType
-
-        val newTypes = newTypesInMethod.filter(t ⇒ t.isObjectType && t.asObjectType.isSubtypeOf(fieldObjType))
+        val newTypes = newTypesInMethod.filter(t ⇒ classHierarchy.isSubtypeOf(t, fieldType.asReferenceType))
 
         if (newTypes.nonEmpty)
             Some(typeFlowPartialResult(writtenField, UIDSet(newTypes.toSeq: _*)))
@@ -261,11 +259,13 @@ class XTACallGraphAnalysis private[analyses] (
     private def backwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCalleeTypes: UIDSet[ReferenceType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
 
         val returnTypeOfCallee = calleeMethod.descriptor.returnType
-        if (!returnTypeOfCallee.isObjectType) {
+
+        // TODO AB optimization: don't register callee for possible backward flow in the first place
+        if (!returnTypeOfCallee.isReferenceType) {
             return None;
         }
 
-        val newTypes = newCalleeTypes.filter(t ⇒ t.isObjectType && t.asObjectType.isSubtypeOf(returnTypeOfCallee.asObjectType))
+        val newTypes = newCalleeTypes.filter(classHierarchy.isSubtypeOf(_, returnTypeOfCallee.asReferenceType))
 
         if (newTypes.nonEmpty)
             Some(typeFlowPartialResult(callerMethod, UIDSet(newTypes.toSeq: _*)))
