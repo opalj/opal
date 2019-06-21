@@ -753,10 +753,11 @@ private[immutable] class LargeLongLinkedTrieSet(
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: LargeLongLinkedTrieSet ⇒
-                this.iterator.sameValues(that.iterator)
-            case _ ⇒
-                false
+            case that: LargeLongLinkedTrieSet ⇒ (this eq that) || {
+                this.size == that.size &&
+                    this.iterator.sameValues(that.iterator)
+            }
+            case _ ⇒ false
         }
     }
 
