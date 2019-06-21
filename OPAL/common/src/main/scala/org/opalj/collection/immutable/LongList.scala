@@ -3,43 +3,58 @@ package org.opalj
 package collection
 package immutable
 
+import java.lang.{Long ⇒ JLong}
+
 /**
- * A linked list which does not perform any length related checks. I.e., it fails,e.g., in
+ * An immutable linked list for storing long values.
+ * This list does not perform any length related checks. I.e., it fails,e.g., in
  * case of `forFirstN` if the size of the list is smaller than expected.
  * Furthermore, all directly implemented methods use `while` loops for maximum
- * efficiency and the list is also specialized for primitive `int` values which
- * makes this list far more efficient when used for storing lists of `int` values.
+ * efficiency.
  *
  * @note    In most cases a `LongList` can be used as a drop-in replacement for a standard
  *          Scala List.
- *
- * @note    Some core methods, e.g. `drop` and `take`, have different
- *          semantics when compared to the methods with the same name defined
- *          by the Scala collections API. In this case these methods may
- *          fail arbitrarily if the list is not long enough.
- *          Therefore, `Chain` does not inherit from `scala...Seq`.
  *
  * @author Michael Eichberg
  */
 sealed trait LongList extends Serializable { self ⇒
 
-    def head: Long
-    def tail: LongList
     def isEmpty: Boolean
     def nonEmpty: Boolean
 
+    def head: Long
+    def tail: LongList
+
     def foreach[U](f: Long ⇒ U): Unit
+
     /** Iterates over the first N values. */
-    def forFirstN[U](n: Int, f: Long ⇒ U): Unit
+    def forFirstN[U](n: Int)(f: Long ⇒ U): Unit
+
     def iterator: LongIterator
+
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     def +:(v: Long): LongList
 
+    final override def equals(other: Any): Boolean = {
+        other match {
+            case l: LongList ⇒ equals(l)
+            case _           ⇒ false
+        }
+    }
+    def equals(that: LongList): Boolean
+
+    override def hashCode(): Int // just added to ensure that we have to override hashCode!
 }
 
 object LongList {
 
     def empty: LongList = EmptyLongList
+
+    def apply(v: Long): LongList = new LongListNode(v, EmptyLongList)
+
+    def apply(head: Long, last: Long): LongList = {
+        new LongListNode(head, new LongListNode(last, EmptyLongList))
+    }
 
 }
 
@@ -56,10 +71,13 @@ case object EmptyLongList extends LongList {
 
     override def foreach[U](f: Long ⇒ U): Unit = {}
     /** Iterates over the first N values. */
-    override def forFirstN[U](n: Int, f: Long ⇒ U): Unit = {}
+    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {}
     override def iterator: LongIterator = LongIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     override def +:(v: Long): LongList = new LongListNode(v, this)
+
+    override def equals(that: LongList): Boolean = that eq this
+    override def hashCode(): Int = 31
 }
 
 /**
@@ -85,7 +103,7 @@ final case class LongListNode(
         } while (list.nonEmpty)
     }
 
-    override def forFirstN[U](n: Int, f: Long ⇒ U): Unit = {
+    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
         if (n == 0) return ;
 
         var i = 0
@@ -110,4 +128,28 @@ final case class LongListNode(
     }
 
     override def +:(v: Long): LongList = new LongListNode(v, this)
+
+    override def equals(that: LongList): Boolean = {
+        (that eq this) || {
+            var thisList: LongList = this
+            var thatList = that
+            while ((thisList ne EmptyLongList) && (thatList ne EmptyLongList)) {
+                if (thisList.head != thatList.head)
+                    return false;
+                thisList = thisList.tail
+                thatList = thatList.tail
+            }
+            thisList eq thatList //... <=> true iff both lists are empty
+        }
+    }
+
+    override def hashCode(): Int = {
+        var h = 31
+        var list: LongList = this
+        while (list ne EmptyLongList) {
+            h = (h + JLong.hashCode(list.head)) * 31
+            list = list.tail
+        }
+        h
+    }
 }
