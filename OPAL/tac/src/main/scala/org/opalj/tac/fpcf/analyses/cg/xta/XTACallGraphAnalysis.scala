@@ -6,6 +6,26 @@ package analyses
 package cg
 package xta
 
+import scala.collection.mutable
+
+import org.opalj.log.OPALLogger
+import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.FieldType
@@ -16,28 +36,12 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.instructions.AALOAD
+import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
-import org.opalj.collection.ForeachRefIterator
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.PartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
+import org.opalj.br.ArrayType
 import org.opalj.tac.fpcf.properties.TACAI
-import scala.collection.mutable
-
-import org.opalj.log.OPALLogger
 
 /**
  * XTA is a dataflow-based call graph analysis which was introduced by Tip and Palsberg.
@@ -95,6 +99,9 @@ class XTACallGraphAnalysis private[analyses] (
                 InterimPartialResult(state.dependees, c(state))
             }
 
+        case EUBP(e: ArrayType, _: InstantiatedTypes) ⇒
+            handleUpdateOfReadArrayTypeSet(state, eps.asInstanceOf[EPS[ArrayType, InstantiatedTypes]])
+
         case _ ⇒ super.c(state)(eps)
     }
 
@@ -147,7 +154,56 @@ class XTACallGraphAnalysis private[analyses] (
 
         val flowToWrittenFields = state.writtenFields.flatMap(f ⇒ forwardFlowToWrittenField(f, UIDSet(newTypes: _*)))
 
-        returnResult(calleesAndCallers, forwardFlowResults, flowToWrittenFields)(state)
+        // Array handling!
+        // TODO use that buffer for all results!
+        val arrayResults = mutable.ArrayBuffer[SomePartialResult]()
+
+        val newArrayTypes = newTypes collect { case at: ArrayType ⇒ at }
+        assert(newArrayTypes.forall(at ⇒ at.elementType.isReferenceType))
+
+        if (newArrayTypes.nonEmpty) {
+            if (state.methodReadsArrays) {
+                arrayResults ++= newArrayTypes.flatMap(handleNewArrayTypeBackwardFlow(state))
+            }
+            if (state.methodWritesArrays) {
+                arrayResults ++= newArrayTypes.flatMap(forwardFlowToArrayType(state.ownInstantiatedTypesUB))
+            }
+        }
+
+        if (state.methodWritesArrays) {
+            val ownArrayTypes = state.ownInstantiatedTypesUB collect { case at: ArrayType ⇒ at }
+            arrayResults ++= ownArrayTypes.flatMap(forwardFlowToArrayType(UIDSet(newTypes: _*)))
+        }
+
+        returnResult(calleesAndCallers, arrayResults.toSeq ++ forwardFlowResults ++ flowToWrittenFields)(state)
+    }
+
+    // If we receive a new array type and the method reads from arrays, include the types written
+    // to the array in the method's type set.
+    def handleNewArrayTypeBackwardFlow(state: XTAState)(arrayType: ArrayType): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+        val newTypeDependee = propertyStore(arrayType, InstantiatedTypes.key)
+        state.updateReadArrayInstantiatedTypesDependee(newTypeDependee)
+
+        assert(state.methodReadsArrays)
+
+        if (newTypeDependee.hasUBP) {
+            // We do not have to do any type checks here; if the array is read, the types stored in the array
+            // (== subtypes of the array's element type) always flow to the reading method.
+            val backwardFlow = typeFlowPartialResult(state.method, newTypeDependee.ub.types)
+            state.updateArrayTypeSeenTypes(arrayType, newTypeDependee.ub.numElements)
+            Some(backwardFlow)
+        } else {
+            state.updateArrayTypeSeenTypes(arrayType, 0)
+            None
+        }
+    }
+
+    def forwardFlowToArrayType(newTypes: UIDSet[ReferenceType])(arrayType: ArrayType): Option[PartialResult[ArrayType, InstantiatedTypes]] = {
+        val forwardFlowingTypes = newTypes.filter(rt ⇒ classHierarchy.isSubtypeOf(rt, arrayType.elementType.asReferenceType))
+        if (forwardFlowingTypes.nonEmpty)
+            Some(typeFlowPartialResult(arrayType, forwardFlowingTypes))
+        else
+            None
     }
 
     // TODO AB (mostly) copied from super-class since we need to make some adjustments
@@ -170,9 +226,8 @@ class XTACallGraphAnalysis private[analyses] (
 
     // TODO (mostly) copied from super-class
     protected def returnResult(
-        calleesAndCallers:           DirectCalls,
-        typeFlowPartialResults:      TraversableOnce[PartialResult[DefinedMethod, InstantiatedTypes]],
-        fieldTypeFlowPartialResults: TraversableOnce[PartialResult[Field, InstantiatedTypes]]
+        calleesAndCallers: DirectCalls,
+        otherResults:      Seq[SomePartialResult]
     )(implicit state: State): ProperPropertyComputationResult = {
         val results = calleesAndCallers.partialResults(state.method)
 
@@ -181,10 +236,10 @@ class XTACallGraphAnalysis private[analyses] (
             Results(
                 InterimPartialResult(state.dependees, c(state)),
                 // TODO AB not efficient?
-                results.toIterator ++ typeFlowPartialResults ++ fieldTypeFlowPartialResults
+                results.toIterator ++ otherResults
             )
         else
-            Results(results.toIterator ++ typeFlowPartialResults ++ fieldTypeFlowPartialResults)
+            Results(results.toIterator ++ otherResults)
     }
 
     def handleUpdateOfCalleeTypeSet(state: XTAState, eps: EPS[DefinedMethod, InstantiatedTypes]): ProperPropertyComputationResult = {
@@ -334,8 +389,14 @@ class XTACallGraphAnalysis private[analyses] (
             OPALLogger.warn("xta", "initial types already available, propagation to written field(s) not possible!")
         }
 
+        // TODO AB this is the level of accuracy as described in the Tip+Palsberg paper
+        // Maybe we can track more accurately which array types are actually written/read.
+        // (See notes.) Would probably increase complexity by quite a bit though.
+        val containsArrayStores = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AASTORE }
+        val containsArrayLoads = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AALOAD }
+
         new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP,
-            readFields, writtenFields, readFieldTypeEOptPs)
+            readFields, writtenFields, readFieldTypeEOptPs, containsArrayStores, containsArrayLoads)
     }
 
     // TODO AB mostly a placeholder; likely it's better to get the accesses from TAC instead
@@ -369,6 +430,28 @@ class XTACallGraphAnalysis private[analyses] (
         state.updateReadFieldSeenTypes(updatedField, seenTypes + newReadFieldTypes.length)
 
         val partialResult = typeFlowPartialResult(state.method, UIDSet(newReadFieldTypes: _*))
+
+        Results(
+            InterimPartialResult(state.dependees, c(state)),
+            partialResult
+        )
+    }
+
+    // TODO AB there is some duplication here (very similar to the field update method)
+    def handleUpdateOfReadArrayTypeSet(state: XTAState, eps: EPS[ArrayType, InstantiatedTypes]): ProperPropertyComputationResult = {
+        assert(state.methodReadsArrays)
+
+        val updatedArray = eps.e
+
+        val seenTypes = state.arrayTypeSeenTypes(updatedArray)
+
+        state.updateReadArrayInstantiatedTypesDependee(eps)
+
+        val newReadArrayTypes = eps.ub.dropOldest(seenTypes).toSeq
+
+        state.updateArrayTypeSeenTypes(updatedArray, seenTypes + newReadArrayTypes.length)
+
+        val partialResult = typeFlowPartialResult(state.method, UIDSet(newReadArrayTypes: _*))
 
         Results(
             InterimPartialResult(state.dependees, c(state)),

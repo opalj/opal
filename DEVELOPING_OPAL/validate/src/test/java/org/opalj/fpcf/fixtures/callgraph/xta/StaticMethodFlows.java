@@ -157,8 +157,8 @@ public class StaticMethodFlows {
     }
 
     @AvailableTypes({
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
-            "Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2;",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
             "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
     public static void arrayTest2_sink(A1[] arr) {
         A1 obj = arr[0];
@@ -194,9 +194,12 @@ public class StaticMethodFlows {
 
     @AvailableTypes({
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            // A2 is written to A1[] in arrayTest2, therefore it is also propagated here!
+            // TODO AB maybe update tests so that they are isolated
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1",
             "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
     public static void arrayTest3_sink(Object[] arr) {
         Object obj = arr[0];
     }

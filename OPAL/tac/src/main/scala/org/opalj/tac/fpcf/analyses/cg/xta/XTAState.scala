@@ -18,6 +18,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -43,10 +44,14 @@ class XTAState(
 
         // Field stuff
         // TODO AB optimize...
-        private[this] var _readFields: Set[Field],
+        private[this] var _readFields:    Set[Field],
         private[this] var _writtenFields: Set[Field],
         // we only need type updates of fields the method READS
-        private[this] var _readFieldTypeDependees: mutable.Map[Field, EOptionP[Field, InstantiatedTypes]]
+        private[this] var _readFieldTypeDependees: mutable.Map[Field, EOptionP[Field, InstantiatedTypes]],
+
+        // Array stuff
+        val methodWritesArrays: Boolean,
+        val methodReadsArrays:  Boolean
 ) extends CGState {
 
     // TODO AB more efficient data type for this?
@@ -60,12 +65,15 @@ class XTAState(
     // TODO AB These should be removed once they're final, right?
     // TODO AB Can they become final? Probably not!
     // TODO AB Does this have to be a map?
-    private[this] var _calleeInstantiatedTypesDependees:
-        mutable.Map[DefinedMethod, EOptionP[DefinedMethod, InstantiatedTypes]]
-            = mutable.Map.empty
+    private[this] var _calleeInstantiatedTypesDependees: mutable.Map[DefinedMethod, EOptionP[DefinedMethod, InstantiatedTypes]] = mutable.Map.empty
 
     // functionally the same as calleeSeenTypes, but Field does not have an ID we can use
     private[this] var _readFieldSeenTypes: mutable.Map[Field, Int] = mutable.Map.empty
+
+    // Array stuff
+    // Note: ArrayType uses a cache internally, so identical array types will be represented by the same object.
+    private[this] var _readArraysTypeDependees: mutable.Map[ArrayType, EOptionP[ArrayType, InstantiatedTypes]] = mutable.Map.empty
+    private[this] var _readArraysSeenTypes: mutable.Map[ArrayType, Int] = mutable.Map.empty
 
     // TODO AB: dependency to InstantiatedTypes of fields it reads --> update own set on update
     // TODO AB: store fields it writes --> update types when own types receive an update
@@ -168,6 +176,27 @@ class XTAState(
         _readFieldSeenTypes.update(field, numberOfTypes)
     }
 
+    // Array stuff
+
+    def availableArrayTypes: UIDSet[ArrayType] = {
+        ownInstantiatedTypesUB collect { case at: ArrayType ⇒ at }
+    }
+
+    def updateReadArrayInstantiatedTypesDependee(
+        eps: EOptionP[ArrayType, InstantiatedTypes]
+    ): Unit = {
+        _readArraysTypeDependees.update(eps.e, eps)
+    }
+
+    def arrayTypeSeenTypes(arrayType: ArrayType): Int = {
+        _readArraysSeenTypes.getOrElse(arrayType, 0)
+    }
+
+    def updateArrayTypeSeenTypes(arrayType: ArrayType, numberOfTypes: Int): Unit = {
+        assert(numberOfTypes >= arrayTypeSeenTypes(arrayType))
+        _readArraysSeenTypes.update(arrayType, numberOfTypes)
+    }
+
     /////////////////////////////////////////////
     //                                         //
     //          virtual call sites             //
@@ -201,10 +230,11 @@ class XTAState(
 
     override def hasOpenDependencies: Boolean = {
         super.hasOpenDependencies ||
-          _ownInstantiatedTypesDependee.isRefinable ||
-          _calleeDependee.isRefinable ||
-          _calleeInstantiatedTypesDependees.nonEmpty ||
-          _readFieldTypeDependees.nonEmpty
+            _ownInstantiatedTypesDependee.isRefinable ||
+            _calleeDependee.isRefinable ||
+            _calleeInstantiatedTypesDependees.nonEmpty ||
+            _readFieldTypeDependees.nonEmpty ||
+            _readArraysSeenTypes.nonEmpty
     }
 
     override def dependees: List[EOptionP[Entity, Property]] = {
@@ -221,6 +251,9 @@ class XTAState(
 
         if (_readFieldTypeDependees.nonEmpty)
             dependees ++= _readFieldTypeDependees.values
+
+        if (_readArraysTypeDependees.nonEmpty)
+            dependees ++= _readArraysTypeDependees.values
 
         dependees
     }
