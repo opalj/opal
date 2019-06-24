@@ -104,6 +104,7 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
     describe("contains") {
 
         val fixtures = List[List[Long]](
+            List[Long](4414074060632414370L, 1896250972871104879L, -4468262829510781048L, 3369759390166412338L, 3433954040001057900L, -5360189778998759153L, -4455613594770698331L, 7795367189183618087L, 7342745861545843810L, -938149705997478263L, -7298104853677454976L, 4601242874523109082L, 4545666121642261549L, 2117478629717484238L),
             List[Long](-92276, -76687, -1003, 39908),
             List[Long](-149831, -143246, -110997, -103241, -100192, -91362, -14553, -10397, -2126, -628, 8184, 13255, 39973),
             List[Long](-103806, -99428, -15784, -6124, 48020),
@@ -152,6 +153,46 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
             assert(!ls.contains(0L))
             assert(!ls.contains(1L))
             assert(!ls.contains(2L))
+        }
+
+        it("when comparing with Set[Long]") {
+            val opalS = PerformanceEvaluation.memory {
+                PerformanceEvaluation.time {
+                    val seed = 123456789L
+                    val rngGen = new java.util.Random(seed)
+                    var opalS = org.opalj.collection.immutable.LongLinkedTrieSet.empty
+                    for { i ← 0 to 1000000 } {
+                        val v = rngGen.nextLong()
+                        opalS += v
+                    }
+                    opalS
+                } { t ⇒ info(s"LongLinkedTrieSet took ${t.toSeconds}") }
+            } { mu ⇒ info(s"LongLinkedTrieSet required $mu bytes") }
+
+            val scalaS = PerformanceEvaluation.memory {
+                PerformanceEvaluation.time {
+                    val seed = 123456789L
+                    val rngGen = new java.util.Random(seed)
+                    var scalaS = Set.empty[Long]
+                    for { i ← 0 to 1000000 } {
+                        val v = rngGen.nextLong()
+                        scalaS += v
+                    }
+                    scalaS
+                } { t ⇒ info(s"Set[Long] took ${t.toSeconds}") }
+            } { mu ⇒ info(s"Set[Long] required $mu bytes") }
+
+            var opalTotal = 0L
+            PerformanceEvaluation.time {
+                for { v ← opalS } { opalTotal += v }
+            } { t ⇒ info(s"OPAL ${t.toSeconds} for foreach") }
+
+            var scalaTotal = 0L
+            PerformanceEvaluation.time {
+                for { v ← scalaS } { scalaTotal += v }
+            } { t ⇒ info(s"Scala ${t.toSeconds} for foreach") }
+
+            assert(opalTotal == scalaTotal)
         }
     }
 
@@ -233,8 +274,6 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
         }
 
         it("for sets with up to 10000 elements creation and contains check should finish in reasonable time") {
-            var sizeOfAllSets: Int = 0
-            var largestSet: Int = 0
             val seed = 123456789L
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
@@ -243,6 +282,8 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
             val setValues = (for { i ← 1 to 10000 } yield rngGen.nextLong()).toArray
             val queryValues = (for { i ← 1 to 10000 } yield rngQuery.nextLong()).toArray
 
+            var sizeOfAllSets: Int = 0
+            var largestSet: Int = 0
             PerformanceEvaluation.time {
                 for { runs ← 0 until 10000 } {
                     var s = org.opalj.collection.immutable.LongLinkedTrieSet.empty
@@ -257,7 +298,7 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
             } { t ⇒ info(s"${t.toSeconds} to create 10_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
 
-        it("memory usage") {
+        it("operations on 2500 sets with ~10000 elements each") {
             val seed = 123456789L
             val rngGen = new java.util.Random(seed)
 
@@ -271,8 +312,16 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
                     }
                     s
                 }
-            } { mu ⇒ info(s"required $mu bytes for 1000 sets with ~10000 elements each") }
-            info(s"overall size: ${allSets.map(_.size).sum}")
+            } { mu ⇒ info(s"required $mu bytes") }
+
+            var total = 0L
+            PerformanceEvaluation.time {
+                for { set ← allSets; v ← set } {
+                    total += v
+                }
+            } { t ⇒ info(s"${t.toSeconds} for foreach") }
+
+            info(s"overall size: ${allSets.map(_.size).sum}; sum: $total")
         }
     }
 }
