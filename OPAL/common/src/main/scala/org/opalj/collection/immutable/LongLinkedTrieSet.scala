@@ -227,7 +227,7 @@ private[immutable] sealed abstract class LongLinkedTrieSetInnerNode extends Long
 }
 
 private[immutable] sealed abstract class LongLinkedTrieSetNShared extends LongLinkedTrieSetInnerNode {
-   
+
     final override def isN4: Boolean = false
 
     def sharedBits: Long
@@ -1063,42 +1063,6 @@ private[immutable] class LargeLongLinkedTrieSet(
         if (trie == null) return false;
 
         trie.contains(v, v)
-        /*
-        var key = v
-        var node = trie
-        do {
-            // Type based switch (proofed to be faster than introducing node ids and using them...):
-            node match {
-                case n: LongLinkedTrieSetNShared ⇒
-                    val sharedBits = n.sharedBits
-                    val length = n.length
-                    if ((key & LongSet.BitMasks(length)) == sharedBits) {
-                        node = n.n
-                        key = key >> length
-                    } else {
-                        return false;
-                    }
-                case n: LongLinkedTrieSetN2 ⇒
-                    if ((key & 1L) == 0L) {
-                        node = n._0
-                    } else {
-                        node = n._1
-                    }
-                    key = key >> 1
-                case n: LongLinkedTrieSetN4 ⇒
-                    ((key & 3L /*binary:11*/ ).toInt: @switch) match {
-                        case 0 ⇒ node = n._0
-                        case 1 ⇒ node = n._1
-                        case 2 ⇒ node = n._2
-                        case 3 ⇒ node = n._3
-                    }
-                    key = key >> 2
-                case l: LongLinkedTrieSetL ⇒
-                    return v == l.value;
-            }
-        } while (node ne null)
-        false
-        */
     }
 
     final override def head: Long = {
