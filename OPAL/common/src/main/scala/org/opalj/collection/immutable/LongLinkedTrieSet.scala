@@ -5,8 +5,8 @@ package immutable
 import scala.annotation.switch
 
 import java.lang.{Long ⇒ JLong}
-//import java.lang.Long.{hashCode ⇒ lHashCode}
-//import java.lang.Math.abs
+import java.lang.Long.{hashCode ⇒ lHashCode}
+import java.lang.Math.abs
 
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the
@@ -38,11 +38,11 @@ object LongLinkedTrieSet {
 
     def apply(v: Long): LongLinkedTrieSet = new LongLinkedTrieSet1(v)
 
-    def apply(v1: Long, v2: Long): LongLinkedTrieSet = {
-        if (v1 == v2)
-            new LongLinkedTrieSet1(v1)
+    def apply(vNewer: Long, vOlder: Long): LongLinkedTrieSet = {
+        if (vNewer == vOlder)
+            new LongLinkedTrieSet1(vNewer)
         else
-            new LongLinkedTrieSet2(v1, v2)
+            new LongLinkedTrieSet2(vNewer, vOlder)
     }
 
 }
@@ -121,12 +121,6 @@ final private[immutable] case class LongLinkedTrieSet3(v1: Long, v2: Long, v3: L
         }
     }
 }
-
-// -------------------------------------------------------------------------------------------------
-//
-// THE IMPLEMENTATION OF THE TRIE
-//
-// -------------------------------------------------------------------------------------------------
 
 /** The super type of the nodes of the trie set. */
 private[immutable] sealed abstract class LongLinkedTrieSetNode {
@@ -1063,17 +1057,11 @@ private[immutable] class LargeLongLinkedTrieSet(
     final override def isEmpty: Boolean = size == 0
     final override def isSingletonSet: Boolean = size == 1
 
-    @inline final private def trieId(v: Long): Int = {
-        Math.abs(JLong.hashCode(v)) % tries.length
-        //(v.toInt) & (this.tries.length - 1)
-
-    }
-
     final override def contains(v: Long): Boolean = {
-        //val tries = this.tries
-        //val trie = tries(Math.abs(JLong.hashCode(v)) % tries.length)
-        val trie = this.tries(trieId(v))
+        val tries = this.tries
+        val trie = tries(Math.abs(JLong.hashCode(v)) % tries.length)
         if (trie == null) return false;
+
         trie.contains(v, v)
     }
 
@@ -1127,11 +1115,9 @@ private[immutable] class LargeLongLinkedTrieSet(
     }
 
     final override def +(v: Long): LargeLongLinkedTrieSet = {
-        def extend(newS: LargeLongLinkedTrieSet, newL: LongLinkedTrieSetL): Unit = {
-            val tries = newS.tries
-            // val trieId = abs(lHashCode(newL.value)) % tries.length
-            //val trieId = newL.value.toInt & (tries.length+1)
-            val trieId = newS.trieId(newL.value)
+        def extend(s: LargeLongLinkedTrieSet, newL: LongLinkedTrieSetL): Unit = {
+            val tries = s.tries
+            val trieId = abs(lHashCode(newL.value)) % tries.length
             val oldTrie = tries(trieId)
             if (oldTrie == null) {
                 tries(trieId) = newL
@@ -1151,8 +1137,7 @@ private[immutable] class LargeLongLinkedTrieSet(
         }
 
         val tries = this.tries
-        //val trieId = abs(lHashCode(v)) % tries.length
-        val trieId = this.trieId(v)
+        val trieId = abs(lHashCode(v)) % tries.length
         val oldTrie = tries(trieId)
         if (oldTrie == null) {
             val newSize = size + 1
@@ -1186,8 +1171,7 @@ private[immutable] class LargeLongLinkedTrieSet(
 
     final private[immutable] def +=(v: Long): Unit = {
         val tries = this.tries
-        //val trieId = abs(lHashCode(v)) % tries.length
-        val trieId = this.trieId(v)
+        val trieId = abs(lHashCode(v)) % tries.length
         val oldTrie = tries(trieId)
         if (oldTrie == null) {
             val newL = new LongLinkedTrieSetL(v, this.l)
