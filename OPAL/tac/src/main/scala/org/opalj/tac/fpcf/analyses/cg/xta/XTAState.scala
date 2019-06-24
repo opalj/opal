@@ -36,7 +36,6 @@ class XTAState(
 
         // Field stuff
         // TODO AB optimize...
-        private[this] var _readFields:    Set[Field],
         private[this] var _writtenFields: Set[Field],
         // we only need type updates of fields the method reads
         private[this] var _readFieldTypeDependees: mutable.Map[Field, EOptionP[Field, InstantiatedTypes]],

@@ -428,7 +428,7 @@ class XTACallGraphAnalysis private[analyses] (
         val containsArrayLoads = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AALOAD }
 
         new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP,
-            readFields, writtenFields, readFieldTypeEOptPs, containsArrayStores, containsArrayLoads)
+            writtenFields, readFieldTypeEOptPs, containsArrayStores, containsArrayLoads)
     }
 
     // TODO AB mostly a placeholder; likely it's better to get the accesses from TAC instead
