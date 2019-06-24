@@ -150,11 +150,11 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                 val targets = callees.callees(pc)
                 val defSiteObject = definitionSites(method, pc)
 
-                if (state.hasCalleesDepenedee) {
-                    state.includeLocalPointsToSet(defSiteObject, emptyPointsToSet)
-                    state.addDependee(defSiteObject, state.calleesDependee)
-                }
                 if (targetVar.value.isReferenceValue) {
+                    if (state.hasCalleesDepenedee) {
+                        state.includeLocalPointsToSet(defSiteObject, emptyPointsToSet)
+                        state.addDependee(defSiteObject, state.calleesDependee)
+                    }
                     state.includeLocalPointsToSets(
                         defSiteObject,
                         targets.map(currentPointsTo(defSiteObject, _))
