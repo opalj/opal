@@ -545,7 +545,7 @@ final private[immutable] class LongLinkedTrieSetN2(
                     if (((_1.asL.value >> level + 1) & 1L) == 0L) {
                         new LongLinkedTrieSetN4_1_2(_1, newN)
                     } else {
-                        new LongLinkedTrieSetN4_0_1(newN, _1)
+                        new LongLinkedTrieSetN4_2_3(newN, _1)
                     }
                 }
             }
@@ -1191,10 +1191,10 @@ private[immutable] class LargeLongLinkedTrieSet(
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: LargeLongLinkedTrieSet ⇒ (this eq that) || {
-                this.size == that.size &&
-                    this.iterator.sameValues(that.iterator)
-            }
+            case that: LargeLongLinkedTrieSet ⇒
+                (this eq that) || {
+                    this.size == that.size && this.iterator.sameValues(that.iterator)
+                }
             case _ ⇒ false
         }
     }
