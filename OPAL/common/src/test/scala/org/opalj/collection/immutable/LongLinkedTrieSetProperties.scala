@@ -94,13 +94,12 @@ object LongLinkedTrieSetProperties extends Properties("LongLinkedTrieSet") {
         s == newS
     }
 
-    /*
     property("equals and hashCode") = forAll { s: IntArraySet ⇒
         val its1 = s.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
         val its2 = s.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
         its1 == its2 &&
             its1.hashCode() == its2.hashCode()
-    }*/
+    }
 
 }
 
