@@ -211,14 +211,19 @@ public class StaticMethodFlows {
     // appear.
     @AvailableTypes({
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E",
+            // This is a slight inaccuracy: E1 is added to [E1 in the *_source method.
+            // Since [E1 is available here and the method reads from arrays, E1
+            // is added to this method as well.
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E1",
             "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;",
-            "[[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;"})
+            "[[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;",
+            "[[[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;"})
     public static void multiDimensionalArrayTest() {
         E obj = new E();
-        E[][] arr = new E[1][1];
-        multiDimensionalArrayTest_source(arr[0]);
-        arr[0][0] = obj;
-        multiDimensionalArrayTest_sink(arr);
+        E[][][] arr = new E[1][1][1];
+        multiDimensionalArrayTest_source(arr[0][0]);
+        arr[0][0][0] = obj;
+        multiDimensionalArrayTest_sink(arr[0]);
     }
 
     @AvailableTypes({
@@ -236,8 +241,6 @@ public class StaticMethodFlows {
     public static void multiDimensionalArrayTest_sink(E[][] arr) {
         E obj = arr[0][0];
     }
-
-
 
     // === Recursive methods ===
 

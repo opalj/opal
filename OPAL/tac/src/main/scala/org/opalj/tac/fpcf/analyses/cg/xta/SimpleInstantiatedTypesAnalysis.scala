@@ -6,6 +6,7 @@ package analyses
 package cg
 package xta
 
+import org.opalj.br.ArrayType
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -27,14 +28,19 @@ import org.opalj.br.instructions.NEW
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.instructions.CreateNewArrayInstruction
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Results
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * Updates InstantiatedTypes attached to a method for each constructor
- * call occurring within that method.
+ * call or array allocation occurring within that method.
  *
  * This is a simple analysis which yields useful results for basic tests,
  * but it does not capture, e.g., indirect constructor calls through reflection.
+ *
+ * It also updates InstantiatedTypes of multidimensional ArrayTypes (see comments below
+ * for more details).
  *
  * The analysis is triggered for a method once it becomes reachable, i.e., a
  * caller has been added. Thus, the property is not computed for unreachable methods.
@@ -58,30 +64,68 @@ class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends R
             case _ ⇒ None
         })
 
-        PartialResult(
-            definedMethod,
-            InstantiatedTypes.key,
-            update(definedMethod, UIDSet((instantiatedObjectTypes ++ instantiatedArrays).toSeq: _*))
+        val multidimensionalArrayPartialResults = multidimensionalArrayInitialAssignments(instantiatedArrays)
+
+        Results(
+            PartialResult(
+                definedMethod,
+                InstantiatedTypes.key,
+                update(definedMethod, UIDSet((instantiatedObjectTypes ++ instantiatedArrays).toSeq: _*))
+            ),
+            multidimensionalArrayPartialResults
         )
     }
 
+    /**
+     * When allocating array with dimension > 1, the JVM allocates and assigns
+     * sub-arrays implicitly. We need to capture these effects for the analysis.
+     *
+     * E.g., consider the allocation "arr = new A[1][1]". Here, it is necessary that
+     * ArrayType(ArrayType(ObjectType(A))) has the instantiated type ArrayType(ObjectType(A)),
+     * otherwise reads like arr[0] will return no types which may lead to incorrect results.
+     *
+     * This implementation has a (sound) over-approximation: Consider an allocation like
+     * "arr = new A[1][]", then a[0] == null, which means there is no such implicit assignment.
+     * However, capturing this more accurately requires more in-depth analysis of the bytecode/
+     * TAC. (TODO AB future work)
+     *
+     * @param arrays ArrayTypes which were found to be instantiated within the method.
+     * @return Partial results for the implicit assignments.
+     */
+    def multidimensionalArrayInitialAssignments(arrays: Array[ArrayType]): Iterable[PartialResult[ArrayType, InstantiatedTypes]] = {
+
+        val multidimensionalArrays = arrays.filter(_.dimensions > 1)
+        if (multidimensionalArrays.isEmpty) {
+            return Iterable.empty
+        }
+
+        val initialAssignments = multidimensionalArrays.map(at ⇒
+            PartialResult(at, InstantiatedTypes.key, update(at, UIDSet(at.componentType.asReferenceType))))
+
+        // these are all ArrayTypes since we filtered for dim > 1 above
+        val componentTypes = multidimensionalArrays.map(_.componentType.asArrayType)
+        val recursiveAssignments = multidimensionalArrayInitialAssignments(componentTypes)
+
+        initialAssignments ++ recursiveAssignments
+    }
+
     // TODO AB code duplication; something like this appears in many places
-    def update(
-        method:               DefinedMethod,
+    def update[E >: Null <: Entity](
+        entity:               E,
         newInstantiatedTypes: UIDSet[ReferenceType]
     )(
-        eop: EOptionP[DefinedMethod, InstantiatedTypes]
-    ): Option[EPS[DefinedMethod, InstantiatedTypes]] = eop match {
+        eop: EOptionP[E, InstantiatedTypes]
+    ): Option[EPS[E, InstantiatedTypes]] = eop match {
         case InterimUBP(ub: InstantiatedTypes) ⇒
             val newUB = ub.updated(newInstantiatedTypes)
             if (newUB.types.size > ub.types.size)
-                Some(InterimEUBP(method, newUB))
+                Some(InterimEUBP(entity, newUB))
             else
                 None
 
         case _: EPK[_, _] ⇒
             val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
-            Some(InterimEUBP(method, newUB))
+            Some(InterimEUBP(entity, newUB))
 
         case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }

@@ -427,7 +427,10 @@ class XTACallGraphAnalysis private[analyses] (
         val containsArrayStores = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AASTORE }
         val containsArrayLoads = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AALOAD }
 
-        // TODO AB do we also need to handle initial flows to ArrayTypes here? (like with fields)
+        // TODO AB need to handle initially available ArrayTypes as well
+        if (instantiatedTypesEOptP.hasUBP && instantiatedTypesEOptP.ub.types.exists(_.isArrayType)) {
+            OPALLogger.warn("xta", "initial types contain ArrayType(s), not handled correctly!")
+        }
 
         new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP,
             writtenFields, readFieldTypeEOptPs, containsArrayStores, containsArrayLoads)
