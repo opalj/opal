@@ -8,7 +8,9 @@ import scala.collection.mutable.Builder
  *
  * @author Michael Eichberg
  */
-trait LongSet[T <: LongSet[T]] extends GrowableLongSet[T] { longSet: T ⇒
+trait LongSet[T <: LongSet[T]] extends GrowableLongSet { longSet: T ⇒
+
+    type ThisSet = T
 
     /**
      * Tests if this set has more than one element (complexity: O(1)).
