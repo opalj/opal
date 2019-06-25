@@ -14,11 +14,6 @@ trait LongSet[T <: LongSet[T]] extends GrowableLongSet[T] { longSet: T ⇒
      * Tests if this set has more than one element (complexity: O(1)).
      */
     def hasMultipleElements: Boolean
-    /**
-     * The size of the set; may not be a constant operation; if possible use isEmpty, nonEmpty,
-     * etc.; or lookup the complexity in the concrete data structures.
-     */
-    def size: Int
 
     def filter(p: Long ⇒ Boolean): T
 
