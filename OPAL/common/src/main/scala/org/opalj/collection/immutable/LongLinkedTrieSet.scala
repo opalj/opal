@@ -19,7 +19,7 @@ import java.lang.{Long ⇒ JLong}
  *
  * @author Michael Eichberg
  */
-sealed abstract class LongLinkedTrieSet {
+sealed abstract class LongLinkedTrieSet extends GrowableLongSet[LongLinkedTrieSet] {
     def size: Int
     def isEmpty: Boolean
     def isSingletonSet: Boolean
