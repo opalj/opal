@@ -23,6 +23,12 @@ trait GrowableLongSet[T <: GrowableLongSet[T]] { longSet: T ⇒
      */
     def isSingletonSet: Boolean
 
+    /**
+     * The size of the set; may not be a constant operation; if possible use isEmpty, nonEmpty,
+     * etc.; or lookup the complexity in the concrete data structures.
+     */
+    def size: Int
+
     def contains(value: Long): Boolean
 
     def foreach[U](f: Long ⇒ U): Unit
