@@ -7,30 +7,44 @@ public class FieldFlows {
     public static void main(String[] args) {
         staticFieldFlowTest();
         staticArrayFieldFlowTest();
+        shadowedFieldTest();
     }
 
     // === Type flow through fields ===
     // In this test, a value is written to a (static) field in one method
     // and read in another. Note that there is no direct flow between methods,
-    // since both methods have no parameters and void return type. Instead,
-    // the single constructed type A1 flows indirectly through the field.
+    // since all methods have no parameters and void return type. Instead,
+    // the types A1 and A2 flow indirectly through the field.
 
     @AvailableTypes
     private static void staticFieldFlowTest() {
-        staticFieldFlowTest_Write();
+        // Note: Order of calls does not matter, result is the same.
+        staticFieldFlowTest_Write1();
         staticFieldFlowTest_Read();
+        staticFieldFlowTest_Write1();
+        staticFieldFlowTest_Write2();
     }
 
-    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1")
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A2"})
     private static A field;
 
     @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1")
-    private static void staticFieldFlowTest_Write() {
+    private static void staticFieldFlowTest_Write1() {
         A obj = new A1();
         field = obj;
     }
 
-    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A2")
+    private static void staticFieldFlowTest_Write2() {
+        A obj = new A2();
+        field = obj;
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A2"})
     private static void staticFieldFlowTest_Read() {
         A obj = field;
     }
@@ -56,13 +70,47 @@ public class FieldFlows {
         Object obj = field2;
     }
 
-    // First class hierarchy: A <-- A1 and A <-- A2
-    private static class A {
+    // === Shadowed field test ===
+
+    private static class B {
+        @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1")
+        A field;
+    }
+    private static class B1 extends B {
+        @AvailableTypes // Empty!
+        A field;
     }
 
-    private static class A1 extends A {
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$B1"})
+    public static void shadowedFieldTest() {
+        B obj = new B1();
+        // Field stores are not virtual, therefore A1 is written to B.field, NOT to B1.field!
+        obj.field = new A1();
+
+        shadowedFieldTest_sink1(obj);
+        shadowedFieldTest_sink2((B1)obj);
     }
 
-    private static class A2 extends A {
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$B1"})
+    public static void shadowedFieldTest_sink1(B b) {
+        Object obj = b.field;
     }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$B1"})
+    public static void shadowedFieldTest_sink2(B1 b1) {
+        // Since no actual value is written to the B1.field, this read will return null.
+        // Thus, no subtype of A is available in this method's type set!
+        Object obj = b1.field;
+    }
+
+    // === Common classes ===
+
+    private static class A {}
+    private static class A1 extends A {}
+    private static class A2 extends A {}
 }

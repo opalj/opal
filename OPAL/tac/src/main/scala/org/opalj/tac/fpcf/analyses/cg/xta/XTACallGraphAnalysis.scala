@@ -427,6 +427,8 @@ class XTACallGraphAnalysis private[analyses] (
         val containsArrayStores = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AASTORE }
         val containsArrayLoads = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AALOAD }
 
+        // TODO AB do we also need to handle initial flows to ArrayTypes here? (like with fields)
+
         new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP,
             writtenFields, readFieldTypeEOptPs, containsArrayStores, containsArrayLoads)
     }

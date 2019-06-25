@@ -21,121 +21,125 @@ public class StaticMethodFlows {
         arrayTest();
         arrayTest2();
         arrayTest3();
+        multiDimensionalArrayTest();
         recursionTest();
     }
 
-    // === Test 1: ===
+    // === Parameter flow ===
     // Data flow from caller to callee.
-    // A2 and B2 are available because of the constructor calls.
+    // A1 and B1 are available because of the constructor calls.
     // The respective subsets should flow to the data sinks.
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1"})
     public static void parameterFlow() {
-        A1 obj1 = new A2();
+        A obj1 = new A1();
         parameterFlow_sinkA(obj1);
-        B1 obj2 = new B2();
+        B obj2 = new B1();
         parameterFlow_sinkB(obj2);
     }
 
-    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2")
-    public static void parameterFlow_sinkA(A1 obj) {
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1")
+    public static void parameterFlow_sinkA(A obj) {
         // ...
     }
 
-    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2")
-    public static void parameterFlow_sinkB(B1 obj) {
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1")
+    public static void parameterFlow_sinkB(B obj) {
         // ...
     }
 
-    // === Test 2: ===
+    // === Return value flow ===
     // Data flow from callee to caller, through return value.
-    // The source method constructs objects of type A2 and B2, but
-    // only A2 flows back to the caller since B2 is not a subtype of A1.
-    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2")
+    // The source method constructs objects of type A1 and B1, but
+    // only A1 flows back to the caller since B1 is not a subtype of A.
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1")
     public static void returnValueFlow() {
-        A1 obj = returnValueFlow_Source();
+        A obj = returnValueFlow_Source();
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2"})
-    public static A1 returnValueFlow_Source() {
-        A1 obj1 = new A2();
-        B1 obj2 = new B2();
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1"})
+    public static A returnValueFlow_Source() {
+        A obj1 = new A1();
+        B obj2 = new B1();
         return obj1;
     }
 
-    // === Test 3: ===
+    // === Combined forward/backward flow ===
     // Data flows in both directions.
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1"})
     public static void twoWayFlow() {
-        A1 obj1 = new A2();
-        B1 obj2 = twoWayFlow_SourceAndSink(obj1);
+        A obj1 = new A1();
+        B obj2 = twoWayFlow_SourceAndSink(obj1);
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B2"})
-    public static B1 twoWayFlow_SourceAndSink(A1 obj) {
-        B1 obj1 = new B2();
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1"})
+    public static B twoWayFlow_SourceAndSink(A obj) {
+        B obj1 = new B1();
         return obj1;
     }
 
-    // === Test 4: ===
+    // === Array test ===
+    // Note: All array tests use different types for isolation, since values written to ArrayTypes
+    // are available globally, across test boundaries.
+
     // In this test, two different types are written to an array. The array is accessed in
     // in arrayTest_sink, which should make both types available in this method.
-    @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
+    @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;")
     public static void arrayTest() {
         // Array is allocated in another method in order to test backward flow of the array type as well.
-        A1[] arr = arrayTest_alloc();
+        A[] arr = arrayTest_alloc();
         arrayTest_source1(arr);
         arrayTest_source2(arr);
         arrayTest_sink(arr);
     }
 
-    @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;")
-    public static A1[] arrayTest_alloc() {
+    @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;")
+    public static A[] arrayTest_alloc() {
         // These are not arrays of object types, therefore they should not be tracked.
         int[] foo = new int[10];
         int[][] foo2 = new int[10][10];
 
-        return new A1[2];
+        return new A[2];
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;"})
+    public static void arrayTest_source1(A[] arr) {
+        arr[0] = new A();
     }
 
     @AvailableTypes({
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
-    public static void arrayTest_source1(A1[] arr) {
-        arr[0] = new A1();
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;"})
+    public static void arrayTest_source2(A[] arr) {
+        arr[1] = new A1();
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
-    public static void arrayTest_source2(A1[] arr) {
-        arr[1] = new A2();
-    }
-
-    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
-    public static void arrayTest_sink(A1[] arr) {
-        A1 obj = arr[0];
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;"})
+    public static void arrayTest_sink(A[] arr) {
+        A obj = arr[0];
     }
 
-    // === Test 5: ===
-    // Here, two differently typed arrays flow into the sink separately. The result should be the same as
+    // === Array test 2 ===
+    // Here, two arrays of the same type flow into the sink separately. The result should be the same as
     // above.
     @AvailableTypes({
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B;",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B;"})
     public static void arrayTest2() {
-        A1[] arr = new A1[2];
-        A1[] arr2 = new A1[2];
+        B[] arr = new B[2];
+        B[] arr2 = new B[2];
         arrayTest2_source1(arr);
         arrayTest2_sink(arr);
         arrayTest2_source2(arr2);
@@ -143,35 +147,35 @@ public class StaticMethodFlows {
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
-    public static void arrayTest2_source1(A1[] arr) {
-        arr[0] = new A1();
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B;"})
+    public static void arrayTest2_source1(B[] arr) {
+        arr[0] = new B();
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
-    public static void arrayTest2_source2(A1[] arr) {
-        arr[1] = new A2();
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B;"})
+    public static void arrayTest2_source2(B[] arr) {
+        arr[1] = new B1();
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
-    public static void arrayTest2_sink(A1[] arr) {
-        A1 obj = arr[0];
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B;"})
+    public static void arrayTest2_sink(B[] arr) {
+        B obj = arr[0];
     }
 
-    // === Test 6: ===
+    // === Array test 3 ===
     // Here, two differently typed arrays flow into the sink.
     @AvailableTypes({
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C;",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D;"})
     public static void arrayTest3() {
-        A1[] arr = new A1[2];
-        B1[] arr2 = new B1[2];
+        C[] arr = new C[2];
+        D[] arr2 = new D[2];
         arrayTest3_source1(arr);
         arrayTest3_sink(arr);
         arrayTest3_source2(arr2);
@@ -179,70 +183,89 @@ public class StaticMethodFlows {
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;"})
-    public static void arrayTest3_source1(A1[] arr) {
-        arr[0] = new A1();
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C;"})
+    public static void arrayTest3_source1(C[] arr) {
+        arr[0] = new C();
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
-    public static void arrayTest3_source2(B1[] arr) {
-        arr[0] = new B1();
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D;"})
+    public static void arrayTest3_source2(D[] arr) {
+        arr[0] = new D();
     }
 
     @AvailableTypes({
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1",
-            // A2 is written to A1[] in arrayTest2, therefore it is also propagated here!
-            // TODO AB maybe update tests so that they are isolated
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A2",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1;",
-            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B1;"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C;",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D;"})
     public static void arrayTest3_sink(Object[] arr) {
         Object obj = arr[0];
     }
 
+    // === Multidimensional array test ===
+    // In the main method, an object E is written to the array. In the source method,
+    // an object E1 is written to the sub-array. In the sink, both E and E1 should
+    // appear.
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;",
+            "[[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;"})
+    public static void multiDimensionalArrayTest() {
+        E obj = new E();
+        E[][] arr = new E[1][1];
+        multiDimensionalArrayTest_source(arr[0]);
+        arr[0][0] = obj;
+        multiDimensionalArrayTest_sink(arr);
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;"})
+    public static void multiDimensionalArrayTest_source(E[] arr) {
+        arr[0] = new E1();
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E1",
+            "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;",
+            "[[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;"})
+    public static void multiDimensionalArrayTest_sink(E[][] arr) {
+        E obj = arr[0][0];
+    }
+
+
 
     // === Recursive methods ===
 
-    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1")
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A")
     public static void recursionTest() {
-        recursiveMethod(new A1());
+        recursiveMethod(new A());
     }
 
-    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1")
-    public static void recursiveMethod(A1 a) {
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A")
+    public static void recursiveMethod(A a) {
         // This will not terminate obviously, but that shouldn't matter for the static analysis.
         recursiveMethod(a);
     }
 
-    // === Test Class Hierarchy ===
+    // === Test Class Hierarchies ===
 
-    // First class hierarchy: A1 <-- A2
-    private static class A1 {
-        public void foo() {
-            // ...
-        }
-    }
+    private static class A {}
+    private static class A1 extends A {}
 
-    private static class A2 extends A1 {
-        public void foo() {
-            // ...
-        }
-    }
+    private static class B {}
+    private static class B1 extends B {}
 
-    // Second class hierarchy: B1 <-- B2
-    private static class B1 {
-        public void foo() {
-            // ...
-        }
-    }
+    private static class C {}
+    private static class C1 extends C {}
 
-    private static class B2 extends B1 {
-        public void foo() {
-            // ...
-        }
-    }
+    private static class D {}
+    private static class D1 extends D {}
+
+    private static class E {}
+    private static class E1 extends E {}
 }
