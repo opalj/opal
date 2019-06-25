@@ -16,6 +16,9 @@ import org.scalacheck.Arbitrary
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
 
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation
+
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
  * the results of the respective functions modulo the different semantics.
@@ -362,6 +365,29 @@ object UIDSetProperties extends Properties("UIDSet") {
 
 @RunWith(classOf[JUnitRunner])
 class UIDSetTest extends FunSpec with Matchers {
+
+    describe("performance") {
+
+        it("foreach") {
+            val seed = 123456789L
+            val rngGen = new java.util.Random(seed)
+
+            var overallSum = 0
+            var overallTime = Nanoseconds.None
+            for { i ← 1 to 1000 } {
+                var s = UIDSet.empty[SUID]
+                for { j ← 1 to 50000 } { s += SUID(rngGen.nextInt()) }
+
+                var sumForeach = 0
+                PerformanceEvaluation.time {
+                    s.foreach(sumForeach += _.id)
+                } { t ⇒ overallTime += t }
+
+                overallSum += sumForeach
+            }
+            info(s"foreach sum took ${overallTime.toSeconds}")
+        }
+    }
 
     describe("the equals operation for sets of one value") {
         it("should return true for two sets containing the same value") {

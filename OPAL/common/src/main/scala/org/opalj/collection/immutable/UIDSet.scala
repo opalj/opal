@@ -501,6 +501,27 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
         f(value)
         val left = this.left; if (left ne null) left.foreach(f)
         val right = this.right; if (right ne null) right.foreach(f)
+        /*
+        val nodes = new Array[UIDTrieSetNodeLike[T]](32 /*IMPROVE... we have to know the depth...*/ )
+        nodes(0) = this
+        var lastElementOnStack = 0
+        while (lastElementOnStack >= 0) {
+            val node = nodes(lastElementOnStack)
+
+                    f(node.value)
+                    lastElementOnStack -= 1
+                    val left = node.left
+                    if (left ne null) {
+                        lastElementOnStack += 1
+                        nodes(lastElementOnStack) = left
+                    }
+                    val right = node.right
+                    if (right ne null) {
+                        lastElementOnStack += 1
+                        nodes(lastElementOnStack) = right
+                    }
+        }
+*/
     }
 
     def iterator: RefIterator[T] = new RefIterator[T] {
@@ -946,10 +967,10 @@ final class UIDTrieSetLeaf[T <: UID] private[immutable] (
 
 // we wan't to be able to adapt the case class...
 final class UIDTrieSetInnerNode[T <: UID] private[immutable] (
-        protected var theSize: Int,
-        protected var value:   T,
-        protected var left:    UIDTrieSetNodeLike[T],
-        protected var right:   UIDTrieSetNodeLike[T]
+        protected var theSize:          Int,
+        protected[immutable] var value: T,
+        protected[immutable] var left:  UIDTrieSetNodeLike[T],
+        protected[immutable] var right: UIDTrieSetNodeLike[T]
 ) extends UIDTrieSetNodeLike[T] {
 
     override def size: Int = theSize

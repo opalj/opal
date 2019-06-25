@@ -5,7 +5,7 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
-import org.scalacheck.Prop.classify
+//import org.scalacheck.Prop.classify
 import org.scalacheck.Prop.BooleanOperators
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
@@ -65,27 +65,34 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
 
+    property("foreach") = forAll { s: IntArraySet ⇒
+        val its = s.iterator.foldLeft(LongTrieSet.empty)(_ + _.toLong)
+        var newS = IntArraySet.empty
+        its foreach { newS += _.toInt } // use foreach to compute a new set
+        s == newS
+    }
+
     property("create singleton LongTrieSet") = forAll { v: Long ⇒
         val factoryITS = LongTrieSet1(v)
         val viaEmptyITS = EmptyLongTrieSet + v
         factoryITS.size == 1 &&
             factoryITS.isSingletonSet &&
             !factoryITS.isEmpty &&
-            !factoryITS.hasMultipleElements &&
             factoryITS.head == v &&
             viaEmptyITS.hashCode == factoryITS.hashCode &&
             viaEmptyITS == factoryITS
     }
 
+    /*
     property("create LongTrieSet from Set step by step") = forAll { s: IntArraySet ⇒
         val its = s.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _.toLong)
         (its.size == s.size) :| "matching size" &&
             (its.isEmpty == s.isEmpty) &&
             (its.nonEmpty == s.nonEmpty) &&
-            (its.hasMultipleElements == (s.size > 1)) &&
             (its.isSingletonSet == (s.size == 1)) &&
             (its.iterator.toList.sorted == s.iterator.toList.sorted) :| "same content"
     }
+   */
 
     property("+ (adding) values to a set which are already in the set will result in the same set") = forAll { s: IntArraySet ⇒
         val its = s.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _.toLong)
@@ -93,31 +100,21 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
             (its eq (s.foldLeft(its)(_ + _.toLong)))
     }
 
+    /*
     property("create LongTrieSet from List (i.e., with duplicates)") = forAll { l: List[Long] ⇒
         val its = l.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _)
         val lWithoutDuplicates = l.toSet.toList
         (its.size == lWithoutDuplicates.size) :| "matching size" &&
             its.iterator.toList.sorted == lWithoutDuplicates.sorted
+    }*/
+
+    property("contains") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+        val its = s1.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _.toLong)
+        s1.forall(i ⇒ its.contains(i.toLong)) :| "contains expected value" &&
+            s2.forall(v ⇒ s1.contains(v) == its.contains(v.toLong))
     }
 
-    property("head") = forAll { s: LongTrieSet ⇒
-        s.nonEmpty ==> {
-            val its = s.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _)
-            s.contains(its.head) && its.size == s.size
-        }
-    }
-
-    property("head and headAndTail should return the same head") = forAll { s: LongTrieSet ⇒
-        var its = s
-        var success = true
-        while (its.nonEmpty && success) {
-            val h = its.head
-            val ht = its.headAndTail
-            its = ht.rest
-            success = h == ht.head
-        }
-        success
-    }
+    /*
 
     property("mkString(String,String,String)") = forAll { (s: Set[Long], pre: String, in: String, post: String) ⇒
         val its = s.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _)
@@ -138,18 +135,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
             ((itsString.length == lString.length) :| "length of generated string (its vs l)")
     }
 
-    property("contains") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
-        val its = s1.foldLeft(EmptyLongTrieSet: LongTrieSet)(_ + _.toLong)
-        s1.forall(i ⇒ its.contains(i.toLong)) :| "contains expected value" &&
-            s2.forall(v ⇒ s1.contains(v) == its.contains(v.toLong))
-    }
-
-    property("foreach") = forAll { s: IntArraySet ⇒
-        val its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
-        var newS = IntArraySet.empty
-        its foreach { newS += _.toInt } // use foreach to compute a new set
-        s == newS
-    }
 
     property("map") = forAll { s: IntArraySet ⇒
         val its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
@@ -185,18 +170,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         its.foldLeft(0L)(_ + _) == s.foldLeft(0L)(_ + _)
     }
 
-    property("headAndTail") = forAll { s: IntArraySet ⇒
-        var its = EmptyLongTrieSet ++ s.iterator.map(_.toLong)
-        var removed = Chain.empty[Long]
-        while (its.nonEmpty) {
-            val LongRefPair(v, newIts) = its.headAndTail
-            removed :&:= v
-            its = newIts
-        }
-        (removed.toIterator.toSet.size == s.size) :| "no value is returned more than once" &&
-            (removed.size == s.size) :| "all values are returned"
-    }
-
     property("flatMap") = forAll { listOfSets: List[IntArraySet] ⇒
         listOfSets.nonEmpty ==> {
             val arrayOfSets = listOfSets.toArray
@@ -220,11 +193,6 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         its != (new Object)
     }
 
-    property("+!") = forAll { s: LongTrieSet ⇒
-        val its = EmptyLongTrieSet ++! s
-        its == s
-    }
-
     property("equals") = forAll { s: LongTrieSet ⇒
         val i = { var i = 0L; while (s.contains(i)) i += 1L; i }
         val newS = (s + i - i)
@@ -238,243 +206,11 @@ object LongTrieSetProperties extends Properties("LongTrieSet") {
         // IMPROVE add content based test
     }
 
-    property("subsetOf (similar)") = forAll { (s1: IntArraySet, i: Long) ⇒
-        val its1 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong)
-        val its2 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong) +! i
-        val setSubsetOf = its1.subsetOf(its2)
-        val iteratorSubsetOf = its1.iterator.toSet.subsetOf(its2.iterator.toSet)
-        classify(its1.size == 0, "its1 is empty") {
-            classify(its1.size == 1, "its1.size == 1") {
-                classify(its1.size == 2, "its1.size == 2") {
-                    classify(its1.size == its2.size, "its1 == its2") {
-                        (setSubsetOf == iteratorSubsetOf) :| s"$setSubsetOf == $iteratorSubsetOf"
-                    }
-                }
-            }
-        }
-    }
-
-    property("subsetOf (always succeeding)") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
-        val its1 = s1.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val its2 = s2.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val mergedIts = its1 ++ its2
-        classify(its1.size == mergedIts.size, "its1 and its1 merged with its2 are different") {
-            its1.subsetOf(mergedIts) && its2.subsetOf(mergedIts)
-        }
-    }
-
-    property("filter (identity if no value is filtered)") = forAll { s: LongTrieSet ⇒
-        val i = { var i = 0L; while (s.contains(i)) i += 1L; i }
-        s.filter(_ != i) eq s
-    }
-
-    property("filter") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
-        val its1 = s1.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val its2 = s2.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val newits = its1.filter(v ⇒ !its2.contains(v))
-        val news = s1.withFilter(v ⇒ !s2.contains(v))
-        classify(news.size < s1.size, "filtered something") {
-            news.forall(v ⇒ newits.contains(v.toLong)) && newits.forall(l ⇒ news.contains(l.toInt))
-        }
-    }
-
-    property("-") = forAll { (ps: (IntArraySet, IntArraySet)) ⇒
-        val (s, other) = ps
-        val its = s.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val newits = other.foldLeft(its)(_ - _.toLong)
-        val news = other.foldLeft(s)(_ - _)
-        classify(news.size < s.size, "removed something") {
-            (its.size == s.size) :| "the original set is unmodified" &&
-                news.forall(i ⇒ newits.contains(i.toLong)) && newits.forall(l ⇒ news.contains(l.toInt))
-        }
-    }
-
-    property("intersect") = forAll { (ps: (IntArraySet, IntArraySet)) ⇒
-        val (ias1, ias2) = ps
-        val s1 = ias1.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val s2 = ias2.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val expected = s1.foldLeft(LongTrieSet.empty)((c, n) ⇒ if (s2.contains(n)) c + n else c)
-        (s1 intersect s2) == expected &&
-            (s2 intersect s1) == expected
-    }
-
-    property("- (all elements)") = forAll { s: IntArraySet ⇒
-        val its = s.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        val newits = s.foldLeft(its)(_ - _.toLong)
-        newits.size == 0 && newits.isEmpty &&
-            newits == EmptyLongTrieSet
-    }
-
-    property("filter (all elements)") = forAll { s: IntArraySet ⇒
-        val its = s.foldLeft(LongTrieSet.empty)(_ + _.toLong)
-        its.filter(i ⇒ false) eq EmptyLongTrieSet
-    }
-
+   */
 }
 
 @RunWith(classOf[JUnitRunner])
 class LongTrieSetTest extends FunSpec with Matchers {
-
-    describe("the subset of relation") {
-        it("should correctly work for empty set related comparisons") {
-            assert(LongTrieSet.empty.subsetOf(LongTrieSet.empty))
-            assert((LongTrieSet(1) - 1).subsetOf(LongTrieSet.empty))
-            assert((LongTrieSet(1) - 1).subsetOf(LongTrieSet(1)))
-            assert((LongTrieSet(1, 2, 3) - 1 - 2 - 3).subsetOf(LongTrieSet(1)))
-
-            assert(LongTrieSet.empty.subsetOf(LongTrieSet(1)))
-            assert(LongTrieSet.empty.subsetOf(LongTrieSet(1, 2)))
-            assert(LongTrieSet.empty.subsetOf(LongTrieSet(1, 2, 3)))
-            assert(LongTrieSet.empty.subsetOf(LongTrieSet(1, 3, 4, 5)))
-
-        }
-
-        it("should correctly work for set1 related comparisons") {
-            assert(LongTrieSet.empty.subsetOf(LongTrieSet1(1)))
-            assert(!LongTrieSet(2).subsetOf(LongTrieSet.empty))
-
-            assert(LongTrieSet(1).subsetOf(LongTrieSet(1)))
-            assert(!LongTrieSet(2).subsetOf(LongTrieSet(3)))
-
-            assert(LongTrieSet(1).subsetOf(LongTrieSet(1, 2)))
-            assert(LongTrieSet(2).subsetOf(LongTrieSet(1, 2)))
-            assert(!LongTrieSet(3).subsetOf(LongTrieSet(1, 2)))
-
-            assert(LongTrieSet(1).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(LongTrieSet(2).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(LongTrieSet(3).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(!LongTrieSet(4).subsetOf(LongTrieSet(1, 2, 3)))
-
-            assert(LongTrieSet(1).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(2).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(3).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(5).subsetOf(LongTrieSet(1, 2, 3, 4)))
-        }
-
-        it("should correctly work for set2 related comparisons") {
-            assert(!LongTrieSet(1, 2).subsetOf(LongTrieSet.empty))
-            assert(!LongTrieSet(1, 2).subsetOf(LongTrieSet(1)))
-
-            assert(LongTrieSet(1, 2).subsetOf(LongTrieSet(1, 2)))
-            assert(!LongTrieSet(2, 3).subsetOf(LongTrieSet(1, 2)))
-            assert(!LongTrieSet(1, 3).subsetOf(LongTrieSet(1, 2)))
-            assert(!LongTrieSet(-1, 1).subsetOf(LongTrieSet(1, 2)))
-            assert(!LongTrieSet(-1, 2).subsetOf(LongTrieSet(1, 2)))
-
-            assert(LongTrieSet(1, 2).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(LongTrieSet(1, 3).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(LongTrieSet(2, 3).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(!LongTrieSet(-1, 2).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(!LongTrieSet(1, 4).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(!LongTrieSet(2, 4).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(!LongTrieSet(3, 4).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(!LongTrieSet(0, 4).subsetOf(LongTrieSet(1, 2, 3)))
-
-            assert(LongTrieSet(1, 2).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(1, 3).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(1, 4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(2, 3).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(2, 4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(3, 4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(-1, 2).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(1, 5).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(2, 5).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(3, 5).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(4, 5).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(0, 4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-        }
-
-        it("should correctly work for set3 related comparisons") {
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet.empty))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(2)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(3)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(0)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 2)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(2, 3)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 3)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 5)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(0, 5)))
-
-            assert(LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 2, 4)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(2, 3, 4)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 3, 4)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 2, 0)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(2, 3, 0)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 3, 0)))
-
-            assert(LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(1, 2, 4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(1, 3, 4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(LongTrieSet(2, 3, 4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 2, 4, 5)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(2, 3, 4, 5)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 3, 4, 5)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 2, 0, 5)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(2, 3, 0, 5)))
-            assert(!LongTrieSet(1, 2, 3).subsetOf(LongTrieSet(1, 3, 0, 5)))
-        }
-
-        it("should correctly work for set4 related comparisons") {
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet.empty))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(2)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(3)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(0)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(2, 3)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(3, 4)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 3)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(0, 5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 3)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 4)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(2, 3, 4)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 3, 4)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 0)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(2, 3, 0)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 3, 0)))
-
-            assert(LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 3, 4)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 4, 5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 3, 4, 5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 3, 5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(2, 3, 4, 5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 4, 0)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 3, 4, 0)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 3, 0)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(2, 3, 4, 0)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 4, -5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 3, 4, -5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 3, -5)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(2, 3, 4, -2)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 4, -2)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 3, 4, -2)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(1, 2, 3, -2)))
-            assert(!LongTrieSet(1, 2, 3, 4).subsetOf(LongTrieSet(2, 3, 4, -2)))
-        }
-
-        it("should correctly work for set5+ related comparisons") {
-
-            // the following are derived from failing tests...
-
-            val s8a = LongTrieSet(-132967, -114794, -91882, -87887) + (-23059) + (-16654) + (-623) + 35514
-            val s8b = LongTrieSet(-90376, -83774, -82124, -81207) + (-18991) + (-5490) + 11406 + 11506
-            assert(!s8a.subsetOf(s8b))
-            assert(!s8b.subsetOf(s8a))
-
-            val l = List[Long](-127543, -104227, -103908, -103694, -100767, -90387, -86807, -80533, -78983, -14063, -10431, -10212, -6447, -298, 163, 9627, 19840, 38723)
-            val s18 = l.foldLeft(LongTrieSet.empty)(_ + _)
-            val s18_plus_m1 = s18 + (-1L)
-            assert(s18.subsetOf(s18_plus_m1), s"$s18 expected to be subset of $s18_plus_m1")
-
-            val s4 = LongTrieSet(-149916, -118018, -102540, -91539)
-            val s4_plus_0 = s4 + 0
-            assert(s4.subsetOf(s4_plus_0), s"$s4 expected to be subset of $s4_plus_0")
-        }
-    }
 
     describe("create an LongTrieSet from four values") {
 
@@ -541,25 +277,19 @@ class LongTrieSetTest extends FunSpec with Matchers {
         }
     }
 
-    describe("create an LongTrieSet from one value") {
-        it("should contain the value") {
-            assert(LongTrieSet(1).head == 1)
-        }
-    }
-
     describe("regression tests") {
         it("should implement contains correctly") {
-            val s = LongTrieSet(-149916, -102540, -118018, -91539) + 0
-            assert(s.contains(-149916))
-            assert(s.contains(-102540))
-            assert(s.contains(-118018))
-            assert(s.contains(-91539))
-            assert(s.contains(0))
+            val s = LongTrieSet(-149916L, -102540L, -118018L) + -91539L + 0L
+            assert(s.contains(-149916L))
+            assert(s.contains(-102540L))
+            assert(s.contains(-118018L))
+            assert(s.contains(-91539L))
+            assert(s.contains(0L))
 
         }
     }
 
-    describe("processing an LongTrieSet which is leaning to the right") {
+    describe("processing a LongTrieSet which is leaning to the right") {
 
         val s = LongTrieSet(8192) + 16384 + 32768 + 65536 + 131072
 
@@ -570,79 +300,89 @@ class LongTrieSetTest extends FunSpec with Matchers {
             assert(s.contains(65536))
             assert(s.contains(131072))
         }
-
-        it("it should be able to eagerly filter the values") {
-            val s1 = s.filter(_ != 8192)
-            assert(!s1.contains(8192))
-            assert(s1.contains(16384))
-            assert(s1.contains(32768))
-            assert(s1.contains(65536))
-            assert(s1.contains(131072))
-
-            val s2 = s1.filter(_ != 32768)
-            assert(s2.contains(16384))
-            assert(!s2.contains(32768))
-            assert(s2.contains(65536))
-            assert(s2.contains(131072))
-
-            val s3 = s2.filter(_ != 131072)
-            assert(s3.contains(16384))
-            assert(s3.contains(65536))
-            assert(!s3.contains(131072))
-        }
-    }
-
-    describe("filtering a LongTrieSet where the values share a very long prefix path") {
-
-        it("should create the canonical representation as soon as we just have two values left") {
-            val its = LongTrieSet(8192, 2048, 8192 + 2048 + 16384, 8192 + 2048) + (8192 + 16384)
-            val filteredIts = its.filter(i ⇒ i == 8192 || i == 8192 + 2048 + 16384)
-            filteredIts.size should be(2)
-            filteredIts shouldBe an[LongTrieSet2]
-        }
-
-        it("should create the canonical representation as soon as we just have one value left in each branch ") {
-            val its = LongTrieSet(0, 8, 12, 4)
-            val filteredIts = its.filter(i ⇒ i == 8 || i == 12)
-            filteredIts.size should be(2)
-            filteredIts shouldBe an[LongTrieSet2]
-        }
-
-        it("should create the canonical representation as soon as we just have one value left") {
-            val its = LongTrieSet(8192, 2048, 8192 + 2048 + 16384, 8192 + 2048) + (8192 + 16384)
-            val filteredIts = its.filter(i ⇒ i == 8192 + 2048 + 16384)
-            filteredIts.size should be(1)
-            filteredIts shouldBe an[LongTrieSet1]
-        }
-    }
-
-    describe("an identity mapping of a small LongTrieSet") {
-        it("should results in the same set") {
-            val is0 = LongTrieSet.empty
-            val is1 = LongTrieSet(1)
-            val is2 = LongTrieSet(3, 4)
-            val is3 = LongTrieSet(256, 512, 1037)
-
-            assert(is0.map(i ⇒ i) eq is0)
-            assert(is1.map(i ⇒ i) eq is1)
-            assert(is2.map(i ⇒ i) eq is2)
-            assert(is3.map(i ⇒ i) eq is3)
-        }
-    }
-
-    describe("creation of a set via an iterator") {
-        it("should result in sets comparable using subset of") {
-            val s1 = IntArraySet(-147701, -141111, -7075) + 24133
-            val its1 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong)
-            val its2 = s1.foldLeft(LongTrieSet.empty)(_ +! _.toLong) +! 0
-            assert(its1.subsetOf(its2))
-            val its1ItSet = its1.iterator.toSet
-            val its2ItSet = its2.iterator.toSet
-            assert(its1ItSet.subsetOf(its2ItSet))
-        }
     }
 
     describe("performance") {
+
+        describe("contains") {
+
+            val fixtures = List[List[Long]](
+                List[Long](4414074060632414370L, 1896250972871104879L, -4468262829510781048L, 3369759390166412338L, 3433954040001057900L, -5360189778998759153L, -4455613594770698331L, 7795367189183618087L, 7342745861545843810L, -938149705997478263L, -7298104853677454976L, 4601242874523109082L, 4545666121642261549L, 2117478629717484238L),
+                List[Long](-92276, -76687, -1003, 39908),
+                List[Long](-149831, -143246, -110997, -103241, -100192, -91362, -14553, -10397, -2126, -628, 8184, 13255, 39973),
+                List[Long](-103806, -99428, -15784, -6124, 48020),
+                List[Long](-134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213, -20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875)
+            )
+
+            for { fixture ← fixtures } {
+                it("[regression] should return true for all values of the test fixture: "+fixture) {
+                    val llts = fixture.foldLeft(LongTrieSet.empty)((c, n) ⇒ c + n)
+                    var notFound = List.empty[Long]
+                    fixture.foreach(v ⇒ if (!llts.contains(v)) notFound ::= v)
+                    if (notFound.nonEmpty)
+                        fail(s"lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
+                }
+
+            }
+
+            it("for sets with four values with many leading zeros") {
+                val ls = org.opalj.collection.immutable.LongTrieSet1(128L) + 16L + 32L + 64L
+                assert(ls.contains(128L))
+                assert(ls.contains(16L))
+                assert(ls.contains(32L))
+                assert(ls.contains(64L))
+
+                assert(!ls.contains(8L))
+                assert(!ls.contains(-16L))
+                assert(!ls.contains(15L))
+                assert(!ls.contains(0L))
+                assert(!ls.contains(1L))
+                assert(!ls.contains(2L))
+            }
+
+            it("for sets with four values with many leading ones") {
+                val ls = org.opalj.collection.immutable.LongTrieSet1(7L) + 15L + 31L + 63L
+                assert(ls.contains(7L))
+                assert(ls.contains(15L))
+                assert(ls.contains(31L))
+                assert(ls.contains(63L))
+
+                assert(!ls.contains(128L))
+                assert(!ls.contains(16L))
+                assert(!ls.contains(32L))
+                assert(!ls.contains(64L))
+                assert(!ls.contains(8L))
+                assert(!ls.contains(-16L))
+                assert(!ls.contains(0L))
+                assert(!ls.contains(1L))
+                assert(!ls.contains(2L))
+            }
+
+            it("when comparing with Set[Long]") {
+                val seed = 123456789L
+                val rngGen = new java.util.Random(seed)
+
+                var opalS = org.opalj.collection.immutable.LongTrieSet.empty
+                var scalaS = Set.empty[Long]
+                for { i ← 0 to 1000000 } {
+                    val v = rngGen.nextLong()
+                    opalS += v
+                    scalaS += v
+                }
+
+                var opalTotal = 0L
+                PerformanceEvaluation.time {
+                    for { v ← opalS } { opalTotal += v }
+                } { t ⇒ info(s"OPAL ${t.toSeconds} for foreach") }
+
+                var scalaTotal = 0L
+                PerformanceEvaluation.time {
+                    for { v ← scalaS } { scalaTotal += v }
+                } { t ⇒ info(s"Scala ${t.toSeconds} for foreach") }
+
+                assert(opalTotal == scalaTotal, s"$opalS vs. $scalaS")
+            }
+        }
 
         it("for small sets (up to 8 elements) creation and contains check should finish in reasonable time (all values are positive)") {
             var sizeOfAllSets: Int = 0
@@ -744,7 +484,7 @@ class LongTrieSetTest extends FunSpec with Matchers {
             } { t ⇒ info(s"${t.toSeconds} to create 10_000 sets with $sizeOfAllSets elements (largest set: $largestSet)") }
         }
 
-        it("memory usage") {
+        it("operations on 2500 sets with ~10000 elements each") {
             val seed = 123456789L
             val rngGen = new java.util.Random(seed)
 
@@ -758,8 +498,16 @@ class LongTrieSetTest extends FunSpec with Matchers {
                     }
                     s
                 }
-            } { mu ⇒ info(s"required $mu bytes for 1000 sets with ~10000 elements each") }
-            info(s"overall size: ${allSets.map(_.size).sum}")
+            } { mu ⇒ info(s"required $mu bytes") }
+
+            var total = 0L
+            PerformanceEvaluation.time {
+                for { set ← allSets; v ← set } {
+                    total += v
+                }
+            } { t ⇒ info(s"${t.toSeconds} for foreach") }
+
+            info(s"overall size: ${allSets.map(_.size).sum}; sum: $total")
         }
     }
 

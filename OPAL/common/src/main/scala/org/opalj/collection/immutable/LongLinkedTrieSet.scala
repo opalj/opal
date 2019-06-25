@@ -5,8 +5,8 @@ package immutable
 import scala.annotation.switch
 
 import java.lang.{Long ⇒ JLong}
-import java.lang.Long.{hashCode ⇒ lHashCode}
-import java.lang.Math.abs
+//import java.lang.Long.{hashCode ⇒ lHashCode}
+//import java.lang.Math.abs
 
 /**
  * An effectively immutable trie set of long values where the elements are sorted based on the
@@ -36,15 +36,13 @@ object LongLinkedTrieSet {
 
     def empty: LongLinkedTrieSet = EmptyLongLinkedTrieSet
 
-    def apply(v: Long): LongLinkedTrieSet = {
-        new LongLinkedTrieSet1(v)
-    }
+    def apply(v: Long): LongLinkedTrieSet = new LongLinkedTrieSet1(v)
 
-    def apply(vNewer: Long, vOlder: Long): LongLinkedTrieSet = {
-        if (vNewer == vOlder)
-            new LongLinkedTrieSet1(vNewer)
+    def apply(v1: Long, v2: Long): LongLinkedTrieSet = {
+        if (v1 == v2)
+            new LongLinkedTrieSet1(v1)
         else
-            new LongLinkedTrieSet2(vNewer, vOlder)
+            new LongLinkedTrieSet2(v1, v2)
     }
 
 }
@@ -118,27 +116,34 @@ final private[immutable] case class LongLinkedTrieSet3(v1: Long, v2: Long, v3: L
             set += v1
             set += v
             set
-
-        } else
+        } else {
             this
+        }
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+//
+// THE IMPLEMENTATION OF THE TRIE
+//
+// -------------------------------------------------------------------------------------------------
+
 /** The super type of the nodes of the trie set. */
-private[immutable] abstract class LongLinkedTrieSetNode {
+private[immutable] sealed abstract class LongLinkedTrieSetNode {
 
     /** `true` if this is an inner node. */
     def isN: Boolean
+    def isN4: Boolean
     /** `true` if this is a leaf node. */
     def isL: Boolean
     def asL: LongLinkedTrieSetL
 
-    /**
-     * Returns true if the node only references leaf nodes or if the node just represents a single
-     * path; hence, it is possible to merge the node with the node at one level up without having
-     * to update the entire tree.
-     */
-    def canFold: Boolean
+    def contains(v: Long, key: Long): Boolean
+
+    /** Returns the node for the path which has another "0" bit. */
+    def split_0(level: Int): LongLinkedTrieSetNode
+    /** Returns the node for the path which has another "1" bit. */
+    def split_1(level: Int): LongLinkedTrieSetNode
 
     def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode
 
@@ -147,15 +152,17 @@ private[immutable] abstract class LongLinkedTrieSetNode {
 }
 
 /** The leaves of the trie set. */
-final private[immutable] case class LongLinkedTrieSetL(
-        value: Long,
-        next:  LongLinkedTrieSetL = null // `null` if this leaf is the first element that was added to the set.
+final private[immutable] class LongLinkedTrieSetL(
+        val value: Long,
+        val next:  LongLinkedTrieSetL = null // `null` if this leaf is the first element that was added to the set.
 ) extends LongLinkedTrieSetNode {
 
     override def isN: Boolean = false
+    override def isN4: Boolean = false
     override def isL: Boolean = true
     override def asL: LongLinkedTrieSetL = this
-    override def canFold: Boolean = false
+
+    override def contains(v: Long, key: Long): Boolean = v == value
 
     override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
         val thisValue = this.value
@@ -175,16 +182,16 @@ final private[immutable] case class LongLinkedTrieSetL(
                 }
             case 1 ⇒
                 if ((thisValueShifted & 1L) == 0L) {
-                    if (((thisValueShifted >> 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(this, null, l, null)
+                    if ((thisValueShifted & 2L) == 0L) {
+                        new LongLinkedTrieSetN4_0_2(this, l)
                     } else {
-                        new LongLinkedTrieSetN4(l, null, this, null)
+                        new LongLinkedTrieSetN4_0_2(l, this)
                     }
                 } else {
-                    if (((thisValueShifted >> 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(null, this, null, l)
+                    if ((thisValueShifted & 2L) == 0L) {
+                        new LongLinkedTrieSetN4_1_3(this, l)
                     } else {
-                        new LongLinkedTrieSetN4(null, l, null, this)
+                        new LongLinkedTrieSetN4_1_3(l, this)
                     }
                 }
             case length ⇒
@@ -198,20 +205,36 @@ final private[immutable] case class LongLinkedTrieSetL(
         }
     }
 
+    final override def split_0(level: Int): LongLinkedTrieSetNode = {
+        if ((((value >> level) & 1L) == 0L)) {
+            this
+        } else {
+            null
+        }
+    }
+
+    final override def split_1(level: Int): LongLinkedTrieSetNode = {
+        if ((((value >> level) & 1L) == 1L)) {
+            this
+        } else {
+            null
+        }
+    }
+
     final override def toString(level: Int): String = s"L(${value.toBinaryString}=$value)"
 
 }
 
 /** The inner nodes of the trie set. */
-private[immutable] abstract class LongLinkedTrieSetInnerNode extends LongLinkedTrieSetNode {
+private[immutable] sealed abstract class LongLinkedTrieSetInnerNode extends LongLinkedTrieSetNode {
     final override def isN: Boolean = true
     final override def isL: Boolean = false
     final override def asL: LongLinkedTrieSetL = throw new ClassCastException()
 }
 
-private[immutable] abstract class LongLinkedTrieSetNShared extends LongLinkedTrieSetInnerNode {
+private[immutable] sealed abstract class LongLinkedTrieSetNShared extends LongLinkedTrieSetInnerNode {
 
-    override def canFold: Boolean = length == 1
+    final override def isN4: Boolean = false
 
     def sharedBits: Long
     def length: Int // at least "1"
@@ -259,7 +282,6 @@ private[immutable] abstract class LongLinkedTrieSetNShared extends LongLinkedTri
             } else {
                 LongLinkedTrieSetNShared(sharedBits & LongSet.BitMasks(lengthOfLead), lengthOfLead, newM)
             }
-
         }
     }
 
@@ -271,16 +293,32 @@ private[immutable] abstract class LongLinkedTrieSetNShared extends LongLinkedTri
 
 private[immutable] object LongLinkedTrieSetNShared {
 
-    def apply(sharedBits: Long, length: Int, n: LongLinkedTrieSetNode): LongLinkedTrieSetNShared = {
+    def apply(sharedBits: Long, length: Int, n: LongLinkedTrieSetNode): LongLinkedTrieSetNode = {
 
         assert(length >= 1)
 
-        (length: @switch) match {
+        length match {
             case 1 ⇒
-                if (sharedBits == 0L)
-                    new LongLinkedTrieSetNShared_0(n)
-                else
-                    new LongLinkedTrieSetNShared_1(n)
+                // if (sharedBits == 0L /*test the last bit...*/ )
+                //    new LongLinkedTrieSetNShared_0(n)
+                // else
+                //    new LongLinkedTrieSetNShared_1(n)
+                (n: @unchecked) match {
+                    case l: LongLinkedTrieSetN2 ⇒
+                        if (sharedBits == 0L /*test the last bit...*/ ) {
+                            new LongLinkedTrieSetN4_0_2(l._0, l._1)
+                        } else {
+                            new LongLinkedTrieSetN4_1_3(l._0, l._1)
+                        }
+                    case l: LongLinkedTrieSetN4 ⇒
+                        if (sharedBits == 0L /*test the last bit...*/ )
+                            new LongLinkedTrieSetNShared_0(n)
+                        else
+                            new LongLinkedTrieSetNShared_1(n)
+                    // [will never occur!] case l: LongLinkedTrieSetL       ⇒ ...
+                    // [will never occur!] case l: LongLinkedTrieSetNShared ⇒ ...
+                }
+
             case 2 ⇒
                 (sharedBits.toInt: @switch) match {
                     case 0 ⇒ new LongLinkedTrieSetNShared_00(n)
@@ -289,7 +327,8 @@ private[immutable] object LongLinkedTrieSetNShared {
                     case 3 ⇒ new LongLinkedTrieSetNShared_11(n)
                 }
 
-            case x ⇒ new LongLinkedTrieSetNShared_X(sharedBits, length, n)
+            case _ ⇒
+                new LongLinkedTrieSetNShared_X(sharedBits, length, n)
         }
 
     }
@@ -297,60 +336,155 @@ private[immutable] object LongLinkedTrieSetNShared {
 }
 
 final private[immutable] class LongLinkedTrieSetNShared_0(
-        val n: LongLinkedTrieSetNode
+        final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
-    def sharedBits: Long = 0
-    def length: Int = 1
+
+    override def sharedBits: Long = 0
+    override def length: Int = 1
+
+    override def split_0(level: Int): LongLinkedTrieSetNode = n
+    override def split_1(level: Int): LongLinkedTrieSetNode = null
+
+    override def contains(v: Long, key: Long): Boolean = {
+        ((key & 1L) == 0L) && n.contains(v, key >> 1)
+    }
+
+    override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
+        val lValue = l.value
+        val lValueShifted = lValue >> level
+        if ((lValueShifted & 1L) == 0L) {
+            val oldN = this.n
+            val newN = oldN + (l, level + length)
+            if (oldN ne newN) {
+                new LongLinkedTrieSetNShared_0(newN)
+            } else {
+                this
+            }
+        } else {
+            LongLinkedTrieSetN2(level, n, l)
+        }
+    }
 }
 
 final private[immutable] class LongLinkedTrieSetNShared_1(
-        val n: LongLinkedTrieSetNode
+        final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
-    def sharedBits: Long = 1
-    def length: Int = 1
+
+    override def sharedBits: Long = 1
+    override def length: Int = 1
+
+    override def split_0(level: Int): LongLinkedTrieSetNode = null
+    override def split_1(level: Int): LongLinkedTrieSetNode = n
+
+    override def contains(v: Long, key: Long): Boolean = {
+        ((key & 1L) == 1L) && n.contains(v, key >> 1)
+    }
+    override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
+        val lValue = l.value
+        val lValueShifted = lValue >> level
+        if ((lValueShifted & 1L) == 1L) {
+            val oldN = this.n
+            val newN = oldN + (l, level + length)
+            if (oldN ne newN) {
+                new LongLinkedTrieSetNShared_1(newN)
+            } else {
+                this
+            }
+        } else {
+            LongLinkedTrieSetN2(level, l, n)
+        }
+    }
 }
 
 final private[immutable] class LongLinkedTrieSetNShared_00(
-        val n: LongLinkedTrieSetNode
+        final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
-    def sharedBits: Long = 0
-    def length: Int = 2
+    override def sharedBits: Long = 0
+    override def length: Int = 2
+    override def split_0(level: Int): LongLinkedTrieSetNode = new LongLinkedTrieSetNShared_0(n)
+    override def split_1(level: Int): LongLinkedTrieSetNode = null
+    override def contains(v: Long, key: Long): Boolean = {
+        ((key & 3L) == 0L) && n.contains(v, key >> 2)
+    }
 }
 
 final private[immutable] class LongLinkedTrieSetNShared_01(
-        val n: LongLinkedTrieSetNode
+        final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
     def sharedBits: Long = 1
     def length: Int = 2
+    override def split_0(level: Int): LongLinkedTrieSetNode = null
+    override def split_1(level: Int): LongLinkedTrieSetNode = new LongLinkedTrieSetNShared_0(n)
+    override def contains(v: Long, key: Long): Boolean = {
+        ((key & 3L) == 1L) && n.contains(v, key >> 2)
+    }
 }
 
 final private[immutable] class LongLinkedTrieSetNShared_10(
-        val n: LongLinkedTrieSetNode
+        final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
     def sharedBits: Long = 2
     def length: Int = 2
+    override def split_0(level: Int): LongLinkedTrieSetNode = new LongLinkedTrieSetNShared_1(n)
+    override def split_1(level: Int): LongLinkedTrieSetNode = null
+    override def contains(v: Long, key: Long): Boolean = {
+        ((key & 3L) == 2L) && n.contains(v, key >> 2)
+    }
 }
 
 final private[immutable] class LongLinkedTrieSetNShared_11(
-        val n: LongLinkedTrieSetNode
+        final val n: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetNShared {
     def sharedBits: Long = 3
     def length: Int = 2
+    override def split_0(level: Int): LongLinkedTrieSetNode = null
+    override def split_1(level: Int): LongLinkedTrieSetNode = new LongLinkedTrieSetNShared_1(n)
+    override def contains(v: Long, key: Long): Boolean = {
+        ((key & 3L) == 3L) && n.contains(v, key >> 2)
+    }
 }
 
 final private[immutable] class LongLinkedTrieSetNShared_X(
         val sharedBits: Long,
         val length:     Int,
         val n:          LongLinkedTrieSetNode
-) extends LongLinkedTrieSetNShared
+) extends LongLinkedTrieSetNShared {
+
+    override def split_0(level: Int): LongLinkedTrieSetNode = {
+        if ((sharedBits & 1L) == 0L) {
+            LongLinkedTrieSetNShared(sharedBits >> 1, length - 1, n)
+        } else {
+            null
+        }
+    }
+    override def split_1(level: Int): LongLinkedTrieSetNode = {
+        if ((sharedBits & 1L) == 1L) {
+            LongLinkedTrieSetNShared(sharedBits >> 1, length - 1, n)
+        } else {
+            null
+        }
+    }
+    override def contains(v: Long, key: Long): Boolean = {
+        val length = this.length
+        ((key & LongSet.BitMasks(length)) == sharedBits) &&
+            n.contains(v, key >> length)
+    }
+}
 
 /** The inner nodes of the trie set. */
 final private[immutable] class LongLinkedTrieSetN2(
-        val _0: LongLinkedTrieSetNode,
-        val _1: LongLinkedTrieSetNode
+        final val _0: LongLinkedTrieSetNode,
+        final val _1: LongLinkedTrieSetNode
 ) extends LongLinkedTrieSetInnerNode {
 
-    override def canFold: Boolean = _0.isL && _1.isL
+    override def isN4: Boolean = false
+
+    override def contains(v: Long, key: Long): Boolean = {
+        if ((key & 1L) == 0L)
+            _0.contains(v, key >> 1)
+        else
+            _1.contains(v, key >> 1)
+    }
 
     def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
         val _0 = this._0
@@ -363,17 +497,15 @@ final private[immutable] class LongLinkedTrieSetN2(
             // do not want to perform "large" changes to the overall trie.
             return {
                 if (lLSB == 0) {
-                    val old_0 = this._0
-                    val new_0 = old_0 + (l, level + 1)
-                    if (old_0 ne new_0) {
+                    val new_0 = _0 + (l, level + 1)
+                    if (_0 ne new_0) {
                         new LongLinkedTrieSetN2(new_0, this._1)
                     } else {
                         this
                     }
                 } else {
-                    val old_1 = this._1
-                    val new_1 = old_1 + (l, level + 1)
-                    if (old_1 ne new_1) {
+                    val new_1 = _1 + (l, level + 1)
+                    if (_1 ne new_1) {
                         new LongLinkedTrieSetN2(this._0, new_1)
                     } else {
                         this
@@ -383,7 +515,7 @@ final private[immutable] class LongLinkedTrieSetN2(
         }
 
         if (lLSB == 0) {
-            val _0Value = this._0.asL.value
+            val _0Value = _0.asL.value
 
             if (_0Value == lValue)
                 return this;
@@ -393,15 +525,15 @@ final private[immutable] class LongLinkedTrieSetN2(
                 if (((_0Value >> level + 1) & 1L) == 0L) {
                     val newN = _0 + (l, level + 2)
                     if (((_1.asL.value >> level + 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(newN, _1, null, null)
+                        new LongLinkedTrieSetN4_0_1(newN, _1)
                     } else {
-                        new LongLinkedTrieSetN4(newN, null, null, _1)
+                        new LongLinkedTrieSetN4_0_3(newN, _1)
                     }
                 } else {
                     if (((_1.asL.value >> level + 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(l, _1, _0, null)
+                        LongLinkedTrieSetN4(l, _1, _0, null)
                     } else {
-                        new LongLinkedTrieSetN4(l, null, _0, _1)
+                        LongLinkedTrieSetN4(l, null, _0, _1)
                     }
                 }
             } else {
@@ -409,22 +541,22 @@ final private[immutable] class LongLinkedTrieSetN2(
                 if (((_0Value >> level + 1) & 1) == 0L) {
                     // l = ...10, _0 = ...00
                     if (((_1.asL.value >> level + 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(_0, _1, l, null)
+                        LongLinkedTrieSetN4(_0, _1, l, null)
                     } else {
-                        new LongLinkedTrieSetN4(_0, null, l, _1)
+                        LongLinkedTrieSetN4(_0, null, l, _1)
                     }
                 } else {
                     // l = ...10, _0 =...10
                     val newN = _0 + (l, level + 2)
                     if (((_1.asL.value >> level + 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(null, _1, newN, null)
+                        new LongLinkedTrieSetN4_1_2(_1, newN)
                     } else {
-                        new LongLinkedTrieSetN4(null, null, newN, _1)
+                        new LongLinkedTrieSetN4_2_3(newN, _1)
                     }
                 }
             }
         } else {
-            val _1Value = this._1.asL.value
+            val _1Value = _1.asL.value
 
             if (_1Value == lValue)
                 return this;
@@ -435,16 +567,16 @@ final private[immutable] class LongLinkedTrieSetN2(
                     // l = ...01, _1 = ...01
                     val newN = _1 + (l, level + 2)
                     if (((_0.asL.value >> level + 1) & 1L) == 0) {
-                        new LongLinkedTrieSetN4(_0, newN, null, null)
+                        new LongLinkedTrieSetN4_0_1(_0, newN)
                     } else {
-                        new LongLinkedTrieSetN4(null, newN, _0, null)
+                        new LongLinkedTrieSetN4_1_2(newN, _0)
                     }
                 } else {
                     // l = ...01,_1 = ...11
                     if (((_0.asL.value >> level + 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(_0, l, null, _1)
+                        LongLinkedTrieSetN4(_0, l, null, _1)
                     } else {
-                        new LongLinkedTrieSetN4(null, l, _0, _1)
+                        LongLinkedTrieSetN4(null, l, _0, _1)
                     }
                 }
             } else {
@@ -452,24 +584,28 @@ final private[immutable] class LongLinkedTrieSetN2(
                 if (((_1Value >> level + 1) & 1L) == 0L) {
                     // l = ...11, _1 = ...01
                     if (((_0.asL.value >> level + 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(_0, _1, null, l)
+                        LongLinkedTrieSetN4(_0, _1, null, l)
                     } else {
-                        new LongLinkedTrieSetN4(null, _1, _0, l)
+                        LongLinkedTrieSetN4(null, _1, _0, l)
                     }
                 } else {
                     // l = ...11, _1 = ...11
                     val newN = _1 + (l, level + 2)
                     if (((_0.asL.value >> level + 1) & 1L) == 0L) {
-                        new LongLinkedTrieSetN4(_0, null, null, newN)
+                        new LongLinkedTrieSetN4_0_3(_0, newN)
                     } else {
-                        new LongLinkedTrieSetN4(null, null, _0, newN)
+                        new LongLinkedTrieSetN4_2_3(_0, newN)
                     }
                 }
             }
         }
     }
 
-    def toString(level: Int): String = {
+    override def split_0(level: Int): LongLinkedTrieSetNode = _0
+
+    override def split_1(level: Int): LongLinkedTrieSetNode = _1
+
+    override def toString(level: Int): String = {
         val indent = " " * level
         val lP2 = level + 2
         s"N2(\n$indent 0=>${_0.toString(lP2)}\n$indent 1=>${_1.toString(lP2)})"
@@ -482,92 +618,433 @@ private[immutable] object LongLinkedTrieSetN2 {
         level: Int,
         _0:    LongLinkedTrieSetNode,
         _1:    LongLinkedTrieSetNode
-    ): LongLinkedTrieSetN2 = {
-        //  if (_0.canFold && _1.canFold) {
-        //      new LongLinkedTrieSetN4(_0.node_0(level))
-        //  } else {
-        new LongLinkedTrieSetN2(_0, _1)
-        //  }
+    ): LongLinkedTrieSetNode = {
+        if (_0.isN4 || _1.isN4)
+            return new LongLinkedTrieSetN2(_0, _1);
+
+        val newLevel = level + 1
+        LongLinkedTrieSetN4(
+            _0.split_0(newLevel), _1.split_0(newLevel), _0.split_1(newLevel), _1.split_1(newLevel)
+        )
+    }
+}
+
+object LongLinkedTrieSetN4 {
+
+    def apply(
+        _0: LongLinkedTrieSetNode,
+        _1: LongLinkedTrieSetNode,
+        _2: LongLinkedTrieSetNode,
+        _3: LongLinkedTrieSetNode
+    ): LongLinkedTrieSetN4 = {
+        if (_0 eq null) {
+            if (_1 eq null) {
+                //(0,0,?,?)
+                new LongLinkedTrieSetN4_2_3(_2, _3)
+            } else {
+                //(0,1,?,?)
+                if (_2 eq null) {
+                    //(0,1,0,?)
+                    new LongLinkedTrieSetN4_1_3(_1, _3)
+                } else {
+                    //(0,1,1,?)
+                    if (_3 eq null) {
+                        //(0,1,1,0)
+                        new LongLinkedTrieSetN4_1_2(_1, _2)
+                    } else {
+                        //(0,1,1,1)
+                        new LongLinkedTrieSetN4_0_1_2_3(null, _1, _2, _3)
+                    }
+                }
+            }
+        } else {
+            if (_1 eq null) {
+                //(1,0,?,?)
+                if (_2 eq null) {
+                    //(1,0,0,?)
+                    new LongLinkedTrieSetN4_0_3(_0, _3)
+                } else {
+                    //(1,0,1,?)
+                    if (_3 eq null) {
+                        //(1,0,1,0)
+                        new LongLinkedTrieSetN4_0_2(_0, _2)
+                    } else {
+                        //(1,0,1,1)
+                        new LongLinkedTrieSetN4_0_1_2_3(_0, null, _2, _3)
+                    }
+                }
+            } else {
+                //(1,1,?,?)
+                if (_2 eq null) {
+                    //(1,1,0,?)
+                    if (_3 eq null) {
+                        //(1,1,0,0)
+                        new LongLinkedTrieSetN4_0_1(_0, _1)
+                    } else {
+                        //(1,1,0,1)
+                        new LongLinkedTrieSetN4_0_1_2_3(_0, _1, null, _3)
+                    }
+                } else {
+                    //(1,1,1,?)
+                    new LongLinkedTrieSetN4_0_1_2_3(_0, _1, _2, _3)
+                }
+            }
+        }
     }
 
 }
 
 /** The inner nodes of the trie set. */
-final private[immutable] class LongLinkedTrieSetN4(
-        // least significant bits _ (current) second most important bit _ (current) most important bit
-        val _0: LongLinkedTrieSetNode, // a tree node, a leaf node or null
-        val _1: LongLinkedTrieSetNode, // a tree node, a leaf node or null
-        val _2: LongLinkedTrieSetNode, // a tree node, a leaf node or null
-        val _3: LongLinkedTrieSetNode // a tree node, a leaf node or null
-) extends LongLinkedTrieSetInnerNode {
+private[immutable] abstract class LongLinkedTrieSetN4 extends LongLinkedTrieSetInnerNode {
 
-    override def canFold: Boolean = false
+    protected def _0: LongLinkedTrieSetNode
+    protected def _1: LongLinkedTrieSetNode
+    protected def _2: LongLinkedTrieSetNode
+    protected def _3: LongLinkedTrieSetNode
+
+    final override def isN4: Boolean = true
+
+    final override def split_0(level: Int): LongLinkedTrieSetNode = throw new UnknownError()
+    final override def split_1(level: Int): LongLinkedTrieSetNode = throw new UnknownError()
+
+    final override def toString(level: Int): String = {
+        val indent = " " * level
+        val lP2 = level + 4
+        var s = "N4("
+        if (_0 ne null) s += s"\n$indent 00=>${_0.toString(lP2)}"
+        if (_1 ne null) s += s"\n$indent 01=>${_1.toString(lP2)}"
+        if (_2 ne null) s += s"\n$indent 10=>${_2.toString(lP2)}"
+        if (_3 ne null) s += s"\n$indent 11=>${_3.toString(lP2)}"
+        s+")"
+    }
+}
+
+final private[immutable] class LongLinkedTrieSetN4_0_1(
+        final val _0: LongLinkedTrieSetNode,
+        final val _1: LongLinkedTrieSetNode
+) extends LongLinkedTrieSetN4 {
+    final override protected def _2: LongLinkedTrieSetNode = null
+    final override protected def _3: LongLinkedTrieSetNode = null
+
+    override def contains(v: Long, key: Long): Boolean = {
+        (key & 3L) match {
+            case 0L ⇒ _0.contains(v, key >> 2)
+            case 1L ⇒ _1.contains(v, key >> 2)
+            case _  ⇒ false
+        }
+    }
+
+    override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
+        val consideredBits = ((l.value >> level) & 3L).toInt
+        (consideredBits: @switch) match {
+            case 0 ⇒
+                val new0 = _0 + (l, level + 2)
+                if (_0 ne new0) {
+                    new LongLinkedTrieSetN4_0_1(new0, this._1)
+                } else {
+                    this
+                }
+
+            case 1 ⇒
+                val new1 = _1 + (l, level + 2)
+                if (_1 ne new1) {
+                    new LongLinkedTrieSetN4_0_1(this._0, new1)
+                } else {
+                    this
+                }
+
+            case 2 ⇒ new LongLinkedTrieSetN4_0_1_2_3(this._0, this._1, l, null)
+
+            case 3 ⇒ new LongLinkedTrieSetN4_0_1_2_3(this._0, this._1, null, l)
+        }
+    }
+}
+
+final private[immutable] class LongLinkedTrieSetN4_0_2(
+        final val _0: LongLinkedTrieSetNode,
+        final val _2: LongLinkedTrieSetNode
+) extends LongLinkedTrieSetN4 {
+    final override protected def _1: LongLinkedTrieSetNode = null
+    final override protected def _3: LongLinkedTrieSetNode = null
+
+    override def contains(v: Long, key: Long): Boolean = {
+        (key & 3L) match {
+            case 0L ⇒ _0.contains(v, key >> 2)
+            case 2L ⇒ _2.contains(v, key >> 2)
+            case _  ⇒ false
+        }
+    }
 
     override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
         // Basic assumption: the trie is nearly balanced...
         val consideredBits = ((l.value >> level) & 3L).toInt
         (consideredBits: @switch) match {
             case 0 ⇒
-                if (_0 == null) {
-                    new LongLinkedTrieSetN4(l, this._1, this._2, this._3)
+                val new0 = _0 + (l, level + 2)
+                if (_0 ne new0) {
+                    new LongLinkedTrieSetN4_0_2(new0, this._2)
                 } else {
-                    val old0 = this._0
-                    val new0 = old0 + (l, level + 2)
-                    if (old0 ne new0) {
-                        new LongLinkedTrieSetN4(new0, this._1, this._2, this._3)
+                    this
+                }
+
+            case 1 ⇒ new LongLinkedTrieSetN4_0_1_2_3(this._0, l, this._2, null)
+
+            case 2 ⇒
+                val new2 = _2 + (l, level + 2)
+                if (_2 ne new2) {
+                    new LongLinkedTrieSetN4_0_2(this._0, new2)
+                } else {
+                    this
+                }
+
+            case 3 ⇒ new LongLinkedTrieSetN4_0_1_2_3(this._0, null, this._2, l)
+        }
+    }
+}
+
+final private[immutable] class LongLinkedTrieSetN4_0_3(
+        final val _0: LongLinkedTrieSetNode,
+        final val _3: LongLinkedTrieSetNode
+) extends LongLinkedTrieSetN4 {
+    final override protected def _1: LongLinkedTrieSetNode = null
+    final override protected def _2: LongLinkedTrieSetNode = null
+
+    override def contains(v: Long, key: Long): Boolean = {
+        (key & 3L) match {
+            case 0L ⇒ _0.contains(v, key >> 2)
+            case 3L ⇒ _3.contains(v, key >> 2)
+            case _  ⇒ false
+        }
+    }
+
+    override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
+        // Basic assumption: the trie is nearly balanced...
+        val consideredBits = ((l.value >> level) & 3L).toInt
+        (consideredBits: @switch) match {
+            case 0 ⇒
+
+                val new0 = _0 + (l, level + 2)
+                if (_0 ne new0) {
+                    new LongLinkedTrieSetN4_0_3(new0, this._3)
+                } else {
+                    this
+                }
+
+            case 1 ⇒ new LongLinkedTrieSetN4_0_1_2_3(this._0, l, null, this._3)
+
+            case 2 ⇒ new LongLinkedTrieSetN4_0_1_2_3(this._0, null, l, this._3)
+
+            case 3 ⇒
+                val new3 = _3 + (l, level + 2)
+                if (_3 ne new3) {
+                    new LongLinkedTrieSetN4_0_3(this._0, new3)
+                } else {
+                    this
+                }
+        }
+    }
+}
+
+final private[immutable] class LongLinkedTrieSetN4_1_2(
+        final val _1: LongLinkedTrieSetNode,
+        final val _2: LongLinkedTrieSetNode
+) extends LongLinkedTrieSetN4 {
+    final override protected def _0: LongLinkedTrieSetNode = null
+    final override protected def _3: LongLinkedTrieSetNode = null
+
+    override def contains(v: Long, key: Long): Boolean = {
+        (key & 3L) match {
+            case 1L ⇒ _1.contains(v, key >> 2)
+            case 2L ⇒ _2.contains(v, key >> 2)
+            case _  ⇒ false
+        }
+    }
+
+    override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
+        // Basic assumption: the trie is nearly balanced...
+        val consideredBits = ((l.value >> level) & 3L).toInt
+        (consideredBits: @switch) match {
+            case 0 ⇒ new LongLinkedTrieSetN4_0_1_2_3(l, this._1, this._2, null)
+
+            case 1 ⇒
+                val new1 = _1 + (l, level + 2)
+                if (_1 ne new1) {
+                    new LongLinkedTrieSetN4_1_2(new1, this._2)
+                } else {
+                    this
+                }
+
+            case 2 ⇒
+                val new2 = _2 + (l, level + 2)
+                if (_2 ne new2) {
+                    new LongLinkedTrieSetN4_1_2(this._1, new2)
+                } else {
+                    this
+                }
+
+            case 3 ⇒ new LongLinkedTrieSetN4_0_1_2_3(null, this._1, this._2, l)
+
+        }
+    }
+}
+
+final private[immutable] class LongLinkedTrieSetN4_1_3(
+        final val _1: LongLinkedTrieSetNode,
+        final val _3: LongLinkedTrieSetNode
+) extends LongLinkedTrieSetN4 {
+    final override protected def _0: LongLinkedTrieSetNode = null
+    final override protected def _2: LongLinkedTrieSetNode = null
+
+    override def contains(v: Long, key: Long): Boolean = {
+        (key & 3L) match {
+            case 1L ⇒ _1.contains(v, key >> 2)
+            case 3L ⇒ _3.contains(v, key >> 2)
+            case _  ⇒ false
+        }
+    }
+
+    override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
+        // Basic assumption: the trie is nearly balanced...
+        val consideredBits = ((l.value >> level) & 3L).toInt
+        (consideredBits: @switch) match {
+            case 0 ⇒ new LongLinkedTrieSetN4_0_1_2_3(l, this._1, null, this._3)
+
+            case 1 ⇒
+                val new1 = _1 + (l, level + 2)
+                if (_1 ne new1) {
+                    new LongLinkedTrieSetN4_1_3(new1, this._3)
+                } else {
+                    this
+                }
+
+            case 2 ⇒ new LongLinkedTrieSetN4_0_1_2_3(null, this._1, l, this._3)
+
+            case 3 ⇒
+                val new3 = _3 + (l, level + 2)
+                if (_3 ne new3) {
+                    new LongLinkedTrieSetN4_1_3(this._1, new3)
+                } else {
+                    this
+                }
+        }
+    }
+}
+
+final private[immutable] class LongLinkedTrieSetN4_2_3(
+        final val _2: LongLinkedTrieSetNode,
+        final val _3: LongLinkedTrieSetNode
+) extends LongLinkedTrieSetN4 {
+    final override protected def _0: LongLinkedTrieSetNode = null
+    final override protected def _1: LongLinkedTrieSetNode = null
+
+    override def contains(v: Long, key: Long): Boolean = {
+        (key & 3L) match {
+            case 2L ⇒ _2.contains(v, key >> 2)
+            case 3L ⇒ _3.contains(v, key >> 2)
+            case _  ⇒ false
+        }
+    }
+
+    override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
+        // Basic assumption: the trie is nearly balanced...
+        val consideredBits = ((l.value >> level) & 3L).toInt
+        (consideredBits: @switch) match {
+
+            case 0 ⇒ new LongLinkedTrieSetN4_0_1_2_3(l, null, this._2, this._3)
+
+            case 1 ⇒ new LongLinkedTrieSetN4_0_1_2_3(null, l, this._2, this._3)
+
+            case 2 ⇒
+                val new2 = _2 + (l, level + 2)
+                if (_2 ne new2) {
+                    new LongLinkedTrieSetN4_2_3(new2, this._3)
+                } else {
+                    this
+                }
+
+            case 3 ⇒
+                val new3 = _3 + (l, level + 2)
+                if (_3 ne new3) {
+                    new LongLinkedTrieSetN4_2_3(this._2, new3)
+                } else {
+                    this
+                }
+        }
+    }
+}
+
+final private[immutable] class LongLinkedTrieSetN4_0_1_2_3(
+        // least significant bits _ (current) second most important bit _ (current) most important bit
+        final val _0: LongLinkedTrieSetNode, // a tree node, a leaf node or null
+        final val _1: LongLinkedTrieSetNode, // a tree node, a leaf node or null
+        final val _2: LongLinkedTrieSetNode, // a tree node, a leaf node or null
+        final val _3: LongLinkedTrieSetNode // a tree node, a leaf node or null
+) extends LongLinkedTrieSetN4 {
+
+    override def contains(v: Long, key: Long): Boolean = {
+        (key & 3L).toInt match {
+            case 0 ⇒ _0 != null && _0.contains(v, key >> 2)
+            case 1 ⇒ _1 != null && _1.contains(v, key >> 2)
+            case 2 ⇒ _2 != null && _2.contains(v, key >> 2)
+            case 3 ⇒ _3 != null && _3.contains(v, key >> 2)
+        }
+    }
+
+    override def +(l: LongLinkedTrieSetL, level: Int): LongLinkedTrieSetNode = {
+        // Basic assumption: the trie is nearly balanced...
+        val consideredBits = ((l.value >> level) & 3L).toInt
+        (consideredBits: @switch) match {
+            case 0 ⇒
+                val _0 = this._0
+                if (_0 == null) {
+                    new LongLinkedTrieSetN4_0_1_2_3(l, this._1, this._2, this._3)
+                } else {
+                    val new0 = _0 + (l, level + 2)
+                    if (_0 ne new0) {
+                        new LongLinkedTrieSetN4_0_1_2_3(new0, this._1, this._2, this._3)
                     } else {
                         this
                     }
                 }
             case 1 ⇒
+                val _1 = this._1
                 if (_1 == null) {
-                    new LongLinkedTrieSetN4(this._0, l, this._2, this._3)
+                    new LongLinkedTrieSetN4_0_1_2_3(this._0, l, this._2, this._3)
                 } else {
-                    val old1 = this._1
-                    val new1 = old1 + (l, level + 2)
-                    if (old1 ne new1) {
-                        new LongLinkedTrieSetN4(this._0, new1, this._2, this._3)
+                    val new1 = _1 + (l, level + 2)
+                    if (_1 ne new1) {
+                        new LongLinkedTrieSetN4_0_1_2_3(this._0, new1, this._2, this._3)
                     } else {
                         this
                     }
                 }
 
             case 2 ⇒
+                val _2 = this._2
                 if (_2 == null) {
-                    new LongLinkedTrieSetN4(this._0, this._1, l, this._3)
+                    new LongLinkedTrieSetN4_0_1_2_3(this._0, this._1, l, this._3)
                 } else {
-                    val old2 = this._2
-                    val new2 = old2 + (l, level + 2)
-                    if (old2 ne new2) {
-                        new LongLinkedTrieSetN4(this._0, this._1, new2, this._3)
+                    val new2 = _2 + (l, level + 2)
+                    if (_2 ne new2) {
+                        new LongLinkedTrieSetN4_0_1_2_3(this._0, this._1, new2, this._3)
                     } else {
                         this
                     }
                 }
 
             case 3 ⇒
+                val _3 = this._3
                 if (_3 == null) {
-                    new LongLinkedTrieSetN4(this._0, this._1, this._2, l)
+                    new LongLinkedTrieSetN4_0_1_2_3(this._0, this._1, this._2, l)
                 } else {
-                    val old3 = this._3
-                    val new3 = old3 + (l, level + 2)
-                    if (old3 ne new3) {
-                        new LongLinkedTrieSetN4(this._0, this._1, this._2, new3)
+                    val new3 = _3 + (l, level + 2)
+                    if (_3 ne new3) {
+                        new LongLinkedTrieSetN4_0_1_2_3(this._0, this._1, this._2, new3)
                     } else {
                         this
                     }
                 }
         }
-    }
-
-    final override def toString(level: Int): String = {
-        val indent = " " * level
-        val lP2 = level + 4
-        "N4("+
-            s"\n$indent 00=>${if (_0 ne null) _0.toString(lP2) else null}"+
-            s"\n$indent 01=>${if (_1 ne null) _1.toString(lP2) else null}"+
-            s"\n$indent 10=>${if (_2 ne null) _2.toString(lP2) else null}"+
-            s"\n$indent 11=>${if (_3 ne null) _3.toString(lP2) else null})"
     }
 }
 
@@ -586,45 +1063,18 @@ private[immutable] class LargeLongLinkedTrieSet(
     final override def isEmpty: Boolean = size == 0
     final override def isSingletonSet: Boolean = size == 1
 
-    final override def contains(v: Long): Boolean = {
-        val tries = this.tries
-        val trie = tries(Math.abs(JLong.hashCode(v)) % tries.length)
-        if (trie == null) return false;
+    @inline final private def trieId(v: Long): Int = {
+        Math.abs(JLong.hashCode(v)) % tries.length
+        //(v.toInt) & (this.tries.length - 1)
 
-        var key = v
-        var node = trie
-        do {
-            // Type based switch (proofed to be faster than introducing node ids and using them...):
-            node match {
-                case n: LongLinkedTrieSetNShared ⇒
-                    val sharedBits = n.sharedBits
-                    val length = n.length
-                    if ((key & LongSet.BitMasks(length)) == sharedBits) {
-                        node = n.n
-                        key = key >> n.length
-                    } else {
-                        return false;
-                    }
-                case n: LongLinkedTrieSetN2 ⇒
-                    if ((key & 1L) == 0L) {
-                        node = n._0
-                    } else {
-                        node = n._1
-                    }
-                    key = key >> 1
-                case n: LongLinkedTrieSetN4 ⇒
-                    ((key & 3L /*binary:11*/ ).toInt: @switch) match {
-                        case 0 ⇒ node = n._0
-                        case 1 ⇒ node = n._1
-                        case 2 ⇒ node = n._2
-                        case 3 ⇒ node = n._3
-                    }
-                    key = key >> 2
-                case l: LongLinkedTrieSetL ⇒
-                    return v == l.value;
-            }
-        } while (node ne null)
-        false
+    }
+
+    final override def contains(v: Long): Boolean = {
+        //val tries = this.tries
+        //val trie = tries(Math.abs(JLong.hashCode(v)) % tries.length)
+        val trie = this.tries(trieId(v))
+        if (trie == null) return false;
+        trie.contains(v, v)
     }
 
     final override def head: Long = {
@@ -677,9 +1127,11 @@ private[immutable] class LargeLongLinkedTrieSet(
     }
 
     final override def +(v: Long): LargeLongLinkedTrieSet = {
-        def extend(s: LargeLongLinkedTrieSet, newL: LongLinkedTrieSetL): Unit = {
-            val tries = s.tries
-            val trieId = abs(lHashCode(newL.value)) % tries.length
+        def extend(newS: LargeLongLinkedTrieSet, newL: LongLinkedTrieSetL): Unit = {
+            val tries = newS.tries
+            // val trieId = abs(lHashCode(newL.value)) % tries.length
+            //val trieId = newL.value.toInt & (tries.length+1)
+            val trieId = newS.trieId(newL.value)
             val oldTrie = tries(trieId)
             if (oldTrie == null) {
                 tries(trieId) = newL
@@ -699,7 +1151,8 @@ private[immutable] class LargeLongLinkedTrieSet(
         }
 
         val tries = this.tries
-        val trieId = abs(lHashCode(v)) % tries.length
+        //val trieId = abs(lHashCode(v)) % tries.length
+        val trieId = this.trieId(v)
         val oldTrie = tries(trieId)
         if (oldTrie == null) {
             val newSize = size + 1
@@ -713,7 +1166,7 @@ private[immutable] class LargeLongLinkedTrieSet(
                     new LargeLongLinkedTrieSet(newSize, newTries, newL)
             }
         } else {
-            val newL = LongLinkedTrieSetL(v, this.l)
+            val newL = new LongLinkedTrieSetL(v, this.l)
             val newTrie = oldTrie + (newL, 0)
             if (oldTrie ne newTrie) {
                 val newSize = size + 1
@@ -733,7 +1186,8 @@ private[immutable] class LargeLongLinkedTrieSet(
 
     final private[immutable] def +=(v: Long): Unit = {
         val tries = this.tries
-        val trieId = abs(lHashCode(v)) % tries.length
+        //val trieId = abs(lHashCode(v)) % tries.length
+        val trieId = this.trieId(v)
         val oldTrie = tries(trieId)
         if (oldTrie == null) {
             val newL = new LongLinkedTrieSetL(v, this.l)
@@ -741,7 +1195,7 @@ private[immutable] class LargeLongLinkedTrieSet(
             this.l = newL
             size += 1
         } else {
-            val newL = LongLinkedTrieSetL(v, this.l)
+            val newL = new LongLinkedTrieSetL(v, this.l)
             val newTrie = oldTrie + (newL, 0)
             if (oldTrie ne newTrie) {
                 tries(trieId) = newTrie
@@ -753,15 +1207,15 @@ private[immutable] class LargeLongLinkedTrieSet(
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: LargeLongLinkedTrieSet ⇒ (this eq that) || {
-                this.size == that.size &&
-                    this.iterator.sameValues(that.iterator)
-            }
+            case that: LargeLongLinkedTrieSet ⇒
+                (this eq that) || {
+                    this.size == that.size && this.iterator.sameValues(that.iterator)
+                }
             case _ ⇒ false
         }
     }
 
-    final override def hashCode(): Int = {
+    final override def hashCode: Int = {
         iterator.foldLeft(0)((hashCode, v) ⇒ (hashCode * 31) + java.lang.Long.hashCode(v))
     }
 

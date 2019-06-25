@@ -3,8 +3,6 @@ package org.opalj
 package fpcf
 package seq
 
-import org.opalj.log.OPALLogger
-
 /**
  * Encapsulates different tasks.
  *
@@ -38,12 +36,6 @@ final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
 ) extends QualifiedTask {
 
     override def apply(): Unit = {
-        if (ps.debug) {
-            OPALLogger.info(
-                "analysis progress",
-                s"calling continuation: ${c.hashCode().toHexString}"
-            )(ps.logContext)
-        }
         ps.handleResult(c(r))
     }
 
@@ -58,12 +50,6 @@ final case class OnUpdateComputationTask[E <: Entity, P <: Property](
 
     override def apply(): Unit = {
         // Get the most current property when the depender is eventually evaluated.
-        if (ps.debug) {
-            OPALLogger.info(
-                "analysis progress",
-                s"calling continuation: ${c.hashCode().toHexString}"
-            )(ps.logContext)
-        }
         ps.handleResult(c(ps(epk).asEPS))
     }
 
