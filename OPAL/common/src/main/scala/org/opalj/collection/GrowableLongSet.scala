@@ -6,13 +6,15 @@ package org.opalj.collection
  *
  * @author Michael Eichberg
  */
-trait GrowableLongSet[T <: GrowableLongSet[T]] extends AnyRef { longSet: T ⇒
+trait GrowableLongSet extends AnyRef {
+
+    type ThisSet <: GrowableLongSet
 
     /**
      * Adds the given value to this set; returns `this` if this set already contains the value
      * otherwise a new set is returned.
      */
-    def +(i: Long): T
+    def +(i: Long): ThisSet
 
     def isEmpty: Boolean
 
