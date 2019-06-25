@@ -457,16 +457,12 @@ final class PKESequentialPropertyStore protected (
                         scheduledOnUpdateComputationsCounter += 1
                         val t = HandleResultTask(this, result)
                         tasksManager.push(t, Nil, Nil)
-                        if (!continue) {
-                            nextProcessedDependees = null
-                            nextC = null
-                        }
                     }
                     // There were updates...
-                    if (debug) {
-                        trace("analysis progress", s"calling continuation: ${nextC.hashCode().toHexString}")
-                    }
-                    nextC(currentDependee.asEPS) match {
+                    val nextR = nextC(currentDependee.asEPS)
+                    nextProcessedDependees = null
+                    nextC = null
+                    nextR match {
 
                         case InterimPartialResult(newPartialResults, newProcessedDependees, newC) ⇒
                             nextPartialResults = newPartialResults
@@ -475,11 +471,9 @@ final class PKESequentialPropertyStore protected (
                             continue = true
 
                         case Results(results) ⇒
-                            var interimPartialResultsCount = 0
                             results.foreach { result ⇒
                                 result match {
-                                    case InterimPartialResult(newPartialResults, newProcessedDependees, newC) if interimPartialResultsCount == 0 ⇒
-                                        interimPartialResultsCount += 1
+                                    case InterimPartialResult(newPartialResults, newProcessedDependees, newC) if nextC == null ⇒
                                         nextPartialResults = newPartialResults
                                         nextProcessedDependees = newProcessedDependees
                                         nextC = newC
@@ -493,10 +487,6 @@ final class PKESequentialPropertyStore protected (
 
                                     case r: Result ⇒
                                         update(r.finalEP, Nil)
-                                        if (!continue) {
-                                            nextProcessedDependees = null
-                                            nextC = null
-                                        }
 
                                     case PartialResult(e, pk, u) ⇒
                                         handlePartialResult(e, pk, u)
@@ -571,9 +561,6 @@ final class PKESequentialPropertyStore protected (
                 val nextDependeePKId = nextDependeePK.id
                 val currentDependee = ps(nextDependeePKId)(nextDependeeE)
                 if (currentDependee.isUpdatedComparedTo(nextDependee)) {
-                    if (debug) {
-                        trace("analysis progress", s"calling continuation: ${nextC.hashCode().toHexString}")
-                    }
                     nextC(currentDependee.asEPS) match {
                         case InterimResult(newEPS @ SomeEPS(`e`, `pk`), newDependees, newC, _) ⇒
                             nextEPS = newEPS
