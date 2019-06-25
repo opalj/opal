@@ -5,7 +5,8 @@ package fpcf
 package properties
 package cg
 
-import org.opalj.collection.immutable.LongTrieSet
+import org.opalj.collection.GrowableLongSet
+import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.OrderedProperty
@@ -103,7 +104,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     final override def updated(
         caller: DeclaredMethod, pc: Int, isDirect: Boolean
     ): Callers = {
-        val set = LongTrieSet(Callers.toLong(caller.id, pc, isDirect))
+        val set = LongLinkedTrieSet(Callers.toLong(caller.id, pc, isDirect))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
             new CallersOnlyWithConcreteCallers(set)
@@ -134,7 +135,7 @@ object OnlyVMCallersAndWithUnknownContext
     extends EmptyConcreteCallers with CallersWithVMLevelCall with CallersWithUnknownContext
 
 sealed trait CallersImplementation extends Callers {
-    val encodedCallers: LongTrieSet /* MethodId + PC*/
+    val encodedCallers: GrowableLongSet[_] /* MethodId + PC*/
     final override def size: Int = encodedCallers.size
 
     final override def isEmpty: Boolean = encodedCallers.isEmpty
@@ -145,9 +146,7 @@ sealed trait CallersImplementation extends Callers {
         implicit
         declaredMethods: DeclaredMethods
     ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
-        for {
-            encodedPair ← encodedCallers.iterator
-        } yield {
+        encodedCallers.iterator.map { encodedPair ⇒
             val (mId, pc, isDirect) = Callers.toMethodPcAndIsDirect(encodedPair)
             (declaredMethods(mId), pc, isDirect)
         }
@@ -155,7 +154,7 @@ sealed trait CallersImplementation extends Callers {
 }
 
 class CallersOnlyWithConcreteCallers(
-        val encodedCallers: LongTrieSet /*MethodId + PC*/
+        val encodedCallers: GrowableLongSet[_] /*MethodId + PC*/
 ) extends CallersImplementation with CallersWithoutVMLevelCall with CallersWithoutUnknownContext {
 
     override def updated(
@@ -187,7 +186,7 @@ class CallersOnlyWithConcreteCallers(
 }
 
 class CallersImplWithOtherCalls(
-        val encodedCallers:                LongTrieSet /*MethodId + PC*/ ,
+        val encodedCallers:                GrowableLongSet[_] /*MethodId + PC*/ ,
         private val specialCallSitesFlags: Byte // last bit vm lvl, second last bit unknown context
 ) extends CallersImplementation {
     assert(!encodedCallers.isEmpty)
@@ -225,7 +224,7 @@ class CallersImplWithOtherCalls(
 
 object CallersImplWithOtherCalls {
     def apply(
-        encodedCallers:               LongTrieSet /* MethodId + PC */ ,
+        encodedCallers:               GrowableLongSet[_] /* MethodId + PC */ ,
         hasVMLevelCallers:            Boolean,
         hasCallersWithUnknownContext: Boolean
     ): CallersImplWithOtherCalls = {
