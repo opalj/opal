@@ -8,14 +8,8 @@ import scala.collection.mutable.Builder
  *
  * @author Michael Eichberg
  */
-trait LongSet[T <: LongSet[T]] { longSet: T ⇒
+trait LongSet[T <: LongSet[T]] extends GrowableLongSet[T] { longSet: T ⇒
 
-    def isEmpty: Boolean
-    def nonEmpty: Boolean = !isEmpty
-    /**
-     * Tests if this set has exactly one element (complexity: O(1)).
-     */
-    def isSingletonSet: Boolean
     /**
      * Tests if this set has more than one element (complexity: O(1)).
      */
@@ -25,8 +19,6 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
      * etc.; or lookup the complexity in the concrete data structures.
      */
     def size: Int
-
-    def foreach[U](f: Long ⇒ U): Unit
 
     def filter(p: Long ⇒ Boolean): T
 
@@ -44,14 +36,10 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
 
     def head: Long
 
-    def contains(value: Long): Boolean
     def exists(p: Long ⇒ Boolean): Boolean
     def forall(f: Long ⇒ Boolean): Boolean
 
     def -(i: Long): T
-
-    /** Adds the given value to this set; returns `this` if this set already contains the value. */
-    def +(i: Long): T
 
     final def --(is: LongSet[_]): T = {
         var r = this
@@ -62,8 +50,6 @@ trait LongSet[T <: LongSet[T]] { longSet: T ⇒
     def ++(that: T): T
 
     final def ++(that: LongIterator): T = that.foldLeft(this)(_ + _)
-
-    def iterator: LongIterator
 
     final def mkString(pre: String, in: String, post: String): String = {
         val sb = new StringBuilder(pre)
