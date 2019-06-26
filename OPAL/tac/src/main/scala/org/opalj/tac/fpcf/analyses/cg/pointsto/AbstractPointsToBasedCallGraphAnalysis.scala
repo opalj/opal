@@ -161,10 +161,6 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
-                if (!state.hasPointsToDependee(e))
-                    // TODO: there seems to be a problem in the property store causing continuations
-                    //  to be called twice.
-                    return Results();
                 val relevantCallSites = state.dependersOf(e)
 
                 // ensures, that we only add new calls
