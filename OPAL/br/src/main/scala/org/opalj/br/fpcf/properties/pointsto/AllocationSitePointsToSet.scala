@@ -115,10 +115,10 @@ case class AllocationSitePointsToSetN private[pointsto] (
                 newOrderedTypes :&:= newType
             }
         }
-        if ((elements eq newAllocationSites) && (newTypes eq types))
+        if (elements eq newAllocationSites)
             return this;
 
-        new AllocationSitePointsToSetN(
+        AllocationSitePointsToSetN(
             newAllocationSites, newTypes, newOrderedTypes
         )
     }
