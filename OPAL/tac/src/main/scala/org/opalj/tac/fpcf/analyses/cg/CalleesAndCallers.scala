@@ -8,7 +8,7 @@ package cg
 import scala.collection.immutable.IntMap
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.LongTrieSet
+import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimUBP
@@ -114,7 +114,7 @@ trait Calls extends CalleesAndCallers {
                     None
 
             case _: EPK[_, _] ⇒
-                val set = LongTrieSet(Callers.toLong(caller.id, pc, isDirect))
+                val set = LongLinkedTrieSet(Callers.toLong(caller.id, pc, isDirect))
                 Some(InterimEUBP(
                     callee,
                     new CallersOnlyWithConcreteCallers(set)

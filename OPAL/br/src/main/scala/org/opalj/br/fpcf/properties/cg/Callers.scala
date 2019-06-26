@@ -135,7 +135,7 @@ object OnlyVMCallersAndWithUnknownContext
     extends EmptyConcreteCallers with CallersWithVMLevelCall with CallersWithUnknownContext
 
 sealed trait CallersImplementation extends Callers {
-    val encodedCallers: GrowableLongSet[_] /* MethodId + PC*/
+    val encodedCallers: GrowableLongSet /* MethodId + PC*/
     final override def size: Int = encodedCallers.size
 
     final override def isEmpty: Boolean = encodedCallers.isEmpty
@@ -154,7 +154,7 @@ sealed trait CallersImplementation extends Callers {
 }
 
 class CallersOnlyWithConcreteCallers(
-        val encodedCallers: GrowableLongSet[_] /*MethodId + PC*/
+        val encodedCallers: GrowableLongSet /*MethodId + PC*/
 ) extends CallersImplementation with CallersWithoutVMLevelCall with CallersWithoutUnknownContext {
 
     override def updated(
@@ -186,7 +186,7 @@ class CallersOnlyWithConcreteCallers(
 }
 
 class CallersImplWithOtherCalls(
-        val encodedCallers:                GrowableLongSet[_] /*MethodId + PC*/ ,
+        val encodedCallers:                GrowableLongSet /*MethodId + PC*/ ,
         private val specialCallSitesFlags: Byte // last bit vm lvl, second last bit unknown context
 ) extends CallersImplementation {
     assert(!encodedCallers.isEmpty)
@@ -224,7 +224,7 @@ class CallersImplWithOtherCalls(
 
 object CallersImplWithOtherCalls {
     def apply(
-        encodedCallers:               GrowableLongSet[_] /* MethodId + PC */ ,
+        encodedCallers:               GrowableLongSet /* MethodId + PC */ ,
         hasVMLevelCallers:            Boolean,
         hasCallersWithUnknownContext: Boolean
     ): CallersImplWithOtherCalls = {
