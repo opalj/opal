@@ -3,10 +3,8 @@ package org.opalj
 package fpcf
 
 import scala.collection.JavaConverters._
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
@@ -14,6 +12,7 @@ import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.XTATypePropagationAnalysisScheduler
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.
@@ -81,7 +80,8 @@ class CallGraphTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 SimpleInstantiatedTypesAnalysisScheduler,
-                XTACallGraphAnalysisScheduler
+                XTACallGraphAnalysisScheduler,
+                XTATypePropagationAnalysisScheduler
             )
         )
         as.propertyStore.shutdown()

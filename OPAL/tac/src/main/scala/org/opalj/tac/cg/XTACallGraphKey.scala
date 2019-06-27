@@ -10,6 +10,7 @@ import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.XTATypePropagationAnalysisScheduler
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
@@ -33,7 +34,8 @@ object XTACallGraphKey extends AbstractCallGraphKey {
         // TODO AB configure this properly depending on library/application (see RTA key)
         List(
             SimpleInstantiatedTypesAnalysisScheduler,
-            XTACallGraphAnalysisScheduler
+            XTACallGraphAnalysisScheduler,
+            XTATypePropagationAnalysisScheduler
         )
     }
 }
