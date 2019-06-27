@@ -43,6 +43,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
  * XTA is a dataflow-based call graph analysis which was introduced by Tip and Palsberg.
@@ -253,8 +254,13 @@ class XTACallGraphAnalysis private[analyses] (
     override protected def returnResult(
         calleesAndCallers: DirectCalls
     )(implicit state: State): ProperPropertyComputationResult = {
-        val results = calleesAndCallers.partialResults(state.method)
-        returnResult(results)
+        val results: TraversableOnce[SomePartialResult] = calleesAndCallers.partialResults(state.method)
+        val initialResults = state.initialPartialResults.toSeq
+        if (initialResults.nonEmpty) {
+            OPALLogger.info("xta", s"${state.method} had ${initialResults.length} initial results")
+        }
+        // TODO AB check efficiency
+        returnResult(results.toIterator ++ initialResults)
     }
 
     protected def returnResult(
@@ -414,26 +420,66 @@ class XTACallGraphAnalysis private[analyses] (
         val (readFields, writtenFields) = findAccessedFieldsInBytecode(definedMethod)
         val readFieldTypeEOptPs = mutable.Map(readFields.map(f ⇒ f → propertyStore(f, InstantiatedTypes.key)).toSeq: _*)
 
-        // If we already know types at this point and the method writes to fields, we possibly already
-        // have some results here.
-        if (instantiatedTypesEOptP.hasUBP && writtenFields.nonEmpty) {
-            // TODO AB fix this bug, likely requires adjustments to the base class
-            OPALLogger.warn("xta", "initial types already available, propagation to written field(s) not possible!")
-        }
-
         // TODO AB this is the level of accuracy as described in the Tip+Palsberg paper
         // Maybe we can track more accurately which array types are actually written/read.
         // (See notes.) Would probably increase complexity by quite a bit though.
         val containsArrayStores = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AASTORE }
         val containsArrayLoads = definedMethod.definedMethod.body.get.exists { case (_, instr) ⇒ instr == AALOAD }
 
-        // TODO AB need to handle initially available ArrayTypes as well
-        if (instantiatedTypesEOptP.hasUBP && instantiatedTypesEOptP.ub.types.exists(_.isArrayType)) {
-            OPALLogger.warn("xta", "initial types contain ArrayType(s), not handled correctly!")
+        val state =
+            new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP,
+                writtenFields, readFieldTypeEOptPs, containsArrayStores, containsArrayLoads)
+
+        // === Initial results ===
+
+        // If we already know types at this point, we possibly already have some results here (type flows to written
+        // array types and written fields. Also, if the fields or arrays we read already had a non-empty type set,
+        // we have initial backward flows.
+        val initialResults = new ListBuffer[SomePartialResult]()
+
+        for (f <- readFields; fieldEOptP = readFieldTypeEOptPs(f) if fieldEOptP.hasUBP) {
+            val fieldTypes = fieldEOptP.ub.types
+
+            initialResults += typeFlowPartialResult(state.method, fieldTypes)
+            state.updateReadFieldSeenTypes(f, fieldEOptP.ub.numElements)
         }
 
-        new XTAState(definedMethod, tacEP, instantiatedTypesEOptP, calleesEOptP,
-            writtenFields, readFieldTypeEOptPs, containsArrayStores, containsArrayLoads)
+        if (instantiatedTypesEOptP.hasUBP) {
+            val initialTypes = instantiatedTypesEOptP.ub.types
+            if (writtenFields.nonEmpty) {
+                for (f <- writtenFields) {
+                    val flowResult = forwardFlowToWrittenField(f, initialTypes)
+                    if (flowResult.isDefined) {
+                        initialResults += flowResult.get
+                    }
+                }
+            }
+
+            for (t ← initialTypes if t.isArrayType; at = t.asArrayType) {
+                if (containsArrayStores) {
+                    val flowResult = forwardFlowToArrayType(initialTypes)(at)
+                    if (flowResult.isDefined) {
+                        initialResults += flowResult.get
+                    }
+                }
+
+                if (containsArrayLoads) {
+                    val arrayTypeSetEOptP = propertyStore(at, InstantiatedTypes.key)
+                    state.updateReadArrayInstantiatedTypesDependee(arrayTypeSetEOptP)
+                    if (arrayTypeSetEOptP.hasUBP) {
+                        val backwardFlowResult = typeFlowPartialResult(state.method, arrayTypeSetEOptP.ub.types)
+                        initialResults += backwardFlowResult
+                        state.updateArrayTypeSeenTypes(arrayTypeSetEOptP.e, arrayTypeSetEOptP.ub.numElements)
+                    }
+                }
+            }
+        }
+
+        if (initialResults.nonEmpty) {
+            state.setInitialPartialResults(initialResults)
+        }
+
+        state
     }
 
     // TODO AB mostly a placeholder; likely it's better to get the accesses from TAC instead

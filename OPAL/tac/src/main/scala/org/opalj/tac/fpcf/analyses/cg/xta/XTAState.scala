@@ -17,6 +17,7 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
+import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.collection.mutable
@@ -97,6 +98,20 @@ class XTAState(
         } else {
             UIDSet.empty
         }
+    }
+
+    // TODO AB remove once there is a better solution (e.g., split analyses)
+    private[this] var _initialPartialResults: TraversableOnce[SomePartialResult] = Seq.empty
+
+    def setInitialPartialResults(initialPartialResults: TraversableOnce[SomePartialResult]): Unit = {
+        _initialPartialResults = initialPartialResults
+    }
+
+    def initialPartialResults: TraversableOnce[SomePartialResult] = {
+        assert(_initialPartialResults.nonEmpty)
+        val results = _initialPartialResults
+        _initialPartialResults = Seq.empty
+        results
     }
 
     /////////////////////////////////////////////
