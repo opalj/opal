@@ -7,7 +7,9 @@ import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.tac.fpcf.analyses.cg.pointsto.AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.DoPrivilegedPointsToCGAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethodsPointsToAnalysisScheduler
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
@@ -22,9 +24,9 @@ object AllocationSiteBasedPointsToCallGraphKey extends AbstractCallGraphKey {
     ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
         List(
             AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler, // TODO make this one independent
-            AllocationSiteBasedPointsToAnalysisScheduler
-        // TODO: ConfiguredNativeMethodsPointsToAnalysisScheduler,
-        // TODO: DoPrivilegedPointsToCGAnalysisScheduler
+            AllocationSiteBasedPointsToAnalysisScheduler,
+            ConfiguredNativeMethodsPointsToAnalysisScheduler,
+            DoPrivilegedPointsToCGAnalysisScheduler
         )
     }
 }
