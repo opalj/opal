@@ -42,7 +42,6 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.fpcf.properties.TACAI
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -71,11 +70,20 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
                 writtenFields, readFieldTypeEOptPs, containsArrayStores, containsArrayLoads)
 
         // === Initial results ===
-
+        // TODO AB reduce code duplication
         // If we already know types at this point, we possibly already have some results here (type flows to written
-        // array types and written fields. Also, if the fields or arrays we read already had a non-empty type set,
+        // array types and written fields). Also, if the fields or arrays we read already had a non-empty type set,
         // we have initial backward flows.
         val initialResults = new ListBuffer[SomePartialResult]()
+
+        if (calleesEOptP.hasUBP) {
+            val callees = getCalleeDefinedMethods(calleesEOptP.ub)
+            state.updateSeenCallees(callees)
+            for (callee ← callees) {
+                val methodFlowResults = handleNewCallee(state)(callee)
+                initialResults ++= methodFlowResults
+            }
+        }
 
         for (f ← readFields; fieldEOptP = readFieldTypeEOptPs(f) if fieldEOptP.hasUBP) {
             val fieldTypes = fieldEOptP.ub.types
@@ -465,6 +473,8 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
 
 object XTATypePropagationAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
+
+    // TODO AB handle assignment of initial instantiated types here!
 
     override def triggeredBy: PropertyKind = Callers.key
 

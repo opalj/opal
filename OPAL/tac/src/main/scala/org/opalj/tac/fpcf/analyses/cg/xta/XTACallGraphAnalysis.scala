@@ -181,8 +181,6 @@ class XTACallGraphAnalysis private[analyses] (
 
 object XTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
-    // TODO AB handle assignment of initial instantiated types here! (see superclass)
-
     override def uses: Set[PropertyBounds] =
         super.uses ++ PropertyBounds.ubs(InstantiatedTypes, Callees)
 
