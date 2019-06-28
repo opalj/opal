@@ -15,7 +15,6 @@ import org.opalj.fpcf.EUBPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
