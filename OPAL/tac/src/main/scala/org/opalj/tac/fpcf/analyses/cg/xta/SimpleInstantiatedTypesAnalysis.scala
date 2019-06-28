@@ -53,15 +53,13 @@ class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends R
     override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         val code = definedMethod.definedMethod.body.get
 
-        val instantiatedObjectTypes = code.instructions.flatMap({
-            case NEW(declType) ⇒ Some(declType)
-            case _             ⇒ None
+        val instantiatedObjectTypes = code.instructions.collect({
+            case NEW(declType) ⇒ declType
         })
 
         // We only care about arrays of reference types.
-        val instantiatedArrays = code.instructions.flatMap({
-            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType ⇒ Some(arr.arrayType)
-            case _ ⇒ None
+        val instantiatedArrays = code.instructions.collect({
+            case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType ⇒ arr.arrayType
         })
 
         val multidimensionalArrayPartialResults = multidimensionalArrayInitialAssignments(instantiatedArrays)

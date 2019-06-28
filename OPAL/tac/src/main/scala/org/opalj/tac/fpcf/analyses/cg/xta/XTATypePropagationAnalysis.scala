@@ -45,6 +45,8 @@ import org.opalj.tac.fpcf.properties.TACAI
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.opalj.log.OPALLogger
+
 class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProject) extends ReachableMethodAnalysis {
 
     private type State = XTATypePropagationState
@@ -121,10 +123,6 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
                     }
                 }
             }
-        }
-
-        if (initialResults.nonEmpty) {
-            state.setInitialPartialResults(initialResults)
         }
 
         returnResults(initialResults)(state)
@@ -309,16 +307,6 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         )
     }
 
-    private def returnResults(
-        partialResults: TraversableOnce[SomePartialResult]
-    )(implicit state: State): ProperPropertyComputationResult = {
-        // Always re-register the continuation. It is impossible for all dependees to be final in XTA.
-        Results(
-            InterimPartialResult(state.dependees, c(state)),
-            partialResults
-        )
-    }
-
     // calculate flow of new types from caller to callee
     private def forwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCallerTypes: UIDSet[ReferenceType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
 
@@ -456,18 +444,34 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         val code = method.definedMethod.body.get
         val reads = code.instructions.flatMap {
             case FieldReadAccess(objType, name, fieldType) ⇒
-                project.resolveFieldReference(objType, name, fieldType)
+                val field = project.resolveFieldReference(objType, name, fieldType)
+                if (field.isEmpty)
+                    OPALLogger.warn("xta", s"field $name in $objType can not be resolved")
+                field
             case _ ⇒
                 None
         }.toSet
         val writes = code.instructions.flatMap {
             case FieldWriteAccess(objType, name, fieldType) ⇒
-                project.resolveFieldReference(objType, name, fieldType)
+                val field = project.resolveFieldReference(objType, name, fieldType)
+                if (field.isEmpty)
+                    OPALLogger.warn("xta", s"field $name in $objType can not be resolved")
+                field
             case _ ⇒
                 None
         }.toSet
 
         (reads, writes)
+    }
+
+    private def returnResults(
+        partialResults: TraversableOnce[SomePartialResult]
+    )(implicit state: State): ProperPropertyComputationResult = {
+        // Always re-register the continuation. It is impossible for all dependees to be final in XTA.
+        Results(
+            InterimPartialResult(state.dependees, c(state)),
+            partialResults
+        )
     }
 }
 

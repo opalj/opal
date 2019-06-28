@@ -92,20 +92,6 @@ class XTATypePropagationState(
         }
     }
 
-    // TODO AB remove once there is a better solution (e.g., split analyses)
-    private[this] var _initialPartialResults: TraversableOnce[SomePartialResult] = Seq.empty
-
-    def setInitialPartialResults(initialPartialResults: TraversableOnce[SomePartialResult]): Unit = {
-        _initialPartialResults = initialPartialResults
-    }
-
-    def initialPartialResults: TraversableOnce[SomePartialResult] = {
-        assert(_initialPartialResults.nonEmpty)
-        val results = _initialPartialResults
-        _initialPartialResults = Seq.empty
-        results
-    }
-
     /////////////////////////////////////////////
     //                                         //
     //                callees                  //
