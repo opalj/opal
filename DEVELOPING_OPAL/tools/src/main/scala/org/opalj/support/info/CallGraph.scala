@@ -120,9 +120,8 @@ object CallGraph extends ProjectAnalysisApplication {
         println(ptss.size)
         println(ptss2.size)
 
-        /*val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != RTACallGraphKey.uniqueId)
-        p2.get(RTACallGraphKey)
-        p2.get(FPCFAnalysesManagerKey).runAll(AllocationSiteBasedPointsToAnalysisScheduler)
+        /*val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId)
+        p2.get({AllocationSiteBasedPointsToCallGraphKey})
         val ps2 = p2.get(PropertyStoreKey)
 
         for {
@@ -130,7 +129,7 @@ object CallGraph extends ProjectAnalysisApplication {
             ub2 = ps2(e, AllocationSitePointsToSet.key).ub
             if p.elements.size != ub2.elements.size
         } {
-            println(s"$e\n\t${ub2.elements.map[(DeclaredMethod, Int)](org.opalj.br.fpcf.properties.pointsto.longToAllocationSite)}\n\t${p.elements.map[(DeclaredMethod, Int)](org.opalj.br.fpcf.properties.pointsto.longToAllocationSite)}")
+            println(s"$e\n\t${ub2.elements.iterator.map(org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(_)).mkString(",")}\n\t${p.elements.iterator.map(org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(_)).mkString(",")}")
         }*/
 
         val reachableMethods = cg.reachableMethods().toTraversable
