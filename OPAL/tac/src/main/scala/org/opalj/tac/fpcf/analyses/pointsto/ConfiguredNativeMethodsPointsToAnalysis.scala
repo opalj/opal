@@ -103,8 +103,9 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
         for (PointsToRelation(lhs, rhs) ← data) {
             rhs match {
                 case asd: AllocationSiteDescription ⇒
-                    val as = allocationSiteToLong(dm, 0)
-                    val pts = AllocationSitePointsToSet(as, ObjectType(asd.instantiatedType))
+                    val instantiatedType = ObjectType(asd.instantiatedType)
+                    val as = allocationSiteToLong(dm, 0, instantiatedType)
+                    val pts = AllocationSitePointsToSet(as, instantiatedType)
                     results += createPartialResultOpt(lhs.entity, pts).get
                 case _ ⇒
                     val pointsToEOptP = propertyStore(rhs.entity, AllocationSitePointsToSet.key)

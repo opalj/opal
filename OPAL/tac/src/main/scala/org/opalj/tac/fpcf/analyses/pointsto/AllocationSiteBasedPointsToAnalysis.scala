@@ -27,7 +27,7 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
     override def createPointsToSet(
         pc: Int, declaredMethod: DeclaredMethod, allocatedType: ObjectType
     ): AllocationSitePointsToSet = {
-        val as = allocationSiteToLong(declaredMethod, pc)
+        val as = allocationSiteToLong(declaredMethod, pc, allocatedType)
         AllocationSitePointsToSet(as, allocatedType)
     }
 

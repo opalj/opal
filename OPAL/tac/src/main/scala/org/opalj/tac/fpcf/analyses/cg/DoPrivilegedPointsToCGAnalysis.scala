@@ -33,7 +33,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.properties.pointsto.allocationSiteToLong
+import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 
 /**
  * On each call of the [[sourceMethod*]] it will call the [[declaredTargetMethod*]] upon its first
@@ -110,8 +110,9 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                         AllocationSitePointsToSet.key,
                         {
                             case UBP(ub: AllocationSitePointsToSet) ⇒
-                                val as = allocationSiteToLong(declaredTargetMethod, 0)
-                                val newUB = ub.included(AllocationSitePointsToSet(as, t))
+                                /*val as = allocationSiteToLong(declaredTargetMethod, 0)
+                                val newUB = ub.included(AllocationSitePointsToSet(as, t))*/
+                                val newUB = ub.included(pointsTo.ub, t)
                                 if (newUB eq ub) {
                                     None
                                 } else {
@@ -119,8 +120,9 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                                 }
 
                             case _: EPK[VirtualFormalParameter, AllocationSitePointsToSet] ⇒
-                                val as = allocationSiteToLong(declaredTargetMethod, 0)
-                                Some(InterimEUBP(tgtThis, AllocationSitePointsToSet(as, t)))
+                                /*val as = allocationSiteToLong(declaredTargetMethod, 0)
+                                Some(InterimEUBP(tgtThis, AllocationSitePointsToSet(as, t)))*/
+                            Some(InterimEUBP(tgtThis, NoAllocationSites.included(pointsTo.ub, t)))
                         }
                     )
 

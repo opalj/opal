@@ -29,11 +29,13 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 trait AllocationSitePointsToSet
-    extends PointsToSetLike[AllocationSite, LongLinkedTrieSet, AllocationSitePointsToSet]
-    with OrderedProperty
-    with AllocationSitePointsToSetPropertyMetaInformation {
+        extends PointsToSetLike[AllocationSite, LongLinkedTrieSet, AllocationSitePointsToSet]
+        with OrderedProperty
+        with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
+
+    def included(other: AllocationSitePointsToSet, tpe: ObjectType): AllocationSitePointsToSet
 
     override def toString: String = s"PointsTo(size=${elements.size})"
 
@@ -95,6 +97,25 @@ case class AllocationSitePointsToSetN private[pointsto] (
         included(other, 0)
     }
 
+    override def included(other: AllocationSitePointsToSet, tpe: ObjectType): AllocationSitePointsToSet = {
+        var newAllocationSites = elements
+
+        other.forNewestNElements(other.numElements) { allocationSite ⇒
+            if (allocationSiteLongToTypeId(allocationSite) == tpe.id)
+                newAllocationSites += allocationSite
+        }
+
+        val newTypes = types + tpe
+        val newOrderedTypes = if (newTypes ne types) tpe :&: orderedTypes else orderedTypes
+
+        if (elements eq newAllocationSites)
+            return this;
+
+        AllocationSitePointsToSetN(
+            newAllocationSites, newTypes, newOrderedTypes
+        )
+    }
+
     override def numElements: Int = elements.size
 
     override def included(
@@ -108,7 +129,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         // IMPROVE: Somehow also use seenElements
         var newOrderedTypes = orderedTypes
         // IMPROVE: iterating over
-        other.types.foreach { newType ⇒
+        other.forNewestNTypes(other.numTypes) { newType ⇒
             val old = newTypes
             newTypes += newType
             if (newTypes ne old) {
@@ -148,6 +169,25 @@ case class AllocationSitePointsToSetN private[pointsto] (
 object NoAllocationSites extends AllocationSitePointsToSet {
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         other
+    }
+
+    def included(other: AllocationSitePointsToSet, tpe: ObjectType): AllocationSitePointsToSet = {
+        var newAllocationSites = LongLinkedTrieSet.empty
+
+        other.forNewestNElements(other.numElements) { allocationSite ⇒
+            if (allocationSiteLongToTypeId(allocationSite) == tpe.id)
+                newAllocationSites += allocationSite
+        }
+
+        val newTypes = types + tpe
+        val newOrderedTypes = if (newTypes ne types) tpe :&: Naught else Naught
+
+        if (elements eq newAllocationSites)
+            return this;
+
+        AllocationSitePointsToSetN(
+            newAllocationSites, newTypes, newOrderedTypes
+        )
     }
 
     override def included(
@@ -215,6 +255,48 @@ case class AllocationSitePointsToSet1(
                 AllocationSitePointsToSetN(
                     newAllocations,
                     otherTypes + allocatedType,
+                    newOrderedTypes
+                )
+            case _ ⇒
+                throw new IllegalArgumentException(s"unexpected list $other")
+        }
+    }
+
+    def included(other: AllocationSitePointsToSet, tpe: ObjectType): AllocationSitePointsToSet = {
+        other match {
+            case AllocationSitePointsToSet1(`allocationSite`, `allocatedType`) ⇒
+                this
+
+            case AllocationSitePointsToSet1(otherAllocationSite, otherAllocatedType) ⇒
+                if (otherAllocatedType eq tpe)
+                    AllocationSitePointsToSet(
+                        otherAllocationSite, otherAllocatedType, allocationSite, allocatedType
+                    )
+                else
+                    this
+
+            case NoAllocationSites ⇒
+                this
+
+            case AllocationSitePointsToSetN(otherAllocationSites, otherTypes, otherOrderedTypes) ⇒
+                val newAllocationSites = otherAllocationSites.foldLeft(elements) { (l, as) ⇒
+                    if (as != allocationSite && allocationSiteLongToTypeId(as) == tpe.id) {
+                        l + as
+                    } else {
+                        l
+                    }
+                }
+
+                val newOrderedTypes =
+                    if (tpe ne allocatedType) tpe :&: allocatedType :&: Naught
+                    else allocatedType :&: Naught
+
+                if (elements eq newAllocationSites)
+                    return this;
+
+                AllocationSitePointsToSetN(
+                    newAllocationSites,
+                    types + tpe,
                     newOrderedTypes
                 )
             case _ ⇒

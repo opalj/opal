@@ -7,22 +7,32 @@ package properties
 import org.opalj.br.analyses.DeclaredMethods
 
 package object pointsto {
-    // we encode allocation sites (method, pc tuples) as longs
+    // we encode allocation sites (method, pc, typeid tuples) as longs
     type AllocationSite = Long
 
-    def allocationSiteToLong(method: DeclaredMethod, pc: Int): Long = {
+    def allocationSiteToLong(method: DeclaredMethod, pc: Int, tpe: ObjectType): Long = {
         val methodId = method.id
+        val typeId = tpe.id
         assert(pc >= 0 && pc <= 0xFFFF)
         assert(methodId >= 0 && methodId <= 0x3FFFFF)
-        methodId.toLong | (pc.toLong << 22)
+        assert(typeId >= 0 && typeId <= 0x3FFFFFF)
+        methodId.toLong | (pc.toLong << 22) | (typeId.toLong << 38)
     }
 
     def longToAllocationSite(
         encodedAllocationSite: AllocationSite
-    )(implicit declaredMethods: DeclaredMethods): (DeclaredMethod, Int) = {
+    )(
+        implicit
+        declaredMethods: DeclaredMethods
+    ): (DeclaredMethod, Int, Int) /* method, pc, typeid */ = {
         (
             declaredMethods(encodedAllocationSite.toInt & 0x3FFFFF),
-            (encodedAllocationSite >> 22).toInt & 0xFFFF
+            (encodedAllocationSite >> 22).toInt & 0xFFFF,
+            (encodedAllocationSite >> 38).toInt & 0x3FFFFFF
         )
+    }
+
+    def allocationSiteLongToTypeId(encodedAllocationSite: AllocationSite): Int = {
+        (encodedAllocationSite >> 38).toInt & 0x3FFFFFF
     }
 }
