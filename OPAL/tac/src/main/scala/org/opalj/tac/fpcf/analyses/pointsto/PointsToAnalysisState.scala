@@ -6,10 +6,12 @@ package analyses
 package pointsto
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
@@ -21,6 +23,7 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.Field
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -34,6 +37,21 @@ class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends TACAIBasedAnalysisState {
+
+    private[this] val getFields: ArrayBuffer[(DefinitionSite, Field)] = ArrayBuffer.empty
+    private[this] val putFields: ArrayBuffer[(IntTrieSet, Field)] = ArrayBuffer.empty
+
+    def addGetFieldEntity(fakeEntity: (DefinitionSite, Field)): Unit = {
+        getFields += fakeEntity
+    }
+
+    def getFieldsIterator: Iterator[(DefinitionSite, Field)] = getFields.iterator
+
+    def addPutFieldEntity(fakeEntity: (IntTrieSet, Field)): Unit = {
+        putFields += fakeEntity
+    }
+
+    def putFieldsIterator: Iterator[(IntTrieSet, Field)] = putFields.iterator
 
     private[this] val _allocationSitePointsToSet: mutable.Map[DefinitionSite, PointsToSet] = {
         mutable.Map.empty
@@ -134,6 +152,7 @@ class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
 
     // IMPROVE: make it efficient
     final def dependeesOf(depender: Entity): Map[SomeEPK, SomeEOptionP] = {
+        assert(_dependerToDependees.contains(depender))
         _dependerToDependees(depender).iterator.map(dependee ⇒ (dependee.toEPK, dependee)).toMap
     }
 

@@ -52,8 +52,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, PointsToSet]]
-        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-        with ReachableMethodAnalysis {
+    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+    with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -119,11 +119,14 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
                     val defSiteObject = definitionSites(method, pc)
-                    val entity = (fieldOpt.get, defSiteObject)
-                    state.includeSharedPointsToSet(entity, emptyPointsToSet)
-                    currentPointsToOfDefSites(entity, objRefDefSites).foreach { pts ⇒
+                    val fakeEntity = (defSiteObject, fieldOpt.get)
+                    state.addGetFieldEntity(fakeEntity)
+                    currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
-                            state.includeSharedPointsToSet(defSiteObject, currentPointsTo(defSiteObject, (as, fieldOpt.get)))
+                            state.includeSharedPointsToSet(
+                                defSiteObject,
+                                currentPointsTo(defSiteObject, (as, fieldOpt.get))
+                            )
                         }
                     }
                 } else {
@@ -218,11 +221,14 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
             case PutField(pc, declaringClass, name, fieldType: ObjectType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    val entity = (fieldOpt.get, defSites.iterator.filterNot(ai.isImplicitOrExternalException).map[EOptionP[Entity, Property]] { ds ⇒ val e = EPK(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey); ps(e); e }.toTraversable)
-                    state.includeSharedPointsToSet(entity, emptyPointsToSet)
+                    val entity = (defSites, fieldOpt.get)
+                    state.addPutFieldEntity(entity)
                     currentPointsToOfDefSites(entity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
-                            state.includeSharedPointsToSets((as, fieldOpt.get), currentPointsToOfDefSites((as, fieldOpt.get), defSites))
+                            state.includeSharedPointsToSets(
+                                (as, fieldOpt.get),
+                                currentPointsToOfDefSites((as, fieldOpt.get), defSites)
+                            )
                         }
                     }
                 } else {
@@ -406,6 +412,39 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
             }
         }
 
+        for (fakeEntity ← state.getFieldsIterator) {
+            if (state.hasDependees(fakeEntity)) {
+                val (defSite, field) = fakeEntity
+                val dependees = state.dependeesOf(fakeEntity)
+                assert(dependees.nonEmpty)
+                results += InterimPartialResult(
+                    dependees.values,
+                    continuationForNewAllocationSitesAtGetField(defSite, field, dependees)
+                )
+            }
+        }
+
+        for (fakeEntity ← state.putFieldsIterator) {
+            if (state.hasDependees(fakeEntity)) {
+                val (defSites, field) = fakeEntity
+                val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
+                val defSitesEPKs = defSitesWithoutExceptions.map[EPK[Entity, Property]] { ds ⇒
+                    val e = EPK(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
+                    // otherwise it might be the case that the property store does not know the epk
+                    ps(e)
+                    e
+                }.toTraversable
+
+                val dependees = state.dependeesOf(fakeEntity)
+                assert(dependees.nonEmpty)
+                if (defSitesEPKs.nonEmpty)
+                    results += InterimPartialResult(
+                        dependees.values,
+                        continuationForNewAllocationSitesAtPutField(defSitesEPKs, field, dependees)
+                    )
+            }
+        }
+
         if (state.hasCalleesDepenedee) {
             val calleesDependee = state.calleesDependee
             results += InterimPartialResult(
@@ -513,9 +552,67 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
         }
     }
 
-    private def getNumElements(eopt: SomeEOptionP) = {
+    private def getNumElements(eopt: SomeEOptionP): Int = {
         if (eopt.isEPK) 0
         else eopt.ub.asInstanceOf[PointsToSet].numElements
+    }
+
+    private[this] def continuationForNewAllocationSitesAtPutField(
+        rhsDefSitesEPS: Traversable[SomeEPK], field: Field, dependees: Map[SomeEPK, SomeEOptionP]
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
+                val newDependees = updatedDependees(eps, dependees)
+                var results: List[ProperPropertyComputationResult] = List.empty
+
+                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
+                    results ::= InterimPartialResult(
+                        rhsDefSitesEPS, continuationForShared((as, field), rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap)
+                    )
+                }
+                if (newDependees.nonEmpty) {
+                    results ::= InterimPartialResult(
+                        newDependees.values,
+                        continuationForNewAllocationSitesAtPutField(rhsDefSitesEPS, field, newDependees)
+                    )
+                }
+                Results(
+                    results
+                )
+        }
+    }
+
+    // todo name
+    private[this] def continuationForNewAllocationSitesAtGetField(
+        defSiteObject: DefinitionSite,
+        field:         Field,
+        dependees:     Map[SomeEPK, SomeEOptionP]
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
+                val newDependees = updatedDependees(eps, dependees)
+                var nextDependees: List[SomeEPK] = Nil
+                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
+                    val epk = EPK((as, field), pointsToPropertyKey)
+                    ps(epk)
+                    nextDependees ::= epk
+                }
+
+                var results: List[ProperPropertyComputationResult] = Nil
+                if (newDependees.nonEmpty) {
+                    results ::= InterimPartialResult(
+                        newDependees.values,
+                        continuationForNewAllocationSitesAtGetField(defSiteObject, field, newDependees)
+                    )
+                }
+                if (nextDependees.nonEmpty) {
+                    results ::= InterimPartialResult(
+                        nextDependees, continuationForShared(defSiteObject, nextDependees.iterator.map(d ⇒ d → d).toMap)
+                    )
+                }
+                Results(results)
+            case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
+        }
     }
 
     private[this] def continuationForShared(
@@ -524,85 +621,46 @@ trait AbstractPointsToAnalysis[PointsToSet >: Null <: PointsToSetLike[_, _, Poin
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
                 val newDependees = updatedDependees(eps, dependees)
-
-                e match {
-                    case (f: Field, defSiteEPKs: Traversable[EOptionP[Entity, Property]] @unchecked) ⇒
-                        var results: List[ProperPropertyComputationResult] = List.empty
-                        newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
-                            results ::= InterimPartialResult(
-                                defSiteEPKs, continuationForShared((as, f), defSiteEPKs.toIterator.map(d ⇒ d.asEPK → d).toMap)
-                            )
-                        }
-                        Results(
-                            InterimPartialResult(
-                                newDependees.values, continuationForShared(e, newDependees)
-                            ),
-                            results
-                        )
-
-                    case (f: Field, defSiteObject: DefinitionSite) ⇒
-                        var nextDependees: List[SomeEPK] = Nil
-                        newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
-                            val epk = EPK((as, f), pointsToPropertyKey)
-                            ps(epk)
-                            nextDependees ::= epk
-                        }
-                        if (nextDependees.isEmpty)
-                            InterimPartialResult(
-                                newDependees.values, continuationForShared(e, newDependees)
-                            )
-                        else
-                            Results(
-                                InterimPartialResult(
-                                    newDependees.values, continuationForShared(e, newDependees)
-                                ),
-                                InterimPartialResult(
-                                    nextDependees, continuationForShared(defSiteObject, nextDependees.iterator.map(d ⇒ d → d).toMap)
-                                )
+                if (newDependeePointsTo ne emptyPointsToSet) {
+                    val pr = PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+                        e, pointsToPropertyKey, {
+                        case UBP(ub: PointsToSet @unchecked) ⇒
+                            val newPointsToSet = updatedPointsToSet(
+                                ub,
+                                newDependeePointsTo,
+                                eps,
+                                dependees
                             )
 
-                    case _ ⇒
-                        if (newDependeePointsTo ne emptyPointsToSet) {
-                            val pr = PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
-                                e, pointsToPropertyKey, {
-                                case UBP(ub: PointsToSet @unchecked) ⇒
-                                    val newPointsToSet = updatedPointsToSet(
-                                        ub,
-                                        newDependeePointsTo,
-                                        eps,
-                                        dependees
-                                    )
-
-                                    if (newPointsToSet ne ub) {
-                                        Some(InterimEUBP(e, newPointsToSet))
-                                    } else {
-                                        None
-                                    }
-
-                                case _: EPK[Entity, _] ⇒
-                                    Some(InterimEUBP(e, newDependeePointsTo))
-
-                                case eOptP ⇒
-                                    throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-                            }
-                            )
-
-                            if (newDependees.nonEmpty) {
-                                val ipr = InterimPartialResult(
-                                    newDependees.values, continuationForShared(e, newDependees)
-                                )
-                                Results(pr, ipr)
+                            if (newPointsToSet ne ub) {
+                                Some(InterimEUBP(e, newPointsToSet))
                             } else {
-                                pr
+                                None
                             }
-                        } else if (newDependees.nonEmpty) {
-                            InterimPartialResult(
-                                newDependees.values,
-                                continuationForShared(e, newDependees)
-                            )
-                        } else {
-                            Results()
-                        }
+
+                        case _: EPK[Entity, _] ⇒
+                            Some(InterimEUBP(e, newDependeePointsTo))
+
+                        case eOptP ⇒
+                            throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
+                    }
+                    )
+
+                    if (newDependees.nonEmpty) {
+                        val ipr = InterimPartialResult(
+                            newDependees.values, continuationForShared(e, newDependees)
+                        )
+                        Results(pr, ipr)
+                    } else {
+                        pr
+                    }
+                } else if (newDependees.nonEmpty) {
+                    InterimPartialResult(
+                        newDependees.values,
+                        continuationForShared(e, newDependees)
+                    )
+                } else {
+                    Results()
                 }
 
             case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")

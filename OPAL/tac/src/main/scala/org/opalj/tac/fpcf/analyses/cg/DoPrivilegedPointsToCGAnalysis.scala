@@ -122,7 +122,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                             case _: EPK[VirtualFormalParameter, AllocationSitePointsToSet] ⇒
                                 /*val as = allocationSiteToLong(declaredTargetMethod, 0)
                                 Some(InterimEUBP(tgtThis, AllocationSitePointsToSet(as, t)))*/
-                            Some(InterimEUBP(tgtThis, NoAllocationSites.included(pointsTo.ub, t)))
+                                Some(InterimEUBP(tgtThis, NoAllocationSites.included(pointsTo.ub, t)))
                         }
                     )
 
@@ -360,5 +360,4 @@ object DoPrivilegedPointsToCGAnalysisScheduler extends BasicFPCFEagerAnalysisSch
         analysis
     }
 }
-
 
