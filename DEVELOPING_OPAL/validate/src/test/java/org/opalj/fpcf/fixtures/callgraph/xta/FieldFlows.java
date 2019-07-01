@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.callgraph.xta;
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 
 public class FieldFlows {
-    @AvailableTypes
+    @AvailableTypes({"java/lang/String", "[Ljava/lang/String;"})
     public static void main(String[] args) {
         staticFieldFlowTest();
         staticArrayFieldFlowTest();

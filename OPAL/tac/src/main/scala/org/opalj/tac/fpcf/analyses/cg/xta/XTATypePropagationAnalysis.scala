@@ -46,6 +46,9 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.log.OPALLogger
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethodsKey
 
 class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProject) extends ReachableMethodAnalysis {
 
@@ -79,7 +82,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         val initialResults = new ListBuffer[SomePartialResult]()
 
         if (calleesEOptP.hasUBP) {
-            val callees = getCalleeDefinedMethods(calleesEOptP.ub)
+            val (callees, foundExternalCallees) = getCalleeDefinedMethods(calleesEOptP.ub)
             state.updateSeenCallees(callees)
             for (callee ← callees) {
                 val methodFlowResults = handleNewCallee(state)(callee)
@@ -153,7 +156,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
 
         state.updateCalleeDependee(eps)
 
-        val allCallees = getCalleeDefinedMethods(eps.ub)
+        val (allCallees, foundExternalCallees) = getCalleeDefinedMethods(eps.ub)
 
         val alreadySeenCallees = state.seenCallees
         val newCallees = allCallees diff alreadySeenCallees
@@ -169,6 +172,11 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         // since there is no relevant type flow.
         if (newCallee == state.method) {
             return Seq.empty;
+        }
+
+        // TODO AB for debugging; remove later
+        if (newCallee.descriptor.parameterTypes.filter(_.isObjectType).exists(ot => !classHierarchy.isKnown(ot.asObjectType))) {
+            OPALLogger.warn("xta", s"new callee $newCallee has parameter types not known by the class hierarchy; type flows could be incorrect")
         }
 
         val calleeInstantiatedTypesDependee = propertyStore(newCallee, InstantiatedTypes.key)
@@ -323,7 +331,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
             }
 
         // TODO AB performance..., maybe we can cache this stuff somehow
-        val relevantParameterTypes = allParameterTypes.toSeq.filter(_.isReferenceType).map(_.asReferenceType)
+        val relevantParameterTypes = allParameterTypes.toSeq.collect { case rt: ReferenceType ⇒ rt }
 
         val newTypes = newCallerTypes.filter(t ⇒
             relevantParameterTypes.exists(p ⇒ classHierarchy.isSubtypeOf(t, p)))
@@ -426,17 +434,26 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
 
-    def getCalleeDefinedMethods(callees: Callees): Set[DefinedMethod] = {
-        // TODO AB check efficiency...
+    def getCalleeDefinedMethods(callees: Callees): (Set[DefinedMethod], Boolean) = {
+        // TODO AB have to iterate through all methods for each update; can we make this more efficient?
         val calleeMethods = mutable.Set[DefinedMethod]()
+        var foundExternalCallees = false
         for {
             pc ← callees.callSitePCs
             callee ← callees.callees(pc)
-            if callee.hasSingleDefinedMethod // TODO AB should work on all DeclaredMethods?
         } {
-            calleeMethods += callee.asDefinedMethod
+            if (callee.hasSingleDefinedMethod) // TODO AB should work on all DeclaredMethods?
+                calleeMethods += callee.asDefinedMethod
+            else {
+                foundExternalCallees = true
+                // TODO AB for debugging, remove later
+                if (callee.name != "<init>")
+                    ()
+                OPALLogger.warn("xta", s"found callee without defined method: $callee")
+            }
         }
-        calleeMethods.toSet
+        // meh
+        (calleeMethods.toSet, foundExternalCallees)
     }
 
     // TODO AB mostly a placeholder; likely it's better to get the accesses from TAC instead
@@ -446,7 +463,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
             case FieldReadAccess(objType, name, fieldType) ⇒
                 val field = project.resolveFieldReference(objType, name, fieldType)
                 if (field.isEmpty)
-                    OPALLogger.warn("xta", s"field $name in $objType can not be resolved")
+                    OPALLogger.warn("xta", s"field $name in $objType can not be resolved (read)")
                 field
             case _ ⇒
                 None
@@ -455,7 +472,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
             case FieldWriteAccess(objType, name, fieldType) ⇒
                 val field = project.resolveFieldReference(objType, name, fieldType)
                 if (field.isEmpty)
-                    OPALLogger.warn("xta", s"field $name in $objType can not be resolved")
+                    OPALLogger.warn("xta", s"field $name in $objType can not be resolved (write)")
                 field
             case _ ⇒
                 None
@@ -478,9 +495,34 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
 object XTATypePropagationAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
-    // TODO AB handle assignment of initial instantiated types here!
-
     override def triggeredBy: PropertyKind = Callers.key
+
+    override def init(p: SomeProject, ps: PropertyStore): Null = {
+        val declaredMethods = p.get(DeclaredMethodsKey)
+        val entryPoints = p.get(InitialEntryPointsKey)
+        // TODO AB placeholder!
+        val initialInstantiatedTypes = UIDSet(ObjectType.String, ArrayType(ObjectType.String))
+
+        // Pre-initialize [Ljava/lang/String;
+        ps.preInitialize(ArrayType(ObjectType.String), InstantiatedTypes.key) {
+            case _: EPK[_, _] ⇒ InterimEUBP(ArrayType(ObjectType.String), InstantiatedTypes(UIDSet(ObjectType.String)))
+            case eps          ⇒ throw new IllegalStateException(s"unexpected property: $eps")
+        }
+
+        // TODO AB more sophisticated handling needed for library mode!
+        for (ep ← entryPoints; method = declaredMethods(ep)) {
+            if (method.name != "main") {
+                OPALLogger.warn("xta", "initial type assignment to entry points other than 'main' methods not implemented yet!")(p.logContext)
+            } else {
+                ps.preInitialize(method, InstantiatedTypes.key) {
+                    case _: EPK[_, _] ⇒ InterimEUBP(method, InstantiatedTypes(initialInstantiatedTypes))
+                    case eps          ⇒ throw new IllegalStateException(s"unexpected property: $eps")
+                }
+            }
+        }
+
+        null
+    }
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis = new XTATypePropagationAnalysis(project)

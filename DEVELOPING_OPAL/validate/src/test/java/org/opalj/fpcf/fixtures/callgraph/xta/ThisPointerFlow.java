@@ -5,6 +5,7 @@ import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 public class ThisPointerFlow {
 
     @AvailableTypes({
+            "java/lang/String", "[Ljava/lang/String;",
             "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$A1",
             "org/opalj/fpcf/fixtures/callgraph/xta/ThisPointerFlow$B"})
     public static void main(String[] args) {

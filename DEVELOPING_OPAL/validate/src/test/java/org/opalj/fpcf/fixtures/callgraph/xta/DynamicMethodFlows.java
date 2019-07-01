@@ -6,7 +6,7 @@ import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 // and dynamic call site resolution in multiple stages.
 public class DynamicMethodFlows {
 
-    @AvailableTypes()
+    @AvailableTypes({"java/lang/String", "[Ljava/lang/String;"})
     public static void main(String[] args) {
         dynamicTest();
     }

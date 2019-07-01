@@ -21,6 +21,8 @@ import org.opalj.tac.fpcf.analyses.cg.xta.XTATypePropagationAnalysisScheduler
  */
 class CallGraphTests extends PropertiesTest {
 
+    //override val withRT = true
+
     override def createConfig(): Config = {
         val baseConfig = super.createConfig()
         // For these tests, we want to restrict entry points to "main" methods.

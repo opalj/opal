@@ -37,14 +37,6 @@ import org.opalj.tac.cg.XTACallGraphKey
 
 // TODO AB for debugging/evaluation; remove later
 object CGTestRunner {
-    def main1(args: Array[String]): Unit = {
-        execute(
-            "C:\\mthesis\\xcorpus\\data\\qualitas_corpus_20130901\\sablecc-3.2\\project\\bin.zip",
-            "xta",
-            "C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\rta-vs-xta"
-        )
-    }
-
     def main(args: Array[String]): Unit = {
         def getArgOrElse(index: Int, alt: String): String = {
             if (index >= args.length)

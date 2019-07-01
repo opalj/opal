@@ -3,16 +3,19 @@ package org.opalj.fpcf.fixtures.callgraph.xta;
 
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Testing type data flow between methods for XTA.
  *
  * @author Andreas Bauer
  */
 public class StaticMethodFlows {
-    // The main enty point. The annotation ensures that no values flow back since the return
-    // type is void.
-    // TODO AB It's possible that this method is going to receive types through the args parameter.
-    @AvailableTypes()
+    // The main enty point. The annotation ensures that no values flow back from the called methods
+    // since the return type is void. Since it is a main method, string and string array are available
+    // by default.
+    @AvailableTypes({"java/lang/String", "[Ljava/lang/String;"})
     public static void main(String[] args) {
         // Call the tests. No data-flow here that should influence the results.
         parameterFlow();
@@ -23,6 +26,7 @@ public class StaticMethodFlows {
         arrayTest3();
         multiDimensionalArrayTest();
         recursionTest();
+        externalWorld();
     }
 
     // === Parameter flow ===
@@ -253,6 +257,30 @@ public class StaticMethodFlows {
     public static void recursiveMethod(A a) {
         // This will not terminate obviously, but that shouldn't matter for the static analysis.
         recursiveMethod(a);
+    }
+
+    // === External world ===
+    // This test handles cases where type flows to/from methods/fields which are not available in
+    // the current analysis context. ArrayList is standard library code, which is not available
+    // for property tests (analysis of incomplete projects).
+
+    @AvailableTypes({
+            "java/util/ArrayList",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A"})
+    public static void externalWorld() {
+        ArrayList<A> list = new ArrayList<>();
+        list.add(new A());
+        // TODO AB If the formal parameter has type List<A> instead, ArrayList does NOT flow to the sink
+        // method, since OPAL does not know List is a supertype of ArrayList. Can this be fixed somehow?
+        // Even if withRT = true, it does not work.
+        externalWorld_sink(list);
+    }
+
+    @AvailableTypes({
+            "java/util/ArrayList",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A"})
+    public static void externalWorld_sink(ArrayList<A> list) {
+        A obj = list.get(0);
     }
 
     // === Test Class Hierarchies ===
