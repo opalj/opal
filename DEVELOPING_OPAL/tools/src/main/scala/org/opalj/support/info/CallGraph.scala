@@ -117,8 +117,9 @@ object CallGraph extends ProjectAnalysisApplication {
         val statistic2 = ptss2.groupBy(p ⇒ p.ub.elements.size).mapValues(_.size).toArray.sorted
         println(statistic2.mkString("\n"))
 
-        println(ptss.size)
-        println(ptss2.size)
+        println(s"TypeBased PTSs ${ptss.size}")
+        println(s"AllocSite PTSs ${ptss2.size}")
+        println(s"PTS entries ${ptss2.map(p ⇒ p.ub.elements.size).sum}")
 
         /*val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId)
         p2.get({AllocationSiteBasedPointsToCallGraphKey})
