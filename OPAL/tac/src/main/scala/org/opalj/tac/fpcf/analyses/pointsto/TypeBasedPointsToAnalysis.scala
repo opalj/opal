@@ -40,7 +40,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class TypeBasedPointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends AbstractPointsToAnalysis[TypeBasedPointsToSet] {
+) extends AbstractPointsToAnalysis[ObjectType, TypeBasedPointsToSet] {
 
     override protected[this] val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
         TypeBasedPointsToSet.key

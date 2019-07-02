@@ -23,7 +23,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 class AllocationSiteBasedPointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends AbstractPointsToAnalysis[AllocationSitePointsToSet] {
+) extends AbstractPointsToAnalysis[Long, AllocationSitePointsToSet] {
     override def createPointsToSet(
         pc: Int, declaredMethod: DeclaredMethod, allocatedType: ObjectType
     ): AllocationSitePointsToSet = {

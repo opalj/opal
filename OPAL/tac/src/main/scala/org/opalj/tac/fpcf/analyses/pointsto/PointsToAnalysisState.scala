@@ -12,6 +12,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
@@ -24,6 +25,7 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.cg.NoCallees
 import org.opalj.br.Field
+import org.opalj.br.ObjectType
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -33,7 +35,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
+class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet]](
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends TACAIBasedAnalysisState {
@@ -108,6 +110,18 @@ class PointsToAnalysisState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
             _sharedPointsToSets(e) = newPointsToSet
         } else {
             _sharedPointsToSets(e) = pointsToSet
+        }
+    }
+
+    def includeSharedPointsToSet(
+        e: Entity, pointsToSet: PointsToSet, allowedTypes: UIDSet[ObjectType]
+    ): Unit = {
+        if (_sharedPointsToSets.contains(e)) {
+            val oldPointsToSet = _sharedPointsToSets(e)
+            val newPointsToSet = oldPointsToSet.included(pointsToSet, allowedTypes)
+            _sharedPointsToSets(e) = newPointsToSet
+        } else {
+            _sharedPointsToSets(e) = pointsToSet.filter(allowedTypes)
         }
     }
 

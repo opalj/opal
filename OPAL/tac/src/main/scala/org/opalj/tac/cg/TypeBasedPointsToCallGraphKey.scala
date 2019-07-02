@@ -22,9 +22,9 @@ object TypeBasedPointsToCallGraphKey extends AbstractCallGraphKey {
     ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
         List(
             TypeBasedPointsToBasedCallGraphAnalysisScheduler,
-            TypeBasedPointsToAnalysisScheduler,
-            //ConfiguredNativeMethodsPointsToAnalysisScheduler,
-            //DoPrivilegedPointsToCGAnalysisScheduler
+            TypeBasedPointsToAnalysisScheduler
+        //ConfiguredNativeMethodsPointsToAnalysisScheduler,
+        //DoPrivilegedPointsToCGAnalysisScheduler
         )
     }
 }

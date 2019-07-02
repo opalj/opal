@@ -32,6 +32,12 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def included(other: T, seenElements: Int): T
 
+    def included(other: T, allowedType: ObjectType): T
+
+    def included(other: T, allowedTypes: UIDSet[ObjectType]): T
+
+    def included(other: T, seenElements: Int, allowedTypes: UIDSet[ObjectType]): T
+
     def includeOption(other: T): Option[T] = {
         val newSet = this.included(other)
         if (newSet eq this)
@@ -39,4 +45,6 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
         else
             Some(newSet)
     }
+
+    def filter(allowedTypes: UIDSet[ObjectType]): T
 }

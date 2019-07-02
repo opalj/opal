@@ -91,6 +91,30 @@ case class TypeBasedPointsToSet private[properties] (
     override def forNewestNElements[U](n: Int)(f: ObjectType ⇒ U): Unit = {
         orderedTypes.forFirstN(n)(f)
     }
+
+    override def included(
+        other: TypeBasedPointsToSet, allowedType: ObjectType
+    ): TypeBasedPointsToSet = {
+        ???
+    }
+
+    override def included(
+        other: TypeBasedPointsToSet, allowedTypes: UIDSet[ObjectType]
+    ): TypeBasedPointsToSet = {
+        ???
+    }
+
+    override def included(
+        other: TypeBasedPointsToSet, seenElements: SourceElementID, allowedTypes: UIDSet[ObjectType]
+    ): TypeBasedPointsToSet = {
+        ???
+    }
+
+    override def filter(
+        allowedTypes: UIDSet[ObjectType]
+    ): TypeBasedPointsToSet = {
+        ???
+    }
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {
