@@ -6,6 +6,33 @@ package analyses
 package cg
 package xta
 
+import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintWriter
+import java.time.Instant
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
+import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.RefArray
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomePartialResult
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
@@ -13,6 +40,7 @@ import org.opalj.br.FieldType
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -22,42 +50,73 @@ import org.opalj.br.instructions.AALOAD
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
-import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.PartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomePartialResult
-import org.opalj.tac.fpcf.properties.TACAI
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-
-import org.opalj.log.OPALLogger
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.MultipleDefinedMethods
+import org.opalj.br.VirtualDeclaredMethod
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.tac.fpcf.properties.TACAI
+
+// TODO AB helper for debugging and maybe evaluation later...
+private[xta] class TypePropagationTrace {
+    private val _file = s"C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\traces\\trace${Instant.now.getEpochSecond}.txt"
+    private val _out = new PrintWriter(new FileOutputStream(new File(_file)))
+
+    private def trace(msg: String): Unit = {
+        _out.println(msg)
+        _out.flush()
+    }
+
+    private def simplifiedName(e: Any): String = e match {
+        case defM: DefinedMethod ⇒ s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
+        case rt: ReferenceType ⇒ rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
+        case _ ⇒ e.toString
+    }
+
+    def traceInit(method: DefinedMethod)(implicit ps: PropertyStore, dm: DeclaredMethods): Unit = {
+        val initialTypes = {
+            val typeEOptP = ps(method, InstantiatedTypes.key)
+            if (typeEOptP.hasUBP) typeEOptP.ub.types
+            else UIDSet.empty
+        }
+        val initialCallees =  {
+            val calleesEOptP = ps(method, Callees.key)
+            if (calleesEOptP.hasUBP) calleesEOptP.ub.callSites.flatMap(_._2)
+            else Iterator.empty
+        }
+        trace(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
+    }
+
+    def traceCalleesUpdate(method: DefinedMethod): Unit = {
+        trace(s"callee property update: ${simplifiedName(method)}")
+    }
+
+    def traceNewCallee(method: DefinedMethod, newCallee: DeclaredMethod): Unit = {
+        trace(s"new callee for ${simplifiedName(method)}: ${simplifiedName(newCallee)}")
+    }
+
+    def traceTypeUpdate(method: DefinedMethod, updatedEntity: Entity, types: UIDSet[ReferenceType]): Unit = {
+        trace(s"type set update: for ${simplifiedName(method)}, from ${simplifiedName(updatedEntity)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
+    }
+
+    def traceTypePropagation(entity: Entity, newTypes: UIDSet[ReferenceType]): Unit = {
+        trace(s"propagate {${newTypes.map(simplifiedName).mkString(", ")}} to ${simplifiedName(entity)}")
+    }
+}
 
 class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProject) extends ReachableMethodAnalysis {
+    private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
 
     private type State = XTATypePropagationState
 
     override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
+
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(definedMethod, InstantiatedTypes.key)
         val calleesEOptP = propertyStore(definedMethod, Callees.key)
+
+        _trace.traceInit(definedMethod)
 
         // Dependees for data flow through fields.
         // TODO AB optimize this...
@@ -82,7 +141,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         val initialResults = new ListBuffer[SomePartialResult]()
 
         if (calleesEOptP.hasUBP) {
-            val (callees, foundExternalCallees) = getCalleeDefinedMethods(calleesEOptP.ub)
+            val callees = getCalleeDeclaredMethods(calleesEOptP.ub)
             state.updateSeenCallees(callees)
             for (callee ← callees) {
                 val methodFlowResults = handleNewCallee(state)(callee)
@@ -134,18 +193,28 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
     private def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
 
         case EUBP(e: DefinedMethod, _: Callees) ⇒
+            assert(e == state.method)
+            _trace.traceCalleesUpdate(e)
             handleUpdateOfCallees(state, eps.asInstanceOf[EPS[DefinedMethod, Callees]])
 
-        case EUBP(e: DefinedMethod, _: InstantiatedTypes) if e == state.method ⇒
+        case EUBP(e: DefinedMethod, t: InstantiatedTypes) if e == state.method ⇒
+            _trace.traceTypeUpdate(state.method, e, t.types)
             handleUpdateOfOwnTypeSet(state, eps.asInstanceOf[EPS[DefinedMethod, InstantiatedTypes]])
 
-        case EUBP(e: DefinedMethod, _: InstantiatedTypes) ⇒
+        case EUBP(e: DefinedMethod, t: InstantiatedTypes) ⇒
+            _trace.traceTypeUpdate(state.method, e, t.types)
             handleUpdateOfCalleeTypeSet(state, eps.asInstanceOf[EPS[DefinedMethod, InstantiatedTypes]])
 
-        case EUBP(e: Field, _: InstantiatedTypes) ⇒
+        case EUBP(ExternalWorld, t: InstantiatedTypes) ⇒
+            _trace.traceTypeUpdate(state.method, ExternalWorld, t.types)
+            handleUpdateOfExternalWorldTypeSet(state, eps.asInstanceOf[EPS[Entity, InstantiatedTypes]])
+
+        case EUBP(e: Field, t: InstantiatedTypes) ⇒
+            _trace.traceTypeUpdate(state.method, e, t.types)
             handleUpdateOfReadFieldTypeSet(state, eps.asInstanceOf[EPS[Field, InstantiatedTypes]])
 
-        case EUBP(e: ArrayType, _: InstantiatedTypes) ⇒
+        case EUBP(e: ArrayType, t: InstantiatedTypes) ⇒
+            _trace.traceTypeUpdate(state.method, e, t.types)
             handleUpdateOfReadArrayTypeSet(state, eps.asInstanceOf[EPS[ArrayType, InstantiatedTypes]])
 
         case _ ⇒
@@ -156,7 +225,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
 
         state.updateCalleeDependee(eps)
 
-        val (allCallees, foundExternalCallees) = getCalleeDefinedMethods(eps.ub)
+        val allCallees = getCalleeDeclaredMethods(eps.ub)
 
         val alreadySeenCallees = state.seenCallees
         val newCallees = allCallees diff alreadySeenCallees
@@ -167,32 +236,52 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         returnResults(newTypeResults)(state)
     }
 
-    def handleNewCallee(state: State)(newCallee: DefinedMethod): Iterable[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+    def handleNewCallee(state: State)(newCallee: DeclaredMethod): Iterable[SomePartialResult] = {
+        _trace.traceNewCallee(state.method, newCallee)
+
         // If the new callee is the method itself, that means it is recursive. We ignore these cases
         // since there is no relevant type flow.
         if (newCallee == state.method) {
             return Seq.empty;
         }
 
+        // TODO AB think about how to handle this case
+        assert(!newCallee.hasMultipleDefinedMethods)
+
         // TODO AB for debugging; remove later
-        if (newCallee.descriptor.parameterTypes.filter(_.isObjectType).exists(ot => !classHierarchy.isKnown(ot.asObjectType))) {
+        if (newCallee.descriptor.parameterTypes.filter(_.isObjectType).exists(ot ⇒ !classHierarchy.isKnown(ot.asObjectType))) {
             OPALLogger.warn("xta", s"new callee $newCallee has parameter types not known by the class hierarchy; type flows could be incorrect")
         }
 
-        val calleeInstantiatedTypesDependee = propertyStore(newCallee, InstantiatedTypes.key)
-        state.updateCalleeInstantiatedTypesDependee(calleeInstantiatedTypesDependee)
+        val calleeInstantiatedTypesDependee =
+            if (newCallee.hasSingleDefinedMethod) {
+                val calleeDefinedMethodInstantiatedTypesDependee = propertyStore(newCallee.asDefinedMethod, InstantiatedTypes.key)
+                state.updateCalleeInstantiatedTypesDependee(calleeDefinedMethodInstantiatedTypesDependee)
+                calleeDefinedMethodInstantiatedTypesDependee
+            } else {
+                val externalWorldInstantiatedTypesDependee = propertyStore(ExternalWorld, InstantiatedTypes.key)
+                state.updateExternalWorldInstantiatedTypesDependee(externalWorldInstantiatedTypesDependee)
+                externalWorldInstantiatedTypesDependee
+            }
+
+        val forwardResult = forwardFlow(state.method, newCallee, state.ownInstantiatedTypesUB)
 
         if (calleeInstantiatedTypesDependee.hasUBP) {
-            val forwardResult = forwardFlow(state.method, newCallee, state.ownInstantiatedTypesUB)
             val backwardResult = backwardFlow(state.method, newCallee, calleeInstantiatedTypesDependee.ub.types)
 
-            state.updateCalleeSeenTypes(newCallee, calleeInstantiatedTypesDependee.ub.numElements)
+            if (newCallee.hasSingleDefinedMethod) {
+                state.updateCalleeSeenTypes(newCallee.asDefinedMethod, calleeInstantiatedTypesDependee.ub.numElements)
+            } else {
+                state.updateExternalWorldSeenTypes(calleeInstantiatedTypesDependee.ub.numElements)
+            }
 
             forwardResult ++ backwardResult
         } else {
-            state.updateCalleeSeenTypes(newCallee, 0)
+            if (newCallee.hasSingleDefinedMethod) {
+                state.updateCalleeSeenTypes(newCallee.asDefinedMethod, 0)
+            }
 
-            Seq.empty
+            forwardResult
         }
     }
 
@@ -213,7 +302,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         val newTypes = UIDSet(state.newInstantiatedTypes(seenTypes).toSeq: _*)
 
         // buffer which holds all partial results which are generated from this update
-        val partialResults = mutable.ArrayBuffer[PartialResult[_ >: Null <: Entity, _ >: Null <: Property]]()
+        val partialResults = mutable.ArrayBuffer[SomePartialResult]()
 
         // (1.) new types may flow to previously known callees, via parameters
         val forwardFlowResults = state.seenCallees.flatMap(c ⇒ forwardFlow(state.method, c, newTypes))
@@ -274,6 +363,35 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         }
     }
 
+    def handleUpdateOfExternalWorldTypeSet(state: State, eps: EPS[Entity, InstantiatedTypes]): ProperPropertyComputationResult = {
+
+        // TODO AB Think about this case later ...
+        assert(!state.seenCallees.exists(_.isInstanceOf[MultipleDefinedMethods]))
+
+        val seenTypes = state.externalWorldSeenTypes
+
+        state.updateExternalWorldInstantiatedTypesDependee(eps)
+
+        val unseenTypes = eps.ub.dropOldest(seenTypes).toSeq
+
+        // TODO AB caching/etc for performance optimization...
+        // The update could have come through the return value of any external callee. We do not know which one.
+        val relevantReturnTypes = state.seenCallees.collect {
+            case c: VirtualDeclaredMethod if c.descriptor.returnType.isReferenceType ⇒ c.descriptor.returnType.asReferenceType
+        }
+
+        val newTypes = unseenTypes.filter(subType ⇒
+            relevantReturnTypes.exists(superType ⇒ classHierarchy.isSubtypeOf(subType, superType)))
+
+        state.updateExternalWorldSeenTypes(seenTypes + unseenTypes.length)
+
+        val results =
+            if (newTypes.isEmpty) Iterable.empty
+            else Iterable(typeFlowPartialResult(state.method, UIDSet(newTypes: _*)))
+
+        returnResults(results)(state)
+    }
+
     def handleUpdateOfReadFieldTypeSet(state: State, eps: EPS[Field, InstantiatedTypes]): ProperPropertyComputationResult = {
         val updatedField = eps.e
 
@@ -316,11 +434,23 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
     }
 
     // calculate flow of new types from caller to callee
-    private def forwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCallerTypes: UIDSet[ReferenceType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+    private def forwardFlow(callerMethod: DefinedMethod, calleeMethod: DeclaredMethod, newCallerTypes: UIDSet[ReferenceType]): Option[SomePartialResult] = {
+
+        // Special case: Object.<init> is implicitly called as a super call by any method X.<init>.
+        // The "this" type X will flow to the type set of Object.<init>. Since Object.<init> is usually
+        // part of the external world, the external world type set is then polluted with any types which
+        // was constructed in the program somewhere.
+        // TODO AB Maybe this case can be handled more gracefully.
+        if (calleeMethod.declaringClassType == ObjectType.Object && calleeMethod.name == "<init>") {
+            return None;
+        }
 
         // Note: Not only virtual methods, since the this pointer can also flow through private methods
         // which are called via invokespecial and are thus not considered "virtual" methods.
-        val hasImplicitThisParameter = calleeMethod.definedMethod.isNotStatic
+
+        // TODO AB this is no good
+        // For now, assume all methods for which we do not have a defined method (--> external world) take an implicit "this"
+        val hasImplicitThisParameter = !calleeMethod.hasSingleDefinedMethod || calleeMethod.definedMethod.isNotStatic
 
         val allParameterTypes: RefArray[FieldType] =
             if (hasImplicitThisParameter) {
@@ -333,17 +463,26 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         // TODO AB performance..., maybe we can cache this stuff somehow
         val relevantParameterTypes = allParameterTypes.toSeq.collect { case rt: ReferenceType ⇒ rt }
 
-        val newTypes = newCallerTypes.filter(t ⇒
-            relevantParameterTypes.exists(p ⇒ classHierarchy.isSubtypeOf(t, p)))
+        val newTypes = newCallerTypes.filter(subType ⇒
+            relevantParameterTypes.exists(superType ⇒ classHierarchy.isSubtypeOf(subType, superType)))
+
+        val flowTarget =
+            if (calleeMethod.hasSingleDefinedMethod)
+                calleeMethod.asDefinedMethod
+            else if (calleeMethod.hasMultipleDefinedMethods)
+                // TODO AB think about how to handle these cases
+                sys.error(s"Case not implemented: MultipleDefinedMethods $calleeMethod")
+            else
+                ExternalWorld
 
         if (newTypes.nonEmpty)
-            Some(typeFlowPartialResult(calleeMethod, UIDSet(newTypes.toSeq: _*)))
+            Some(typeFlowPartialResult(flowTarget, UIDSet(newTypes.toSeq: _*)))
         else
             None
     }
 
     // calculate flow of new types from callee to caller
-    private def backwardFlow(callerMethod: DefinedMethod, calleeMethod: DefinedMethod, newCalleeTypes: UIDSet[ReferenceType]): Option[PartialResult[DefinedMethod, InstantiatedTypes]] = {
+    private def backwardFlow(callerMethod: DefinedMethod, calleeMethod: DeclaredMethod, newCalleeTypes: UIDSet[ReferenceType]): Option[SomePartialResult] = {
 
         val returnTypeOfCallee = calleeMethod.descriptor.returnType
 
@@ -405,6 +544,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
     }
 
     def typeFlowPartialResult[E >: Null <: Entity](entity: E, newTypes: UIDSet[ReferenceType]): PartialResult[E, InstantiatedTypes] = {
+        _trace.traceTypePropagation(entity, newTypes)
         PartialResult[E, InstantiatedTypes](
             entity,
             InstantiatedTypes.key,
@@ -434,26 +574,17 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
 
-    def getCalleeDefinedMethods(callees: Callees): (Set[DefinedMethod], Boolean) = {
+    def getCalleeDeclaredMethods(callees: Callees): Set[DeclaredMethod] = {
         // TODO AB have to iterate through all methods for each update; can we make this more efficient?
-        val calleeMethods = mutable.Set[DefinedMethod]()
-        var foundExternalCallees = false
+        val calleeMethods = mutable.Set[DeclaredMethod]()
         for {
             pc ← callees.callSitePCs
             callee ← callees.callees(pc)
         } {
-            if (callee.hasSingleDefinedMethod) // TODO AB should work on all DeclaredMethods?
-                calleeMethods += callee.asDefinedMethod
-            else {
-                foundExternalCallees = true
-                // TODO AB for debugging, remove later
-                if (callee.name != "<init>")
-                    ()
-                OPALLogger.warn("xta", s"found callee without defined method: $callee")
-            }
+            calleeMethods += callee
         }
         // meh
-        (calleeMethods.toSet, foundExternalCallees)
+        calleeMethods.toSet
     }
 
     // TODO AB mostly a placeholder; likely it's better to get the accesses from TAC instead

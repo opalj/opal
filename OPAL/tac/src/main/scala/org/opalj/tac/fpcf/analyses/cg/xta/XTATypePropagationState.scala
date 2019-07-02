@@ -6,6 +6,12 @@ package analyses
 package cg
 package xta
 
+import scala.collection.mutable
+
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
@@ -13,13 +19,12 @@ import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.fpcf.SomePartialResult
+import org.opalj.br.DeclaredMethod
 import org.opalj.tac.fpcf.properties.TACAI
 
-import scala.collection.mutable
+// Entity which is used for types flow from/to the "external world".
+// TODO AB probably should move this somewhere else.
+object ExternalWorld
 
 class XTATypePropagationState(
         override val method:                       DefinedMethod,
@@ -42,7 +47,7 @@ class XTATypePropagationState(
 
     // TODO AB is there a more efficient data type for this?
     // TODO AB maybe we also need to store the PC of the callsite here, in order to optimize for returned values which are ignored
-    private[this] var _seenCallees: mutable.Set[DefinedMethod] = mutable.Set.empty
+    private[this] var _seenCallees: mutable.Set[DeclaredMethod] = mutable.Set.empty
 
     // TODO AB is there a better data type for this?
     private[this] var _calleeSeenTypes: mutable.LongMap[Int] = mutable.LongMap.empty
@@ -110,12 +115,12 @@ class XTATypePropagationState(
         _calleeDependee = calleeDependee
     }
 
-    def seenCallees: Set[DefinedMethod] = {
+    def seenCallees: Set[DeclaredMethod] = {
         // TODO AB probably not very efficient
         _seenCallees.toSet
     }
 
-    def updateSeenCallees(newCallees: Set[DefinedMethod]): Unit = {
+    def updateSeenCallees(newCallees: Set[DeclaredMethod]): Unit = {
         _seenCallees ++= newCallees
     }
 
@@ -184,6 +189,26 @@ class XTATypePropagationState(
 
     /////////////////////////////////////////////
     //                                         //
+    //             external world              //
+    //                                         //
+    /////////////////////////////////////////////
+
+    private[this] var _externalWorldInstantiatedTypesDependee: Option[EOptionP[Entity, InstantiatedTypes]] = None
+    private[this] var _externalWorldSeenTypes: Int = 0
+
+    def updateExternalWorldInstantiatedTypesDependee(eps: EOptionP[Entity, InstantiatedTypes]): Unit = {
+        _externalWorldInstantiatedTypesDependee = Some(eps)
+    }
+
+    def externalWorldSeenTypes: Int = _externalWorldSeenTypes
+
+    def updateExternalWorldSeenTypes(numberOfTypes: Int): Unit = {
+        assert(numberOfTypes >= _externalWorldSeenTypes)
+        _externalWorldSeenTypes = numberOfTypes
+    }
+
+    /////////////////////////////////////////////
+    //                                         //
     //      general dependency management      //
     //                                         //
     /////////////////////////////////////////////
@@ -194,7 +219,8 @@ class XTATypePropagationState(
             _calleeDependee.isRefinable ||
             _calleeInstantiatedTypesDependees.nonEmpty ||
             _readFieldTypeDependees.nonEmpty ||
-            _readArraysSeenTypes.nonEmpty
+            _readArraysSeenTypes.nonEmpty ||
+            (_externalWorldInstantiatedTypesDependee.isDefined && _externalWorldInstantiatedTypesDependee.get.isRefinable)
     }
 
     override def dependees: List[SomeEOptionP] = {
@@ -214,6 +240,9 @@ class XTATypePropagationState(
 
         if (_readArraysTypeDependees.nonEmpty)
             dependees ++= _readArraysTypeDependees.values
+
+        if (_externalWorldInstantiatedTypesDependee.isDefined)
+            dependees ::= _externalWorldInstantiatedTypesDependee.get
 
         dependees
     }
