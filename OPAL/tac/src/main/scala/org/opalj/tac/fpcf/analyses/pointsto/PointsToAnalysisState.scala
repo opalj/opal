@@ -114,7 +114,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
             val newPointsToSet = oldPointsToSet.included(pointsToSet, superType)
             _sharedPointsToSets(e) = (newPointsToSet, superType)
         } else {
-            _sharedPointsToSets(e) = (pointsToSet, superType)
+            _sharedPointsToSets(e) = (pointsToSet.filter(superType), superType)
         }
     }
 
