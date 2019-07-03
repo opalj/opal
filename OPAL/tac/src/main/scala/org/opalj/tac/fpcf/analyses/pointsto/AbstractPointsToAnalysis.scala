@@ -54,8 +54,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-    with ReachableMethodAnalysis {
+        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+        with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -495,12 +495,10 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case _                               ⇒ throw new IllegalArgumentException(s"unexpected dependee")
         }
 
-        val newPointsToUB: PointsToSet = if (oldDependeePointsTo eq oldPointsToSet) {
-            newDependeePointsToSet.filter(allowedTypes)
-        } else {
-            val seenElements = oldDependeePointsTo.numElements
-            oldPointsToSet.included(newDependeePointsToSet, seenElements, allowedTypes)
-        }
+        val newPointsToUB: PointsToSet =
+            oldPointsToSet.included(
+                newDependeePointsToSet, oldDependeePointsTo.numElements, allowedTypes
+            )
 
         newPointsToUB
     }
