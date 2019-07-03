@@ -44,6 +44,16 @@ trait AllocationSitePointsToSet
     }
 
     assert(numElements >= numTypes)
+
+    /*assert {
+        var asTypes = IntTrieSet.empty
+        elements.foreach { allocationSite ⇒
+            asTypes += allocationSiteLongToTypeId(allocationSite)
+        }
+
+        val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) ⇒ r + t.id }
+        typeIds == asTypes
+    }*/
 }
 
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
@@ -237,11 +247,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
             }
         }
 
-        if (newTypes.size == types.size) {
-            new AllocationSitePointsToSetN(newAllocationSites, types, orderedTypes)
-        } else {
-            new AllocationSitePointsToSetN(newAllocationSites, newTypes, newOrderedTypes)
-        }
+        new AllocationSitePointsToSetN(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def filter(
@@ -284,11 +290,8 @@ case class AllocationSitePointsToSetN private[pointsto] (
             }
         }
 
-        if (newTypes.size == types.size) {
-            AllocationSitePointsToSet(newAllocationSites, types, orderedTypes)
-        } else {
-            AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
-        }
+        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
+
     }
 
     override def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit = {
@@ -374,8 +377,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         var newOrderedTypes = Chain.empty[ObjectType]
 
         // iterate over the smaller set
-        if (numTypes <= allowedTypes.size) {
-            types.foreach { t ⇒
+        if (other.numTypes <= allowedTypes.size) {
+            other.types.foreach { t ⇒
                 if (allowedTypes.contains(t)) {
                     val oldNewTypes = newTypes
                     newTypes += t
@@ -386,7 +389,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
             }
         } else {
             allowedTypes.foreach { t ⇒
-                if (types.contains(t)) {
+                if (other.types.contains(t)) {
                     val oldNewTypes = newTypes
                     newTypes += t
                     if (oldNewTypes ne newTypes) {
@@ -540,8 +543,8 @@ case class AllocationSitePointsToSet1(
         var newOrderedTypes = allocatedType :&: Naught
 
         // iterate over the smaller set
-        if (numTypes <= allowedTypes.size) {
-            types.foreach { t ⇒
+        if (other.numTypes <= allowedTypes.size) {
+            other.types.foreach { t ⇒
                 if (allowedTypes.contains(t)) {
                     val oldNewTypes = newTypes
                     newTypes += t
@@ -552,7 +555,7 @@ case class AllocationSitePointsToSet1(
             }
         } else {
             allowedTypes.foreach { t ⇒
-                if (types.contains(t)) {
+                if (other.types.contains(t)) {
                     val oldNewTypes = newTypes
                     newTypes += t
                     if (oldNewTypes ne newTypes) {
@@ -585,8 +588,8 @@ case class AllocationSitePointsToSet1(
         var newOrderedTypes = allocatedType :&: Naught
 
         // iterate over the smaller set
-        if (numTypes <= allowedTypes.size) {
-            types.foreach { t ⇒
+        if (other.numTypes <= allowedTypes.size) {
+            other.types.foreach { t ⇒
                 if (allowedTypes.contains(t)) {
                     val oldNewTypes = newTypes
                     newTypes += t
@@ -597,7 +600,7 @@ case class AllocationSitePointsToSet1(
             }
         } else {
             allowedTypes.foreach { t ⇒
-                if (types.contains(t)) {
+                if (other.types.contains(t)) {
                     val oldNewTypes = newTypes
                     newTypes += t
                     if (oldNewTypes ne newTypes) {
