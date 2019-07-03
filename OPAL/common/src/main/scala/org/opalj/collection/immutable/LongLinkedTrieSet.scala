@@ -20,7 +20,8 @@ import java.lang.{Integer ⇒ JInt}
  *
  * @author Michael Eichberg
  */
-sealed abstract class LongLinkedTrieSet {
+sealed abstract class LongLinkedTrieSet extends GrowableLongSet {
+    final type ThisSet = LongLinkedTrieSet
     def size: Int
     def isEmpty: Boolean
     def isSingletonSet: Boolean
