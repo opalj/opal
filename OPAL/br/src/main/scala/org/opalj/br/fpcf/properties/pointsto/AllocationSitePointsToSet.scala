@@ -6,6 +6,7 @@ package properties
 package pointsto
 
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet1
 import org.opalj.collection.immutable.Naught
@@ -43,32 +44,34 @@ trait AllocationSitePointsToSet
         }
     }
 
-    assert(numElements >= numTypes)
-
-    /*assert {
+    assert {
         var asTypes = IntTrieSet.empty
         elements.foreach { allocationSite ⇒
             asTypes += allocationSiteLongToTypeId(allocationSite)
         }
 
         val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) ⇒ r + t.id }
+        if (typeIds != asTypes) {
+            println()
+        }
         typeIds == asTypes
-    }*/
+    }
+    assert(numElements >= numTypes)
 }
 
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
 
     def apply(
-        allocationSite: AllocationSite, allocatedType: ObjectType
+        allocationSite: AllocationSite, allocatedType: ReferenceType
     ): AllocationSitePointsToSet = {
         new AllocationSitePointsToSet1(allocationSite, allocatedType)
     }
 
     def apply(
         allocationSiteNew: AllocationSite,
-        allocatedTypeNew:  ObjectType,
+        allocatedTypeNew:  ReferenceType,
         allocationSiteOld: AllocationSite,
-        allocatedTypeOld:  ObjectType
+        allocatedTypeOld:  ReferenceType
     ): AllocationSitePointsToSet = {
         assert(allocationSiteOld != allocationSiteNew)
         new AllocationSitePointsToSetN(
@@ -82,7 +85,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
     }
 
     def apply(
-        elements: LongLinkedTrieSet, types: UIDSet[ObjectType], orderedTypes: Chain[ObjectType]
+        elements: LongLinkedTrieSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
     ): AllocationSitePointsToSet = {
 
         if (elements.isEmpty) {
@@ -109,8 +112,8 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 
 case class AllocationSitePointsToSetN private[pointsto] (
         override val elements:    LongLinkedTrieSet,
-        override val types:       UIDSet[ObjectType],
-        private val orderedTypes: Chain[ObjectType]
+        override val types:       UIDSet[ReferenceType],
+        private val orderedTypes: Chain[ReferenceType]
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
@@ -143,8 +146,8 @@ case class AllocationSitePointsToSetN private[pointsto] (
         new AllocationSitePointsToSetN(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def included(
-        other: AllocationSitePointsToSet, allowedType: ObjectType
+    override def includedSingleType(
+        other: AllocationSitePointsToSet, allowedType: ReferenceType
     ): AllocationSitePointsToSet = {
         val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
             if (allocationSiteLongToTypeId(allocationSite) == allowedType.id) {
@@ -166,10 +169,10 @@ case class AllocationSitePointsToSetN private[pointsto] (
     }
 
     override def included(
-        other: AllocationSitePointsToSet, allowedTypes: UIDSet[ObjectType]
-    ): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
         val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
-            if (allowedTypes.containsId(allocationSiteLongToTypeId(allocationSite))) {
+            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
                 r + allocationSite
             } else {
                 r
@@ -182,25 +185,12 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        // iterate over the smaller set
-        if (other.numTypes <= allowedTypes.size) {
-            other.types.foreach { t ⇒
-                if (allowedTypes.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
-                }
-            }
-        } else {
-            allowedTypes.foreach { t ⇒
-                if (other.types.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
+        other.types.foreach { t ⇒
+            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+                val oldNewTypes = newTypes
+                newTypes += t
+                if (oldNewTypes ne newTypes) {
+                    newOrderedTypes :&:= t
                 }
             }
         }
@@ -209,11 +199,11 @@ case class AllocationSitePointsToSetN private[pointsto] (
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, allowedTypes: UIDSet[ObjectType]
-    ): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, seenElements: Int, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
         var newAllocationSites = elements
         other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
-            if (allowedTypes.containsId(allocationSiteLongToTypeId(allocationSite))) {
+            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
                 newAllocationSites += allocationSite
             }
         }
@@ -224,25 +214,12 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        // iterate over the smaller set
-        if (other.numTypes <= allowedTypes.size) {
-            other.types.foreach { t ⇒
-                if (allowedTypes.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
-                }
-            }
-        } else {
-            allowedTypes.foreach { t ⇒
-                if (other.types.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
+        other.types.foreach { t ⇒
+            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+                val oldNewTypes = newTypes
+                newTypes += t
+                if (oldNewTypes ne newTypes) {
+                    newOrderedTypes :&:= t
                 }
             }
         }
@@ -251,10 +228,10 @@ case class AllocationSitePointsToSetN private[pointsto] (
     }
 
     override def filter(
-        allowedTypes: UIDSet[ObjectType]
-    ): AllocationSitePointsToSet = {
+        superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
         val newAllocationSites = elements.foldLeft(LongLinkedTrieSet.empty) { (r, allocationSite) ⇒
-            if (allowedTypes.containsId(allocationSiteLongToTypeId(allocationSite))) {
+            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
                 r + allocationSite
             } else {
                 r
@@ -264,28 +241,15 @@ case class AllocationSitePointsToSetN private[pointsto] (
         if (newAllocationSites.size == elements.size)
             return this;
 
-        var newTypes = UIDSet.empty[ObjectType]
-        var newOrderedTypes = Chain.empty[ObjectType]
+        var newTypes = UIDSet.empty[ReferenceType]
+        var newOrderedTypes = Chain.empty[ReferenceType]
 
-        // iterate over the smaller set
-        if (numTypes <= allowedTypes.size) {
-            types.foreach { t ⇒
-                if (allowedTypes.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
-                }
-            }
-        } else {
-            allowedTypes.foreach { t ⇒
-                if (types.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
+        types.foreach { t ⇒
+            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+                val oldNewTypes = newTypes
+                newTypes += t
+                if (oldNewTypes ne newTypes) {
+                    newOrderedTypes :&:= t
                 }
             }
         }
@@ -294,7 +258,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
 
     }
 
-    override def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
         orderedTypes.forFirstN(n)(f)
     }
 
@@ -332,8 +296,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         other
     }
 
-    def included(
-        other: AllocationSitePointsToSet, allowedType: ObjectType
+    def includedSingleType(
+        other: AllocationSitePointsToSet, allowedType: ReferenceType
     ): AllocationSitePointsToSet = {
         val newAllocationSites = other.elements.foldLeft(LongLinkedTrieSet.empty) {
             (r, allocationSite) ⇒
@@ -355,17 +319,17 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     }
 
     override def included(
-        other: AllocationSitePointsToSet, allowedTypes: UIDSet[ObjectType]
-    ): AllocationSitePointsToSet = {
-        other.filter(allowedTypes)
+        other: AllocationSitePointsToSet, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+        other.filter(superType)
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, allowedTypes: UIDSet[ObjectType]
-    ): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, seenElements: Int, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
         var newAllocationSites = LongLinkedTrieSet.empty
         other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
-            if (allowedTypes.containsId(allocationSiteLongToTypeId(allocationSite))) {
+            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
                 newAllocationSites += allocationSite
             }
         }
@@ -373,28 +337,15 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         if (newAllocationSites.isEmpty)
             return this;
 
-        var newTypes = UIDSet.empty[ObjectType]
-        var newOrderedTypes = Chain.empty[ObjectType]
+        var newTypes = UIDSet.empty[ReferenceType]
+        var newOrderedTypes = Chain.empty[ReferenceType]
 
-        // iterate over the smaller set
-        if (other.numTypes <= allowedTypes.size) {
-            other.types.foreach { t ⇒
-                if (allowedTypes.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
-                }
-            }
-        } else {
-            allowedTypes.foreach { t ⇒
-                if (other.types.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
+        other.types.foreach { t ⇒
+            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+                val oldNewTypes = newTypes
+                newTypes += t
+                if (oldNewTypes ne newTypes) {
+                    newOrderedTypes :&:= t
                 }
             }
         }
@@ -402,19 +353,21 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(allowedTypes: UIDSet[ObjectType]): AllocationSitePointsToSet = {
+    override def filter(
+        superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
         this
     }
 
     override def numTypes: Int = 0
 
-    override def types: UIDSet[ObjectType] = UIDSet.empty
+    override def types: UIDSet[ReferenceType] = UIDSet.empty
 
     override def numElements: Int = 0
 
     override def elements: LongLinkedTrieSet = LongLinkedTrieSet.empty
 
-    override def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
         assert(n == 0)
     }
 
@@ -424,12 +377,12 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 }
 
 case class AllocationSitePointsToSet1(
-        allocationSite: AllocationSite, allocatedType: ObjectType
+        allocationSite: AllocationSite, allocatedType: ReferenceType
 ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = 1
 
-    override def types: UIDSet[ObjectType] = UIDSet(allocatedType)
+    override def types: UIDSet[ReferenceType] = UIDSet(allocatedType)
 
     override def numElements: Int = 1
 
@@ -480,8 +433,8 @@ case class AllocationSitePointsToSet1(
         included(other)
     }
 
-    def included(
-        other: AllocationSitePointsToSet, allowedType: ObjectType
+    def includedSingleType(
+        other: AllocationSitePointsToSet, allowedType: ReferenceType
     ): AllocationSitePointsToSet = {
         other match {
             case AllocationSitePointsToSet1(`allocationSite`, `allocatedType`) ⇒
@@ -525,11 +478,11 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, allowedTypes: UIDSet[ObjectType]
-    ): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
         val newAllocationSites = other.elements.foldLeft(LongLinkedTrieSet(allocationSite)) {
             (r, as) ⇒
-                if (allowedTypes.containsId(allocationSiteLongToTypeId(as))) {
+                if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(as), superType.id)) {
                     r + as
                 } else {
                     r
@@ -542,25 +495,12 @@ case class AllocationSitePointsToSet1(
         var newTypes = UIDSet(allocatedType)
         var newOrderedTypes = allocatedType :&: Naught
 
-        // iterate over the smaller set
-        if (other.numTypes <= allowedTypes.size) {
-            other.types.foreach { t ⇒
-                if (allowedTypes.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
-                }
-            }
-        } else {
-            allowedTypes.foreach { t ⇒
-                if (other.types.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
+        other.types.foreach { t ⇒
+            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+                val oldNewTypes = newTypes
+                newTypes += t
+                if (oldNewTypes ne newTypes) {
+                    newOrderedTypes :&:= t
                 }
             }
         }
@@ -571,12 +511,12 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, allowedTypes: UIDSet[ObjectType]
-    ): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, seenElements: Int, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
         var newAllocationSites = LongLinkedTrieSet(allocationSite)
 
         other.forNewestNElements(other.numElements - seenElements) { as ⇒
-            if (allowedTypes.containsId(allocationSiteLongToTypeId(as))) {
+            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(as), superType.id)) {
                 newAllocationSites += as
             }
         }
@@ -587,25 +527,12 @@ case class AllocationSitePointsToSet1(
         var newTypes = UIDSet(allocatedType)
         var newOrderedTypes = allocatedType :&: Naught
 
-        // iterate over the smaller set
-        if (other.numTypes <= allowedTypes.size) {
-            other.types.foreach { t ⇒
-                if (allowedTypes.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
-                }
-            }
-        } else {
-            allowedTypes.foreach { t ⇒
-                if (other.types.contains(t)) {
-                    val oldNewTypes = newTypes
-                    newTypes += t
-                    if (oldNewTypes ne newTypes) {
-                        newOrderedTypes :&:= t
-                    }
+        other.types.foreach { t ⇒
+            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+                val oldNewTypes = newTypes
+                newTypes += t
+                if (oldNewTypes ne newTypes) {
+                    newOrderedTypes :&:= t
                 }
             }
         }
@@ -613,15 +540,15 @@ case class AllocationSitePointsToSet1(
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(allowedTypes: UIDSet[ObjectType]): AllocationSitePointsToSet = {
-        if (allowedTypes.contains(allocatedType)) {
+    override def filter(superType: ReferenceType)(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+        if (classHierarchy.isSubtypeOf(allocatedType.id, superType.id)) {
             this
         } else {
             NoAllocationSites
         }
     }
 
-    override def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
         assert(n == 0 || n == 1)
         if (n == 1)
             f(allocatedType)

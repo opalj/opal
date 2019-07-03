@@ -10,7 +10,6 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -39,8 +38,9 @@ import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.cg.NoCallees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.Field
-import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -65,7 +65,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     def createPointsToSet(
-        pc: Int, declaredMethod: DeclaredMethod, allocatedType: ObjectType
+        pc: Int, declaredMethod: DeclaredMethod, allocatedType: ReferenceType
     ): PointsToSet
 
     type State = PointsToAnalysisState[ElementType, PointsToSet]
@@ -94,11 +94,11 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 val defSite = definitionSites(method, pc)
                 state.setAllocationSitePointsToSet(defSite, createPointsToSet(pc, state.method, t))
 
-            case Assignment(pc, _, NewArray(_, _, tpe)) if tpe.elementType.isObjectType ⇒
+            case Assignment(pc, _, NewArray(_, _, tpe)) ⇒
                 val defSite = definitionSites(method, pc)
                 state.setAllocationSitePointsToSet(
                     defSite,
-                    createPointsToSet(pc, state.method, tpe.elementType.asObjectType)
+                    createPointsToSet(pc, state.method, tpe)
                 )
 
             case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
@@ -117,17 +117,19 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     defSiteObject, currentPointsToOfDefSites(defSiteObject, defSites)
                 )
 
-            case Assignment(pc, DVar(_: IsReferenceValue, _), GetField(_, declaringClass, name, fieldType, UVar(_, objRefDefSites))) ⇒
+            case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
+                    val field = fieldOpt.get
                     val defSiteObject = definitionSites(method, pc)
-                    val fakeEntity = (defSiteObject, fieldOpt.get)
+                    val fakeEntity = (defSiteObject, field)
                     state.addGetFieldEntity(fakeEntity)
                     currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
                             state.includeSharedPointsToSet(
                                 defSiteObject,
-                                currentPointsTo(defSiteObject, (as, fieldOpt.get))
+                                currentPointsTo(defSiteObject, (as, field)),
+                                fieldType
                             )
                         }
                     }
@@ -135,7 +137,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case Assignment(pc, DVar(_: IsReferenceValue, _), GetStatic(_, declaringClass, name, fieldType)) ⇒
+            case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) ⇒
                 val defSiteObject = definitionSites(method, pc)
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
@@ -147,12 +149,13 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case Assignment(pc, _, ArrayLoad(_, _, UVar(av: IsSArrayValue, _))) if av.theUpperTypeBound.elementType.isObjectType ⇒
+            // TODO: maybe not require elementType to be an ObjectType
+            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, _))) ⇒
                 val defSiteObject = definitionSites(method, pc)
-                val arrayBaseType = av.theUpperTypeBound.elementType
+                val componentType = av.theUpperTypeBound.componentType
                 state.includeLocalPointsToSet(
                     defSiteObject,
-                    currentPointsTo(defSiteObject, arrayBaseType)
+                    currentPointsTo(defSiteObject, componentType)
                 )
 
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
@@ -190,10 +193,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
                 )
 
-            case Assignment(_, DVar(av: IsSArrayValue, _), _) if av.theUpperTypeBound.elementType.isObjectType ⇒
-                throw new IllegalArgumentException(s"unexpected assignment: $stmt")
-
-            case Assignment(_, DVar(rv: IsReferenceValue, _), _) if !rv.isInstanceOf[IsSArrayValue] ⇒
+            case Assignment(_, DVar(rv: IsReferenceValue, _), _) ⇒
                 throw new IllegalArgumentException(s"unexpected assignment: $stmt")
 
             case call: Call[_] ⇒
@@ -202,22 +202,24 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case ExprStmt(pc, call: Call[_]) ⇒
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
-            case ArrayStore(_, UVar(av: IsSArrayValue, _), _, UVar(_, defSites)) if av.theUpperTypeBound.elementType.isReferenceType ⇒
-                val arrayBaseType = av.theUpperTypeBound.elementType
+            case ArrayStore(_, UVar(av: IsSArrayValue, _), _, UVar(_: IsReferenceValue, defSites)) ⇒
+                val componentType = av.theUpperTypeBound.componentType
                 state.includeSharedPointsToSets(
-                    arrayBaseType, currentPointsToOfDefSites(arrayBaseType, defSites)
+                    componentType, currentPointsToOfDefSites(componentType, defSites), ObjectType.Object // FIXME
                 )
 
-            case PutField(pc, declaringClass, name, fieldType: ObjectType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
+            case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    val entity = (defSites, fieldOpt.get)
+                    val field = fieldOpt.get
+                    val entity = (defSites, field)
                     state.addPutFieldEntity(entity)
                     currentPointsToOfDefSites(entity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
                             state.includeSharedPointsToSets(
-                                (as, fieldOpt.get),
-                                currentPointsToOfDefSites((as, fieldOpt.get), defSites)
+                                (as, field),
+                                currentPointsToOfDefSites((as, field), defSites),
+                                fieldType
                             )
                         }
                     }
@@ -225,11 +227,11 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case PutStatic(pc, declaringClass, name, fieldType: ObjectType, UVar(_, defSites)) ⇒
+            case PutStatic(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined)
                     state.includeSharedPointsToSets(
-                        fieldOpt.get, currentPointsToOfDefSites(fieldOpt.get, defSites)
+                        fieldOpt.get, currentPointsToOfDefSites(fieldOpt.get, defSites), fieldType
                     )
                 else {
                     state.addIncompletePointsToInfo(pc)
@@ -274,27 +276,25 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             // handle receiver for non static methods
             if (receiverOpt.isDefined) {
                 val fp = fps(0)
-                // IMPROVE: Here we copy all points-to entries of the receiver into the *this*
-                // of the target methods. It would be only needed to do so for the ones that led
-                // to the call.
                 val ptss = currentPointsToOfDefSites(fp, receiverOpt.get.asVar.definedBy)
+                state.includeSharedPointsToSets(fp, ptss, target.declaringClassType)
 
-                ptss.foreach { pts ⇒
-                    // IMPROVE: add a method state.includeSharedPointsToSetWithFilter
-                    // IMPROVE: use instantsmethods instead of the subtypeOf check
-                    val possibleTypes = pts.types.filter(classHierarchy.isSubtypeOf(_, target.declaringClassType))
-                    state.includeSharedPointsToSet(fp, pts, possibleTypes)
-                }
             }
 
+            val descriptor = target.descriptor
             // in case of signature polymorphic methods, we give up
-            if (call.params.size == target.descriptor.parametersCount) {
+            if (call.params.size == descriptor.parametersCount) {
                 // handle params
-                for (i ← 0 until target.descriptor.parametersCount) {
-                    val fp = fps(i + 1)
-                    state.includeSharedPointsToSets(
-                        fp, currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy)
-                    )
+                for (i ← 0 until descriptor.parametersCount) {
+                    val paramType = descriptor.parameterType(i)
+                    if (paramType.isReferenceType) {
+                        val fp = fps(i + 1)
+                        state.includeSharedPointsToSets(
+                            fp,
+                            currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy),
+                            paramType.asReferenceType
+                        )
+                    }
                 }
             } else {
                 // it is not needed to mark it as incomplete here
@@ -319,34 +319,30 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             if (receiverOpt.isDefined) {
                 val fp = fps(0)
                 val receiverDefSites = valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
-                // IMPROVE: Here we copy all points-to entries of the receiver into the *this*
-                // of the target methods. It would be only needed to do so for the ones that led
-                // to the call.
                 val ptss = currentPointsToOfDefSites(fp, receiverDefSites)
-
-                ptss.foreach { pts ⇒
-                    // IMPROVE: add a method state.includeSharedPointsToSetWithFilter
-                    // IMPROVE: use instantsmethods instead of the subtypeOf check
-                    val possibleTypes = pts.types.filter(classHierarchy.isSubtypeOf(_, target.declaringClassType))
-                    state.includeSharedPointsToSet(fp, pts, possibleTypes)
-                }
+                state.includeSharedPointsToSets(fp, ptss, target.declaringClassType)
             } else {
                 // todo: distinguish between static methods and unavailable info
             }
 
             val indirectParams = callees.indirectCallParameters(pc, target)
-            for (i ← 0 until target.descriptor.parametersCount) {
-                val fp = fps(i + 1)
-                val indirectParam = indirectParams(i)
-                if (indirectParam.isDefined) {
-                    state.includeSharedPointsToSets(
-                        fp,
-                        currentPointsToOfDefSites(
-                            fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+            val descriptor = target.descriptor
+            for (i ← 0 until descriptor.parametersCount) {
+                val paramType = descriptor.parameterType(i)
+                if (paramType.isReferenceType) {
+                    val fp = fps(i + 1)
+                    val indirectParam = indirectParams(i)
+                    if (indirectParam.isDefined) {
+                        state.includeSharedPointsToSets(
+                            fp,
+                            currentPointsToOfDefSites(
+                                fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+                            ),
+                            paramType.asReferenceType
                         )
-                    )
-                } else {
-                    state.addIncompletePointsToInfo(pc)
+                    } else {
+                        state.addIncompletePointsToInfo(pc)
+                    }
                 }
             }
         } else {
@@ -375,13 +371,13 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             }
         }
 
-        for ((e, pointsToSet) ← state.sharedPointsToSetsIterator) {
+        for ((e, (pointsToSet, superType)) ← state.sharedPointsToSetsIterator) {
             // The shared entities are not affected by changes of the tac and use partial results.
             // Thus, we could simply recompute them on updates for the tac
             if (state.hasDependees(e)) {
                 val dependees = state.dependeesOf(e)
                 results += InterimPartialResult(
-                    dependees.values, continuationForShared(e, dependees)
+                    dependees.values, continuationForShared(e, dependees, superType)
                 )
             }
             if (pointsToSet ne emptyPointsToSet) {
@@ -487,8 +483,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         newDependeePointsToSet: PointsToSet,
         dependee:               SomeEPS,
         oldDependees:           Map[SomeEPK, SomeEOptionP],
-        allowedTypes:           UIDSet[ObjectType]
-    ): PointsToSet = {
+        superType:              ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): PointsToSet = {
         val oldDependeePointsTo = oldDependees(dependee.toEPK) match {
             case UBP(ub: PointsToSet @unchecked) ⇒ ub
             case _: EPK[_, PointsToSet]          ⇒ emptyPointsToSet
@@ -497,7 +493,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
         val newPointsToUB: PointsToSet =
             oldPointsToSet.included(
-                newDependeePointsToSet, oldDependeePointsTo.numElements, allowedTypes
+                newDependeePointsToSet, oldDependeePointsTo.numElements, superType
             )
 
         newPointsToUB
@@ -579,7 +575,12 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
                     results ::= InterimPartialResult(
-                        rhsDefSitesEPS, continuationForShared((as, field), rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap)
+                        rhsDefSitesEPS,
+                        continuationForShared(
+                            (as, field),
+                            rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
+                            field.fieldType.asReferenceType
+                        )
                     )
                 }
                 if (newDependees.nonEmpty) {
@@ -619,7 +620,12 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 }
                 if (nextDependees.nonEmpty) {
                     results ::= InterimPartialResult(
-                        nextDependees, continuationForShared(defSiteObject, nextDependees.iterator.map(d ⇒ d → d).toMap)
+                        nextDependees,
+                        continuationForShared(
+                            defSiteObject,
+                            nextDependees.iterator.map(d ⇒ d → d).toMap,
+                            field.fieldType.asReferenceType
+                        )
                     )
                 }
                 Results(results)
@@ -628,7 +634,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     private[this] def continuationForShared(
-        e: Entity, dependees: Map[SomeEPK, SomeEOptionP]
+        e: Entity, dependees: Map[SomeEPK, SomeEOptionP], superType: ReferenceType
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
@@ -637,24 +643,13 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     val pr = PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
                         e, pointsToPropertyKey, {
                         case UBP(ub: PointsToSet @unchecked) ⇒
-                            val newPointsToSet = e match {
-                                case VirtualFormalParameter(target, -1) ⇒
-                                    val allowedTypes = newDependeePointsTo.types.filter(classHierarchy.isSubtypeOf(_, target.declaringClassType))
-                                    updatedPointsToSet(
-                                        ub,
-                                        newDependeePointsTo,
-                                        eps,
-                                        dependees,
-                                        allowedTypes
-                                    )
-
-                                case _ ⇒ updatedPointsToSet(
-                                    ub,
-                                    newDependeePointsTo,
-                                    eps,
-                                    dependees
-                                )
-                            }
+                            val newPointsToSet = updatedPointsToSet(
+                                ub,
+                                newDependeePointsTo,
+                                eps,
+                                dependees,
+                                superType
+                            )
 
                             if (newPointsToSet ne ub) {
                                 Some(InterimEUBP(e, newPointsToSet))
@@ -663,15 +658,10 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                             }
 
                         case _: EPK[Entity, _] ⇒
-                            e match {
-                                case VirtualFormalParameter(target, -1) ⇒
-                                    Some(InterimEUBP(
-                                        e,
-                                        newDependeePointsTo.filter(newDependeePointsTo.types.filter(classHierarchy.isSubtypeOf(_, target.declaringClassType)))
-                                    ))
-                                case _ ⇒
-                                    Some(InterimEUBP(e, newDependeePointsTo))
-                            }
+                            Some(InterimEUBP(
+                                e,
+                                newDependeePointsTo.filter(superType)
+                            ))
 
                         case eOptP ⇒
                             throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
@@ -680,7 +670,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
                     if (newDependees.nonEmpty) {
                         val ipr = InterimPartialResult(
-                            newDependees.values, continuationForShared(e, newDependees)
+                            newDependees.values, continuationForShared(e, newDependees, superType)
                         )
                         Results(pr, ipr)
                     } else {
@@ -689,7 +679,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 } else if (newDependees.nonEmpty) {
                     InterimPartialResult(
                         newDependees.values,
-                        continuationForShared(e, newDependees)
+                        continuationForShared(e, newDependees, superType)
                     )
                 } else {
                     Results()

@@ -12,7 +12,6 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.PropertyStore
@@ -24,8 +23,9 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.ClassHierarchy
 import org.opalj.br.Field
-import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -101,35 +101,33 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def localPointsToSet(e: Entity): PointsToSet = _localPointsToSets(e)
 
-    private[this] val _sharedPointsToSets: mutable.Map[Entity, PointsToSet] = mutable.Map.empty
-
-    def includeSharedPointsToSet(e: Entity, pointsToSet: PointsToSet): Unit = {
-        if (_sharedPointsToSets.contains(e)) {
-            val oldPointsToSet = _sharedPointsToSets(e)
-            val newPointsToSet = oldPointsToSet.included(pointsToSet)
-            _sharedPointsToSets(e) = newPointsToSet
-        } else {
-            _sharedPointsToSets(e) = pointsToSet
-        }
+    private[this] val _sharedPointsToSets: mutable.Map[Entity, (PointsToSet, ReferenceType)] = {
+        mutable.Map.empty
     }
 
     def includeSharedPointsToSet(
-        e: Entity, pointsToSet: PointsToSet, allowedTypes: UIDSet[ObjectType]
-    ): Unit = {
+        e: Entity, pointsToSet: PointsToSet, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): Unit = {
         if (_sharedPointsToSets.contains(e)) {
-            val oldPointsToSet = _sharedPointsToSets(e)
-            val newPointsToSet = oldPointsToSet.included(pointsToSet, allowedTypes)
-            _sharedPointsToSets(e) = newPointsToSet
+            val (oldPointsToSet, oldSuperType) = _sharedPointsToSets(e)
+            assert(oldSuperType == superType)
+            val newPointsToSet = oldPointsToSet.included(pointsToSet, superType)
+            _sharedPointsToSets(e) = (newPointsToSet, superType)
         } else {
-            _sharedPointsToSets(e) = pointsToSet.filter(allowedTypes)
+            _sharedPointsToSets(e) = (pointsToSet, superType)
         }
     }
 
-    def includeSharedPointsToSets(e: Entity, pointsToSets: Iterator[PointsToSet]): Unit = {
-        pointsToSets.foreach(pointsToSet ⇒ includeSharedPointsToSet(e, pointsToSet))
+    def includeSharedPointsToSets(
+        e: Entity, pointsToSets: Iterator[PointsToSet], superType: ReferenceType
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
+    ): Unit = {
+        pointsToSets.foreach(pointsToSet ⇒ includeSharedPointsToSet(e, pointsToSet, superType))
     }
 
-    def sharedPointsToSetsIterator: Iterator[(Entity, PointsToSet)] = {
+    def sharedPointsToSetsIterator: Iterator[(Entity, (PointsToSet, ReferenceType))] = {
         _sharedPointsToSets.iterator
     }
 

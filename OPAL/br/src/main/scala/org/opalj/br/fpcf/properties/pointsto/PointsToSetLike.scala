@@ -16,11 +16,11 @@ import org.opalj.fpcf.Property
  */
 trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType, PointsToSet, T]] extends Property { self: T ⇒
 
-    def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit
+    def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit
 
     def numTypes: Int
 
-    def types: UIDSet[ObjectType]
+    def types: UIDSet[ReferenceType]
 
     def numElements: Int
 
@@ -32,11 +32,13 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def included(other: T, seenElements: Int): T
 
-    def included(other: T, allowedType: ObjectType): T
+    def includedSingleType(other: T, allowedType: ReferenceType): T
 
-    def included(other: T, allowedTypes: UIDSet[ObjectType]): T
+    def included(other: T, superType: ReferenceType)(implicit classHierarchy: ClassHierarchy): T
 
-    def included(other: T, seenElements: Int, allowedTypes: UIDSet[ObjectType]): T
+    def included(
+        other: T, seenElements: Int, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): T
 
     def includeOption(other: T): Option[T] = {
         val newSet = this.included(other)
@@ -46,5 +48,5 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
             Some(newSet)
     }
 
-    def filter(allowedTypes: UIDSet[ObjectType]): T
+    def filter(superType: ReferenceType)(implicit classHierarchy: ClassHierarchy): T
 }

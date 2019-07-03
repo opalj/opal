@@ -27,9 +27,9 @@ sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInf
 }
 
 case class TypeBasedPointsToSet private[properties] (
-        private val orderedTypes: Chain[ObjectType],
-        override val types:       UIDSet[ObjectType]
-) extends PointsToSetLike[ObjectType, UIDSet[ObjectType], TypeBasedPointsToSet]
+        private val orderedTypes: Chain[ReferenceType],
+        override val types:       UIDSet[ReferenceType]
+) extends PointsToSetLike[ReferenceType, UIDSet[ReferenceType], TypeBasedPointsToSet]
     with OrderedProperty
     with TypeBasedPointsToSetPropertyMetaInformation {
 
@@ -65,7 +65,7 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def numTypes: Int = types.size
 
-    override def elements: UIDSet[ObjectType] = types
+    override def elements: UIDSet[ReferenceType] = types
 
     override def equals(obj: Any): Boolean = {
         obj match {
@@ -83,47 +83,39 @@ case class TypeBasedPointsToSet private[properties] (
         included(other) // todo: implement correct version
     }
 
-    override def forNewestNTypes[U](n: Int)(f: ObjectType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
         orderedTypes.forFirstN(n)(f)
     }
 
     // here, the elements are the types
-    override def forNewestNElements[U](n: Int)(f: ObjectType ⇒ U): Unit = {
+    override def forNewestNElements[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
         orderedTypes.forFirstN(n)(f)
     }
 
-    override def included(
-        other: TypeBasedPointsToSet, allowedType: ObjectType
-    ): TypeBasedPointsToSet = {
-        ???
-    }
+    override def includedSingleType(
+        other: TypeBasedPointsToSet, allowedType: ReferenceType
+    ): TypeBasedPointsToSet = ???
 
     override def included(
-        other: TypeBasedPointsToSet, allowedTypes: UIDSet[ObjectType]
-    ): TypeBasedPointsToSet = {
-        ???
-    }
+        other: TypeBasedPointsToSet, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): TypeBasedPointsToSet = ???
 
     override def included(
-        other: TypeBasedPointsToSet, seenElements: SourceElementID, allowedTypes: UIDSet[ObjectType]
-    ): TypeBasedPointsToSet = {
-        ???
-    }
+        other: TypeBasedPointsToSet, seenElements: Int, superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): TypeBasedPointsToSet = ???
 
     override def filter(
-        allowedTypes: UIDSet[ObjectType]
-    ): TypeBasedPointsToSet = {
-        ???
-    }
+        superType: ReferenceType
+    )(implicit classHierarchy: ClassHierarchy): TypeBasedPointsToSet = ???
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {
 
     def apply(
-        initialPointsTo: UIDSet[ObjectType]
+        initialPointsTo: UIDSet[ReferenceType]
     ): TypeBasedPointsToSet = {
         new TypeBasedPointsToSet(
-            initialPointsTo.foldLeft(Chain.empty[ObjectType])((l, t) ⇒ t :&: l),
+            initialPointsTo.foldLeft(Chain.empty[ReferenceType])((l, t) ⇒ t :&: l),
             initialPointsTo
         )
     }

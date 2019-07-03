@@ -12,20 +12,20 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteToLong
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 class AllocationSiteBasedPointsToAnalysis private[analyses] (
         final val project: SomeProject
 ) extends AbstractPointsToAnalysis[Long, AllocationSitePointsToSet] {
     override def createPointsToSet(
-        pc: Int, declaredMethod: DeclaredMethod, allocatedType: ObjectType
+        pc: Int, declaredMethod: DeclaredMethod, allocatedType: ReferenceType
     ): AllocationSitePointsToSet = {
         val as = allocationSiteToLong(declaredMethod, pc, allocatedType)
         AllocationSitePointsToSet(as, allocatedType)

@@ -18,7 +18,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -40,7 +40,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class TypeBasedPointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends AbstractPointsToAnalysis[ObjectType, TypeBasedPointsToSet] {
+) extends AbstractPointsToAnalysis[ReferenceType, TypeBasedPointsToSet] {
 
     override protected[this] val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
         TypeBasedPointsToSet.key
@@ -49,7 +49,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
     override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
     override def createPointsToSet(
-        pc: Int, declaredMethod: DeclaredMethod, allocatedType: ObjectType
+        pc: Int, declaredMethod: DeclaredMethod, allocatedType: ReferenceType
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 }
 

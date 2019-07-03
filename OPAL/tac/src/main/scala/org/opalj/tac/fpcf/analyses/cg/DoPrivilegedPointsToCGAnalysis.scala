@@ -112,7 +112,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                             case UBP(ub: AllocationSitePointsToSet) ⇒
                                 /*val as = allocationSiteToLong(declaredTargetMethod, 0)
                                 val newUB = ub.included(AllocationSitePointsToSet(as, t))*/
-                                val newUB = ub.included(pointsTo.ub, t)
+                                val newUB = ub.includedSingleType(pointsTo.ub, t)
                                 if (newUB eq ub) {
                                     None
                                 } else {
@@ -122,7 +122,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                             case _: EPK[VirtualFormalParameter, AllocationSitePointsToSet] ⇒
                                 /*val as = allocationSiteToLong(declaredTargetMethod, 0)
                                 Some(InterimEUBP(tgtThis, AllocationSitePointsToSet(as, t)))*/
-                                Some(InterimEUBP(tgtThis, NoAllocationSites.included(pointsTo.ub, t)))
+                                Some(InterimEUBP(tgtThis, NoAllocationSites.includedSingleType(pointsTo.ub, t)))
                         }
                     )
 

@@ -173,7 +173,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                     val typesLeft = state.typesForCallSite(callSite)
                     ub.forNewestNTypes(ub.numTypes - seenElements) { newType ⇒
                         if (typesLeft.contains(newType.id)) {
-                            state.removeTypeForCallSite(callSite, newType)
+                            state.removeTypeForCallSite(callSite, newType.asObjectType)
                             val (pc, name, descriptor, declaredType) = callSite
                             val tgtR = project.instanceCall(
                                 state.method.declaringClassType.asObjectType,
