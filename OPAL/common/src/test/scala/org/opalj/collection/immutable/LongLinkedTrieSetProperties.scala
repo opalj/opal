@@ -1,5 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection.immutable
+package org.opalj
+package collection
+package immutable
 
 import org.junit.runner.RunWith
 import org.scalacheck.Properties
@@ -75,16 +77,22 @@ object LongLinkedTrieSetProperties extends Properties("LongLinkedTrieSet") {
             (its.iterator.mkString(",") == l.reverse.mkString(",")) :| "same content"
     }
 
-    property("contains (int values)") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
+    property("contains (values using lower 4 bytes)") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
         val its = s1.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
         s1.forall(i ⇒ its.contains(i.toLong)) :| "contains expected value" &&
             s2.forall(v ⇒ s1.contains(v) == its.contains(v.toLong))
     }
 
-    property("contains (long values)") = forAll { (s1: IntArraySet) ⇒
+    property("contains (values using byte 4 to 7)") = forAll { (s1: IntArraySet) ⇒
         val its = s1.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)((c, n) ⇒ c + (n.toLong << 24))
         s1.forall(i ⇒ its.contains(i.toLong << 24)) :| "contains expected value" &&
             its.iterator.forall(v ⇒ s1.contains((v >> 24).toInt))
+    }
+
+    property("contains (long values)") = forAll { (s1: IntArraySet) ⇒
+        val its = s1.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)((c, n) ⇒ c + ((n.toLong << 32) | i2lBitMask(n)))
+        s1.forall(i ⇒ its.contains((i.toLong << 32) | i2lBitMask(i))) :| "contains expected value" &&
+            its.iterator.forall(v ⇒ s1.contains((v >> 32).toInt))
     }
 
     property("foreach") = forAll { s: IntArraySet ⇒
@@ -109,11 +117,15 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
     describe("contains") {
 
         val fixtures = List[List[Long]](
-            List[Long](-146501L << 24, -137809L << 24, -92565L << 24, -2585L << 24, 42822L << 24, 43337L << 24),
+            List[Long](-149888, -148631, -145484, -141562, -140079, -138107, -136334, -134497, -134411, -133903, -130864, -127559, -125917, -125874, -122818, -122662, -121942, -117767, -109611, -109221, -106817, -105853, -98499, -97621, -97268, -95127, -87266, -87167, -84007, -81481, -79385, -78975, -77313, -24933, -24046, -21559, -14486, -13697, -10057, -9088, -8839, -8094, -2799, 4427, 4715, 6171, 9785, 12698, 13743, 14451, 17035, 22533, 23552, 25426, 28095, 28971, 30684, 38784, 39380, 40539, 41679, 43454, 44458, 46205, 47203, 47959, 48225),
+            List[Long](-133101, -131537, -110967, -102501, -94607, -89623, -82931, -20999, 1601, 1914, 16349, 16597, 31899, 49328),
+            List[Long](-148452, -133542, -119766, -18749, -8976, -8071),
+            List[Long](4414074060632414370L, 1896250972871104879L, -4468262829510781048L, 3369759390166412338L, 3433954040001057900L, -5360189778998759153L, -4455613594770698331L, 7795367189183618087L, 7342745861545843810L, -938149705997478263L, -7298104853677454976L, 4601242874523109082L, 4545666121642261549L, 2117478629717484238L),
+            List[Long](-143785, -114103, -80816, -4668, 5229, 26264),
             List[Long](-139445, -133367, -106981, -81548, -77199, -75525, -8910, -4517, -2458, 174, 13649, 25930, 33737),
+            List[Long](-146501L << 24, -137809L << 24, -92565L << 24, -2585L << 24, 42822L << 24, 43337L << 24),
             List[Long](-146600, -140735, -139854, -129840, -120475, -104855, -103277, -102090, -100994, -100568, -86461, -78635, -19372, -14745, -2214, -1718, 10236, 24057, 25739, 26007, 27050, 34031, 34347, 34872),
             List[Long](-147366, -139048, -116344, -115683, -96550, -94893, -93671, -85883, -81353, -79557, -77003, -76450, -11499, 6020, 9867, 10204, 11359, 30183, 37307, 41127, 42384, 45544, 46243, 49298),
-            List[Long](4414074060632414370L, 1896250972871104879L, -4468262829510781048L, 3369759390166412338L, 3433954040001057900L, -5360189778998759153L, -4455613594770698331L, 7795367189183618087L, 7342745861545843810L, -938149705997478263L, -7298104853677454976L, 4601242874523109082L, 4545666121642261549L, 2117478629717484238L),
             List[Long](-92276, -76687, -1003, 39908),
             List[Long](-149831, -143246, -110997, -103241, -100192, -91362, -14553, -10397, -2126, -628, 8184, 13255, 39973),
             List[Long](-103806, -99428, -15784, -6124, 48020),
@@ -164,48 +176,48 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
             assert(!ls.contains(2L))
         }
 
-        it("when comparing with Set[Long]") {
-            val opalS = PerformanceEvaluation.memory {
+        describe(s"performance (#buckets: ${LargeLongLinkedTrieSet.initialBucketsCount})") {
+
+            it("when comparing with Set[Long]") {
+                val opalS = PerformanceEvaluation.memory {
+                    PerformanceEvaluation.time {
+                        val seed = 123456789L
+                        val rngGen = new java.util.Random(seed)
+                        var opalS = org.opalj.collection.immutable.LongLinkedTrieSet.empty
+                        for { i ← 0 to 1000000 } {
+                            val v = rngGen.nextLong()
+                            opalS += v
+                        }
+                        opalS
+                    } { t ⇒ info(s"LongLinkedTrieSet took ${t.toSeconds}") }
+                } { mu ⇒ info(s"LongLinkedTrieSet required $mu bytes") }
+
+                val scalaS = PerformanceEvaluation.memory {
+                    PerformanceEvaluation.time {
+                        val seed = 123456789L
+                        val rngGen = new java.util.Random(seed)
+                        var scalaS = Set.empty[Long]
+                        for { i ← 0 to 1000000 } {
+                            val v = rngGen.nextLong()
+                            scalaS += v
+                        }
+                        scalaS
+                    } { t ⇒ info(s"Set[Long] took ${t.toSeconds}") }
+                } { mu ⇒ info(s"Set[Long] required $mu bytes") }
+
+                var opalTotal = 0L
                 PerformanceEvaluation.time {
-                    val seed = 123456789L
-                    val rngGen = new java.util.Random(seed)
-                    var opalS = org.opalj.collection.immutable.LongLinkedTrieSet.empty
-                    for { i ← 0 to 1000000 } {
-                        val v = rngGen.nextLong()
-                        opalS += v
-                    }
-                    opalS
-                } { t ⇒ info(s"LongLinkedTrieSet took ${t.toSeconds}") }
-            } { mu ⇒ info(s"LongLinkedTrieSet required $mu bytes") }
+                    for { v ← opalS } { opalTotal += v }
+                } { t ⇒ info(s"OPAL ${t.toSeconds} for foreach") }
 
-            val scalaS = PerformanceEvaluation.memory {
+                var scalaTotal = 0L
                 PerformanceEvaluation.time {
-                    val seed = 123456789L
-                    val rngGen = new java.util.Random(seed)
-                    var scalaS = Set.empty[Long]
-                    for { i ← 0 to 1000000 } {
-                        val v = rngGen.nextLong()
-                        scalaS += v
-                    }
-                    scalaS
-                } { t ⇒ info(s"Set[Long] took ${t.toSeconds}") }
-            } { mu ⇒ info(s"Set[Long] required $mu bytes") }
+                    for { v ← scalaS } { scalaTotal += v }
+                } { t ⇒ info(s"Scala ${t.toSeconds} for foreach") }
 
-            var opalTotal = 0L
-            PerformanceEvaluation.time {
-                for { v ← opalS } { opalTotal += v }
-            } { t ⇒ info(s"OPAL ${t.toSeconds} for foreach") }
-
-            var scalaTotal = 0L
-            PerformanceEvaluation.time {
-                for { v ← scalaS } { scalaTotal += v }
-            } { t ⇒ info(s"Scala ${t.toSeconds} for foreach") }
-
-            assert(opalTotal == scalaTotal)
+                assert(opalTotal == scalaTotal)
+            }
         }
-    }
-
-    describe(s"performance (#buckets: ${LargeLongLinkedTrieSet.initialBucketsCount})") {
 
         it("for small sets (up to 8 elements) creation and contains check should finish in reasonable time (all values are positive)") {
             var sizeOfAllSets: Int = 0

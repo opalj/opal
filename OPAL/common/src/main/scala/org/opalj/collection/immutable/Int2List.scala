@@ -16,8 +16,8 @@ package immutable
  * case of `forFirstN` if the size of the list is smaller than expected.
  *
  * Furthermore, all directly implemented methods use `while` loops for maximum
- * efficiency and the list is also specialized for primitive `unsigned long` values which
- * makes this list far more efficient when used for storing lists of `long` values.
+ * efficiency and the list is also specialized for primitive `int` values which
+ * makes this list far more efficient when used for storing lists of `int` values.
  *
  * @author Michael Eichberg
  */
