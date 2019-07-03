@@ -16,9 +16,7 @@ package object pointsto {
         assert(pc >= 0 && pc <= 0xFFFF)
         assert(methodId >= 0 && methodId <= 0x3FFFFF)
         assert(typeId >= -0x2000000 && typeId <= 0x3FFFFFF)
-        val r = methodId.toLong | (pc.toLong << 22) | (typeId.toLong << 38)
-        assert(allocationSiteLongToTypeId(r) == tpe.id)
-        r
+        methodId.toLong | (pc.toLong << 22) | (typeId.toLong << 38)
     }
 
     @inline def longToAllocationSite(
