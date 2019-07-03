@@ -204,9 +204,8 @@ case class AllocationSitePointsToSetN private[pointsto] (
             }
         }
 
-        if (newAllocationSites.size == elements.size) {
+        if (newAllocationSites.size == elements.size)
             return this;
-        }
 
         var newTypes = UIDSet.empty[ObjectType]
         var newOrderedTypes = Chain.empty[ObjectType]
@@ -291,11 +290,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         if (newAllocationSites.isEmpty)
             return this;
 
-        val newTypes = types + allowedType
-        val newOrderedTypes = if (newTypes ne types) allowedType :&: Naught else Naught
-
         AllocationSitePointsToSet(
-            newAllocationSites, newTypes, newOrderedTypes
+            newAllocationSites, UIDSet(allowedType), Chain(allowedType)
         )
     }
 
@@ -338,9 +334,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
             }
         }
 
-        if (newAllocationSites.isEmpty) {
+        if (newAllocationSites.isEmpty)
             return this;
-        }
 
         var newTypes = UIDSet.empty[ObjectType]
         var newOrderedTypes = Chain.empty[ObjectType]
@@ -439,12 +434,12 @@ case class AllocationSitePointsToSet1(
                     }
                 }
 
+                if (newAllocationSites.size == 1)
+                    return this;
+
                 val newOrderedTypes =
                     if (allowedType ne allocatedType) allowedType :&: allocatedType :&: Naught
                     else allocatedType :&: Naught
-
-                if (elements eq newAllocationSites)
-                    return this;
 
                 AllocationSitePointsToSetN(
                     newAllocationSites,
@@ -520,9 +515,8 @@ case class AllocationSitePointsToSet1(
             }
         }
 
-        if (newAllocationSites.size == 1) {
+        if (newAllocationSites.size == 1)
             return this;
-        }
 
         var newTypes = UIDSet(allocatedType)
         var newOrderedTypes = allocatedType :&: Naught
