@@ -17,8 +17,6 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites.numTypes
-import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites.types
 
 /**
  * Represent the set of types that have allocations reachable from the respective entry points.
@@ -31,9 +29,9 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 trait AllocationSitePointsToSet
-        extends PointsToSetLike[AllocationSite, LongLinkedTrieSet, AllocationSitePointsToSet]
-        with OrderedProperty
-        with AllocationSitePointsToSetPropertyMetaInformation {
+    extends PointsToSetLike[AllocationSite, LongLinkedTrieSet, AllocationSitePointsToSet]
+    with OrderedProperty
+    with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
