@@ -1302,6 +1302,34 @@ class ClassHierarchy private (
         }
     }
 
+    // todo handling for reference types
+    final def isSubtypeOf(subtypeId: Int, supertypeId: Int): Boolean = {
+        if (subtypeId == supertypeId)
+            return true;
+
+        if (subtypeId > 0) {
+            //  the subtype is an ObjectType
+            if (supertypeId > 0) {
+                // the supertype is an ObjectType
+                if (isUnknown(supertypeId))
+                    return false;
+
+                subtypeInformationMap(supertypeId).containsId(subtypeId)
+            } else {
+                false
+            }
+        } else {
+            if (supertypeId > 0) {
+                supertypeId == ObjectType.Object.id ||
+                    supertypeId == ObjectType.Serializable.id ||
+                    supertypeId == ObjectType.Cloneable.id
+            } else {
+                // FIXME:
+                true
+            }
+        }
+    }
+
     /**
      * Returns `true` if subtype is a subtype of `supertype`; `false` is returned if
      * the subtyping relationship is unknown OR `subtype` is not a subtype of `supertype`.
