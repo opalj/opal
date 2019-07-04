@@ -55,6 +55,21 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def putFieldsIterator: Iterator[(IntTrieSet, Field)] = putFields.iterator
 
+    private[this] val arrayLoads: ArrayBuffer[(DefinitionSite, ReferenceType)] = ArrayBuffer.empty
+    private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ReferenceType)] = ArrayBuffer.empty
+
+    def addArrayLoadEntity(fakeEntity: (DefinitionSite, ReferenceType)): Unit = {
+        arrayLoads += fakeEntity
+    }
+
+    def arrayLoadsIterator: Iterator[(DefinitionSite, ReferenceType)] = arrayLoads.iterator
+
+    def addArrayStoredEntity(fakeEntity: (IntTrieSet, ReferenceType)): Unit = {
+        arrayStores += fakeEntity
+    }
+
+    def arrayStoresIterator: Iterator[(IntTrieSet, ReferenceType)] = arrayStores.iterator
+
     private[this] val _allocationSitePointsToSet: mutable.Map[DefinitionSite, PointsToSet] = {
         mutable.Map.empty
     }

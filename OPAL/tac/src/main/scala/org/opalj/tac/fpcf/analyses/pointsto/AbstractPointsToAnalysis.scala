@@ -33,7 +33,6 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.cg.NoCallees
@@ -48,6 +47,8 @@ import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TACAI
+
+case class ArrayEntity[ElementType](element: ElementType)
 
 /**
  *
@@ -128,6 +129,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         pts.forNewestNElements(pts.numElements) { as ⇒
                             state.includeSharedPointsToSet(
                                 defSiteObject,
+                                // IMPROVE: Use LongRefPair to avoid boxing
                                 currentPointsTo(defSiteObject, (as, field)),
                                 fieldType
                             )
@@ -149,13 +151,26 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, _))) ⇒
+            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) ⇒
                 val defSiteObject = definitionSites(method, pc)
-                val componentType = av.theUpperTypeBound.componentType
-                state.includeLocalPointsToSet(
+                val componentType = av.theUpperTypeBound.componentType.asReferenceType
+                val fakeEntity = (defSiteObject, componentType)
+                state.addArrayLoadEntity(fakeEntity)
+                currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
+                    pts.forNewestNElements(pts.numElements) { as ⇒
+                        state.includeSharedPointsToSet(
+                            defSiteObject,
+                            // IMPROVE: Use LongRefPair to avoid boxing
+                            currentPointsTo(defSiteObject, ArrayEntity(as)),
+                            componentType
+                        )
+                    }
+                }
+
+            /*state.includeLocalPointsToSet(
                     defSiteObject,
                     currentPointsTo(defSiteObject, componentType)
-                )
+                )*/
 
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
                 val callees: Callees = state.callees(ps)
@@ -202,12 +217,25 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
             case ArrayStore(_, UVar(av: IsSArrayValue, _), _, UVar(_: IsReferenceValue, defSites)) ⇒
-                val componentType = av.theUpperTypeBound.componentType
-                state.includeSharedPointsToSets(
+                val componentType = av.theUpperTypeBound.componentType.asReferenceType
+                val fakeEntity = (defSites, componentType)
+                state.addArrayStoredEntity(fakeEntity)
+                currentPointsToOfDefSites(fakeEntity, defSites).foreach { pts ⇒
+                    pts.forNewestNElements(pts.numElements) { as ⇒
+                        val arrayEntity = ArrayEntity(as)
+                        state.includeSharedPointsToSets(
+                            arrayEntity,
+                            currentPointsToOfDefSites(arrayEntity, defSites),
+                            componentType
+                        )
+                    }
+                }
+
+            /*state.includeSharedPointsToSets(
                     componentType,
                     currentPointsToOfDefSites(componentType, defSites),
                     ObjectType.Object // TODO: componentType.asReferenceType
-                )
+                )*/
 
             case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
@@ -434,6 +462,39 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             }
         }
 
+        for (fakeEntity ← state.arrayLoadsIterator) {
+            if (state.hasDependees(fakeEntity)) {
+                val (defSite, componentType) = fakeEntity
+                val dependees = state.dependeesOf(fakeEntity)
+                assert(dependees.nonEmpty)
+                results += InterimPartialResult(
+                    dependees.values,
+                    continuationForNewAllocationSitesAtArrayLoad(defSite, componentType, dependees)
+                )
+            }
+        }
+
+        for (fakeEntity ← state.arrayStoresIterator) {
+            if (state.hasDependees(fakeEntity)) {
+                val (defSites, componentType) = fakeEntity
+                val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
+                val defSitesEPKs = defSitesWithoutExceptions.map[EPK[Entity, Property]] { ds ⇒
+                    val e = EPK(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
+                    // otherwise it might be the case that the property store does not know the epk
+                    ps(e)
+                    e
+                }.toTraversable
+
+                val dependees = state.dependeesOf(fakeEntity)
+                assert(dependees.nonEmpty)
+                if (defSitesEPKs.nonEmpty)
+                    results += InterimPartialResult(
+                        dependees.values,
+                        continuationForNewAllocationSitesAtArrayStore(defSitesEPKs, componentType, dependees)
+                    )
+            }
+        }
+
         if (state.hasCalleesDepenedee) {
             val calleesDependee = state.calleesDependee
             results += InterimPartialResult(
@@ -593,6 +654,36 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         }
     }
 
+    private[this] def continuationForNewAllocationSitesAtArrayStore(
+        rhsDefSitesEPS: Traversable[SomeEPK], componentType: ReferenceType, dependees: Map[SomeEPK, SomeEOptionP]
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
+                val newDependees = updatedDependees(eps, dependees)
+                var results: List[ProperPropertyComputationResult] = List.empty
+
+                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
+                    results ::= InterimPartialResult(
+                        rhsDefSitesEPS,
+                        continuationForShared(
+                            ArrayEntity(as),
+                            rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
+                            componentType
+                        )
+                    )
+                }
+                if (newDependees.nonEmpty) {
+                    results ::= InterimPartialResult(
+                        newDependees.values,
+                        continuationForNewAllocationSitesAtArrayStore(rhsDefSitesEPS, componentType, newDependees)
+                    )
+                }
+                Results(
+                    results
+                )
+        }
+    }
+
     // todo name
     private[this] def continuationForNewAllocationSitesAtGetField(
         defSiteObject: DefinitionSite,
@@ -623,6 +714,44 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                             defSiteObject,
                             nextDependees.iterator.map(d ⇒ d → d).toMap,
                             field.fieldType.asReferenceType
+                        )
+                    )
+                }
+                Results(results)
+            case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
+        }
+    }
+
+    // todo name
+    private[this] def continuationForNewAllocationSitesAtArrayLoad(
+        defSiteObject: DefinitionSite,
+        componentType: ReferenceType,
+        dependees:     Map[SomeEPK, SomeEOptionP]
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        eps match {
+            case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
+                val newDependees = updatedDependees(eps, dependees)
+                var nextDependees: List[SomeEPK] = Nil
+                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
+                    val epk = EPK(ArrayEntity(as), pointsToPropertyKey)
+                    ps(epk)
+                    nextDependees ::= epk
+                }
+
+                var results: List[ProperPropertyComputationResult] = Nil
+                if (newDependees.nonEmpty) {
+                    results ::= InterimPartialResult(
+                        newDependees.values,
+                        continuationForNewAllocationSitesAtArrayLoad(defSiteObject, componentType, newDependees)
+                    )
+                }
+                if (nextDependees.nonEmpty) {
+                    results ::= InterimPartialResult(
+                        nextDependees,
+                        continuationForShared(
+                            defSiteObject,
+                            nextDependees.iterator.map(d ⇒ d → d).toMap,
+                            componentType
                         )
                     )
                 }
