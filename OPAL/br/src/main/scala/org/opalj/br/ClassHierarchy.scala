@@ -1307,9 +1307,9 @@ class ClassHierarchy private (
         if (subtypeId == supertypeId)
             return true;
 
-        if (subtypeId >= ObjectType.Object.id) {
+        if (subtypeId >= ObjectType.ObjectId) {
             //  the subtype is an ObjectType
-            if (supertypeId >= ObjectType.Object.id) {
+            if (supertypeId >= ObjectType.ObjectId) {
                 // the supertype is an ObjectType
                 if (isUnknown(supertypeId))
                     return false;
@@ -1319,10 +1319,10 @@ class ClassHierarchy private (
                 false
             }
         } else {
-            if (supertypeId >= ObjectType.Object.id) {
-                supertypeId == ObjectType.Object.id ||
-                    supertypeId == ObjectType.Serializable.id ||
-                    supertypeId == ObjectType.Cloneable.id
+            if (supertypeId >= ObjectType.ObjectId) {
+                supertypeId == ObjectType.ObjectId ||
+                    supertypeId == ObjectType.SerializableId ||
+                    supertypeId == ObjectType.CloneableId
             } else {
                 // FIXME:
                 true
