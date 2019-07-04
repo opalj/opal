@@ -149,7 +149,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            // TODO: maybe not require elementType to be an ObjectType
             case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, _))) ⇒
                 val defSiteObject = definitionSites(method, pc)
                 val componentType = av.theUpperTypeBound.componentType
@@ -205,7 +204,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case ArrayStore(_, UVar(av: IsSArrayValue, _), _, UVar(_: IsReferenceValue, defSites)) ⇒
                 val componentType = av.theUpperTypeBound.componentType
                 state.includeSharedPointsToSets(
-                    componentType, currentPointsToOfDefSites(componentType, defSites), ObjectType.Object // FIXME
+                    componentType,
+                    currentPointsToOfDefSites(componentType, defSites),
+                    ObjectType.Object // TODO: componentType.asReferenceType
                 )
 
             case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
