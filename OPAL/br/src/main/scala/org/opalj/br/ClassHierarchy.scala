@@ -1307,9 +1307,9 @@ class ClassHierarchy private (
         if (subtypeId == supertypeId)
             return true;
 
-        if (subtypeId > 0) {
+        if (subtypeId >= ObjectType.Object.id) {
             //  the subtype is an ObjectType
-            if (supertypeId > 0) {
+            if (supertypeId >= ObjectType.Object.id) {
                 // the supertype is an ObjectType
                 if (isUnknown(supertypeId))
                     return false;
@@ -1319,7 +1319,7 @@ class ClassHierarchy private (
                 false
             }
         } else {
-            if (supertypeId > 0) {
+            if (supertypeId >= ObjectType.Object.id) {
                 supertypeId == ObjectType.Object.id ||
                     supertypeId == ObjectType.Serializable.id ||
                     supertypeId == ObjectType.Cloneable.id
