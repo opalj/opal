@@ -212,13 +212,14 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
                     val field = fieldOpt.get
-                    val entity = (defSites, field)
-                    state.addPutFieldEntity(entity)
-                    currentPointsToOfDefSites(entity, objRefDefSites).foreach { pts ⇒
+                    val fakeEntity = (defSites, field)
+                    state.addPutFieldEntity(fakeEntity)
+                    currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
+                            val fieldEntity = (as, field)
                             state.includeSharedPointsToSets(
-                                (as, field),
-                                currentPointsToOfDefSites((as, field), defSites),
+                                fieldEntity,
+                                currentPointsToOfDefSites(fieldEntity, defSites),
                                 fieldType
                             )
                         }
@@ -469,13 +470,12 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case _                               ⇒ throw new IllegalArgumentException(s"unexpected dependee")
         }
 
-        val newPointsToUB: PointsToSet = if (oldDependeePointsTo eq oldPointsToSet) {
+        if (oldDependeePointsTo eq oldPointsToSet) {
             newDependeePointsToSet
         } else {
             val seenElements = oldDependeePointsTo.numElements
             oldPointsToSet.included(newDependeePointsToSet, seenElements)
         }
-        newPointsToUB
     }
 
     private[this] def updatedPointsToSet(
@@ -491,12 +491,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case _                               ⇒ throw new IllegalArgumentException(s"unexpected dependee")
         }
 
-        val newPointsToUB: PointsToSet =
-            oldPointsToSet.included(
-                newDependeePointsToSet, oldDependeePointsTo.numElements, superType
-            )
-
-        newPointsToUB
+        oldPointsToSet.included(
+            newDependeePointsToSet, oldDependeePointsTo.numElements, superType
+        )
     }
 
     private[this] def continuationForLocal(
