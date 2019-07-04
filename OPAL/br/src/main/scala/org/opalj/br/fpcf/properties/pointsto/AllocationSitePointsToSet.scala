@@ -6,7 +6,6 @@ package properties
 package pointsto
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet1
 import org.opalj.collection.immutable.Naught
@@ -44,7 +43,7 @@ trait AllocationSitePointsToSet
         }
     }
 
-    assert {
+    /*assert {
         var asTypes = IntTrieSet.empty
         elements.foreach { allocationSite ⇒
             asTypes += allocationSiteLongToTypeId(allocationSite)
@@ -56,7 +55,7 @@ trait AllocationSitePointsToSet
         }
         typeIds == asTypes
     }
-    assert(numElements >= numTypes)
+    assert(numElements >= numTypes)*/
 }
 
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
@@ -230,6 +229,9 @@ case class AllocationSitePointsToSetN private[pointsto] (
     override def filter(
         superType: ReferenceType
     )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+        if (superType eq ObjectType.Object) {
+            return this;
+        }
         val newAllocationSites = elements.foldLeft(LongLinkedTrieSet.empty) { (r, allocationSite) ⇒
             if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
                 r + allocationSite
@@ -271,8 +273,8 @@ case class AllocationSitePointsToSetN private[pointsto] (
         obj match {
             case that: AllocationSitePointsToSetN ⇒
                 (this eq that) || {
-                    that.numTypes == this.numTypes &&
-                        that.elements.size == this.elements.size &&
+                    that.elements.size == this.elements.size &&
+                        that.numTypes == this.numTypes &&
                         // TODO: we should assert that:
                         //  that.elements == this.elements => that.orderedTypes == this.orderedTypes
                         that.elements == this.elements
@@ -281,7 +283,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         }
     }
 
-    override def hashCode: Int = elements.hashCode() * 31
+    override def hashCode: Int = elements.hashCode()
 }
 
 object NoAllocationSites extends AllocationSitePointsToSet {
@@ -559,4 +561,15 @@ case class AllocationSitePointsToSet1(
         if (n == 1)
             f(allocationSite)
     }
+
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case that: AllocationSitePointsToSet1 ⇒
+                that.allocationSite == this.allocationSite
+
+            case _ ⇒ false
+        }
+    }
+
+    override def hashCode: Int = (allocationSite ^ (allocationSite >> 32)).toInt
 }
