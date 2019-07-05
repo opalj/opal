@@ -96,7 +96,7 @@ object EntityDescription {
             val cf = c.getString("cf")
             val name = c.getString("name")
             val fieldType = c.getString("fieldType")
-            FieldDescription(cf, name, fieldType)
+            StaticFieldDescription(cf, name, fieldType)
         } else if (c.hasPath("index")) {
             val cf = c.getString("cf")
             val name = c.getString("name")
@@ -139,7 +139,7 @@ object MethodDescription {
     }
 }
 
-case class FieldDescription(
+case class StaticFieldDescription(
         cf: String, name: String, fieldType: String
 ) extends EntityDescription {
     override def entity(
