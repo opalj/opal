@@ -23,7 +23,6 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.cg.NoCallees
-import org.opalj.br.ClassHierarchy
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSite
@@ -116,33 +115,29 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def localPointsToSet(e: Entity): PointsToSet = _localPointsToSets(e)
 
-    private[this] val _sharedPointsToSets: mutable.Map[Entity, (PointsToSet, ReferenceType)] = {
+    private[this] val _sharedPointsToSets: mutable.Map[Entity, (PointsToSet, Int ⇒ Boolean)] = {
         mutable.Map.empty
     }
 
     def includeSharedPointsToSet(
-        e: Entity, pointsToSet: PointsToSet, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): Unit = {
+        e: Entity, pointsToSet: PointsToSet, typeFilter: Int ⇒ Boolean
+    ): Unit = {
         if (_sharedPointsToSets.contains(e)) {
             val (oldPointsToSet, oldSuperType) = _sharedPointsToSets(e)
-            assert(oldSuperType == superType)
-            val newPointsToSet = oldPointsToSet.included(pointsToSet, superType)
-            _sharedPointsToSets(e) = (newPointsToSet, superType)
+            val newPointsToSet = oldPointsToSet.included(pointsToSet, typeFilter)
+            _sharedPointsToSets(e) = (newPointsToSet, typeFilter)
         } else {
-            _sharedPointsToSets(e) = (pointsToSet.filter(superType), superType)
+            _sharedPointsToSets(e) = (pointsToSet.filter(typeFilter), typeFilter)
         }
     }
 
     def includeSharedPointsToSets(
-        e: Entity, pointsToSets: Iterator[PointsToSet], superType: ReferenceType
-    )(
-        implicit
-        classHierarchy: ClassHierarchy
+        e: Entity, pointsToSets: Iterator[PointsToSet], typeFilter: Int ⇒ Boolean
     ): Unit = {
-        pointsToSets.foreach(pointsToSet ⇒ includeSharedPointsToSet(e, pointsToSet, superType))
+        pointsToSets.foreach(pointsToSet ⇒ includeSharedPointsToSet(e, pointsToSet, typeFilter))
     }
 
-    def sharedPointsToSetsIterator: Iterator[(Entity, (PointsToSet, ReferenceType))] = {
+    def sharedPointsToSetsIterator: Iterator[(Entity, (PointsToSet, Int ⇒ Boolean))] = {
         _sharedPointsToSets.iterator
     }
 

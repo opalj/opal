@@ -168,10 +168,10 @@ case class AllocationSitePointsToSetN private[pointsto] (
     }
 
     override def included(
-        other: AllocationSitePointsToSet, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, typeFilter: Int ⇒ Boolean
+    ): AllocationSitePointsToSet = {
         val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
-            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
+            if(typeFilter(allocationSiteLongToTypeId(allocationSite))) {
                 r + allocationSite
             } else {
                 r
@@ -185,7 +185,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newOrderedTypes = orderedTypes
 
         other.types.foreach { t ⇒
-            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+            if(typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -198,11 +198,11 @@ case class AllocationSitePointsToSetN private[pointsto] (
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, seenElements: Int, typeFilter: Int ⇒ Boolean
+    ): AllocationSitePointsToSet = {
         var newAllocationSites = elements
         other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
-            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
+            if(typeFilter(allocationSiteLongToTypeId(allocationSite))) {
                 newAllocationSites += allocationSite
             }
         }
@@ -214,7 +214,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newOrderedTypes = orderedTypes
 
         other.types.foreach { t ⇒
-            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+            if(typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -226,14 +226,9 @@ case class AllocationSitePointsToSetN private[pointsto] (
         new AllocationSitePointsToSetN(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(
-        superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
-        if (superType eq ObjectType.Object) {
-            return this;
-        }
+    override def filter(typeFilter: Int ⇒ Boolean): AllocationSitePointsToSet = {
         val newAllocationSites = elements.foldLeft(LongLinkedTrieSet.empty) { (r, allocationSite) ⇒
-            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
+            if(typeFilter(allocationSiteLongToTypeId(allocationSite))) {
                 r + allocationSite
             } else {
                 r
@@ -247,7 +242,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newOrderedTypes = Chain.empty[ReferenceType]
 
         types.foreach { t ⇒
-            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+            if(typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -321,17 +316,17 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     }
 
     override def included(
-        other: AllocationSitePointsToSet, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
-        other.filter(superType)
+        other: AllocationSitePointsToSet, typeFilter: Int ⇒ Boolean
+    ): AllocationSitePointsToSet = {
+        other.filter(typeFilter)
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, seenElements: Int, typeFilter: Int ⇒ Boolean
+    ): AllocationSitePointsToSet = {
         var newAllocationSites = LongLinkedTrieSet.empty
         other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
-            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(allocationSite), superType.id)) {
+            if(typeFilter(allocationSiteLongToTypeId(allocationSite))) {
                 newAllocationSites += allocationSite
             }
         }
@@ -343,7 +338,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         var newOrderedTypes = Chain.empty[ReferenceType]
 
         other.types.foreach { t ⇒
-            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+            if(typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -355,9 +350,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(
-        superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+    override def filter(typeFilter: Int ⇒ Boolean): AllocationSitePointsToSet = {
         this
     }
 
@@ -480,11 +473,11 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, typeFilter: Int ⇒ Boolean
+    ): AllocationSitePointsToSet = {
         val newAllocationSites = other.elements.foldLeft(LongLinkedTrieSet(allocationSite)) {
             (r, as) ⇒
-                if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(as), superType.id)) {
+                if(typeFilter(allocationSiteLongToTypeId(as))) {
                     r + as
                 } else {
                     r
@@ -498,7 +491,7 @@ case class AllocationSitePointsToSet1(
         var newOrderedTypes = allocatedType :&: Naught
 
         other.types.foreach { t ⇒
-            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+            if(typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -513,12 +506,12 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
+        other: AllocationSitePointsToSet, seenElements: Int, typeFilter: Int ⇒ Boolean
+    ): AllocationSitePointsToSet = {
         var newAllocationSites = LongLinkedTrieSet(allocationSite)
 
         other.forNewestNElements(other.numElements - seenElements) { as ⇒
-            if (classHierarchy.isSubtypeOf(allocationSiteLongToTypeId(as), superType.id)) {
+            if(typeFilter(allocationSiteLongToTypeId(as))) {
                 newAllocationSites += as
             }
         }
@@ -530,7 +523,7 @@ case class AllocationSitePointsToSet1(
         var newOrderedTypes = allocatedType :&: Naught
 
         other.types.foreach { t ⇒
-            if (classHierarchy.isSubtypeOf(t.id, superType.id)) {
+            if(typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -542,8 +535,8 @@ case class AllocationSitePointsToSet1(
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(superType: ReferenceType)(implicit classHierarchy: ClassHierarchy): AllocationSitePointsToSet = {
-        if (classHierarchy.isSubtypeOf(allocatedType.id, superType.id)) {
+    override def filter(typeFilter: Int ⇒ Boolean): AllocationSitePointsToSet = {
+        if(typeFilter(allocatedType.id)) {
             this
         } else {
             NoAllocationSites

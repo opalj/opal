@@ -34,11 +34,9 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def includedSingleType(other: T, allowedType: ReferenceType): T
 
-    def included(other: T, superType: ReferenceType)(implicit classHierarchy: ClassHierarchy): T
+    def included(other: T, typeFilter: Int ⇒ Boolean): T
 
-    def included(
-        other: T, seenElements: Int, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): T
+    def included(other: T, seenElements: Int, typeFilter: Int ⇒ Boolean): T
 
     def includeOption(other: T): Option[T] = {
         val newSet = this.included(other)
@@ -48,5 +46,5 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
             Some(newSet)
     }
 
-    def filter(superType: ReferenceType)(implicit classHierarchy: ClassHierarchy): T
+    def filter(typeFilter: Int ⇒ Boolean): T
 }

@@ -97,16 +97,16 @@ case class TypeBasedPointsToSet private[properties] (
     ): TypeBasedPointsToSet = ???
 
     override def included(
-        other: TypeBasedPointsToSet, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): TypeBasedPointsToSet = ???
+        other: TypeBasedPointsToSet, typeFilter: Int ⇒ Boolean
+    ): TypeBasedPointsToSet = ???
 
     override def included(
-        other: TypeBasedPointsToSet, seenElements: Int, superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): TypeBasedPointsToSet = ???
+        other: TypeBasedPointsToSet, seenElements: Int, typeFilter: Int ⇒ Boolean
+    ): TypeBasedPointsToSet = ???
 
     override def filter(
-        superType: ReferenceType
-    )(implicit classHierarchy: ClassHierarchy): TypeBasedPointsToSet = ???
+                           typeFilter: Int ⇒ Boolean
+    ): TypeBasedPointsToSet = ???
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {
