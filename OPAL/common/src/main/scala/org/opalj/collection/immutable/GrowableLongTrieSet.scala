@@ -9,9 +9,12 @@ sealed abstract class GrowableLongTrieSet { intSet ⇒
     def isEmpty: Boolean
     def isSingletonSet: Boolean
     def size: Int
+
     def contains(value: Long): Boolean
+
     def foreach[U](f: Long ⇒ U): Unit
     def iterator: LongIterator
+
     def +(value: Long): GrowableLongTrieSet
 
     final override def equals(other: Any): Boolean = {
@@ -28,9 +31,10 @@ object GrowableLongTrieSet {
 
     def empty: GrowableLongTrieSet = GrowableLongTrieSet0
 
+    def apply(v: Long): GrowableLongTrieSet = new GrowableLongTrieSet1(v)
 }
 
-/** The node of an IntTrie. */
+/** A node of the trie. */
 private[immutable] sealed trait GrowableLongTrieSetN {
 
     def foreach[U](f: Long ⇒ U): Unit
@@ -48,7 +52,9 @@ private[immutable] sealed trait GrowableLongTrieSetN {
 }
 
 /** The (potential) leaves of an IntTrie. */
-private[immutable] sealed abstract class GrowableLongTrieSetL extends GrowableLongTrieSet with GrowableLongTrieSetN {
+private[immutable] sealed abstract class GrowableLongTrieSetL
+    extends GrowableLongTrieSet
+    with GrowableLongTrieSetN {
 
     final override private[immutable] def contains(value: Long, key: Long): Boolean = {
         this.contains(value)
@@ -59,60 +65,95 @@ private[immutable] sealed abstract class GrowableLongTrieSetL extends GrowableLo
     }
 }
 
-case object GrowableLongTrieSet0 extends GrowableLongTrieSetL {
+private[immutable] case object GrowableLongTrieSet0 extends GrowableLongTrieSetL {
     override def isSingletonSet: Boolean = false
     override def isEmpty: Boolean = true
     override def size: Int = 0
-    override def foreach[U](f: Long ⇒ U): Unit = {}
-    override def +(i: Long): GrowableLongTrieSet1 = GrowableLongTrieSet1(i)
-    override def iterator: LongIterator = LongIterator.empty
+
     override def contains(value: Long): Boolean = false
 
-    override def equals(other: GrowableLongTrieSet): Boolean = other eq this
-    override def hashCode: Int = 0 // compatible to Arrays.hashCode
-    override def toString: String = "GrowableLongTrieSet()"
+    override def foreach[U](f: Long ⇒ U): Unit = {}
+    override def iterator: LongIterator = LongIterator.empty
 
+    override def +(i: Long): GrowableLongTrieSet1 = new GrowableLongTrieSet1(i)
     private[immutable] override def +(i: Long, level: Int): GrowableLongTrieSetN = this.+(i)
+
+    override def equals(other: GrowableLongTrieSet): Boolean = other eq this
+    override def hashCode: Int = 0
+    override def toString: String = "GrowableLongTrieSet()"
 
 }
 
-final case class GrowableLongTrieSet1 private (i: Long) extends GrowableLongTrieSetL {
+private[immutable] final class GrowableLongTrieSet1(val i1: Long) extends GrowableLongTrieSetL {
+
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = true
     override def size: Int = 1
-    override def foreach[U](f: Long ⇒ U): Unit = { f(i) }
-    override def +(i: Long): GrowableLongTrieSetL = if (this.i == i) this else new GrowableLongTrieSet2(this.i, i)
-    override def iterator: LongIterator = LongIterator(i)
-    override def contains(value: Long): Boolean = value == i
+
+    override def contains(i: Long): Boolean = i == i1
+
+    override def foreach[U](f: Long ⇒ U): Unit = { f(i1) }
+    override def iterator: LongIterator = LongIterator(i1)
+
+    override def +(i: Long): GrowableLongTrieSetL = {
+        val i1 = this.i1
+        if (i1 == i)
+            this
+        else {
+            if (i1 < i)
+                new GrowableLongTrieSet2(i1, i)
+            else
+                new GrowableLongTrieSet2(i, i1)
+        }
+    }
+    override private[immutable] def +(i: Long, level: Int): GrowableLongTrieSetN = this.+(i)
 
     override def equals(other: GrowableLongTrieSet): Boolean = {
         (other eq this) || (other match {
-            case that: GrowableLongTrieSet1 ⇒ this.i == that.i
+            case that: GrowableLongTrieSet1 ⇒ this.i1 == that.i1
             case that                       ⇒ false
         })
     }
+    override def hashCode: Int = 31 + lHashCode(i1)
+    override def toString: String = s"GrowableLongTrieSet($i1)"
 
-    override def hashCode: Int = 31 + lHashCode(i)
-
-    override def toString: String = s"GrowableLongTrieSet($i)"
-
-    override private[immutable] def +(i: Long, level: Int): GrowableLongTrieSetN = this.+(i)
 }
 
 /**
  * Represents an ordered set of two values where i1 has to be smaller than i2.
  */
-private[immutable] final class GrowableLongTrieSet2 private[immutable] (
+private[immutable] final class GrowableLongTrieSet2(
         val i1: Long, val i2: Long
 ) extends GrowableLongTrieSetL {
 
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false
     override def size: Int = 2
+
+    override def contains(i: Long): Boolean = i == i1 || i == i2
+
     override def iterator: LongIterator = LongIterator(i1, i2)
     override def foreach[U](f: Long ⇒ U): Unit = { f(i1); f(i2) }
-    override def +(i: Long): GrowableLongTrieSetL = if (i1 == i | i2 == i) this else new GrowableLongTrieSet3(i1, i2, i)
-    override def contains(value: Long): Boolean = value == i1 || value == i2
+
+    override def +(i: Long): GrowableLongTrieSetL = {
+        val i1 = this.i1
+        val i2 = this.i2
+        if (i1 == i || i2 == i)
+            this
+        else {
+            if (i < i2) {
+                if (i < i1) {
+                    new GrowableLongTrieSet3(i, i1, i2)
+                } else {
+                    new GrowableLongTrieSet3(i1, i, i2)
+                }
+            } else {
+                new GrowableLongTrieSet3(i1, i2, i)
+            }
+
+        }
+    }
+    override private[immutable] def +(i: Long, level: Int): GrowableLongTrieSetN = this.+(i)
 
     override def equals(other: GrowableLongTrieSet): Boolean = {
         (other eq this) || (
@@ -122,25 +163,22 @@ private[immutable] final class GrowableLongTrieSet2 private[immutable] (
             }
         )
     }
-
     override def hashCode: Int = 31 * (31 + lHashCode(i1)) + lHashCode(i2)
-
     override def toString: String = s"GrowableLongTrieSet($i1, $i2)"
 
-    override private[immutable] def +(i: Long, level: Int): GrowableLongTrieSetN = this.+(i)
 }
 
 /**
  * Represents an ordered set of three int values: i1 < i2 < i3.
  */
-private[immutable] final class GrowableLongTrieSet3 private[immutable] (
+private[immutable] final class GrowableLongTrieSet3(
         val i1: Long, val i2: Long, val i3: Long
 ) extends GrowableLongTrieSetL {
 
     override def size: Int = 3
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false
-    override def contains(value: Long): Boolean = value == i1 || value == i2 || value == i3
+    override def contains(i: Long): Boolean = i == i1 || i == i2 || i == i3
     override def iterator: LongIterator = LongIterator(i1, i2, i3)
     override def foreach[U](f: Long ⇒ U): Unit = { f(i1); f(i2); f(i3) }
 
@@ -148,53 +186,48 @@ private[immutable] final class GrowableLongTrieSet3 private[immutable] (
         if (i == i1 || i == i2 || i == i3)
             this
         else
-            new LargeGrowableLongTrieSet(4, this + (i, 0))
+            new LargeGrowableLongTrieSet(4, this.grow(i, 0))
+    }
+    override private[immutable] def +(i: Long, level: Int): GrowableLongTrieSetN = {
+        if (i == i1 || i == i2 || i == i3)
+            this
+        else {
+            this.grow(i, level)
+        }
+    }
+    private[this] def grow(i: Long, level: Int): GrowableLongTrieSetN = {
+        val l = new GrowableLongTrieSet1(i)
+        var r: GrowableLongTrieSetN = new GrowableLongTrieSetN1(((i >> level) & 7L).toInt, l)
+        r = r + (i1, level)
+        r = r + (i2, level)
+        r = r + (i3, level)
+        r
     }
 
     override def equals(other: GrowableLongTrieSet): Boolean = {
         (other eq this) || (
             other match {
-                case that: GrowableLongTrieSet3 ⇒
-                    this.i1 == that.i1 && this.i2 == that.i2 && this.i3 == that.i3
-                case that ⇒
-                    that.size == 3 && that.contains(i1) && that.contains(i2) && that.contains(i3)
+                case that: GrowableLongTrieSet3 ⇒ i1 == that.i1 && i2 == that.i2 && i3 == that.i3
+                case _                          ⇒ false
             }
         )
     }
-
-    override def hashCode: Int = 31 * (31 * (31 + lHashCode(i1)) + lHashCode(i2)) + lHashCode(i3) // compatible to Arrays.hashCode
-
+    override def hashCode: Int = 31 * (31 * (31 + lHashCode(i1)) + lHashCode(i2)) + lHashCode(i3)
     override def toString: String = s"GrowableLongTrieSet($i1, $i2, $i3)"
 
-    override private[immutable] def +(i: Long, level: Int): GrowableLongTrieSetN = {
-        if (i == i1 || i == i2 || i == i3)
-            this
-        else {
-            val l = GrowableLongTrieSet1(i)
-            var r: GrowableLongTrieSetN = new GrowableLongTrieSetN1(((i >> level) & 7L).toInt, l)
-            r = r + (i1, level)
-            r = r + (i2, level)
-            r = r + (i3, level)
-            r
-        }
-    }
 }
 
-private[immutable] class LargeGrowableLongTrieSet(
-        val size: Int,
-        root:     GrowableLongTrieSetN
+private[immutable] final class LargeGrowableLongTrieSet(
+        final val size: Int,
+        final val root: GrowableLongTrieSetN
 ) extends GrowableLongTrieSet {
 
-    assert(size >= 4)
+    // assert(size >= 4)
 
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false
-    override def contains(value: Long): Boolean = {
-        root.contains(value, value)
-    }
-    override def foreach[U](f: Long ⇒ U): Unit = {
-        root.foreach(f)
-    }
+    override def contains(value: Long): Boolean = root.contains(value, value)
+    override def foreach[U](f: Long ⇒ U): Unit = root.foreach(f)
 
     override def iterator: LongIterator = ???
 
@@ -220,8 +253,8 @@ private[immutable] class LargeGrowableLongTrieSet(
 }
 
 private[immutable] final class GrowableLongTrieSetN1(
-        n1Bits: Int,
-        n1:     GrowableLongTrieSetN
+        final val n1Bits: Int,
+        final val n1:     GrowableLongTrieSetN
 ) extends GrowableLongTrieSetN {
 
     override def foreach[U](f: Long ⇒ U): Unit = n1.foreach(f)
@@ -245,7 +278,7 @@ private[immutable] final class GrowableLongTrieSetN1(
             }
         } else {
             val lookupTable = 1 << (n1Bits * 4) | 2 << (vBits * 4)
-            new GrowableLongTrieSetN2(lookupTable, n1, GrowableLongTrieSet1(v))
+            new GrowableLongTrieSetN2(lookupTable, n1, new GrowableLongTrieSet1(v))
         }
     }
 
@@ -257,12 +290,15 @@ private[immutable] final class GrowableLongTrieSetN1(
 
 private[immutable] abstract class GrowableLongTrieSetN2x extends GrowableLongTrieSetN {
 
-    // The mapping between the three (relevant) bits of the value to the slot where the value
-    // is stored.
-    // def lookupTable : Int
+    /**
+     * The mapping between the three (relevant) bits of the value to the slot where the value
+     * is stored.
+     */
     val lookupTable: Int
 
-    // The index is "1" based.
+    /**
+     * The index starts with "1"!
+     */
     def node(index: Int): GrowableLongTrieSetN
 
     final override private[immutable] def contains(v: Long, key: Long): Boolean = {
@@ -276,7 +312,7 @@ private[immutable] abstract class GrowableLongTrieSetN2x extends GrowableLongTri
         }
     }
 
-    override def toString(level: Int): String = {
+    final override def toString(level: Int): String = {
         val indent = " " * level * 3
         var s = s"N("
         var i = 0
@@ -293,9 +329,9 @@ private[immutable] abstract class GrowableLongTrieSetN2x extends GrowableLongTri
 }
 
 private[immutable] final class GrowableLongTrieSetN2(
-        val lookupTable: Int,
-        n1:              GrowableLongTrieSetN,
-        n2:              GrowableLongTrieSetN
+        final val lookupTable: Int,
+        final val n1:          GrowableLongTrieSetN,
+        final val n2:          GrowableLongTrieSetN
 ) extends GrowableLongTrieSetN2x {
 
     override def node(index: Int): GrowableLongTrieSetN = {
@@ -317,7 +353,8 @@ private[immutable] final class GrowableLongTrieSetN2(
         vIndex match {
             case 0 ⇒
                 val newLookupTable = lookupTable | (3 << (vBits * 4))
-                new GrowableLongTrieSetN3(newLookupTable, n1, n2, GrowableLongTrieSet1(v))
+                val newN3 = new GrowableLongTrieSet1(v)
+                new GrowableLongTrieSetN3(newLookupTable, n1, n2, newN3)
             case 1 ⇒
                 val newN1 = n1 + (v, level + 3)
                 if (newN1 ne n1) {
@@ -338,10 +375,10 @@ private[immutable] final class GrowableLongTrieSetN2(
 }
 
 private[immutable] final class GrowableLongTrieSetN3(
-        val lookupTable: Int,
-        n1:              GrowableLongTrieSetN,
-        n2:              GrowableLongTrieSetN,
-        n3:              GrowableLongTrieSetN
+        final val lookupTable: Int,
+        final val n1:          GrowableLongTrieSetN,
+        final val n2:          GrowableLongTrieSetN,
+        final val n3:          GrowableLongTrieSetN
 ) extends GrowableLongTrieSetN2x {
 
     override def foreach[U](f: Long ⇒ U): Unit = {
@@ -365,7 +402,8 @@ private[immutable] final class GrowableLongTrieSetN3(
         vIndex match {
             case 0 ⇒
                 val newLookupTable = lookupTable | (4 << (vBits * 4))
-                new GrowableLongTrieSetN4(newLookupTable, n1, n2, n3, GrowableLongTrieSet1(v))
+                val newN4 = new GrowableLongTrieSet1(v)
+                new GrowableLongTrieSetN4(newLookupTable, n1, n2, n3, newN4)
             case 1 ⇒
                 val newN1 = n1 + (v, level + 3)
                 if (newN1 ne n1) {
@@ -392,11 +430,11 @@ private[immutable] final class GrowableLongTrieSetN3(
 }
 
 private[immutable] final class GrowableLongTrieSetN4(
-        val lookupTable: Int,
-        n1:              GrowableLongTrieSetN,
-        n2:              GrowableLongTrieSetN,
-        n3:              GrowableLongTrieSetN,
-        n4:              GrowableLongTrieSetN
+        final val lookupTable: Int,
+        final val n1:          GrowableLongTrieSetN,
+        final val n2:          GrowableLongTrieSetN,
+        final val n3:          GrowableLongTrieSetN,
+        final val n4:          GrowableLongTrieSetN
 ) extends GrowableLongTrieSetN2x {
 
     override def foreach[U](f: Long ⇒ U): Unit = {
@@ -422,7 +460,8 @@ private[immutable] final class GrowableLongTrieSetN4(
         vIndex match {
             case 0 ⇒
                 val newLookupTable = lookupTable | (5 << (vBits * 4))
-                new GrowableLongTrieSetN5(newLookupTable, n1, n2, n3, n4, GrowableLongTrieSet1(v))
+                val newN5 = new GrowableLongTrieSet1(v)
+                new GrowableLongTrieSetN5(newLookupTable, n1, n2, n3, n4, newN5)
             case 1 ⇒
                 val newN1 = n1 + (v, level + 3)
                 if (newN1 ne n1) {
@@ -456,12 +495,12 @@ private[immutable] final class GrowableLongTrieSetN4(
 }
 
 private[immutable] final class GrowableLongTrieSetN5(
-        val lookupTable: Int,
-        n1:              GrowableLongTrieSetN,
-        n2:              GrowableLongTrieSetN,
-        n3:              GrowableLongTrieSetN,
-        n4:              GrowableLongTrieSetN,
-        n5:              GrowableLongTrieSetN
+        final val lookupTable: Int,
+        final val n1:          GrowableLongTrieSetN,
+        final val n2:          GrowableLongTrieSetN,
+        final val n3:          GrowableLongTrieSetN,
+        final val n4:          GrowableLongTrieSetN,
+        final val n5:          GrowableLongTrieSetN
 ) extends GrowableLongTrieSetN2x {
 
     override def foreach[U](f: Long ⇒ U): Unit = {
@@ -489,7 +528,8 @@ private[immutable] final class GrowableLongTrieSetN5(
         vIndex match {
             case 0 ⇒
                 val newLookupTable = lookupTable | (6 << (vBits * 4))
-                new GrowableLongTrieSetN6(newLookupTable, n1, n2, n3, n4, n5, GrowableLongTrieSet1(v))
+                val newN6 = new GrowableLongTrieSet1(v)
+                new GrowableLongTrieSetN6(newLookupTable, n1, n2, n3, n4, n5, newN6)
             case 1 ⇒
                 val newN1 = n1 + (v, level + 3)
                 if (newN1 ne n1) {
@@ -530,13 +570,13 @@ private[immutable] final class GrowableLongTrieSetN5(
 }
 
 private[immutable] final class GrowableLongTrieSetN6(
-        val lookupTable: Int,
-        n1:              GrowableLongTrieSetN,
-        n2:              GrowableLongTrieSetN,
-        n3:              GrowableLongTrieSetN,
-        n4:              GrowableLongTrieSetN,
-        n5:              GrowableLongTrieSetN,
-        n6:              GrowableLongTrieSetN
+        final val lookupTable: Int,
+        final val n1:          GrowableLongTrieSetN,
+        final val n2:          GrowableLongTrieSetN,
+        final val n3:          GrowableLongTrieSetN,
+        final val n4:          GrowableLongTrieSetN,
+        final val n5:          GrowableLongTrieSetN,
+        final val n6:          GrowableLongTrieSetN
 ) extends GrowableLongTrieSetN2x {
 
     override def foreach[U](f: Long ⇒ U): Unit = {
@@ -566,7 +606,8 @@ private[immutable] final class GrowableLongTrieSetN6(
         vIndex match {
             case 0 ⇒
                 val newLookupTable = lookupTable | (7 << (vBits * 4))
-                new GrowableLongTrieSetN7(newLookupTable, n1, n2, n3, n4, n5, n6, GrowableLongTrieSet1(v))
+                val newN7 = new GrowableLongTrieSet1(v)
+                new GrowableLongTrieSetN7(newLookupTable, n1, n2, n3, n4, n5, n6, newN7)
             case 1 ⇒
                 val newN1 = n1 + (v, level + 3)
                 if (newN1 ne n1) {
@@ -614,14 +655,14 @@ private[immutable] final class GrowableLongTrieSetN6(
 }
 
 private[immutable] final class GrowableLongTrieSetN7(
-        val lookupTable: Int,
-        n1:              GrowableLongTrieSetN,
-        n2:              GrowableLongTrieSetN,
-        n3:              GrowableLongTrieSetN,
-        n4:              GrowableLongTrieSetN,
-        n5:              GrowableLongTrieSetN,
-        n6:              GrowableLongTrieSetN,
-        n7:              GrowableLongTrieSetN
+        final val lookupTable: Int,
+        final val n1:          GrowableLongTrieSetN,
+        final val n2:          GrowableLongTrieSetN,
+        final val n3:          GrowableLongTrieSetN,
+        final val n4:          GrowableLongTrieSetN,
+        final val n5:          GrowableLongTrieSetN,
+        final val n6:          GrowableLongTrieSetN,
+        final val n7:          GrowableLongTrieSetN
 ) extends GrowableLongTrieSetN2x {
 
     override def foreach[U](f: Long ⇒ U): Unit = {
@@ -653,7 +694,8 @@ private[immutable] final class GrowableLongTrieSetN7(
         vIndex match {
             case 0 ⇒
                 val newLookupTable = lookupTable | (8 << (vBits * 4))
-                new GrowableLongTrieSetN8(newLookupTable, n1, n2, n3, n4, n5, n6, n7, GrowableLongTrieSet1(v))
+                val newN8 = new GrowableLongTrieSet1(v)
+                new GrowableLongTrieSetN8(newLookupTable, n1, n2, n3, n4, n5, n6, n7, newN8)
             case 1 ⇒
                 val newN1 = n1 + (v, level + 3)
                 if (newN1 ne n1) {
@@ -709,15 +751,15 @@ private[immutable] final class GrowableLongTrieSetN7(
 }
 
 private[immutable] final class GrowableLongTrieSetN8(
-        val lookupTable: Int,
-        n1:              GrowableLongTrieSetN,
-        n2:              GrowableLongTrieSetN,
-        n3:              GrowableLongTrieSetN,
-        n4:              GrowableLongTrieSetN,
-        n5:              GrowableLongTrieSetN,
-        n6:              GrowableLongTrieSetN,
-        n7:              GrowableLongTrieSetN,
-        n8:              GrowableLongTrieSetN
+        final val lookupTable: Int,
+        final val n1:          GrowableLongTrieSetN,
+        final val n2:          GrowableLongTrieSetN,
+        final val n3:          GrowableLongTrieSetN,
+        final val n4:          GrowableLongTrieSetN,
+        final val n5:          GrowableLongTrieSetN,
+        final val n6:          GrowableLongTrieSetN,
+        final val n7:          GrowableLongTrieSetN,
+        final val n8:          GrowableLongTrieSetN
 ) extends GrowableLongTrieSetN2x {
 
     override def foreach[U](f: Long ⇒ U): Unit = {

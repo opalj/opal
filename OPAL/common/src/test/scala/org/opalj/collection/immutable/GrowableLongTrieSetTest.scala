@@ -14,7 +14,7 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
     describe("regression tests") {
 
         it("-149916 + -102540 + -118018 + -91539 + 0") {
-            val s = GrowableLongTrieSet1(-149916) + -102540 + -118018 + -91539 + 0
+            val s = GrowableLongTrieSet(-149916) + -102540 + -118018 + -91539 + 0
             assert(s.size == 5)
             assert(s.contains(-149916))
             assert(s.contains(-102540))
@@ -38,7 +38,7 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
 
     describe("processing an GrowableLongTrieSet which is leaning to the right") {
 
-        val s = GrowableLongTrieSet1(8192) + 16384 + 32768 + 65536 + 131072
+        val s = GrowableLongTrieSet(8192) + 16384 + 32768 + 65536 + 131072
 
         it("it should contain the given values") {
             assert(s.contains(8192))
