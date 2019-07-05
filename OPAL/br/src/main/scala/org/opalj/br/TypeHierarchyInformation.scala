@@ -90,8 +90,10 @@ object SubtypeInformation {
             final override val interfaceTypes: UIDSet[ObjectType] = theInterfaceTypes
             final override val allTypes: UIDSet[ObjectType] = theAllTypes
             final override def iterator: RefIterator[ObjectType] = allTypes.iterator
-            final override def contains(t: ObjectType): Boolean = true
-            final override private[br] def containsId(objectTypeId: Int): Boolean = true
+            final override def contains(t: ObjectType): Boolean = t ne ObjectType.Object
+            final override private[br] def containsId(objectTypeId: Int): Boolean = {
+                objectTypeId != ObjectType.ObjectId
+            }
         }
     }
 
