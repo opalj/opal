@@ -161,7 +161,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     pts.forNewestNElements(pts.numElements) { as ⇒
                         state.includeSharedPointsToSet(
                             defSiteObject,
-                            // IMPROVE: Use LongRefPair to avoid boxing
                             currentPointsTo(defSiteObject, ArrayEntity(as)),
                             { tid: Int ⇒
                                 classHierarchy.isSubtypeOf(tid, componentType.id)
