@@ -3,6 +3,8 @@ package org.opalj
 package collection
 package immutable
 
+import java.lang.Integer.toUnsignedLong
+
 /**
  * An immutable bit set for storing positive int values.
  *
@@ -23,18 +25,14 @@ sealed abstract class BitArraySet extends BitSet { thisSet ⇒
 
     final def |(that: BitArraySet): BitArraySet = this ++ that
 
-    override def equals(other: Any): Boolean = {
-        other match {
-            case that: BitSet ⇒ this.iterator.sameValues(that.iterator)
-            case _            ⇒ false
-        }
-    }
+    override def equals(other: Any): Boolean
+    override def hashCode: Int
 
     final override def toString: String = mkString("BitArraySet(", ",", ")")
 
 }
 
-private[immutable] object EmptyBitArraySet extends BitArraySet { thisSet ⇒
+private[immutable] object BitArraySet0 extends BitArraySet { thisSet ⇒
 
     override def isEmpty: Boolean = true
 
@@ -50,12 +48,105 @@ private[immutable] object EmptyBitArraySet extends BitArraySet { thisSet ⇒
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BitArraySet ⇒ that.isEmpty
-            case _                 ⇒ false // the other BitSets are never empty!
+            case that: AnyRef ⇒ this eq that
+            case _            ⇒ false
+        }
+    }
+    override def hashCode: Int = 1 // from j.u.Arrays.hashCode
+}
+
+private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet { thisSet ⇒
+
+    assert(set != 0L)
+
+    override def isEmpty: Boolean = false
+
+    override def +(i: Int): BitArraySet = {
+        if (i < 32) {
+            val set = this.set
+            val newSet = set | (1 << i)
+            if (newSet != set) new BitArraySet32(newSet) else this
+        } else if (i < 64) {
+            val newSet = Integer.toUnsignedLong(this.set) | (1L << i)
+            new BitArraySet64(newSet)
+        } else {
+            val newSet = new BitArraySetN(new Array[Int]((i / 32) + 1))
+            newSet.set(0) = set
+            newSet + i
         }
     }
 
-    override def hashCode: Int = 1 // from j.u.Arrays.hashCode
+    override def -(i: Int): BitArraySet = {
+        if (i < 32) {
+            val set = this.set
+            val newSet = set & (-1 & ~(1 << i))
+            if (newSet == set)
+                this
+            else if (newSet == 0)
+                BitArraySet0
+            else
+                new BitArraySet32(newSet)
+        } else {
+            this
+        }
+    }
+
+    override def ++(that: BitArraySet): BitArraySet = {
+        that match {
+            case BitArraySet0 ⇒
+                this
+
+            case that: BitArraySet32 ⇒
+                val thisSet = this.set
+                val thatSet = that.set
+                val newSet = thisSet | thatSet
+                if (newSet == thisSet)
+                    this
+                else if (newSet == thatSet)
+                    that
+                else
+                    new BitArraySet32(newSet)
+
+            case that: BitArraySet64 ⇒
+                val thatSet = that.set
+                val newSet = Integer.toUnsignedLong(this.set) | thatSet
+                if (newSet == thatSet)
+                    that
+                else
+                    new BitArraySet64(newSet)
+
+            case that: BitArraySetN ⇒
+                that | this
+        }
+    }
+
+    override def contains(i: Int): Boolean = {
+        if (i < 32)
+            (set & (1 << i)) != 0
+        else
+            false
+    }
+
+    override def iterator: IntIterator = new IntIterator {
+        private[this] var i: Int = java.lang.Integer.numberOfTrailingZeros(set)
+        def hasNext: Boolean = i < 32
+        def next(): Int = {
+            val currentI = this.i
+            var i = currentI
+            do { i += 1 } while (i < 32 && (set & (1 << i)) == 0);
+            this.i = i
+            currentI
+        }
+    }
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case that: BitArraySet32 ⇒ this.set == that.set
+            case _                   ⇒ false
+        }
+    }
+
+    override def hashCode: Int = 31 * set
 }
 
 private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet { thisSet ⇒
@@ -70,8 +161,9 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
             val newSet = set | (1L << i)
             if (newSet != set) new BitArraySet64(newSet) else this
         } else {
-            val newSet = new BitArraySetN(new Array[Long]((i / 64) + 1))
-            newSet.set(0) = set
+            val newSet = new BitArraySetN(new Array[Int]((i / 32) + 1))
+            newSet.set(0) = set.toInt
+            newSet.set(1) = (set >>> 32).toInt
             newSet + i
         }
     }
@@ -83,7 +175,9 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
             if (newSet == set)
                 this
             else if (newSet == 0L)
-                EmptyBitArraySet
+                BitArraySet0
+            else if ((newSet & BitArraySet.HigherWordMask) == 0)
+                new BitArraySet32(newSet.toInt)
             else
                 new BitArraySet64(newSet)
         } else {
@@ -93,8 +187,16 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
 
     override def ++(that: BitArraySet): BitArraySet = {
         that match {
-            case EmptyBitArraySet ⇒
+            case BitArraySet0 ⇒
                 this
+
+            case that: BitArraySet32 ⇒
+                val thisSet = this.set
+                val newSet = thisSet | toUnsignedLong(that.set)
+                if (newSet == thisSet)
+                    this
+                else
+                    new BitArraySet64(newSet)
 
             case that: BitArraySet64 ⇒
                 val thisSet = this.set
@@ -120,46 +222,46 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
     }
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] var i: Int = -1
-        private[this] def advanceIterator(): Unit = {
-            do { i += 1 } while (i < 64 && !thisSet.contains(i))
-        }
-        advanceIterator()
-
+        private[this] var i: Int = java.lang.Long.numberOfTrailingZeros(set)
         def hasNext: Boolean = i < 64
-        def next(): Int = { val i = this.i; advanceIterator(); i }
+        def next(): Int = {
+            val currentI = this.i
+            var i = currentI
+            do { i += 1 } while (i < 64 && (set & (1L << i)) == 0L)
+            this.i = i
+            currentI
+        }
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case EmptyBitArraySet    ⇒ false // this set is never empty!
             case that: BitArraySet64 ⇒ this.set == that.set
-            case _                   ⇒ super.equals(other)
+            case _                   ⇒ false
         }
     }
 
     override def hashCode: Int = 31 * (set ^ (set >>> 32)).toInt // from j.u.Arrays.hashCode
 }
 
-private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArraySet { thisSet ⇒
+private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArraySet { self ⇒
 
     override def isEmpty: Boolean = false
 
     override def +(i: Int): BitArraySet = {
-        val bucket = i / 64
+        val bucket = i / 32
         val setLength = set.length
         if (bucket >= setLength) {
-            val newSet = new Array[Long](bucket + 1)
+            val newSet = new Array[Int](bucket + 1)
             Array.copy(set, 0, newSet, 0, setLength)
-            newSet(bucket) = (1L << (i - 64 * bucket))
+            newSet(bucket) = (1 << (i - 32 * bucket))
             new BitArraySetN(newSet)
         } else {
             val oldBucketValue = set(bucket)
-            val newBucketValue = oldBucketValue | (1L << (i - 64 * bucket))
+            val newBucketValue = oldBucketValue | (1 << (i - 32 * bucket))
             if (oldBucketValue == newBucketValue)
                 this
             else {
-                val newSet = new Array[Long](setLength)
+                val newSet = new Array[Int](setLength)
                 Array.copy(set, 0, newSet, 0, setLength)
                 newSet(bucket) = newBucketValue
                 new BitArraySetN(newSet)
@@ -168,16 +270,17 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
     }
 
     override def -(i: Int): BitArraySet = {
-        val bucket = i / 64
-        if (bucket >= set.length)
+        val setLength = set.length
+
+        val bucket = i / 32
+        if (bucket >= setLength)
             return this;
 
         val oldBucketValue = set(bucket)
-        val newBucketValue = oldBucketValue & ((-1L & ~(1L << (i - 64 * bucket))))
+        val newBucketValue = oldBucketValue & ((-1 & ~(1 << (i - 32 * bucket))))
         if (newBucketValue == oldBucketValue)
             return this;
 
-        val setLength = set.length
         val lastBucket = setLength - 1
         if (newBucketValue == 0 && bucket == lastBucket) {
             // check how many buckets can be deleted....
@@ -186,15 +289,18 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
                 emptyBuckets += 1
             }
             (setLength - emptyBuckets) match {
-                case 0 ⇒ EmptyBitArraySet
-                case 1 ⇒ new BitArraySet64(set(0))
+                case 0 ⇒ BitArraySet0
+                case 1 ⇒ new BitArraySet32(set(0))
+                case 2 ⇒
+                    val newSet = toUnsignedLong(set(0)) | toUnsignedLong(set(1)) << 32
+                    new BitArraySet64(newSet)
                 case x ⇒
-                    val newSet = new Array[Long](x)
+                    val newSet = new Array[Int](x)
                     Array.copy(set, 0, newSet, 0, x)
                     new BitArraySetN(newSet)
             }
         } else {
-            val newSet = new Array[Long](setLength)
+            val newSet = new Array[Int](setLength)
             Array.copy(set, 0, newSet, 0, setLength)
             newSet(bucket) = newBucketValue
             new BitArraySetN(newSet)
@@ -203,17 +309,28 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
 
     override def ++(that: BitArraySet): BitArraySet = {
         that match {
-            case EmptyBitArraySet ⇒ this
+            case BitArraySet0 ⇒ this
 
-            case that: BitArraySet64 ⇒
+            case that: BitArraySet32 ⇒
                 val thisSet0 = this.set(0)
-                val thatSet = that.set
-                val newSet0 = thisSet0 | thatSet
+                val newSet0 = thisSet0 | that.set
                 if (newSet0 == thisSet0)
                     this
                 else {
                     val newSet = set.clone
                     newSet(0) = newSet0
+                    new BitArraySetN(newSet)
+                }
+
+            case that: BitArraySet64 ⇒
+                val thisSet = toUnsignedLong(this.set(0)) | toUnsignedLong(this.set(1)) << 32
+                val newSet64 = thisSet | that.set
+                if (newSet64 == thisSet)
+                    this
+                else {
+                    val newSet = set.clone
+                    newSet(0) = newSet64.toInt
+                    newSet(1) = (newSet64 >>> 32).toInt
                     new BitArraySetN(newSet)
                 }
 
@@ -226,7 +343,7 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
                     var i = 0
                     var takeThis = true
                     var takeThat = true
-                    val newSet = new Array[Long](thisSetLength)
+                    val newSet = new Array[Int](thisSetLength)
                     while (i < thisSetLength) {
                         val thisSetI = thisSet(i)
                         val thatSetI = thatSet(i)
@@ -242,7 +359,7 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
                 } else if (thisSetLength > thatSetLength) {
                     var i = 0
                     var takeThis = true
-                    val newSet = new Array[Long](thisSetLength)
+                    val newSet = new Array[Int](thisSetLength)
                     while (i < thatSetLength) {
                         val thisSetI = thisSet(i)
                         val thatSetI = thatSet(i)
@@ -260,7 +377,7 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
                 } else /*if (thisSetLength <= thatSetLength)*/ {
                     var i = 0
                     var takeThat = true
-                    val newSet = new Array[Long](thatSetLength)
+                    val newSet = new Array[Int](thatSetLength)
                     while (i < thisSetLength) {
                         val thisSetI = thisSet(i)
                         val thatSetI = thatSet(i)
@@ -281,19 +398,25 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
     }
 
     override def contains(i: Int): Boolean = {
-        val bucket = i / 64
         val set = this.set
+
+        val bucket = i / 32
         if (bucket >= set.length)
             return false;
 
-        (set(bucket) & (1L << (i - 64 * bucket))) != 0L
+        (set(bucket) & (1 << (i - 32 * bucket))) != 0
     }
 
     override def iterator: IntIterator = new IntIterator {
-        private[this] val max: Int = set.length * 64
+        private[this] final val max: Int = set.length * 32
         private[this] var i: Int = -1
         private[this] def advanceIterator(): Unit = {
-            do { i += 1 } while (i < max && !thisSet.contains(i))
+            val set = self.set
+            var bucket = -1
+            do {
+                i += 1
+                bucket = i / 32
+            } while (i < max && (set(bucket) & (1 << (i - 32 * bucket))) == 0)
         }
         advanceIterator()
         def hasNext: Boolean = i < max
@@ -302,10 +425,8 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BitArraySetN if this.set.length == that.set.length ⇒
-                java.util.Arrays.equals(this.set, that.set)
-            case _ ⇒
-                super.equals(other)
+            case that: BitArraySetN ⇒ java.util.Arrays.equals(this.set, that.set)
+            case _                  ⇒ false
         }
     }
 
@@ -314,11 +435,19 @@ private[immutable] final class BitArraySetN(val set: Array[Long]) extends BitArr
 
 object BitArraySet {
 
-    final def empty: BitArraySet = EmptyBitArraySet
+    /**
+     * Masks the higher word.
+     */
+    final val HigherWordMask = ~java.lang.Integer.toUnsignedLong(-1)
 
-    /** @param max The maximum value you may want to store in the set. */
+    final def empty: BitArraySet = BitArraySet0
+
     def apply(i: Int): BitArraySet = {
-        if (i < 64) new BitArraySet64(1L << i)
-        else new BitArraySetN(new Array[Long]((i / 64) + 1)) + i
+        if (i < 32)
+            new BitArraySet32(1 << i)
+        else if (i < 64)
+            new BitArraySet64(1L << i)
+        else
+            new BitArraySetN(new Array[Int]((i / 32) + 1)) + i
     }
 }
