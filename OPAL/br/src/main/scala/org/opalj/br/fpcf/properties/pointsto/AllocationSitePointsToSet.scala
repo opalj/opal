@@ -171,7 +171,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         other: AllocationSitePointsToSet, typeFilter: Int ⇒ Boolean
     ): AllocationSitePointsToSet = {
         val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
-            if(typeFilter(allocationSiteLongToTypeId(allocationSite))) {
+            if (typeFilter(allocationSiteLongToTypeId(allocationSite))) {
                 r + allocationSite
             } else {
                 r
@@ -185,7 +185,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newOrderedTypes = orderedTypes
 
         other.types.foreach { t ⇒
-            if(typeFilter(t.id)) {
+            if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -202,7 +202,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
     ): AllocationSitePointsToSet = {
         var newAllocationSites = elements
         other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
-            if(typeFilter(allocationSiteLongToTypeId(allocationSite))) {
+            if (typeFilter(allocationSiteLongToTypeId(allocationSite))) {
                 newAllocationSites += allocationSite
             }
         }
@@ -214,7 +214,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newOrderedTypes = orderedTypes
 
         other.types.foreach { t ⇒
-            if(typeFilter(t.id)) {
+            if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -228,7 +228,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
 
     override def filter(typeFilter: Int ⇒ Boolean): AllocationSitePointsToSet = {
         val newAllocationSites = elements.foldLeft(LongLinkedTrieSet.empty) { (r, allocationSite) ⇒
-            if(typeFilter(allocationSiteLongToTypeId(allocationSite))) {
+            if (typeFilter(allocationSiteLongToTypeId(allocationSite))) {
                 r + allocationSite
             } else {
                 r
@@ -242,7 +242,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newOrderedTypes = Chain.empty[ReferenceType]
 
         types.foreach { t ⇒
-            if(typeFilter(t.id)) {
+            if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -326,7 +326,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     ): AllocationSitePointsToSet = {
         var newAllocationSites = LongLinkedTrieSet.empty
         other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
-            if(typeFilter(allocationSiteLongToTypeId(allocationSite))) {
+            if (typeFilter(allocationSiteLongToTypeId(allocationSite))) {
                 newAllocationSites += allocationSite
             }
         }
@@ -338,7 +338,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         var newOrderedTypes = Chain.empty[ReferenceType]
 
         other.types.foreach { t ⇒
-            if(typeFilter(t.id)) {
+            if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -477,7 +477,7 @@ case class AllocationSitePointsToSet1(
     ): AllocationSitePointsToSet = {
         val newAllocationSites = other.elements.foldLeft(LongLinkedTrieSet(allocationSite)) {
             (r, as) ⇒
-                if(typeFilter(allocationSiteLongToTypeId(as))) {
+                if (typeFilter(allocationSiteLongToTypeId(as))) {
                     r + as
                 } else {
                     r
@@ -491,7 +491,7 @@ case class AllocationSitePointsToSet1(
         var newOrderedTypes = allocatedType :&: Naught
 
         other.types.foreach { t ⇒
-            if(typeFilter(t.id)) {
+            if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -511,7 +511,7 @@ case class AllocationSitePointsToSet1(
         var newAllocationSites = LongLinkedTrieSet(allocationSite)
 
         other.forNewestNElements(other.numElements - seenElements) { as ⇒
-            if(typeFilter(allocationSiteLongToTypeId(as))) {
+            if (typeFilter(allocationSiteLongToTypeId(as))) {
                 newAllocationSites += as
             }
         }
@@ -523,7 +523,7 @@ case class AllocationSitePointsToSet1(
         var newOrderedTypes = allocatedType :&: Naught
 
         other.types.foreach { t ⇒
-            if(typeFilter(t.id)) {
+            if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
                 if (oldNewTypes ne newTypes) {
@@ -536,7 +536,7 @@ case class AllocationSitePointsToSet1(
     }
 
     override def filter(typeFilter: Int ⇒ Boolean): AllocationSitePointsToSet = {
-        if(typeFilter(allocatedType.id)) {
+        if (typeFilter(allocatedType.id)) {
             this
         } else {
             NoAllocationSites

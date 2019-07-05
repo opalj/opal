@@ -105,7 +105,7 @@ case class TypeBasedPointsToSet private[properties] (
     ): TypeBasedPointsToSet = ???
 
     override def filter(
-                           typeFilter: Int ⇒ Boolean
+        typeFilter: Int ⇒ Boolean
     ): TypeBasedPointsToSet = ???
 }
 
