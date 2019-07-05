@@ -123,7 +123,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         e: Entity, pointsToSet: PointsToSet, typeFilter: Int ⇒ Boolean
     ): Unit = {
         if (_sharedPointsToSets.contains(e)) {
-            val (oldPointsToSet, oldSuperType) = _sharedPointsToSets(e)
+            val oldPointsToSet = _sharedPointsToSets(e)._1
             val newPointsToSet = oldPointsToSet.included(pointsToSet, typeFilter)
             _sharedPointsToSets(e) = (newPointsToSet, typeFilter)
         } else {
