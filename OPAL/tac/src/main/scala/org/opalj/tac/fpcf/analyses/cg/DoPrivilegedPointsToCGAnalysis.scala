@@ -69,27 +69,28 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     }
 
     def continuationForParameterValue(
-        seenTypes: Int
+        seenElements: Int
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case EUBP(_: VirtualFormalParameter, _: AllocationSitePointsToSet) ⇒
             methodMapping(
                 eps.asInstanceOf[EPS[VirtualFormalParameter, AllocationSitePointsToSet]],
-                seenTypes
+                seenElements
             )
         case _ ⇒
             throw new IllegalStateException(s"unexpected update $eps")
     }
 
     def methodMapping(
-        pointsTo: EOptionP[VirtualFormalParameter, AllocationSitePointsToSet], seenTypes: Int
+        dependeeEOptP: EOptionP[VirtualFormalParameter, AllocationSitePointsToSet],
+        seenElements:  Int
     ): ProperPropertyComputationResult = {
 
         val calls = new DirectCalls()
         var results: List[ProperPropertyComputationResult] = Nil
 
-        val newSeenTypes = if (pointsTo.hasUBP) {
-            val ub = pointsTo.ub
-            ub.forNewestNTypes(ub.numTypes - seenTypes) { t ⇒
+        val newSeenElements = if (dependeeEOptP.hasUBP) {
+            val dependeePointsTo = dependeeEOptP.ub
+            dependeePointsTo.types.foreach { t ⇒
                 val callR = p.instanceCall(
                     sourceMethod.declaringClassType.asObjectType,
                     t,
@@ -109,20 +110,28 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                         tgtThis,
                         AllocationSitePointsToSet.key,
                         {
-                            case UBP(ub: AllocationSitePointsToSet) ⇒
-                                /*val as = allocationSiteToLong(declaredTargetMethod, 0)
-                                val newUB = ub.included(AllocationSitePointsToSet(as, t))*/
-                                val newUB = ub.includedSingleType(pointsTo.ub, t)
-                                if (newUB eq ub) {
+                            case UBP(oldPointsToUB: AllocationSitePointsToSet) ⇒
+                                val newPointsToUB = oldPointsToUB.included(
+                                    dependeePointsTo,
+                                    seenElements,
+                                    { _ == t.id }
+                                )
+                                if (newPointsToUB eq oldPointsToUB) {
                                     None
                                 } else {
-                                    Some(InterimEUBP(tgtThis, newUB))
+                                    Some(InterimEUBP(tgtThis, newPointsToUB))
                                 }
 
                             case _: EPK[VirtualFormalParameter, AllocationSitePointsToSet] ⇒
-                                /*val as = allocationSiteToLong(declaredTargetMethod, 0)
-                                Some(InterimEUBP(tgtThis, AllocationSitePointsToSet(as, t)))*/
-                                Some(InterimEUBP(tgtThis, NoAllocationSites.includedSingleType(pointsTo.ub, t)))
+                                val newPointsToUB = NoAllocationSites.included(
+                                    dependeePointsTo,
+                                    seenElements,
+                                    { _ == t.id }
+                                )
+                                Some(InterimEUBP(
+                                    tgtThis,
+                                    newPointsToUB
+                                ))
                         }
                     )
 
@@ -134,14 +143,14 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                     calls.addIncompleteCallSite(0)
                 }
             }
-            pointsTo.ub.numTypes
+            dependeePointsTo.numElements
         } else {
             0
         }
 
-        if (pointsTo.isRefinable) {
+        if (dependeeEOptP.isRefinable) {
             results ::= InterimPartialResult(
-                Some(pointsTo), continuationForParameterValue(newSeenTypes)
+                Some(dependeeEOptP), continuationForParameterValue(newSeenElements)
             )
         }
         results ++= calls.partialResults(sourceMethod)
@@ -150,16 +159,16 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     }
 
     def returnMapping(
-        returnPointsTo: EOptionP[DeclaredMethod, AllocationSitePointsToSet], numSeenTypes: Int
+        returnPointsTo: EOptionP[DeclaredMethod, AllocationSitePointsToSet], seenElements: Int
     ): ProperPropertyComputationResult = {
         var results: List[ProperPropertyComputationResult] = Nil
-        val newNumSeenTypes = if (returnPointsTo.hasUBP) {
+        val newSeenElements = if (returnPointsTo.hasUBP) {
             results ::= PartialResult[DeclaredMethod, AllocationSitePointsToSet](
                 sourceMethod,
                 AllocationSitePointsToSet.key,
                 {
                     case UBP(ub: AllocationSitePointsToSet) ⇒
-                        val newUB = ub.included(returnPointsTo.ub)
+                        val newUB = ub.included(returnPointsTo.ub, seenElements)
                         if (newUB eq ub) {
                             None
                         } else {
@@ -170,14 +179,14 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                         Some(InterimEUBP(sourceMethod, returnPointsTo.ub))
                 }
             )
-            returnPointsTo.ub.numTypes
+            returnPointsTo.ub.numElements
         } else {
             0
         }
 
         if (returnPointsTo.isRefinable) {
             results ::= InterimPartialResult(
-                Some(returnPointsTo), continuationForReturnValue(newNumSeenTypes)
+                Some(returnPointsTo), continuationForReturnValue(newSeenElements)
             )
         }
 
@@ -185,11 +194,14 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     }
 
     def continuationForReturnValue(
-        seenTypes: Int
+        seenElements: Int
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         // join the return values of all invoked methods
         case EUBP(_: DeclaredMethod, _: AllocationSitePointsToSet) ⇒
-            returnMapping(eps.asInstanceOf[EPS[DeclaredMethod, AllocationSitePointsToSet]], seenTypes)
+            returnMapping(
+                eps.asInstanceOf[EPS[DeclaredMethod, AllocationSitePointsToSet]],
+                seenElements
+            )
 
         case _ ⇒
             throw new IllegalStateException(s"unexpected update $eps")
