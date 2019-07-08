@@ -34,6 +34,7 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
+import org.opalj.br.ReferenceType
 
 /**
  * On each call of the [[sourceMethod*]] it will call the [[declaredTargetMethod*]] upon its first
@@ -118,7 +119,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                                     dependeePointsTo,
                                     seenElements,
                                     seenTypes,
-                                    { _ == t.id }
+                                    { x: ReferenceType ⇒ x == t }
                                 )
                                 if (newPointsToUB eq oldPointsToUB) {
                                     None
@@ -131,7 +132,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                                     dependeePointsTo,
                                     seenElements,
                                     seenTypes,
-                                    { _ == t.id }
+                                    { x: ReferenceType ⇒ x == t }
                                 )
                                 Some(InterimEUBP(
                                     tgtThis,
