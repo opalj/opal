@@ -32,8 +32,6 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def included(other: T, seenElements: Int, seenTypes: Int): T
 
-    def includedSingleType(other: T, allowedType: ReferenceType): T
-
     def included(other: T, typeFilter: ReferenceType ⇒ Boolean): T
 
     def included(

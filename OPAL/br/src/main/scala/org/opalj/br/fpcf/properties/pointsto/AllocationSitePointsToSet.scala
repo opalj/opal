@@ -73,28 +73,6 @@ sealed trait AllocationSitePointsToSet
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def includedSingleType(
-        other: AllocationSitePointsToSet, allowedType: ReferenceType
-    ): AllocationSitePointsToSet = {
-        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
-            if (allocationSiteLongToTypeId(allocationSite) == allowedType.id) {
-                r + allocationSite
-            } else {
-                r
-            }
-        }
-
-        if (elements eq newAllocationSites)
-            return this;
-
-        // Here, there was at least one element added (that has the allowedType), so we can add
-        // the allowedType to the set of types.
-        val newTypes = types + allowedType
-        val newOrderedTypes = if (newTypes ne types) allowedType :&: orderedTypes else orderedTypes
-
-        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
-    }
-
     override def included(
         other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSet = {
@@ -386,50 +364,6 @@ case class AllocationSitePointsToSet1(
         // Note, that we can not assert, that seenElements is between 0 and 1, as this can
         // happen by unordered partial results.
         included(other)
-    }
-
-    override def includedSingleType(
-        other: AllocationSitePointsToSet, allowedType: ReferenceType
-    ): AllocationSitePointsToSet = {
-        other match {
-            case AllocationSitePointsToSet1(`allocationSite`, `allocatedType`) ⇒
-                this
-
-            case AllocationSitePointsToSet1(otherAllocationSite, otherAllocatedType) ⇒
-                if (otherAllocatedType eq allowedType)
-                    AllocationSitePointsToSet(
-                        otherAllocationSite, otherAllocatedType, allocationSite, allocatedType
-                    )
-                else
-                    this
-
-            case NoAllocationSites ⇒
-                this
-
-            case AllocationSitePointsToSetN(otherAllocationSites, _, _) ⇒
-                val newAllocationSites = otherAllocationSites.foldLeft(elements) { (l, as) ⇒
-                    if (as != allocationSite && allocationSiteLongToTypeId(as) == allowedType.id) {
-                        l + as
-                    } else {
-                        l
-                    }
-                }
-
-                if (elements eq newAllocationSites)
-                    return this;
-
-                val newOrderedTypes =
-                    if (allowedType ne allocatedType) allowedType :&: allocatedType :&: Naught
-                    else allocatedType :&: Naught
-
-                AllocationSitePointsToSet(
-                    newAllocationSites,
-                    types + allowedType,
-                    newOrderedTypes
-                )
-            case _ ⇒
-                throw new IllegalArgumentException(s"unexpected list $other")
-        }
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {

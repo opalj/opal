@@ -94,10 +94,6 @@ case class TypeBasedPointsToSet private[properties] (
         orderedTypes.forFirstN(n)(f)
     }
 
-    override def includedSingleType(
-        other: TypeBasedPointsToSet, allowedType: ReferenceType
-    ): TypeBasedPointsToSet = ???
-
     override def included(
         other: TypeBasedPointsToSet, typeFilter: ReferenceType ⇒ Boolean
     ): TypeBasedPointsToSet = ???
