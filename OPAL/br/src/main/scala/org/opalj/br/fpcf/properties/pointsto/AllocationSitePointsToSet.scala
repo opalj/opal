@@ -29,7 +29,7 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
     final type Self = AllocationSitePointsToSet
 }
 
-trait AllocationSitePointsToSet
+sealed trait AllocationSitePointsToSet
     extends PointsToSetLike[AllocationSite, LongLinkedTrieSet, AllocationSitePointsToSet]
     with OrderedProperty
     with AllocationSitePointsToSetPropertyMetaInformation {
@@ -44,80 +44,7 @@ trait AllocationSitePointsToSet
         }
     }
 
-    assert {
-        var asTypes = IntTrieSet.empty
-        elements.foreach { allocationSite ⇒
-            asTypes += allocationSiteLongToTypeId(allocationSite)
-        }
-
-        val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) ⇒ r + t.id }
-        if (typeIds != asTypes) {
-            println()
-        }
-        typeIds == asTypes
-    }
-    assert(numElements >= numTypes)
-}
-
-object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
-
-    def apply(
-        allocationSite: AllocationSite, allocatedType: ReferenceType
-    ): AllocationSitePointsToSet = {
-        new AllocationSitePointsToSet1(allocationSite, allocatedType)
-    }
-
-    def apply(
-        allocationSiteNew: AllocationSite,
-        allocatedTypeNew:  ReferenceType,
-        allocationSiteOld: AllocationSite,
-        allocatedTypeOld:  ReferenceType
-    ): AllocationSitePointsToSet = {
-        assert(allocationSiteOld != allocationSiteNew)
-        new AllocationSitePointsToSetN(
-            LongLinkedTrieSet(allocationSiteNew, allocationSiteOld),
-            UIDSet(allocatedTypeOld, allocatedTypeNew),
-            if (allocatedTypeNew != allocatedTypeOld)
-                allocatedTypeNew :&: allocatedTypeOld :&: Naught
-            else
-                allocatedTypeNew :&: Naught
-        )
-    }
-
-    def apply(
-        elements: LongLinkedTrieSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
-    ): AllocationSitePointsToSet = {
-
-        if (elements.isEmpty) {
-            NoAllocationSites
-        } else if (elements.size == 1) {
-            new AllocationSitePointsToSet1(elements.head, orderedTypes.head)
-        } else {
-            new AllocationSitePointsToSetN(elements, types, orderedTypes)
-        }
-    }
-
-    final val key: PropertyKey[AllocationSitePointsToSet] = {
-        val name = "opalj.AllocationSitePointsToSet"
-        PropertyKey.create(
-            name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoAllocationSites
-                case _ ⇒
-                    throw new IllegalStateException(s"no analysis is scheduled for property: $name")
-            }
-        )
-    }
-}
-
-case class AllocationSitePointsToSetN private[pointsto] (
-        override val elements:    LongLinkedTrieSet,
-        override val types:       UIDSet[ReferenceType],
-        private val orderedTypes: Chain[ReferenceType]
-) extends AllocationSitePointsToSet {
-
-    override def numTypes: Int = types.size
-    override def numElements: Int = elements.size
+    protected[this] def orderedTypes: Chain[ReferenceType]
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         included(other, 0, 0)
@@ -259,6 +186,81 @@ case class AllocationSitePointsToSetN private[pointsto] (
 
     }
 
+    assert {
+        var asTypes = IntTrieSet.empty
+        elements.foreach { allocationSite ⇒
+            asTypes += allocationSiteLongToTypeId(allocationSite)
+        }
+
+        val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) ⇒ r + t.id }
+        if (typeIds != asTypes) {
+            println()
+        }
+        typeIds == asTypes
+    }
+    assert(numElements >= numTypes)
+}
+
+object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
+
+    def apply(
+        allocationSite: AllocationSite, allocatedType: ReferenceType
+    ): AllocationSitePointsToSet = {
+        new AllocationSitePointsToSet1(allocationSite, allocatedType)
+    }
+
+    def apply(
+        allocationSiteNew: AllocationSite,
+        allocatedTypeNew:  ReferenceType,
+        allocationSiteOld: AllocationSite,
+        allocatedTypeOld:  ReferenceType
+    ): AllocationSitePointsToSet = {
+        assert(allocationSiteOld != allocationSiteNew)
+        new AllocationSitePointsToSetN(
+            LongLinkedTrieSet(allocationSiteNew, allocationSiteOld),
+            UIDSet(allocatedTypeOld, allocatedTypeNew),
+            if (allocatedTypeNew != allocatedTypeOld)
+                allocatedTypeNew :&: allocatedTypeOld :&: Naught
+            else
+                allocatedTypeNew :&: Naught
+        )
+    }
+
+    def apply(
+        elements: LongLinkedTrieSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
+    ): AllocationSitePointsToSet = {
+
+        if (elements.isEmpty) {
+            NoAllocationSites
+        } else if (elements.size == 1) {
+            new AllocationSitePointsToSet1(elements.head, orderedTypes.head)
+        } else {
+            new AllocationSitePointsToSetN(elements, types, orderedTypes)
+        }
+    }
+
+    final val key: PropertyKey[AllocationSitePointsToSet] = {
+        val name = "opalj.AllocationSitePointsToSet"
+        PropertyKey.create(
+            name,
+            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoAllocationSites
+                case _ ⇒
+                    throw new IllegalStateException(s"no analysis is scheduled for property: $name")
+            }
+        )
+    }
+}
+
+case class AllocationSitePointsToSetN private[pointsto] (
+        override val elements:                     LongLinkedTrieSet,
+        override val types:                        UIDSet[ReferenceType],
+        override protected[this] val orderedTypes: Chain[ReferenceType]
+) extends AllocationSitePointsToSet {
+
+    override def numTypes: Int = types.size
+    override def numElements: Int = elements.size
+
     override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
         orderedTypes.forFirstN(n)(f)
     }
@@ -286,6 +288,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
 }
 
 object NoAllocationSites extends AllocationSitePointsToSet {
+
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         other
     }
@@ -297,64 +300,10 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         other
     }
 
-    def includedSingleType(
-        other: AllocationSitePointsToSet, allowedType: ReferenceType
-    ): AllocationSitePointsToSet = {
-        val newAllocationSites = other.elements.foldLeft(LongLinkedTrieSet.empty) {
-            (r, allocationSite) ⇒
-                if (allocationSiteLongToTypeId(allocationSite) == allowedType.id) {
-                    r + allocationSite
-                } else {
-                    r
-                }
-        }
-
-        if (newAllocationSites.isEmpty)
-            return this;
-
-        // Here, there was at least one element added (that has the allowedType), so we can add
-        // the allowedType to the set of types.
-        AllocationSitePointsToSet(
-            newAllocationSites, UIDSet(allowedType), Chain(allowedType)
-        )
-    }
-
     override def included(
         other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSet = {
         other.filter(typeFilter)
-    }
-
-    override def included(
-        other:        AllocationSitePointsToSet,
-        seenElements: Int,
-        seenTypes:    Int,
-        typeFilter:   ReferenceType ⇒ Boolean
-    ): AllocationSitePointsToSet = {
-        var newTypes = UIDSet.empty[ReferenceType]
-        var newOrderedTypes = Chain.empty[ReferenceType]
-
-        other.forNewestNTypes(other.numTypes - seenTypes) { t ⇒
-            if (typeFilter(t)) {
-                val oldNewTypes = newTypes
-                newTypes += t
-                if (oldNewTypes ne newTypes) {
-                    newOrderedTypes :&:= t
-                }
-            }
-        }
-
-        var newAllocationSites = LongLinkedTrieSet.empty
-        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
-            if (newTypes.containsId(allocationSiteLongToTypeId(allocationSite))) {
-                newAllocationSites += allocationSite
-            }
-        }
-
-        if (newAllocationSites.isEmpty)
-            return this;
-
-        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
@@ -364,6 +313,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     override def numTypes: Int = 0
 
     override def types: UIDSet[ReferenceType] = UIDSet.empty
+
+    override protected[this] def orderedTypes: Chain[ReferenceType] = Chain.empty
 
     override def numElements: Int = 0
 
@@ -385,6 +336,8 @@ case class AllocationSitePointsToSet1(
     override def numTypes: Int = 1
 
     override def types: UIDSet[ReferenceType] = UIDSet(allocatedType)
+
+    override protected[this] def orderedTypes: Chain[ReferenceType] = Chain(allocatedType)
 
     override def numElements: Int = 1
 
@@ -435,7 +388,7 @@ case class AllocationSitePointsToSet1(
         included(other)
     }
 
-    def includedSingleType(
+    override def includedSingleType(
         other: AllocationSitePointsToSet, allowedType: ReferenceType
     ): AllocationSitePointsToSet = {
         other match {
@@ -477,71 +430,6 @@ case class AllocationSitePointsToSet1(
             case _ ⇒
                 throw new IllegalArgumentException(s"unexpected list $other")
         }
-    }
-
-    override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
-    ): AllocationSitePointsToSet = {
-        var newTypes = UIDSet(allocatedType)
-        var newOrderedTypes = allocatedType :&: Naught
-
-        other.types.foreach { t ⇒
-            if (typeFilter(t)) {
-                val oldNewTypes = newTypes
-                newTypes += t
-                if (oldNewTypes ne newTypes) {
-                    newOrderedTypes :&:= t
-                }
-            }
-        }
-        val newAllocationSites = other.elements.foldLeft(LongLinkedTrieSet(allocationSite)) {
-            (r, as) ⇒
-                if (newTypes.containsId(allocationSiteLongToTypeId(as))) {
-                    r + as
-                } else {
-                    r
-                }
-        }
-
-        if (newAllocationSites.size == 1)
-            return this;
-
-        AllocationSitePointsToSet(
-            newAllocationSites, newTypes, newOrderedTypes
-        )
-    }
-
-    override def included(
-        other:        AllocationSitePointsToSet,
-        seenElements: Int,
-        seenTypes:    Int,
-        typeFilter:   ReferenceType ⇒ Boolean
-    ): AllocationSitePointsToSet = {
-        var newTypes = UIDSet(allocatedType)
-        var newOrderedTypes = allocatedType :&: Naught
-
-        other.forNewestNTypes(other.numTypes - seenTypes) { t ⇒
-            if (typeFilter(t)) {
-                val oldNewTypes = newTypes
-                newTypes += t
-                if (oldNewTypes ne newTypes) {
-                    newOrderedTypes :&:= t
-                }
-            }
-        }
-
-        var newAllocationSites = LongLinkedTrieSet(allocationSite)
-
-        other.forNewestNElements(other.numElements - seenElements) { as ⇒
-            if (newTypes.containsId(allocationSiteLongToTypeId(as))) {
-                newAllocationSites += as
-            }
-        }
-
-        if (newAllocationSites.size == 1)
-            return this;
-
-        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
