@@ -70,7 +70,7 @@ sealed trait AllocationSitePointsToSet
             }
         }
 
-        new AllocationSitePointsToSetN(newAllocationSites, newTypes, newOrderedTypes)
+        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def includedSingleType(
@@ -92,7 +92,7 @@ sealed trait AllocationSitePointsToSet
         val newTypes = types + allowedType
         val newOrderedTypes = if (newTypes ne types) allowedType :&: orderedTypes else orderedTypes
 
-        new AllocationSitePointsToSetN(newAllocationSites, newTypes, newOrderedTypes)
+        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def included(
@@ -122,7 +122,7 @@ sealed trait AllocationSitePointsToSet
         if (elements eq newAllocationSites)
             return this;
 
-        new AllocationSitePointsToSetN(newAllocationSites, newTypes, newOrderedTypes)
+        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def included(
@@ -154,7 +154,7 @@ sealed trait AllocationSitePointsToSet
         if (elements eq newAllocationSites)
             return this;
 
-        new AllocationSitePointsToSetN(newAllocationSites, newTypes, newOrderedTypes)
+        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
