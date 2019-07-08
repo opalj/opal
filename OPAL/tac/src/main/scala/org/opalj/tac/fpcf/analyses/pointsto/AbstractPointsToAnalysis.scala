@@ -130,8 +130,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                                 defSiteObject,
                                 // IMPROVE: Use LongRefPair to avoid boxing
                                 currentPointsTo(defSiteObject, (as, field)),
-                                { tid: Int ⇒
-                                    classHierarchy.isSubtypeOf(tid, fieldType.id)
+                                { t: ReferenceType ⇒
+                                    classHierarchy.isSubtypeOf(t, fieldType)
                                 }
                             )
                         }
@@ -162,8 +162,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         state.includeSharedPointsToSet(
                             defSiteObject,
                             currentPointsTo(defSiteObject, ArrayEntity(as)),
-                            { tid: Int ⇒
-                                classHierarchy.isSubtypeOf(tid, componentType.id)
+                            { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, componentType)
                             }
                         )
                     }
@@ -228,8 +228,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         state.includeSharedPointsToSets(
                             arrayEntity,
                             currentPointsToOfDefSites(arrayEntity, defSites),
-                            { tid: Int ⇒
-                                classHierarchy.isSubtypeOf(tid, componentType.id)
+                            { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, componentType)
                             }
                         )
                     }
@@ -253,8 +253,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                             state.includeSharedPointsToSets(
                                 fieldEntity,
                                 currentPointsToOfDefSites(fieldEntity, defSites),
-                                { tid: Int ⇒
-                                    classHierarchy.isSubtypeOf(tid, fieldType.id)
+                                { t: ReferenceType ⇒
+                                    classHierarchy.isSubtypeOf(t, fieldType)
                                 }
                             )
                         }
@@ -269,8 +269,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.includeSharedPointsToSets(
                         fieldOpt.get,
                         currentPointsToOfDefSites(fieldOpt.get, defSites),
-                        { tid: Int ⇒
-                            classHierarchy.isSubtypeOf(tid, fieldType.id)
+                        { t: ReferenceType ⇒
+                            classHierarchy.isSubtypeOf(t, fieldType)
                         }
                     )
                 else {
@@ -325,9 +325,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 state.includeSharedPointsToSets(
                     fp,
                     ptss,
-                    { tid: Int ⇒
-                        classHierarchy.isSubtypeOf(tid, target.declaringClassType.id) &&
-                            !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(tid, st.id))
+                    { t: ReferenceType ⇒
+                        classHierarchy.isSubtypeOf(t, target.declaringClassType) &&
+                            !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
                     }
                 )
             }
@@ -343,8 +343,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         state.includeSharedPointsToSets(
                             fp,
                             currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy),
-                            { tid: Int ⇒
-                                classHierarchy.isSubtypeOf(tid, paramType.id)
+                            { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
                             }
                         )
                     }
@@ -380,9 +380,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 state.includeSharedPointsToSets(
                     fp,
                     ptss,
-                    { tid: Int ⇒
-                        classHierarchy.isSubtypeOf(tid, target.declaringClassType.id) &&
-                            !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(tid, st.id))
+                    { t: ReferenceType ⇒
+                        classHierarchy.isSubtypeOf(t, target.declaringClassType) &&
+                            !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
                     }
                 )
             } else {
@@ -402,8 +402,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                             currentPointsToOfDefSites(
                                 fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
                             ),
-                            { tid: Int ⇒
-                                classHierarchy.isSubtypeOf(tid, paramType.id)
+                            { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
                             }
                         )
                     } else {
@@ -582,7 +582,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         newDependeePointsToSet: PointsToSet,
         dependee:               SomeEPS,
         oldDependees:           Map[SomeEPK, SomeEOptionP],
-        typeFilter:             Int ⇒ Boolean
+        typeFilter:             ReferenceType ⇒ Boolean
     ): PointsToSet = {
         val oldDependeePointsTo = oldDependees(dependee.toEPK) match {
             case UBP(ub: PointsToSet @unchecked) ⇒ ub
@@ -678,8 +678,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         continuationForShared(
                             (as, field),
                             rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
-                            { tid: Int ⇒
-                                classHierarchy.isSubtypeOf(tid, field.fieldType.id)
+                            { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
                             }
                         )
                     )
@@ -710,8 +710,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         continuationForShared(
                             ArrayEntity(as),
                             rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
-                            { tid: Int ⇒
-                                classHierarchy.isSubtypeOf(tid, componentType.id)
+                            { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, componentType)
                             }
                         )
                     )
@@ -757,8 +757,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         continuationForShared(
                             defSiteObject,
                             nextDependees.iterator.map(d ⇒ d → d).toMap,
-                            { tid: Int ⇒
-                                classHierarchy.isSubtypeOf(tid, field.fieldType.id)
+                            { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
                             }
                         )
                     )
@@ -797,8 +797,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         continuationForShared(
                             defSiteObject,
                             nextDependees.iterator.map(d ⇒ d → d).toMap,
-                            { tid: Int ⇒
-                                classHierarchy.isSubtypeOf(tid, componentType.id)
+                            { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, componentType)
                             }
                         )
                     )
@@ -809,7 +809,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     private[this] def continuationForShared(
-        e: Entity, dependees: Map[SomeEPK, SomeEOptionP], typeFilter: Int ⇒ Boolean
+        e: Entity, dependees: Map[SomeEPK, SomeEOptionP], typeFilter: ReferenceType ⇒ Boolean
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒

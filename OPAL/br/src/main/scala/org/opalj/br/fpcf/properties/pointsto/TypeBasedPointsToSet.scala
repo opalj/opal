@@ -99,15 +99,18 @@ case class TypeBasedPointsToSet private[properties] (
     ): TypeBasedPointsToSet = ???
 
     override def included(
-        other: TypeBasedPointsToSet, typeFilter: Int ⇒ Boolean
+        other: TypeBasedPointsToSet, typeFilter: ReferenceType ⇒ Boolean
     ): TypeBasedPointsToSet = ???
 
     override def included(
-        other: TypeBasedPointsToSet, seenElements: Int, seenTypes: Int, typeFilter: Int ⇒ Boolean
+        other:        TypeBasedPointsToSet,
+        seenElements: Int,
+        seenTypes:    Int,
+        typeFilter:   ReferenceType ⇒ Boolean
     ): TypeBasedPointsToSet = ???
 
     override def filter(
-        typeFilter: Int ⇒ Boolean
+        typeFilter: ReferenceType ⇒ Boolean
     ): TypeBasedPointsToSet = ???
 }
 

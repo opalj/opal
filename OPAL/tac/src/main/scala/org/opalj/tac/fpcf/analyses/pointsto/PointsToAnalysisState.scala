@@ -115,12 +115,12 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def localPointsToSet(e: Entity): PointsToSet = _localPointsToSets(e)
 
-    private[this] val _sharedPointsToSets: mutable.Map[Entity, (PointsToSet, Int ⇒ Boolean)] = {
+    private[this] val _sharedPointsToSets: mutable.Map[Entity, (PointsToSet, ReferenceType ⇒ Boolean)] = {
         mutable.Map.empty
     }
 
     def includeSharedPointsToSet(
-        e: Entity, pointsToSet: PointsToSet, typeFilter: Int ⇒ Boolean
+        e: Entity, pointsToSet: PointsToSet, typeFilter: ReferenceType ⇒ Boolean
     ): Unit = {
         if (_sharedPointsToSets.contains(e)) {
             val oldPointsToSet = _sharedPointsToSets(e)._1
@@ -132,12 +132,12 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     def includeSharedPointsToSets(
-        e: Entity, pointsToSets: Iterator[PointsToSet], typeFilter: Int ⇒ Boolean
+        e: Entity, pointsToSets: Iterator[PointsToSet], typeFilter: ReferenceType ⇒ Boolean
     ): Unit = {
         pointsToSets.foreach(pointsToSet ⇒ includeSharedPointsToSet(e, pointsToSet, typeFilter))
     }
 
-    def sharedPointsToSetsIterator: Iterator[(Entity, (PointsToSet, Int ⇒ Boolean))] = {
+    def sharedPointsToSetsIterator: Iterator[(Entity, (PointsToSet, ReferenceType ⇒ Boolean))] = {
         _sharedPointsToSets.iterator
     }
 
