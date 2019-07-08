@@ -452,7 +452,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         Some(InterimEUBP(e, pointsToSet))
 
                     case UBP(ub: PointsToSet @unchecked) ⇒
-                        val newPointsTo = ub.included(pointsToSet, 0)
+                        val newPointsTo = ub.included(pointsToSet, 0, 0)
                         if (newPointsTo ne ub) {
                             Some(InterimEUBP(e, newPointsTo))
                         } else {
@@ -572,7 +572,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             newDependeePointsToSet
         } else {
             val seenElements = oldDependeePointsTo.numElements
-            oldPointsToSet.included(newDependeePointsToSet, seenElements)
+            val seenTypes = oldDependeePointsTo.numTypes
+            oldPointsToSet.included(newDependeePointsToSet, seenElements, seenTypes)
         }
     }
 
@@ -590,7 +591,10 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         }
 
         oldPointsToSet.included(
-            newDependeePointsToSet, oldDependeePointsTo.numElements, typeFilter
+            newDependeePointsToSet,
+            oldDependeePointsTo.numElements,
+            oldDependeePointsTo.numTypes,
+            typeFilter
         )
     }
 

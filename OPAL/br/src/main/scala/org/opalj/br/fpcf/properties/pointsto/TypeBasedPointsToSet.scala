@@ -79,7 +79,9 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def numElements: Int = types.size
 
-    override def included(other: TypeBasedPointsToSet, seenElements: Int): TypeBasedPointsToSet = {
+    override def included(
+        other: TypeBasedPointsToSet, seenElements: Int, seenTypes: Int
+    ): TypeBasedPointsToSet = {
         included(other) // todo: implement correct version
     }
 
@@ -101,7 +103,7 @@ case class TypeBasedPointsToSet private[properties] (
     ): TypeBasedPointsToSet = ???
 
     override def included(
-        other: TypeBasedPointsToSet, seenElements: Int, typeFilter: Int ⇒ Boolean
+        other: TypeBasedPointsToSet, seenElements: Int, seenTypes: Int, typeFilter: Int ⇒ Boolean
     ): TypeBasedPointsToSet = ???
 
     override def filter(

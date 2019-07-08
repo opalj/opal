@@ -65,16 +65,18 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         val fp = fps(1)
         val pointsToParam = ps(fp, AllocationSitePointsToSet.key)
 
-        Results(methodMapping(pointsToParam, 0))
+        Results(methodMapping(pointsToParam, 0, 0))
     }
 
     def continuationForParameterValue(
-        seenElements: Int
+        seenElements: Int,
+        seenTypes:    Int
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case EUBP(_: VirtualFormalParameter, _: AllocationSitePointsToSet) ⇒
             methodMapping(
                 eps.asInstanceOf[EPS[VirtualFormalParameter, AllocationSitePointsToSet]],
-                seenElements
+                seenElements,
+                seenTypes
             )
         case _ ⇒
             throw new IllegalStateException(s"unexpected update $eps")
@@ -82,13 +84,14 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
 
     def methodMapping(
         dependeeEOptP: EOptionP[VirtualFormalParameter, AllocationSitePointsToSet],
-        seenElements:  Int
+        seenElements:  Int,
+        seenTypes:     Int
     ): ProperPropertyComputationResult = {
 
         val calls = new DirectCalls()
         var results: List[ProperPropertyComputationResult] = Nil
 
-        val newSeenElements = if (dependeeEOptP.hasUBP) {
+        val (newSeenElements, newSeenTypes) = if (dependeeEOptP.hasUBP) {
             val dependeePointsTo = dependeeEOptP.ub
             dependeePointsTo.types.foreach { t ⇒
                 val callR = p.instanceCall(
@@ -114,6 +117,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                                 val newPointsToUB = oldPointsToUB.included(
                                     dependeePointsTo,
                                     seenElements,
+                                    seenTypes,
                                     { _ == t.id }
                                 )
                                 if (newPointsToUB eq oldPointsToUB) {
@@ -126,6 +130,7 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                                 val newPointsToUB = NoAllocationSites.included(
                                     dependeePointsTo,
                                     seenElements,
+                                    seenTypes,
                                     { _ == t.id }
                                 )
                                 Some(InterimEUBP(
@@ -137,20 +142,20 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
 
                     // 3. Map the return value back to the source method
                     val returnPointsTo = ps(tgtMethod, AllocationSitePointsToSet.key)
-                    results ::= returnMapping(returnPointsTo, 0)
+                    results ::= returnMapping(returnPointsTo, 0, 0)
 
                 } else {
                     calls.addIncompleteCallSite(0)
                 }
             }
-            dependeePointsTo.numElements
+            (dependeePointsTo.numElements, dependeePointsTo.numTypes)
         } else {
-            0
+            (0, 0)
         }
 
         if (dependeeEOptP.isRefinable) {
             results ::= InterimPartialResult(
-                Some(dependeeEOptP), continuationForParameterValue(newSeenElements)
+                Some(dependeeEOptP), continuationForParameterValue(newSeenElements, newSeenTypes)
             )
         }
         results ++= calls.partialResults(sourceMethod)
@@ -159,16 +164,19 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     }
 
     def returnMapping(
-        returnPointsTo: EOptionP[DeclaredMethod, AllocationSitePointsToSet], seenElements: Int
+        returnPointsTo: EOptionP[DeclaredMethod, AllocationSitePointsToSet],
+        seenElements:   Int,
+        seenTypes:      Int
     ): ProperPropertyComputationResult = {
         var results: List[ProperPropertyComputationResult] = Nil
-        val newSeenElements = if (returnPointsTo.hasUBP) {
+        val (newSeenElements, newSeenTypes) = if (returnPointsTo.hasUBP) {
+            val returnPointsToUB = returnPointsTo.ub
             results ::= PartialResult[DeclaredMethod, AllocationSitePointsToSet](
                 sourceMethod,
                 AllocationSitePointsToSet.key,
                 {
                     case UBP(ub: AllocationSitePointsToSet) ⇒
-                        val newUB = ub.included(returnPointsTo.ub, seenElements)
+                        val newUB = ub.included(returnPointsToUB, seenElements, seenTypes)
                         if (newUB eq ub) {
                             None
                         } else {
@@ -176,17 +184,17 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
                         }
 
                     case _: EPK[_, _] ⇒
-                        Some(InterimEUBP(sourceMethod, returnPointsTo.ub))
+                        Some(InterimEUBP(sourceMethod, returnPointsToUB))
                 }
             )
-            returnPointsTo.ub.numElements
+            (returnPointsToUB.numElements, returnPointsToUB.numTypes)
         } else {
-            0
+            (0, 0)
         }
 
         if (returnPointsTo.isRefinable) {
             results ::= InterimPartialResult(
-                Some(returnPointsTo), continuationForReturnValue(newSeenElements)
+                Some(returnPointsTo), continuationForReturnValue(newSeenElements, newSeenTypes)
             )
         }
 
@@ -194,13 +202,15 @@ class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     }
 
     def continuationForReturnValue(
-        seenElements: Int
+        seenElements: Int,
+        seenTypes:    Int
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         // join the return values of all invoked methods
         case EUBP(_: DeclaredMethod, _: AllocationSitePointsToSet) ⇒
             returnMapping(
                 eps.asInstanceOf[EPS[DeclaredMethod, AllocationSitePointsToSet]],
-                seenElements
+                seenElements,
+                seenTypes
             )
 
         case _ ⇒

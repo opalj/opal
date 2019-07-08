@@ -30,13 +30,13 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def included(other: T): T
 
-    def included(other: T, seenElements: Int): T
+    def included(other: T, seenElements: Int, seenTypes: Int): T
 
     def includedSingleType(other: T, allowedType: ReferenceType): T
 
     def included(other: T, typeFilter: Int ⇒ Boolean): T
 
-    def included(other: T, seenElements: Int, typeFilter: Int ⇒ Boolean): T
+    def included(other: T, seenElements: Int, seenTypes: Int, typeFilter: Int ⇒ Boolean): T
 
     def includeOption(other: T): Option[T] = {
         val newSet = this.included(other)

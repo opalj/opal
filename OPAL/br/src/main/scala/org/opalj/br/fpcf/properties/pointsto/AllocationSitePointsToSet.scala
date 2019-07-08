@@ -6,6 +6,7 @@ package properties
 package pointsto
 
 import org.opalj.collection.immutable.Chain
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet1
 import org.opalj.collection.immutable.Naught
@@ -43,7 +44,7 @@ trait AllocationSitePointsToSet
         }
     }
 
-    /*assert {
+    assert {
         var asTypes = IntTrieSet.empty
         elements.foreach { allocationSite ⇒
             asTypes += allocationSiteLongToTypeId(allocationSite)
@@ -55,7 +56,7 @@ trait AllocationSitePointsToSet
         }
         typeIds == asTypes
     }
-    assert(numElements >= numTypes)*/
+    assert(numElements >= numTypes)
 }
 
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
@@ -119,11 +120,11 @@ case class AllocationSitePointsToSetN private[pointsto] (
     override def numElements: Int = elements.size
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
-        included(other, 0)
+        included(other, 0, 0)
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int
+        other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
     ): AllocationSitePointsToSet = {
         var newAllocationSites = elements
 
@@ -134,7 +135,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
 
         var newTypes = types
         var newOrderedTypes = orderedTypes
-        other.types.foreach { newType ⇒
+        other.forNewestNTypes(other.numTypes - seenTypes) { newType ⇒
             val old = newTypes
             newTypes += newType
             if (newTypes ne old) {
@@ -198,7 +199,10 @@ case class AllocationSitePointsToSetN private[pointsto] (
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, typeFilter: Int ⇒ Boolean
+        other:        AllocationSitePointsToSet,
+        seenElements: Int,
+        seenTypes:    Int,
+        typeFilter:   Int ⇒ Boolean
     ): AllocationSitePointsToSet = {
         var newAllocationSites = elements
         other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
@@ -213,7 +217,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        other.types.foreach { t ⇒
+        other.forNewestNTypes(other.numTypes - seenTypes) { t ⇒
             if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
@@ -287,7 +291,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int
+        other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
     ): AllocationSitePointsToSet = {
         assert(seenElements == 0)
         other
@@ -322,7 +326,10 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, typeFilter: Int ⇒ Boolean
+        other:        AllocationSitePointsToSet,
+        seenElements: Int,
+        seenTypes:    Int,
+        typeFilter:   Int ⇒ Boolean
     ): AllocationSitePointsToSet = {
         var newAllocationSites = LongLinkedTrieSet.empty
         other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
@@ -337,7 +344,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
         var newTypes = UIDSet.empty[ReferenceType]
         var newOrderedTypes = Chain.empty[ReferenceType]
 
-        other.types.foreach { t ⇒
+        other.forNewestNTypes(other.numTypes - seenTypes) { t ⇒
             if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
@@ -420,7 +427,7 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int
+        other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
     ): AllocationSitePointsToSet = {
         assert(seenElements >= 0 && seenElements <= other.numElements)
         // Note, that we can not assert, that seenElements is between 0 and 1, as this can
@@ -506,7 +513,10 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, typeFilter: Int ⇒ Boolean
+        other:        AllocationSitePointsToSet,
+        seenElements: Int,
+        seenTypes:    Int,
+        typeFilter:   Int ⇒ Boolean
     ): AllocationSitePointsToSet = {
         var newAllocationSites = LongLinkedTrieSet(allocationSite)
 
@@ -522,7 +532,7 @@ case class AllocationSitePointsToSet1(
         var newTypes = UIDSet(allocatedType)
         var newOrderedTypes = allocatedType :&: Naught
 
-        other.types.foreach { t ⇒
+        other.forNewestNTypes(other.numTypes - seenTypes) { t ⇒
             if (typeFilter(t.id)) {
                 val oldNewTypes = newTypes
                 newTypes += t
