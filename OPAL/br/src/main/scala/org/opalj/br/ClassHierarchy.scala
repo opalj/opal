@@ -110,27 +110,27 @@ import org.opalj.br.ObjectType.Object
  */
 class ClassHierarchy private (
         // the case "java.lang.Object" is handled explicitly!
-        /* todo accessor method private[this]*/ val knownTypesMap:                     Array[ObjectType],
-                                                private[this] val isKnownTypeMap:      Array[Boolean],
-                                                private[this] val isInterfaceTypeMap:  Array[Boolean],
-                                                private[this] val isKnownToBeFinalMap: Array[Boolean],
+        private[this] val knownTypesMap:       Array[ObjectType],
+        private[this] val isKnownTypeMap:      Array[Boolean],
+        private[this] val isInterfaceTypeMap:  Array[Boolean],
+        private[this] val isKnownToBeFinalMap: Array[Boolean],
 
-                                                // The element is null for types for which we have no complete information
-                                                // (unless it is java.lang.Object)!
-                                                private[this] val superclassTypeMap:      Array[ObjectType],
-                                                private[this] val superinterfaceTypesMap: Array[UIDSet[ObjectType]],
+        // The element is null for types for which we have no complete information
+        // (unless it is java.lang.Object)!
+        private[this] val superclassTypeMap:      Array[ObjectType],
+        private[this] val superinterfaceTypesMap: Array[UIDSet[ObjectType]],
 
-                                                // In the following all elements are non-null for each known type!
-                                                private[this] val subclassTypesMap:     Array[UIDSet[ObjectType]],
-                                                private[this] val subinterfaceTypesMap: Array[UIDSet[ObjectType]],
+        // In the following all elements are non-null for each known type!
+        private[this] val subclassTypesMap:     Array[UIDSet[ObjectType]],
+        private[this] val subinterfaceTypesMap: Array[UIDSet[ObjectType]],
 
-                                                // DERIVED INFORMATION
-                                                val rootTypes:                                       UIDSet[ObjectType],
-                                                val leafTypes:                                       UIDSet[ObjectType],
-                                                private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
+        // DERIVED INFORMATION
+        val rootTypes:                                       UIDSet[ObjectType],
+        val leafTypes:                                       UIDSet[ObjectType],
+        private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
 
-                                                private[this] val supertypeInformationMap: Array[SupertypeInformation],
-                                                private[this] val subtypeInformationMap:   Array[SubtypeInformation]
+        private[this] val supertypeInformationMap: Array[SupertypeInformation],
+        private[this] val subtypeInformationMap:   Array[SubtypeInformation]
 )(
         implicit
         val logContext: LogContext
@@ -1298,34 +1298,6 @@ class ClassHierarchy private (
                     false
                 else
                     isSubtypeOf(componentType.asReferenceType, superComponentType.asReferenceType)
-            }
-        }
-    }
-
-    // todo handling for reference types
-    final def isSubtypeOf(subtypeId: Int, supertypeId: Int): Boolean = {
-        if (subtypeId == supertypeId)
-            return true;
-
-        if (subtypeId >= ObjectType.ObjectId) {
-            //  the subtype is an ObjectType
-            if (supertypeId >= ObjectType.ObjectId) {
-                // the supertype is an ObjectType
-                if (isUnknown(supertypeId))
-                    return false;
-
-                subtypeInformationMap(supertypeId).containsId(subtypeId)
-            } else {
-                false
-            }
-        } else {
-            if (supertypeId >= ObjectType.ObjectId) {
-                supertypeId == ObjectType.ObjectId ||
-                    supertypeId == ObjectType.SerializableId ||
-                    supertypeId == ObjectType.CloneableId
-            } else {
-                // FIXME:
-                true
             }
         }
     }
