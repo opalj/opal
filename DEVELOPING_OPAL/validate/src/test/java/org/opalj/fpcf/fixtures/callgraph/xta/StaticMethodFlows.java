@@ -12,6 +12,11 @@ import java.util.List;
  * @author Andreas Bauer
  */
 public class StaticMethodFlows {
+
+    // Any variable passed to this will not be understood as dead code during TAC creation, and will
+    // thus remain intact in the TAC.
+    public static void sink(Object obj) {}
+
     // The main enty point. The annotation ensures that no values flow back from the called methods
     // since the return type is void. Since it is a main method, string and string array are available
     // by default.
@@ -27,6 +32,9 @@ public class StaticMethodFlows {
         multiDimensionalArrayTest();
         recursionTest();
         externalWorld();
+        externalWorldField();
+        returnOptimization();
+        genericContainer();
     }
 
     // === Parameter flow ===
@@ -281,6 +289,109 @@ public class StaticMethodFlows {
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A"})
     public static void externalWorld_sink(ArrayList<A> list) {
         A obj = list.get(0);
+    }
+
+    // === External world field ===
+
+    @AvailableTypes({
+            "java/awt/Event",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B"
+    })
+    public static void externalWorldField() {
+        java.awt.Event e = new java.awt.Event(null, 0, null);
+        e.arg = new B();
+        externalWorldField_sink(e);
+    }
+
+    @AvailableTypes({
+            "java/awt/Event",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B"
+    })
+    public static void externalWorldField_sink(java.awt.Event e) {
+        B obj = (B)e.arg;
+    }
+
+    // === Return optimization ===
+    // Even though the source method here has a non-void return type, the analysis should not consider the call
+    // for backward flows since the caller discards the returned value.
+    // "returnOptimization2" is a version which contains one call which discards the value and one call which doesn't,
+    // making sure that the backward flow still applies in these cases.
+
+    @AvailableTypes
+    public static void returnOptimization() {
+        returnOptimization1();
+        returnOptimization2();
+    }
+
+    @AvailableTypes()
+    public static void returnOptimization1() {
+        returnOptimization_source();
+    }
+
+    @AvailableTypes()
+    public static void returnOptimization2() {
+        returnOptimization_source();
+        A obj = returnOptimization_source();
+        sink(obj);
+    }
+
+    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A"})
+    public static A returnOptimization_source() {
+        return new A();
+    }
+
+    // === Generic container ===
+    // This test makes sure that flows back from generic container data structures are handled
+    // precisely. Due to type erasure, the return type of the Container's "get" method is Object,
+    // which means that any value written to a Container of any generic type will flow back through
+    // a "get" call on a Container, which is not precise.
+    // However, the compiler inserts a "checkcast" instruction at each call site of such generic
+    // methods. The analysis can make use of this to improve precision.
+
+    private static class Container<T> {
+        private T value;
+        Container(T val) { value = val; }
+        public T get() { return value; }
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$Container"})
+    public static void genericContainer() {
+        Container<A> a = new Container<>(new A());
+        Container<B> b = new Container<>(new B());
+        Container<C> c = new Container<>(new C());
+        genericContainer_sink(a);
+        genericContainer_sink2(a, b);
+        genericContainer_sink3(c);
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$Container"})
+    public static void genericContainer_sink(Container<A> a) {
+        sink(a.get());
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$Container"})
+    public static void genericContainer_sink2(Container<A> a, Container<B> b) {
+        sink(a.get());
+        sink(b.get());
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$Container"})
+    public static void genericContainer_sink3(Container c) {
+        // This method's parameter is a raw type.
+        sink(c.get());
     }
 
     // === Test Class Hierarchies ===
