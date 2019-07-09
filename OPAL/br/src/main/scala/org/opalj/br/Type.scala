@@ -1204,6 +1204,12 @@ object ObjectType {
     final val Comparable = ObjectType("java/lang/Comparable")
     final val ComparableId = 15
     require(Comparable.id == ComparableId)
+    final val StringBuilder = ObjectType("java/lang/StringBuilder")
+    final val StringBuilderId = 16
+    require(StringBuilder.id == StringBuilderId)
+    final val StringBuffer = ObjectType("java/lang/StringBuffer")
+    final val StringBufferId = 17
+    require(StringBuffer.id == StringBufferId)
 
     final val System = ObjectType("java/lang/System")
 
@@ -1214,8 +1220,6 @@ object ObjectType {
 
     final val Thread = ObjectType("java/lang/Thread")
     final val Runnable = ObjectType("java/lang/Runnable")
-
-    final val StringBuilder = ObjectType("java/lang/StringBuilder")
 
     // Types related to the invokedynamic instruction
     final val VarHandle = ObjectType("java/lang/invoke/VarHandle")

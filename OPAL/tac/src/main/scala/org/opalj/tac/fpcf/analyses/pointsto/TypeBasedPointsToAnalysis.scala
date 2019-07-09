@@ -49,7 +49,10 @@ class TypeBasedPointsToAnalysis private[analyses] (
     override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
     override def createPointsToSet(
-        pc: Int, declaredMethod: DeclaredMethod, allocatedType: ReferenceType
+        pc:             Int,
+        declaredMethod: DeclaredMethod,
+        allocatedType:  ReferenceType,
+        isConstant:     Boolean
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 }
 

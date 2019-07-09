@@ -65,8 +65,11 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     def createPointsToSet(
-        pc: Int, declaredMethod: DeclaredMethod, allocatedType: ReferenceType
-    ): PointsToSet
+                             pc: Int,
+                             declaredMethod: DeclaredMethod,
+                             allocatedType: ReferenceType,
+                             isConstant: Boolean
+                         ): PointsToSet
 
     type State = PointsToAnalysisState[ElementType, PointsToSet]
 
@@ -92,23 +95,31 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         for (stmt ← tac.stmts) stmt match {
             case Assignment(pc, _, New(_, t)) ⇒
                 val defSite = definitionSites(method, pc)
-                state.setAllocationSitePointsToSet(defSite, createPointsToSet(pc, state.method, t))
+                state.setAllocationSitePointsToSet(
+                    defSite,
+                    createPointsToSet(pc, state.method, t, isConstant = false)
+                )
 
             case Assignment(pc, _, NewArray(_, _, tpe)) ⇒
                 val defSite = definitionSites(method, pc)
                 state.setAllocationSitePointsToSet(
                     defSite,
-                    createPointsToSet(pc, state.method, tpe)
+                    createPointsToSet(pc, state.method, tpe, isConstant = false)
                 )
 
             case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
-                state.setAllocationSitePointsToSet(
-                    defSite,
-                    if (const.isNullExpr) emptyPointsToSet
-                    // note, this is wrong for alias analyses
-                    else createPointsToSet(pc, state.method, const.tpe.asObjectType)
-                )
+                    state.setAllocationSitePointsToSet(
+                        defSite,
+                        if (const.isNullExpr)
+                            emptyPointsToSet
+                            // note, this is wrong for alias analyses
+                        else
+                            createPointsToSet(
+                                pc, state.method, const.tpe.asObjectType, isConstant = true
+                            )
+                    )
+
 
             // that case should not happen
             case Assignment(pc, DVar(_: IsReferenceValue, _), UVar(_, defSites)) ⇒
