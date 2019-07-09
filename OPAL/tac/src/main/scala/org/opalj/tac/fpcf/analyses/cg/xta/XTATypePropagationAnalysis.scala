@@ -56,52 +56,86 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.MultipleDefinedMethods
 import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 import org.opalj.tac.fpcf.properties.TACAI
 
-// TODO AB helper for debugging and maybe evaluation later...
-private[xta] class TypePropagationTrace {
-    private val _file = s"C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\traces\\trace${Instant.now.getEpochSecond}.txt"
-    private val _out = new PrintWriter(new FileOutputStream(new File(_file)))
+// TODO AB helpers for debugging and maybe evaluation later...
+object TypePropagationTrace {
+    case class TypePropagation(targetEntity: Entity, types: UIDSet[ReferenceType])
+    case class Trace(events: mutable.ArrayBuffer[Event])
+    trait Event {
+        val typePropagations: mutable.ArrayBuffer[TypePropagation] = new mutable.ArrayBuffer[TypePropagation]()
+    }
+    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[DeclaredMethod]) extends Event
+    trait UpdateEvent extends Event
+    case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent
+    case class CalleesUpdate(receiver: Entity) extends UpdateEvent
 
-    private def trace(msg: String): Unit = {
-        _out.println(msg)
-        _out.flush()
+    // Global variable holding the type propagation trace of the last executed XTA analysis.
+    var LastTrace: Trace = _
+    val WriteTextualTrace: Boolean = false
+}
+
+private[xta] class TypePropagationTrace {
+    // Textual trace
+    private val _out =
+        if (TypePropagationTrace.WriteTextualTrace) {
+            val file = new FileOutputStream(new File(s"C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\traces\\trace${Instant.now.getEpochSecond}.txt"))
+            new PrintWriter(file)
+        } else {
+            null
+        }
+
+    // Structural trace (for further evaluation)
+    val _trace = Trace(mutable.ArrayBuffer())
+    TypePropagationTrace.LastTrace = _trace
+
+    private def traceMsg(msg: String): Unit = {
+        if (TypePropagationTrace.WriteTextualTrace) {
+            _out.println(msg)
+            _out.flush()
+        }
     }
 
     private def simplifiedName(e: Any): String = e match {
         case defM: DefinedMethod ⇒ s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
-        case rt: ReferenceType ⇒ rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
-        case _ ⇒ e.toString
+        case rt: ReferenceType   ⇒ rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
+        case _                   ⇒ e.toString
     }
 
     def traceInit(method: DefinedMethod)(implicit ps: PropertyStore, dm: DeclaredMethods): Unit = {
         val initialTypes = {
             val typeEOptP = ps(method, InstantiatedTypes.key)
             if (typeEOptP.hasUBP) typeEOptP.ub.types
-            else UIDSet.empty
+            else UIDSet.empty[ReferenceType]
         }
-        val initialCallees =  {
+        val initialCallees = {
             val calleesEOptP = ps(method, Callees.key)
             if (calleesEOptP.hasUBP) calleesEOptP.ub.callSites.flatMap(_._2)
             else Iterator.empty
         }
-        trace(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
+        traceMsg(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
+        _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
     }
 
-    def traceCalleesUpdate(method: DefinedMethod): Unit = {
-        trace(s"callee property update: ${simplifiedName(method)}")
+    def traceCalleesUpdate(receiver: DefinedMethod): Unit = {
+        traceMsg(s"callee property update: ${simplifiedName(receiver)}")
+        _trace.events += TypePropagationTrace.CalleesUpdate(receiver)
     }
 
     def traceNewCallee(method: DefinedMethod, newCallee: DeclaredMethod): Unit = {
-        trace(s"new callee for ${simplifiedName(method)}: ${simplifiedName(newCallee)}")
+        traceMsg(s"new callee for ${simplifiedName(method)}: ${simplifiedName(newCallee)}")
+        // TODO AB new callee trace?
     }
 
-    def traceTypeUpdate(method: DefinedMethod, updatedEntity: Entity, types: UIDSet[ReferenceType]): Unit = {
-        trace(s"type set update: for ${simplifiedName(method)}, from ${simplifiedName(updatedEntity)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
+    def traceTypeUpdate(receiver: DefinedMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
+        traceMsg(s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
+        _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
     }
 
-    def traceTypePropagation(entity: Entity, newTypes: UIDSet[ReferenceType]): Unit = {
-        trace(s"propagate {${newTypes.map(simplifiedName).mkString(", ")}} to ${simplifiedName(entity)}")
+    def traceTypePropagation(targetEntity: Entity, propagatedTypes: UIDSet[ReferenceType]): Unit = {
+        traceMsg(s"propagate {${propagatedTypes.map(simplifiedName).mkString(", ")}} to ${simplifiedName(targetEntity)}")
+        _trace.events.last.typePropagations += TypePropagationTrace.TypePropagation(targetEntity, propagatedTypes)
     }
 }
 
@@ -439,8 +473,8 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         // Special case: Object.<init> is implicitly called as a super call by any method X.<init>.
         // The "this" type X will flow to the type set of Object.<init>. Since Object.<init> is usually
         // part of the external world, the external world type set is then polluted with any types which
-        // was constructed in the program somewhere.
-        // TODO AB Maybe this case can be handled more gracefully.
+        // was constructed anywhere in the program.
+        // TODO AB Maybe this case can be handled more gracefully. There is some more info in the paper.
         if (calleeMethod.declaringClassType == ObjectType.Object && calleeMethod.name == "<init>") {
             return None;
         }
