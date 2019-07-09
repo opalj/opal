@@ -12,16 +12,20 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.br.Field
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
+import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 
 /**
  * Computes a call graph and reports its size.
@@ -114,12 +118,32 @@ object CallGraph extends ProjectAnalysisApplication {
         println(statistic.mkString("\n"))
 
         val ptss2 = ps.entities(AllocationSitePointsToSet.key).toList
-        val statistic2 = ptss2.groupBy(p ⇒ p.ub.elements.size).mapValues(_.size).toArray.sorted
+        import scala.collection.JavaConverters._
+        val statistic2 = ptss2.groupBy(p ⇒ p.ub.elements.size).mapValues { spts ⇒
+            (spts.size, {
+                val unique = new java.util.IdentityHashMap[AllocationSitePointsToSet, AllocationSitePointsToSet]()
+                unique.putAll(spts.map(x ⇒ x.ub → x.ub).toMap.asJava)
+                unique.size()
+            })
+        }.toArray.sorted
         println(statistic2.mkString("\n"))
 
         println(s"TypeBased PTSs ${ptss.size}")
         println(s"AllocSite PTSs ${ptss2.size}")
         println(s"PTS entries ${ptss2.map(p ⇒ p.ub.elements.size).sum}")
+
+        val byType = ptss2.groupBy(_.e.getClass)
+        println(s"DefSite PTSs: ${byType(classOf[DefinitionSite]).size}")
+        println(s"Parameter PTSs: ${byType(classOf[VirtualFormalParameter]).size}")
+        println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
+        println(s"Static Field PTSs: ${byType(classOf[Field]).size}")
+        println(s"Array PTSs: ${byType(classOf[ArrayEntity[Long]]).size}")
+
+        println(s"DefSite PTS entries: ${byType(classOf[DefinitionSite]).map(_.ub.numElements).sum}")
+        println(s"Parameter PTS entries: ${byType(classOf[VirtualFormalParameter]).map(_.ub.numElements).sum}")
+        println(s"Instance Field PTS entries: ${byType(classOf[Tuple2[Long, Field]]).map(_.ub.numElements).sum}")
+        println(s"Static Field PTS entries: ${byType(classOf[Field]).map(_.ub.numElements).sum}")
+        println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
 
         /*val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId)
         p2.get({AllocationSiteBasedPointsToCallGraphKey})
