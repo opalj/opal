@@ -39,6 +39,7 @@ import org.opalj.br.fpcf.properties.cg.NoCallees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -136,14 +137,16 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addGetFieldEntity(fakeEntity)
                     currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
-                            state.includeSharedPointsToSet(
-                                defSiteObject,
-                                // IMPROVE: Use LongRefPair to avoid boxing
-                                currentPointsTo(defSiteObject, (as, field)),
-                                { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, fieldType)
-                                }
-                            )
+                            if (classHierarchy.subtypeInformation(field.classFile.thisType).get.containsId(allocationSiteLongToTypeId(as.asInstanceOf[Long]))) {
+                                state.includeSharedPointsToSet(
+                                    defSiteObject,
+                                    // IMPROVE: Use LongRefPair to avoid boxing
+                                    currentPointsTo(defSiteObject, (as, field)),
+                                    { t: ReferenceType ⇒
+                                        classHierarchy.isSubtypeOf(t, fieldType)
+                                    }
+                                )
+                            }
                         }
                     }
                 } else {
@@ -254,14 +257,16 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addPutFieldEntity(fakeEntity)
                     currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
-                            val fieldEntity = (as, field)
-                            state.includeSharedPointsToSets(
-                                fieldEntity,
-                                currentPointsToOfDefSites(fieldEntity, defSites),
-                                { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, fieldType)
-                                }
-                            )
+                            if (classHierarchy.subtypeInformation(field.classFile.thisType).get.containsId(allocationSiteLongToTypeId(as.asInstanceOf[Long]))) {
+                                val fieldEntity = (as, field)
+                                state.includeSharedPointsToSets(
+                                    fieldEntity,
+                                    currentPointsToOfDefSites(fieldEntity, defSites),
+                                    { t: ReferenceType ⇒
+                                        classHierarchy.isSubtypeOf(t, fieldType)
+                                    }
+                                )
+                            }
                         }
                     }
                 } else {
