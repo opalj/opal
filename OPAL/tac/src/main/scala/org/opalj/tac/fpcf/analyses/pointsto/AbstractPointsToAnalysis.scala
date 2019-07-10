@@ -169,20 +169,18 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 state.addArrayLoadEntity(fakeEntity)
                 currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
                     pts.forNewestNElements(pts.numElements) { as ⇒
-                        state.includeSharedPointsToSet(
-                            defSiteObject,
-                            currentPointsTo(defSiteObject, ArrayEntity(as)),
-                            { t: ReferenceType ⇒
-                                classHierarchy.isSubtypeOf(t, componentType)
-                            }
-                        )
+                        // TODO can we get this check tighter (i.e. correct array subtyping)?
+                        if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                            state.includeSharedPointsToSet(
+                                defSiteObject,
+                                currentPointsTo(defSiteObject, ArrayEntity(as)),
+                                { t: ReferenceType ⇒
+                                    classHierarchy.isSubtypeOf(t, componentType)
+                                }
+                            )
+                        }
                     }
                 }
-
-            /*state.includeLocalPointsToSet(
-                    defSiteObject,
-                    currentPointsTo(defSiteObject, componentType)
-                )*/
 
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
                 val callees: Callees = state.callees(ps)
@@ -228,28 +226,25 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case ExprStmt(pc, call: Call[_]) ⇒
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
-            case ArrayStore(_, UVar(av: IsSArrayValue, _), _, UVar(_: IsReferenceValue, defSites)) ⇒
+            case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) ⇒
                 val componentType = av.theUpperTypeBound.componentType.asReferenceType
                 val fakeEntity = (defSites, componentType)
                 state.addArrayStoredEntity(fakeEntity)
-                currentPointsToOfDefSites(fakeEntity, defSites).foreach { pts ⇒
+                currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
                     pts.forNewestNElements(pts.numElements) { as ⇒
-                        val arrayEntity = ArrayEntity(as)
-                        state.includeSharedPointsToSets(
-                            arrayEntity,
-                            currentPointsToOfDefSites(arrayEntity, defSites),
-                            { t: ReferenceType ⇒
-                                classHierarchy.isSubtypeOf(t, componentType)
-                            }
-                        )
+                        // TODO can we get this check tighter (i.e. correct array subtyping)?
+                        if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                            val arrayEntity = ArrayEntity(as)
+                            state.includeSharedPointsToSets(
+                                arrayEntity,
+                                currentPointsToOfDefSites(arrayEntity, defSites),
+                                { t: ReferenceType ⇒
+                                    classHierarchy.isSubtypeOf(t, componentType)
+                                }
+                            )
+                        }
                     }
                 }
-
-            /*state.includeSharedPointsToSets(
-                    componentType,
-                    currentPointsToOfDefSites(componentType, defSites),
-                    ObjectType.Object // TODO: componentType.asReferenceType
-                )*/
 
             case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
@@ -723,16 +718,19 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 var results: List[ProperPropertyComputationResult] = List.empty
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
-                    results ::= InterimPartialResult(
-                        rhsDefSitesEPS,
-                        continuationForShared(
-                            ArrayEntity(as),
-                            rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
-                            { t: ReferenceType ⇒
-                                classHierarchy.isSubtypeOf(t, componentType)
-                            }
+                    // TODO can we get this check tighter (i.e. correct array subtyping)?
+                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                        results ::= InterimPartialResult(
+                            rhsDefSitesEPS,
+                            continuationForShared(
+                                ArrayEntity(as),
+                                rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
+                                { t: ReferenceType ⇒
+                                    classHierarchy.isSubtypeOf(t, componentType)
+                                }
+                            )
                         )
-                    )
+                    }
                 }
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
@@ -797,9 +795,12 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 val newDependees = updatedDependees(eps, dependees)
                 var nextDependees: List[SomeEPK] = Nil
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
-                    val epk = EPK(ArrayEntity(as), pointsToPropertyKey)
-                    ps(epk)
-                    nextDependees ::= epk
+                    // TODO can we get this check tighter (i.e. correct array subtyping)?
+                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                        val epk = EPK(ArrayEntity(as), pointsToPropertyKey)
+                        ps(epk)
+                        nextDependees ::= epk
+                    }
                 }
 
                 var results: List[ProperPropertyComputationResult] = Nil
