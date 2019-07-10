@@ -54,8 +54,8 @@ case class ArrayEntity[ElementType](element: ElementType)
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-    with ReachableMethodAnalysis {
+        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+        with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -65,11 +65,11 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     def createPointsToSet(
-                             pc: Int,
-                             declaredMethod: DeclaredMethod,
-                             allocatedType: ReferenceType,
-                             isConstant: Boolean
-                         ): PointsToSet
+        pc:             Int,
+        declaredMethod: DeclaredMethod,
+        allocatedType:  ReferenceType,
+        isConstant:     Boolean
+    ): PointsToSet
 
     type State = PointsToAnalysisState[ElementType, PointsToSet]
 
@@ -109,17 +109,16 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
             case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
-                    state.setAllocationSitePointsToSet(
-                        defSite,
-                        if (const.isNullExpr)
-                            emptyPointsToSet
-                            // note, this is wrong for alias analyses
-                        else
-                            createPointsToSet(
-                                pc, state.method, const.tpe.asObjectType, isConstant = true
-                            )
-                    )
-
+                state.setAllocationSitePointsToSet(
+                    defSite,
+                    if (const.isNullExpr)
+                        emptyPointsToSet
+                    // note, this is wrong for alias analyses
+                    else
+                        createPointsToSet(
+                            pc, state.method, const.tpe.asObjectType, isConstant = true
+                        )
+                )
 
             // that case should not happen
             case Assignment(pc, DVar(_: IsReferenceValue, _), UVar(_, defSites)) ⇒
@@ -457,23 +456,21 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     dependees.values, continuationForShared(e, dependees, typeFilter)
                 )
             }
-            if (pointsToSet ne emptyPointsToSet) {
-                results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](e, pointsToPropertyKey, {
-                    case _: EPK[Entity, _] ⇒
-                        Some(InterimEUBP(e, pointsToSet))
+            results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](e, pointsToPropertyKey, {
+                case _: EPK[Entity, _] ⇒
+                    Some(InterimEUBP(e, pointsToSet))
 
-                    case UBP(ub: PointsToSet @unchecked) ⇒
-                        val newPointsTo = ub.included(pointsToSet, 0, 0)
-                        if (newPointsTo ne ub) {
-                            Some(InterimEUBP(e, newPointsTo))
-                        } else {
-                            None
-                        }
+                case UBP(ub: PointsToSet @unchecked) ⇒
+                    val newPointsTo = ub.included(pointsToSet, 0, 0)
+                    if (newPointsTo ne ub) {
+                        Some(InterimEUBP(e, newPointsTo))
+                    } else {
+                        None
+                    }
 
-                    case eOptP ⇒
-                        throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-                })
-            }
+                case eOptP ⇒
+                    throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
+            })
         }
 
         for (fakeEntity ← state.getFieldsIterator) {
