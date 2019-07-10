@@ -317,7 +317,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     private[this] def handleDirectCall(
-        call: Call[DUVar[ValueInformation]], pc: Int, target: DeclaredMethod
+        call: Call[V], pc: Int, target: DeclaredMethod
     )(implicit state: State): Unit = {
         val receiverOpt: Option[Expr[DUVar[ValueInformation]]] = call.receiverOption
         val fps = formalParameters(target)
@@ -327,18 +327,28 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             if (receiverOpt.isDefined) {
                 val fp = fps(0)
                 val ptss = currentPointsToOfDefSites(fp, receiverOpt.get.asVar.definedBy)
-                //state.includeSharedPointsToSets(fp, ptss, target.declaringClassType)
-                val overrides =
-                    if (project.overridingMethods.contains(target.definedMethod))
-                        project.overridingMethods(target.definedMethod).map(_.classFile.thisType) - target.declaringClassType.asObjectType
-                    else Set.empty
+                val declClassType = target.declaringClassType.asObjectType
+                val tgtMethod = target.definedMethod
+                val filter = call match {
+                    case _: NonVirtualFunctionCall[V] | _: NonVirtualMethodCall[V] ⇒
+                        t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, declClassType)
+                    case _ ⇒
+                        val overrides =
+                            if (project.overridingMethods.contains(tgtMethod))
+                                project.overridingMethods(tgtMethod).map(_.classFile.thisType) -
+                                    declClassType
+                            else
+                                Set.empty
+                        // TODO this might not be 100% correct in some corner cases
+                        t: ReferenceType ⇒
+                            classHierarchy.isSubtypeOf(t, declClassType) &&
+                                !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
+
+                }
                 state.includeSharedPointsToSets(
                     fp,
                     ptss,
-                    { t: ReferenceType ⇒
-                        classHierarchy.isSubtypeOf(t, target.declaringClassType) &&
-                            !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
-                    }
+                    filter
                 )
             }
 
