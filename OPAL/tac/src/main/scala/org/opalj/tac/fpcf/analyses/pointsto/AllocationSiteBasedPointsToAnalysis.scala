@@ -33,9 +33,11 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
         final val project: SomeProject
 ) extends AbstractPointsToAnalysis[Long, AllocationSitePointsToSet] {
 
-    val mergeStringBuilderBuffer = project.config.getBoolean("org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis.mergeStringBuilderBuffer")
-    val mergeStringConstants = project.config.getBoolean("org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis.mergeStringConstants")
-    val mergeClassConstants = project.config.getBoolean("org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis.mergeClassConstants")
+    val configPrefix = "org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis"
+    val mergeStringBuilderBuffer =
+        project.config.getBoolean(s"$configPrefix.mergeStringBuilderBuffer")
+    val mergeStringConstants = project.config.getBoolean(s"$configPrefix.mergeStringConstants")
+    val mergeClassConstants = project.config.getBoolean(s"$configPrefix.mergeClassConstants")
 
     val stringBuilderPointsToSet = AllocationSitePointsToSet1(StringBuilderId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.StringBuilder)
     val stringBufferPointsToSet = AllocationSitePointsToSet1(StringBufferId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.StringBuffer)
