@@ -40,6 +40,7 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
+import org.opalj.br.FieldType
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -101,12 +102,38 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     createPointsToSet(pc, state.method, t, isConstant = false)
                 )
 
-            case Assignment(pc, _, NewArray(_, _, tpe)) ⇒
+            case Assignment(pc, _, NewArray(_, counts, tpe)) ⇒
                 val defSite = definitionSites(method, pc)
+                var arrayReferencePTS = createPointsToSet(pc, state.method, tpe, isConstant = false)
                 state.setAllocationSitePointsToSet(
                     defSite,
-                    createPointsToSet(pc, state.method, tpe, isConstant = false)
+                    arrayReferencePTS
                 )
+                var remainingCounts = counts.tail
+                var allocatedType: FieldType = tpe.componentType
+                var continue = true
+                while (remainingCounts.nonEmpty && allocatedType.isArrayType && continue) {
+                    val theType = allocatedType.asArrayType
+
+                    // Ugly hack to get the only points-to element from the previously created PTS
+                    var arrayEntity: ArrayEntity[ElementType] = null
+                    arrayReferencePTS.forNewestNElements(1) { as ⇒ arrayEntity = ArrayEntity(as) }
+
+                    arrayReferencePTS = createPointsToSet(pc, state.method, theType, isConstant = false)
+                    state.includeSharedPointsToSet(
+                        arrayEntity,
+                        arrayReferencePTS,
+                        { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, theType) }
+                    )
+                    if (remainingCounts.head.asVar.definedBy.forall { ds ⇒
+                        ds >= 0 &&
+                            tac.stmts(ds).asAssignment.expr.isIntConst &&
+                            tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
+                    })
+                        continue = false
+                    remainingCounts = counts.tail
+                    allocatedType = theType.componentType
+                }
 
             case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
