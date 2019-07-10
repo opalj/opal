@@ -17,6 +17,10 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.log.GlobalLogContext
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
 import org.opalj.value.ValueInformation
 import org.opalj.br.Method
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
@@ -30,13 +34,13 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.instructions.FieldReadAccess
 import org.opalj.br.instructions.FieldWriteAccess
+import org.opalj.br.ReferenceType
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.XTACallGraphKey
 
-// TODO AB for debugging/evaluation; remove later
-object CGTestRunner {
+object CGEvaluation {
     def main(args: Array[String]): Unit = {
         def getArgOrElse(index: Int, alt: String): String = {
             if (index >= args.length)
@@ -55,23 +59,35 @@ object CGTestRunner {
         execute(testJar, algo, outDir)
     }
 
-    def execute(testJar: String, algo: String, outDir: String): Unit = {
-        val testFile = new File(testJar)
-        val testFileName =
-            if (testFile.getName == "bin.zip") { // for xcorpus projects
-                testFile.getParentFile.getParentFile.getName
+    case class CGConstructionResult(
+            projectName:       String,
+            cgFile:            File,
+            instantiatedTypes: Map[Entity, UIDSet[ReferenceType]],
+            projectStatistics: Map[String, Int],
+            creationRuntime:   Nanoseconds
+    )
+
+    def execute(testJar: String, algo: String, outDir: String): CGConstructionResult = {
+        execute(new File(testJar), Array.empty, Array.empty, algo, outDir)
+    }
+
+    def execute(mainProjectFile: File, otherProjectFiles: Array[File], libraryFiles: Array[File], algo: String, outDir: String): CGConstructionResult = {
+
+        val projectName =
+            if (mainProjectFile.getName == "bin.zip") { // for xcorpus projects
+                mainProjectFile.getParentFile.getParentFile.getName
             } else {
-                testFile.getName
+                mainProjectFile.getName
             }
 
         val algoKey = algo match {
             case "cha" ⇒ CHACallGraphKey
             case "rta" ⇒ RTACallGraphKey
             case "xta" ⇒ XTACallGraphKey
-            case _     ⇒ sys.error("cg algorithm must be cha, rta, or xta!")
+            case _     ⇒ sys.error("invalid cg algorithm!")
         }
 
-        val outFileName = s"$testFileName-$algo.json"
+        val outFileName = s"$projectName-$algo.json"
         val outFile = Paths.get(outDir, outFileName).toFile
 
         // Application mode!
@@ -83,26 +99,46 @@ object CGTestRunner {
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
             )
 
-        val project = Project(new File(testJar), GlobalLogContext, cfg)
-        val cg = project.get(algoKey)
+        val project = Project(mainProjectFile +: otherProjectFiles, libraryFiles, GlobalLogContext, cfg)
+
+        val (creationTimeNs, cg) = PerformanceEvaluation.timed {
+            project.get(algoKey)
+        }
+
+        val statistics = project.statistics.toMap
 
         // Dump per-entity types for XTA.
-        if (algo == "xta") {
-            val typesOutFile = Paths.get(outDir, s"$testFileName-xta-types.txt").toFile
-            val writer = new PrintWriter(new FileOutputStream(typesOutFile))
-            val ps = project.get(PropertyStoreKey)
-            for (e ← ps.entities(InstantiatedTypes.key)) {
-                writer.println(s"${e.e} (isFinal: ${e.isFinal})")
-                for (t ← ps(e.e, InstantiatedTypes.key).ub.types)
-                    writer.println(s"-> $t")
-                writer.println()
+        val instantiatedTypes =
+            if (algo == "xta") {
+                val ps = project.get(PropertyStoreKey)
+                val map = Map.newBuilder[Entity, UIDSet[ReferenceType]]
+                for (eps ← ps.entities(InstantiatedTypes.key)) {
+                    map += (eps.e → ps(eps.e, InstantiatedTypes.key).ub.types)
+                }
+                map.result()
+            } else {
+                Map.empty[Entity, UIDSet[ReferenceType]]
             }
-            writer.flush()
-            writer.close()
-        }
 
         implicit val dm: DeclaredMethods = project.get(DeclaredMethodsKey)
         CallGraphSerializer.writeCG(cg, outFile)
+
+        CGConstructionResult(projectName, outFile, instantiatedTypes, statistics, creationTimeNs)
+    }
+
+    def dumpInstantiatedTypes(projectName: String, instantiatedTypes: Map[Entity, UIDSet[ReferenceType]], outDir: String): Unit = {
+        val typesOutFile = Paths.get(outDir, s"$projectName-xta-types.txt").toFile
+        val writer = new PrintWriter(new FileOutputStream(typesOutFile))
+
+        for ((entity, types) ← instantiatedTypes) {
+            writer.println(entity)
+            for (t ← types) {
+                writer.println(s"-> $t")
+            }
+            writer.println()
+        }
+        writer.flush()
+        writer.close()
     }
 }
 
