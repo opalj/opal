@@ -110,27 +110,27 @@ import org.opalj.br.ObjectType.Object
  */
 class ClassHierarchy private (
         // the case "java.lang.Object" is handled explicitly!
-        /*private[this]*/ val knownTypesMap:                     Array[ObjectType],
-                          private[this] val isKnownTypeMap:      Array[Boolean],
-                          private[this] val isInterfaceTypeMap:  Array[Boolean],
-                          private[this] val isKnownToBeFinalMap: Array[Boolean],
+        /*TODO: private[this]*/ val knownTypesMap:                     Array[ObjectType],
+                                private[this] val isKnownTypeMap:      Array[Boolean],
+                                private[this] val isInterfaceTypeMap:  Array[Boolean],
+                                private[this] val isKnownToBeFinalMap: Array[Boolean],
 
-                          // The element is null for types for which we have no complete information
-                          // (unless it is java.lang.Object)!
-                          private[this] val superclassTypeMap:      Array[ObjectType],
-                          private[this] val superinterfaceTypesMap: Array[UIDSet[ObjectType]],
+                                // The element is null for types for which we have no complete information
+                                // (unless it is java.lang.Object)!
+                                private[this] val superclassTypeMap:      Array[ObjectType],
+                                private[this] val superinterfaceTypesMap: Array[UIDSet[ObjectType]],
 
-                          // In the following all elements are non-null for each known type!
-                          private[this] val subclassTypesMap:     Array[UIDSet[ObjectType]],
-                          private[this] val subinterfaceTypesMap: Array[UIDSet[ObjectType]],
+                                // In the following all elements are non-null for each known type!
+                                private[this] val subclassTypesMap:     Array[UIDSet[ObjectType]],
+                                private[this] val subinterfaceTypesMap: Array[UIDSet[ObjectType]],
 
-                          // DERIVED INFORMATION
-                          val rootTypes:                                       UIDSet[ObjectType],
-                          val leafTypes:                                       UIDSet[ObjectType],
-                          private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
+                                // DERIVED INFORMATION
+                                val rootTypes:                                       UIDSet[ObjectType],
+                                val leafTypes:                                       UIDSet[ObjectType],
+                                private[this] val isSupertypeInformationCompleteMap: Array[Boolean],
 
-                          private[this] val supertypeInformationMap: Array[SupertypeInformation],
-                          private[this] val subtypeInformationMap:   Array[SubtypeInformation]
+                                private[this] val supertypeInformationMap: Array[SupertypeInformation],
+                                private[this] val subtypeInformationMap:   Array[SubtypeInformation]
 )(
         implicit
         val logContext: LogContext

@@ -44,6 +44,7 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
         project.config.getBoolean(s"$configPrefix.mergeClassConstants")
     val mergeExceptions: Boolean = project.config.getBoolean(s"$configPrefix.mergeExceptions")
 
+    // TODO: Create merged pointsTo allocation site
     val stringBuilderPointsToSet = AllocationSitePointsToSet1(StringBuilderId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.StringBuilder)
     val stringBufferPointsToSet = AllocationSitePointsToSet1(StringBufferId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.StringBuffer)
     val stringConstPointsToSet = AllocationSitePointsToSet1(StringId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.String)

@@ -56,8 +56,8 @@ case class ArrayEntity[ElementType](element: ElementType)
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-    with ReachableMethodAnalysis {
+        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+        with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -115,7 +115,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 while (remainingCounts.nonEmpty && allocatedType.isArrayType && continue) {
                     val theType = allocatedType.asArrayType
 
-                    // Ugly hack to get the only points-to element from the previously created PTS
+                    // TODO: Ugly hack to get the only points-to element from the previously created PTS
                     var arrayEntity: ArrayEntity[ElementType] = null
                     arrayReferencePTS.forNewestNElements(1) { as ⇒ arrayEntity = ArrayEntity(as) }
 
@@ -125,6 +125,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         arrayReferencePTS,
                         { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, theType) }
                     )
+                    // TODO: refactor
                     if (remainingCounts.head.asVar.definedBy.forall { ds ⇒
                         ds >= 0 &&
                             tac.stmts(ds).asAssignment.expr.isIntConst &&
@@ -164,6 +165,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addGetFieldEntity(fakeEntity)
                     currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
+                            // TODO: Refactor
                             if (classHierarchy.subtypeInformation(field.classFile.thisType).get.containsId(allocationSiteLongToTypeId(as.asInstanceOf[Long]))) {
                                 state.includeSharedPointsToSet(
                                     defSiteObject,
@@ -284,6 +286,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addPutFieldEntity(fakeEntity)
                     currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
+                            // TODO: refactor
                             if (classHierarchy.subtypeInformation(field.classFile.thisType).get.containsId(allocationSiteLongToTypeId(as.asInstanceOf[Long]))) {
                                 val fieldEntity = (as, field)
                                 state.includeSharedPointsToSets(

@@ -46,7 +46,7 @@ sealed abstract class TypeHierarchyInformation {
      * Checks if the objectTypeId is contained in the underlying set; no special cases
      * related to `java.lang.Object` are supported!
      */
-    /*private[br]*/ def containsId(objectTypeId: Int): Boolean
+    /* TODO: private[br]*/ def containsId(objectTypeId: Int): Boolean
 
     override def toString: String = {
         val classInfo = classTypes.map(_.toJava).mkString("classes={", ", ", "}")
@@ -153,7 +153,7 @@ object SubtypeInformation {
                         tid < isKnownType.length && isKnownType(tid) &&
                         allTypes.containsId(tid)
                 }
-                final override /*private[br]*/ def containsId(objectTypeId: Int): Boolean = {
+                final override /*TODO: private[br]*/ def containsId(objectTypeId: Int): Boolean = {
                     allTypes.containsId(objectTypeId)
                 }
             }
