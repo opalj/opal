@@ -59,6 +59,10 @@ object LongTrieSet {
         }
     }
 
+    def apply(v1: Long, v2: Long, v3: Long, v4: Long): LongTrieSet = {
+        apply(v1, v2, v3) + v4
+    }
+
 }
 
 private[immutable] case object LongTrieSet0 extends LongTrieSet {
@@ -456,7 +460,7 @@ private[immutable] abstract class LongTrieSetNode2_7 extends LongTrieSetNode {
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: LongTrieSetNode2 ⇒
+            case that: LongTrieSetNode2_7 ⇒
                 val thisLookupTable = this.lookupTable
                 val thatLookupTable = that.lookupTable
                 var index = 0

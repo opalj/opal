@@ -15,6 +15,20 @@ import org.opalj.collection.immutable.set.long.i1.LongTrieSet
  */
 abstract class LongIterator extends AbstractIterator[Long] { self ⇒
 
+    def ++(other: LongIterator): LongIterator = {
+        new LongIterator {
+            private[this] var it = self
+            override def hasNext = it != null
+            override def next: Long = {
+                val v = it.next
+                if (!it.hasNext) {
+                    it = if (it eq self) other else null
+                }
+                v
+            }
+        }
+    }
+
     /**
      * Returns the next value if `hasNext` has returned `true`; if hasNext has returned `false`
      * and `next` is called, the result is undefined. The method may throw an
@@ -220,6 +234,29 @@ object LongIterator {
             as
         }
         override def toSet: LongTrieSet = LongTrieSet(i1, i2, i3)
+    }
+
+    def apply(i1: Long, i2: Long, i3: Long, i4: Long): LongIterator = new LongIterator {
+        private[this] var nextId: Int = 0
+        def hasNext: Boolean = nextId < 4
+        def next(): Long = {
+            nextId += 1
+            nextId match {
+                case 1 ⇒ i1
+                case 2 ⇒ i2
+                case 3 ⇒ i3
+                case _ ⇒ i4
+            }
+        }
+        override def toArray: Array[Long] = {
+            val as = new Array[Long](3)
+            as(0) = i1
+            as(1) = i2
+            as(2) = i3
+            as(3) = i4
+            as
+        }
+        override def toSet: LongTrieSet = LongTrieSet(i1, i2, i3, i4)
     }
 
 }

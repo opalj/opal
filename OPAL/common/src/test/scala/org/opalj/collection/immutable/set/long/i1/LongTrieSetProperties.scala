@@ -1,0 +1,16 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
+package org.opalj.collection
+package immutable
+package set
+package long
+package i1
+
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+
+@RunWith(classOf[JUnitRunner])
+object LongTrieSetProperties extends LongSetProperties("LongTrieSetProperties") {
+
+    def empty(): LongSet = LongTrieSet.empty
+
+}
