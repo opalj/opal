@@ -110,7 +110,7 @@ import org.opalj.br.ObjectType.Object
  */
 class ClassHierarchy private (
         // the case "java.lang.Object" is handled explicitly!
-        private[this] val knownTypesMap:       Array[ObjectType],
+        /*private[this]*/ val knownTypesMap:       Array[ObjectType],
         private[this] val isKnownTypeMap:      Array[Boolean],
         private[this] val isInterfaceTypeMap:  Array[Boolean],
         private[this] val isKnownToBeFinalMap: Array[Boolean],

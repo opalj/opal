@@ -7,6 +7,8 @@ package pointsto
 
 import scala.annotation.switch
 
+import scala.collection.immutable.IntMap
+
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyKind
@@ -34,15 +36,19 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
 ) extends AbstractPointsToAnalysis[Long, AllocationSitePointsToSet] {
 
     val configPrefix = "org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis"
-    val mergeStringBuilderBuffer =
+    val mergeStringBuilderBuffer: Boolean =
         project.config.getBoolean(s"$configPrefix.mergeStringBuilderBuffer")
-    val mergeStringConstants = project.config.getBoolean(s"$configPrefix.mergeStringConstants")
-    val mergeClassConstants = project.config.getBoolean(s"$configPrefix.mergeClassConstants")
+    val mergeStringConstants: Boolean =
+        project.config.getBoolean(s"$configPrefix.mergeStringConstants")
+    val mergeClassConstants: Boolean =
+        project.config.getBoolean(s"$configPrefix.mergeClassConstants")
+    val mergeExceptions: Boolean = project.config.getBoolean(s"$configPrefix.mergeExceptions")
 
     val stringBuilderPointsToSet = AllocationSitePointsToSet1(StringBuilderId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.StringBuilder)
     val stringBufferPointsToSet = AllocationSitePointsToSet1(StringBufferId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.StringBuffer)
     val stringConstPointsToSet = AllocationSitePointsToSet1(StringId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.String)
     val classConstPointsToSet = AllocationSitePointsToSet1(ClassId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.Class)
+    var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
 
     override def createPointsToSet(
         pc:             Int,
@@ -77,7 +83,18 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
                 else
                     createNewPointsToSet()
             case _ ⇒
-                createNewPointsToSet()
+                if(mergeExceptions &&
+                    classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)){
+                    val ptsO = exceptionPointsToSets.get(allocatedType.id)
+                    if(ptsO.isDefined)
+                    ptsO.get
+                    else {
+                        val newPts = new AllocationSitePointsToSet1(allocatedType.id << 38 | 0x3FFFFFFFFFL, allocatedType)
+                        exceptionPointsToSets += allocatedType.id → newPts
+                        newPts
+                    }
+                } else
+                    createNewPointsToSet()
         }
     }
 
