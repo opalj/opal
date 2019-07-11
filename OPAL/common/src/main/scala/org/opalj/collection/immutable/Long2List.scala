@@ -34,7 +34,8 @@ sealed trait Long2List extends Serializable { self ⇒
     def nonEmpty: Boolean
 
     def foreach[U](f: Long ⇒ U): Unit
-
+    def forall(p: Long ⇒ Boolean): Boolean
+    def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B
     /** Iterates over the first N values. */
     def forFirstN[U](n: Int)(f: Long ⇒ U): Unit
 
@@ -61,11 +62,15 @@ sealed trait Long2List extends Serializable { self ⇒
 
 object Long2List {
 
-    def empty: Long2List = EmptyLong2List
+    def empty: Long2List = Long2List0
 
-    def apply(v: Long): Long2List = new Long2ListNode(Long.MinValue, v, EmptyLong2List)
+    def apply(v: Long): Long2List = new Long2ListNode(Long.MinValue, v, Long2List0)
 
-    def apply(head: Long, last: Long): Long2List = new Long2ListNode(head, last, EmptyLong2List)
+    def apply(head: Long, last: Long): Long2List = new Long2ListNode(head, last, Long2List0)
+
+    def apply(v1: Long, v2: Long, v3: Long, v4: Long): Long2List = {
+        new Long2ListNode(v1, v2, new Long2ListNode(v3, v4, Long2List0))
+    }
 
 }
 
@@ -74,7 +79,7 @@ object Long2List {
  *
  * @author Michael Eichberg
  */
-case object EmptyLong2List extends Long2List {
+case object Long2List0 extends Long2List {
 
     override def isEmpty: Boolean = true
     override def isSingletonList: Boolean = false
@@ -85,6 +90,8 @@ case object EmptyLong2List extends Long2List {
     override private[immutable] def rest: Long2List = throw new UnsupportedOperationException
 
     override def foreach[U](f: Long ⇒ U): Unit = {}
+    override def forall(p: Long ⇒ Boolean): Boolean = true
+    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = z
     /** Iterates over the first N values. */
     override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {}
     override def iterator: LongIterator = LongIterator.empty
@@ -100,14 +107,14 @@ case object EmptyLong2List extends Long2List {
  *
  * @author Michael Eichberg
  */
-final case class Long2ListNode(
+private[immutable] final case class Long2ListNode(
         private[immutable] var h:    Long,
         private[immutable] var t:    Long,
-        private[immutable] var rest: Long2List = EmptyLong2List
+        private[immutable] var rest: Long2List = Long2List0
 ) extends Long2List { list ⇒
 
     override def isEmpty: Boolean = false
-    override def isSingletonList: Boolean = h == Long.MinValue && (rest eq EmptyLong2List)
+    override def isSingletonList: Boolean = h == Long.MinValue && (rest eq Long2List0)
     override def nonEmpty: Boolean = true
 
     override def foreach[U](f: Long ⇒ U): Unit = {
@@ -119,6 +126,30 @@ final case class Long2ListNode(
             f(list.t)
             list = list.rest
         }
+    }
+
+    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = {
+        var r = z
+        if (h != Long.MinValue) r = op(r, h)
+        r = op(r, t)
+        var list: Long2List = this.rest
+        while (list.nonEmpty) {
+            r = op(op(r, list.h), list.t)
+            list = list.rest
+        }
+        r
+    }
+
+    override def forall(p: Long ⇒ Boolean): Boolean = {
+        if (h != Long.MinValue) if (!p(h)) return false;
+        if (!p(t)) return false;
+        var list: Long2List = this.rest
+        while (list.nonEmpty) {
+            if (!(p(list.h) && p(list.t)))
+                return false;
+            list = list.rest
+        }
+        true
     }
 
     override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
@@ -150,7 +181,7 @@ final case class Long2ListNode(
         new LongIterator {
             private[this] var currentList: Long2List = list
             private[this] var head: Boolean = list.h != Long.MinValue
-            def hasNext: Boolean = currentList ne EmptyLong2List
+            def hasNext: Boolean = currentList ne Long2List0
             def next: Long = {
                 if (head) {
                     head = false
@@ -176,7 +207,7 @@ final case class Long2ListNode(
         (that eq this) || {
             var thisList: Long2List = this
             var thatList = that
-            while ((thisList ne EmptyLong2List) && (thatList ne EmptyLong2List)) {
+            while ((thisList ne Long2List0) && (thatList ne Long2List0)) {
                 if (thisList.h != thatList.h || thisList.t != thatList.t)
                     return false;
                 thisList = thisList.rest
@@ -189,7 +220,7 @@ final case class Long2ListNode(
     override def hashCode(): Int = {
         var h = 31
         var list: Long2List = this
-        while (list ne EmptyLong2List) {
+        while (list ne Long2List0) {
             h = ((h + JLong.hashCode(list.h)) * 31 + JLong.hashCode(list.t)) * 31
             list = list.rest
         }

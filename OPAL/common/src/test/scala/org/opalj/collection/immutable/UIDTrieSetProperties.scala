@@ -22,11 +22,11 @@ import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
 
 @RunWith(classOf[JUnitRunner])
-object GrowableUIDSetProperties extends Properties("GrowableUIDSet") {
+object UIDTrieSetProperties extends Properties("UIDTrieSet") {
 
     implicit def intToSUID(i: Int): SUID = SUID(i)
-    implicit def toSUIDSet(l: Traversable[Int]): GrowableUIDTrieSet[SUID] = {
-        l.foldLeft(GrowableUIDTrieSet.empty[SUID])(_ + SUID(_))
+    implicit def toSUIDSet(l: Traversable[Int]): UIDTrieSet[SUID] = {
+        l.foldLeft(UIDTrieSet.empty[SUID])(_ + SUID(_))
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,47 +47,55 @@ object GrowableUIDSetProperties extends Properties("GrowableUIDSet") {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S
 
-    property("create set(+) and contains") = forAll { intSet: Set[Int] ⇒
-        val oUIDTrieSet = intSet.foldLeft(GrowableUIDTrieSet.empty[SUID])(_ + _)
+    property("create set(+) and forall and contains(id)") = forAll { intSet: Set[Int] ⇒
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
 
         val sUIDSet = intSet.map(SUID(_))
-        (sUIDSet.size == oUIDTrieSet.size) :| "size" &&
+        (sUIDSet.isEmpty == oUIDTrieSet.isEmpty) :| "isEmpty" &&
+            ((sUIDSet.size == 1 && oUIDTrieSet.isSingletonSet) || sUIDSet.size != 1) :| "isSingletonSet" &&
+            (sUIDSet.size == oUIDTrieSet.size) :| "size" &&
             sUIDSet.forall(oUIDTrieSet.contains) :| "oUIDTrieSet.contains" &&
             oUIDTrieSet.forall(sUIDSet.contains) :| "oUIDTrieSet.forall"
     }
 
     property("create set(+) and foreach") = forAll { intSet: Set[Int] ⇒
-        val oUIDTrieSet = intSet.foldLeft(GrowableUIDTrieSet.empty[SUID])(_ + _)
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
         val sUIDSet = intSet.map(SUID(_))
-        var containsAll = true
-        oUIDTrieSet.foreach { e ⇒
-            containsAll &&= sUIDSet.contains(e)
-        }
-        containsAll
+        var newSUIDSet = Set.empty[SUID]
+        oUIDTrieSet.foreach { e ⇒ newSUIDSet += e }
+        sUIDSet == newSUIDSet
     }
 
     property("create set(+) and iterator") = forAll { intSet: Set[Int] ⇒
-        val oUIDTrieSet = intSet.foldLeft(GrowableUIDTrieSet.empty[SUID])(_ + _)
+        val oUIDTrieSet = intSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _)
         val sUIDSet = intSet.map(SUID(_))
-        oUIDTrieSet.iterator.forall(sUIDSet.contains)
+        var newSUIDSet = Set.empty[SUID]
+        oUIDTrieSet.iterator.foreach { e ⇒ newSUIDSet += e }
+        sUIDSet == newSUIDSet
     }
 
-    property("equals and hashCode (if the sets are equal)") = forAll { l: Set[Int] ⇒
-        val p = l.toList.permutations
-        val lastP = p.next
-        val uidSet1 = toSUIDSet(if (p.hasNext) p.next else lastP)
-        val uidSet2 = toSUIDSet(if (p.hasNext) p.next else lastP)
-        val uidSet3 = toSUIDSet(if (p.hasNext) p.next else lastP)
-        val uidSet4 = toSUIDSet(if (p.hasNext) p.next else lastP)
-        (uidSet1 == uidSet2 && uidSet2 == uidSet3 && uidSet3 == uidSet4 && uidSet1 == uidSet4) :| "equality" &&
-            (uidSet1.hashCode == uidSet2.hashCode) :| s"hashCodes 1 vs 2: ${uidSet1.hashCode} vs. ${uidSet2.hashCode}" &&
-            (uidSet2.hashCode == uidSet3.hashCode) :| s"hashCodes 2 vs 3: ${uidSet2.hashCode} vs. ${uidSet3.hashCode}" &&
-            (uidSet3.hashCode == uidSet4.hashCode) :| s"hashCodes 3 vs 4: ${uidSet3.hashCode} vs. ${uidSet4.hashCode}"
+    property("equals and hashCode (if the sets are equal)") = forAll { intSet: Set[Int] ⇒
+        val p = intSet.toList.permutations
+        val initialUIDTrieSet = toSUIDSet(p.next)
+        p.take(100).forall { p ⇒
+            val pUIDTrieSet = toSUIDSet(p)
+            initialUIDTrieSet == pUIDTrieSet &&
+                initialUIDTrieSet.hashCode == pUIDTrieSet.hashCode
+        }
+    }
+
+    property("equals (if the sets are not equal)") = forAll { intSet: Set[Int] ⇒
+        intSet.nonEmpty ==> {
+            val oUIDTrieSet = toSUIDSet(intSet)
+            oUIDTrieSet.iterator.toList.tail.tails.forall { tailUIDTrieSet ⇒
+                tailUIDTrieSet.foldLeft(UIDTrieSet.empty[SUID])(_ + _) != oUIDTrieSet
+            }
+        }
     }
 }
 
 @RunWith(classOf[JUnitRunner])
-class GrowableUIDTrieSetTest extends FunSpec with Matchers {
+class UIDTrieSetTest extends FunSpec with Matchers {
 
     describe("performance") {
 
@@ -99,7 +107,7 @@ class GrowableUIDTrieSetTest extends FunSpec with Matchers {
                 var overallSum = 0
                 var overallTime = Nanoseconds.None
                 for { i ← 1 to 100000 } {
-                    var s = GrowableUIDTrieSet.empty[SUID]
+                    var s = UIDTrieSet.empty[SUID]
                     for { j ← 1 to 500 } {
                         s += SUID(rngGen.nextInt())
                     }
@@ -111,7 +119,7 @@ class GrowableUIDTrieSetTest extends FunSpec with Matchers {
 
                     overallSum += sumForeach
                 }
-                info(s"GrowableUIDTrieSet foreach sum took ${overallTime.toSeconds}")
+                info(s"UIDTrieSet foreach sum took ${overallTime.toSeconds}")
             }
 
             {
@@ -143,9 +151,9 @@ class GrowableUIDTrieSetTest extends FunSpec with Matchers {
                 PerformanceEvaluation.time {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
-                    var lastOpalS = GrowableUIDTrieSet.empty[SUID]
+                    var lastOpalS = UIDTrieSet.empty[SUID]
                     for { j ← 0 to 1000000 } {
-                        var opalS = GrowableUIDTrieSet.empty[SUID]
+                        var opalS = UIDTrieSet.empty[SUID]
                         for { i ← 0 to 50 } {
                             val v = rngGen.nextInt()
                             opalS += SUID(v)
@@ -154,7 +162,7 @@ class GrowableUIDTrieSetTest extends FunSpec with Matchers {
                         lastOpalS = opalS
                     }
                     lastOpalS
-                } { t ⇒ info(s"GrowableUIDTrieSet took ${t.toSeconds} (total number of entries: $totalSize)") }
+                } { t ⇒ info(s"UIDTrieSet took ${t.toSeconds} (total number of entries: $totalSize)") }
             }
 
             val scalaS = {
@@ -188,9 +196,9 @@ class GrowableUIDTrieSetTest extends FunSpec with Matchers {
                 PerformanceEvaluation.time {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
-                    var allSets = List.empty[GrowableUIDTrieSet[SUID]]
+                    var allSets = List.empty[UIDTrieSet[SUID]]
                     for { j ← 0 to 1000000 } {
-                        var opalS = GrowableUIDTrieSet.empty[SUID]
+                        var opalS = UIDTrieSet.empty[SUID]
                         for { i ← 0 to 50 } {
                             val v = rngGen.nextInt()
                             opalS += SUID(v)
@@ -198,8 +206,8 @@ class GrowableUIDTrieSetTest extends FunSpec with Matchers {
                         allSets ::= opalS
                     }
                     allSets
-                } { t ⇒ info(s"GrowableUIDTrieSet took ${t.toSeconds}") }
-            } { mu ⇒ info(s"GrowableUIDTrieSet required $mu bytes") }
+                } { t ⇒ info(s"UIDTrieSet took ${t.toSeconds}") }
+            } { mu ⇒ info(s"UIDTrieSet required $mu bytes") }
 
             val scalaS = PerformanceEvaluation.memory {
                 PerformanceEvaluation.time {

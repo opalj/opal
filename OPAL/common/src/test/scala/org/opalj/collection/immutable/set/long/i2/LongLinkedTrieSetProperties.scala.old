@@ -61,7 +61,7 @@ object LongLinkedTrieSetProperties extends Properties("LongLinkedTrieSet") {
 
     property("create singleton LongLinkedTrieSet") = forAll { v: Long ⇒
         val factoryITS = LongLinkedTrieSet1(v)
-        val viaEmptyITS = EmptyLongLinkedTrieSet + v
+        val viaEmptyITS = LongLinkedTrieSet0 + v
         factoryITS.size == 1 &&
             factoryITS.isSingletonSet &&
             !factoryITS.isEmpty &&
@@ -72,39 +72,39 @@ object LongLinkedTrieSetProperties extends Properties("LongLinkedTrieSet") {
 
     property("create LongLinkedTrieSet from Set step by step") = forAll { s: Set[Long] ⇒
         val l = s.toList
-        val its = l.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
+        val its = l.foldLeft(LongLinkedTrieSet0: LongLinkedTrieSet)(_ + _.toLong)
         (its.size == s.size) :| "matching size" &&
             (its.iterator.mkString(",") == l.reverse.mkString(",")) :| "same content"
     }
 
     property("contains (values using lower 4 bytes)") = forAll { (s1: IntArraySet, s2: IntArraySet) ⇒
-        val its = s1.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
+        val its = s1.foldLeft(LongLinkedTrieSet0: LongLinkedTrieSet)(_ + _.toLong)
         s1.forall(i ⇒ its.contains(i.toLong)) :| "contains expected value" &&
             s2.forall(v ⇒ s1.contains(v) == its.contains(v.toLong))
     }
 
     property("contains (values using byte 4 to 7)") = forAll { (s1: IntArraySet) ⇒
-        val its = s1.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)((c, n) ⇒ c + (n.toLong << 24))
+        val its = s1.foldLeft(LongLinkedTrieSet0: LongLinkedTrieSet)((c, n) ⇒ c + (n.toLong << 24))
         s1.forall(i ⇒ its.contains(i.toLong << 24)) :| "contains expected value" &&
             its.iterator.forall(v ⇒ s1.contains((v >> 24).toInt))
     }
 
     property("contains (long values)") = forAll { (s1: IntArraySet) ⇒
-        val its = s1.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)((c, n) ⇒ c + ((n.toLong << 32) | i2lBitMask(n)))
+        val its = s1.foldLeft(LongLinkedTrieSet0: LongLinkedTrieSet)((c, n) ⇒ c + ((n.toLong << 32) | i2lBitMask(n)))
         s1.forall(i ⇒ its.contains((i.toLong << 32) | i2lBitMask(i))) :| "contains expected value" &&
             its.iterator.forall(v ⇒ s1.contains((v >> 32).toInt))
     }
 
     property("foreach") = forAll { s: IntArraySet ⇒
-        val its = s.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
+        val its = s.foldLeft(LongLinkedTrieSet0: LongLinkedTrieSet)(_ + _.toLong)
         var newS = IntArraySet.empty
         its foreach { newS += _.toInt } // use foreach to compute a new set
         s == newS
     }
 
     property("equals and hashCode") = forAll { s: IntArraySet ⇒
-        val its1 = s.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
-        val its2 = s.foldLeft(EmptyLongLinkedTrieSet: LongLinkedTrieSet)(_ + _.toLong)
+        val its1 = s.foldLeft(LongLinkedTrieSet0: LongLinkedTrieSet)(_ + _.toLong)
+        val its2 = s.foldLeft(LongLinkedTrieSet0: LongLinkedTrieSet)(_ + _.toLong)
         its1 == its2 &&
             its1.hashCode() == its2.hashCode()
     }
@@ -117,6 +117,7 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
     describe("contains") {
 
         val fixtures = List[List[Long]](
+            List[Long](-148198, -146377, -144713, -136387, -128093, -125412, -114745, -114416, -114042, -111787, -107616, -106292, -104265, -100180, -96310, -85335, -78774, -19351, -9013, -8061, -6281, -6119, -96, 1969, 3393, 8171, 10401, 10672, 24158, 27468, 27866, 29988, 30001, 37426, 46739),
             List[Long](-149888, -148631, -145484, -141562, -140079, -138107, -136334, -134497, -134411, -133903, -130864, -127559, -125917, -125874, -122818, -122662, -121942, -117767, -109611, -109221, -106817, -105853, -98499, -97621, -97268, -95127, -87266, -87167, -84007, -81481, -79385, -78975, -77313, -24933, -24046, -21559, -14486, -13697, -10057, -9088, -8839, -8094, -2799, 4427, 4715, 6171, 9785, 12698, 13743, 14451, 17035, 22533, 23552, 25426, 28095, 28971, 30684, 38784, 39380, 40539, 41679, 43454, 44458, 46205, 47203, 47959, 48225),
             List[Long](-133101, -131537, -110967, -102501, -94607, -89623, -82931, -20999, 1601, 1914, 16349, 16597, 31899, 49328),
             List[Long](-148452, -133542, -119766, -18749, -8976, -8071),
@@ -132,13 +133,17 @@ class LongLinkedTrieSetTest extends FunSpec with Matchers {
             List[Long](-134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213, -20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875)
         )
 
-        for { fixture ← fixtures } {
-            it("[regression] should return true for all values of the test fixture: "+fixture) {
+        for { fixture ← fixtures.flatten :: fixtures } {
+            it(s"should return true for all ${fixture.size} values of the test fixture: "+fixture) {
                 val llts = fixture.foldLeft(LongLinkedTrieSet.empty)((c, n) ⇒ c + n)
                 var notFound = List.empty[Long]
                 fixture.foreach(v ⇒ if (!llts.contains(v)) notFound ::= v)
-                if (notFound.nonEmpty)
-                    fail(s"lookup of ${notFound.head}(${notFound.head.toBinaryString}) failed: $llts")
+                if (notFound.nonEmpty) {
+                    val m = notFound
+                        .map(v ⇒ v+"("+v.toBinaryString+")")
+                        .mkString("contains check failed for: {", ",", s"} in $llts")
+                    fail(m)
+                }
             }
 
         }

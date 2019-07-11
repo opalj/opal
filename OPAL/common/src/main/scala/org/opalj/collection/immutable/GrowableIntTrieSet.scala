@@ -58,7 +58,7 @@ private[immutable] sealed abstract class GrowableIntTrieSetL extends GrowableInt
     }
 }
 
-case object GrowableIntTrieSet0 extends GrowableIntTrieSetL {
+case object GrowableIntTrieSet0 extends GrowableIntTrieSet {
     override def isSingletonSet: Boolean = false
     override def isEmpty: Boolean = true
     override def size: Int = 0
@@ -68,11 +68,8 @@ case object GrowableIntTrieSet0 extends GrowableIntTrieSetL {
     override def contains(value: Int): Boolean = false
 
     override def equals(other: GrowableIntTrieSet): Boolean = other eq this
-    override def hashCode: Int = 0 // compatible to Arrays.hashCode
+    override def hashCode: Int = 0
     override def toString: String = "GrowableIntTrieSet()"
-
-    private[immutable] override def +(i: Int, level: Int): GrowableIntTrieSetN = this.+(i)
-
 }
 
 final case class GrowableIntTrieSet1 private (i: Int) extends GrowableIntTrieSetL {
@@ -91,7 +88,7 @@ final case class GrowableIntTrieSet1 private (i: Int) extends GrowableIntTrieSet
         })
     }
 
-    override def hashCode: Int = 31 + i // compatible to Arrays.hashCode
+    override def hashCode: Int = 31 + i
 
     override def toString: String = s"GrowableIntTrieSet($i)"
 
@@ -100,8 +97,8 @@ final case class GrowableIntTrieSet1 private (i: Int) extends GrowableIntTrieSet
 
 object GrowableIntTrieSet1 {
 
-    // The preallocation of the GrowableIntTrieSet1 data structures costs ~2Mb memory;
-    // however, we use it as the backbone Infrastructure for storing CFGs and
+    // The preallocation of the data structures costs ~2Mb memory;
+    // however, we use it as the backbone infrastructure for storing CFGs and
     // def-use information; in both cases, we generally require HUGE numbers
     // of such sets in the preconfigured ranges and therefore we avoid allocating
     // several hundred million instances (in case of a thorough analysis of the
@@ -158,7 +155,7 @@ private[immutable] final class GrowableIntTrieSet2 private[immutable] (
     override def size: Int = 2
     override def iterator: IntIterator = IntIterator(i1, i2)
     override def foreach[U](f: Int ⇒ U): Unit = { f(i1); f(i2) }
-    override def +(i: Int): GrowableIntTrieSetL = if (i1 == i | i2 == i) this else new GrowableIntTrieSet3(i1, i2, i)
+    override def +(i: Int): GrowableIntTrieSetL = if (i1 == i || i2 == i) this else new GrowableIntTrieSet3(i1, i2, i)
     override def contains(value: Int): Boolean = value == i1 || value == i2
 
     override def equals(other: GrowableIntTrieSet): Boolean = {
@@ -170,7 +167,7 @@ private[immutable] final class GrowableIntTrieSet2 private[immutable] (
         )
     }
 
-    override def hashCode: Int = 31 * (31 + i1) + i2 // compatible to Arrays.hashCode
+    override def hashCode: Int = 31 * (31 + i1) + i2
 
     override def toString: String = s"GrowableIntTrieSet($i1, $i2)"
 

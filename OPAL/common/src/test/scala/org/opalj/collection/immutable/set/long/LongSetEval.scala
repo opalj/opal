@@ -1,84 +1,35 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.collection.immutable
+package org.opalj.collection
+package immutable
+package set 
+package long
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
+import org.scalacheck.Properties
+import org.scalacheck.Prop.forAll
+//import org.scalacheck.Prop.classify
+import org.scalacheck.Prop.BooleanOperators
+//import org.scalacheck.Gen
+//import org.scalacheck.Arbitrary
 import org.scalatest.Matchers
+import org.scalatest.FunSpec
 
 import org.opalj.util.PerformanceEvaluation
 
-@RunWith(classOf[JUnitRunner])
-class GrowableLongTrieSetTest extends FunSpec with Matchers {
-
-    describe("regression tests") {
-
-        it("-149916 + -102540 + -118018 + -91539 + 0") {
-            val s = GrowableLongTrieSet(-149916) + -102540 + -118018 + -91539 + 0
-            assert(s.size == 5)
-            assert(s.contains(-149916))
-            assert(s.contains(-102540))
-            assert(s.contains(-118018))
-            assert(s.contains(-91539))
-            assert(s.contains(0))
-        }
-
-        it("-149916 + -102540 + -118018 + -91539 + 0 + -149916 + -102540 + -118018 + -91539 + 0 ") {
-            val s = GrowableLongTrieSet.empty +
-                -149916 + -102540 + -118018 + -91539 + 0 +
-                -149916 + -102540 + -118018 + -91539 + 0
-            assert(s.size == 5)
-            assert(s.contains(-149916))
-            assert(s.contains(-102540))
-            assert(s.contains(-118018))
-            assert(s.contains(-91539))
-            assert(s.contains(0))
-        }
-    }
-
-    describe("processing an GrowableLongTrieSet which is leaning to the right") {
-
-        val s = GrowableLongTrieSet(8192) + 16384 + 32768 + 65536 + 131072
-
-        it("it should contain the given values") {
-            assert(s.contains(8192))
-            assert(s.contains(16384))
-            assert(s.contains(32768))
-            assert(s.contains(65536))
-            assert(s.contains(131072))
-        }
-    }
-
-    describe(s"performance") {
-
-        describe(s"performance") {
+abstract class LongSetEval extends App {
 
             it("when comparing with Set[Long]") {
-                val opalS = PerformanceEvaluation.memory {
-                    PerformanceEvaluation.time {
-                        val seed = 123456789L
-                        val rngGen = new java.util.Random(seed)
-                        var opalS = org.opalj.collection.immutable.GrowableLongTrieSet.empty
-                        for { i ← 0 to 1000000 } {
-                            val v = rngGen.nextLong()
-                            opalS += v
-                        }
-                        opalS
-                    } { t ⇒ info(s"GrowableLongTrieSet took ${t.toSeconds}") }
-                } { mu ⇒ info(s"GrowableLongTrieSet required $mu bytes") }
+                val seed = 123456789L
+                val rngGen = new java.util.Random(seed)
 
-                val scalaS = PerformanceEvaluation.memory {
-                    PerformanceEvaluation.time {
-                        val seed = 123456789L
-                        val rngGen = new java.util.Random(seed)
-                        var scalaS = Set.empty[Long]
-                        for { i ← 0 to 1000000 } {
-                            val v = rngGen.nextLong()
-                            scalaS += v
-                        }
-                        scalaS
-                    } { t ⇒ info(s"Set[Long] took ${t.toSeconds}") }
-                } { mu ⇒ info(s"Set[Long] required $mu bytes") }
+                var opalS = org.opalj.collection.immutable.LongTrieSet.empty
+                var scalaS = Set.empty[Long]
+                for { i ← 0 to 1000000 } {
+                    val v = rngGen.nextLong()
+                    opalS += v
+                    scalaS += v
+                }
 
                 var opalTotal = 0L
                 PerformanceEvaluation.time {
@@ -90,7 +41,7 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
                     for { v ← scalaS } { scalaTotal += v }
                 } { t ⇒ info(s"Scala ${t.toSeconds} for foreach") }
 
-                assert(opalTotal == scalaTotal)
+                assert(opalTotal == scalaTotal, s"$opalS vs. $scalaS")
             }
         }
 
@@ -107,7 +58,7 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
 
             PerformanceEvaluation.time {
                 for { runs ← 0 until 10000000 } {
-                    var s = org.opalj.collection.immutable.GrowableLongTrieSet.empty
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
                     var hits = 0
                     for { i ← 0 to rngGen.nextInt(8) } {
                         s += setValues(i)
@@ -132,7 +83,7 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
 
             PerformanceEvaluation.time {
                 for { runs ← 0 until 10000000 } {
-                    var s = org.opalj.collection.immutable.GrowableLongTrieSet.empty
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
                     var hits = 0
                     for { i ← 0 to 8 + rngGen.nextInt(8) } {
                         s += setValues(i)
@@ -157,7 +108,7 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
 
             PerformanceEvaluation.time {
                 for { runs ← 0 until 1000000 } {
-                    var s = org.opalj.collection.immutable.GrowableLongTrieSet.empty
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
                     var hits = 0
                     for { i ← 0 to 16 + rngGen.nextInt(16) } {
                         s += setValues(i)
@@ -170,6 +121,8 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
         }
 
         it("for sets with up to 10000 elements creation and contains check should finish in reasonable time") {
+            var sizeOfAllSets: Int = 0
+            var largestSet: Int = 0
             val seed = 123456789L
             val rngGen = new java.util.Random(seed)
             val rngQuery = new java.util.Random(seed)
@@ -178,11 +131,9 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
             val setValues = (for { i ← 1 to 10000 } yield rngGen.nextLong()).toArray
             val queryValues = (for { i ← 1 to 10000 } yield rngQuery.nextLong()).toArray
 
-            var sizeOfAllSets: Int = 0
-            var largestSet: Int = 0
             PerformanceEvaluation.time {
                 for { runs ← 0 until 10000 } {
-                    var s = org.opalj.collection.immutable.GrowableLongTrieSet.empty
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
                     var hits = 0
                     for { i ← 1 to runs } {
                         s += setValues(i)
@@ -202,7 +153,7 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
                 for {
                     set ← 0 until 2500
                 } yield {
-                    var s = org.opalj.collection.immutable.GrowableLongTrieSet.empty
+                    var s = org.opalj.collection.immutable.LongTrieSet.empty
                     for { i ← 0 to 10000 } {
                         s += rngGen.nextLong()
                     }
@@ -220,4 +171,5 @@ class GrowableLongTrieSetTest extends FunSpec with Matchers {
             info(s"overall size: ${allSets.map(_.size).sum}; sum: $total")
         }
     }
+
 }

@@ -505,7 +505,7 @@ class UIDSetTest extends FunSpec with Matchers {
             assert(new UIDSet1(SUID(1)) == UIDSet1(SUID(1)))
 
             assert(
-                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) == UIDSet1(SUID(1))
+                new UIDSetInnerNode[SUID](1, SUID(1), null, null) == UIDSet1(SUID(1))
             )
         }
     }
@@ -556,15 +556,15 @@ class UIDSetTest extends FunSpec with Matchers {
 
         it("should return true for two new sets containing the same values") {
             assert(
-                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
-                    new UIDTrieSetInnerNode[SUID](1, SUID(4), null, null) + SUID(3) + SUID(2) + SUID(1)
+                new UIDSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDSetInnerNode[SUID](1, SUID(4), null, null) + SUID(3) + SUID(2) + SUID(1)
             )
             assert(
-                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
-                    new UIDTrieSetInnerNode[SUID](1, SUID(2), null, null) + SUID(4) + SUID(1) + SUID(3)
+                new UIDSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDSetInnerNode[SUID](1, SUID(2), null, null) + SUID(4) + SUID(1) + SUID(3)
             )
             assert(
-                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                new UIDSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
                     new UIDSet3[SUID](SUID(1), SUID(4), SUID(2)) + SUID(3)
             )
         }
