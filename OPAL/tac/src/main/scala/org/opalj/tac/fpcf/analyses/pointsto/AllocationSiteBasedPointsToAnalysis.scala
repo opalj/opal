@@ -83,13 +83,13 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
                 else
                     createNewPointsToSet()
             case _ ⇒
-                if(mergeExceptions &&
-                    classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)){
+                if (mergeExceptions &&
+                    classHierarchy.isSubtypeOf(allocatedType, ObjectType.Throwable)) {
                     val ptsO = exceptionPointsToSets.get(allocatedType.id)
-                    if(ptsO.isDefined)
-                    ptsO.get
+                    if (ptsO.isDefined)
+                        ptsO.get
                     else {
-                        val newPts = new AllocationSitePointsToSet1(allocatedType.id << 38 | 0x3FFFFFFFFFL, allocatedType)
+                        val newPts = new AllocationSitePointsToSet1(allocatedType.id.toLong << 38 | 0x3FFFFFFFFFL, allocatedType)
                         exceptionPointsToSets += allocatedType.id → newPts
                         newPts
                     }
