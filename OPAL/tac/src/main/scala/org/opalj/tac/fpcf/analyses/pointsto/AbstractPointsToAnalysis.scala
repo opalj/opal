@@ -56,8 +56,8 @@ case class ArrayEntity[ElementType](element: ElementType)
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-        with ReachableMethodAnalysis {
+    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+    with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
