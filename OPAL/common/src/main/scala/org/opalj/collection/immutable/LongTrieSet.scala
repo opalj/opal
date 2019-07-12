@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection
 package immutable
-package set
-package long
-package i1
+
+import scala.annotation.tailrec
 
 import org.opalj.collection.LongIterator
+import org.opalj.collection.mutable.RefArrayStack
 import java.lang.Long.{hashCode ⇒ lHashCode}
 
 sealed abstract class LongTrieSet extends LongSet { intSet ⇒
@@ -310,34 +310,90 @@ private[immutable] final class LongTrieSetN(
     override def forall(p: Long ⇒ Boolean): Boolean = root.forall(p)
     override def foreach[U](f: Long ⇒ U): Unit = root.foreach(f)
 
-    override def iterator: LongIterator = ???
-    /*
     override def iterator: LongIterator = new LongIterator {
-            private[this] var leafNodes : LongTrieSetLeaf = null
-            private[this] var index = 0
-            private[this] val nodes = RefArrayStack(root,Math.min(16,size/2))
-            private[this] def moveToNextLeafNode() : Unit = {
-                innerNodes.pop() match {
-                    case n : LongTrieSetLeaf =>
-                        leafNode =
-                        index = 0
-                }
+        private[this] var leafNode: LongTrieSetLeaf = null
+        private[this] var index = 0
+        private[this] val nodes = new RefArrayStack(root, Math.min(16, size / 2))
+        @tailrec private[this] def moveToNextLeafNode(): Unit = {
+            if (nodes.isEmpty) {
+                leafNode = null
+                return ;
             }
-            moveToNextLeafNode
-            def hasNext: Boolean = leafNode ne null
-            def next: Long = {
-                var index = this.index
-                val i = leafNode(index)
-                index += 1
-                if (index >= leafNode.size) {
-                    moveToNextLeafNode()
-                } else {
-                    this.index = index
-                }
-                i
+            (nodes.pop(): @unchecked) match {
+                case n: LongTrieSetLeaf ⇒
+                    leafNode = n
+                    index = 0
+                    return ;
+
+                case n: LongTrieSetNode1 ⇒
+                    nodes.push(n.n1)
+
+                case n: LongTrieSetNode2 ⇒
+                    nodes.push(n.n1)
+                    nodes.push(n.n2)
+
+                case n: LongTrieSetNode3 ⇒
+                    nodes.push(n.n1)
+                    nodes.push(n.n2)
+                    nodes.push(n.n3)
+
+                case n: LongTrieSetNode4 ⇒
+                    nodes.push(n.n1)
+                    nodes.push(n.n2)
+                    nodes.push(n.n3)
+                    nodes.push(n.n4)
+
+                case n: LongTrieSetNode5 ⇒
+                    nodes.push(n.n1)
+                    nodes.push(n.n2)
+                    nodes.push(n.n3)
+                    nodes.push(n.n4)
+                    nodes.push(n.n5)
+
+                case n: LongTrieSetNode6 ⇒
+                    nodes.push(n.n1)
+                    nodes.push(n.n2)
+                    nodes.push(n.n3)
+                    nodes.push(n.n4)
+                    nodes.push(n.n5)
+                    nodes.push(n.n6)
+
+                case n: LongTrieSetNode7 ⇒
+                    nodes.push(n.n1)
+                    nodes.push(n.n2)
+                    nodes.push(n.n3)
+                    nodes.push(n.n4)
+                    nodes.push(n.n5)
+                    nodes.push(n.n6)
+                    nodes.push(n.n7)
+
+                case n: LongTrieSetNode8 ⇒
+                    nodes.push(n.n1)
+                    nodes.push(n.n2)
+                    nodes.push(n.n3)
+                    nodes.push(n.n4)
+                    nodes.push(n.n5)
+                    nodes.push(n.n6)
+                    nodes.push(n.n7)
+                    nodes.push(n.n8)
             }
+            moveToNextLeafNode()
+        }
+        moveToNextLeafNode()
+        def hasNext: Boolean = leafNode ne null
+        def next: Long = {
+            var index = this.index
+            val i = leafNode(index)
+            index += 1
+            if (index >= leafNode.size) {
+                moveToNextLeafNode()
+            } else {
+                this.index = index
+            }
+            i
+        }
     }
-*/
+
     override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = root.foldLeft(z)(op)
 
     override def equals(other: Any): Boolean = {
@@ -419,7 +475,7 @@ private[immutable] final class LongTrieSetNode1(
 
 }
 
-private[immutable] abstract class LongTrieSetNode2_7 extends LongTrieSetNode {
+private[immutable] sealed abstract class LongTrieSetNode2_7 extends LongTrieSetNode {
 
     /**
      * The mapping between the three (relevant) bits of the value to the slot where the value

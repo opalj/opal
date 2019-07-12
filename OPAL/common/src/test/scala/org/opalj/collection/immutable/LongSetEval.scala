@@ -1,12 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection
 package immutable
-package set
-package long
 
 import org.opalj.util.PerformanceEvaluation
 
 abstract class LongSetEval {
+
+    println("Please note that the evaluation code itself incurs some constant"+
+        " overhead; hence, if an evaluation of the data structure X is twice as fast"+
+        " as the evaluation of Y the underlying data structure is faster actually"+
+        " faster than just two times.")
 
     final val numberOfSetsWithSize3orLess = 10000000
 
@@ -14,17 +17,20 @@ abstract class LongSetEval {
         empty:    () ⇒ T,
         size:     (T) ⇒ Int,
         add:      (T) ⇒ Long ⇒ T,
-        contains: (T) ⇒ Long ⇒ Boolean
+        contains: (T) ⇒ Long ⇒ Boolean,
+        foreach:  (T) ⇒ ((Long ⇒ Unit) ⇒ Unit),
+        // forFirstN:  (T) ⇒ ((Int => (Long ⇒ Unit)) ⇒ Unit)
+        foldLeft: (T) ⇒ (Long ⇒ ((Long, Long) ⇒ Long) ⇒ Long)
     ): Unit = {
 
-        val rngSeed = 123456789L
-        val rngGen = new java.util.Random(rngSeed)
+        def createSets(maxSize: Int, numberOfSets: Int): List[T] = {
+            val rngSeed = 123456789L
+            val rngGen = new java.util.Random(rngSeed)
 
-        def createSets(maxSize: Int, numberOfSets: Int): Unit = {
-            println(s"creating $numberOfSets sets with $maxSize elements...")
+            println(s"$numberOfSets sets with $maxSize elements...")
             val allSets = PerformanceEvaluation.memory {
                 PerformanceEvaluation.time {
-                    var r = List.empty[T]
+                    var allSets = List.empty[T]
                     var i = 0
                     do {
                         var l = 0
@@ -33,18 +39,65 @@ abstract class LongSetEval {
                             s = add(s)(rngGen.nextLong)
                             l += 1
                         } while (l < maxSize)
-                        r ::= s
+                        allSets ::= s
                         i += 1
                     } while (i < numberOfSets)
-                    r
-                } { t ⇒ println(s"\ttook: ${t.toSeconds}") }
+                    allSets
+                } { t ⇒ println(s"\tcreation took: ${t.toSeconds}") }
             } { m ⇒ println(s"\trequired: ${m / 1024 / 1024} MB") }
             println(s"\tand stores: ${allSets.map(size(_)).sum} elements")
+
+            allSets
         }
 
-        createSets(maxSize = 3, numberOfSetsWithSize3orLess)
-        createSets(maxSize = 16, numberOfSetsWithSize3orLess / 10)
-        createSets(maxSize = 5000, numberOfSetsWithSize3orLess / 1000)
+        def evalForeach(l: List[T]): Unit = {
+            var i = 0L
+            PerformanceEvaluation.time {
+                l.foreach { s ⇒ foreach(s)(v ⇒ i += v) }
+            } { t ⇒ println(s"\tforeach took: ${t.toSeconds} (sum = $i)") }
+        }
+
+        def evalFoldLeft(l: List[T]): Unit = {
+            var i = 0L
+            PerformanceEvaluation.time {
+                l.foreach { n ⇒ i += foldLeft(n)(0L)(_ + _) }
+            } { t ⇒ println(s"\tfoldLeft took: ${t.toSeconds}  (sum = $i)") }
+        }
+
+        def evalContains(l: List[T]): Unit = {
+            val rngSeed = 123456789L
+            val rngGen = new java.util.Random(rngSeed)
+            // RECALL that all sets contain unique values... there is no repetition!
+
+            var containsInverse = true
+            PerformanceEvaluation.time {
+                l.foreach { s ⇒
+                    val max = size(s)
+                    var j = 0
+                    while (j < max) {
+                        val v = rngGen.nextLong
+                        if (!contains(s)(v)) throw new UnknownError(s"$s doesn't contain $v")
+                        containsInverse &&= contains(s)(~v)
+                        j += 1
+                    }
+                }
+            } { t ⇒ println(s"\tcontains took: ${t.toSeconds} (containsInverse = $containsInverse)") }
+        }
+
+        val allSets3 = createSets(maxSize = 3, numberOfSetsWithSize3orLess)
+        evalForeach(allSets3)
+        evalFoldLeft(allSets3)
+        evalContains(allSets3.reverse)
+
+        val allSets16 = createSets(maxSize = 16, numberOfSetsWithSize3orLess / 10)
+        evalForeach(allSets16)
+        evalFoldLeft(allSets16)
+        evalContains(allSets16.reverse)
+
+        val allSets5000 = createSets(maxSize = 5000, numberOfSetsWithSize3orLess / 1000)
+        evalForeach(allSets5000)
+        evalFoldLeft(allSets5000)
+        evalContains(allSets5000.reverse)
     }
 
     /*

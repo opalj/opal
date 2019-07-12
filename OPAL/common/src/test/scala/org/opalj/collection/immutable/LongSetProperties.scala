@@ -1,8 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection
 package immutable
-package set
-package long
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner

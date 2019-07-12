@@ -1,8 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection
 package immutable
-package set
-package long
 
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
@@ -104,7 +102,7 @@ abstract class LongSetTest extends FunSpec {
             List[Long](-103806, -99428, -15784, -6124, 48020),
             List[Long](-134206, -128016, -124763, -106014, -99624, -97374, -90508, -79349, -77213, -20404, 4063, 6348, 14217, 21395, 23943, 25328, 30684, 33875),
             List[Long](-149916L, -102540L, -118018L, -91539L, 0L),
-            List[Long](8192, 16384, 32768, 65536, 131072),
+            List[Long](8192, 16384, 32768, 65536, 131072)
         )
 
         for { fixture ← fixtures } {

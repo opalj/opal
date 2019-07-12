@@ -5,7 +5,7 @@ import java.util.function.LongPredicate
 import java.util.function.LongConsumer
 
 import scala.collection.AbstractIterator
-import org.opalj.collection.immutable.set.long.i1.LongTrieSet
+import org.opalj.collection.immutable.LongTrieSet
 
 /**
  * Iterator over a collection of longs; basically all methods are overridden to avoid

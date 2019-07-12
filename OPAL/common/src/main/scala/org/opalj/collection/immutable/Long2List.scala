@@ -301,7 +301,9 @@ private[immutable] final class Long2List3(
 
     override def foreach[U](f: Long ⇒ U): Unit = { f(v1); f(v2); f(v3); restForeach(f) }
 
-    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = restFoldLeft(op(op(op(z, v1), v2), v3))(op)
+    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = {
+        restFoldLeft(op(op(op(z, v1), v2), v3))(op)
+    }
 
     override def forall(p: Long ⇒ Boolean): Boolean = p(v1) && p(v2) && p(v3) && restForall(p)
 
@@ -354,9 +356,13 @@ private[immutable] final class Long2List4(
 
     override def isSingletonList: Boolean = false
 
-    override def foreach[U](f: Long ⇒ U): Unit = { f(v1); f(v2); f(v3); f(v4); restForeach(f) }
+    override def foreach[U](f: Long ⇒ U): Unit = {
+        f(v1); f(v2); f(v3); f(v4); restForeach(f)
+    }
 
-    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = restFoldLeft(op(op(op(op(z, v1), v2), v3), v4))(op)
+    override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = {
+        restFoldLeft(op(op(op(op(z, v1), v2), v3), v4))(op)
+    }
 
     override def forall(p: Long ⇒ Boolean): Boolean = {
         p(v1) && p(v2) && p(v3) && p(v4) && restForall(p)
@@ -393,7 +399,6 @@ private[immutable] final class Long2List4(
             case that: Long2List4 ⇒
                 (that eq this) || (
                     that.v1 == v1 && that.v2 == v2 && that.v3 == v3 && that.v4 == v4 &&
-
                     restEquals(that.rest)
                 )
             case _ ⇒ false
@@ -401,6 +406,10 @@ private[immutable] final class Long2List4(
     }
 
     override def hashCode(): Int = {
-        JLong.hashCode(v1) * 31 + JLong.hashCode(v2) * 31 + JLong.hashCode(v3) * 31 + JLong.hashCode(v4) * 31 + restHashCode()
+        JLong.hashCode(v1) * 31 +
+            JLong.hashCode(v2) * 31 +
+            JLong.hashCode(v3) * 31 +
+            JLong.hashCode(v4) * 31 +
+            restHashCode()
     }
 }

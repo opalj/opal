@@ -1,40 +1,48 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection
 package immutable
-package set
-package long
-package i1
 
 import org.opalj.collection.LongIterator
 import java.lang.Long.{hashCode ⇒ lHashCode}
 
 /**
- * An immutable linked trie set which can store all values except Long.MinValue.
+ * An immutable set of long values which maintains an additional list to enable
+ * an access of the values in insertion order (newest first).
+ * Additionally, the list is used to provide more efficient iterate and foreach
+ * methods when compared to doing both on the underlying trie itself.
+ *
+ * Compared to the LongLinkedTrieSet this implementation uses less memory and
+ * is faster to create; however, the LongLinkedTrieSet offers faster contains
+ * and foreach methods than this implementation. Hence, this representation
+ * is faster to create and requires significantly less memory. However,
+ * accessing the data structure is generally slower. (Internally every node in
+ * the trie uses a lookup table to determine the successor node w.r.t. the
+ * next bits of a value; this requires an indirection which costs time.)
  */
-sealed abstract class LongLinkedTrieSet extends LongLinkedSet { intSet ⇒
+sealed abstract class LongTrieSetWithList extends LongLinkedSet { intSet ⇒
 
-    final type ThisSet = LongLinkedTrieSet
+    final type ThisSet = LongTrieSetWithList
 
     override def equals(other: Any): Boolean
     override def hashCode: Int
 }
 
-object LongLinkedTrieSet {
+object LongTrieSetWithList {
 
-    def empty: LongLinkedTrieSet = LongLinkedTrieSet0
+    def empty: LongTrieSetWithList = LongTrieSetWithList0
 
-    def apply(v: Long): LongLinkedTrieSet = new LongLinkedTrieSet1(v)
+    def apply(v: Long): LongTrieSetWithList = new LongTrieSetWithList1(v)
 
-    def apply(head: Long, last: Long): LongLinkedTrieSet = {
+    def apply(head: Long, last: Long): LongTrieSetWithList = {
         if (head == last)
-            new LongLinkedTrieSet1(head)
+            new LongTrieSetWithList1(head)
         else
-            new LongLinkedTrieSet2(head, last)
+            new LongTrieSetWithList2(head, last)
     }
 
 }
 
-private[immutable] case object LongLinkedTrieSet0 extends LongLinkedTrieSet {
+private[immutable] case object LongTrieSetWithList0 extends LongTrieSetWithList {
     override def isSingletonSet: Boolean = false
     override def isEmpty: Boolean = true
     override def size: Int = 0
@@ -47,7 +55,7 @@ private[immutable] case object LongLinkedTrieSet0 extends LongLinkedTrieSet {
     override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = z
     override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = { /*nothing to do*/ }
 
-    override def +(i: Long): LongLinkedTrieSet1 = new LongLinkedTrieSet1(i)
+    override def +(i: Long): LongTrieSetWithList1 = new LongTrieSetWithList1(i)
 
     override def equals(other: Any): Boolean = {
         other match {
@@ -56,10 +64,12 @@ private[immutable] case object LongLinkedTrieSet0 extends LongLinkedTrieSet {
         }
     }
     override def hashCode: Int = 0
-    override def toString: String = "LongLinkedTrieSet()"
+    override def toString: String = "LongTrieSetWithList()"
 }
 
-private[immutable] final class LongLinkedTrieSet1(val i1: Long) extends LongLinkedTrieSet {
+private[immutable] final class LongTrieSetWithList1 private[immutable] (
+        private[immutable] final val i1: Long
+) extends LongTrieSetWithList {
 
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = true
@@ -76,29 +86,30 @@ private[immutable] final class LongLinkedTrieSet1(val i1: Long) extends LongLink
         f(i1)
     }
 
-    override def +(i: Long): LongLinkedTrieSet = {
+    override def +(i: Long): LongTrieSetWithList = {
         val i1 = this.i1
         if (i1 == i)
             this
         else {
-            new LongLinkedTrieSet2(i, i1)
+            new LongTrieSetWithList2(i, i1)
         }
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LongLinkedTrieSet1 ⇒ (that eq this) || this.i1 == that.i1
-            case that                     ⇒ false
+            case that: LongTrieSetWithList1 ⇒ (that eq this) || this.i1 == that.i1
+            case that                       ⇒ false
         }
     }
     override def hashCode: Int = 31 + lHashCode(i1)
-    override def toString: String = s"LongLinkedTrieSet($i1)"
+    override def toString: String = s"LongTrieSetWithList($i1)"
 
 }
 
-private[immutable] final class LongLinkedTrieSet2(
-        val i1: Long, val i2: Long
-) extends LongLinkedTrieSet {
+private[immutable] final class LongTrieSetWithList2 private[immutable] (
+        private[immutable] final val i1: Long,
+        private[immutable] final val i2: Long
+) extends LongTrieSetWithList {
 
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false
@@ -117,7 +128,7 @@ private[immutable] final class LongLinkedTrieSet2(
         f(i2)
     }
 
-    override def +(i: Long): LongLinkedTrieSet = {
+    override def +(i: Long): LongTrieSetWithList = {
         val i1 = this.i1
         if (i1 == i)
             return this;
@@ -126,23 +137,25 @@ private[immutable] final class LongLinkedTrieSet2(
         if (i2 == i)
             return this;
 
-        new LongLinkedTrieSet3(i, i1, i2)
+        new LongTrieSetWithList3(i, i1, i2)
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LongLinkedTrieSet2 ⇒ (that eq this) || this.i1 == that.i1 && this.i2 == that.i2
-            case that                     ⇒ false
+            case that: LongTrieSetWithList2 ⇒ (that eq this) || this.i1 == that.i1 && this.i2 == that.i2
+            case that                       ⇒ false
         }
     }
     override def hashCode: Int = 31 * (31 + lHashCode(i1)) + lHashCode(i2)
-    override def toString: String = s"LongLinkedTrieSet($i1, $i2)"
+    override def toString: String = s"LongTrieSetWithList($i1, $i2)"
 
 }
 
-private[immutable] final class LongLinkedTrieSet3(
-        val i1: Long, val i2: Long, val i3: Long
-) extends LongLinkedTrieSet {
+private[immutable] final class LongTrieSetWithList3 private[immutable] (
+        private[immutable] final val i1: Long,
+        private[immutable] final val i2: Long,
+        private[immutable] final val i3: Long
+) extends LongTrieSetWithList {
 
     override def size: Int = 3
     override def isEmpty: Boolean = false
@@ -163,11 +176,11 @@ private[immutable] final class LongLinkedTrieSet3(
         f(i3)
     }
 
-    override def +(i: Long): LongLinkedTrieSet = {
+    override def +(i: Long): LongTrieSetWithList = {
         if (i == i1 || i == i2 || i == i3)
             this
         else
-            new LongLinkedTrieSetN(4, this.grow(i, 0), Long2List(i, i1, i2, i3))
+            new LongTrieSetWithListN(4, this.grow(i, 0), Long2List(i, i1, i2, i3))
     }
 
     private[this] def grow(i: Long, level: Int): LongTrieSetNode = {
@@ -181,22 +194,22 @@ private[immutable] final class LongLinkedTrieSet3(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LongLinkedTrieSet3 ⇒
+            case that: LongTrieSetWithList3 ⇒
                 (this eq that) || (i1 == that.i1 && i2 == that.i2 && i3 == that.i3)
             case _ ⇒
                 false
         }
     }
     override def hashCode: Int = 31 * (31 * (31 + lHashCode(i1)) + lHashCode(i2)) + lHashCode(i3)
-    override def toString: String = s"LongLinkedTrieSet($i1, $i2, $i3)"
+    override def toString: String = s"LongTrieSetWithList($i1, $i2, $i3)"
 
 }
 
-private[immutable] final class LongLinkedTrieSetN(
+private[immutable] final class LongTrieSetWithListN(
         final val size: Int,
         final val root: LongTrieSetNode,
         final val list: Long2List
-) extends LongLinkedTrieSet {
+) extends LongTrieSetWithList {
 
     // assert(size >= 4)
 
@@ -211,23 +224,23 @@ private[immutable] final class LongLinkedTrieSetN(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: LongLinkedTrieSetN ⇒
+            case that: LongTrieSetWithListN ⇒
                 (that eq this) || (that.size == this.size && this.list == that.list)
             case _ ⇒ false
         }
     }
     override def hashCode: Int = list.hashCode * 31 + size
 
-    override def +(i: Long): LongLinkedTrieSet = {
+    override def +(i: Long): LongTrieSetWithList = {
         val root = this.root
         val newRoot = root + (i, 0)
         if (newRoot ne root) {
-            new LongLinkedTrieSetN(size + 1, newRoot, i +: list)
+            new LongTrieSetWithListN(size + 1, newRoot, i +: list)
         } else {
             this
         }
     }
 
-    override def toString: String = s"LongLinkedTrieSet(#$size, $list)"
+    override def toString: String = s"LongTrieSetWithList(#$size, $list)"
 
 }
