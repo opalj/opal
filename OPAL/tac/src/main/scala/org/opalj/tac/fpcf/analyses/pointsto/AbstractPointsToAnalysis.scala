@@ -166,7 +166,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
                             // TODO: Refactor
-                            if (classHierarchy.subtypeInformation(field.classFile.thisType).get.containsId(allocationSiteLongToTypeId(as.asInstanceOf[Long]))) {
+                            val fieldClassType = field.classFile.thisType
+                            val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                            if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
                                 state.includeSharedPointsToSet(
                                     defSiteObject,
                                     // IMPROVE: Use LongRefPair to avoid boxing
@@ -286,8 +288,10 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.addPutFieldEntity(fakeEntity)
                     currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
                         pts.forNewestNElements(pts.numElements) { as ⇒
-                            // TODO: refactor
-                            if (classHierarchy.subtypeInformation(field.classFile.thisType).get.containsId(allocationSiteLongToTypeId(as.asInstanceOf[Long]))) {
+                            // TODO: Refactor
+                            val fieldClassType = field.classFile.thisType
+                            val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                            if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
                                 val fieldEntity = (as, field)
                                 state.includeSharedPointsToSets(
                                     fieldEntity,
@@ -721,16 +725,21 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 var results: List[ProperPropertyComputationResult] = List.empty
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
-                    results ::= InterimPartialResult(
-                        rhsDefSitesEPS,
-                        continuationForShared(
-                            (as, field),
-                            rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
-                            { t: ReferenceType ⇒
-                                classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
-                            }
+                    // TODO: Refactor
+                    val fieldClassType = field.classFile.thisType
+                    val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                    if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                        results ::= InterimPartialResult(
+                            rhsDefSitesEPS,
+                            continuationForShared(
+                                (as, field),
+                                rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
+                                { t: ReferenceType ⇒
+                                    classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
+                                }
+                            )
                         )
-                    )
+                    }
                 }
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
@@ -790,9 +799,14 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 val newDependees = updatedDependees(eps, dependees)
                 var nextDependees: List[SomeEPK] = Nil
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
-                    val epk = EPK((as, field), pointsToPropertyKey)
-                    ps(epk)
-                    nextDependees ::= epk
+                    // TODO: Refactor
+                    val fieldClassType = field.classFile.thisType
+                    val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                    if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                        val epk = EPK((as, field), pointsToPropertyKey)
+                        ps(epk)
+                        nextDependees ::= epk
+                    }
                 }
 
                 var results: List[ProperPropertyComputationResult] = Nil
