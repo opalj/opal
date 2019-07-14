@@ -3,11 +3,14 @@ package org.opalj.fpcf.fixtures.callgraph.xta;
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 
 public class FieldFlows {
+    private static void sink(Object obj) { }
+
     @AvailableTypes({"java/lang/String", "[Ljava/lang/String;"})
     public static void main(String[] args) {
         staticFieldFlowTest();
         staticArrayFieldFlowTest();
         shadowedFieldTest();
+        genericFieldTest();
     }
 
     // === Type flow through fields ===
@@ -47,6 +50,7 @@ public class FieldFlows {
             "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A2"})
     private static void staticFieldFlowTest_Read() {
         A obj = field;
+        sink(obj);
     }
 
     // === Array field test ===
@@ -68,6 +72,7 @@ public class FieldFlows {
     @AvailableTypes("[Lorg/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A1;")
     private static void staticArrayFieldFlowTest_Read() {
         Object obj = field2;
+        sink(obj);
     }
 
     // === Shadowed field test ===
@@ -98,6 +103,7 @@ public class FieldFlows {
             "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$B1"})
     public static void shadowedFieldTest_sink1(B b) {
         Object obj = b.field;
+        sink(obj);
     }
 
     @AvailableTypes({
@@ -106,6 +112,47 @@ public class FieldFlows {
         // Since no actual value is written to the B1.field, this read will return null.
         // Thus, no subtype of A is available in this method's type set!
         Object obj = b1.field;
+        sink(obj);
+    }
+
+    // === Generic field ===
+    private static class Box<T> {
+        public T field;
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$Box",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$B"})
+    public static void genericFieldTest() {
+        Box<A> box1 = new Box<>();
+        box1.field = new A();
+
+        Box<B> box2 = new Box<>();
+        box2.field = new B();
+
+        genericFieldTest_sink(box1);
+        genericFieldTest_sink2(box1, box2);
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$Box",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A"})
+    public static void genericFieldTest_sink(Box<A> box) {
+        // Compiler should insert a checkcast here from which we can get the "actual" field type.
+        A obj = box.field;
+        sink(obj);
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$Box",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$A",
+            "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows$B"})
+    public static void genericFieldTest_sink2(Box<A> box1, Box<B> box2) {
+        A obj1 = box1.field;
+        B obj2 = box2.field;
+        sink(obj1);
+        sink(obj2);
     }
 
     // === Common classes ===

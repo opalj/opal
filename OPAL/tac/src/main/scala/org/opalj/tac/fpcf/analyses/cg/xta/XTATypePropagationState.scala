@@ -6,83 +6,45 @@ package analyses
 package cg
 package xta
 
-import scala.collection.mutable
-
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.SomeEOptionP
-import org.opalj.br.ArrayType
+import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
-import org.opalj.br.Field
 import org.opalj.br.Method
+import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.DeclaredMethod
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.properties.TACAI
 
-// Entity which is used for types flow from/to the "external world".
-// TODO AB probably should move this somewhere else.
-object ExternalWorld
+import scala.collection.mutable
 
 class XTATypePropagationState(
         override val method:                       DefinedMethod,
+        val setEntity:                             SetEntity,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
 
-        private[this] var _ownInstantiatedTypesDependee: EOptionP[DefinedMethod, InstantiatedTypes],
-
-        private[this] var _calleeDependee: EOptionP[DefinedMethod, Callees],
-
-        // Field stuff
-        // TODO AB optimize...
-        private[this] var _writtenFields: Set[Field],
-        // we only need type updates of fields the method reads
-        private[this] var _readFieldTypeDependees: mutable.Map[Field, EOptionP[Field, InstantiatedTypes]],
-
-        // Array stuff
-        val methodWritesArrays: Boolean,
-        val methodReadsArrays:  Boolean
+        // TODO AB Maybe this can be incorporated into the _backwardPropagationDependees?
+        private[this] var _ownInstantiatedTypesDependee: EOptionP[SetEntity, InstantiatedTypes],
+        private[this] var _calleeDependee:               EOptionP[DefinedMethod, Callees]
 ) extends TACAIBasedAnalysisState {
 
-    // TODO AB is there a more efficient data type for this?
-    // TODO AB maybe we also need to store the PC of the callsite here, in order to optimize for returned values which are ignored
-    private[this] var _seenCallees: mutable.Set[DeclaredMethod] = mutable.Set.empty
-
-    // TODO AB is there a better data type for this?
-    private[this] var _calleeSeenTypes: mutable.LongMap[Int] = mutable.LongMap.empty
-
-    // TODO AB Can these dependees become final? Probably not!
-    // TODO AB Does this have to be a map?
-    private[this] var _calleeInstantiatedTypesDependees: mutable.Map[DefinedMethod, EOptionP[DefinedMethod, InstantiatedTypes]] = mutable.Map.empty
-
-    // NOTE AB functionally the same as calleeSeenTypes, but Field does not have an ID we can use
-    private[this] var _readFieldSeenTypes: mutable.Map[Field, Int] = mutable.Map.empty
-
-    // Note: ArrayType uses a cache internally, so identical array types will be represented by the same object.
-    private[this] var _readArraysTypeDependees: mutable.Map[ArrayType, EOptionP[ArrayType, InstantiatedTypes]] = mutable.Map.empty
-    private[this] var _readArraysSeenTypes: mutable.Map[ArrayType, Int] = mutable.Map.empty
+    // Array stuff
+    var methodWritesArrays: Boolean = false
+    var methodReadsArrays: Boolean = false
 
     /////////////////////////////////////////////
     //                                         //
-    //          instantiated types             //
+    //           own types (method)            //
     //                                         //
     /////////////////////////////////////////////
 
-    def updateOwnInstantiatedTypesDependee(
-        ownInstantiatedTypesDependee: EOptionP[DefinedMethod, InstantiatedTypes]
-    ): Unit = {
-        _ownInstantiatedTypesDependee = ownInstantiatedTypesDependee
+    def updateOwnInstantiatedTypesDependee(eps: EOptionP[SetEntity, InstantiatedTypes]): Unit = {
+        _ownInstantiatedTypesDependee = eps
     }
 
-    def ownInstantiatedTypesDependee: Option[EOptionP[DefinedMethod, InstantiatedTypes]] = {
-        if (_ownInstantiatedTypesDependee.isRefinable)
-            Some(_ownInstantiatedTypesDependee)
-        else
-            None
-    }
-
-    def ownInstantiatedTypesUB: UIDSet[ReferenceType] = {
+    def ownInstantiatedTypes: UIDSet[ReferenceType] = {
         if (_ownInstantiatedTypesDependee.hasUBP)
             _ownInstantiatedTypesDependee.ub.types
         else
@@ -99,9 +61,18 @@ class XTATypePropagationState(
 
     /////////////////////////////////////////////
     //                                         //
-    //                callees                  //
+    //                 callees                 //
     //                                         //
     /////////////////////////////////////////////
+
+    private[this] var _seenCallees: mutable.Set[(PC, DeclaredMethod)] = mutable.Set.empty
+
+    def isSeenCallee(pc: PC, callee: DeclaredMethod): Boolean = _seenCallees.contains((pc, callee))
+
+    def addSeenCallee(pc: PC, callee: DeclaredMethod): Unit = {
+        assert(!isSeenCallee(pc, callee))
+        _seenCallees.add((pc, callee))
+    }
 
     def calleeDependee: Option[EOptionP[DefinedMethod, Callees]] = {
         if (_calleeDependee.isRefinable) {
@@ -115,96 +86,97 @@ class XTATypePropagationState(
         _calleeDependee = calleeDependee
     }
 
-    def seenCallees: Set[DeclaredMethod] = {
-        // TODO AB probably not very efficient
-        _seenCallees.toSet
-    }
+    /////////////////////////////////////////////
+    //                                         //
+    //           forward propagation           //
+    //                                         //
+    /////////////////////////////////////////////
 
-    def updateSeenCallees(newCallees: Set[DeclaredMethod]): Unit = {
-        _seenCallees ++= newCallees
-    }
+    private[this] var _forwardPropagationEntities: mutable.Set[SetEntity] = mutable.Set.empty
+    private[this] var _forwardPropagationFilters: mutable.Map[SetEntity, Set[ReferenceType]] = mutable.Map.empty
 
-    def calleeSeenTypes(callee: DefinedMethod): Int = {
-        _calleeSeenTypes(callee.id.toLong)
-    }
+    def forwardPropagationEntities: Traversable[SetEntity] = _forwardPropagationEntities
 
-    def updateCalleeSeenTypes(callee: DefinedMethod, numberOfTypes: Int): Unit = {
-        assert(numberOfTypes >= _calleeSeenTypes.getOrElse(callee.id.toLong, 0))
-        _calleeSeenTypes.update(callee.id.toLong, numberOfTypes)
-    }
+    def forwardPropagationFilters(setEntity: SetEntity): Set[ReferenceType] = _forwardPropagationFilters(setEntity)
 
-    def updateCalleeInstantiatedTypesDependee(
-        eps: EOptionP[DefinedMethod, InstantiatedTypes]
-    ): Unit = {
-        _calleeInstantiatedTypesDependees.update(eps.e, eps)
+    /**
+     * Registers a new set entity to consider for forward propagation alongside a set of filters. If the
+     * set entity was already registered, the new type filters are added to the existing ones.
+     *
+     * @param setEntity The set entity to register.
+     * @param typeFilters Set of types to filter for forward propagation.
+     * @return True if the set of filters has changed compared to the ones which were previously known, otherwise
+     *         False.
+     */
+    def registerForwardPropagationEntity(setEntity: SetEntity, typeFilters: Set[ReferenceType]): Boolean = {
+        assert(typeFilters.nonEmpty)
+        val alreadyExists = _forwardPropagationEntities.contains(setEntity)
+        if (!alreadyExists) {
+            _forwardPropagationEntities += setEntity
+            _forwardPropagationFilters += setEntity -> typeFilters
+            true
+        } else {
+            val existingTypeFilters = _forwardPropagationFilters(setEntity)
+            // TODO AB Implement compacting! E.g. if we have one Object in the list of filters, all other filters are not needed.
+            val newFilters = existingTypeFilters union typeFilters
+            _forwardPropagationFilters.update(setEntity, newFilters)
+            newFilters != existingTypeFilters
+        }
     }
 
     /////////////////////////////////////////////
     //                                         //
-    //                 fields                  //
+    //           backward propagation          //
     //                                         //
     /////////////////////////////////////////////
 
-    def writtenFields: Set[Field] = _writtenFields
+    private[this] var _backwardPropagationDependees: mutable.Map[SetEntity, EOptionP[SetEntity, InstantiatedTypes]] =
+        mutable.Map.empty
+    private[this] var _backwardPropagationFilters: mutable.Map[SetEntity, Set[ReferenceType]] = mutable.Map.empty
 
-    def updateAccessedFieldInstantiatedTypesDependee(
-        eps: EOptionP[Field, InstantiatedTypes]
-    ): Unit = {
-        _readFieldTypeDependees.update(eps.e, eps)
+    // TODO AB Do we even need this? Maybe we can get this number from the old dependee.
+    private[this] var _backwardPropagationSeenTypes: mutable.Map[SetEntity, Int] = mutable.Map.empty
+
+    def backwardPropagationDependeeInstantiatedTypes(setEntity: SetEntity): UIDSet[ReferenceType] = {
+        val dependee = _backwardPropagationDependees(setEntity)
+        if (dependee.hasUBP)
+            dependee.ub.types
+        else
+            UIDSet.empty
     }
 
-    def fieldSeenTypes(field: Field): Int = {
-        _readFieldSeenTypes.getOrElse(field, 0)
+    def backwardPropagationDependeeIsRegistered(setEntity: SetEntity): Boolean =
+        _backwardPropagationDependees.contains(setEntity)
+
+    def backwardPropagationFilters(setEntity: SetEntity): Traversable[ReferenceType] =
+        _backwardPropagationFilters(setEntity)
+
+    def updateBackwardPropagationFilters(setEntity: SetEntity, typeFilters: Set[ReferenceType]): Boolean = {
+        assert(typeFilters.nonEmpty)
+        val alreadyExists = _backwardPropagationFilters.contains(setEntity)
+        if (!alreadyExists) {
+            _backwardPropagationFilters += setEntity -> typeFilters
+            true
+        } else {
+            val existingTypeFilters = _backwardPropagationFilters(setEntity)
+            // TODO AB Implement compacting! E.g. if we have one Object in the list of filters, all other filters are not needed.
+            val newFilters = existingTypeFilters union typeFilters
+            _backwardPropagationFilters.update(setEntity, newFilters)
+            newFilters != existingTypeFilters
+        }
     }
 
-    def updateReadFieldSeenTypes(field: Field, numberOfTypes: Int): Unit = {
-        assert(numberOfTypes >= _readFieldSeenTypes.getOrElse(field, 0))
-        _readFieldSeenTypes.update(field, numberOfTypes)
+    def updateBackwardPropagationDependee(eps: EOptionP[SetEntity, InstantiatedTypes]): Unit = {
+        _backwardPropagationDependees.update(eps.e, eps)
     }
 
-    /////////////////////////////////////////////
-    //                                         //
-    //                 arrays                  //
-    //                                         //
-    /////////////////////////////////////////////
-
-    def availableArrayTypes: UIDSet[ArrayType] = {
-        ownInstantiatedTypesUB collect { case at: ArrayType ⇒ at }
+    def seenTypes(setEntity: SetEntity): Int = {
+        _backwardPropagationSeenTypes.getOrElse(setEntity, sys.error(s"Entity $setEntity not registered."))
     }
 
-    def updateReadArrayInstantiatedTypesDependee(
-        eps: EOptionP[ArrayType, InstantiatedTypes]
-    ): Unit = {
-        _readArraysTypeDependees.update(eps.e, eps)
-    }
-
-    def arrayTypeSeenTypes(arrayType: ArrayType): Int = {
-        _readArraysSeenTypes.getOrElse(arrayType, 0)
-    }
-
-    def updateArrayTypeSeenTypes(arrayType: ArrayType, numberOfTypes: Int): Unit = {
-        assert(numberOfTypes >= arrayTypeSeenTypes(arrayType))
-        _readArraysSeenTypes.update(arrayType, numberOfTypes)
-    }
-
-    /////////////////////////////////////////////
-    //                                         //
-    //             external world              //
-    //                                         //
-    /////////////////////////////////////////////
-
-    private[this] var _externalWorldInstantiatedTypesDependee: Option[EOptionP[Entity, InstantiatedTypes]] = None
-    private[this] var _externalWorldSeenTypes: Int = 0
-
-    def updateExternalWorldInstantiatedTypesDependee(eps: EOptionP[Entity, InstantiatedTypes]): Unit = {
-        _externalWorldInstantiatedTypesDependee = Some(eps)
-    }
-
-    def externalWorldSeenTypes: Int = _externalWorldSeenTypes
-
-    def updateExternalWorldSeenTypes(numberOfTypes: Int): Unit = {
-        assert(numberOfTypes >= _externalWorldSeenTypes)
-        _externalWorldSeenTypes = numberOfTypes
+    def updateSeenTypes(setEntity: SetEntity, numberOfSeenTypes: Int): Unit = {
+        assert(numberOfSeenTypes >= _backwardPropagationSeenTypes.getOrElse(setEntity, 0))
+        _backwardPropagationSeenTypes.update(setEntity, numberOfSeenTypes)
     }
 
     /////////////////////////////////////////////
@@ -217,32 +189,21 @@ class XTATypePropagationState(
         super.hasOpenDependencies ||
             _ownInstantiatedTypesDependee.isRefinable ||
             _calleeDependee.isRefinable ||
-            _calleeInstantiatedTypesDependees.nonEmpty ||
-            _readFieldTypeDependees.nonEmpty ||
-            _readArraysSeenTypes.nonEmpty ||
-            (_externalWorldInstantiatedTypesDependee.isDefined && _externalWorldInstantiatedTypesDependee.get.isRefinable)
+            _backwardPropagationDependees.nonEmpty
     }
 
     override def dependees: List[SomeEOptionP] = {
         var dependees = super.dependees
 
-        if (ownInstantiatedTypesDependee.isDefined)
-            dependees ::= ownInstantiatedTypesDependee.get
+        // TODO AB Re-check these.
+
+        dependees ::= _ownInstantiatedTypesDependee
 
         if (calleeDependee.isDefined)
             dependees ::= calleeDependee.get
 
-        if (_calleeInstantiatedTypesDependees.nonEmpty)
-            dependees ++= _calleeInstantiatedTypesDependees.values
-
-        if (_readFieldTypeDependees.nonEmpty)
-            dependees ++= _readFieldTypeDependees.values
-
-        if (_readArraysTypeDependees.nonEmpty)
-            dependees ++= _readArraysTypeDependees.values
-
-        if (_externalWorldInstantiatedTypesDependee.isDefined)
-            dependees ::= _externalWorldInstantiatedTypesDependee.get
+        if (_backwardPropagationDependees.nonEmpty)
+            dependees ++= _backwardPropagationDependees.values
 
         dependees
     }

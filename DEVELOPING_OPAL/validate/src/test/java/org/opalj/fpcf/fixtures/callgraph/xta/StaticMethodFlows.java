@@ -68,6 +68,7 @@ public class StaticMethodFlows {
     @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A1")
     public static void returnValueFlow() {
         A obj = returnValueFlow_Source();
+        sink(obj);
     }
 
     @AvailableTypes({
@@ -87,6 +88,7 @@ public class StaticMethodFlows {
     public static void twoWayFlow() {
         A obj1 = new A1();
         B obj2 = twoWayFlow_SourceAndSink(obj1);
+        sink(obj2);
     }
 
     @AvailableTypes({
@@ -141,6 +143,7 @@ public class StaticMethodFlows {
             "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A;"})
     public static void arrayTest_sink(A[] arr) {
         A obj = arr[0];
+        sink(obj);
     }
 
     // === Array test 2 ===
@@ -178,6 +181,7 @@ public class StaticMethodFlows {
             "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B;"})
     public static void arrayTest2_sink(B[] arr) {
         B obj = arr[0];
+        sink(obj);
     }
 
     // === Array test 3 ===
@@ -215,6 +219,7 @@ public class StaticMethodFlows {
             "[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D;"})
     public static void arrayTest3_sink(Object[] arr) {
         Object obj = arr[0];
+        sink(obj);
     }
 
     // === Multidimensional array test ===
@@ -252,6 +257,7 @@ public class StaticMethodFlows {
             "[[Lorg/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$E;"})
     public static void multiDimensionalArrayTest_sink(E[][] arr) {
         E obj = arr[0][0];
+        sink(obj);
     }
 
     // === Recursive methods ===
@@ -288,10 +294,11 @@ public class StaticMethodFlows {
             "java/util/ArrayList",
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A"})
     public static void externalWorld_sink(ArrayList<A> list) {
+        // TODO AB Returned types is unused, why does this not require a call to sink?
         A obj = list.get(0);
     }
 
-    // === External world field ===
+    // === Field in external world ===
 
     @AvailableTypes({
             "java/awt/Event",
@@ -309,6 +316,7 @@ public class StaticMethodFlows {
     })
     public static void externalWorldField_sink(java.awt.Event e) {
         B obj = (B)e.arg;
+        sink(obj);
     }
 
     // === Return optimization ===
@@ -328,14 +336,14 @@ public class StaticMethodFlows {
         returnOptimization_source();
     }
 
-    @AvailableTypes()
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A")
     public static void returnOptimization2() {
         returnOptimization_source();
         A obj = returnOptimization_source();
         sink(obj);
     }
 
-    @AvailableTypes({"org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A"})
+    @AvailableTypes("org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A")
     public static A returnOptimization_source() {
         return new A();
     }
@@ -372,7 +380,8 @@ public class StaticMethodFlows {
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$Container"})
     public static void genericContainer_sink(Container<A> a) {
-        sink(a.get());
+        A obj = a.get();
+        sink(obj);
     }
 
     @AvailableTypes({
@@ -380,8 +389,10 @@ public class StaticMethodFlows {
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B",
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$Container"})
     public static void genericContainer_sink2(Container<A> a, Container<B> b) {
-        sink(a.get());
-        sink(b.get());
+        A obj1 = a.get();
+        B obj2 = b.get();
+        sink(obj1);
+        sink(obj2);
     }
 
     @AvailableTypes({
@@ -391,7 +402,8 @@ public class StaticMethodFlows {
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$Container"})
     public static void genericContainer_sink3(Container c) {
         // This method's parameter is a raw type.
-        sink(c.get());
+        Object obj = c.get();
+        sink(obj);
     }
 
     // === Test Class Hierarchies ===

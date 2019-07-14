@@ -53,12 +53,12 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
         val isInvalid = missingTypes.nonEmpty || additionalTypes.nonEmpty
         if (isInvalid) {
             val errorMsg = StringBuilder.newBuilder
-            errorMsg.append(s"Entity: $entity.")
+            errorMsg.append(s"Entity: $entity.\n")
             if (missingTypes.nonEmpty) {
-                errorMsg.append(s" Expected types that were missing: ${missingTypes.mkString(", ")}.")
+                errorMsg.append(s"Expected types that were missing: \n* ${missingTypes.mkString("\n* ")}\n")
             }
             if (additionalTypes.nonEmpty) {
-                errorMsg.append(s" Computed types which were unexpected: ${additionalTypes.mkString(", ")}")
+                errorMsg.append(s"Computed types which were unexpected: \n* ${additionalTypes.mkString("\n* ")}\n")
             }
             Some(errorMsg.toString())
         } else {
