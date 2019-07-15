@@ -41,6 +41,7 @@ import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 import org.opalj.br.FieldType
+import org.opalj.br.ObjectType
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -408,6 +409,46 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             }
         } else {
             state.addIncompletePointsToInfo(pc)
+        }
+
+        /*
+        Special handling for System.arraycopy
+        Uses a fake defsite at the (method!)call to simulate an array load and store
+        TODO Integrate into ConfiguredNativeMethodsPointsToAnalysis
+         */
+        if((target.declaringClassType eq ObjectType.System) && target.name == "arraycopy") {
+            val defSiteObject = definitionSites(state.method.definedMethod, pc)
+            val rhsEntity = (defSiteObject, ObjectType.Object)
+            state.addArrayLoadEntity(rhsEntity)
+            currentPointsToOfDefSites(rhsEntity, call.params.head.asVar.definedBy).foreach { pts ⇒
+                pts.forNewestNElements(pts.numElements) { as ⇒
+                    // TODO can we get this check tighter (i.e. correct array subtyping)?
+                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                        state.includeSharedPointsToSet(
+                            defSiteObject,
+                            currentPointsTo(defSiteObject, ArrayEntity(as)),
+                            { t: ReferenceType ⇒ true }
+                        )
+                    }
+                }
+            }
+
+            val defSites = IntTrieSet(state.tac.pcToIndex(pc))
+            val lhsEntity = (defSites, ObjectType.Object)
+            state.addArrayStoredEntity(lhsEntity)
+            currentPointsToOfDefSites(lhsEntity, call.params(2).asVar.definedBy).foreach { pts ⇒
+                pts.forNewestNElements(pts.numElements) { as ⇒
+                    // TODO can we get this check tighter (i.e. correct array subtyping)?
+                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                        val arrayEntity = ArrayEntity(as)
+                        state.includeSharedPointsToSets(
+                            arrayEntity,
+                            currentPointsToOfDefSites(arrayEntity, defSites),
+                            { t: ReferenceType ⇒ true }
+                        )
+                    }
+                }
+            }
         }
     }
 
