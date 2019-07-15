@@ -11,9 +11,8 @@ import scala.collection.Set
  */
 object SingletonSet {
 
-    def unapply[T](s: Set[T]): Option[T] = if ((s ne null) && s.size == 1) s.headOption else None
+    def unapply[T](s: Set[T]): Option[T] = if (s.size == 1) s.headOption else None
 
-    def unapply(s: IntSet[_]): Option[Int] = if ((s ne null) && s.size == 1) Some(s.head) else None
+    def unapply(s: IntSet[_]): Option[Int] = if (s.size == 1) Some(s.head) else None
 
-    def unapply(s: LongSet[_]): Option[Long] = if ((s ne null) && s.size == 1) Some(s.head) else None
 }

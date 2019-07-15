@@ -4,7 +4,7 @@ package collection
 package immutable
 
 /**
- * A memory-efficient representation of a pair of UShortValues which uses one Integer value.
+ * A representation of a pair of unsigned short values.
  *
  * @example
  * {{{

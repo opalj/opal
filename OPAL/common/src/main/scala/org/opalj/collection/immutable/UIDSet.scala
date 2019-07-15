@@ -175,7 +175,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
     }
 
     //
-    // METHODS DEFINED BY UIDTrieSet
+    // METHODS DEFINED BY UIDSet
     //
 
     override def findById(id: Int): Option[T] = if (value.id == id) Some(value) else None
@@ -387,7 +387,7 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
             return this;
 
         // we only use the trie for sets with more than three elements
-        new UIDTrieSetInnerNode(1, value1, null, null) +! value2 +! value3 +! e
+        new UIDSetInnerNode(1, value1, null, null) +! value2 +! value3 +! e
     }
 
     override def -(e: T): UIDSet[T] = {
@@ -457,14 +457,14 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
 //
 // ------------------------------------------------------------------------------------------------
 
-sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] {
+sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmptyUIDSet[T] {
     self ⇒
 
     protected def value: T
 
-    // the following two methods return either a UIDTrieSetNode, a UIDTrieSetLeaf or null:
-    protected def left: UIDTrieSetNodeLike[T]
-    protected def right: UIDTrieSetNodeLike[T]
+    // the following two methods return either a UIDSetNode, a UIDSetLeaf or null:
+    protected def left: UIDSetNodeLike[T]
+    protected def right: UIDSetNodeLike[T]
 
     override def find(p: T ⇒ Boolean): Option[T] = {
         if (p(value))
@@ -502,7 +502,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
         val left = this.left; if (left ne null) left.foreach(f)
         val right = this.right; if (right ne null) right.foreach(f)
         /*
-        val nodes = new Array[UIDTrieSetNodeLike[T]](32 /*IMPROVE... we have to know the depth...*/ )
+        val nodes = new Array[UIDSetNodeLike[T]](32 /*IMPROVE... we have to know the depth...*/ )
         nodes(0) = this
         var lastElementOnStack = 0
         while (lastElementOnStack >= 0) {
@@ -525,7 +525,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
     }
 
     def iterator: RefIterator[T] = new RefIterator[T] {
-        private[this] val nextNodes = ArrayStack[UIDTrieSetNodeLike[T]](self)
+        private[this] val nextNodes = ArrayStack[UIDSetNodeLike[T]](self)
         def hasNext: Boolean = nextNodes.nonEmpty
         def next: T = {
             val currentNode = nextNodes.pop
@@ -640,7 +640,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
         }
     }
 
-    private def filter0(p: T ⇒ Boolean): UIDTrieSetNodeLike[T] = {
+    private def filter0(p: T ⇒ Boolean): UIDSetNodeLike[T] = {
         val left = this.left
         val right = this.right
         val newLeft = if (left != null) left.filter0(p) else null
@@ -651,9 +651,9 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
                 if (newLeft ne null) newSize += newLeft.size
                 if (newRight ne null) newSize += newRight.size
                 if (newSize == 1)
-                    new UIDTrieSetLeaf(value)
+                    new UIDSetLeaf(value)
                 else
-                    new UIDTrieSetInnerNode(newSize, value, newLeft, newRight)
+                    new UIDSetInnerNode(newSize, value, newLeft, newRight)
             } else {
                 this
             }
@@ -665,13 +665,13 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
     override def filterNot(p: T ⇒ Boolean): UIDSet[T] = filter((u: T) ⇒ !p(u))
 
     //
-    // METHODS DEFINED BY UIDTrieSet
+    // METHODS DEFINED BY UIDSet
     //
 
     override def idIterator: IntIterator = {
         new IntIterator {
 
-            private[this] val nextNodes = ArrayStack[UIDTrieSetNodeLike[T]](self)
+            private[this] val nextNodes = ArrayStack[UIDSetNodeLike[T]](self)
 
             override def hasNext: Boolean = nextNodes.nonEmpty
 
@@ -693,7 +693,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
     override def isSingletonSet: Boolean = false
 
     override def findById(id: Int): Option[T] = {
-        var currentNode: UIDTrieSetNodeLike[T] = this
+        var currentNode: UIDSetNodeLike[T] = this
         var currentShiftedEId = id
         do {
             if (currentNode.value.id == id)
@@ -727,9 +727,9 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
     }
 
     private def selectHead(
-        left:  UIDTrieSetNodeLike[T],
-        right: UIDTrieSetNodeLike[T]
-    ): UIDTrieSetNodeLike[T] = {
+        left:  UIDSetNodeLike[T],
+        right: UIDSetNodeLike[T]
+    ): UIDSetNodeLike[T] = {
         val rightSize = if (right ne null) right.size else 0
         var newSize = rightSize
         if (left ne null) {
@@ -738,53 +738,53 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
             val leftValue = left.head
             if (leftSize == 1) {
                 if (right eq null)
-                    new UIDTrieSetLeaf(leftValue)
+                    new UIDSetLeaf(leftValue)
                 else
-                    new UIDTrieSetInnerNode(newSize, leftValue, null, right)
+                    new UIDSetInnerNode(newSize, leftValue, null, right)
             } else {
-                new UIDTrieSetInnerNode(newSize, leftValue, left.dropHead, right)
+                new UIDSetInnerNode(newSize, leftValue, left.dropHead, right)
             }
         } else if (right ne null) {
             val rightValue = right.head
             if (rightSize == 1) {
                 if (left eq null)
-                    new UIDTrieSetLeaf(rightValue)
+                    new UIDSetLeaf(rightValue)
                 else
-                    new UIDTrieSetInnerNode(newSize, rightValue, left, null)
+                    new UIDSetInnerNode(newSize, rightValue, left, null)
             } else {
-                new UIDTrieSetInnerNode(newSize, rightValue, left, right.dropHead)
+                new UIDSetInnerNode(newSize, rightValue, left, right.dropHead)
             }
         } else {
             null
         }
     }
 
-    private def dropHead: UIDTrieSetNodeLike[T] = {
+    private def dropHead: UIDSetNodeLike[T] = {
         if (left ne null) {
             val leftValue = left.head
             if (left.size == 1) {
                 if (right eq null)
-                    new UIDTrieSetLeaf(leftValue)
+                    new UIDSetLeaf(leftValue)
                 else
-                    new UIDTrieSetInnerNode(size - 1, leftValue, null, right)
+                    new UIDSetInnerNode(size - 1, leftValue, null, right)
             } else { //left.size >= 2... but maybe we can pull the right value...
                 if ((right ne null) && right.size == 1)
-                    new UIDTrieSetInnerNode(size - 1, right.head, left, null)
+                    new UIDSetInnerNode(size - 1, right.head, left, null)
                 else
-                    new UIDTrieSetInnerNode(size - 1, leftValue, left.dropHead, right)
+                    new UIDSetInnerNode(size - 1, leftValue, left.dropHead, right)
             }
         } else if (right ne null) {
             val rightValue = right.head
             if (right.size == 1) {
                 if (left eq null)
-                    new UIDTrieSetLeaf(rightValue)
+                    new UIDSetLeaf(rightValue)
                 else
-                    new UIDTrieSetInnerNode(size - 1, rightValue, left, null)
+                    new UIDSetInnerNode(size - 1, rightValue, left, null)
             } else { //right.size >= 2... but maybe we can pull the left value...
                 if ((left ne null) && left.size == 1)
-                    new UIDTrieSetInnerNode(size - 1, left.head, null, right)
+                    new UIDSetInnerNode(size - 1, left.head, null, right)
                 else
-                    new UIDTrieSetInnerNode(size - 1, rightValue, left, right.dropHead)
+                    new UIDSetInnerNode(size - 1, rightValue, left, right.dropHead)
             }
         } else {
             null
@@ -803,7 +803,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
         }
         */
 
-        var currentNode: UIDTrieSetNodeLike[T] = this
+        var currentNode: UIDSetNodeLike[T] = this
         var currentShiftedId = shiftedId
         do {
             if (currentNode.value.id == id)
@@ -820,9 +820,9 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
         false
     }
 
-    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T]
+    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T]
 
-    private def +(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T] = {
+    private def +(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T] = {
         val valueId = this.value.id
         // In the following, we try to minimize the high of the tree.
         if (valueId == eId)
@@ -835,14 +835,14 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
         if ((shiftedEId & 1) == 1) {
             // we have to add the value "here" or on the right branch
             if (newRight eq null)
-                newRight = new UIDTrieSetLeaf(e)
+                newRight = new UIDSetLeaf(e)
             else {
                 val newShiftedEId = shiftedEId >>> 1
                 if ((newLeft eq null) &&
                     (valueId >>> level & 1) == 0 &&
                     !newRight.containsId(eId, newShiftedEId)) {
                     // we can move the current value to the empty left branch...
-                    return new UIDTrieSetInnerNode(size + 1, e, new UIDTrieSetLeaf(value), newRight);
+                    return new UIDSetInnerNode(size + 1, e, new UIDSetLeaf(value), newRight);
                 } else {
                     newRight += (e, eId, newShiftedEId, level + 1)
                     if (newRight eq right)
@@ -851,14 +851,14 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
             }
         } else {
             if (newLeft eq null)
-                newLeft = new UIDTrieSetLeaf(e)
+                newLeft = new UIDSetLeaf(e)
             else {
                 val newShiftedEId = shiftedEId >>> 1
                 if ((newRight eq null) &&
                     (valueId >>> level & 1) == 1 &&
                     !newLeft.containsId(eId, newShiftedEId)) {
                     // we can move the current value to the empty right branch...
-                    return new UIDTrieSetInnerNode(size + 1, e, newLeft, new UIDTrieSetLeaf(value));
+                    return new UIDSetInnerNode(size + 1, e, newLeft, new UIDSetLeaf(value));
                 } else {
                     newLeft += (e, eId, newShiftedEId, level + 1)
                     if (newLeft eq left)
@@ -866,10 +866,10 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
                 }
             }
         }
-        new UIDTrieSetInnerNode(size + 1, value, newLeft, newRight)
+        new UIDSetInnerNode(size + 1, value, newLeft, newRight)
     }
 
-    private def -(eId: Int, shiftedEId: Int): UIDTrieSetNodeLike[T] = {
+    private def -(eId: Int, shiftedEId: Int): UIDSetNodeLike[T] = {
         // assert( size > 3) // i.e., after removal we still have a tree
         val value = this.value
         if (value.id == eId) {
@@ -893,7 +893,7 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
                 if (newLeft eq left)
                     return this;
             }
-            new UIDTrieSetInnerNode(size - 1, value, newLeft, newRight)
+            new UIDSetInnerNode(size - 1, value, newLeft, newRight)
         }
     }
 
@@ -905,28 +905,28 @@ sealed private[immutable] abstract class UIDTrieSetNodeLike[T <: UID] extends No
     }
 }
 
-private[immutable] object UIDTrieSetNode {
+private[immutable] object UIDSetNode {
 
     def apply[T <: UID](
         size:  Int,
         value: T,
-        left:  UIDTrieSetNodeLike[T],
-        right: UIDTrieSetNodeLike[T]
-    ): UIDTrieSetNodeLike[T] = {
+        left:  UIDSetNodeLike[T],
+        right: UIDSetNodeLike[T]
+    ): UIDSetNodeLike[T] = {
         if (size == 1)
-            new UIDTrieSetLeaf(value)
+            new UIDSetLeaf(value)
         else
-            new UIDTrieSetInnerNode(size, value, left, right)
+            new UIDSetInnerNode(size, value, left, right)
     }
 
 }
 
-final class UIDTrieSetLeaf[T <: UID] private[immutable] (
+final class UIDSetLeaf[T <: UID] private[immutable] (
         val value: T
-) extends UIDTrieSetNodeLike[T] {
+) extends UIDSetNodeLike[T] {
     override def size: Int = 1
-    override def left: UIDTrieSetNodeLike[T] = null
-    override def right: UIDTrieSetNodeLike[T] = null
+    override def left: UIDSetNodeLike[T] = null
+    override def right: UIDSetNodeLike[T] = null
     override def head: T = value
     override def tail: UIDSet[T] = empty
     override def last: T = value
@@ -950,14 +950,14 @@ final class UIDTrieSetLeaf[T <: UID] private[immutable] (
 
     override private[opalj] def +!(e: T): UIDSet[T] = throw new UnknownError
 
-    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDTrieSetNodeLike[T] = {
+    private[immutable] def +!(e: T, eId: Int, shiftedEId: Int, level: Int): UIDSetNodeLike[T] = {
         if (value.id == eId)
             return this;
 
         if ((shiftedEId & 1) == 1)
-            new UIDTrieSetInnerNode(2, value, null, new UIDTrieSetLeaf(e))
+            new UIDSetInnerNode(2, value, null, new UIDSetLeaf(e))
         else
-            new UIDTrieSetInnerNode(2, value, new UIDTrieSetLeaf(e), null)
+            new UIDSetInnerNode(2, value, new UIDSetLeaf(e), null)
     }
 
     override def containsId(id: Int): Boolean = id == value.id
@@ -966,12 +966,12 @@ final class UIDTrieSetLeaf[T <: UID] private[immutable] (
 }
 
 // we wan't to be able to adapt the case class...
-final class UIDTrieSetInnerNode[T <: UID] private[immutable] (
+final class UIDSetInnerNode[T <: UID] private[immutable] (
         protected var theSize:          Int,
         protected[immutable] var value: T,
-        protected[immutable] var left:  UIDTrieSetNodeLike[T],
-        protected[immutable] var right: UIDTrieSetNodeLike[T]
-) extends UIDTrieSetNodeLike[T] {
+        protected[immutable] var left:  UIDSetNodeLike[T],
+        protected[immutable] var right: UIDSetNodeLike[T]
+) extends UIDSetNodeLike[T] {
 
     override def size: Int = theSize
 
@@ -1012,7 +1012,7 @@ final class UIDTrieSetInnerNode[T <: UID] private[immutable] (
         eId:        Int,
         shiftedEId: Int,
         level:      Int
-    ): UIDTrieSetNodeLike[T] = {
+    ): UIDSetNodeLike[T] = {
         val value = this.value
         val valueId = value.id
         if (eId == valueId)
@@ -1023,12 +1023,12 @@ final class UIDTrieSetInnerNode[T <: UID] private[immutable] (
         if ((shiftedEId & 1) == 1) {
             // we have to add the new value here or to the right branch
             if (right eq null) {
-                this.right = new UIDTrieSetLeaf(e)
+                this.right = new UIDSetLeaf(e)
                 this.theSize += 1
             } else if ((left eq null) &&
                 (valueId >>> level & 1) == 0 &&
                 !right.containsId(eId, shiftedEId >>> 1)) {
-                this.left = new UIDTrieSetLeaf(value)
+                this.left = new UIDSetLeaf(value)
                 this.value = e
                 this.theSize += 1
             } else {
@@ -1039,12 +1039,12 @@ final class UIDTrieSetInnerNode[T <: UID] private[immutable] (
         } else {
             // we have to add the new value here or to the left branch
             if (left eq null) {
-                this.left = new UIDTrieSetLeaf(e)
+                this.left = new UIDSetLeaf(e)
                 this.theSize += 1
             } else if ((right eq null) &&
                 (valueId >>> level & 1) == 1 &&
                 !left.containsId(eId, shiftedEId >>> 1)) {
-                this.right = new UIDTrieSetLeaf(value)
+                this.right = new UIDSetLeaf(value)
                 this.value = e
                 this.theSize += 1
             } else {

@@ -196,7 +196,7 @@ object PerformanceEvaluation {
      * to the calculation of the average, the last run is added anyway. This way, we
      * ensure that the evaluation will more likely terminate in reasonable time without
      * affecting the average too much. Nevertheless, if the behavior of `f` is
-     * extremely eratic, the evaluation may not terminate.
+     * extremely erratic, the evaluation may not terminate.
      *
      * ==Example Usage==
      * {{{

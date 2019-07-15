@@ -6,8 +6,8 @@ import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-object LongLinkedTrieSetProperties extends LongSetProperties("LongLinkedTrieSetProperties") {
+object LongTrieSetWithListProperties extends LongSetProperties("LongTrieSetWithListProperties") {
 
-    def empty(): LongSet = LongLinkedTrieSet.empty
+    def empty(): LongSet = LongTrieSetWithList.empty
 
 }

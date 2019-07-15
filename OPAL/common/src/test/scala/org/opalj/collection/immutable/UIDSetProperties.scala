@@ -369,23 +369,134 @@ class UIDSetTest extends FunSpec with Matchers {
     describe("performance") {
 
         it("foreach") {
-            val seed = 123456789L
-            val rngGen = new java.util.Random(seed)
+            {
+                val seed = 123456789L
+                val rngGen = new java.util.Random(seed)
 
-            var overallSum = 0
-            var overallTime = Nanoseconds.None
-            for { i ← 1 to 1000 } {
-                var s = UIDSet.empty[SUID]
-                for { j ← 1 to 50000 } { s += SUID(rngGen.nextInt()) }
+                var overallSum = 0
+                var overallTime = Nanoseconds.None
+                for { i ← 1 to 100000 } {
+                    var s = UIDSet.empty[SUID]
+                    for { j ← 1 to 500 } {
+                        s += SUID(rngGen.nextInt())
+                    }
 
-                var sumForeach = 0
-                PerformanceEvaluation.time {
-                    s.foreach(sumForeach += _.id)
-                } { t ⇒ overallTime += t }
+                    var sumForeach = 0
+                    PerformanceEvaluation.time {
+                        s.foreach(sumForeach += _.id)
+                    } { t ⇒ overallTime += t }
 
-                overallSum += sumForeach
+                    overallSum += sumForeach
+                }
+                info(s"UIDSet foreach sum took ${overallTime.toSeconds}")
             }
-            info(s"foreach sum took ${overallTime.toSeconds}")
+
+            {
+                val seed = 123456789L
+                val rngGen = new java.util.Random(seed)
+
+                var overallSum = 0
+                var overallTime = Nanoseconds.None
+                for { i ← 1 to 100000 } {
+                    var s = Set.empty[SUID]
+                    for { j ← 1 to 500 } {
+                        s += SUID(rngGen.nextInt())
+                    }
+
+                    var sumForeach = 0
+                    PerformanceEvaluation.time {
+                        s.foreach(sumForeach += _.id)
+                    } { t ⇒ overallTime += t }
+
+                    overallSum += sumForeach
+                }
+                info(s"Set[UID] foreach sum took ${overallTime.toSeconds}")
+            }
+        }
+
+        it("time for creating the sets compared to Set[UID]") {
+            val opalS = {
+                var totalSize = 0
+                PerformanceEvaluation.time {
+                    val seed = 123456789L
+                    val rngGen = new java.util.Random(seed)
+                    var lastOpalS = UIDSet.empty[SUID]
+                    for { j ← 0 to 1000000 } {
+                        var opalS = UIDSet.empty[SUID]
+                        for { i ← 0 to 50 } {
+                            val v = rngGen.nextInt()
+                            opalS += SUID(v)
+                        }
+                        totalSize += opalS.size
+                        lastOpalS = opalS
+                    }
+                    lastOpalS
+                } { t ⇒ info(s"UIDSet took ${t.toSeconds} (total number of entries: $totalSize)") }
+            }
+
+            val scalaS = {
+                var totalSize = 0
+                PerformanceEvaluation.time {
+                    val seed = 123456789L
+                    val rngGen = new java.util.Random(seed)
+                    var lastScalaS = Set.empty[SUID]
+                    for { j ← 0 to 1000000 } {
+                        var scalaS = Set.empty[SUID]
+                        for { i ← 0 to 50 } {
+                            val v = rngGen.nextInt()
+                            scalaS += SUID(v)
+                        }
+                        totalSize += scalaS.size
+                        lastScalaS = scalaS
+                    }
+                    lastScalaS
+                } { t ⇒ info(s"Set[UID] took ${t.toSeconds} (total number of entries: $totalSize)") }
+            }
+
+            var opalTotal = 0L
+            for { v ← opalS } { opalTotal += v.id }
+            var scalaTotal = 0L
+            for { v ← scalaS } { scalaTotal += v.id }
+            assert(opalTotal == scalaTotal)
+        }
+
+        it("memory for creating the sets compared to Set[UID]") {
+            val opalS = PerformanceEvaluation.memory {
+                PerformanceEvaluation.time {
+                    val seed = 123456789L
+                    val rngGen = new java.util.Random(seed)
+                    var allSets = List.empty[UIDSet[SUID]]
+                    for { j ← 0 to 1000000 } {
+                        var opalS = UIDSet.empty[SUID]
+                        for { i ← 0 to 50 } {
+                            val v = rngGen.nextInt()
+                            opalS += SUID(v)
+                        }
+                        allSets ::= opalS
+                    }
+                    allSets
+                } { t ⇒ info(s"UIDSet took ${t.toSeconds}") }
+            } { mu ⇒ info(s"UIDSet required $mu bytes") }
+
+            val scalaS = PerformanceEvaluation.memory {
+                PerformanceEvaluation.time {
+                    val seed = 123456789L
+                    val rngGen = new java.util.Random(seed)
+                    var allSets = List.empty[Set[SUID]]
+                    for { j ← 0 to 1000000 } {
+                        var scalaS = Set.empty[SUID]
+                        for { i ← 0 to 50 } {
+                            val v = rngGen.nextInt()
+                            scalaS += SUID(v)
+                        }
+                        allSets ::= scalaS
+                    }
+                    allSets
+                } { t ⇒ info(s"Set[UID] took ${t.toSeconds}") }
+            } { mu ⇒ info(s"Set[UID] required $mu bytes") }
+
+            info(s"overall size of sets: "+scalaS.map(_.size).sum)
+            assert(opalS.map(_.size).sum == scalaS.map(_.size).sum)
         }
     }
 
@@ -394,7 +505,7 @@ class UIDSetTest extends FunSpec with Matchers {
             assert(new UIDSet1(SUID(1)) == UIDSet1(SUID(1)))
 
             assert(
-                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) == UIDSet1(SUID(1))
+                new UIDSetInnerNode[SUID](1, SUID(1), null, null) == UIDSet1(SUID(1))
             )
         }
     }
@@ -445,15 +556,15 @@ class UIDSetTest extends FunSpec with Matchers {
 
         it("should return true for two new sets containing the same values") {
             assert(
-                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
-                    new UIDTrieSetInnerNode[SUID](1, SUID(4), null, null) + SUID(3) + SUID(2) + SUID(1)
+                new UIDSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDSetInnerNode[SUID](1, SUID(4), null, null) + SUID(3) + SUID(2) + SUID(1)
             )
             assert(
-                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
-                    new UIDTrieSetInnerNode[SUID](1, SUID(2), null, null) + SUID(4) + SUID(1) + SUID(3)
+                new UIDSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                    new UIDSetInnerNode[SUID](1, SUID(2), null, null) + SUID(4) + SUID(1) + SUID(3)
             )
             assert(
-                new UIDTrieSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
+                new UIDSetInnerNode[SUID](1, SUID(1), null, null) + SUID(2) + SUID(3) + SUID(4) ==
                     new UIDSet3[SUID](SUID(1), SUID(4), SUID(2)) + SUID(3)
             )
         }

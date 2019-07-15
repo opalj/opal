@@ -303,7 +303,6 @@ object IntTrieSet1 {
             new IntTrieSet1(v)
         }
     }
-
 }
 
 /**

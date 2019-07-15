@@ -16,8 +16,8 @@ package immutable
  * case of `forFirstN` if the size of the list is smaller than expected.
  *
  * Furthermore, all directly implemented methods use `while` loops for maximum
- * efficiency and the list is also specialized for primitive `unsigned long` values which
- * makes this list far more efficient when used for storing lists of `long` values.
+ * efficiency and the list is also specialized for primitive `int` values which
+ * makes this list far more efficient when used for storing lists of `int` values.
  *
  * @author Michael Eichberg
  */
@@ -59,11 +59,11 @@ sealed trait Int2List extends Serializable { self ⇒
 
 object Int2List {
 
-    def empty: Int2List = EmptyInt2List
+    def empty: Int2List = Int2ListEnd
 
-    def apply(v: Int): Int2List = new Int2ListNode(Int.MinValue, v, EmptyInt2List)
+    def apply(v: Int): Int2List = new Int2ListNode(Int.MinValue, v, Int2ListEnd)
 
-    def apply(head: Int, last: Int): Int2List = new Int2ListNode(head, last, EmptyInt2List)
+    def apply(head: Int, last: Int): Int2List = new Int2ListNode(head, last, Int2ListEnd)
 
 }
 
@@ -72,7 +72,7 @@ object Int2List {
  *
  * @author Michael Eichberg
  */
-case object EmptyInt2List extends Int2List {
+case object Int2ListEnd extends Int2List {
 
     override def isEmpty: Boolean = true
     override def isSingletonList: Boolean = false
@@ -101,11 +101,11 @@ case object EmptyInt2List extends Int2List {
 final case class Int2ListNode(
         private[immutable] var h:    Int,
         private[immutable] var t:    Int,
-        private[immutable] var rest: Int2List = EmptyInt2List
+        private[immutable] var rest: Int2List = Int2ListEnd
 ) extends Int2List { list ⇒
 
     override def isEmpty: Boolean = false
-    override def isSingletonList: Boolean = h == Int.MinValue && (rest eq EmptyInt2List)
+    override def isSingletonList: Boolean = h == Int.MinValue && (rest eq Int2ListEnd)
     override def nonEmpty: Boolean = true
 
     override def foreach[U](f: Int ⇒ U): Unit = {
@@ -148,7 +148,7 @@ final case class Int2ListNode(
         new IntIterator {
             private[this] var currentList: Int2List = list
             private[this] var head: Boolean = list.h != Int.MinValue
-            def hasNext: Boolean = currentList ne EmptyInt2List
+            def hasNext: Boolean = currentList ne Int2ListEnd
             def next: Int = {
                 if (head) {
                     head = false
@@ -174,7 +174,7 @@ final case class Int2ListNode(
         (that eq this) || {
             var thisList: Int2List = this
             var thatList = that
-            while ((thisList ne EmptyInt2List) && (thatList ne EmptyInt2List)) {
+            while ((thisList ne Int2ListEnd) && (thatList ne Int2ListEnd)) {
                 if (thisList.h != thatList.h || thisList.t != thatList.t)
                     return false;
                 thisList = thisList.rest
@@ -187,7 +187,7 @@ final case class Int2ListNode(
     override def hashCode(): Int = {
         var h = 31
         var list: Int2List = this
-        while (list ne EmptyInt2List) {
+        while (list ne Int2ListEnd) {
             h = ((h + list.h) * 31 + (list.t)) * 31
             list = list.rest
         }

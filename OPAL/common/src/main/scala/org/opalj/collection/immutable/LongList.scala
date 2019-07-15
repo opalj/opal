@@ -48,12 +48,12 @@ sealed trait LongList extends Serializable { self ⇒
 
 object LongList {
 
-    def empty: LongList = EmptyLongList
+    def empty: LongList = LongList0
 
-    def apply(v: Long): LongList = new LongListNode(v, EmptyLongList)
+    def apply(v: Long): LongList = new LongListNode(v, LongList0)
 
     def apply(head: Long, last: Long): LongList = {
-        new LongListNode(head, new LongListNode(last, EmptyLongList))
+        new LongListNode(head, new LongListNode(last, LongList0))
     }
 
 }
@@ -63,7 +63,7 @@ object LongList {
  *
  * @author Michael Eichberg
  */
-case object EmptyLongList extends LongList {
+case object LongList0 extends LongList {
     override def head: Long = throw new UnsupportedOperationException
     override def tail: LongList = throw new UnsupportedOperationException
     override def isEmpty: Boolean = true
@@ -87,7 +87,7 @@ case object EmptyLongList extends LongList {
  */
 final case class LongListNode(
         head:                        Long,
-        private[immutable] var rest: LongList = EmptyLongList
+        private[immutable] var rest: LongList = LongList0
 ) extends LongList { list ⇒
 
     override def tail: LongList = rest
@@ -133,7 +133,7 @@ final case class LongListNode(
         (that eq this) || {
             var thisList: LongList = this
             var thatList = that
-            while ((thisList ne EmptyLongList) && (thatList ne EmptyLongList)) {
+            while ((thisList ne LongList0) && (thatList ne LongList0)) {
                 if (thisList.head != thatList.head)
                     return false;
                 thisList = thisList.tail
@@ -146,7 +146,7 @@ final case class LongListNode(
     override def hashCode(): Int = {
         var h = 31
         var list: LongList = this
-        while (list ne EmptyLongList) {
+        while (list ne LongList0) {
             h = (h + JLong.hashCode(list.head)) * 31
             list = list.tail
         }
