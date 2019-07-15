@@ -18,23 +18,10 @@ import java.lang.{Integer ⇒ JInt}
  *
  * @author Michael Eichberg
  */
-sealed abstract class LongLinkedTrieSet extends LongSet {
+sealed abstract class LongLinkedTrieSet extends LongLinkedSet {
 
     final type ThisSet = LongLinkedTrieSet
 
-    def size: Int
-    def isEmpty: Boolean
-    def isSingletonSet: Boolean
-
-    def head: Long
-    def contains(v: Long): Boolean
-
-    def foreach[U](f: Long ⇒ U): Unit
-    def foldLeft[T](op: T)(f: (T, Long) ⇒ T): T
-    def forFirstN[U](n: Int)(f: Long ⇒ U): Unit
-    def iterator: LongIterator
-
-    def +(v: Long): LongLinkedTrieSet
 }
 
 object LongLinkedTrieSet {
