@@ -13,4 +13,6 @@ trait LongLinkedSet extends LongSet {
 
     def forFirstN[U](n: Int)(f: Long ⇒ U): Unit
 
+    def head: Long
+
 }

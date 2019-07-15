@@ -24,6 +24,7 @@ sealed abstract class Long2List extends Serializable { self ⇒
     def isSingletonList: Boolean
     def nonEmpty: Boolean
 
+    def head: Long
     def foreach[U](f: Long ⇒ U): Unit
     def forall(p: Long ⇒ Boolean): Boolean
     def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B
@@ -73,6 +74,7 @@ case object Long2List0 extends Long2List {
     override def isSingletonList: Boolean = false
     override def nonEmpty: Boolean = false
 
+    override def head: Long = throw new UnsupportedOperationException
     override def foreach[U](f: Long ⇒ U): Unit = {}
     override def forall(p: Long ⇒ Boolean): Boolean = true
     override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = z
@@ -201,6 +203,8 @@ private[immutable] final class Long2List1(
 
     override def isSingletonList: Boolean = rest == null
 
+    override def head: Long = v1
+
     override def foreach[U](f: Long ⇒ U): Unit = {
         f(v1);
         restForeach(f)
@@ -251,6 +255,8 @@ private[immutable] final class Long2List2(
 
     override def isSingletonList: Boolean = false
 
+    override def head: Long = v1
+
     override def foreach[U](f: Long ⇒ U): Unit = { f(v1); f(v2); restForeach(f) }
 
     override def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B = restFoldLeft(op(op(z, v1), v2))(op)
@@ -298,6 +304,8 @@ private[immutable] final class Long2List3(
 ) extends Long2List1_4 { list ⇒
 
     override def isSingletonList: Boolean = false
+
+    override def head: Long = v1
 
     override def foreach[U](f: Long ⇒ U): Unit = { f(v1); f(v2); f(v3); restForeach(f) }
 
@@ -355,6 +363,8 @@ private[immutable] final class Long2List4(
 ) extends Long2List1_4 { list ⇒
 
     override def isSingletonList: Boolean = false
+
+    override def head: Long = v1
 
     override def foreach[U](f: Long ⇒ U): Unit = {
         f(v1); f(v2); f(v3); f(v4); restForeach(f)

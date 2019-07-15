@@ -47,6 +47,7 @@ private[immutable] case object LongTrieSetWithList0 extends LongTrieSetWithList 
     override def isEmpty: Boolean = true
     override def size: Int = 0
 
+    override def head: Long = throw new UnsupportedOperationException
     override def contains(value: Long): Boolean = false
 
     override def forall(p: Long ⇒ Boolean): Boolean = true
@@ -76,6 +77,7 @@ private[immutable] final class LongTrieSetWithList1 private[immutable] (
     override def size: Int = 1
 
     override def contains(i: Long): Boolean = i == i1
+    override def head: Long = i1
 
     override def forall(p: Long ⇒ Boolean): Boolean = p(i1)
     override def foreach[U](f: Long ⇒ U): Unit = f(i1)
@@ -116,6 +118,7 @@ private[immutable] final class LongTrieSetWithList2 private[immutable] (
     override def size: Int = 2
 
     override def contains(i: Long): Boolean = i == i1 || i == i2
+    override def head: Long = i1
 
     override def forall(p: Long ⇒ Boolean): Boolean = { p(i1) && p(i2) }
     override def foreach[U](f: Long ⇒ U): Unit = { f(i1); f(i2) }
@@ -162,6 +165,7 @@ private[immutable] final class LongTrieSetWithList3 private[immutable] (
     override def isSingletonSet: Boolean = false
 
     override def contains(i: Long): Boolean = i == i1 || i == i2 || i == i3
+    override def head: Long = i1
 
     override def forall(p: Long ⇒ Boolean): Boolean = { p(i1) && p(i2) && p(i3) }
     override def foreach[U](f: Long ⇒ U): Unit = { f(i1); f(i2); f(i3) }
@@ -216,6 +220,7 @@ private[immutable] final class LongTrieSetWithListN(
     override def isEmpty: Boolean = false
     override def isSingletonSet: Boolean = false
     override def contains(value: Long): Boolean = root.contains(value, value)
+    override def head: Long = list.head
     override def forall(p: Long ⇒ Boolean): Boolean = list.forall(p)
     override def foreach[U](f: Long ⇒ U): Unit = list.foreach(f)
     override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = list.forFirstN(n)(f)
