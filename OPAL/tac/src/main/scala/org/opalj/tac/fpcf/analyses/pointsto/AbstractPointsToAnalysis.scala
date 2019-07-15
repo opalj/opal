@@ -500,21 +500,27 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     dependees.values, continuationForShared(e, dependees, typeFilter)
                 )
             }
-            results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](e, pointsToPropertyKey, {
-                case _: EPK[Entity, _] ⇒
-                    Some(InterimEUBP(e, pointsToSet))
+            if (pointsToSet ne emptyPointsToSet) {
+                results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+                    e,
+                    pointsToPropertyKey,
+                    {
+                        case _: EPK[Entity, _] ⇒
+                            Some(InterimEUBP(e, pointsToSet))
 
-                case UBP(ub: PointsToSet @unchecked) ⇒
-                    val newPointsTo = ub.included(pointsToSet, 0, 0)
-                    if (newPointsTo ne ub) {
-                        Some(InterimEUBP(e, newPointsTo))
-                    } else {
-                        None
+                        case UBP(ub: PointsToSet @unchecked) ⇒
+                            val newPointsTo = ub.included(pointsToSet, 0, 0)
+                            if (newPointsTo ne ub) {
+                                Some(InterimEUBP(e, newPointsTo))
+                            } else {
+                                None
+                            }
+
+                        case eOptP ⇒
+                            throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
                     }
-
-                case eOptP ⇒
-                    throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-            })
+                )
+            }
         }
 
         for (fakeEntity ← state.getFieldsIterator) {
