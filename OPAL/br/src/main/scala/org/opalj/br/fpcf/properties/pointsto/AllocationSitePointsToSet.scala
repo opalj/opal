@@ -7,6 +7,7 @@ package pointsto
 
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.LongLinkedSet
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.collection.immutable.LongLinkedTrieSet1
 import org.opalj.collection.immutable.Naught
@@ -30,7 +31,7 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 sealed trait AllocationSitePointsToSet
-    extends PointsToSetLike[AllocationSite, LongLinkedTrieSet, AllocationSitePointsToSet]
+    extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
     with OrderedProperty
     with AllocationSitePointsToSetPropertyMetaInformation {
 
@@ -205,7 +206,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
     }
 
     def apply(
-        elements: LongLinkedTrieSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
+        elements: LongLinkedSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
     ): AllocationSitePointsToSet = {
 
         if (elements.isEmpty) {
@@ -231,7 +232,7 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 }
 
 case class AllocationSitePointsToSetN private[pointsto] (
-        override val elements:                     LongLinkedTrieSet,
+        override val elements:                     LongLinkedSet,
         override val types:                        UIDSet[ReferenceType],
         override protected[this] val orderedTypes: Chain[ReferenceType]
 ) extends AllocationSitePointsToSet {
@@ -296,7 +297,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 
     override def numElements: Int = 0
 
-    override def elements: LongLinkedTrieSet = LongLinkedTrieSet.empty
+    override def elements: LongLinkedSet = LongLinkedTrieSet.empty
 
     override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
         assert(n == 0)
@@ -319,7 +320,7 @@ case class AllocationSitePointsToSet1(
 
     override def numElements: Int = 1
 
-    override def elements: LongLinkedTrieSet = LongLinkedTrieSet1(allocationSite)
+    override def elements: LongLinkedSet = LongLinkedTrieSet1(allocationSite)
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         other match {
