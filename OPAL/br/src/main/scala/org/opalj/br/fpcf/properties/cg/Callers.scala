@@ -6,7 +6,7 @@ package properties
 package cg
 
 import org.opalj.collection.LongSet
-import org.opalj.collection.immutable.LongLinkedTrieSet
+import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
 import org.opalj.fpcf.OrderedProperty
@@ -104,7 +104,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     final override def updated(
         caller: DeclaredMethod, pc: Int, isDirect: Boolean
     ): Callers = {
-        val set = LongLinkedTrieSet(Callers.toLong(caller.id, pc, isDirect))
+        val set = LongTrieSet(Callers.toLong(caller.id, pc, isDirect))
 
         if (!hasCallersWithUnknownContext && !hasVMLevelCallers) {
             new CallersOnlyWithConcreteCallers(set)
