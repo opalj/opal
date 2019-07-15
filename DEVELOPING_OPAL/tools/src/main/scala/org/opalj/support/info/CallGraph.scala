@@ -145,6 +145,22 @@ object CallGraph extends ProjectAnalysisApplication {
         println(s"Static Field PTS entries: ${byType(classOf[Field]).map(_.ub.numElements).sum}")
         println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
 
+        /*
+        //Prints sizes of all array PTSs
+        for(pts <- byType(classOf[ArrayEntity[Long]]))
+            println(s"${org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(pts.e.asInstanceOf[ArrayEntity[Long]].element)}\t${pts.ub.numElements}")*/
+
+        /*
+        //Prints all allocation sites in the PTS of Object.<init>'s this parameter in Doop's format
+        val initThis = project.get(VirtualFormalParametersKey)(project.get(DeclaredMethodsKey)(ObjectType.Object, "", ObjectType.Object, "<init>", MethodDescriptor.NoArgsAndReturnVoid))(0)
+        val initThisPTS = ps(initThis, AllocationSitePointsToSet.key).ub
+        initThisPTS.elements.foreach { as ⇒
+            try {
+                val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
+                println(s"<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${project.classHierarchy.knownTypesMap(tId).toJava}")
+            } catch { case _: Exception ⇒ }
+        }*/
+
         /*val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId)
         p2.get({AllocationSiteBasedPointsToCallGraphKey})
         val ps2 = p2.get(PropertyStoreKey)
