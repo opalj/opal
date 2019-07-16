@@ -166,12 +166,12 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                 val calls = new DirectCalls()
 
                 val oldEOptP: EOptionP[Entity, PointsToSet] = state.getPointsToProperty(eps.e)
-                val seenElements = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
+                val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
                 // perform the update for the new types
                 for (callSite ← relevantCallSites) {
                     val typesLeft = state.typesForCallSite(callSite)
-                    ub.forNewestNTypes(ub.numTypes - seenElements) { newType ⇒
+                    ub.forNewestNTypes(ub.numTypes - seenTypes) { newType ⇒
                         if (typesLeft.contains(newType.id)) {
                             state.removeTypeForCallSite(callSite, newType.asObjectType)
                             val (pc, name, descriptor, declaredType) = callSite
