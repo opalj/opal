@@ -11,6 +11,28 @@ import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.time.Instant
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
+import org.opalj.log.OPALLogger
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomePartialResult
+import org.opalj.value.ValueInformation
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -30,30 +52,9 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.INVOKESTATIC
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimUBP
-import org.opalj.fpcf.PartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.SomePartialResult
-import org.opalj.log.OPALLogger
+import org.opalj.br.Code
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.ValueInformation
-
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 // TODO AB helpers for debugging and maybe evaluation later...
 object TypePropagationTrace {
@@ -69,7 +70,7 @@ object TypePropagationTrace {
 
     // Global variable holding the type propagation trace of the last executed XTA analysis.
     var LastTrace: Trace = _
-    val WriteTextualTrace: Boolean = true
+    var WriteTextualTrace: Boolean = true
 }
 
 private[xta] class TypePropagationTrace {
@@ -161,9 +162,9 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
     }
 
     /**
-      * Processes the method upon initialization. Finds field/array accesses and wires up dependencies accordingly.
-      * @param state
-      */
+     * Processes the method upon initialization. Finds field/array accesses and wires up dependencies accordingly.
+     * @param state
+     */
     private def processTACStatements(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         val bytecode = state.method.definedMethod.body.get
         val tac = state.tac
@@ -263,7 +264,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         returnResults(partialResults)
     }
 
-    def handleUpdateOfBackwardPropagationTypeSet(eps: EPS[SetEntity, InstantiatedTypes])(implicit state: State): ProperPropertyComputationResult = {
+    private def handleUpdateOfBackwardPropagationTypeSet(eps: EPS[SetEntity, InstantiatedTypes])(implicit state: State): ProperPropertyComputationResult = {
         val setEntity = eps.e
         val previouslySeenTypes = state.seenTypes(setEntity)
         state.updateBackwardPropagationDependee(eps)
@@ -274,6 +275,17 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         val propagationResult = propagateTypes(state.setEntity, unseenTypes, filters.toSet)
 
         returnResults(propagationResult)
+    }
+
+    private def processArrayTypes(unseenTypes: UIDSet[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+        for (t ← unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
+            if (state.methodWritesArrays) {
+                registerEntityForForwardPropagation(at, Set(at.componentType.asReferenceType))
+            }
+            if (state.methodReadsArrays) {
+                registerEntityForBackwardPropagation(at, at.componentType.asReferenceType)
+            }
+        }
     }
 
     private def processCallees(callees: Callees)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
@@ -301,55 +313,44 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
             // Remember callee (with PC) so we don't have to process it again later.
             state.addSeenCallee(pc, callee)
 
-            // This is the only place where we can find out whether a VirtualDeclaredMethod is static or not!
-            val isStaticCall = bytecode.instructions(pc).isInstanceOf[INVOKESTATIC]
-            assert(!callee.hasSingleDefinedMethod || (isStaticCall && callee.asDefinedMethod.definedMethod.isStatic))
+            maybeRegisterMethodForForwardPropagation(callee, pc, bytecode)
 
-            maybeRegisterMethodForForwardPropagation(callee, isStaticCall)
+            maybeRegisterMethodForBackwardPropagation(callee, pc, bytecode)
+        }
+    }
 
-            val returnValueIsUsed = {
-                val tacIndex = state.tac.pcToIndex(pc)
-                val tacInstr = state.tac.instructions(tacIndex)
-                tacInstr.isAssignment
+    private def maybeRegisterMethodForBackwardPropagation(callee: DeclaredMethod, pc: Int, bytecode: Code)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+        val returnValueIsUsed = {
+            val tacIndex = state.tac.pcToIndex(pc)
+            val tacInstr = state.tac.instructions(tacIndex)
+            tacInstr.isAssignment
+        }
+
+        if (returnValueIsUsed) {
+            // Internally, generic methods have return type "Object" due to type erasure. In many cases
+            // (but not all!), the Java compiler will place the "actual" return type within a checkcast
+            // instruction right after the call.
+            val mostPreciseReturnType = {
+                val nextPc = bytecode.pcOfNextInstruction(pc)
+                val nextInstruction = bytecode.instructions(nextPc)
+                if (nextInstruction.isCheckcast) {
+                    nextInstruction.asInstanceOf[CHECKCAST].referenceType
+                } else {
+                    callee.descriptor.returnType
+                }
             }
 
-            if (returnValueIsUsed) {
-                // Internally, generic methods have return type "Object" due to type erasure. In many cases
-                // (but not all!), the Java compiler will place the "actual" return type within a checkcast
-                // instruction right after the call.
-                val mostPreciseReturnType = {
-                    val nextPc = bytecode.pcOfNextInstruction(pc)
-                    val nextInstruction = bytecode.instructions(nextPc)
-                    if (nextInstruction.isCheckcast) {
-                        nextInstruction.asInstanceOf[CHECKCAST].referenceType
-                    } else {
-                        callee.descriptor.returnType
-                    }
-                }
-
-                // Return type could also be a basic type (i.e., int). We don't care about those.
-                if (mostPreciseReturnType.isReferenceType) {
-                    registerEntityForBackwardPropagation(callee, mostPreciseReturnType.asReferenceType)
-                }
+            // Return type could also be a basic type (i.e., int). We don't care about those.
+            if (mostPreciseReturnType.isReferenceType) {
+                registerEntityForBackwardPropagation(callee, mostPreciseReturnType.asReferenceType)
             }
         }
     }
 
-    private def processArrayTypes(unseenTypes: UIDSet[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
-        for (t ← unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
-            if (state.methodWritesArrays) {
-                registerEntityForForwardPropagation(at, Set(at.componentType.asReferenceType))
-            }
-            if (state.methodReadsArrays) {
-                registerEntityForBackwardPropagation(at, at.componentType.asReferenceType)
-            }
-        }
-    }
-
-    private def maybeRegisterMethodForForwardPropagation(e: DeclaredMethod, isStaticCall: Boolean)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+    private def maybeRegisterMethodForForwardPropagation(callee: DeclaredMethod, pc: Int, bytecode: Code)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         // Pre-process parameter types
         val params = mutable.Set[ReferenceType]()
-        for (param ← e.descriptor.parameterTypes) {
+        for (param ← callee.descriptor.parameterTypes) {
             if (param.isReferenceType) {
                 params += param.asReferenceType
 
@@ -366,26 +367,30 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
             }
         }
 
+        // This is the only place where we can find out whether a VirtualDeclaredMethod is static or not!
+        val isStaticCall = bytecode.instructions(pc).isInstanceOf[INVOKESTATIC]
+        assert(!callee.hasSingleDefinedMethod || (isStaticCall && callee.asDefinedMethod.definedMethod.isStatic))
+
         // If the call is not static, we need to take the implicit "this" parameter into account.
         if (!isStaticCall) {
-            params += e.declaringClassType
+            params += callee.declaringClassType
         }
 
         // If we do not have any params at this point, there is no forward propagation!
         if (params.isEmpty) {
-            return;
+            return ;
         }
 
         // TODO AB toSet is not a constant time operation(?)
-        registerEntityForForwardPropagation(e, params.toSet)
+        registerEntityForForwardPropagation(callee, params.toSet)
     }
 
     private def registerEntityForForwardPropagation(e: Entity, filters: Set[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         // TODO AB If we register a method for both forward and backward propagation, this is called twice.
-        // (-> Check if this is a problem for performance and maybe memoize the result...)
+        // (-> Check if this is a problem for performance and maybe memoize the result?)
         val setEntity = getCorrespondingSetEntity(e)
         if (setEntity == state.setEntity) {
-            return;
+            return ;
         }
 
         val filterSetHasChanged = state.registerForwardPropagationEntity(setEntity, filters)
@@ -399,7 +404,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
     private def registerEntityForBackwardPropagation(e: Entity, mostPreciseUpperBound: ReferenceType)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         val setEntity = getCorrespondingSetEntity(e)
         if (setEntity == state.setEntity) {
-            return;
+            return ;
         }
 
         val filter = Set(mostPreciseUpperBound)
@@ -412,7 +417,7 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
             state.updateSeenTypes(setEntity, 0)
 
             if (dependee.hasNoUBP) {
-                return;
+                return ;
             }
 
             val propagation = propagateTypes(state.setEntity, dependee.ub.types, filter)
@@ -441,20 +446,22 @@ class XTATypePropagationAnalysis private[analyses] ( final val project: SomeProj
         newTypes:  UIDSet[ReferenceType],
         filters:   Set[ReferenceType]
     ): Option[PartialResult[E, InstantiatedTypes]] = {
-        val filteredTypes = newTypes.filter(nt ⇒ filters.exists(f ⇒ classHierarchy.isSubtypeOf(nt, f)))
-        if (filteredTypes.nonEmpty)
-            Some(typeFlowPartialResult(setEntity, filteredTypes))
-        else
-            None
-    }
+        assert(newTypes.nonEmpty)
 
-    def typeFlowPartialResult[E >: Null <: SetEntity](entity: E, newTypes: UIDSet[ReferenceType]): PartialResult[E, InstantiatedTypes] = {
-        _trace.traceTypePropagation(entity, newTypes)
-        PartialResult[E, InstantiatedTypes](
-            entity,
-            InstantiatedTypes.key,
-            updateInstantiatedTypes(entity, newTypes)
-        )
+        val filteredTypes = newTypes.filter(nt ⇒ filters.exists(f ⇒ classHierarchy.isSubtypeOf(nt, f)))
+
+        if (filteredTypes.nonEmpty) {
+            _trace.traceTypePropagation(setEntity, filteredTypes)
+            val partialResult = PartialResult[E, InstantiatedTypes](
+                setEntity,
+                InstantiatedTypes.key,
+                updateInstantiatedTypes(setEntity, filteredTypes)
+            )
+
+            Some(partialResult)
+        } else {
+            None
+        }
     }
 
     // TODO AB something like this appears in several places; should maybe move to some Utils class
