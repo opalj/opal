@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.collection.mutable
 
-class XTATypePropagationState(
+final class TypePropagationState(
         override val method:                       DefinedMethod,
         val setEntity:                             SetEntity,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
