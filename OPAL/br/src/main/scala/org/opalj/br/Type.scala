@@ -405,10 +405,11 @@ object ReferenceType {
      */
     @throws[IllegalArgumentException]("in case of an invalid reference type descriptor")
     def apply(rt: String): ReferenceType = {
-        if (rt.charAt(0) == '[')
-            ArrayType(FieldType(rt.substring(1)))
-        else
-            ObjectType(rt)
+        (rt.charAt(0): @scala.annotation.switch) match {
+            case '[' ⇒ ArrayType(FieldType(rt.substring(1)))
+            case 'L' ⇒ ObjectType(rt.substring(1, rt.length - 1))
+            case _ ⇒ ObjectType(rt)
+        }
     }
 }
 
