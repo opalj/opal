@@ -606,9 +606,9 @@ final class PKESequentialPropertyStore protected (
 
     override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
 
-        if (debug) {
-            trace("analysis progress", s"handling result: $r")
-        }
+        // if (debug) {
+        //     trace("analysis progress", s"handling result: $r")
+        // }
 
         r.id match {
 
@@ -902,6 +902,7 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
 
             case "FIFO"                       ⇒ new FIFOTasksManager
             case "LIFO"                       ⇒ new LIFOTasksManager
+            case "EntityAccessOrderingBased"  ⇒ new EntityAccessOrderingBasedTasksManager
 
             case "ManyDirectDependenciesLast" ⇒ new ManyDirectDependenciesLastTasksManager
             case "ManyDirectDependersLast"    ⇒ new ManyDirectDependersLastTasksManager
