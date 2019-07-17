@@ -261,7 +261,6 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
         val previouslySeenTypes = state.seenTypes(setEntity)
         state.updateBackwardPropagationDependee(eps)
         val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
-        state.updateSeenTypes(setEntity, eps.ub.numElements)
 
         val filters = state.backwardPropagationFilters(setEntity)
         val propagationResult = propagateTypes(state.setEntity, unseenTypes, filters.toSet)
@@ -406,7 +405,6 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
 
             state.updateBackwardPropagationDependee(dependee)
             state.updateBackwardPropagationFilters(setEntity, filter)
-            state.updateSeenTypes(setEntity, 0)
 
             if (dependee.hasNoUBP) {
                 return ;
@@ -416,8 +414,6 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
             if (propagation.isDefined) {
                 partialResults += propagation.get
             }
-
-            state.updateSeenTypes(setEntity, dependee.ub.numElements)
         } else {
             val filterSetHasChanged = state.updateBackwardPropagationFilters(setEntity, filter)
             if (filterSetHasChanged) {

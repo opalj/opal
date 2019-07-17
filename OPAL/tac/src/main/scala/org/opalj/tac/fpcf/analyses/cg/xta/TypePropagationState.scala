@@ -134,9 +134,6 @@ final class TypePropagationState(
         mutable.Map.empty
     private[this] var _backwardPropagationFilters: mutable.Map[SetEntity, Set[ReferenceType]] = mutable.Map.empty
 
-    // TODO AB Do we even need this? Maybe we can get this number from the old dependee.
-    private[this] var _backwardPropagationSeenTypes: mutable.Map[SetEntity, Int] = mutable.Map.empty
-
     def backwardPropagationDependeeInstantiatedTypes(setEntity: SetEntity): UIDSet[ReferenceType] = {
         val dependee = _backwardPropagationDependees(setEntity)
         if (dependee.hasUBP)
@@ -171,12 +168,11 @@ final class TypePropagationState(
     }
 
     def seenTypes(setEntity: SetEntity): Int = {
-        _backwardPropagationSeenTypes.getOrElse(setEntity, sys.error(s"Entity $setEntity not registered."))
-    }
-
-    def updateSeenTypes(setEntity: SetEntity, numberOfSeenTypes: Int): Unit = {
-        assert(numberOfSeenTypes >= _backwardPropagationSeenTypes.getOrElse(setEntity, 0))
-        _backwardPropagationSeenTypes.update(setEntity, numberOfSeenTypes)
+        val dependee = _backwardPropagationDependees(setEntity)
+        if (dependee.hasUBP)
+            dependee.ub.numElements
+        else
+            0
     }
 
     /////////////////////////////////////////////
