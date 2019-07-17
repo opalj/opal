@@ -8,8 +8,7 @@ package pointsto
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.LongLinkedSet
-import org.opalj.collection.immutable.LongLinkedTrieSet
-import org.opalj.collection.immutable.LongLinkedTrieSet1
+import org.opalj.collection.immutable.LongTrieSetWithList
 import org.opalj.collection.immutable.Naught
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
@@ -32,8 +31,8 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 
 sealed trait AllocationSitePointsToSet
     extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
-    with OrderedProperty
-    with AllocationSitePointsToSetPropertyMetaInformation {
+        with OrderedProperty
+        with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
@@ -52,8 +51,8 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
-    ): AllocationSitePointsToSet = {
+                             other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
+                         ): AllocationSitePointsToSet = {
         var newAllocationSites = elements
 
         other.forNewestNElements(other.numElements - seenElements)(newAllocationSites += _)
@@ -75,8 +74,8 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
-    ): AllocationSitePointsToSet = {
+                             other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+                         ): AllocationSitePointsToSet = {
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
@@ -105,11 +104,11 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def included(
-        other:        AllocationSitePointsToSet,
-        seenElements: Int,
-        seenTypes:    Int,
-        typeFilter:   ReferenceType ⇒ Boolean
-    ): AllocationSitePointsToSet = {
+                             other:        AllocationSitePointsToSet,
+                             seenElements: Int,
+                             seenTypes:    Int,
+                             typeFilter:   ReferenceType ⇒ Boolean
+                         ): AllocationSitePointsToSet = {
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
@@ -150,7 +149,7 @@ sealed trait AllocationSitePointsToSet
             }
         }
 
-        val newAllocationSites = elements.foldLeft(LongLinkedTrieSet.empty) { (r, allocationSite) ⇒
+        val newAllocationSites = elements.foldLeft(LongTrieSetWithList.empty) { (r, allocationSite) ⇒
             if (newTypes.containsId(allocationSiteLongToTypeId(allocationSite))) {
                 r + allocationSite
             } else {
@@ -183,20 +182,20 @@ sealed trait AllocationSitePointsToSet
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
 
     def apply(
-        allocationSite: AllocationSite, allocatedType: ReferenceType
-    ): AllocationSitePointsToSet = {
+                 allocationSite: AllocationSite, allocatedType: ReferenceType
+             ): AllocationSitePointsToSet = {
         new AllocationSitePointsToSet1(allocationSite, allocatedType)
     }
 
     def apply(
-        allocationSiteNew: AllocationSite,
-        allocatedTypeNew:  ReferenceType,
-        allocationSiteOld: AllocationSite,
-        allocatedTypeOld:  ReferenceType
-    ): AllocationSitePointsToSet = {
+                 allocationSiteNew: AllocationSite,
+                 allocatedTypeNew:  ReferenceType,
+                 allocationSiteOld: AllocationSite,
+                 allocatedTypeOld:  ReferenceType
+             ): AllocationSitePointsToSet = {
         assert(allocationSiteOld != allocationSiteNew)
         new AllocationSitePointsToSetN(
-            LongLinkedTrieSet(allocationSiteNew, allocationSiteOld),
+            LongTrieSetWithList(allocationSiteNew, allocationSiteOld),
             UIDSet(allocatedTypeOld, allocatedTypeNew),
             if (allocatedTypeNew != allocatedTypeOld)
                 allocatedTypeNew :&: allocatedTypeOld :&: Naught
@@ -206,8 +205,8 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
     }
 
     def apply(
-        elements: LongLinkedSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
-    ): AllocationSitePointsToSet = {
+                 elements: LongLinkedSet, types: UIDSet[ReferenceType], orderedTypes: Chain[ReferenceType]
+             ): AllocationSitePointsToSet = {
 
         if (elements.isEmpty) {
             NoAllocationSites
@@ -232,10 +231,10 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
 }
 
 case class AllocationSitePointsToSetN private[pointsto] (
-        override val elements:                     LongLinkedSet,
-        override val types:                        UIDSet[ReferenceType],
-        override protected[this] val orderedTypes: Chain[ReferenceType]
-) extends AllocationSitePointsToSet {
+                                                            override val elements:                     LongLinkedSet,
+                                                            override val types:                        UIDSet[ReferenceType],
+                                                            override protected[this] val orderedTypes: Chain[ReferenceType]
+                                                        ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = types.size
     override def numElements: Int = elements.size
@@ -273,15 +272,15 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
-    ): AllocationSitePointsToSet = {
+                             other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
+                         ): AllocationSitePointsToSet = {
         assert(seenElements == 0)
         other
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
-    ): AllocationSitePointsToSet = {
+                             other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+                         ): AllocationSitePointsToSet = {
         other.filter(typeFilter)
     }
 
@@ -297,7 +296,7 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 
     override def numElements: Int = 0
 
-    override def elements: LongLinkedSet = LongLinkedTrieSet.empty
+    override def elements: LongLinkedSet = LongTrieSetWithList.empty
 
     override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
         assert(n == 0)
@@ -309,8 +308,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 }
 
 case class AllocationSitePointsToSet1(
-        allocationSite: AllocationSite, allocatedType: ReferenceType
-) extends AllocationSitePointsToSet {
+                                         allocationSite: AllocationSite, allocatedType: ReferenceType
+                                     ) extends AllocationSitePointsToSet {
 
     override def numTypes: Int = 1
 
@@ -320,7 +319,7 @@ case class AllocationSitePointsToSet1(
 
     override def numElements: Int = 1
 
-    override def elements: LongLinkedSet = LongLinkedTrieSet1(allocationSite)
+    override def elements: LongLinkedSet = LongTrieSetWithList(allocationSite)
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         other match {
@@ -359,8 +358,8 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
-    ): AllocationSitePointsToSet = {
+                             other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
+                         ): AllocationSitePointsToSet = {
         assert(seenElements >= 0 && seenElements <= other.numElements)
         // Note, that we can not assert, that seenElements is between 0 and 1, as this can
         // happen by unordered partial results.
