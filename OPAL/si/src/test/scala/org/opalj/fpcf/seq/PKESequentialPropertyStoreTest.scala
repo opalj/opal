@@ -63,11 +63,11 @@ class ManyDependeesAndDependersOfDependersLastTaskskManagePKESequentialPropertyS
     }
 }
 
-class EntityAccessOrderingBasedTasksManagerPKESequentialPropertyStoreTest
+class ManyDependeesOfDirectDependersLastWithPKSplittingTasksManagerPKESequentialPropertyStoreTest
     extends PropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PropertyStore = {
-        val s = PKESequentialPropertyStore("EntityAccessOrderingBased", 64)()
+        val s = PKESequentialPropertyStore("ManyDependeesOfDirectDependersLastWithPKSplitting", 64)()
         s.suppressError = true
         s
     }
