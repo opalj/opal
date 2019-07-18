@@ -293,8 +293,12 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
             // TODO AB Maybe this case can be handled more gracefully. There is some more info in the paper.
             if !(callee.declaringClassType == ObjectType.Object && callee.name == "<init>")
         } {
-            // TODO AB think about how to handle this case
+            // Some sanity checks ...
+            // Methods with multiple defined methods should never appear as callees.
             assert(!callee.hasMultipleDefinedMethods)
+            // Instances of DefinedMethod we see should only be those where the method is defined in the class file of
+            // the declaring class type (i.e., it is not a DefinedMethod instance of some inherited method).
+            assert(!callee.hasSingleDefinedMethod || (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType))
 
             // TODO AB for debugging; remove later
             if (callee.descriptor.parameterTypes.filter(_.isObjectType).exists(ot ⇒ !classHierarchy.isKnown(ot.asObjectType))) {
