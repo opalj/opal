@@ -44,8 +44,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
-    extends AbstractCallGraphAnalysis
-    with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
+        extends AbstractCallGraphAnalysis
+        with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -55,6 +55,69 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     }
 
     override type State = PointsToBasedCGState[PointsToSet]
+
+    /*override def handleVirtualCall(
+        caller:            DefinedMethod,
+        call:              Call[V] with VirtualCall[V],
+        pc:                Int,
+        calleesAndCallers: DirectCalls
+    )(implicit state: State): Unit = {
+        // TODO: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
+        val rvs = call.receiver.asVar.value.asReferenceValue.allValues
+        for (rv ← rvs) rv match {
+            case mv: IsMObjectValue ⇒
+                val typeBounds = mv.upperTypeBound
+                val remainingTypeBounds = typeBounds.tail
+                val firstTypeBound = typeBounds.head
+                val potentialTypes = ch.allSubtypesForeachIterator(
+                    firstTypeBound, reflexive = true
+                ).filter { subtype ⇒
+                    val cfOption = project.classFile(subtype)
+                    cfOption.isDefined && {
+                        val cf = cfOption.get
+                        !cf.isInterfaceDeclaration && !cf.isAbstract &&
+                            remainingTypeBounds.forall { supertype ⇒
+                                ch.isSubtypeOf(subtype, supertype)
+                            }
+                    }
+                }
+
+                handleImpreciseCall(
+                    caller,
+                    call,
+                    pc,
+                    call.declaringClass,
+                    potentialTypes,
+                    calleesAndCallers
+                )
+
+            case _: IsNullValue ⇒
+            // TODO: do not ignore the implicit calls to NullPointerException.<init>
+
+            case v: IsSReferenceValue[_] ⇒
+                val utb = v.theUpperTypeBound
+                val ot = if(utb.isObjectType) utb.asObjectType else ObjectType.Object
+
+                val potentialTypes = classHierarchy.allSubtypesForeachIterator(
+                    ot, reflexive = true
+                ).filter { subtype ⇒
+                    val cfOption = project.classFile(subtype)
+                    cfOption.isDefined && {
+                        val cf = cfOption.get
+                        !cf.isInterfaceDeclaration && !cf.isAbstract
+                    }
+                }
+
+                handleImpreciseCall(
+                    caller,
+                    call,
+                    pc,
+                    ot,
+                    potentialTypes,
+                    calleesAndCallers
+                )
+        }
+    }*/
 
     /**
      * Computes the calls of the given `method` including the known effect of the `call` and
