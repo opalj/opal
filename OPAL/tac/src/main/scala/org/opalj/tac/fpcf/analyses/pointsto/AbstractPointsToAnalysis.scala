@@ -82,10 +82,25 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         doProcessMethod(new PointsToAnalysisState[ElementType, PointsToSet](definedMethod, tacEP))
     }
 
+    val javaLangRefReference = ObjectType("java/lang/ref/Reference")
+
     private[this] def doProcessMethod(
         implicit
         state: State
     ): ProperPropertyComputationResult = {
+
+        // TODO Do not handle this here!
+        // The garbage collector assigns every Reference to Reference.pending
+        if (state.method.declaringClassType == javaLangRefReference && state.method.definedMethod.isConstructor) {
+            val fieldOpt = p.resolveFieldReference(javaLangRefReference, "pending", javaLangRefReference)
+            if (fieldOpt.isDefined) {
+                state.includeSharedPointsToSet(
+                    fieldOpt.get,
+                    currentPointsToDefSite(fieldOpt.get, -1),
+                    { t: ReferenceType ⇒ true }
+                )
+            }
+        }
 
         if (state.hasTACDependee)
             throw new IllegalStateException("points to analysis does not support refinement based tac")
@@ -416,7 +431,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         Uses a fake defsite at the (method!)call to simulate an array load and store
         TODO Integrate into ConfiguredNativeMethodsPointsToAnalysis
          */
-        if((target.declaringClassType eq ObjectType.System) && target.name == "arraycopy") {
+        if ((target.declaringClassType eq ObjectType.System) && target.name == "arraycopy") {
             val defSiteObject = definitionSites(state.method.definedMethod, pc)
             val rhsEntity = (defSiteObject, ObjectType.Object)
             state.addArrayLoadEntity(rhsEntity)
@@ -1076,7 +1091,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             emptyPointsToSet
         } else if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here
-            emptyPointsToSet
+            createPointsToSet(ai.pcOfImmediateVMException(dependeeDefSite), state.method, ObjectType.Throwable, false)
         } else {
             currentPointsTo(depender, toEntity(dependeeDefSite, state.method, state.tac.stmts))
         }
