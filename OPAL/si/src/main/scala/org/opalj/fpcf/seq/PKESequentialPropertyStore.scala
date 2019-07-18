@@ -456,7 +456,7 @@ final class PKESequentialPropertyStore protected (
                         // this shouldn't happen... too often
                         scheduledOnUpdateComputationsCounter += 1
                         val t = HandleResultTask(this, result)
-                        tasksManager.push(t, Nil, Nil)
+                        tasksManager.push(t)
                     }
                     // There were updates...
                     val nextR = nextC(currentDependee.asEPS)
@@ -902,12 +902,13 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
 
             case "FIFO"                       ⇒ new FIFOTasksManager
             case "LIFO"                       ⇒ new LIFOTasksManager
-            case "EntityAccessOrderingBased"  ⇒ new EntityAccessOrderingBasedTasksManager
 
             case "ManyDirectDependenciesLast" ⇒ new ManyDirectDependenciesLastTasksManager
             case "ManyDirectDependersLast"    ⇒ new ManyDirectDependersLastTasksManager
             case "ManyDependeesOfDirectDependersLast" ⇒
                 new ManyDependeesOfDirectDependersLastTasksManager
+            case "ManyDependeesOfDirectDependersLastWithPKSplitting" ⇒
+                new ManyDependeesOfDirectDependersLastWithPKSplittingTasksManager
             case "ManyDependeesAndDependersOfDirectDependersLast" ⇒
                 new ManyDependeesAndDependersOfDirectDependersLastTasksManager
 

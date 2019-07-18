@@ -486,7 +486,7 @@ object BasicIFDSTaintAnalysisRunner {
 
             println("Start: "+new java.util.Date)
             val analyses = time {
-                manager.runAll(LazyTACAIProvider, BasicIFDSTaintAnalysis)
+                manager.runAll(BasicIFDSTaintAnalysis)
             }(t ⇒ analysisTime = t.toSeconds)._2
 
             val entryPoints =

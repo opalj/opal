@@ -628,7 +628,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                         // we do not know, whether the invoked method is static or not
                         // (i.e. whether the first parameter of the descriptor represent the receiver)
                         val md = descriptor.get
-                        if(md.parametersCount > 0) {
+                        if (md.parametersCount > 0) {
                             val nonStaticDescriptor = MethodDescriptor(
                                 md.parameterTypes.tail, md.returnType
                             )

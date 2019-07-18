@@ -16,8 +16,6 @@ sealed abstract class QualifiedTask extends (() ⇒ Unit) {
      */
     def isTriggeredByFinalProperty: Boolean
 
-    def isEntityBasedTask: Boolean = false
-    def asEntityBasedTask: EntityBasedQualifiedTask = throw new ClassCastException
 }
 
 final case class HandleResultTask[E <: Entity, P <: Property](
@@ -38,19 +36,11 @@ final case class HandleResultTask[E <: Entity, P <: Property](
     }
 }
 
-sealed abstract class EntityBasedQualifiedTask extends QualifiedTask {
-
-    /** The entity which will be analyzed. */
-    def e: Entity
-    final override def isEntityBasedTask: Boolean = true
-    final override def asEntityBasedTask: EntityBasedQualifiedTask = this
-}
-
 final case class PropertyComputationTask[E <: Entity](
         ps: PropertyStore,
         e:  E,
         pc: PropertyComputation[E]
-) extends EntityBasedQualifiedTask {
+) extends QualifiedTask {
 
     override def apply(): Unit = ps.handleResult(pc(e))
 
@@ -61,9 +51,7 @@ final case class OnFinalUpdateComputationTask[E <: Entity, P <: Property](
         ps: PropertyStore,
         r:  FinalEP[E, P],
         c:  OnUpdateContinuation
-) extends EntityBasedQualifiedTask {
-
-    override def e: Entity = r.e
+) extends QualifiedTask {
 
     override def apply(): Unit = {
         ps.handleResult(c(r))
@@ -76,9 +64,7 @@ final case class OnUpdateComputationTask[E <: Entity, P <: Property](
         ps:  PropertyStore,
         epk: EPK[E, P],
         c:   OnUpdateContinuation
-) extends EntityBasedQualifiedTask {
-
-    override def e: Entity = epk.e
+) extends QualifiedTask {
 
     override def apply(): Unit = {
         // Get the most current property when the depender is eventually evaluated.

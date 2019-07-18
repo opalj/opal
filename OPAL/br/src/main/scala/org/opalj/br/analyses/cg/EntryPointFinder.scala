@@ -199,7 +199,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         configEntryPoints foreach { ep ⇒
             val EntryPointContainer(configuredType, name, descriptor) = ep
 
-            OPALLogger.debug("EPFInder", ep.toString)
+            OPALLogger.debug("project configuration - entry points", ep.toString)
 
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
