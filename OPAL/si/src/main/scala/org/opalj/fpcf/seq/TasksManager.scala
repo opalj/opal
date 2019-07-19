@@ -228,9 +228,12 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
 
     private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
     private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
-
+    
     override def push(task: QualifiedTask): Unit = {
-        this.initialTasks.addFirst(task)
+        task match {
+            case _: HandleResultTask[_, _] ⇒ this.initialTasks.addFirst(task)
+            case _                         ⇒ this.initialTasks.addLast(task)
+        }
     }
 
     override def push(
@@ -240,9 +243,13 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         updatedEOptionPDependees:          Traversable[SomeEOptionP],
         currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
     ): Unit = {
-        var weight = 0
-        currentDependersOfUpdatedEOptionP foreach { epk ⇒ weight += ps.dependeesCount(epk) }
-        this.tasks.add(new WeightedQualifiedTask(task, weight))
+        if (task.isTriggeredByFinalProperty && ps.dependeesCount(taskEPK) == 1) {
+            this.initialTasks.addFirst(task)
+        } else {
+            var weight = 0
+            currentDependersOfUpdatedEOptionP foreach { epk ⇒ weight += ps.dependeesCount(epk) }
+            this.tasks.add(new WeightedQualifiedTask(task, weight))
+        }
     }
 
     override def pollAndExecute(): Unit = {
