@@ -114,6 +114,13 @@ final class PKESequentialPropertyStore protected (
         }
     }
 
+    private[seq] def hasDependers(eOptionP: SomeEOptionP): Boolean = {
+        dependers(eOptionP.pk.id).get(eOptionP.e) match {
+            case Some(dependers) ⇒ dependers.nonEmpty
+            case _               ⇒ false
+        }
+    }
+
     // The registered triggered computations along with the set of entities for which the analysis was triggered
     private[this] var triggeredComputations: Array[mutable.AnyRefMap[SomePropertyComputation, mutable.HashSet[Entity]]] = {
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }

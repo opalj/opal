@@ -226,9 +226,13 @@ private[seq] final class ManyDirectDependersLastTasksManager
 private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
     extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(50000)
-    private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(50000)
-    
+    // The following insights were gained by running the IFDS taint analysis:
+    // Note: What really didn't work was to delay tasks that have no dependers at the time
+    //       the task is registered.
+
+    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(32768)
+    private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(32768)
+
     override def push(task: QualifiedTask): Unit = {
         task match {
             case _: HandleResultTask[_, _] ⇒ this.initialTasks.addFirst(task)
@@ -244,26 +248,34 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
     ): Unit = {
         if (task.isTriggeredByFinalProperty && ps.dependeesCount(taskEPK) == 1) {
-            this.initialTasks.addFirst(task)
+            task()
         } else {
             var weight = 0
             currentDependersOfUpdatedEOptionP foreach { epk ⇒ weight += ps.dependeesCount(epk) }
-            this.tasks.add(new WeightedQualifiedTask(task, weight))
+            val wt = new WeightedQualifiedTask(task, weight)
+            this.tasks.add(wt)
         }
     }
 
     override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
-        if (t ne null)
+        if (t ne null) {
             t()
-        else {
-            this.tasks.poll().task()
+            return ;
         }
+
+        val wt = this.tasks.poll()
+        //if (wt ne null) {
+        wt.task()
+        //    return ;
+        // }
+
+        // this.delayedTasks.poll().task()
     }
 
-    override def isEmpty: Boolean = initialTasks.isEmpty && tasks.isEmpty
+    override def isEmpty: Boolean = initialTasks.isEmpty && tasks.isEmpty // && delayedTasks.isEmpty
 
-    override def size: Int = initialTasks.size + tasks.size
+    override def size: Int = initialTasks.size + tasks.size // + delayedTasks.size
 
     override def toString: String = "ManyDependeesOfDirectDependersLastTasksManager"
 }
