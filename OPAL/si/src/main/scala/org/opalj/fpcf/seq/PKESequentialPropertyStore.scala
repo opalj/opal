@@ -915,16 +915,14 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
             case "ManyDirectDependersLast"    ⇒ new ManyDirectDependersLastTasksManager
             case "ManyDependeesOfDirectDependersLast" ⇒
                 new ManyDependeesOfDirectDependersLastTasksManager
-            case "WeightedTaskDependencies" ⇒
-                new WeightedTaskDependenciesTasksManager
             case "ManyDependeesAndDependersOfDirectDependersLast" ⇒
                 new ManyDependeesAndDependersOfDirectDependersLastTasksManager
 
             case "ForwardAllDependeesLast" | "ForwardAllDependeesFirst" |
                 "BackwardAllDependeesLast" | "BackwardAllDependeesFirst" ⇒
                 val forward = taskManagerId.startsWith("Forward")
-                val manyDependeeslast = taskManagerId.endsWith("Last")
-                new AllDependeesTasksManager(forward, manyDependeeslast)
+                val manyDependeesLast = taskManagerId.endsWith("Last")
+                new AllDependeesTasksManager(forward, manyDependeesLast)
 
             case _ ⇒ throw new IllegalArgumentException(s"unknown task manager $taskManagerId")
         }

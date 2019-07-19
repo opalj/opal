@@ -7,8 +7,6 @@ import java.util.ArrayDeque
 import java.util.PriorityQueue
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.AnyRefMap
 
 trait TasksManager {
 
@@ -82,7 +80,7 @@ private[seq] final class LIFOTasksManager extends TasksManager {
 }
 
 /**
- * Processes the tasks that are schedulued for the longest time first.
+ * Processes the tasks that are scheduled for the longest time first.
  */
 private[seq] final class FIFOTasksManager extends TasksManager {
 
@@ -261,55 +259,6 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
     override def size: Int = initialTasks.size + tasks.size
 
     override def toString: String = "ManyDependeesOfDirectDependersLastTasksManager"
-}
-
-private[seq] final class WeightedTaskDependenciesTasksManager
-    extends PropertyStoreDependentTasksManager {
-
-    private[this] val immediateTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(32768)
-    private[this] val tasks: AnyRefMap[Entity, ArrayBuffer[ExtendedQualifiedTask]] = AnyRefMap.empty
-
-    override def push(task: QualifiedTask): Unit = this.immediateTasks.addFirst(task)
-
-    override def push(
-        task:                              QualifiedTask,
-        taskEPK:                           SomeEPK,
-        updatedEOptionP:                   SomeEOptionP,
-        updatedEOptionPDependees:          Traversable[SomeEOptionP],
-        currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
-    ): Unit = {
-        val eqt = new ExtendedQualifiedTask(task, taskEPK)
-        this.tasks.getOrElseUpdate(taskEPK.e, ArrayBuffer.empty) += eqt
-    }
-
-    override def pollAndExecute(): Unit = {
-        val t = this.immediateTasks.pollFirst()
-        if (t ne null)
-            return t();
-
-        val tIt = tasks.iterator
-        val head = tIt.next
-        val (_, selectedTasks) = tIt.take(10).foldLeft(head) { (c, n) ⇒
-            val (_, cTasks) = c
-            val (_, nTasks) = n
-            print("size: "+cTasks.size+" vs. "+nTasks.size+"  --  ")
-            val cLiveDependencies = cTasks.iterator.map(ct ⇒ ps.dependersCount(ct.taskEPK)).sum
-            val nLiveDependencies = nTasks.iterator.map(nt ⇒ ps.dependersCount(nt.taskEPK)).sum
-            println("live dependencies: "+cLiveDependencies+" vs. "+nLiveDependencies)
-            if (cLiveDependencies < nLiveDependencies) {
-                c
-            } else {
-                n
-            }
-        }
-        selectedTasks.foreach(t ⇒ t.task())
-    }
-
-    override def isEmpty: Boolean = tasks.isEmpty && immediateTasks.isEmpty
-
-    override def size: Int = immediateTasks.size + tasks.size
-
-    override def toString: String = "WeightedTaskDependenciesTasksManager"
 }
 
 private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksManager
