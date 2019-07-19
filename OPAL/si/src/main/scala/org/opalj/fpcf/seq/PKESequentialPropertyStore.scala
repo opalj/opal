@@ -73,6 +73,7 @@ final class PKESequentialPropertyStore protected (
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
+    // type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
     private[this] val dependers: Array[AnyRefMap[Entity, EntityDependers]] = {
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
@@ -84,6 +85,13 @@ final class PKESequentialPropertyStore protected (
     private[seq] def dependeesCount(eOptionP: SomeEOptionP): Int = {
         dependees(eOptionP.pk.id).get(eOptionP.e) match {
             case Some(dependees) ⇒ dependees.size
+            case _               ⇒ 0
+        }
+    }
+
+    private[seq] def liveDependeesCount(eOptionP: SomeEOptionP): Int = {
+        dependees(eOptionP.pk.id).get(eOptionP.e) match {
+            case Some(dependees) ⇒ dependees.count(dependee ⇒ store(dependee.toEPK).isRefinable)
             case _               ⇒ 0
         }
     }
@@ -365,6 +373,7 @@ final class PKESequentialPropertyStore protected (
             val isFinal = eps.isFinal
             val theDependers = dependers(pkId).get(e)
             theDependers.foreach { dependersOfEPK ⇒
+                val currentDependers = dependersOfEPK.keys
                 dependersOfEPK foreach { cHint ⇒
                     val (dependerEPK, (c, _hint)) = cHint
                     // IMPROVE Give the PropertyComputationHint a (new) meaningful semantics
@@ -375,7 +384,7 @@ final class PKESequentialPropertyStore protected (
                             } else {
                                 new OnUpdateComputationTask(this, eps.toEPK, c)
                             }
-                        tasksManager.push(t, eps, newDependees, dependersOfEPK.keys)
+                        tasksManager.push(t, dependerEPK, eps, newDependees, currentDependers)
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {
@@ -694,9 +703,8 @@ final class PKESequentialPropertyStore protected (
 
     protected[this] def processTasks(): Unit = {
         while (!tasksManager.isEmpty) {
-            val task = tasksManager.poll()
+            tasksManager.pollAndExecute()
             if (doTerminate) throw new InterruptedException()
-            task.apply()
         }
     }
 
@@ -907,8 +915,8 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
             case "ManyDirectDependersLast"    ⇒ new ManyDirectDependersLastTasksManager
             case "ManyDependeesOfDirectDependersLast" ⇒
                 new ManyDependeesOfDirectDependersLastTasksManager
-            case "ManyDependeesOfDirectDependersLastWithPKSplitting" ⇒
-                new ManyDependeesOfDirectDependersLastWithPKSplittingTasksManager
+            case "WeightedTaskDependencies" ⇒
+                new WeightedTaskDependenciesTasksManager
             case "ManyDependeesAndDependersOfDirectDependersLast" ⇒
                 new ManyDependeesAndDependersOfDirectDependersLastTasksManager
 

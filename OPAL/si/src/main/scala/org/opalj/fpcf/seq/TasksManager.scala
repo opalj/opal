@@ -7,6 +7,8 @@ import java.util.ArrayDeque
 import java.util.PriorityQueue
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.AnyRefMap
 
 trait TasksManager {
 
@@ -28,13 +30,14 @@ trait TasksManager {
     // else
     //  OrderedProperty.DefaultBottomness
     def push(
-        task:             QualifiedTask,
-        eOptionP:         SomeEOptionP, // the current eOptionP to which the task is related
-        dependees:        Traversable[SomeEOptionP], // the dependees of the eOptionP
-        currentDependers: Traversable[SomeEPK]
+        task:                              QualifiedTask,
+        taskEPK:                           SomeEPK,
+        updatedEOptionP:                   SomeEOptionP, // the current eOptionP to which the task is related
+        updatedEOptionPDependees:          Traversable[SomeEOptionP], // the dependees of the eOptionP
+        currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
     ): Unit
 
-    def poll(): QualifiedTask
+    def pollAndExecute(): Unit
 
     def isEmpty: Boolean
 
@@ -55,6 +58,7 @@ private[seq] final class LIFOTasksManager extends TasksManager {
 
     override def push(
         task:             QualifiedTask,
+        taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
         currentDependers: Traversable[SomeEPK]
@@ -62,12 +66,12 @@ private[seq] final class LIFOTasksManager extends TasksManager {
         this.tasks.addFirst(task)
     }
 
-    override def poll(): QualifiedTask = {
+    override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null)
-            t
+            t()
         else
-            this.tasks.pollFirst()
+            this.tasks.pollFirst()()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -91,6 +95,7 @@ private[seq] final class FIFOTasksManager extends TasksManager {
 
     override def push(
         task:             QualifiedTask,
+        taskEPK:          SomeEPK,
         eOptionPs:        SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
         currentDependers: Traversable[SomeEPK]
@@ -98,12 +103,12 @@ private[seq] final class FIFOTasksManager extends TasksManager {
         this.tasks.addLast(task)
     }
 
-    override def poll(): QualifiedTask = {
+    override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null)
-            t
+            t()
         else
-            this.tasks.pollFirst()
+            this.tasks.pollFirst()()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -119,6 +124,19 @@ private class WeightedQualifiedTask(
 ) extends Comparable[WeightedQualifiedTask] {
     def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
 }
+
+private class WeightedExtendedQualifiedTask(
+        val task:    QualifiedTask,
+        val taskEPK: SomeEPK,
+        val weight:  Int
+) extends Comparable[WeightedQualifiedTask] {
+    def compareTo(other: WeightedQualifiedTask) = this.weight - other.weight
+}
+
+private class ExtendedQualifiedTask(
+        val task:    QualifiedTask,
+        val taskEPK: SomeEPK
+)
 
 trait PropertyStoreDependentTasksManager extends TasksManager {
 
@@ -148,6 +166,7 @@ private[seq] final class ManyDirectDependenciesLastTasksManager
 
     override def push(
         task:             QualifiedTask,
+        taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
         currentDependers: Traversable[SomeEPK]
@@ -156,12 +175,12 @@ private[seq] final class ManyDirectDependenciesLastTasksManager
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
-    override def poll(): QualifiedTask = {
+    override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null)
-            t
+            t()
         else
-            this.tasks.poll().task
+            this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -183,6 +202,7 @@ private[seq] final class ManyDirectDependersLastTasksManager
 
     override def push(
         task:             QualifiedTask,
+        taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
         currentDependers: Traversable[SomeEPK]
@@ -190,12 +210,12 @@ private[seq] final class ManyDirectDependersLastTasksManager
         this.tasks.add(new WeightedQualifiedTask(task, currentDependers.size))
     }
 
-    override def poll(): QualifiedTask = {
+    override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null)
-            t
+            t()
         else
-            this.tasks.poll().task
+            this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -216,22 +236,23 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
     }
 
     override def push(
-        task:             QualifiedTask,
-        eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        task:                              QualifiedTask,
+        taskEPK:                           SomeEPK,
+        updatedEOptionP:                   SomeEOptionP,
+        updatedEOptionPDependees:          Traversable[SomeEOptionP],
+        currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
     ): Unit = {
         var weight = 0
-        currentDependers foreach { epk ⇒ weight += ps.dependeesCount(epk) }
+        currentDependersOfUpdatedEOptionP foreach { epk ⇒ weight += ps.dependeesCount(epk) }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
-    override def poll(): QualifiedTask = {
+    override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null)
-            t
+            t()
         else {
-            this.tasks.poll().task
+            this.tasks.poll().task()
         }
     }
 
@@ -242,70 +263,53 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
     override def toString: String = "ManyDependeesOfDirectDependersLastTasksManager"
 }
 
-private[seq] final class ManyDependeesOfDirectDependersLastWithPKSplittingTasksManager
+private[seq] final class WeightedTaskDependenciesTasksManager
     extends PropertyStoreDependentTasksManager {
 
-    private[this] val initialTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(32768)
-    private[this] val tasksForCollabProps: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(32768)
-    private[this] val tasks: PriorityQueue[WeightedQualifiedTask] = new PriorityQueue(32768)
+    private[this] val immediateTasks: ArrayDeque[QualifiedTask] = new ArrayDeque(32768)
+    private[this] val tasks: AnyRefMap[Entity, ArrayBuffer[ExtendedQualifiedTask]] = AnyRefMap.empty
 
-    override def push(task: QualifiedTask): Unit = {
-        task match {
-            case t: HandleResultTask[_, _] ⇒ this.initialTasks.addFirst(task)
-            case _                         ⇒ this.initialTasks.addLast(task)
-        }
-    }
+    override def push(task: QualifiedTask): Unit = this.immediateTasks.addFirst(task)
 
     override def push(
-        task:             QualifiedTask,
-        eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        task:                              QualifiedTask,
+        taskEPK:                           SomeEPK,
+        updatedEOptionP:                   SomeEOptionP,
+        updatedEOptionPDependees:          Traversable[SomeEOptionP],
+        currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
     ): Unit = {
-        var weight = 0
-        currentDependers foreach { epk ⇒ weight += ps.dependeesCount(epk) }
-        if (!task.isTriggeredByFinalProperty && dependees.isEmpty) {
-            this.tasksForCollabProps.add(new WeightedQualifiedTask(task, weight))
-        } else {
-            this.tasks.add(new WeightedQualifiedTask(task, weight))
-        }
+        val eqt = new ExtendedQualifiedTask(task, taskEPK)
+        this.tasks.getOrElseUpdate(taskEPK.e, ArrayBuffer.empty) += eqt
     }
 
-    override def poll(): QualifiedTask = {
-        val t = this.initialTasks.pollFirst()
+    override def pollAndExecute(): Unit = {
+        val t = this.immediateTasks.pollFirst()
         if (t ne null)
-            t
-        else {
-            val wt = this.tasksForCollabProps.poll()
-            if (wt != null)
-                wt.task
-            else
-                this.tasks.poll().task
+            return t();
+
+        val tIt = tasks.iterator
+        val head = tIt.next
+        val (_, selectedTasks) = tIt.take(10).foldLeft(head) { (c, n) ⇒
+            val (_, cTasks) = c
+            val (_, nTasks) = n
+            print("size: "+cTasks.size+" vs. "+nTasks.size+"  --  ")
+            val cLiveDependencies = cTasks.iterator.map(ct ⇒ ps.dependersCount(ct.taskEPK)).sum
+            val nLiveDependencies = nTasks.iterator.map(nt ⇒ ps.dependersCount(nt.taskEPK)).sum
+            println("live dependencies: "+cLiveDependencies+" vs. "+nLiveDependencies)
+            if (cLiveDependencies < nLiveDependencies) {
+                c
+            } else {
+                n
+            }
         }
-        /* THE FOLLOWING STRATEGY DOESN'T SEEM TO WORK WELL AT ALL:
-        // Priority to updating collaboratively computed properties
-        val wt = this.tasksForCollabProps.poll()
-        if (wt != null)
-            wt.task
-        else {
-            val it = this.initialTasks.pollFirst()
-            if (it ne null)
-                it
-            else
-                this.tasks.poll().task
-        }
-        */
+        selectedTasks.foreach(t ⇒ t.task())
     }
 
-    override def isEmpty: Boolean = {
-        tasks.isEmpty && tasksForCollabProps.isEmpty && initialTasks.isEmpty
-    }
+    override def isEmpty: Boolean = tasks.isEmpty && immediateTasks.isEmpty
 
-    override def size: Int = {
-        initialTasks.size + tasks.size + tasksForCollabProps.size
-    }
+    override def size: Int = immediateTasks.size + tasks.size
 
-    override def toString: String = "ManyDependeesOfDirectDependersLastWithPKSplitting"
+    override def toString: String = "WeightedTaskDependenciesTasksManager"
 }
 
 private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksManager
@@ -320,6 +324,7 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksMana
 
     override def push(
         task:             QualifiedTask,
+        taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
         currentDependers: Traversable[SomeEPK]
@@ -331,12 +336,12 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksMana
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
-    override def poll(): QualifiedTask = {
+    override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null)
-            t
+            t()
         else
-            this.tasks.poll().task
+            this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
@@ -396,6 +401,7 @@ private[seq] final class AllDependeesTasksManager(
 
     override def push(
         task:             QualifiedTask,
+        taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
         dependees:        Traversable[SomeEOptionP],
         currentDependers: Traversable[SomeEPK]
@@ -411,12 +417,12 @@ private[seq] final class AllDependeesTasksManager(
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
-    override def poll(): QualifiedTask = {
+    override def pollAndExecute(): Unit = {
         val t = this.initialTasks.pollFirst()
         if (t ne null)
-            t
+            t()
         else
-            this.tasks.poll().task
+            this.tasks.poll().task()
     }
 
     override def isEmpty: Boolean = this.initialTasks.isEmpty && this.tasks.isEmpty
