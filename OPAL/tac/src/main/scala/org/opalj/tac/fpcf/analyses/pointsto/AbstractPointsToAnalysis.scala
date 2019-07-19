@@ -51,6 +51,8 @@ import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TACAI
 
 case class ArrayEntity[ElementType](element: ElementType)
+case class MethodExceptions(dm: DeclaredMethod)
+case class CallExceptions(defSite: DefinitionSite)
 
 /**
  *
@@ -342,10 +344,16 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     state.method, currentPointsToOfDefSites(state.method, defSites)
                 )
 
+            case Throw(_, UVar(_, defSites)) ⇒
+                val entity = MethodExceptions(state.method)
+                state.includeLocalPointsToSets(
+                    entity, currentPointsToOfDefSites(entity, defSites)
+                )
+
             case _ ⇒
         }
 
-        // todo: we have to handle the exceptions that might be thrown by this method
+        // todo: we have to handle the exceptions that might implicitly be thrown by this method
 
         returnResult(state)
     }
@@ -425,6 +433,14 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         } else {
             state.addIncompletePointsToInfo(pc)
         }
+
+        val callExceptions = CallExceptions(definitionSites(state.method.definedMethod, pc))
+        val targetExceptions = MethodExceptions(target)
+
+        state.includeLocalPointsToSet(
+            callExceptions,
+            currentPointsTo(callExceptions, targetExceptions)
+        )
 
         /*
         Special handling for System.arraycopy
@@ -524,6 +540,14 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         } else {
             state.addIncompletePointsToInfo(pc)
         }
+
+        val callExceptions = CallExceptions(definitionSites(state.method.definedMethod, pc))
+        val targetExceptions = MethodExceptions(target)
+
+        state.includeLocalPointsToSet(
+            callExceptions,
+            currentPointsTo(callExceptions, targetExceptions)
+        )
     }
 
     private[this] def returnResult(state: State): ProperPropertyComputationResult = {
@@ -701,7 +725,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         val oldDependeePointsTo = oldDependees(dependee.toEPK) match {
             case UBP(ub: PointsToSet @unchecked) ⇒ ub
             case _: EPK[_, PointsToSet]          ⇒ emptyPointsToSet
-            case _                               ⇒ throw new IllegalArgumentException(s"unexpected dependee")
+            case d ⇒
+                throw new IllegalArgumentException(s"unexpected dependee $d")
         }
 
         oldPointsToSet.included(
@@ -1076,10 +1101,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     @inline private[this] def currentPointsToOfDefSites(
         depender: Entity,
         defSites: IntTrieSet
-    )(
-        implicit
-        state: State
-    ): Iterator[PointsToSet] = {
+    )(implicit state: State): Iterator[PointsToSet] = {
         defSites.iterator.map[PointsToSet](currentPointsToDefSite(depender, _))
     }
 
@@ -1087,8 +1109,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         depender: Entity, dependeeDefSite: Int
     )(implicit state: State): PointsToSet = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            // FIXME ask what exception has been thrown
-            emptyPointsToSet
+            val pc = ai.pcOfMethodExternalException(dependeeDefSite)
+            val defSite = toEntity(pc, state.method, state.tac.stmts).asInstanceOf[DefinitionSite]
+            currentPointsTo(depender, CallExceptions(defSite))
         } else if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here
             createPointsToSet(ai.pcOfImmediateVMException(dependeeDefSite), state.method, ObjectType.Throwable, false)

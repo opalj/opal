@@ -31,10 +31,12 @@ import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.toEntity
+import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -173,8 +175,9 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         depender: CallSiteT, dependeeDefSite: Int
     )(implicit state: State): PointsToSet = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            // FIXME ask what exception has been thrown
-            emptyPointsToSet
+            val pc = ai.pcOfMethodExternalException(dependeeDefSite)
+            val defSite = toEntity(pc, state.method, state.tac.stmts).asInstanceOf[DefinitionSite]
+            currentPointsTo(depender, CallExceptions(defSite))
         } else if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here
             emptyPointsToSet
