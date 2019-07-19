@@ -3,28 +3,31 @@ package org.opalj
 package fpcf
 package par
 
-import scala.collection.JavaConverters._
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.{Arrays => JArrays}
+
+import scala.collection.JavaConverters._
 
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
-import org.opalj.fpcf.PropertyKey.computeFastTrackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
 /**
  * A concurrent implementation of the property store which executes the scheduled computations
- * in parallel using a ForkJoinPool.
+ * in parallel.
  *
- * We use `NumberOfThreadsForProcessingPropertyComputations` threads for processing the
- * scheduled computations.
+ * The number of threads that is used for parallelizing the computation is determined by: 
+ * `NumberOfThreadsForProcessingPropertyComputations`
  *
  * @author Michael Eichberg
  */
-abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
+final class PKECPropertyStore(
+    final val taskManager : TaskManager
+    ) extends ParallelPropertyStore { store ⇒
 
-    protected[this] implicit def self: PKECPropertyStore = this
+    private[par] implicit def self: PKECPropertyStore = this
 
     //
     //
@@ -32,86 +35,21 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     //
     //
 
-    protected[this] def awaitPoolQuiescence(): Unit
+    import taskManager.prepareThreadPool
+    import taskManager.awaitPoolQuiescence
+    import taskManager.parallelize
+    import taskManager.forkResultHandler
+    import taskManager.forkOnUpdateContinuation
+    import taskManager.forkLazyPropertyComputation
+    import taskManager.schedulePropertyComputation
+    import taskManager.cleanUpThreadPool
 
-    protected[this] def parallelize(r: Runnable): Unit
 
-    protected[this] def forkResultHandler(r: PropertyComputationResult): Unit
-
-    protected[this] def forkPropertyComputation[E <: Entity](
-        e:  E,
-        pc: PropertyComputation[E]
-    ): Unit
-
-    protected[this] def forkOnUpdateContinuation(
-        c:  OnUpdateContinuation,
-        e:  Entity,
-        pk: SomePropertyKey
-    ): Unit
-
-    protected[this] def forkOnUpdateContinuation(
-        c:       OnUpdateContinuation,
-        finalEP: SomeFinalEP
-    ): Unit
-
+    // --------------------------------------------------------------------------------------------
     //
+    // STATISTICS
     //
-    // CORE DATA STRUCTURES
-    //
-    //
-
-    // Per PropertyKind we use one concurrent hash map to store the entities' properties.
-    // The value encompasses the current property along with some helper information.
-    protected[this] val properties: Array[ConcurrentHashMap[Entity, EPKState]] = {
-        Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
-    }
-
-    // The following "var"s/"arrays" do not need to be volatile/thread safe, because the updates –
-    // which are only done while the store is quiescent – are done within the driver thread and
-    // are guaranteed to be visible to all relevant tasks.
-
-    /** Computations that will be triggered when a new property becomes available. */
-    protected[this] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
-        new Array(SupportedPropertyKinds)
-    }
-
-    //
-    //
-    // BASIC QUERY METHODS
-    //
-    //
-
-    override def toString(printProperties: Boolean): String = {
-        if (printProperties) {
-            val ps = for {
-                (entitiesMap, pkId) ← properties.iterator.zipWithIndex.take(PropertyKey.maxId + 1)
-            } yield {
-                entitiesMap.values().iterator().asScala
-                    .map(_.eOptionP.toString.replace("\n", "\n\t"))
-                    .toList.sorted
-                    .mkString(s"Entities for property key $pkId:\n\t", "\n\t", "\n")
-            }
-            ps.mkString("PropertyStore(\n\t", "\n\t", "\n)")
-        } else {
-            s"PropertyStore(properties=${properties.iterator.map(_.size).sum})"
-        }
-    }
-
-    override def supportsFastTrackPropertyComputations: Boolean = true
-
-    private[this] val fastTrackPropertiesCounter = new AtomicInteger(0)
-    override def fastTrackPropertiesCount: Int = fastTrackPropertiesCounter.get()
-    override private[fpcf] def incrementFastTrackPropertiesCounter(): Unit = {
-        if (debug) fastTrackPropertiesCounter.incrementAndGet()
-    }
-
-    private[this] val fastTrackPropertyComputationsCounter = new AtomicInteger(0)
-    override def fastTrackPropertyComputationsCount: Int = {
-        fastTrackPropertyComputationsCounter.get()
-    }
-    override protected[this] def incrementFastTrackPropertyComputationsCounter(): Unit = {
-        if (debug) fastTrackPropertyComputationsCounter.incrementAndGet()
-    }
+    // --------------------------------------------------------------------------------------------
 
     private[this] var quiescenceCounter = 0
     override def quiescenceCount: Int = quiescenceCounter
@@ -136,6 +74,50 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     }
     override private[fpcf] def incrementFallbacksUsedForComputedPropertiesCounter(): Unit = {
         if (debug) fallbacksUsedForComputedPropertiesCounter.incrementAndGet()
+    }
+
+    //
+    //
+    // CORE DATA STRUCTURES
+    //
+    //
+
+    // Per PropertyKind we use one concurrent hash map to store the entities' properties.
+    // The value (EPKState) encompasses the current property along with some helper information.
+    private[par] val properties: Array[ConcurrentHashMap[Entity, EPKState]] = {
+        Array.fill(SupportedPropertyKinds) { new ConcurrentHashMap() }
+    }
+
+    /** 
+     * Computations that will be triggered when a new property becomes available. 
+     * 
+     * Please note, that the triggered computations have to be registered strictly before the first
+     * computation is started.
+     */
+    private[par] val triggeredComputations: Array[Array[SomePropertyComputation]] = {
+        new Array(SupportedPropertyKinds)
+    }
+
+    // --------------------------------------------------------------------------------------------
+    //
+    // BASIC QUERY METHODS (ONLY TO BE CALLED WHEN THE STORE IS QUIESCENT)
+    //
+    // --------------------------------------------------------------------------------------------
+
+    override def toString(printProperties: Boolean): String = {
+        if (printProperties) {
+            val ps = for {
+                (entitiesMap, pkId) ← properties.iterator.zipWithIndex.take(PropertyKey.maxId + 1)
+            } yield {
+                entitiesMap.values().iterator().asScala
+                    .map(_.eOptionP.toString.replace("\n", "\n\t"))
+                    .toList.sorted
+                    .mkString(s"Entities for property key $pkId:\n\t", "\n\t", "\n")
+            }
+            ps.mkString("PropertyStore(\n\t", "\n\t", "\n)")
+        } else {
+            s"PropertyStore(properties=${properties.iterator.map(_.size).sum})"
+        }
     }
 
     override def entities(p: SomeEPS ⇒ Boolean): Iterator[Entity] = {
@@ -187,18 +169,18 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
         properties.exists(propertiesOfKind ⇒ propertiesOfKind.containsKey(e))
     }
 
-    //
+    // --------------------------------------------------------------------------------------------
     //
     // CORE IMPLEMENTATION
     //
-    //
+    // --------------------------------------------------------------------------------------------
 
     override def doScheduleEagerComputationForEntity[E <: Entity](
         e: E
     )(
         pc: PropertyComputation[E]
     ): Unit = {
-        forkPropertyComputation(e, pc)
+        schedulePropertyComputation(e, pc)
     }
 
     override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
@@ -213,15 +195,15 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
         if (oldComputations == null) {
             newComputations = Array[SomePropertyComputation](pc)
         } else {
-            newComputations = java.util.Arrays.copyOf(oldComputations, oldComputations.length + 1)
+            newComputations = JArrays.copyOf(oldComputations, oldComputations.length + 1)
             newComputations(oldComputations.length) = pc
         }
         triggeredComputations(pkId) = newComputations
 
-        // Let's check if we need to trigger it right away due to already existing values...
-        println(oldComputations)
-        ???
-
+        // Recall that the scheduler has to take care of registering a triggered computation
+        // at the correct point in time; i.e., before the first analysis derives a respective
+        // value! Hence, there is no need to immediately check that we have to trigger a 
+        // computation.
     }
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = this(e, pk)
@@ -241,12 +223,12 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     ): Unit = {
         val pkId = pk.id
         val propertiesOfKind = properties(pkId)
+
         val newInterimP: SomeInterimEP =
             propertiesOfKind.get(e) match {
                 case null  ⇒ pc(EPK(e, pk))
                 case state ⇒ pc(state.eOptionP.asInstanceOf[EOptionP[E, P]])
             }
-
         propertiesOfKind.put(e, EPKState(newInterimP))
     }
 
@@ -269,29 +251,21 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
             return oldEPKState.eOptionP.asInstanceOf[EOptionP[E, P]];
         }
 
-        // The entity was not yet known ... let's check if:
+        // The entity was not yet known ... and we registered the EPKState object; let's check if:
         //  - we have to trigger a lazy property computation
-        //     - we can compute a fast track result
-        //  - have to compute the fallback because no analysis is scheduled
+        //  - we have to compute the fallback because no analysis is scheduled
         val lc = lazyComputations(pkId)
         if (lc != null) {
-            if (useFastTrackPropertyComputations) {
-                val r = computeFastTrackPropertyBasedOnPKId[P](this, e, pkId)
-                if (r.isDefined) {
-                    val p = r.get
-                    val finalP = FinalEP(e, p)
-                    finalUpdate(finalP, potentiallyIdemPotentUpdate = true)
-                    return finalP;
-                }
-            }
-            forkPropertyComputation(e, lc.asInstanceOf[PropertyComputation[E]])
+            forkLazyPropertyComputation(epk, lc.asInstanceOf[PropertyComputation[E]])
+        } else if (propertyKindsComputedInThisPhase(pkId)) {
+            // TODO Execute or register transformer...
             epk
-        } else if (!propertyKindsComputedInThisPhase(pkId)) {
-            val r = computeFallback[E, P](e, pkId)
-            finalUpdate(r, potentiallyIdemPotentUpdate = true)
-            r
         } else {
-            epk
+            // ... we have no lazy computation
+            // ... the property is also not computed 
+            val finalEP = computeFallback[E, P](e, pkId)
+            finalUpdate(finalEP, potentiallyIdemPotentUpdate = true)
+            finalEP
         }
     }
 
@@ -310,7 +284,10 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     }
 
     private[this] def removeDependerFromDependees(dependerEPK: SomeEPK): Unit = {
-        removeDependerFromDependees(dependerEPK, properties(dependerEPK.pk.id).get(dependerEPK.e).dependees)
+        removeDependerFromDependees(
+            dependerEPK, 
+            properties(dependerEPK.pk.id).get(dependerEPK.e).dependees
+        )
     }
 
     private[this] def notifyDepender(dependerEPK: SomeEPK, eps: SomeEPS): Unit = {
@@ -329,13 +306,14 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     ): Unit = {
         val oldState = properties(finalEP.pk.id).put(finalEP.e, EPKState(finalEP))
         if (oldState != null) {
-            if (!oldState.isRefinable) {
-                if (!potentiallyIdemPotentUpdate)
-                    throw new IllegalStateException(
+            if (oldState.isFinal) {
+                if (potentiallyIdemPotentUpdate)
+                return ; // IDEMPOTENT UPDATE
+                else
+                throw new IllegalStateException(
                         s"the old state $oldState is already final (new: $finalEP)"
                     )
-                else
-                    return ; // IDEMPOTENT UPDATE
+                    
             }
 
             if (debug) oldState.eOptionP.checkIsValidPropertiesUpdate(finalEP, Nil)
@@ -391,7 +369,7 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
             state
         }
 
-        // ATTENTION:   - - - - - - - - - H E R E   A R E   T H E   D R A G O N S - - - - - - - - -
+        // ATTENTION:   - - - - - - - - - - - H E R E   A R E   D R A G O N S - - - - - - - - - - -
         //              As soon as we register with the first dependee, we can have concurrent
         //              updates, which (in an extreme case) can already be completely finished
         //              between every two statements in the following code! That is, the dependees
@@ -750,6 +728,8 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
         val maxPKIndex = PropertyKey.maxId
 
+        prepareThreadPool()
+
         val continueComputation = new AtomicBoolean(false)
         do {
             continueComputation.set(false)
@@ -842,6 +822,8 @@ abstract class PKECPropertyStore extends ParallelPropertyStore { store ⇒
         } while (continueComputation.get())
 
         // TODO assert that we don't have any more InterimEPKStates
+
+        cleanUpThreadPool()
     }
 
 }

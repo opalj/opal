@@ -21,6 +21,8 @@ sealed trait EPKState {
     /** Returns `true` if this entity/property pair is not yet final. */
     def isRefinable: Boolean
 
+    def isFinal: Boolean
+
     /** Returns the underlying entity. */
     final def e: Entity = eOptionP.e
 
@@ -115,6 +117,7 @@ final class InterimEPKState(
     assert(eOptionP.isRefinable)
 
     override def isRefinable: Boolean = true
+    override def isFinal: Boolean = false
 
     override def addDepender(someEPK: SomeEPK): Unit = {
         val dependersAR = this.dependersAR
@@ -188,6 +191,7 @@ final class InterimEPKState(
 final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState {
 
     override def isRefinable: Boolean = false
+    override def isFinal: Boolean = true
 
     override def update(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP = {
         throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
