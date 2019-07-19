@@ -16,6 +16,9 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.SomeEPS
+import org.opalj.value.IsMObjectValue
+import org.opalj.value.IsNullValue
+import org.opalj.value.IsSReferenceValue
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -56,7 +59,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
 
     override type State = PointsToBasedCGState[PointsToSet]
 
-    /*override def handleVirtualCall(
+    override def handleVirtualCall(
         caller:            DefinedMethod,
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
@@ -117,7 +120,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                     calleesAndCallers
                 )
         }
-    }*/
+    }
 
     /**
      * Computes the calls of the given `method` including the known effect of the `call` and
