@@ -434,20 +434,27 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
     }
 
     def propagateTypes[E >: Null <: SetEntity](
-        setEntity: E,
-        newTypes:  UIDSet[ReferenceType],
-        filters:   Set[ReferenceType]
+        targetSetEntity: E,
+        newTypes:        UIDSet[ReferenceType],
+        filters:         Set[ReferenceType]
     ): Option[PartialResult[E, InstantiatedTypes]] = {
         assert(newTypes.nonEmpty)
 
-        val filteredTypes = newTypes.filter(nt ⇒ filters.exists(f ⇒ classHierarchy.isSubtypeOf(nt, f)))
+        def isMaybeASubtype(subtype: ReferenceType, supertype: ReferenceType): Boolean = {
+            val answer = classHierarchy.isASubtypeOf(subtype, supertype)
+            // TODO AB This is extra logic necessary for now due to some quirk in ClassHierarchy.isASubtypeOf(..)
+            val supertypeIsNotFinal = !classHierarchy.isKnownToBeFinal(supertype)
+            answer.isYes || (answer.isUnknown && supertypeIsNotFinal)
+        }
+
+        val filteredTypes = newTypes.filter(nt ⇒ filters.exists(f ⇒ isMaybeASubtype(nt, f)))
 
         if (filteredTypes.nonEmpty) {
-            _trace.traceTypePropagation(setEntity, filteredTypes)
+            _trace.traceTypePropagation(targetSetEntity, filteredTypes)
             val partialResult = PartialResult[E, InstantiatedTypes](
-                setEntity,
+                targetSetEntity,
                 InstantiatedTypes.key,
-                updateInstantiatedTypes(setEntity, filteredTypes)
+                updateInstantiatedTypes(targetSetEntity, filteredTypes)
             )
 
             Some(partialResult)

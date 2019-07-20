@@ -3,8 +3,7 @@ package org.opalj.fpcf.fixtures.callgraph.xta;
 
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Testing type data flow between methods for XTA.
@@ -33,6 +32,7 @@ public class StaticMethodFlows {
         recursionTest();
         externalWorld();
         externalWorldField();
+        externalTypeFilter();
         returnOptimization();
         genericContainer();
     }
@@ -280,10 +280,10 @@ public class StaticMethodFlows {
 
     @AvailableTypes({
             "java/util/ArrayList",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C"})
     public static void externalWorld() {
-        ArrayList<A> list = new ArrayList<>();
-        list.add(new A());
+        ArrayList<C> list = new ArrayList<>();
+        list.add(new C());
         // TODO AB If the formal parameter has type List<A> instead, ArrayList does NOT flow to the sink
         // method, since OPAL does not know List is a supertype of ArrayList. Can this be fixed somehow?
         // Even if withRT = true, it does not work.
@@ -292,32 +292,69 @@ public class StaticMethodFlows {
 
     @AvailableTypes({
             "java/util/ArrayList",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A"})
-    public static void externalWorld_sink(ArrayList<A> list) {
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C"})
+    public static void externalWorld_sink(ArrayList<C> list) {
         // TODO AB Returned types is unused, why does this not require a call to sink?
-        A obj = list.get(0);
+        C obj = list.get(0);
     }
 
     // === Field in external world ===
 
     @AvailableTypes({
             "java/awt/Event",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B"
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C"
     })
     public static void externalWorldField() {
         java.awt.Event e = new java.awt.Event(null, 0, null);
-        e.arg = new B();
+        e.arg = new C();
         externalWorldField_sink(e);
     }
 
     @AvailableTypes({
             "java/awt/Event",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$B"
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C"
     })
     public static void externalWorldField_sink(java.awt.Event e) {
-        B obj = (B)e.arg;
+        C obj = (C)e.arg;
         sink(obj);
     }
+
+    // === External type filter ===
+    // For external types (i.e., types which are not part of the analysis project), we only have limited amount of
+    // information regarding their type hierarchy. In this test, we consider two sinks with parameters of external
+    // types ArrayList and Map.
+
+    static class MyList extends ArrayList { }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$A",
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$MyList",
+            "java/util/LinkedList"})
+    private static void externalTypeFilter() {
+        // A is an internal type for which we know it does not extend Map or ArrayList. A should not be propagated
+        // to either sink.
+        sink(new A());
+        // MyList is an internal type for which we know it extends ArrayList, but it is unknown whether or not it
+        // extends Map (since we do not know the relationship between ArrayList and Map). It should propagate to
+        // both sinks.
+        sink(new MyList());
+        // LinkedList is an external type for which it is unknwon whether it extends Map or ArrayList.
+        // It should propagate to both sinks.
+        sink(new LinkedList());
+
+        externalTypeFilter_sink(null);
+        externalTypeFilter_sink2(null);
+    }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$MyList",
+            "java/util/LinkedList"})
+    private static void externalTypeFilter_sink(ArrayList list) { }
+
+    @AvailableTypes({
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$MyList",
+            "java/util/LinkedList"})
+    private static void externalTypeFilter_sink2(Map map) { }
 
     // === Return optimization ===
     // Even though the source method here has a non-void return type, the analysis should not consider the call
@@ -414,11 +451,9 @@ public class StaticMethodFlows {
     private static class B {}
     private static class B1 extends B {}
 
-    private static class C {}
-    private static class C1 extends C {}
+    final private static class C {}
 
     private static class D {}
-    private static class D1 extends D {}
 
     private static class E {}
     private static class E1 extends E {}
