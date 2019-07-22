@@ -372,6 +372,19 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         for (target ← callees.indirectCallees(pc)) {
             handleIndirectCall(pc, target, callees, tac)
         }
+
+        val callExceptions = CallExceptions(definitionSites(state.method.definedMethod, pc))
+        for (target ← callees.callees(pc)) {
+            val targetExceptions = MethodExceptions(target)
+
+            state.includeLocalPointsToSet(
+                callExceptions,
+                currentPointsTo(callExceptions, targetExceptions)
+            )
+        }
+        if (state.hasCalleesDepenedee) {
+            state.addDependee(callExceptions, state.calleesDependee)
+        }
     }
 
     private[this] def handleDirectCall(
@@ -433,14 +446,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         } else {
             state.addIncompletePointsToInfo(pc)
         }
-
-        val callExceptions = CallExceptions(definitionSites(state.method.definedMethod, pc))
-        val targetExceptions = MethodExceptions(target)
-
-        state.includeLocalPointsToSet(
-            callExceptions,
-            currentPointsTo(callExceptions, targetExceptions)
-        )
 
         /*
         Special handling for System.arraycopy
@@ -540,14 +545,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         } else {
             state.addIncompletePointsToInfo(pc)
         }
-
-        val callExceptions = CallExceptions(definitionSites(state.method.definedMethod, pc))
-        val targetExceptions = MethodExceptions(target)
-
-        state.includeLocalPointsToSet(
-            callExceptions,
-            currentPointsTo(callExceptions, targetExceptions)
-        )
     }
 
     private[this] def returnResult(state: State): ProperPropertyComputationResult = {
@@ -761,8 +758,11 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     )
                 }
             case UBP(callees: Callees) ⇒
-                // this will never happen for method return values
-                val defSite = e.asInstanceOf[DefinitionSite]
+                // this will never happen for method return values or method exceptions
+                val (defSite, dependeeIsExceptions) = e match {
+                    case ds: DefinitionSite ⇒ (ds, false)
+                    case ce: CallExceptions ⇒ (ce.defSite, true)
+                }
                 // TODO: Only handle new callees
                 val results = ArrayBuffer.empty[ProperPropertyComputationResult]
                 val tgts = callees.callees(defSite.pc)
@@ -770,11 +770,12 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 var newDependees = updatedDependees(eps, dependees)
                 var newPointsToSet = pointsToSetUB
                 tgts.foreach { target ⇒
+                    val entity = if(dependeeIsExceptions) MethodExceptions(target) else target
                     // if we already have a dependency to that method, we do not need to process it
                     // otherwise, it might still be the case that we processed it before but it is
                     // final and thus not part of dependees anymore
-                    if (!dependees.contains(EPK(target, pointsToPropertyKey))) {
-                        val p2s = ps(target, pointsToPropertyKey)
+                    if (!dependees.contains(EPK(entity, pointsToPropertyKey))) {
+                        val p2s = ps(entity, pointsToPropertyKey)
                         if (p2s.isRefinable) {
                             newDependees += (p2s.toEPK → p2s)
                         }
