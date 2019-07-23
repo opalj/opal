@@ -1457,6 +1457,7 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ArrayType {
 
+    // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
     @volatile private[this] var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
 
     private[this] def updateArrayTypes(): Unit = {
