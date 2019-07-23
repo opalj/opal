@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.collection.SortedSet
-import scala.collection.JavaConverters._
 import scala.math.Ordered
 
 import org.opalj.collection.UIDValue
@@ -1453,34 +1452,34 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ArrayType {
 
-    /** 
+    /**
      * Returns a function that enables the reverse lookup of an ArrayType given an ArrayType's id.
-     * 
-     * @note Creating this function is computationally intensive. Therefore, 
-     *       the resulting function should be cached if it is required multiple 
+     *
+     * @note Creating this function is computationally intensive. Therefore,
+     *       the resulting function should be cached if it is required multiple
      *       times.
-     * 
+     *
      * @note This function will only return those ArrayTypes which were created before
      *       this function was called.
      */
-    def lookup : (Int) => ArrayType = {
-        val arrayTypes = Array[ArrayType](-nextId +1 )
-        cache.values.forEach {wat => 
+    def lookup: (Int) ⇒ ArrayType = {
+        val arrayTypes = new Array[ArrayType](-nextId.get + 1)
+        cache.values.forEach { wat ⇒
             val at = wat.get
-            if(at != null && -at.id < arrayTypes.length) {
+            if (at != null && -at.id < arrayTypes.length) {
                 arrayTypes(-at.id) = at
             }
         }
-        (atId : Int) => {
-            val id = -atId 
-            if(id < arrayTypes.length) {
+        (atId: Int) ⇒ {
+            val id = -atId
+            if (id < arrayTypes.length) {
                 val at = arrayTypes(id)
                 if (at == null) throw new IllegalArgumentException(s"$atId is unknown")
                 at
             } else {
                 throw new IllegalArgumentException(
                     s"$atId belongs to ArrayType created after the creation of the lookup map"
-                    )
+                )
             }
         }
     }
