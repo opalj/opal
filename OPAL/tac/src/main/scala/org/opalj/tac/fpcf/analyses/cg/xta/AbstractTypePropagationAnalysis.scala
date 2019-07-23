@@ -300,11 +300,6 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
             // the declaring class type (i.e., it is not a DefinedMethod instance of some inherited method).
             assert(!callee.hasSingleDefinedMethod || (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType))
 
-            // TODO AB for debugging; remove later
-            if (callee.descriptor.parameterTypes.filter(_.isObjectType).exists(ot ⇒ !classHierarchy.isKnown(ot.asObjectType))) {
-                OPALLogger.warn("xta", s"new callee $callee has parameter types not known by the class hierarchy; type flows could be incorrect")
-            }
-
             // Remember callee (with PC) so we don't have to process it again later.
             state.addSeenCallee(pc, callee)
 
@@ -348,17 +343,6 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
         for (param ← callee.descriptor.parameterTypes) {
             if (param.isReferenceType) {
                 params += param.asReferenceType
-
-                // If the class hierarchy does not know a parameter type, we also do not know which types are subtypes
-                // of that type. Conservatively, we assume that the parameter is of type Object, i.e., every type is a
-                // subtype of that parameter.
-                // TODO AB Maybe this should only apply to external types?
-                // TODO AB What to do with array types whose element type is not known?
-                // if (param.isArrayType || param.isObjectType && classHierarchy.isKnown(param.asObjectType)) {
-                //     params += param.asReferenceType
-                // } else {
-                //     params += ObjectType.Object
-                // }
             }
         }
 
@@ -433,21 +417,53 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
         }
     }
 
-    def propagateTypes[E >: Null <: SetEntity](
+    private def candidateMatchesTypeFilter(candidateType: ReferenceType, filterType: ReferenceType): Boolean = {
+        val answer = classHierarchy.isASubtypeOf(candidateType, filterType)
+
+        if (answer.isYesOrNo) {
+            // Here, we know for sure that the candidate type is or is not a subtype of the filter type.
+            answer.isYes
+        } else {
+            // If the answer is Unknown, we don't know for sure whether the candidate is a subtype of the filter type.
+            // However, ClassHierarchy returns Unknown even for cases where it is very unlikely that this is the case.
+            // Therefore, we take some more features into account to make the filtering more precise.
+
+            // TODO AB This is extra logic necessary for now due to some quirk in ClassHierarchy.isASubtypeOf(..)
+            // See: https://bitbucket.org/delors/opal/issues/182/
+            val filterTypeIsFinal = classHierarchy.isKnownToBeFinal(filterType)
+            if (filterTypeIsFinal) {
+                return false;
+            }
+
+            // If the filter type is not a project type (i.e., it is external), we assume that any candidate type
+            // is a subtype. This can be any external type or project types for which we have incomplete supertype
+            // information.
+            // If the filter type IS a project type, we consider the candidate type not to be a subtype since this is
+            // very likely to be not the case. For the candidate type, there are two options: Either it is an external
+            // type, in which case the candidate type could only be a subtype if project types are available in the
+            // external type's project at compile time. This is very unlikely since external types are almost always
+            // from libraries (like the JDK) which are not available in the analysis context, and which were almost
+            // certainly compiled separately ("Separate Compilation Assumption").
+            // The other option is that the candidate is also a project type, in which case we should have gotten a
+            // definitive Yes/No answer before. Since we didn't get one, the candidate type probably has a supertype
+            // which is not a project type. In that case, the above argument applies similarly.
+            val filterTypeIsProjectType = filterType match {
+                case ot: ObjectType ⇒ project.isProjectType(ot)
+                case at: ArrayType  ⇒ project.isProjectType(at.elementType.asObjectType)
+            }
+
+            !filterTypeIsProjectType
+        }
+    }
+
+    private def propagateTypes[E >: Null <: SetEntity](
         targetSetEntity: E,
         newTypes:        UIDSet[ReferenceType],
         filters:         Set[ReferenceType]
     ): Option[PartialResult[E, InstantiatedTypes]] = {
         assert(newTypes.nonEmpty)
 
-        def isMaybeASubtype(subtype: ReferenceType, supertype: ReferenceType): Boolean = {
-            val answer = classHierarchy.isASubtypeOf(subtype, supertype)
-            // TODO AB This is extra logic necessary for now due to some quirk in ClassHierarchy.isASubtypeOf(..)
-            val supertypeIsNotFinal = !classHierarchy.isKnownToBeFinal(supertype)
-            answer.isYes || (answer.isUnknown && supertypeIsNotFinal)
-        }
-
-        val filteredTypes = newTypes.filter(nt ⇒ filters.exists(f ⇒ isMaybeASubtype(nt, f)))
+        val filteredTypes = newTypes.filter(nt ⇒ filters.exists(f ⇒ candidateMatchesTypeFilter(nt, f)))
 
         if (filteredTypes.nonEmpty) {
             _trace.traceTypePropagation(targetSetEntity, filteredTypes)
@@ -464,7 +480,7 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
     }
 
     // TODO AB something like this appears in several places; should maybe move to some Utils class
-    def updateInstantiatedTypes[E >: Null <: Entity](
+    private def updateInstantiatedTypes[E >: Null <: Entity](
         entity:               E,
         newInstantiatedTypes: UIDSet[ReferenceType]
     )(

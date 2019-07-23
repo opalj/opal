@@ -280,10 +280,10 @@ public class StaticMethodFlows {
 
     @AvailableTypes({
             "java/util/ArrayList",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C"})
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D"})
     public static void externalWorld() {
-        ArrayList<C> list = new ArrayList<>();
-        list.add(new C());
+        ArrayList<D> list = new ArrayList<>();
+        list.add(new D());
         // TODO AB If the formal parameter has type List<A> instead, ArrayList does NOT flow to the sink
         // method, since OPAL does not know List is a supertype of ArrayList. Can this be fixed somehow?
         // Even if withRT = true, it does not work.
@@ -292,10 +292,10 @@ public class StaticMethodFlows {
 
     @AvailableTypes({
             "java/util/ArrayList",
-            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$C"})
-    public static void externalWorld_sink(ArrayList<C> list) {
+            "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D"})
+    public static void externalWorld_sink(ArrayList<D> list) {
         // TODO AB Returned types is unused, why does this not require a call to sink?
-        C obj = list.get(0);
+        D obj = list.get(0);
     }
 
     // === Field in external world ===
