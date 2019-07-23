@@ -23,6 +23,7 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.cg.NoCallees
+import org.opalj.br.ArrayType
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSite
@@ -54,20 +55,20 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def putFieldsIterator: Iterator[(IntTrieSet, Field)] = putFields.iterator
 
-    private[this] val arrayLoads: ArrayBuffer[(DefinitionSite, ReferenceType)] = ArrayBuffer.empty
-    private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ReferenceType)] = ArrayBuffer.empty
+    private[this] val arrayLoads: ArrayBuffer[(DefinitionSite, ArrayType)] = ArrayBuffer.empty
+    private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
 
-    def addArrayLoadEntity(fakeEntity: (DefinitionSite, ReferenceType)): Unit = {
+    def addArrayLoadEntity(fakeEntity: (DefinitionSite, ArrayType)): Unit = {
         arrayLoads += fakeEntity
     }
 
-    def arrayLoadsIterator: Iterator[(DefinitionSite, ReferenceType)] = arrayLoads.iterator
+    def arrayLoadsIterator: Iterator[(DefinitionSite, ArrayType)] = arrayLoads.iterator
 
-    def addArrayStoredEntity(fakeEntity: (IntTrieSet, ReferenceType)): Unit = {
+    def addArrayStoredEntity(fakeEntity: (IntTrieSet, ArrayType)): Unit = {
         arrayStores += fakeEntity
     }
 
-    def arrayStoresIterator: Iterator[(IntTrieSet, ReferenceType)] = arrayStores.iterator
+    def arrayStoresIterator: Iterator[(IntTrieSet, ArrayType)] = arrayStores.iterator
 
     private[this] val _allocationSitePointsToSet: mutable.Map[DefinitionSite, PointsToSet] = {
         mutable.Map.empty

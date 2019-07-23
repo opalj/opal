@@ -43,6 +43,7 @@ import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.pointsto.isEmptyArrayAllocationSite
+import org.opalj.br.ArrayType
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -232,18 +233,19 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
             case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) ⇒
                 val defSiteObject = definitionSites(method, pc)
-                val componentType = av.theUpperTypeBound.componentType.asReferenceType
-                val fakeEntity = (defSiteObject, componentType)
+                val arrayType = av.theUpperTypeBound
+                val fakeEntity = (defSiteObject, arrayType)
                 state.addArrayLoadEntity(fakeEntity)
                 currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
                     pts.forNewestNElements(pts.numElements) { as ⇒
-                        // TODO can we get this check tighter (i.e. correct array subtyping)?
-                        if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                        val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                        if (typeId < 0 &&
+                            classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), av.theUpperTypeBound)){
                             state.includeSharedPointsToSet(
                                 defSiteObject,
                                 currentPointsTo(defSiteObject, ArrayEntity(as)),
                                 { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, componentType)
+                                    classHierarchy.isSubtypeOf(t, arrayType.componentType.asReferenceType)
                                 }
                             )
                         }
@@ -295,20 +297,21 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
             case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) ⇒
-                val componentType = av.theUpperTypeBound.componentType.asReferenceType
-                val fakeEntity = (defSites, componentType)
+                val arrayType = av.theUpperTypeBound
+                val fakeEntity = (defSites, av.theUpperTypeBound)
                 state.addArrayStoredEntity(fakeEntity)
                 currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
                     pts.forNewestNElements(pts.numElements) { as ⇒
-                        // TODO can we get this check tighter (i.e. correct array subtyping)?
-                        if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0 &&
+                        val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                        if (typeId < 0 &&
+                            classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), av.theUpperTypeBound) &&
                             !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
                             val arrayEntity = ArrayEntity(as)
                             state.includeSharedPointsToSets(
                                 arrayEntity,
                                 currentPointsToOfDefSites(arrayEntity, defSites),
                                 { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, componentType)
+                                    classHierarchy.isSubtypeOf(t, arrayType.componentType.asReferenceType)
                                 }
                             )
                         }
@@ -471,11 +474,11 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
          */
         if ((target.declaringClassType eq ObjectType.System) && target.name == "arraycopy") {
             val defSiteObject = definitionSites(state.method.definedMethod, pc)
-            val rhsEntity = (defSiteObject, ObjectType.Object)
+            val rhsEntity = (defSiteObject, ArrayType.ArrayOfObject)
             state.addArrayLoadEntity(rhsEntity)
             currentPointsToOfDefSites(rhsEntity, call.params.head.asVar.definedBy).foreach { pts ⇒
                 pts.forNewestNElements(pts.numElements) { as ⇒
-                    // TODO can we get this check tighter (i.e. correct array subtyping)?
+                    /* check if it is any array type */
                     if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
                         state.includeSharedPointsToSet(
                             defSiteObject,
@@ -487,11 +490,11 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             }
 
             val defSites = IntTrieSet(state.tac.pcToIndex(pc))
-            val lhsEntity = (defSites, ObjectType.Object)
+            val lhsEntity = (defSites, ArrayType.ArrayOfObject)
             state.addArrayStoredEntity(lhsEntity)
             currentPointsToOfDefSites(lhsEntity, call.params(2).asVar.definedBy).foreach { pts ⇒
                 pts.forNewestNElements(pts.numElements) { as ⇒
-                    // TODO can we get this check tighter (i.e. correct array subtyping)?
+                    /* check if it is any array type */
                     if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0 &&
                         !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
                         val arrayEntity = ArrayEntity(as)
@@ -653,19 +656,19 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
         for (fakeEntity ← state.arrayLoadsIterator) {
             if (state.hasDependees(fakeEntity)) {
-                val (defSite, componentType) = fakeEntity
+                val (defSite, arrayType) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
                 assert(dependees.nonEmpty)
                 results += InterimPartialResult(
                     dependees.values,
-                    continuationForNewAllocationSitesAtArrayLoad(defSite, componentType, dependees)
+                    continuationForNewAllocationSitesAtArrayLoad(defSite, arrayType, dependees)
                 )
             }
         }
 
         for (fakeEntity ← state.arrayStoresIterator) {
             if (state.hasDependees(fakeEntity)) {
-                val (defSites, componentType) = fakeEntity
+                val (defSites, arrayType) = fakeEntity
                 val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
                 val defSitesEPKs = defSitesWithoutExceptions.map[EPK[Entity, Property]] { ds ⇒
                     val e = EPK(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
@@ -679,7 +682,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 if (defSitesEPKs.nonEmpty)
                     results += InterimPartialResult(
                         dependees.values,
-                        continuationForNewAllocationSitesAtArrayStore(defSitesEPKs, componentType, dependees)
+                        continuationForNewAllocationSitesAtArrayStore(defSitesEPKs, arrayType, dependees)
                     )
             }
         }
@@ -860,7 +863,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     private[this] def continuationForNewAllocationSitesAtArrayStore(
-        rhsDefSitesEPS: Traversable[SomeEPK], componentType: ReferenceType, dependees: Map[SomeEPK, SomeEOptionP]
+        rhsDefSitesEPS: Traversable[SomeEPK], arrayType: ArrayType, dependees: Map[SomeEPK, SomeEOptionP]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
@@ -868,8 +871,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 var results: List[ProperPropertyComputationResult] = List.empty
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
-                    // TODO can we get this check tighter (i.e. correct array subtyping)?
-                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0 &&
+                    val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                    if (typeId < 0 &&
+                        classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
                         !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
                         results ::= InterimPartialResult(
                             rhsDefSitesEPS,
@@ -877,7 +881,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                                 ArrayEntity(as),
                                 rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
                                 { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, componentType)
+                                    classHierarchy.isSubtypeOf(t, arrayType.componentType.asReferenceType)
                                 }
                             )
                         )
@@ -886,7 +890,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
                         newDependees.values,
-                        continuationForNewAllocationSitesAtArrayStore(rhsDefSitesEPS, componentType, newDependees)
+                        continuationForNewAllocationSitesAtArrayStore(rhsDefSitesEPS, arrayType, newDependees)
                     )
                 }
                 Results(
@@ -943,7 +947,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     // todo name
     private[this] def continuationForNewAllocationSitesAtArrayLoad(
         defSiteObject: DefinitionSite,
-        componentType: ReferenceType,
+        arrayType: ArrayType,
         dependees:     Map[SomeEPK, SomeEOptionP]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
@@ -951,8 +955,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 val newDependees = updatedDependees(eps, dependees)
                 var nextDependees: List[SomeEPK] = Nil
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
-                    // TODO can we get this check tighter (i.e. correct array subtyping)?
-                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                    val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                    if (typeId < 0 && classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)){
                         val epk = EPK(ArrayEntity(as), pointsToPropertyKey)
                         ps(epk)
                         nextDependees ::= epk
@@ -963,7 +967,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
                         newDependees.values,
-                        continuationForNewAllocationSitesAtArrayLoad(defSiteObject, componentType, newDependees)
+                        continuationForNewAllocationSitesAtArrayLoad(defSiteObject, arrayType, newDependees)
                     )
                 }
                 if (nextDependees.nonEmpty) {
@@ -973,7 +977,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                             defSiteObject,
                             nextDependees.iterator.map(d ⇒ d → d).toMap,
                             { t: ReferenceType ⇒
-                                classHierarchy.isSubtypeOf(t, componentType)
+                                classHierarchy.isSubtypeOf(t, arrayType.componentType.asReferenceType)
                             }
                         )
                     )
