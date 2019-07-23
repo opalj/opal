@@ -6,6 +6,7 @@ import scala.annotation.tailrec
 
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
+import java.util.{Arrays ⇒ JArrays}
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
@@ -1456,26 +1457,36 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ArrayType {
 
-    /**
-     * Returns a function that enables the reverse lookup of an ArrayType given an ArrayType's id.
-     *
-     * @note Creating this function is computationally intensive. Therefore,
-     *       the resulting function should be cached if it is required multiple
-     *       times.
-     *
-     * @note This function will only return those ArrayTypes which were created before
-     *       this function was called.
-     */
-    def lookup: (Int) ⇒ ArrayType = {
-        val arrayTypes = new Array[ArrayType](-nextId.get + 1)
-        cache.values.forEach { wat ⇒
-            val at = wat.get
-            if (at != null && -at.id < arrayTypes.length) {
-                arrayTypes(-at.id) = at
+    // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
+    @volatile private[this] var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
+
+    private[this] def updateArrayTypes(): Unit = {
+        if (-nextId.get > arrayTypes.length) {
+            val newArrayTypes = JArrays.copyOf(this.arrayTypes, -nextId.get)
+            cache.values.forEach { wat ⇒
+                val at = wat.get
+                if (at != null && -at.id < newArrayTypes.length) {
+                    newArrayTypes(-at.id) = at
+                }
             }
+            this.arrayTypes = newArrayTypes
         }
-        (atId: Int) ⇒ {
-            val id = -atId
+    }
+
+    /**
+     * Enables the reverse lookup of an ArrayType given an ArrayType's id.
+     */
+    def lookup(atId: Int): ArrayType = {
+        var arrayTypes = this.arrayTypes
+        val id = -atId
+        if (id < arrayTypes.length) {
+            val at = arrayTypes(id)
+            if (at == null) throw new IllegalArgumentException(s"$atId is unknown")
+            at
+        } else {
+            // Let's check if the type was created in the meantime!
+            updateArrayTypes()
+            arrayTypes = this.arrayTypes
             if (id < arrayTypes.length) {
                 val at = arrayTypes(id)
                 if (at == null) throw new IllegalArgumentException(s"$atId is unknown")
