@@ -404,6 +404,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         }
         if (state.hasCalleesDepenedee) {
             state.addDependee(callExceptions, state.calleesDependee)
+            state.includeLocalPointsToSet(callExceptions, emptyPointsToSet)
         }
     }
 
@@ -806,13 +807,13 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
                 if (newDependees.nonEmpty) {
                     results += InterimResult.forUB(
-                        defSite,
+                        e,
                         newPointsToSet,
                         newDependees.values,
-                        continuationForLocal(defSite, newDependees, newPointsToSet)
+                        continuationForLocal(e, newDependees, newPointsToSet)
                     )
                 } else {
-                    results += Result(defSite, newPointsToSet)
+                    results += Result(e, newPointsToSet)
                 }
 
                 Results(results)
