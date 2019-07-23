@@ -49,8 +49,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
-        extends AbstractCallGraphAnalysis
-        with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
+    extends AbstractCallGraphAnalysis
+    with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -101,7 +101,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
 
             case v: IsSReferenceValue[_] ⇒
                 val utb = v.theUpperTypeBound
-                val ot = if(utb.isObjectType) utb.asObjectType else ObjectType.Object
+                val ot = if (utb.isObjectType) utb.asObjectType else ObjectType.Object
 
                 val potentialTypes = classHierarchy.allSubtypesForeachIterator(
                     ot, reflexive = true
