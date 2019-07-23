@@ -513,6 +513,10 @@ object Purity {
             case Some("CHA")        ⇒ CHACallGraphKey
             case Some("PointsTo")   ⇒ AllocationSiteBasedPointsToCallGraphKey
             case Some("RTA") | None ⇒ RTACallGraphKey
+            case Some(a) ⇒
+                Console.println(s"unknown call graph analysis: $a")
+                Console.println(usage)
+                return ;
         }
 
         if (evaluationDir.isDefined && !evaluationDir.get.exists()) evaluationDir.get.mkdir
