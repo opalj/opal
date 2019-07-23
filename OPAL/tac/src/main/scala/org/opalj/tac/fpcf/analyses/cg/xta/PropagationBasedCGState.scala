@@ -20,16 +20,22 @@ import org.opalj.tac.fpcf.properties.TACAI
 import scala.collection.mutable
 
 /**
- * Manages the state used by the [[XTACallGraphAnalysis]].
+ * Manages the state used by the [[PropagationBasedCallGraphAnalysis]].
  *
  * @author Andreas Bauer
  */
-// TODO AB code duplication: this is very similar to the RTAState (except for the entity of the type property).
-class XTAState(
-        override val method:                          DefinedMethod,
-        override protected[this] var _tacDependee:    EOptionP[Method, TACAI],
-        private[this] var _instantiatedTypesDependee: EOptionP[DefinedMethod, InstantiatedTypes]
+class PropagationBasedCGState(
+        override val method:                       DefinedMethod,
+        override protected[this] var _tacDependee: EOptionP[Method, TACAI],
+        _instantiatedTypesDependees:               Iterable[EOptionP[SetEntity, InstantiatedTypes]]
 ) extends CGState {
+
+    private[this] val _instantiatedTypesDependeeMap: mutable.Map[SetEntity, EOptionP[SetEntity, InstantiatedTypes]] = mutable.Map.empty
+
+    for (dependee ← _instantiatedTypesDependees) {
+        _instantiatedTypesDependeeMap.update(dependee.e, dependee)
+    }
+
     private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSiteT]] = mutable.LongMap.empty
 
     /////////////////////////////////////////////
@@ -39,28 +45,27 @@ class XTAState(
     /////////////////////////////////////////////
 
     def updateInstantiatedTypesDependee(
-        instantiatedTypesDependee: EOptionP[DefinedMethod, InstantiatedTypes]
+        instantiatedTypesDependee: EOptionP[SetEntity, InstantiatedTypes]
     ): Unit = {
-        _instantiatedTypesDependee = instantiatedTypesDependee
+        _instantiatedTypesDependeeMap.update(instantiatedTypesDependee.e, instantiatedTypesDependee)
     }
 
-    def instantiatedTypesDependee(): Option[EOptionP[DefinedMethod, InstantiatedTypes]] = {
-        if (_instantiatedTypesDependee.isRefinable)
-            Some(_instantiatedTypesDependee)
-        else
-            None
-    }
-
-    def instantiatedTypesUB: UIDSet[ReferenceType] = {
-        if (_instantiatedTypesDependee.hasUBP)
-            _instantiatedTypesDependee.ub.types
+    def instantiatedTypes(setEntity: SetEntity): UIDSet[ReferenceType] = {
+        val typeDependee = _instantiatedTypesDependeeMap(setEntity)
+        if (typeDependee.hasUBP)
+            typeDependee.ub.types
         else
             UIDSet.empty
     }
 
-    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ReferenceType] = {
-        if (_instantiatedTypesDependee.hasUBP) {
-            _instantiatedTypesDependee.ub.dropOldest(seenTypes)
+    def instantiatedTypesContains(tpe: ReferenceType): Boolean = {
+        _instantiatedTypesDependeeMap.keys.exists(instantiatedTypes(_).contains(tpe))
+    }
+
+    def newInstantiatedTypes(setEntity: SetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
+        val typeDependee = _instantiatedTypesDependeeMap(setEntity)
+        if (typeDependee.hasUBP) {
+            typeDependee.ub.dropOldest(seenTypes)
         } else {
             UIDSet.empty
         }
@@ -98,13 +103,10 @@ class XTAState(
     /////////////////////////////////////////////
 
     override def hasOpenDependencies: Boolean = {
-        _instantiatedTypesDependee.isRefinable || super.hasOpenDependencies
+        _instantiatedTypesDependeeMap.exists(_._2.isRefinable) || super.hasOpenDependencies
     }
 
     override def dependees: List[EOptionP[Entity, Property]] = {
-        if (instantiatedTypesDependee().isDefined)
-            instantiatedTypesDependee().get :: super.dependees
-        else
-            super.dependees
+        _instantiatedTypesDependeeMap.values ++: super.dependees
     }
 }

@@ -6,8 +6,8 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.ArrayType
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
@@ -18,6 +18,8 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -28,8 +30,7 @@ import org.opalj.br.instructions.NEW
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
 import org.opalj.br.instructions.CreateNewArrayInstruction
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Results
+import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -57,6 +58,19 @@ class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends R
             case NEW(declType) ⇒ declType
         })
 
+        // Exception types are tracked globally.
+        val instantiatedExceptionTypes =
+            instantiatedObjectTypes.filter(classHierarchy.isSubtypeOf(_, ObjectType.Throwable))
+        val exceptionTypePartialResult =
+            if (instantiatedExceptionTypes.nonEmpty)
+                Some(PartialResult(
+                    project,
+                    InstantiatedTypes.key,
+                    updateForProject(project, UIDSet(instantiatedExceptionTypes.toSeq: _*))
+                ))
+            else
+                None
+
         // We only care about arrays of reference types.
         val instantiatedArrays = code.instructions.collect({
             case arr: CreateNewArrayInstruction if arr.arrayType.elementType.isReferenceType ⇒ arr.arrayType
@@ -70,7 +84,7 @@ class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends R
                 InstantiatedTypes.key,
                 update(definedMethod, UIDSet((instantiatedObjectTypes ++ instantiatedArrays).toSeq: _*))
             ),
-            multidimensionalArrayPartialResults
+            exceptionTypePartialResult ++ multidimensionalArrayPartialResults
         )
     }
 
@@ -108,12 +122,34 @@ class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends R
     }
 
     // TODO AB code duplication; something like this appears in many places
-    def update[E >: Null <: Entity](
+    def update[E <: Entity](
         entity:               E,
         newInstantiatedTypes: UIDSet[ReferenceType]
     )(
         eop: EOptionP[E, InstantiatedTypes]
     ): Option[EPS[E, InstantiatedTypes]] = eop match {
+        case InterimUBP(ub: InstantiatedTypes) ⇒
+            val newUB = ub.updated(newInstantiatedTypes)
+            if (newUB.types.size > ub.types.size)
+                Some(InterimEUBP(entity, newUB))
+            else
+                None
+
+        case _: EPK[_, _] ⇒
+            val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
+            Some(InterimEUBP(entity, newUB))
+
+        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+    }
+
+    // TODO AB This variant is needed for updating project (SomeProject is not compatible with the one above),
+    //  although I'm not entirely sure why...
+    def updateForProject(
+        entity:               SomeProject,
+        newInstantiatedTypes: UIDSet[ReferenceType]
+    )(
+        eop: EOptionP[SomeProject, InstantiatedTypes]
+    ): Option[EPS[SomeProject, InstantiatedTypes]] = eop match {
         case InterimUBP(ub: InstantiatedTypes) ⇒
             val newUB = ub.updated(newInstantiatedTypes)
             if (newUB.types.size > ub.types.size)
