@@ -76,16 +76,16 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  * computed a lower bound that one will be used.
  *
  * ==Thread Safety==
- * The sequential property store is not thread-safe; the parallelized implementation is
- * thread-safe in the following manner:
+ * The sequential property store is not thread-safe; the parallelized implementation enables
+ * limited concurrent access:
  *  - a client has to use the SAME thread (the driver thread) to call
- *    (0) [[set]] to initialize the property store,
+ *    (0) [[set]] and [[preInitialize]] to initialize the property store,
  *    (1) [[org.opalj.fpcf.PropertyStore!.setupPhase(configuration:org\.opalj\.fpcf\.PropertyKindsConfiguration)*]],
  *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]],
  *    (3) [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
  *    (4) [[force]] and
- *    (5) go back to (1)
- *    (finally) [[PropertyStore#waitOnPhaseCompletion]] methods.
+ *    (5) (finally) [[PropertyStore#waitOnPhaseCompletion]] methods.
+ *    go back to (1).    
  *    Hence, the previously mentioned methods MUST NOT be called by
  *    PropertyComputation/OnUpdateComputation functions. The methods to query the store (`apply`)
  *    are thread-safe and can be called at any time.
