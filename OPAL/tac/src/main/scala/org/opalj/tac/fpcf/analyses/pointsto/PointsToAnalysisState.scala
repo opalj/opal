@@ -178,10 +178,6 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         _dependerToDependees(depender).iterator.map(dependee ⇒ (dependee.toEPK, dependee)).toMap
     }
 
-    final def plainDependeesOf(depender: Entity): mutable.Set[SomeEOptionP] = {
-        _dependerToDependees(depender)
-    }
-
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
 
     def callees(ps: PropertyStore): Callees = {
