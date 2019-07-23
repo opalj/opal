@@ -45,8 +45,12 @@ sealed abstract class EPKState {
      */
     final def e: Entity = eOptionP.e
 
+    final def pk: SomePropertyKey = eOptionP.pk
+
+    final def pkId: Int = eOptionP.pk.id
+
     /**
-     * Updates the underlying `EOptionP` value; if the update is relevant, the current set
+     * Atomically updates the underlying `EOptionP` value; if the update is relevant, the current set
      * of dependers is cleared and returned along with the old `eOptionP` value.
      *
      * @note This function is only defined if the current `EOptionP` value is not already a
@@ -62,7 +66,7 @@ sealed abstract class EPKState {
     //  newEOptionP.isUpdatedComparedTo(eOptionP)
 
     /**
-     * Updates the underlying `eOptionP` and returns the set of dependers.
+     * Atomically updates the underlying `eOptionP` and returns the set of dependers.
      */
     def finalUpdate(eOptionP : SomeFinalEP):  Set[SomeEPK] 
 
@@ -124,34 +128,6 @@ sealed abstract class EPKState {
      *       `PropertyComputationResult`.
      */
     def dependees: Traversable[SomeEOptionP]
-
-    /*
-
-    def resetDependers(): Set[SomeEPK]
-
-    def lastDependers(): Set[SomeEPK]
-
-    /**
-     * Returns the current `OnUpdateComputation` or `null`, if the `OnUpdateComputation` was
-     * already triggered. This is an atomic operation. Additionally – in a second step –
-     * removes the EPK underlying the EPKState from the the dependees and clears the dependees.
-     *
-     * @note This method is always defined and never throws an exception.
-     */
-    def clearOnUpdateComputationAndDependees(): OnUpdateContinuation
-
-    /**
-     * Returns `true` if the current `EPKState` has an `OnUpdateComputation` that was not yet
-     * triggered.
-     *
-     * @note The returned value may have changed in the meantime; hence, this method
-     *       can/should only be used as a hint.
-     */
-    def hasPendingOnUpdateComputation: Boolean
-
- 
-
-    */
 
 }
 

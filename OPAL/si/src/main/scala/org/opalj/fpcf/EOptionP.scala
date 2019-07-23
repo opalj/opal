@@ -625,7 +625,7 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
         }
     }
 
-    override def hashCode: Int = (e.hashCode() * 31 + ub.hashCode()) * 7 + 83
+    override def hashCode: Int = e.hashCode() * 31 + ub.hashCode()
 
     override def toString: String = {
         s"InterimEUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
@@ -741,7 +741,7 @@ final class InterimELBP[+E <: Entity, +P <: Property](
         }
     }
 
-    override def hashCode: Int = (e.hashCode() * 31 + lb.hashCode()) * 7 + 73
+    override def hashCode: Int = e.hashCode() * 31 + lb.hashCode()
 
     override def toString: String = {
         s"InterimELBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
@@ -823,7 +823,7 @@ final class EPK[+E <: Entity, +P <: Property](
         }
     }
 
-    override def hashCode: Int = e.hashCode() * 97 + pk.id
+    override def hashCode: Int = e.hashCode() * 511 + pk.id
 
     override def toString: String = {
         val pkId = pk.id
