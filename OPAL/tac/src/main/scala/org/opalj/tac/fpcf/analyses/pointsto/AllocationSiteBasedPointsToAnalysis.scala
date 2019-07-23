@@ -45,20 +45,21 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
     val mergeExceptions: Boolean = project.config.getBoolean(s"$configPrefix.mergeExceptions")
 
     // TODO: Create merged pointsTo allocation site
-    val stringBuilderPointsToSet = AllocationSitePointsToSet1(StringBuilderId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.StringBuilder)
-    val stringBufferPointsToSet = AllocationSitePointsToSet1(StringBufferId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.StringBuffer)
-    val stringConstPointsToSet = AllocationSitePointsToSet1(StringId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.String)
-    val classConstPointsToSet = AllocationSitePointsToSet1(ClassId.toLong << 38 | 0x3FFFFFFFFFL, ObjectType.Class)
+    val stringBuilderPointsToSet = AllocationSitePointsToSet1(StringBuilderId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.StringBuilder)
+    val stringBufferPointsToSet = AllocationSitePointsToSet1(StringBufferId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.StringBuffer)
+    val stringConstPointsToSet = AllocationSitePointsToSet1(StringId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.String)
+    val classConstPointsToSet = AllocationSitePointsToSet1(ClassId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.Class)
     var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
 
     override def createPointsToSet(
         pc:             Int,
         declaredMethod: DeclaredMethod,
         allocatedType:  ReferenceType,
-        isConstant:     Boolean
+        isConstant:     Boolean,
+        isEmptyArray:   Boolean = false
     ): AllocationSitePointsToSet = {
         @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
-            val as = allocationSiteToLong(declaredMethod, pc, allocatedType)
+            val as = allocationSiteToLong(declaredMethod, pc, allocatedType, isEmptyArray)
             new AllocationSitePointsToSet1(as, allocatedType)
         }
 
@@ -90,7 +91,7 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
                     if (ptsO.isDefined)
                         ptsO.get
                     else {
-                        val newPts = new AllocationSitePointsToSet1(allocatedType.id.toLong << 38 | 0x3FFFFFFFFFL, allocatedType)
+                        val newPts = new AllocationSitePointsToSet1(allocatedType.id.toLong << 39 | 0x3FFFFFFFFFL, allocatedType)
                         exceptionPointsToSets += allocatedType.id → newPts
                         newPts
                     }

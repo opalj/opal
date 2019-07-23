@@ -42,6 +42,7 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
+import org.opalj.br.fpcf.properties.pointsto.isEmptyArrayAllocationSite
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -73,7 +74,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         pc:             Int,
         declaredMethod: DeclaredMethod,
         allocatedType:  ReferenceType,
-        isConstant:     Boolean
+        isConstant:     Boolean,
+        isEmptyArray:   Boolean        = false
     ): PointsToSet
 
     type State = PointsToAnalysisState[ElementType, PointsToSet]
@@ -121,15 +123,26 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 )
 
             case Assignment(pc, _, NewArray(_, counts, tpe)) ⇒
+                @inline def countIsZero(theCounts: Seq[Expr[V]]): Boolean = {
+                    theCounts.head.asVar.definedBy.forall { ds ⇒
+                        ds >= 0 &&
+                            tac.stmts(ds).asAssignment.expr.isIntConst &&
+                            tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
+                    }
+                }
+
                 val defSite = definitionSites(method, pc)
-                var arrayReferencePTS = createPointsToSet(pc, state.method, tpe, isConstant = false)
+                val isEmptyArray = countIsZero(counts)
+                var arrayReferencePTS = createPointsToSet(
+                    pc, state.method, tpe, isConstant = false, isEmptyArray
+                )
                 state.setAllocationSitePointsToSet(
                     defSite,
                     arrayReferencePTS
                 )
                 var remainingCounts = counts.tail
                 var allocatedType: FieldType = tpe.componentType
-                var continue = true
+                var continue = !isEmptyArray
                 while (remainingCounts.nonEmpty && allocatedType.isArrayType && continue) {
                     val theType = allocatedType.asArrayType
 
@@ -137,20 +150,23 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     var arrayEntity: ArrayEntity[ElementType] = null
                     arrayReferencePTS.forNewestNElements(1) { as ⇒ arrayEntity = ArrayEntity(as) }
 
-                    arrayReferencePTS = createPointsToSet(pc, state.method, theType, isConstant = false)
+                    if (countIsZero(remainingCounts))
+                        continue = false
+
+                    arrayReferencePTS = createPointsToSet(
+                        pc,
+                        state.method,
+                        theType,
+                        isConstant = false,
+                        isEmptyArray = !continue
+                    )
                     state.includeSharedPointsToSet(
                         arrayEntity,
                         arrayReferencePTS,
                         { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, theType) }
                     )
-                    // TODO: refactor
-                    if (remainingCounts.head.asVar.definedBy.forall { ds ⇒
-                        ds >= 0 &&
-                            tac.stmts(ds).asAssignment.expr.isIntConst &&
-                            tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
-                    })
-                        continue = false
-                    remainingCounts = counts.tail
+
+                    remainingCounts = remainingCounts.tail
                     allocatedType = theType.componentType
                 }
 
@@ -285,7 +301,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
                     pts.forNewestNElements(pts.numElements) { as ⇒
                         // TODO can we get this check tighter (i.e. correct array subtyping)?
-                        if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                        if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0 &&
+                            !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
                             val arrayEntity = ArrayEntity(as)
                             state.includeSharedPointsToSets(
                                 arrayEntity,
@@ -475,7 +492,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             currentPointsToOfDefSites(lhsEntity, call.params(2).asVar.definedBy).foreach { pts ⇒
                 pts.forNewestNElements(pts.numElements) { as ⇒
                     // TODO can we get this check tighter (i.e. correct array subtyping)?
-                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0 &&
+                        !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
                         val arrayEntity = ArrayEntity(as)
                         state.includeSharedPointsToSets(
                             arrayEntity,
@@ -770,7 +788,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 var newDependees = updatedDependees(eps, dependees)
                 var newPointsToSet = pointsToSetUB
                 tgts.foreach { target ⇒
-                    val entity = if(dependeeIsExceptions) MethodExceptions(target) else target
+                    val entity = if (dependeeIsExceptions) MethodExceptions(target) else target
                     // if we already have a dependency to that method, we do not need to process it
                     // otherwise, it might still be the case that we processed it before but it is
                     // final and thus not part of dependees anymore
@@ -851,7 +869,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
                     // TODO can we get this check tighter (i.e. correct array subtyping)?
-                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
+                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0 &&
+                        !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
                         results ::= InterimPartialResult(
                             rhsDefSitesEPS,
                             continuationForShared(
