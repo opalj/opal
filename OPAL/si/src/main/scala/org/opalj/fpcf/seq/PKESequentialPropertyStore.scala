@@ -642,7 +642,7 @@ final class PKESequentialPropertyStore protected (
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
-                results foreach { ep ⇒ update(FinalEP(ep.e, ep.p), newDependees = Nil) }
+                results foreach { finalEP ⇒ update(finalEP, newDependees = Nil) }
 
             //
             // Methods which actually store results...
