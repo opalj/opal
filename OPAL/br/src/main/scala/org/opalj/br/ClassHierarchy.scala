@@ -1461,9 +1461,11 @@ class ClassHierarchy private (
         val subtypeId = subtype.id
         val theSupertypeId = theSupertype.id
 
-        if (isUnknown(subtypeId)) {
-            return if (isKnownToBeFinal(theSupertypeId)) No else Unknown;
-        }
+        if (isKnownToBeFinal(theSupertypeId))
+            return No;
+
+        if (isUnknown(subtypeId))
+            return Unknown;
 
         if (isUnknown(theSupertypeId)) {
             return if (isSupertypeInformationCompleteMap(subtypeId)) No else Unknown;
