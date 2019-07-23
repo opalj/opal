@@ -38,7 +38,7 @@ abstract class TaskManager {
 
     def awaitPoolQuiescence()(implicit store: PKECPropertyStore): Unit
 
-    def parallelize(r: Runnable)(implicit store: PKECPropertyStore): Unit 
+    def parallelize(f : => Unit)(implicit store: PKECPropertyStore): Unit 
 
      def forkResultHandler(r: PropertyComputationResult)(implicit store: PKECPropertyStore ): Unit 
 
@@ -51,7 +51,13 @@ abstract class TaskManager {
         ): Unit
 
      /**
-      * Idea: run the property computation by a thread that has just analyzed the entity... 
+      * Schedule or execute the given lazy property computation for the given entity.
+      * 
+      * It is the responsibility of the task manager to ensure that we don't run in
+      * a `StackOverflowError` if if executes the property computation eagerly.
+      * 
+      * *Potential Optimizations*  
+      * Run the property computation by a thread that has just analyzed the entity... 
       * if no thread is analyzing the entity analyze it using the current thread to minimize
       * the overall number of notifications.
       */
@@ -62,6 +68,8 @@ abstract class TaskManager {
         implicit 
         store: PKECPropertyStore
         ): EOptionP[E,P]
+
+
 
      def forkOnUpdateContinuation(
         c:  OnUpdateContinuation,
