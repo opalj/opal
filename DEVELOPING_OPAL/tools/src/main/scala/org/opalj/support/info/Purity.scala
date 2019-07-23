@@ -48,22 +48,33 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
+import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.AbstractCallGraphKey
+import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
+import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.DomainSpecificRater
 import org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
+import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -78,49 +89,35 @@ object Purity {
             "[-projectDir <directory with project class files relative to cp>]\n"+
             "[-libDir <directory with library class files relative to cp>]\n"+
             "[-analysis <L0|L1|L2> (Default: L2, the most precise analysis configuration)]\n"+
+            "[-fieldMutability <none|L0|L1|L2> (Default: Depends on analysis level)]\n"+
+            "[-escape <none|L0|L1> (Default: L1, the most precise configuration)]\n"+
             "[-domain <class name of the abstract interpretation domain>]\n"+
             "[-rater <class name of the rater for domain-specific actions>]\n"+
+            "[-callGraph <CHA|RTA|PointsTo> (Default: RTA)]\n"+
+            "[-eager] (supporting analyses are executed eagerly)\n"+
             "[-noJDK] (do not analyze any JDK methods)\n"+
             "[-individual] (reports the purity result for each method)\n"+
             "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n"+
+            "[-library] (assumes that the target is a library)\n"+
             "[-debug] (enable debug output from PropertyStore)\n"+
             "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
             "[-eval <path to evaluation directory>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
-    val supportingAnalyses = IndexedSeq(
-        List[FPCFAnalysisScheduler](
-            LazyL0FieldMutabilityAnalysis,
-            LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis
-        ),
-        List[FPCFAnalysisScheduler](
-            LazyL1FieldMutabilityAnalysis,
-            LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis
-        ),
-        List[FPCFAnalysisScheduler](
-            LazyL0CompileTimeConstancyAnalysis,
-            LazyStaticDataUsageAnalysis,
-            LazyReturnValueFreshnessAnalysis,
-            LazyFieldLocalityAnalysis,
-            LazyL1FieldMutabilityAnalysis,
-            LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis
-        )
-    )
-
     def evaluate(
         cp:                    File,
         projectDir:            Option[String],
         libDir:                Option[String],
         analysis:              FPCFLazyAnalysisScheduler,
+        support:               List[FPCFAnalysisScheduler],
         domain:                Class[_ <: Domain with RecordDefUse],
         rater:                 DomainSpecificRater,
+        callGraphKey:          AbstractCallGraphKey,
         withoutJDK:            Boolean,
         individual:            Boolean,
         closedWorldAssumption: Boolean,
+        isLibrary:             Boolean,
         debug:                 Boolean,
         evaluationDir:         Option[File]
     ): Unit = {
@@ -140,8 +137,6 @@ object Purity {
         val dirName = if (cp eq JRELibraryFolder) "JDK" else cp.getName
         val projectEvalDir = evaluationDir.map(new File(_, dirName))
         if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
-
-        val isLibrary = cp eq JRELibraryFolder // TODO make configurable
 
         var projectTime: Seconds = Seconds.None
         var propertyStoreTime: Seconds = Seconds.None
@@ -185,12 +180,6 @@ object Purity {
             case LazyL2PurityAnalysis ⇒ L2PurityAnalysis.setRater(Some(rater))
         }
 
-        val support = analysis match {
-            case LazyL0PurityAnalysis ⇒ supportingAnalyses(0)
-            case LazyL1PurityAnalysis ⇒ supportingAnalyses(1)
-            case LazyL2PurityAnalysis ⇒ supportingAnalyses(2)
-        }
-
         val declaredMethods = project.get(DeclaredMethodsKey)
 
         val projMethods: Seq[DefinedMethod] =
@@ -200,7 +189,7 @@ object Purity {
         val manager = project.get(FPCFAnalysesManagerKey)
 
         time {
-            project.get(RTACallGraphKey)
+            project.get(callGraphKey)
         } { t ⇒ callGraphTime = t.toSeconds }
 
         val reachableMethods =
@@ -371,13 +360,18 @@ object Purity {
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var analysisName: Option[String] = None
+        var fieldMutabilityAnalysisName: Option[String] = None
+        var escapeAnalysisName: Option[String] = None
         var domainName: Option[String] = None
         var raterName: Option[String] = None
+        var callGraphName: Option[String] = None
         var withoutJDK = false
         var individual = false
+        var isLibrary = false
         var cwa = false
         var debug = false
         var multiProjects = false
+        var eager = false
         var evaluationDir: Option[File] = None
 
         // PARSING PARAMETERS
@@ -395,18 +389,23 @@ object Purity {
 
         while (i < args.length) {
             args(i) match {
-                case "-cp"          ⇒ cp = new File(readNextArg())
-                case "-projectDir"  ⇒ projectDir = Some(readNextArg())
-                case "-libDir"      ⇒ libDir = Some(readNextArg())
-                case "-analysis"    ⇒ analysisName = Some(readNextArg())
-                case "-domain"      ⇒ domainName = Some(readNextArg())
-                case "-rater"       ⇒ raterName = Some(readNextArg())
-                case "-individual"  ⇒ individual = true
-                case "-closedWorld" ⇒ cwa = true
-                case "-debug"       ⇒ debug = true
-                case "-multi"       ⇒ multiProjects = true
-                case "-eval"        ⇒ evaluationDir = Some(new File(readNextArg()))
-                case "-noJDK"       ⇒ withoutJDK = true
+                case "-cp"              ⇒ cp = new File(readNextArg())
+                case "-projectDir"      ⇒ projectDir = Some(readNextArg())
+                case "-libDir"          ⇒ libDir = Some(readNextArg())
+                case "-analysis"        ⇒ analysisName = Some(readNextArg())
+                case "-fieldMutability" ⇒ fieldMutabilityAnalysisName = Some(readNextArg())
+                case "-escape"          ⇒ escapeAnalysisName = Some(readNextArg())
+                case "-domain"          ⇒ domainName = Some(readNextArg())
+                case "-rater"           ⇒ raterName = Some(readNextArg())
+                case "-callGraph"       ⇒ callGraphName = Some(readNextArg())
+                case "-eager"           ⇒ eager = true
+                case "-individual"      ⇒ individual = true
+                case "-closedWorld"     ⇒ cwa = true
+                case "-library"         ⇒ isLibrary = true
+                case "-debug"           ⇒ debug = true
+                case "-multi"           ⇒ multiProjects = true
+                case "-eval"            ⇒ evaluationDir = Some(new File(readNextArg()))
+                case "-noJDK"           ⇒ withoutJDK = true
                 case "-JDK" ⇒
                     cp = JRELibraryFolder; withoutJDK = true
 
@@ -423,13 +422,73 @@ object Purity {
             return ;
         }
 
+        var support: List[FPCFAnalysisScheduler] = Nil
         val analysis: FPCFLazyAnalysisScheduler = analysisName match {
-            case Some("L0")        ⇒ LazyL0PurityAnalysis
-            case Some("L1")        ⇒ LazyL1PurityAnalysis
-            case None | Some("L2") ⇒ LazyL2PurityAnalysis
+            case Some("L0") ⇒ LazyL0PurityAnalysis
+
+            case Some("L1") ⇒ LazyL1PurityAnalysis
+
+            case None | Some("L2") ⇒
+                support = List(
+                    LazyL0CompileTimeConstancyAnalysis,
+                    LazyStaticDataUsageAnalysis,
+                    LazyReturnValueFreshnessAnalysis,
+                    LazyFieldLocalityAnalysis
+                )
+                LazyL2PurityAnalysis
 
             case Some(a) ⇒
                 Console.println(s"unknown analysis: $a")
+                Console.println(usage)
+                return ;
+        }
+
+        if (eager) {
+            support ::= EagerClassImmutabilityAnalysis
+            support ::= EagerTypeImmutabilityAnalysis
+        } else {
+            support ::= LazyClassImmutabilityAnalysis
+            support ::= LazyTypeImmutabilityAnalysis
+        }
+
+        escapeAnalysisName match {
+            case Some("L0") ⇒
+                support ::= LazySimpleEscapeAnalysis
+
+            case None | Some("L1") ⇒
+                support ::= LazyInterProceduralEscapeAnalysis
+
+            case Some("none") ⇒
+
+            case Some(a) ⇒
+                Console.println(s"unknown escape analysis: $a")
+                Console.println(usage)
+                return ;
+        }
+
+        fieldMutabilityAnalysisName match {
+            case Some("L0") if eager ⇒ support ::= EagerL0FieldMutabilityAnalysis
+
+            case Some("L0")          ⇒ support ::= LazyL0FieldMutabilityAnalysis
+
+            case Some("L1") if eager ⇒ support ::= EagerL1FieldMutabilityAnalysis
+
+            case Some("L1")          ⇒ support ::= LazyL1FieldMutabilityAnalysis
+
+            case Some("L2") if eager ⇒ support ::= EagerL2FieldMutabilityAnalysis
+
+            case Some("L2")          ⇒ support ::= LazyL2FieldMutabilityAnalysis
+
+            case Some("none")        ⇒
+
+            case None ⇒ analysis match {
+                case LazyL0PurityAnalysis ⇒ LazyL0FieldMutabilityAnalysis
+                case LazyL1PurityAnalysis ⇒ LazyL1FieldMutabilityAnalysis
+                case LazyL2PurityAnalysis ⇒ LazyL1FieldMutabilityAnalysis
+            }
+
+            case Some(a) ⇒
+                Console.println(s"unknown field mutability analysis: $a")
                 Console.println(usage)
                 return ;
         }
@@ -450,6 +509,12 @@ object Purity {
             mirror.reflectModule(module).instance.asInstanceOf[DomainSpecificRater]
         }
 
+        val callGraphKey = callGraphName match {
+            case Some("CHA")        ⇒ CHACallGraphKey
+            case Some("PointsTo")   ⇒ AllocationSiteBasedPointsToCallGraphKey
+            case Some("RTA") | None ⇒ RTACallGraphKey
+        }
+
         if (evaluationDir.isDefined && !evaluationDir.get.exists()) evaluationDir.get.mkdir
 
         val begin = Calendar.getInstance()
@@ -464,11 +529,14 @@ object Purity {
                         projectDir,
                         libDir,
                         analysis,
+                        support,
                         d,
                         rater,
+                        callGraphKey,
                         withoutJDK,
                         individual,
                         cwa,
+                        isLibrary || (subp eq JRELibraryFolder),
                         debug,
                         evaluationDir
                     )
@@ -479,11 +547,14 @@ object Purity {
                     projectDir,
                     libDir,
                     analysis,
+                    support,
                     d,
                     rater,
+                    callGraphKey,
                     withoutJDK,
                     individual,
                     cwa,
+                    isLibrary || (cp eq JRELibraryFolder),
                     debug,
                     evaluationDir
                 )
