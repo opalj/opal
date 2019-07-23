@@ -59,8 +59,8 @@ case class CallExceptions(defSite: DefinitionSite)
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-        with ReachableMethodAnalysis {
+    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+    with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -770,7 +770,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 var newDependees = updatedDependees(eps, dependees)
                 var newPointsToSet = pointsToSetUB
                 tgts.foreach { target ⇒
-                    val entity = if(dependeeIsExceptions) MethodExceptions(target) else target
+                    val entity = if (dependeeIsExceptions) MethodExceptions(target) else target
                     // if we already have a dependency to that method, we do not need to process it
                     // otherwise, it might still be the case that we processed it before but it is
                     // final and thus not part of dependees anymore
