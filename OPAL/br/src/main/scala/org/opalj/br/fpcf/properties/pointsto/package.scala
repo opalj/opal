@@ -18,7 +18,7 @@ package object pointsto {
     ): Long = {
         val methodId = method.id
         val typeId = tpe.id
-        val emptyArray = if(isEmptyArray) 1L else 0L
+        val emptyArray = if (isEmptyArray) 1L else 0L
         assert(pc >= 0 && pc <= 0xFFFF)
         assert(methodId >= 0 && methodId <= 0x3FFFFF)
         assert(typeId >= -0x1000000 && typeId <= 0x1FFFFFF)

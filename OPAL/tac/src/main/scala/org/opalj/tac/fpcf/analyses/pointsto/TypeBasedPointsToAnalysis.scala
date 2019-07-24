@@ -53,7 +53,7 @@ class TypeBasedPointsToAnalysis private[analyses] (
         declaredMethod: DeclaredMethod,
         allocatedType:  ReferenceType,
         isConstant:     Boolean,
-        isEmptyArray:   Boolean = false
+        isEmptyArray:   Boolean        = false
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 }
 

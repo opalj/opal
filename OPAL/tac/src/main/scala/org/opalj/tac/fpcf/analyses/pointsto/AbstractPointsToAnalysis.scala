@@ -240,7 +240,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     pts.forNewestNElements(pts.numElements) { as ⇒
                         val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
                         if (typeId < 0 &&
-                            classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), av.theUpperTypeBound)){
+                            classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), av.theUpperTypeBound)) {
                             state.includeSharedPointsToSet(
                                 defSiteObject,
                                 currentPointsTo(defSiteObject, ArrayEntity(as)),
@@ -948,7 +948,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     // todo name
     private[this] def continuationForNewAllocationSitesAtArrayLoad(
         defSiteObject: DefinitionSite,
-        arrayType: ArrayType,
+        arrayType:     ArrayType,
         dependees:     Map[SomeEPK, SomeEOptionP]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
@@ -957,7 +957,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 var nextDependees: List[SomeEPK] = Nil
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
                     val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                    if (typeId < 0 && classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)){
+                    if (typeId < 0 && classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)) {
                         val epk = EPK(ArrayEntity(as), pointsToPropertyKey)
                         ps(epk)
                         nextDependees ::= epk
