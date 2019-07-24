@@ -56,7 +56,7 @@ class AllocationSiteBasedPointsToAnalysis private[analyses] (
         declaredMethod: DeclaredMethod,
         allocatedType:  ReferenceType,
         isConstant:     Boolean,
-        isEmptyArray:   Boolean = false
+        isEmptyArray:   Boolean        = false
     ): AllocationSitePointsToSet = {
         @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
             val as = allocationSiteToLong(declaredMethod, pc, allocatedType, isEmptyArray)
