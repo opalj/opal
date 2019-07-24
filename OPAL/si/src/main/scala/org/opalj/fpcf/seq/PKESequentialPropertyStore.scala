@@ -874,6 +874,19 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
     final val TasksManagerKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.TasksManager"
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.MaxEvaluationDepth"
 
+    final val Strategies = List(
+        "ManyDirectDependenciesLast",
+        "ManyDirectDependersLast",
+        "ManyDependeesOfDirectDependersLast",
+        "ManyDependeesAndDependersOfDirectDependersLast",
+        "FIFO",
+        "LIFO" /*,
+        "ForwardAllDependeesLast",
+        "ForwardAllDependeesFirst",
+        "BackwardAllDependeesLast",
+        "BackwardAllDependeesFirst"*/
+    )
+
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
     )(
@@ -890,19 +903,6 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         val maxEvaluationDepth = config.getInt(MaxEvaluationDepthKey)
         apply(taskManagerId, maxEvaluationDepth)(contextMap)
     }
-
-    final val Strategies = List(
-        "ManyDirectDependenciesLast",
-        "ManyDirectDependersLast",
-        "ManyDependeesOfDirectDependersLast",
-        "ManyDependeesAndDependersOfDirectDependersLast",
-        "FIFO",
-        "LIFO" /*,
-        "ForwardAllDependeesLast",
-        "ForwardAllDependeesFirst",
-        "BackwardAllDependeesLast",
-        "BackwardAllDependeesFirst"*/
-    )
 
     def apply(
         taskManagerId:      String,
