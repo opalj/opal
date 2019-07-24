@@ -9,6 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -44,6 +45,7 @@ import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.pointsto.isEmptyArrayAllocationSite
 import org.opalj.br.ArrayType
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
@@ -62,8 +64,8 @@ case class CallExceptions(defSite: DefinitionSite)
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-        with ReachableMethodAnalysis {
+    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+    with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -71,6 +73,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     protected[this] implicit val definitionSites: DefinitionSites = {
         p.get(DefinitionSitesKey)
     }
+
+    private[this] val tamiFlexLogData = project.get(TamiFlexKey)
 
     def createPointsToSet(
         pc:             Int,
@@ -89,6 +93,172 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     val javaLangRefReference = ObjectType("java/lang/ref/Reference")
+
+    private[this] def handleGetField(
+        field: Field, pc: Int, objRefDefSites: IntTrieSet
+    )(implicit state: State): Unit = {
+        val tac = state.tac
+        val index = tac.pcToIndex(pc)
+        val nextStmt = tac.stmts(index + 1)
+        val filter = nextStmt match {
+            case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
+                t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
+            case _ ⇒
+                AllocationSitePointsToSet.noFilter
+        }
+        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val fakeEntity = (defSiteObject, field)
+        state.addGetFieldEntity(fakeEntity)
+        currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
+            pts.forNewestNElements(pts.numElements) { as ⇒
+                // TODO: Refactor
+                val fieldClassType = field.classFile.thisType
+                val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                    state.includeSharedPointsToSet(
+                        defSiteObject,
+                        // IMPROVE: Use LongRefPair to avoid boxing
+                        currentPointsTo(defSiteObject, (as, field)),
+                        filter
+                    )
+                }
+            }
+        }
+    }
+
+    private[this] def handleGetStatic(field: Field, pc: Int)(implicit state: State): Unit = {
+        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val tac = state.tac
+        val index = tac.pcToIndex(pc)
+        val nextStmt = tac.stmts(index + 1)
+        val filter = nextStmt match {
+            case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
+                t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
+            case _ ⇒
+                AllocationSitePointsToSet.noFilter
+        }
+        state.includeLocalPointsToSet(
+            defSiteObject,
+            currentPointsTo(defSiteObject, field),
+            filter
+        )
+    }
+
+    private[this] def handleArrayLoad(
+        arrayType: ArrayType, pc: Int, arrayDefSites: IntTrieSet
+    )(implicit state: State): Unit = {
+        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val tac = state.tac
+        val fakeEntity = (defSiteObject, arrayType)
+        state.addArrayLoadEntity(fakeEntity)
+        val index = tac.pcToIndex(pc)
+        val nextStmt = tac.stmts(index + 1)
+        val filter = nextStmt match {
+            case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
+                t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
+            case _ ⇒
+                AllocationSitePointsToSet.noFilter
+        }
+        currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
+            pts.forNewestNElements(pts.numElements) { as ⇒
+                val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                if (typeId < 0 &&
+                    classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)) {
+                    state.includeSharedPointsToSet(
+                        defSiteObject,
+                        currentPointsTo(defSiteObject, ArrayEntity(as)),
+                        filter
+                    )
+                }
+            }
+        }
+    }
+
+    private[this] def handlePutField(
+        field: Field, objRefDefSites: IntTrieSet, rhsDefSites: IntTrieSet
+    )(implicit state: State): Unit = {
+        val fakeEntity = (rhsDefSites, field)
+        state.addPutFieldEntity(fakeEntity)
+        currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
+            pts.forNewestNElements(pts.numElements) { as ⇒
+                // TODO: Refactor
+                val fieldClassType = field.classFile.thisType
+                val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                    val fieldEntity = (as, field)
+                    state.includeSharedPointsToSets(
+                        fieldEntity,
+                        currentPointsToOfDefSites(fieldEntity, rhsDefSites),
+                        { t: ReferenceType ⇒
+                            classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private[this] def handlePutStatic(field: Field, rhsDefSites: IntTrieSet)(implicit state: State): Unit = {
+        state.includeSharedPointsToSets(
+            field,
+            currentPointsToOfDefSites(field, rhsDefSites),
+            { t: ReferenceType ⇒
+                classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
+            }
+        )
+    }
+
+    private[this] def handleArrayStore(
+        arrayType: ArrayType, arrayDefSites: IntTrieSet, rhsDefSites: IntTrieSet
+    )(implicit state: State): Unit = {
+        val fakeEntity = (rhsDefSites, arrayType)
+        state.addArrayStoredEntity(fakeEntity)
+        currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
+            pts.forNewestNElements(pts.numElements) { as ⇒
+                val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                if (typeId < 0 &&
+                    classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
+                    !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
+                    val arrayEntity = ArrayEntity(as)
+                    state.includeSharedPointsToSets(
+                        arrayEntity,
+                        currentPointsToOfDefSites(arrayEntity, rhsDefSites),
+                        { t: ReferenceType ⇒
+                            classHierarchy.isSubtypeOf(t, ArrayType.lookup(allocationSiteLongToTypeId(as.asInstanceOf[Long])).componentType.asReferenceType)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private[this] def handleCallReceiver(
+        receiverDefSites: IntTrieSet, target: DeclaredMethod, fps: ConstArray[VirtualFormalParameter], isNonVirtualCall: Boolean
+    )(implicit state: State): Unit = {
+        val fp = fps(0)
+        val ptss = currentPointsToOfDefSites(fp, receiverDefSites)
+        val declClassType = target.declaringClassType.asObjectType
+        val tgtMethod = target.definedMethod
+        val filter = if (isNonVirtualCall) {
+            t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, declClassType)
+        } else {
+            val overrides =
+                if (project.overridingMethods.contains(tgtMethod))
+                    project.overridingMethods(tgtMethod).map(_.classFile.thisType) -
+                        declClassType
+                else
+                    Set.empty
+            // TODO this might not be 100% correct in some corner cases
+            t: ReferenceType ⇒
+                classHierarchy.isSubtypeOf(t, declClassType) &&
+                    !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
+        }
+        state.includeSharedPointsToSets(
+            fp,
+            ptss,
+            filter
+        )
+    }
 
     private[this] def doProcessMethod(
         implicit
@@ -201,84 +371,22 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    val index = tac.pcToIndex(pc)
-                    val nextStmt = tac.stmts(index + 1)
-                    val filter = nextStmt match {
-                        case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
-                            t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
-                        case _ ⇒
-                            AllocationSitePointsToSet.noFilter
-                    }
-                    val field = fieldOpt.get
-                    val defSiteObject = definitionSites(method, pc)
-                    val fakeEntity = (defSiteObject, field)
-                    state.addGetFieldEntity(fakeEntity)
-                    currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
-                        pts.forNewestNElements(pts.numElements) { as ⇒
-                            // TODO: Refactor
-                            val fieldClassType = field.classFile.thisType
-                            val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                            if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
-                                state.includeSharedPointsToSet(
-                                    defSiteObject,
-                                    // IMPROVE: Use LongRefPair to avoid boxing
-                                    currentPointsTo(defSiteObject, (as, field)),
-                                    filter
-                                )
-                            }
-                        }
-                    }
+                    handleGetField(fieldOpt.get, pc, objRefDefSites)
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
 
             case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) ⇒
-                val defSiteObject = definitionSites(method, pc)
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    val index = tac.pcToIndex(pc)
-                    val nextStmt = tac.stmts(index + 1)
-                    val filter = nextStmt match {
-                        case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
-                            t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
-                        case _ ⇒
-                            AllocationSitePointsToSet.noFilter
-                    }
-                    state.includeLocalPointsToSet(
-                        defSiteObject,
-                        currentPointsTo(defSiteObject, fieldOpt.get),
-                        filter
-                    )
+                    handleGetStatic(fieldOpt.get, pc)
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
 
             case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) ⇒
-                val defSiteObject = definitionSites(method, pc)
                 val arrayType = av.theUpperTypeBound
-                val fakeEntity = (defSiteObject, arrayType)
-                state.addArrayLoadEntity(fakeEntity)
-                val index = tac.pcToIndex(pc)
-                val nextStmt = tac.stmts(index + 1)
-                val filter = nextStmt match {
-                    case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
-                        t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
-                    case _ ⇒
-                        AllocationSitePointsToSet.noFilter
-                }
-                currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
-                    pts.forNewestNElements(pts.numElements) { as ⇒
-                        val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                        if (typeId < 0 &&
-                            classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)) {
-                            state.includeSharedPointsToSet(
-                                defSiteObject,
-                                currentPointsTo(defSiteObject, ArrayEntity(as)),
-                                filter
-                            )
-                        }
-                    }
-                }
+                handleArrayLoad(arrayType, pc, arrayDefSites)
 
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
                 val callees: Callees = state.callees(ps)
@@ -333,68 +441,25 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case ExprStmt(pc, call: Call[_]) ⇒
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
-            case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) ⇒
-                val arrayType = av.theUpperTypeBound
-                val fakeEntity = (defSites, arrayType)
-                state.addArrayStoredEntity(fakeEntity)
-                currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
-                    pts.forNewestNElements(pts.numElements) { as ⇒
-                        val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                        if (typeId < 0 &&
-                            classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
-                            !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
-                            val arrayEntity = ArrayEntity(as)
-                            state.includeSharedPointsToSets(
-                                arrayEntity,
-                                currentPointsToOfDefSites(arrayEntity, defSites),
-                                { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, ArrayType.lookup(allocationSiteLongToTypeId(as.asInstanceOf[Long])).componentType.asReferenceType)
-                                }
-                            )
-                        }
-                    }
-                }
-
             case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    val field = fieldOpt.get
-                    val fakeEntity = (defSites, field)
-                    state.addPutFieldEntity(fakeEntity)
-                    currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
-                        pts.forNewestNElements(pts.numElements) { as ⇒
-                            // TODO: Refactor
-                            val fieldClassType = field.classFile.thisType
-                            val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                            if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
-                                val fieldEntity = (as, field)
-                                state.includeSharedPointsToSets(
-                                    fieldEntity,
-                                    currentPointsToOfDefSites(fieldEntity, defSites),
-                                    { t: ReferenceType ⇒
-                                        classHierarchy.isSubtypeOf(t, fieldType)
-                                    }
-                                )
-                            }
-                        }
-                    }
+                    handlePutField(fieldOpt.get, objRefDefSites, defSites)
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
 
             case PutStatic(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
-                if (fieldOpt.isDefined)
-                    state.includeSharedPointsToSets(
-                        fieldOpt.get,
-                        currentPointsToOfDefSites(fieldOpt.get, defSites),
-                        { t: ReferenceType ⇒
-                            classHierarchy.isSubtypeOf(t, fieldType)
-                        }
-                    )
-                else {
+                if (fieldOpt.isDefined) {
+                    handlePutStatic(fieldOpt.get, defSites)
+                } else {
                     state.addIncompletePointsToInfo(pc)
                 }
+
+            case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) ⇒
+                val arrayType = av.theUpperTypeBound
+                handleArrayStore(arrayType, arrayDefSites, defSites)
 
             case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) ⇒
                 state.includeLocalPointsToSets(
@@ -458,31 +523,14 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         if (fps != null) {
             // handle receiver for non static methods
             if (receiverOpt.isDefined) {
-                val fp = fps(0)
-                val ptss = currentPointsToOfDefSites(fp, receiverOpt.get.asVar.definedBy)
-                val declClassType = target.declaringClassType.asObjectType
-                val tgtMethod = target.definedMethod
-                val filter = call match {
-                    case _: NonVirtualFunctionCall[V] | _: NonVirtualMethodCall[V] ⇒
-                        t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, declClassType)
-                    case _ ⇒
-                        val overrides =
-                            if (project.overridingMethods.contains(tgtMethod))
-                                project.overridingMethods(tgtMethod).map(_.classFile.thisType) -
-                                    declClassType
-                            else
-                                Set.empty
-                        // TODO this might not be 100% correct in some corner cases
-                        t: ReferenceType ⇒
-                            classHierarchy.isSubtypeOf(t, declClassType) &&
-                                !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
-
+                val isNonVirtualCall = call match {
+                    case _: NonVirtualFunctionCall[V] |
+                        _: NonVirtualMethodCall[V] |
+                        _: StaticFunctionCall[V] |
+                        _: StaticMethodCall[V] ⇒ true
+                    case _ ⇒ false
                 }
-                state.includeSharedPointsToSets(
-                    fp,
-                    ptss,
-                    filter
-                )
+                handleCallReceiver(receiverOpt.get.asVar.definedBy, target, fps, isNonVirtualCall)
             }
 
             val descriptor = target.descriptor
@@ -515,40 +563,91 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         TODO Integrate into ConfiguredNativeMethodsPointsToAnalysis
          */
         if ((target.declaringClassType eq ObjectType.System) && target.name == "arraycopy") {
-            val defSiteObject = definitionSites(state.method.definedMethod, pc)
-            val rhsEntity = (defSiteObject, ArrayType.ArrayOfObject)
-            state.addArrayLoadEntity(rhsEntity)
-            currentPointsToOfDefSites(rhsEntity, call.params.head.asVar.definedBy).foreach { pts ⇒
-                pts.forNewestNElements(pts.numElements) { as ⇒
-                    /* check if it is any array type */
-                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0) {
-                        state.includeSharedPointsToSet(
-                            defSiteObject,
-                            currentPointsTo(defSiteObject, ArrayEntity(as)),
-                            AllocationSitePointsToSet.noFilter
-                        )
-                    }
-                }
-            }
+            handleArrayLoad(ArrayType.ArrayOfObject, pc, call.params.head.asVar.definedBy)
 
             val defSites = IntTrieSet(state.tac.pcToIndex(pc))
-            val lhsEntity = (defSites, ArrayType.ArrayOfObject)
-            state.addArrayStoredEntity(lhsEntity)
-            currentPointsToOfDefSites(lhsEntity, call.params(2).asVar.definedBy).foreach { pts ⇒
-                pts.forNewestNElements(pts.numElements) { as ⇒
-                    /* check if it is any array type */
-                    if (allocationSiteLongToTypeId(as.asInstanceOf[Long]) < 0 &&
-                        !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
-                        val arrayEntity = ArrayEntity(as)
-                        state.includeSharedPointsToSets(
-                            arrayEntity,
-                            currentPointsToOfDefSites(arrayEntity, defSites),
-                            { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ArrayType.lookup(allocationSiteLongToTypeId(as.asInstanceOf[Long])).componentType.asReferenceType) }
-                        )
-                    }
+            handleArrayStore(ArrayType.ArrayOfObject, call.params(2).asVar.definedBy, defSites)
+        }
+
+        /*
+         * Special handling for Class|Array|Constructor.newInstance using tamiflex
+         * TODO: Integrate into a TamiFlex analysis
+         */
+        val line = state.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
+        if (target.name == "newInstance" && (
+            (target.declaringClassType eq ObjectType.Class) ||
+            (target.declaringClassType eq ObjectType("java/lang/reflect/Constructor")) ||
+            (target.declaringClassType eq ObjectType("java/lang/reflect/Array"))
+        )) {
+            val allocatedTypes = tamiFlexLogData.newInstance(state.method, line)
+
+            for (allocatedType ← allocatedTypes) {
+                val pointsToSet = createPointsToSet(
+                    pc, state.method, allocatedType, isConstant = false
+                )
+                val defSite = definitionSites(state.method.definedMethod, pc)
+                state.setLocalPointsToSet(defSite, pointsToSet, _ ⇒ true)
+                // TODO: handle this + params
+            }
+        }
+
+        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Method")) && target.name == "invoke") {
+            val reflectiveTargets = tamiFlexLogData.methodInvokes(state.method, line)
+            for (reflectiveTarget ← reflectiveTargets) {
+                if (reflectiveTarget.hasSingleDefinedMethod && !reflectiveTarget.definedMethod.isStatic) {
+                    val rfps = formalParameters(reflectiveTarget)
+                    // the first param of invoke is the receiver
+                    handleCallReceiver(call.params(0).asVar.definedBy, reflectiveTarget, rfps, false)
+                }
+                // TODO we also need the parameters
+            }
+
+        }
+
+        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Field")) &&
+            target.name == "get") {
+            val fields = tamiFlexLogData.fields(state.method, line)
+            for (field ← fields) {
+                if (field.isStatic) {
+                    handleGetStatic(field, pc)
+                } else {
+                    handleGetField(field, pc, call.params.head.asVar.definedBy)
                 }
             }
         }
+
+        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Field")) &&
+            target.name == "set") {
+            val fields = tamiFlexLogData.fields(state.method, line)
+            for (field ← fields) {
+                if (field.isStatic) {
+                    handlePutStatic(field, call.params(1).asVar.definedBy)
+                } else {
+                    handlePutField(
+                        field, call.params.head.asVar.definedBy, call.params(1).asVar.definedBy
+                    )
+                }
+            }
+        }
+
+        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Array")) &&
+            target.name == "get") {
+            val arrays = tamiFlexLogData.arrays(state.method, line)
+            for (array ← arrays) {
+                handleArrayLoad(array, pc, call.params.head.asVar.definedBy)
+            }
+        }
+
+        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Array")) &&
+            target.name == "set") {
+            val arrays = tamiFlexLogData.arrays(state.method, line)
+            for (array ← arrays) {
+                handleArrayStore(
+                    array, call.params.head.asVar.definedBy, call.params(2).asVar.definedBy
+                )
+            }
+        }
+
     }
 
     // todo: reduce code duplication
@@ -564,21 +663,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             // handle receiver for non static methods
             val receiverOpt = callees.indirectCallReceiver(pc, target)
             if (receiverOpt.isDefined) {
-                val fp = fps(0)
                 val receiverDefSites = valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
-                val ptss = currentPointsToOfDefSites(fp, receiverDefSites)
-                val overrides =
-                    if (project.overridingMethods.contains(target.definedMethod))
-                        project.overridingMethods(target.definedMethod).map(_.classFile.thisType) - target.declaringClassType.asObjectType
-                    else Set.empty
-                state.includeSharedPointsToSets(
-                    fp,
-                    ptss,
-                    { t: ReferenceType ⇒
-                        classHierarchy.isSubtypeOf(t, target.declaringClassType) &&
-                            !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
-                    }
-                )
+                handleCallReceiver(receiverDefSites, target, fps, false)
             } else {
                 // todo: distinguish between static methods and unavailable info
             }
