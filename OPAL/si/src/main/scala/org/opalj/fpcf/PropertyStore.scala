@@ -85,7 +85,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  *    (3) [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
  *    (4) [[force]] and
  *    (5) (finally) [[PropertyStore#waitOnPhaseCompletion]] methods.
- *    go back to (1).    
+ *    go back to (1).
  *    Hence, the previously mentioned methods MUST NOT be called by
  *    PropertyComputation/OnUpdateComputation functions. The methods to query the store (`apply`)
  *    are thread-safe and can be called at any time.
