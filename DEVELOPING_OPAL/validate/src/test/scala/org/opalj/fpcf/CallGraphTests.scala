@@ -3,15 +3,20 @@ package org.opalj
 package fpcf
 
 import scala.collection.JavaConverters._
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.AttachToClassFile
+import org.opalj.tac.fpcf.analyses.cg.xta.AttachToDefinedMethod
+import org.opalj.tac.fpcf.analyses.cg.xta.MTATypePropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.xta.XTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTATypePropagationAnalysisScheduler
 
 /**
@@ -81,8 +86,8 @@ class CallGraphTests extends PropertiesTest {
     describe("the XTA call graph analysis is executed") {
         val as = executeAnalyses(
             Set(
-                SimpleInstantiatedTypesAnalysisScheduler,
-                XTACallGraphAnalysisScheduler,
+                new SimpleInstantiatedTypesAnalysisScheduler(AttachToDefinedMethod),
+                PropagationBasedCallGraphAnalysisScheduler,
                 XTATypePropagationAnalysisScheduler
             )
         )
@@ -90,7 +95,28 @@ class CallGraphTests extends PropertiesTest {
 
         validateProperties(
             as,
-            declaredMethodsWithAnnotations(as.project) ++ fieldsWithAnnotations(as.project),
+            classFilesWithAnnotations(as.project) ++
+                declaredMethodsWithAnnotations(as.project) ++
+                fieldsWithAnnotations(as.project),
+            Set("AvailableTypes")
+        )
+    }
+
+    describe("the MTA call graph analysis is executed") {
+        val as = executeAnalyses(
+            Set(
+                new SimpleInstantiatedTypesAnalysisScheduler(AttachToClassFile),
+                PropagationBasedCallGraphAnalysisScheduler,
+                MTATypePropagationAnalysisScheduler
+            )
+        )
+        as.propertyStore.shutdown()
+
+        validateProperties(
+            as,
+            classFilesWithAnnotations(as.project) ++
+                declaredMethodsWithAnnotations(as.project) ++
+                fieldsWithAnnotations(as.project),
             Set("AvailableTypes")
         )
     }

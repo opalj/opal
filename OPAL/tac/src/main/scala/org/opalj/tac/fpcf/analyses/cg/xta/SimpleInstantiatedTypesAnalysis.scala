@@ -34,6 +34,16 @@ import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
+ * The set entity the type set of direct instantiations is attached to. XTA and FTA use the DefinedMethod,
+ * MTA and CTA use the method's class file.
+ *
+ * TODO AB Maybe this can be unified, since the choice is made in multiple places...
+ */
+sealed trait PerMethodTypeSetEntity
+case object AttachToDefinedMethod extends PerMethodTypeSetEntity
+case object AttachToClassFile extends PerMethodTypeSetEntity
+
+/**
  * Updates InstantiatedTypes attached to a method for each constructor
  * call or array allocation occurring within that method.
  *
@@ -49,10 +59,18 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Andreas Bauer
  */
 // TODO AB replace later with a more sophisticated analysis (based on the RTA one)
-class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends ReachableMethodAnalysis {
+class SimpleInstantiatedTypesAnalysis(
+        final val project:          SomeProject,
+        val perMethodTypeSetEntity: PerMethodTypeSetEntity
+) extends ReachableMethodAnalysis {
 
     override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         val code = definedMethod.definedMethod.body.get
+
+        val targetSetEntity = perMethodTypeSetEntity match {
+            case AttachToDefinedMethod ⇒ definedMethod
+            case AttachToClassFile     ⇒ definedMethod.definedMethod.classFile
+        }
 
         val instantiatedObjectTypes = code.instructions.collect({
             case NEW(declType) ⇒ declType
@@ -80,9 +98,9 @@ class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends R
 
         Results(
             PartialResult(
-                definedMethod,
+                targetSetEntity,
                 InstantiatedTypes.key,
-                update(definedMethod, UIDSet((instantiatedObjectTypes ++ instantiatedArrays).toSeq: _*))
+                update(targetSetEntity, UIDSet((instantiatedObjectTypes ++ instantiatedArrays).toSeq: _*))
             ),
             exceptionTypePartialResult ++ multidimensionalArrayPartialResults
         )
@@ -165,9 +183,12 @@ class SimpleInstantiatedTypesAnalysis( final val project: SomeProject) extends R
     }
 }
 
-object SimpleInstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+class SimpleInstantiatedTypesAnalysisScheduler(
+        val perMethodTypeSetEntity: PerMethodTypeSetEntity
+) extends BasicFPCFTriggeredAnalysisScheduler {
+
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis = new SimpleInstantiatedTypesAnalysis(project)
+        val analysis = new SimpleInstantiatedTypesAnalysis(project, perMethodTypeSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }

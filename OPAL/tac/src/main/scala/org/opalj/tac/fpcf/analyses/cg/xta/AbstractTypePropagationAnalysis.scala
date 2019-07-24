@@ -511,7 +511,9 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
     }
 }
 
-trait AbstractTypePropagationAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+abstract class AbstractTypePropagationAnalysisScheduler(
+        perMethodTypeSetEntity: PerMethodTypeSetEntity
+) extends BasicFPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     override def triggeredBy: PropertyKind = Callers.key
@@ -533,8 +535,13 @@ trait AbstractTypePropagationAnalysisScheduler extends BasicFPCFTriggeredAnalysi
             if (method.name != "main") {
                 OPALLogger.warn("xta", "initial type assignment to entry points other than 'main' methods not implemented yet!")(p.logContext)
             } else {
-                ps.preInitialize(method, InstantiatedTypes.key) {
-                    case _: EPK[_, _] ⇒ InterimEUBP(method, InstantiatedTypes(initialInstantiatedTypes))
+                val setEntity = perMethodTypeSetEntity match {
+                    case AttachToDefinedMethod ⇒ method
+                    case AttachToClassFile     ⇒ method.definedMethod.classFile
+                }
+
+                ps.preInitialize(setEntity, InstantiatedTypes.key) {
+                    case _: EPK[_, _] ⇒ InterimEUBP(setEntity, InstantiatedTypes(initialInstantiatedTypes))
                     case eps          ⇒ throw new IllegalStateException(s"unexpected property: $eps")
                 }
             }

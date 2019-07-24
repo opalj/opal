@@ -1,7 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.callgraph;
 
+import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
+import org.opalj.tac.fpcf.analyses.cg.xta.AbstractTypePropagationAnalysis;
+import org.opalj.tac.fpcf.analyses.cg.xta.XTATypePropagationAnalysis;
 
 import java.lang.annotation.*;
 
@@ -32,4 +35,6 @@ public @interface AvailableTypes {
      * expectation).
      */
     String[] value() default {};
+
+    Class<? extends AbstractTypePropagationAnalysis>[] analyses() default { XTATypePropagationAnalysis.class };
 }

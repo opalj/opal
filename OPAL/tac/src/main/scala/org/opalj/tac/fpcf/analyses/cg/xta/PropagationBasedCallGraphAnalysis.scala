@@ -25,7 +25,7 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * XTA is a dataflow-based call graph analysis which was introduced by Tip and Palsberg.
+ * XTA, MTA, FTA and CTA are a propagation-based call graph analyses which were introduced by Tip and Palsberg.
  *
  * This analysis does not handle features such as JVM calls to static initializers or finalize
  * calls.
@@ -75,7 +75,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         // type set to the DefinedMethod itself. CTA/MTA have merged sets for all methods of a class, attached to the
         // class type.
         val perMethodInstantiatedTypes = propertyStore(definedMethod, InstantiatedTypes.key)
-        val perClassInstantiatedTypes = propertyStore(definedMethod.declaringClassType, InstantiatedTypes.key)
+        val perClassInstantiatedTypes = propertyStore(definedMethod.definedMethod.classFile, InstantiatedTypes.key)
         val perProjectInstantiatedTypes = propertyStore(project, InstantiatedTypes.key)
 
         val typeSources = Iterable(perMethodInstantiatedTypes, perClassInstantiatedTypes, perProjectInstantiatedTypes)
@@ -192,7 +192,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     }
 }
 
-object XTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
+object PropagationBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] =
         super.uses ++ PropertyBounds.ubs(InstantiatedTypes, Callees)

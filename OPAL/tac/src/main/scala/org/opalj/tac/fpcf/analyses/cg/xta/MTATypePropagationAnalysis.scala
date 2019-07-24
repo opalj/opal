@@ -7,17 +7,17 @@ package cg
 package xta
 
 import org.opalj.fpcf.Entity
+import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
-import org.opalj.br.VirtualDeclaredMethod
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Field
+import org.opalj.br.VirtualDeclaredMethod
 
-final class XTATypePropagationAnalysis private[analyses] (project: SomeProject)
+final class MTATypePropagationAnalysis private[analyses] (project: SomeProject)
     extends AbstractTypePropagationAnalysis(project) {
 
     override def getCorrespondingSetEntity(e: Entity): SetEntity = e match {
-        case dm: DefinedMethod          ⇒ dm
+        case dm: DefinedMethod          ⇒ dm.definedMethod.classFile
         case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
         case f: Field                   ⇒ f
         case ef: ExternalField          ⇒ ExternalWorld
@@ -26,7 +26,7 @@ final class XTATypePropagationAnalysis private[analyses] (project: SomeProject)
     }
 }
 
-object XTATypePropagationAnalysisScheduler extends AbstractTypePropagationAnalysisScheduler(AttachToDefinedMethod) {
+object MTATypePropagationAnalysisScheduler extends AbstractTypePropagationAnalysisScheduler(AttachToClassFile) {
     override def initializeAnalysis(project: SomeProject): AbstractTypePropagationAnalysis =
-        new XTATypePropagationAnalysis(project)
+        new MTATypePropagationAnalysis(project)
 }
