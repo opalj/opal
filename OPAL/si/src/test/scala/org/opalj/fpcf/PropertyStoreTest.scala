@@ -148,7 +148,10 @@ sealed abstract class PropertyStoreTest(
                         fail(m)
                 }
 
-                ps("a", PalindromeKey) should be(InterimELUBP("a", NoPalindrome, Palindrome))
+                val aEPK = ps("a", PalindromeKey)
+                if (!(aEPK == EPK("a", PalindromeKey) || aEPK == InterimELUBP("a", NoPalindrome, Palindrome))) {
+                    fail(s"unexpected: "+aEPK)
+                }
 
                 ps.shutdown()
             }

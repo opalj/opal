@@ -9,4 +9,4 @@ package par
  *
  * @author Michael Eichberg
  */
-abstract class ParallelPropertyStore extends PropertyStore 
+abstract class ParallelPropertyStore extends PropertyStore

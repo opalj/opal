@@ -782,16 +782,18 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def hasLBP: Boolean = false
     override def lb: Nothing = throw new UnsupportedOperationException();
-    override private[fpcf] def toFinalELBP = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalELBP = throw new UnsupportedOperationException(toString);
 
     override def hasUBP: Boolean = false
     override def ub: Nothing = throw new UnsupportedOperationException();
-    override private[fpcf] def toFinalEUBP = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalEUBP = throw new UnsupportedOperationException(toString);
 
     override def isFinal: Boolean = false
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
-    override private[fpcf] def toFinalEP: FinalEP[E, P] = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalEP: FinalEP[E, P] = {
+        throw new UnsupportedOperationException(toString)
+    };
 
     override def isEPS: Boolean = false
     override def asEPS: EPS[E, P] = throw new ClassCastException();

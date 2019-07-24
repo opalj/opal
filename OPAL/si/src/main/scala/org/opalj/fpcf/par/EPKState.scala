@@ -3,15 +3,15 @@ package org.opalj
 package fpcf
 package par
 
-import java.util.concurrent.atomic.AtomicReference
+import org.opalj.concurrent.Locking
 
 /**
  * Encapsulates the state of a single entity and its property of a specific kind.
  *
- * @note Read the documentation of the methods to understand the behavior  
+ * @note Read the documentation of the methods to understand the behavior
  *       in case of concurrent access.
  */
-sealed abstract class EPKState {
+private[par] sealed abstract class EPKState {
 
     //
     // ------------------- PROPERTIES OF THIS EPK STATE ------------------------
@@ -26,21 +26,21 @@ sealed abstract class EPKState {
     // ---------------- PROPERTIES OF THE UNDERLYING EP PAIR -------------------
     //
 
-    /** 
-     * Returns the current property extension. 
+    /**
+     * Returns the current property extension.
      */
     def eOptionP: SomeEOptionP
 
-    /** 
-     * Returns `true` if no property has been computed yet; `false` otherwise. 
-     * 
+    /**
+     * Returns `true` if no property has been computed yet; `false` otherwise.
+     *
      * @note Just a convenience method delegating to eOptionP.
      */
     final def isEPK: Boolean = eOptionP.isEPK
 
-    /** 
-     * Returns the underlying entity. 
-     * 
+    /**
+     * Returns the underlying entity.
+     *
      * @note Just a convenience method delegating to eOptionP.
      */
     final def e: Entity = eOptionP.e
@@ -56,48 +56,52 @@ sealed abstract class EPKState {
      * @note This function is only defined if the current `EOptionP` value is not already a
      *       final value. Hence, the client is required to handle (potentially) idempotent updates
      *       and to take care of appropriate synchronization.
+     *
+     * @note Update is never called concurrently, however, the changes still have to applied
+     *       atomically because some of the other methods rely on a consistent snapshot regarding
+     *       the relation of the values.
      */
     def update(
         newEOptionP: SomeInterimEP,
         c:           OnUpdateContinuation,
         dependees:   Traversable[SomeEOptionP],
         debug:       Boolean
-    ): Option[(SomeEOptionP,Set[SomeEPK])]
+    ): Option[(SomeEOptionP, Set[SomeEPK])]
     //  newEOptionP.isUpdatedComparedTo(eOptionP)
 
     /**
      * Atomically updates the underlying `eOptionP` and returns the set of dependers.
      */
-    def finalUpdate(eOptionP : SomeFinalEP):  Set[SomeEPK] 
+    def finalUpdate(newEOptionP: SomeFinalEP): Set[SomeEPK]
 
     /**
-     * Adds the given EPK as a depender on this EPK instance if the current `(this.)eOptionP`
-     * equals the given `eOptionP` – based on a reference comparison. If this `eOption`
+     * Adds the given EPK as a depender if the current `(this.)eOptionP`
+     * equals the given `eOptionP` – based on a reference comparison. If this `eOptionP`
      * has changed `false` will be returned (adding a depender was not successful); `true` otherwise.
      *
      * @note  This operation is idempotent; that is, adding the same EPK multiple times has no
      *        special effect.
      */
-    def addDepender(expectedEOptionP : SomeEOptionP, someEPK: SomeEPK): Boolean
+    def addDepender(expectedEOptionP: SomeEOptionP, someEPK: SomeEPK): Boolean
 
     /**
-     * ATOMICALLY: If a continuation function still exists and the given dependee is among the set
+     * If a continuation function still exists and the given dependee is among the set
      * of current dependees then the continuation function is cleared and returned.
      *
      * (The set of dependees will not be updated!)
      */
-    def prepareInvokeC(updatedDependeeEOptionP : SomeEOptionP): Option[OnUpdateContinuation]
+    def prepareInvokeC(updatedDependeeEOptionP: SomeEOptionP): Option[OnUpdateContinuation]
 
     /**
-     * ATOMICALLY: If the current continuation function is equal to the given function, the  
+     * If the current continuation function is equal to the given function, the
      * continuation function is cleared and returned (Some(c)); otherwise None is returned.
      *
      * (The set of dependees will not be updated!)
      */
-    def prepareInvokeC(expectedC : OnUpdateContinuation): Option[OnUpdateContinuation]
+    def prepareInvokeC(expectedC: OnUpdateContinuation): Option[OnUpdateContinuation]
 
-    def clearDependees() : Unit
-    
+    def clearDependees(): Unit
+
     /**
      * Removes the given E/PK from the list of dependers of this EPKState.
      *
@@ -109,9 +113,9 @@ sealed abstract class EPKState {
      * Returns `true` if the current continuation function `c` is reference equal to the
      * given one.
      */
-    def isCurrentC(c : OnUpdateContinuation) : Boolean
+    def isCurrentC(c: OnUpdateContinuation): Boolean
 
-   /**
+    /**
      * Returns `true` if and only if this EPKState has dependees.
      *
      * @note The set of dependees is only update when a property computation result is processed
@@ -133,135 +137,166 @@ sealed abstract class EPKState {
 
 /**
  *
- * @param eOptionPAR An atomic reference holding the current property extension; we need to
- *         use an atomic reference to enable concurrent update operations as required
- *         by properties computed using partial results.
- *         The referenced `EOptionP` is never null.
- * @param cAR The on update continuation function; null if triggered.
- * @param dependees The dependees; never updated concurrently.
+ * @param eOptionP The current property extension; never null.
+ * @param c The on update continuation function; null if triggered.
+ * @param dependees The dependees.
  */
-final class InterimEPKState(
-        var eOptionP:            SomeEOptionP,
-        val cAR:                 AtomicReference[OnUpdateContinuation],
-        @volatile var dependees: Set[SomeEOptionP],
-        var dependersAR:         AtomicReference[Set[SomeEPK]]
-) extends EPKState {
+private[par] final class InterimEPKState(
+        @volatile var eOptionP:  SomeEOptionP,
+        @volatile var c:         OnUpdateContinuation,
+        @volatile var dependees: Traversable[SomeEOptionP],
+        @volatile var dependers: Set[SomeEPK]
+) extends EPKState with Locking {
 
-    assert(eOptionP.isRefinable)
+    assert(eOptionP.isRefinable) // an update which makes it final is possible...
 
     override def isRefinable: Boolean = true
     override def isFinal: Boolean = false
-
-    override def addDepender(someEPK: SomeEPK): Unit = {
-        val dependersAR = this.dependersAR
-        if (dependersAR == null)
-            return ;
-
-        var prev, next: Set[SomeEPK] = null
-        do {
-            prev = dependersAR.get()
-            next = prev + someEPK
-        } while (!dependersAR.compareAndSet(prev, next))
-    }
-
-    override def removeDepender(someEPK: SomeEPK): Unit = {
-        val dependersAR = this.dependersAR
-        if (dependersAR == null)
-            return ;
-
-        var prev, next: Set[SomeEPK] = null
-        do {
-            prev = dependersAR.get()
-            next = prev - someEPK
-        } while (!dependersAR.compareAndSet(prev, next))
-    }
-
-    override def lastDependers(): Set[SomeEPK] = {
-        val dependers = dependersAR.get()
-        dependersAR = null
-        dependers
-    }
-
-    override def clearOnUpdateComputationAndDependees(): OnUpdateContinuation = {
-        val c = cAR.getAndSet(null)
-        dependees = Set.empty
-        c
-    }
-
-    override def hasPendingOnUpdateComputation: Boolean = cAR.get() != null
 
     override def update(
         eOptionP:  SomeInterimEP,
         c:         OnUpdateContinuation,
         dependees: Traversable[SomeEOptionP],
         debug:     Boolean
-    ): SomeEOptionP = {
+    ): Option[(SomeEOptionP, Set[SomeEPK])] = {
+        assert(this.c == null)
+        // The following _assert is not possible_, because we only strive for
+        // eventual consistency w.r.t. the depender/dependee relation:
+        // assert(this.dependees.isEmpty)
+
         val oldEOptionP = this.eOptionP
         if (debug) oldEOptionP.checkIsValidPropertiesUpdate(eOptionP, dependees)
 
-        this.eOptionP = eOptionP
+        val isRelevantUpdate = eOptionP.isUpdatedComparedTo(oldEOptionP)
 
-        val oldOnUpdateContinuation = cAR.getAndSet(c)
-        assert(oldOnUpdateContinuation == null)
-
-        assert(this.dependees.isEmpty)
-        this.dependees = dependees
-
-        oldEOptionP
+        withWriteLock {
+            this.c = c
+            this.dependees = dependees
+            if (isRelevantUpdate) {
+                this.eOptionP = eOptionP
+                val oldDependers = this.dependers
+                this.dependers = Set.empty
+                Some((oldEOptionP, oldDependers))
+            } else {
+                None
+            }
+        }
     }
+
+    override def finalUpdate(eOptionP: SomeFinalEP): Set[SomeEPK] = {
+        assert(this.eOptionP.isRefinable)
+
+        withWriteLock {
+            this.eOptionP = eOptionP
+            val oldDependers = this.dependers
+            this.dependers = Set.empty
+            oldDependers
+        }
+    }
+
+    override def addDepender(expectedEOptionP: SomeEOptionP, someEPK: SomeEPK): Boolean = {
+        assert(expectedEOptionP.isRefinable)
+
+        withWriteLock {
+            if (this.eOptionP eq expectedEOptionP) {
+                this.dependers += someEPK
+                true
+            } else {
+                false
+            }
+        }
+    }
+
+    override def prepareInvokeC(
+        updatedDependeeEOptionP: SomeEOptionP
+    ): Option[OnUpdateContinuation] = {
+
+        withWriteLock {
+            val c = this.c
+            if (c != null) {
+                // IMPROVE ? Use a set based contains check.
+                val isDependee = this.dependees.exists(dependee ⇒
+                    dependee.e == updatedDependeeEOptionP.e &&
+                        dependee.pk == updatedDependeeEOptionP.pk)
+                if (isDependee) {
+                    this.c = null
+                    Some(c)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+    }
+
+    override def prepareInvokeC(expectedC: OnUpdateContinuation): Option[OnUpdateContinuation] = {
+        assert(expectedC != null)
+
+        withWriteLock {
+            if (this.c eq expectedC) {
+                this.c = null
+                Some(expectedC)
+            } else {
+                None
+            }
+        }
+    }
+
+    def clearDependees(): Unit = this.dependees = null
+
+    override def removeDepender(someEPK: SomeEPK): Unit = withWriteLock {
+        // the write lock is required to avoid lost updates; e.g., if we have to
+        // remove two dependers "concurrently"
+        dependers -= someEPK
+    }
+
+    override def isCurrentC(c: OnUpdateContinuation): Boolean = c eq this.c
 
     override def hasDependees: Boolean = dependees.nonEmpty
 
     override def toString: String = {
         "InterimEPKState("+
-            s"eOptionP=${eOptionPAR.get},"+
-            s"<hasOnUpdateComputation=${cAR.get() != null}>,"+
+            s"eOptionP=${eOptionP},"+
+            s"<hasOnUpdateComputation=${c != null}>,"+
             s"dependees=$dependees,"+
-            s"dependers=${dependersAR.get()})"
+            s"dependers=$dependers)"
     }
 }
 
-final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState {
+private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) extends EPKState {
 
     override def isRefinable: Boolean = false
     override def isFinal: Boolean = true
 
-    override def update(newEOptionP: SomeInterimEP, debug: Boolean): SomeEOptionP = {
+    override def update(
+        newEOptionP: SomeInterimEP,
+        c:           OnUpdateContinuation,
+        dependees:   Traversable[SomeEOptionP],
+        debug:       Boolean
+    ): Option[(SomeEOptionP, Set[SomeEPK])] = {
         throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
     }
 
-    override def addDepender(epk: SomeEPK): Unit = {
-        throw new UnknownError(s"final properties can't have dependers")
-    }
-    
-    override def lastDependers(): Set[SomeEPK] = {
-        throw new UnknownError(s"the final property $eOptionP can't have dependers")
-    }
-    
-    override def resetDependers(): Set[SomeEPK] = {
-                    throw new UnknownError(s"the final property $eOptionP can't have dependers")
-                }
-
-    override def removeDepender(someEPK: SomeEPK): Unit = { /* There is nothing to do! */ }
-
-    override def clearOnUpdateComputationAndDependees(): OnUpdateContinuation = {
-        null
+    override def finalUpdate(newEOptionP: SomeFinalEP): Set[SomeEPK] = {
+        throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
     }
 
-    override def dependees: Traversable[SomeEOptionP] = {
-        throw new UnknownError("final properties don't have dependees")
+    override def addDepender(expectedEOptionP: SomeEOptionP, someEPK: SomeEPK): Boolean = false
+
+    override def prepareInvokeC(
+        updatedDependeeEOptionP: SomeEOptionP
+    ): Option[OnUpdateContinuation] = None
+
+    override def prepareInvokeC(expectedC: OnUpdateContinuation): Option[OnUpdateContinuation] = {
+        None
     }
 
+    override def clearDependees(): Unit = { /* Nothing to do! */ }
+    override def removeDepender(someEPK: SomeEPK): Unit = { /* Nothing to do! */ }
+    override def isCurrentC(c: OnUpdateContinuation): Boolean = false
     override def hasDependees: Boolean = false
-
-    override def setOnUpdateComputationAndDependees(
-        c:         OnUpdateContinuation,
-        dependees: Traversable[SomeEOptionP]
-    ): Unit = {
-        throw new UnknownError("final properties can't have \"OnUpdateContinuations\"")
-    }
-
-    override def hasPendingOnUpdateComputation: Boolean = false
+    override def dependees: Traversable[SomeEOptionP] = Nil
 
     override def toString: String = s"FinalEPKState(finalEP=$eOptionP)"
 }
@@ -271,12 +306,7 @@ object EPKState {
     def apply(finalEP: SomeFinalEP): EPKState = new FinalEPKState(finalEP)
 
     def apply(eOptionP: SomeEOptionP): InterimEPKState = {
-        new InterimEPKState(
-            new AtomicReference[SomeEOptionP](eOptionP),
-            new AtomicReference[OnUpdateContinuation]( /*null*/ ),
-            Nil,
-            new AtomicReference[Set[SomeEPK]](Set.empty)
-        )
+        new InterimEPKState(eOptionP, null, Nil, Set.empty)
     }
 
     def apply(
@@ -284,12 +314,7 @@ object EPKState {
         c:         OnUpdateContinuation,
         dependees: Traversable[SomeEOptionP]
     ): InterimEPKState = {
-        new InterimEPKState(
-            new AtomicReference[SomeEOptionP](eOptionP),
-            new AtomicReference[OnUpdateContinuation](c),
-            dependees,
-            new AtomicReference[Set[SomeEPK]](Set.empty)
-        )
+        new InterimEPKState(eOptionP, c, dependees, Set.empty)
     }
 
     def unapply(epkState: EPKState): Some[SomeEOptionP] = Some(epkState.eOptionP)
