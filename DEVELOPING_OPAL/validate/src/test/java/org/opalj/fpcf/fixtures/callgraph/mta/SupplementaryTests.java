@@ -2,17 +2,21 @@
 package org.opalj.fpcf.fixtures.callgraph.mta;
 
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;
+import org.opalj.tac.fpcf.analyses.cg.xta.CTATypePropagationAnalysis;
 import org.opalj.tac.fpcf.analyses.cg.xta.MTATypePropagationAnalysis;
 
 /**
  * The main functionality of type propagation is assured via the XTA tests. Since MTA is very similar, this file
  * only contains tests which concern the minor differences.
  *
+ * These tests also apply to CTA, since method sets for methods are also merged in CTA (and these tests do not contain
+ * any fields which would affect the outcome).
+ *
  * @author Andreas Bauer
  */
 @AvailableTypes(
         value = {"java/lang/String", "[Ljava/lang/String;"},
-        analyses = MTATypePropagationAnalysis.class)
+        analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
 public class SupplementaryTests {
 
     @AvailableTypes(analyses = MTATypePropagationAnalysis.class)
@@ -23,10 +27,10 @@ public class SupplementaryTests {
     @AvailableTypes(
             value = {"org/opalj/fpcf/fixtures/callgraph/mta/SupplementaryTests$A",
                      "org/opalj/fpcf/fixtures/callgraph/mta/SupplementaryTests$B"},
-            analyses = MTATypePropagationAnalysis.class)
+            analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
     public static class Scope1 {
         // In MTA, methods should not have any types attached to them.
-        @AvailableTypes(analyses = MTATypePropagationAnalysis.class)
+        @AvailableTypes(analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
         public static void test() {
             A obj1 = new A();
             B obj2 = new B();
@@ -35,7 +39,7 @@ public class SupplementaryTests {
             Scope3.test();
         }
 
-        @AvailableTypes(analyses = MTATypePropagationAnalysis.class)
+        @AvailableTypes(analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
         public static void sink1(A obj) {}
     }
 
@@ -44,21 +48,21 @@ public class SupplementaryTests {
                     "org/opalj/fpcf/fixtures/callgraph/mta/SupplementaryTests$A1",
                     "org/opalj/fpcf/fixtures/callgraph/mta/SupplementaryTests$B"
             },
-            analyses = MTATypePropagationAnalysis.class)
+            analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
     public static class Scope2 {
-        @AvailableTypes(analyses = MTATypePropagationAnalysis.class)
+        @AvailableTypes(analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
         public static void sink1(A obj) {}
 
-        @AvailableTypes(analyses = MTATypePropagationAnalysis.class)
+        @AvailableTypes(analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
         public static void sink2(B obj) {}
 
-        @AvailableTypes(analyses = MTATypePropagationAnalysis.class)
+        @AvailableTypes(analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
         public static void sink3(C obj) {}
     }
 
     @AvailableTypes(
             value = "org/opalj/fpcf/fixtures/callgraph/mta/SupplementaryTests$A1",
-            analyses = MTATypePropagationAnalysis.class)
+            analyses = { MTATypePropagationAnalysis.class, CTATypePropagationAnalysis.class })
     public static class Scope3 {
         public static void test() {
             A obj1 = new A1();

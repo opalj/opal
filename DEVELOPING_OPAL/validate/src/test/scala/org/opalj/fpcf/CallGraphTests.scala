@@ -14,6 +14,8 @@ import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.AttachToClassFile
 import org.opalj.tac.fpcf.analyses.cg.xta.AttachToDefinedMethod
+import org.opalj.tac.fpcf.analyses.cg.xta.CTATypePropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.FTATypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.MTATypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
@@ -108,6 +110,44 @@ class CallGraphTests extends PropertiesTest {
                 new SimpleInstantiatedTypesAnalysisScheduler(AttachToClassFile),
                 PropagationBasedCallGraphAnalysisScheduler,
                 MTATypePropagationAnalysisScheduler
+            )
+        )
+        as.propertyStore.shutdown()
+
+        validateProperties(
+            as,
+            classFilesWithAnnotations(as.project) ++
+                declaredMethodsWithAnnotations(as.project) ++
+                fieldsWithAnnotations(as.project),
+            Set("AvailableTypes")
+        )
+    }
+
+    describe("the FTA call graph analysis is executed") {
+        val as = executeAnalyses(
+            Set(
+                new SimpleInstantiatedTypesAnalysisScheduler(AttachToDefinedMethod),
+                PropagationBasedCallGraphAnalysisScheduler,
+                FTATypePropagationAnalysisScheduler
+            )
+        )
+        as.propertyStore.shutdown()
+
+        validateProperties(
+            as,
+            classFilesWithAnnotations(as.project) ++
+                declaredMethodsWithAnnotations(as.project) ++
+                fieldsWithAnnotations(as.project),
+            Set("AvailableTypes")
+        )
+    }
+
+    describe("the CTA call graph analysis is executed") {
+        val as = executeAnalyses(
+            Set(
+                new SimpleInstantiatedTypesAnalysisScheduler(AttachToClassFile),
+                PropagationBasedCallGraphAnalysisScheduler,
+                CTATypePropagationAnalysisScheduler
             )
         )
         as.propertyStore.shutdown()
