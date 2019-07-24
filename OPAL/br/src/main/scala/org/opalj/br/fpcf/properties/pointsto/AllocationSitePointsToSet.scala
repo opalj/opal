@@ -30,9 +30,9 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 sealed trait AllocationSitePointsToSet
-    extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
-    with OrderedProperty
-    with AllocationSitePointsToSetPropertyMetaInformation {
+        extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
+        with OrderedProperty
+        with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
@@ -76,6 +76,9 @@ sealed trait AllocationSitePointsToSet
     override def included(
         other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSet = {
+        if (typeFilter eq AllocationSitePointsToSet.noFilter)
+            return included(other);
+
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
@@ -109,6 +112,9 @@ sealed trait AllocationSitePointsToSet
         seenTypes:    Int,
         typeFilter:   ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSet = {
+        if (typeFilter eq AllocationSitePointsToSet.noFilter)
+            return included(other, seenElements, seenTypes);
+
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
@@ -136,6 +142,9 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
+        if (typeFilter eq AllocationSitePointsToSet.noFilter)
+            return this;
+
         var newTypes = UIDSet.empty[ReferenceType]
         var newOrderedTypes = Chain.empty[ReferenceType]
 
@@ -180,6 +189,8 @@ sealed trait AllocationSitePointsToSet
 }
 
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
+
+    val noFilter = { t: ReferenceType ⇒ true }
 
     def apply(
         allocationSite: AllocationSite, allocatedType: ReferenceType
@@ -367,7 +378,7 @@ case class AllocationSitePointsToSet1(
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
-        if (typeFilter(allocatedType)) {
+        if ((typeFilter eq AllocationSitePointsToSet.noFilter) || typeFilter(allocatedType)) {
             this
         } else {
             NoAllocationSites
