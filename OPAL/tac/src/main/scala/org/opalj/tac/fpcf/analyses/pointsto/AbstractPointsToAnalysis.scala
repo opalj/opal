@@ -587,21 +587,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 )
                 val defSite = definitionSites(state.method.definedMethod, pc)
                 state.setLocalPointsToSet(defSite, pointsToSet, _ ⇒ true)
-                // TODO: handle this + params
             }
-        }
-
-        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Method")) && target.name == "invoke") {
-            val reflectiveTargets = tamiFlexLogData.methodInvokes(state.method, line)
-            for (reflectiveTarget ← reflectiveTargets) {
-                if (reflectiveTarget.hasSingleDefinedMethod && !reflectiveTarget.definedMethod.isStatic) {
-                    val rfps = formalParameters(reflectiveTarget)
-                    // the first param of invoke is the receiver
-                    handleCallReceiver(call.params(0).asVar.definedBy, reflectiveTarget, rfps, false)
-                }
-                // TODO we also need the parameters
-            }
-
         }
 
         if ((target.declaringClassType eq ObjectType("java/lang/reflect/Field")) &&

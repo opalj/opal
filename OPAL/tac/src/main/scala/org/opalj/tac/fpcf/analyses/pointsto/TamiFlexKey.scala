@@ -30,6 +30,7 @@ class TamiFlexLogData(
     private[this] def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"
     }
+
     def newInstance(source: DeclaredMethod, sourceLine: Int): scala.collection.Set[ReferenceType] = {
         val sourceDesc = toMethodDesc(source)
         val key = (sourceDesc, sourceLine)

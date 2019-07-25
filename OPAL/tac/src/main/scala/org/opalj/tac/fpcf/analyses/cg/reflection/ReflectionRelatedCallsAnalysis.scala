@@ -346,7 +346,7 @@ class MethodInvokeAnalysis private[analyses] (
 
     override def processNewCaller(
         caller:          DefinedMethod,
-        pc:              UShort,
+        pc:              Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
         params:          Seq[Option[Expr[V]]],
