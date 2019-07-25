@@ -59,13 +59,28 @@ case class ArrayEntity[ElementType](element: ElementType)
 case class MethodExceptions(dm: DeclaredMethod)
 case class CallExceptions(defSite: DefinitionSite)
 
+trait AField {
+    def classType: ObjectType
+    def fieldType: FieldType
+}
+
+case class RealField(field: Field) extends AField {
+    override def classType: ObjectType = field.classFile.thisType
+    override def fieldType: FieldType = field.fieldType
+}
+
+case object UnsafeFakeField extends AField {
+    override def classType: ObjectType = ObjectType.Object
+    override def fieldType: FieldType = ObjectType.Object
+}
+
 /**
  *
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-    with ReachableMethodAnalysis {
+        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+        with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -95,7 +110,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     val javaLangRefReference = ObjectType("java/lang/ref/Reference")
 
     private[this] def handleGetField(
-        field: Field, pc: Int, objRefDefSites: IntTrieSet
+        field: AField, pc: Int, objRefDefSites: IntTrieSet
     )(implicit state: State): Unit = {
         val tac = state.tac
         val index = tac.pcToIndex(pc)
@@ -112,7 +127,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
                 // TODO: Refactor
-                val fieldClassType = field.classFile.thisType
+                val fieldClassType = field.classType
                 val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
                 if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
                     state.includeSharedPointsToSet(
@@ -175,14 +190,14 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     private[this] def handlePutField(
-        field: Field, objRefDefSites: IntTrieSet, rhsDefSites: IntTrieSet
+        field: AField, objRefDefSites: IntTrieSet, rhsDefSites: IntTrieSet
     )(implicit state: State): Unit = {
         val fakeEntity = (rhsDefSites, field)
         state.addPutFieldEntity(fakeEntity)
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
                 // TODO: Refactor
-                val fieldClassType = field.classFile.thisType
+                val fieldClassType = field.classType
                 val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
                 if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
                     val fieldEntity = (as, field)
@@ -371,7 +386,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    handleGetField(fieldOpt.get, pc, objRefDefSites)
+                    handleGetField(RealField(fieldOpt.get), pc, objRefDefSites)
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
@@ -444,7 +459,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    handlePutField(fieldOpt.get, objRefDefSites, defSites)
+                    handlePutField(RealField(fieldOpt.get), objRefDefSites, defSites)
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
@@ -514,6 +529,11 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         }
     }
 
+    private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
+    private[this] val ArrayT = ObjectType("java/lang/reflect/Array")
+    private[this] val FieldT = ObjectType("java/lang/reflect/Field")
+    private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
+
     private[this] def handleDirectCall(
         call: Call[V], pc: Int, target: DeclaredMethod
     )(implicit state: State): Unit = {
@@ -574,11 +594,10 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
          * TODO: Integrate into a TamiFlex analysis
          */
         val line = state.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
-        if (target.name == "newInstance" && (
-            (target.declaringClassType eq ObjectType.Class) ||
-            (target.declaringClassType eq ObjectType("java/lang/reflect/Constructor")) ||
-            (target.declaringClassType eq ObjectType("java/lang/reflect/Array"))
-        )) {
+        if (((target.declaringClassType eq ObjectType.Class) ||
+            (target.declaringClassType eq ConstructorT) ||
+            (target.declaringClassType eq ArrayT)) &&
+            target.name == "newInstance") {
             val allocatedTypes = tamiFlexLogData.newInstance(state.method, line)
 
             for (allocatedType ← allocatedTypes) {
@@ -590,47 +609,65 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             }
         }
 
-        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Field")) &&
-            target.name == "get") {
-            val fields = tamiFlexLogData.fields(state.method, line)
-            for (field ← fields) {
-                if (field.isStatic) {
-                    handleGetStatic(field, pc)
-                } else {
-                    handleGetField(field, pc, call.params.head.asVar.definedBy)
-                }
+        if (target.declaringClassType eq FieldT) {
+            target.name match {
+                case "get" ⇒
+                    val fields = tamiFlexLogData.fields(state.method, line)
+                    for (field ← fields) {
+                        if (field.isStatic) {
+                            handleGetStatic(field, pc)
+                        } else {
+                            handleGetField(RealField(field), pc, call.params.head.asVar.definedBy)
+                        }
+                    }
+
+                case "put" ⇒
+                    val fields = tamiFlexLogData.fields(state.method, line)
+                    for (field ← fields) {
+                        if (field.isStatic) {
+                            handlePutStatic(field, call.params(1).asVar.definedBy)
+                        } else {
+                            handlePutField(
+                                RealField(field),
+                                call.params.head.asVar.definedBy,
+                                call.params(1).asVar.definedBy
+                            )
+                        }
+                    }
+
+                case _ ⇒
             }
         }
 
-        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Field")) &&
-            target.name == "set") {
-            val fields = tamiFlexLogData.fields(state.method, line)
-            for (field ← fields) {
-                if (field.isStatic) {
-                    handlePutStatic(field, call.params(1).asVar.definedBy)
-                } else {
-                    handlePutField(
-                        field, call.params.head.asVar.definedBy, call.params(1).asVar.definedBy
-                    )
-                }
+        if (target.declaringClassType eq ArrayT) {
+            target.name match {
+                case "get" ⇒
+                    val arrays = tamiFlexLogData.arrays(state.method, line)
+                    for (array ← arrays) {
+                        handleArrayLoad(array, pc, call.params.head.asVar.definedBy)
+                    }
+
+                case "put" ⇒
+                    val arrays = tamiFlexLogData.arrays(state.method, line)
+                    for (array ← arrays) {
+                        handleArrayStore(
+                            array, call.params.head.asVar.definedBy, call.params(2).asVar.definedBy
+                        )
+                    }
+
+                case _ ⇒
             }
         }
 
-        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Array")) &&
-            target.name == "get") {
-            val arrays = tamiFlexLogData.arrays(state.method, line)
-            for (array ← arrays) {
-                handleArrayLoad(array, pc, call.params.head.asVar.definedBy)
-            }
-        }
-
-        if ((target.declaringClassType eq ObjectType("java/lang/reflect/Array")) &&
-            target.name == "set") {
-            val arrays = tamiFlexLogData.arrays(state.method, line)
-            for (array ← arrays) {
-                handleArrayStore(
-                    array, call.params.head.asVar.definedBy, call.params(2).asVar.definedBy
-                )
+        if (target.declaringClassType eq UnsafeT) {
+            target.name match {
+                case "getObject" | "getObjectVolatile" ⇒
+                    handleGetField(UnsafeFakeField, pc, call.params.head.asVar.definedBy)
+                case "putObject" | "putObjectVolative" | "putOrderedObject" ⇒
+                    handlePutField(UnsafeFakeField, call.params.head.asVar.definedBy, call.params(2).asVar.definedBy)
+                case "compareAndSwapObject" ⇒
+                    handlePutField(UnsafeFakeField, call.params.head.asVar.definedBy, call.params(3).asVar.definedBy)
+                case _ ⇒
             }
         }
 
@@ -920,7 +957,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     }
 
     private[this] def continuationForNewAllocationSitesAtPutField(
-        rhsDefSitesEPS: Traversable[SomeEPK], field: Field, dependees: Map[SomeEPK, SomeEOptionP]
+        rhsDefSitesEPS: Traversable[SomeEPK], field: AField, dependees: Map[SomeEPK, SomeEOptionP]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
@@ -929,7 +966,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
                     // TODO: Refactor
-                    val fieldClassType = field.classFile.thisType
+                    val fieldClassType = field.classType
                     val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
                     if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
                         results ::= InterimPartialResult(
@@ -994,7 +1031,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     // todo name
     private[this] def continuationForNewAllocationSitesAtGetField(
         defSiteObject: DefinitionSite,
-        field:         Field,
+        field:         AField,
         dependees:     Map[SomeEPK, SomeEOptionP]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
@@ -1003,7 +1040,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 var nextDependees: List[SomeEPK] = Nil
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
                     // TODO: Refactor
-                    val fieldClassType = field.classFile.thisType
+                    val fieldClassType = field.classType
                     val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
                     if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
                         val epk = EPK((as, field), pointsToPropertyKey)

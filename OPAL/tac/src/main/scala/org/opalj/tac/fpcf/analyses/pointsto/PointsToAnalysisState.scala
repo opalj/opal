@@ -24,7 +24,6 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.cg.NoCallees
 import org.opalj.br.ArrayType
-import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.properties.TACAI
@@ -40,20 +39,20 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends TACAIBasedAnalysisState {
 
-    private[this] val getFields: ArrayBuffer[(DefinitionSite, Field)] = ArrayBuffer.empty
-    private[this] val putFields: ArrayBuffer[(IntTrieSet, Field)] = ArrayBuffer.empty
+    private[this] val getFields: ArrayBuffer[(DefinitionSite, AField)] = ArrayBuffer.empty
+    private[this] val putFields: ArrayBuffer[(IntTrieSet, AField)] = ArrayBuffer.empty
 
-    def addGetFieldEntity(fakeEntity: (DefinitionSite, Field)): Unit = {
+    def addGetFieldEntity(fakeEntity: (DefinitionSite, AField)): Unit = {
         getFields += fakeEntity
     }
 
-    def getFieldsIterator: Iterator[(DefinitionSite, Field)] = getFields.iterator
+    def getFieldsIterator: Iterator[(DefinitionSite, AField)] = getFields.iterator
 
-    def addPutFieldEntity(fakeEntity: (IntTrieSet, Field)): Unit = {
+    def addPutFieldEntity(fakeEntity: (IntTrieSet, AField)): Unit = {
         putFields += fakeEntity
     }
 
-    def putFieldsIterator: Iterator[(IntTrieSet, Field)] = putFields.iterator
+    def putFieldsIterator: Iterator[(IntTrieSet, AField)] = putFields.iterator
 
     private[this] val arrayLoads: ArrayBuffer[(DefinitionSite, ArrayType)] = ArrayBuffer.empty
     private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
