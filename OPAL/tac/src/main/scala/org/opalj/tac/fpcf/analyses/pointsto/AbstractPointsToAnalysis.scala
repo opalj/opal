@@ -1184,7 +1184,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case ds: DefinitionSite if state.hasLocalPointsToSet(ds) ⇒
                 if (!state.hasDependency(depender, EPK(dependee, pointsToPropertyKey))) {
                     val p2s = propertyStore(dependee, pointsToPropertyKey)
-                    assert(p2s.isEPK)
+
+                    //TODO: is it safe to comment this assertion out?  assert(p2s.isEPK)
                     state.addDependee(depender, p2s)
                 }
 
