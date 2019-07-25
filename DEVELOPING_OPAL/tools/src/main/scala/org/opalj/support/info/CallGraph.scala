@@ -6,6 +6,8 @@ package info
 import java.io.File
 import java.net.URL
 
+import scala.collection.JavaConverters._
+
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.fpcf.PropertyStore
@@ -21,6 +23,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.Field
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
@@ -86,6 +89,8 @@ object CallGraph extends ProjectAnalysisApplication {
         timingsFile:  Option[String],
         pointsToFile: Option[String]
     ): BasicReport = {
+        println("ENTRYPOINTS:")
+        println(project.get(InitialEntryPointsKey).mkString("\n"))
         // TODO: Implement output files
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
@@ -265,8 +270,23 @@ object CallGraph extends ProjectAnalysisApplication {
         else
             project.config
 
-        if (mainClass.isDefined)
-            newConfig = null //todo implement this ???
+        if (mainClass.isDefined) {
+            val key = s"${InitialEntryPointsKey.ConfigKeyPrefix}entryPoints"
+            val currentValues = newConfig.getList(key).unwrapped()
+            val configValue = Map(
+                "declaringClass" → mainClass.get.replace('.', '/'),
+                "name" → "main"
+            ).asJava
+            currentValues.add(ConfigValueFactory.fromMap(configValue))
+            newConfig = newConfig.withValue(key, ConfigValueFactory.fromIterable(currentValues))
+
+            newConfig = newConfig.withValue(
+                s"${InitialEntryPointsKey.ConfigKeyPrefix}analysis",
+                ConfigValueFactory.fromAnyRef(
+                    "org.opalj.br.analyses.cg.ConfigurationEntryPointsFinder"
+                )
+            )
+        }
         performAnalysis(
             Project.recreate(project, newConfig),
             calleesSigs,
