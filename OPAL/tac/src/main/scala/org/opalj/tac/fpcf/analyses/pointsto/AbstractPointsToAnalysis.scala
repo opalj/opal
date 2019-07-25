@@ -586,7 +586,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     pc, state.method, allocatedType, isConstant = false
                 )
                 val defSite = definitionSites(state.method.definedMethod, pc)
-                state.setLocalPointsToSet(defSite, pointsToSet, _ ⇒ true)
+                state.includeLocalPointsToSet(defSite, pointsToSet, _ ⇒ true)
             }
         }
 

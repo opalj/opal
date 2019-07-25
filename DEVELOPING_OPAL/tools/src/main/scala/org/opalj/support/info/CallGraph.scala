@@ -6,6 +6,8 @@ package info
 import java.io.File
 import java.net.URL
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
@@ -26,6 +28,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
+import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 
 /**
  * Computes a call graph and reports its size.
@@ -54,7 +57,7 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"
+        "[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"+"[-writeTimings=file]"+"[-writePointsToSets=file]"+"[-main=package.MainClass]"+"[-tamiflex-log=logfile]"
     }
 
     private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
@@ -65,37 +68,25 @@ object CallGraph extends ProjectAnalysisApplication {
                 !p.matches(algorithmRegex.regex) &&
                     !p.startsWith("-callers=") &&
                     !p.startsWith("-callees=") &&
-                    !p.startsWith("-writeCG=")
+                    !p.startsWith("-writeCG=") &&
+                    !p.startsWith("-writeTimings=") &&
+                    !p.startsWith("-writePointsToSets=") &&
+                    !p.startsWith("-main=") &&
+                    !p.startsWith("-tamiflex-log=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
 
-    // todo: we would like to print the edges for a given method
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+    private[this] def performAnalysis(
+        project:      Project[URL],
+        calleesSigs:  List[String],
+        callersSigs:  List[String],
+        cgAlgorithm:  String,
+        cgFile:       Option[String],
+        timingsFile:  Option[String],
+        pointsToFile: Option[String]
     ): BasicReport = {
-        var calleesSigs: List[String] = Nil
-        var callersSigs: List[String] = Nil
-        var cgAlgorithm: String = "RTA"
-        var cgFile: Option[String] = None
-
-        val callersRegex = "-callers=(.*)".r
-        val calleesRegex = "-callees=(.*)".r
-        val writeCGRegex = "-writeCG=(.*)".r
-
-        parameters.foreach {
-            case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
-            case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
-            case algorithmRegex(algo)    ⇒ cgAlgorithm = algo
-            case writeCGRegex(fileName) ⇒
-                if (cgFile.isEmpty)
-                    cgFile = Some(fileName)
-                else throw new IllegalArgumentException("-writeCG was set twice")
-
-        }
-
+        // TODO: Implement output files
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
             dm.hasSingleDefinedMethod &&
@@ -215,5 +206,75 @@ object CallGraph extends ProjectAnalysisApplication {
                 |"""
 
         BasicReport(message.stripMargin('|'))
+    }
+
+    // todo: we would like to print the edges for a given method
+    override def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
+        var calleesSigs: List[String] = Nil
+        var callersSigs: List[String] = Nil
+        var cgAlgorithm: String = "RTA"
+        var cgFile: Option[String] = None
+        var timingsFile: Option[String] = None
+        var pointsToFile: Option[String] = None
+        var mainClass: Option[String] = None
+        var tamiflexLog: Option[String] = None
+
+        val callersRegex = "-callers=(.*)".r
+        val calleesRegex = "-callees=(.*)".r
+        val writeCGRegex = "-writeCG=(.*)".r
+        val writeTimingsRegex = "-writeTimings=(.*)".r
+        val writePointsToSetsRegex = "-writePointsToSets=(.*)".r
+        val mainClassRegex = "-main=(.*)".r
+        val tamiflexLogRegex = "-tamiflex-log=(.*)".r
+
+        parameters.foreach {
+            case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
+            case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
+            case algorithmRegex(algo)    ⇒ cgAlgorithm = algo
+            case writeCGRegex(fileName) ⇒
+                if (cgFile.isEmpty)
+                    cgFile = Some(fileName)
+                else throw new IllegalArgumentException("-writeCG was set twice")
+            case writeTimingsRegex(fileName) ⇒
+                if (timingsFile.isEmpty)
+                    timingsFile = Some(fileName)
+                else throw new IllegalArgumentException("-writeTimings was set twice")
+            case writePointsToSetsRegex(fileName) ⇒
+                if (pointsToFile.isEmpty)
+                    pointsToFile = Some(fileName)
+                else throw new IllegalArgumentException("-writePointsToSets was set twice")
+            case mainClassRegex(fileName) ⇒
+                if (mainClass.isEmpty)
+                    mainClass = Some(fileName)
+                else throw new IllegalArgumentException("-main was set twice")
+            case tamiflexLogRegex(fileName) ⇒
+                if (tamiflexLog.isEmpty)
+                    tamiflexLog = Some(fileName)
+                else throw new IllegalArgumentException("-tamiflex-log was set twice")
+        }
+
+        var newConfig = if (tamiflexLog.isDefined)
+            project.config.withValue(
+                TamiFlexKey.configKey,
+                ConfigValueFactory.fromAnyRef(tamiflexLog.get)
+            )
+        else
+            project.config
+
+        if (mainClass.isDefined)
+            newConfig = null //todo implement this ???
+        performAnalysis(
+            Project.recreate(project, newConfig),
+            calleesSigs,
+            callersSigs,
+            cgAlgorithm,
+            cgFile,
+            timingsFile,
+            pointsToFile
+        )
     }
 }

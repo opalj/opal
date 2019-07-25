@@ -98,7 +98,7 @@ class TamiFlexLogData(
  * @author Florian Kuebler
  */
 object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
-    private[this] val configKey = "org.opalj.tac.fpcf.analyses.pointsto.TamiFlex.logFile"
+    val configKey = "org.opalj.tac.fpcf.analyses.pointsto.TamiFlex.logFile"
 
     override protected def requirements: ProjectInformationKeys = {
         Seq(DeclaredMethodsKey)
@@ -113,7 +113,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         if (project.config.hasPath(configKey)) {
             val logName = project.config.getString(configKey)
             Source.fromFile(logName).getLines().foreach { line ⇒
-                line.split(";") match {
+                line.split(";", -1) match {
                     case Array("Array.newInstance", arrayType, sourceMethod, sourceLine, _, _) ⇒
                         val line = if (sourceLine == "") -1 else sourceLine.toInt
                         val oldSet = newInstance.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
@@ -214,6 +214,8 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         val oldInvokes = methodInvoke.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
                         oldInvokes.add(method)
 
+                    case e ⇒ throw new RuntimeException(s"unexpected log entry ${e.mkString(",")}")
+
                 }
             }
 
@@ -242,7 +244,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
     private[this] def toDeclaredMethod(
         methodDesc: String
     )(implicit declaredMethods: DeclaredMethods): DeclaredMethod = {
-        val regex = "<([^:]+): ([^ ]+) ([^(]+)\\(([^)]+)\\)>".r
+        val regex = "<([^:]+): ([^ ]+) ([^(]+)\\(([^)]*)\\)>".r
         methodDesc match {
             case regex(declaringClass, returnType, name, parameterTypes) ⇒
                 val declaringClassType = ObjectType(toJVMType(declaringClass))
