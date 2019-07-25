@@ -586,7 +586,21 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     pc, state.method, allocatedType, isConstant = false
                 )
                 val defSite = definitionSites(state.method.definedMethod, pc)
-                state.includeLocalPointsToSet(defSite, pointsToSet, _ ⇒ true)
+                state.includeLocalPointsToSet(defSite, pointsToSet, AllocationSitePointsToSet.noFilter)
+            }
+        }
+
+        if ((target.declaringClassType eq ObjectType.Class) && target.name == "forName") {
+            val classTypes = tamiFlexLogData.forNames(state.method, line)
+            for (classType ← classTypes) {
+                state.includeLocalPointsToSet(
+                    definitionSites(state.method.definedMethod, pc),
+                    createPointsToSet(
+                        pc, state.method, classType, isConstant = true
+                    ),
+                    AllocationSitePointsToSet.noFilter
+
+                )
             }
         }
 
