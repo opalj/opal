@@ -605,7 +605,21 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     pc, state.method, allocatedType, isConstant = false
                 )
                 val defSite = definitionSites(state.method.definedMethod, pc)
-                state.setLocalPointsToSet(defSite, pointsToSet, _ ⇒ true)
+                state.includeLocalPointsToSet(defSite, pointsToSet, AllocationSitePointsToSet.noFilter)
+            }
+        }
+
+        if ((target.declaringClassType eq ObjectType.Class) && target.name == "forName") {
+            val classTypes = tamiFlexLogData.forNames(state.method, line)
+            for (classType ← classTypes) {
+                state.includeLocalPointsToSet(
+                    definitionSites(state.method.definedMethod, pc),
+                    createPointsToSet(
+                        pc, state.method, classType, isConstant = true
+                    ),
+                    AllocationSitePointsToSet.noFilter
+
+                )
             }
         }
 
@@ -1221,7 +1235,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             case ds: DefinitionSite if state.hasLocalPointsToSet(ds) ⇒
                 if (!state.hasDependency(depender, EPK(dependee, pointsToPropertyKey))) {
                     val p2s = propertyStore(dependee, pointsToPropertyKey)
-                    assert(p2s.isEPK)
+
+                    //TODO: is it safe to comment this assertion out?  assert(p2s.isEPK)
                     state.addDependee(depender, p2s)
                 }
 
