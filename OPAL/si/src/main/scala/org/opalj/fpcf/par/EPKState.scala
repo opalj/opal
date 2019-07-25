@@ -69,6 +69,16 @@ private[par] sealed abstract class EPKState {
     ): Option[(SomeEOptionP, Set[SomeEPK])]
     //  newEOptionP.isUpdatedComparedTo(eOptionP)
 
+/**
+ * Atomically updates the underlying `EOptionP` value by applying the given update function;
+ * if the update is relevant, the current set of dependers is cleared and returned along
+ * with the old `eOptionP` value.
+ */
+    def update(
+                   u : UpdateComputation[_ <: Entity, _<: Property]
+                 ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])]
+    //  newEOptionP.isUpdatedComparedTo(eOptionP)
+
     /**
      * Atomically updates the underlying `eOptionP` and returns the set of dependers.
      */
@@ -183,7 +193,30 @@ private[par] final class InterimEPKState(
         }
     }
 
-    override def finalUpdate(eOptionP: SomeFinalEP): Set[SomeEPK] = {
+    override def update(
+                           u : UpdateComputation[_ <: Entity, _<: Property]
+                       ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
+        withWriteLock {
+            val oldEOptionP = this.eOptionP
+            val newEOptionPOption = u(oldEOptionP)
+            if(newEOptionPOption.isEmpty)
+                return None;
+
+            val newEOptionP = newEOptionPOption.get
+            val isRelevantUpdate = newEOptionP.isUpdatedComparedTo(oldEOptionP)
+            if(isRelevantUpdate) {
+                this.eOptionP = newEOptionP
+                val oldDependers = this.dependers
+                this.dependers = Set.empty
+                Some((oldEOptionP,newEOptionP, oldDependers))
+            } else {
+                None
+            }
+        }
+    }
+
+
+        override def finalUpdate(eOptionP: SomeFinalEP): Set[SomeEPK] = {
         assert(this.eOptionP.isRefinable)
 
         withWriteLock {
@@ -276,6 +309,12 @@ private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) exte
         debug:       Boolean
     ): Option[(SomeEOptionP, Set[SomeEPK])] = {
         throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
+    }
+
+    override def update(
+                           u : UpdateComputation[_ <: Entity, _<: Property]
+                       ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
+        throw new UnknownError(s"the final property $eOptionP can't be updated using $u")
     }
 
     override def finalUpdate(newEOptionP: SomeFinalEP): Set[SomeEPK] = {

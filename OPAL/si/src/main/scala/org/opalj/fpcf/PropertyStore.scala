@@ -821,7 +821,7 @@ abstract class PropertyStore {
      * between the case "no callers" and "unknown callers"; in case of the final property
      * "no callers" the result may very well be [[NoResult]].
      *
-     * @note A computation is guaranteed to be triggered excactly once for every e/pk pair that has
+     * @note A computation is guaranteed to be triggered exactly once for every e/pk pair that has
      *       a concrete property - even if the value was already associated with the e/pk pair
      *       before the registration is done.
      *

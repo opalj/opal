@@ -111,6 +111,8 @@ final class PKECPropertyStore(
 
     private[par] val forcedEPKs: ConcurrentLinkedQueue[SomeEPK] = new ConcurrentLinkedQueue()
 
+    private[par] var setAndPreinitializedValues : List[SomeEPK] = List.empty
+
     // --------------------------------------------------------------------------------------------
     //
     // BASIC QUERY METHODS (ONLY TO BE CALLED WHEN THE STORE IS QUIESCENT)
@@ -223,6 +225,7 @@ final class PKECPropertyStore(
         if (oldP != null) {
             throw new IllegalStateException(s"$e had already the property $oldP")
         }
+        setAndPreinitializedValues ::= EPK(e,p.key)
     }
 
     override def doPreInitialize[E <: Entity, P <: Property](
@@ -236,8 +239,12 @@ final class PKECPropertyStore(
 
         val newInterimP: SomeInterimEP =
             propertiesOfKind.get(e) match {
-                case null  ⇒ pc(EPK(e, pk))
-                case state ⇒ pc(state.eOptionP.asInstanceOf[EOptionP[E, P]])
+                case null  ⇒
+                  val epk = EPK(e, pk)
+                    setAndPreinitializedValues ::= epk
+                    pc(epk)
+                case state ⇒
+                    pc(state.eOptionP.asInstanceOf[EOptionP[E, P]])
             }
         propertiesOfKind.put(e, EPKState(newInterimP))
     }
@@ -247,6 +254,18 @@ final class PKECPropertyStore(
     // CORE IMPLEMENTATION - THREAD SAFE PART
     //
     // --------------------------------------------------------------------------------------------
+
+
+    private[this] def triggerComputations(e: Entity, pkId: Int): Unit = {
+        val triggeredComputations = this.triggeredComputations(pkId)
+        if (triggeredComputations == null)
+            return;
+
+        triggeredComputations foreach { pcEntities ⇒
+            val pc = pcEntities
+            schedulePropertyComputation(e,pc.asInstanceOf[PropertyComputation[Entity]])
+        }
+    }
 
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = {
         forcedEPKs.add(EPK(e, pk))
@@ -401,7 +420,10 @@ final class PKECPropertyStore(
         finalEP:                     SomeFinalEP,
         potentiallyIdemPotentUpdate: Boolean     = false
     ): Unit = {
-        val oldEPKState = properties(finalEP.pk.id).put(finalEP.e, EPKState(finalEP))
+      val e = finalEP.e
+      val pkId = finalEP.pk.id
+        val oldEPKState = properties(pkId).put(e, EPKState(finalEP))
+        var invokeTriggeredComputations = true
         if (oldEPKState != null) {
             if (oldEPKState.isFinal) {
                 if (potentiallyIdemPotentUpdate)
@@ -420,6 +442,7 @@ final class PKECPropertyStore(
             // We have to update the value of the oldEPKState to ensure that clients that
             // want to register a depender see the most current value.
             val oldEOptionP = oldEPKState.eOptionP
+            invokeTriggeredComputations = oldEOptionP.isEPK
             val dependers = oldEPKState.finalUpdate(finalEP)
             // We now have to inform the dependers.
             // We can simply inform all dependers because is it guaranteed that they have not seen
@@ -428,7 +451,9 @@ final class PKECPropertyStore(
             // update, which is checked for by notifyDepender.
             dependers.foreach(epk ⇒ notifyDepender(epk, oldEOptionP, finalEP))
         }
-        // If the oldState was null then there is nothing to do.
+        if(invokeTriggeredComputations) {
+          triggerComputations(e,pkId)
+        }
     }
 
     // NOTES REGARDING CONCURRENCY
@@ -439,7 +464,8 @@ final class PKECPropertyStore(
         hint:      PropertyComputationHint,
         dependees: Traversable[SomeEOptionP]
     ): Unit = {
-        val psPerKind = properties(interimEP.pk.id)
+        val interimEPKId = interimEP.pk.id
+        val psPerKind = properties(interimEPKId )
 
         // 0. Get EPKState object.
         var epkStateUpdateRequired = true
@@ -460,7 +486,7 @@ final class PKECPropertyStore(
         }
 
         // 1. Update the property if necessary.
-        //    Though, we can have concurrent executions of this method, it is still always
+        //    Though we can have concurrent executions of this method, it is still always
         //    the case that we will only see monotonic updates; i.e., this part of this
         //    method is never executed concurrently; only the first part may be executed
         //    concurrently with the second part.
@@ -536,10 +562,41 @@ final class PKECPropertyStore(
             }
         }
 
-        // 3. Notify dependers
+        // 3. Notify dependers if required
         if (eOptionPWithDependersOption.isDefined) {
             val (oldEOptionP, dependers) = eOptionPWithDependersOption.get
+            if(oldEOptionP.isEPK) triggerComputations(interimEP.e,interimEPKId )
             dependers.foreach(epk ⇒ notifyDepender(epk, oldEOptionP, interimEP))
+        } else {
+            if(!epkStateUpdateRequired/* <=> we created a new EPKState with an intermediate property */)
+            triggerComputations(interimEP.e,interimEPKId )
+        }
+    }
+
+
+    // NOTES REGARDING CONCURRENCY
+    // W.r.t. one EPK there may be multiple executions of this method concurrently!
+    private[this] def handlePartialResult(
+                                       e: Entity,
+                                       pk : SomePropertyKey,
+                                       u:  UpdateComputation[_ <: Entity, _ <: Property]
+                                   ): Unit = {
+        val pkId = pk.id
+        val psPerKind = properties(pkId )
+
+        // 0. Get EPKState object.
+        val epk = EPK(e,pk)
+        val epkState = psPerKind.putIfAbsent(                    e,                        EPKState(epk)                )
+
+        // 1. Update the property if necessary.
+        val eOptionPWithDependersOption = epkState.update(u)
+
+
+        // 2. Notify dependers if required
+        if (eOptionPWithDependersOption.isDefined) {
+            val (oldEOptionP, newEOptionP, dependers) = eOptionPWithDependersOption.get
+            if(oldEOptionP.isEPK) triggerComputations(e,pkId)
+            dependers.foreach(epk ⇒ notifyDepender(epk, oldEOptionP, newEOptionP))
         }
     }
 
@@ -586,6 +643,12 @@ final class PKECPropertyStore(
                     interimR.hint,
                     interimR.dependees
                 )
+
+            case PartialResult.id ⇒
+                val PartialResult(e, pk, u) = r
+                type E = e.type
+                type P = Property
+handlePartialResult(e,pk,u)
 
             /*
 
@@ -658,6 +721,11 @@ final class PKECPropertyStore(
         val maxPKIndex = PropertyKey.maxId
 
         prepareThreadPool()
+
+        // If some values were explicitly set, we have to trigger corresponding triggered
+        // computations.
+        setAndPreinitializedValues.foreach {epk ⇒ triggerComputations(epk.e,epk.pk.id)}
+        setAndPreinitializedValues = List.empty
 
         val continueComputation = new AtomicBoolean(false)
         do {
