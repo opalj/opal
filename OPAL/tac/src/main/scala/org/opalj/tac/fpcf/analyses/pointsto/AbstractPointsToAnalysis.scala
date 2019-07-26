@@ -79,8 +79,8 @@ case object UnsafeFakeField extends AField {
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-        with ReachableMethodAnalysis {
+    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+    with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -738,7 +738,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         } else if (target.declaringClassType eq ConstructorT) {
             target.name match {
                 case "getModifiers" ⇒
-                    // TODO
+                // TODO
                 case "newInstance" ⇒
                     val allocatedTypes = tamiFlexLogData.classes(state.method, line)
                     if (allocatedTypes.nonEmpty) {
