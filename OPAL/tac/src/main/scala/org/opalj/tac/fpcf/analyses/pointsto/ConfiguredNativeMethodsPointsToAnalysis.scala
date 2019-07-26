@@ -78,14 +78,14 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
             // the method is reachable, so we analyze it!
         }
 
-        if (!dm.hasSingleDefinedMethod)
-            return NoResult;
+        if (dm.name == "getConstructor")
+            println()
 
-        // we only allow defined methods
-        val method = dm.definedMethod
-
-        if (method.isNative && nativeMethodData.contains(dm))
+        if (nativeMethodData.contains(dm)) {
+            if (dm.name == "getConstructor")
+                println()
             return handleNativeMethod(dm.asDefinedMethod);
+        }
 
         NoResult
     }

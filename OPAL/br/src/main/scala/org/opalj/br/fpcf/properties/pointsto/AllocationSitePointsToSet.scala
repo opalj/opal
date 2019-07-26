@@ -371,7 +371,8 @@ case class AllocationSitePointsToSet1(
     override def included(
         other: AllocationSitePointsToSet, seenElements: Int, seenTypes: Int
     ): AllocationSitePointsToSet = {
-        assert(seenElements >= 0 && seenElements <= other.numElements)
+        if (!(seenElements >= 0 && seenElements <= other.numElements))
+            assert(seenElements >= 0 && seenElements <= other.numElements)
         // Note, that we can not assert, that seenElements is between 0 and 1, as this can
         // happen by unordered partial results.
         included(other)

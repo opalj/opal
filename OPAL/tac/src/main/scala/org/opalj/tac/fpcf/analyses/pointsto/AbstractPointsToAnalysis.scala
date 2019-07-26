@@ -104,6 +104,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
+        if ((definedMethod.declaringClassType eq ObjectType.Class) && (definedMethod.name == "getConstructor") || definedMethod.name == "getDeclaredConstructor") {
+            return Results();
+        }
         doProcessMethod(new PointsToAnalysisState[ElementType, PointsToSet](definedMethod, tacEP))
     }
 
@@ -410,7 +413,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
                 if (targetVar.value.isReferenceValue &&
                     // Unsafe.getObject and getObjectVolatile are handled like getField
-                    ((call.declaringClass ne UnsafeT) || !call.name.startsWith("getObject"))) {
+                    ((call.declaringClass ne UnsafeT) || !call.name.startsWith("getObject")) &&
+                    ((call.declaringClass ne ConstructorT) || !call.name.startsWith("newInstance"))) {
                     val index = tac.pcToIndex(pc)
                     val nextStmt = tac.stmts(index + 1)
                     val filter = nextStmt match {
@@ -754,6 +758,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         val defSite = definitionSites(state.method.definedMethod, pc)
                         state.includeLocalPointsToSet(defSite, pointsToSet, AllocationSitePointsToSet.noFilter)
                     }
+                case _ ⇒
             }
 
         } else if (target.declaringClassType eq FieldT) {
@@ -817,7 +822,8 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
             val indirectParams = callees.indirectCallParameters(pc, target)
             val descriptor = target.descriptor
-            for (i ← 0 until descriptor.parametersCount) {
+
+            for (i ← indirectParams.indices) {
                 val paramType = descriptor.parameterType(i)
                 if (paramType.isReferenceType) {
                     val fp = fps(i + 1)
