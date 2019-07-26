@@ -408,7 +408,9 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 val targets = callees.callees(pc)
                 val defSiteObject = definitionSites(method, pc)
 
-                if (targetVar.value.isReferenceValue) {
+                if (targetVar.value.isReferenceValue &&
+                    // Unsafe.getObject and getObjectVolatile are handled like getField
+                    ((call.declaringClass ne UnsafeT) || !call.name.startsWith("getObject"))) {
                     val index = tac.pcToIndex(pc)
                     val nextStmt = tac.stmts(index + 1)
                     val filter = nextStmt match {
