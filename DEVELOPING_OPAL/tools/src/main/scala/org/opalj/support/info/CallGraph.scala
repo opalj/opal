@@ -89,8 +89,6 @@ object CallGraph extends ProjectAnalysisApplication {
         timingsFile:  Option[String],
         pointsToFile: Option[String]
     ): BasicReport = {
-        println("ENTRYPOINTS:")
-        println(project.get(InitialEntryPointsKey).mkString("\n"))
         // TODO: Implement output files
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
