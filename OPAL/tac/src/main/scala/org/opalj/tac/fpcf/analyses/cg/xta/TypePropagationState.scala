@@ -198,6 +198,7 @@ final class TypePropagationState(
         if (calleeDependee.isDefined)
             dependees ::= calleeDependee.get
 
+        // TODO AB Copy must be immutable, "view" to the map?
         if (_backwardPropagationDependees.nonEmpty)
             dependees ++= _backwardPropagationDependees.values
 

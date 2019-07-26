@@ -2,7 +2,8 @@
 package org.opalj.fpcf.fixtures.callgraph.fta;
 
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;
-import org.opalj.tac.fpcf.analyses.cg.xta.FTATypePropagationAnalysis;
+
+import static org.opalj.fpcf.properties.callgraph.TypePropagationVariant.FTA;
 
 /**
  * The main functionality of type propagation is assured via the XTA tests. Since FTA is very similar, this file
@@ -11,12 +12,12 @@ import org.opalj.tac.fpcf.analyses.cg.xta.FTATypePropagationAnalysis;
  * @author Andreas Bauer
  */
 
-@AvailableTypes(analyses = FTATypePropagationAnalysis.class)
+@AvailableTypes(variants = FTA)
 public class SupplementaryTests {
 
     @AvailableTypes(
             value = {"java/lang/String", "[Ljava/lang/String;"},
-            analyses = FTATypePropagationAnalysis.class)
+            variants = FTA)
     public static void main(String[] args) {
         Scope1.test();
     }
@@ -25,23 +26,23 @@ public class SupplementaryTests {
             value = {"org/opalj/fpcf/fixtures/callgraph/fta/SupplementaryTests$A",
                     "org/opalj/fpcf/fixtures/callgraph/fta/SupplementaryTests$A1",
                     "org/opalj/fpcf/fixtures/callgraph/fta/SupplementaryTests$B"},
-            analyses = FTATypePropagationAnalysis.class)
+            variants = FTA)
     public static class Scope1 {
 
-        @AvailableTypes(analyses = FTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = FTA)
         public static A field1;
 
-        @AvailableTypes(analyses = FTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = FTA)
         public static B field2;
 
-        @AvailableTypes(analyses = FTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = FTA)
         public static A1 field3;
 
         @AvailableTypes(
                 value = {"org/opalj/fpcf/fixtures/callgraph/fta/SupplementaryTests$A",
                         "org/opalj/fpcf/fixtures/callgraph/fta/SupplementaryTests$A1",
                         "org/opalj/fpcf/fixtures/callgraph/fta/SupplementaryTests$B"},
-                analyses = FTATypePropagationAnalysis.class)
+                variants = FTA)
         public static void test() {
             field1 = new A();
             field2 = new B();
@@ -52,7 +53,7 @@ public class SupplementaryTests {
         @AvailableTypes(
                 value = {"org/opalj/fpcf/fixtures/callgraph/fta/SupplementaryTests$A",
                         "org/opalj/fpcf/fixtures/callgraph/fta/SupplementaryTests$A1"},
-                analyses = FTATypePropagationAnalysis.class)
+                variants = FTA)
         public static void read() {
             // Only A was written to field1, but since all type sets for fields are merged, the field read also
             // propagates A1 which was written to field3!

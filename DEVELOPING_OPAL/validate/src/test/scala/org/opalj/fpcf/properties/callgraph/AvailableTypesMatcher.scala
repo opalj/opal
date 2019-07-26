@@ -4,15 +4,16 @@ package fpcf
 package properties
 package callgraph
 
+import org.opalj.br.AnnotationLike
+import org.opalj.br.ElementValue
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.ElementValue
-import org.opalj.br.ReferenceType
 
 /**
  * Matches AvailableTypes annotations to the values computed cooperatively by a
@@ -30,21 +31,24 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
         properties: Traversable[Property]
     ): Option[String] = {
 
-        if (as contains ObjectType("org/opalj/tac/fpcf/analyses/cg/xta/XTATypePropagationAnalysis")) {
-            ()
-        }
-
         val annotationType = a.annotationType.asObjectType
 
-        // Get call graph analyses for which this annotation applies.
-        val analysesElementValues: Seq[ElementValue] =
-            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        // Get the set of type propagation variants for which this annotation applies.
+        val variantsElementValues: Seq[ElementValue] =
+            getValue(p, annotationType, a.elementValuePairs, "variants").asArrayValue.values
+        val variants = variantsElementValues.map(ev ⇒ TypePropagationVariant.valueOf(ev.asEnumValue.constName))
 
-        // If none of the annotated analyses match the executed ones, return...
-        // If the list of specified analyses is empty, we assume the annotation applies to all
-        // call graph algorithms, so we don't exit early.
-        if (analyses.nonEmpty && !analyses.exists(as.contains))
+        // Get the variant which was actually executed.
+        val executedVariant =
+            p.get(PropertyStoreKey).getInformation[TypePropagationVariant](TypePropagationVariant.id) match {
+                case Some(variant) => variant
+                case None => sys.error("type propagation variant must be registered")
+            }
+
+        // If none of the annotated variants match the executed ones, return...
+        // If the list of specified variants is empty, we assume the annotation applies to all
+        // of them, so we don't exit early.
+        if (variants.nonEmpty && !variants.contains(executedVariant))
             return None;
 
         val instantiatedTypes = {

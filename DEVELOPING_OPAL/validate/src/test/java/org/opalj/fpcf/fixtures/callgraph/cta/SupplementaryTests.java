@@ -2,7 +2,8 @@
 package org.opalj.fpcf.fixtures.callgraph.cta;
 
 import org.opalj.fpcf.properties.callgraph.AvailableTypes;
-import org.opalj.tac.fpcf.analyses.cg.xta.CTATypePropagationAnalysis;
+
+import static org.opalj.fpcf.properties.callgraph.TypePropagationVariant.CTA;
 
 /**
  * The main functionality of type propagation is assured via the XTA tests. Since CTA is very similar, this file
@@ -13,10 +14,10 @@ import org.opalj.tac.fpcf.analyses.cg.xta.CTATypePropagationAnalysis;
 
 @AvailableTypes(
         value = {"java/lang/String", "[Ljava/lang/String;"},
-        analyses = CTATypePropagationAnalysis.class)
+        variants = CTA)
 public class SupplementaryTests {
 
-    @AvailableTypes(analyses = CTATypePropagationAnalysis.class)
+    @AvailableTypes(variants = CTA)
     public static void main(String[] args) {
         Scope1.test();
     }
@@ -26,26 +27,26 @@ public class SupplementaryTests {
                     "org/opalj/fpcf/fixtures/callgraph/cta/SupplementaryTests$A1",
                     "org/opalj/fpcf/fixtures/callgraph/cta/SupplementaryTests$B",
                     "org/opalj/fpcf/fixtures/callgraph/cta/SupplementaryTests$B1"},
-            analyses = CTATypePropagationAnalysis.class)
+            variants = CTA)
     public static class Scope1 {
 
-        @AvailableTypes(analyses = CTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = CTA)
         public static A field1;
 
-        @AvailableTypes(analyses = CTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = CTA)
         public static B field2;
 
-        @AvailableTypes(analyses = CTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = CTA)
         public static A1 field3;
 
-        @AvailableTypes(analyses = CTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = CTA)
         public static void test() {
             field1 = new A();
             field2 = new B();
             other();
         }
 
-        @AvailableTypes(analyses = CTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = CTA)
         public static void other() {
             field3 = new A1();
             // A and A1 are propagated to the class Scope2. In XTA, only A1 would've been propagated since neither
@@ -60,7 +61,7 @@ public class SupplementaryTests {
     @AvailableTypes(
             value = {"org/opalj/fpcf/fixtures/callgraph/cta/SupplementaryTests$A",
                     "org/opalj/fpcf/fixtures/callgraph/cta/SupplementaryTests$A1"},
-            analyses = CTATypePropagationAnalysis.class)
+            variants = CTA)
     public static class Scope2 {
         public static void sink(A obj) {}
     }
@@ -68,10 +69,10 @@ public class SupplementaryTests {
     @AvailableTypes(
             value = {"org/opalj/fpcf/fixtures/callgraph/cta/SupplementaryTests$B",
                     "org/opalj/fpcf/fixtures/callgraph/cta/SupplementaryTests$B1"},
-            analyses = CTATypePropagationAnalysis.class)
+            variants = CTA)
     public static class Scope3 {
 
-        @AvailableTypes(analyses = CTATypePropagationAnalysis.class)
+        @AvailableTypes(variants = CTA)
         public static B field1;
     }
 

@@ -55,7 +55,7 @@ import org.opalj.br.Code
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 import org.opalj.tac.fpcf.properties.TACAI
 
-// TODO AB helpers for debugging and maybe evaluation later...
+// TODO AB Helpers for debugging and maybe evaluation, remove later...
 object TypePropagationTrace {
     case class TypePropagation(targetEntity: Entity, types: UIDSet[ReferenceType])
     case class Trace(events: mutable.ArrayBuffer[Event])
@@ -72,6 +72,7 @@ object TypePropagationTrace {
     var WriteTextualTrace: Boolean = true
 }
 
+// TODO AB For debugging, remove later...
 private[xta] class TypePropagationTrace {
     // Textual trace
     private val _out =
@@ -135,14 +136,18 @@ private[xta] class TypePropagationTrace {
     }
 }
 
-abstract class AbstractTypePropagationAnalysis private[analyses] ( final val project: SomeProject) extends ReachableMethodAnalysis {
+final class TypePropagationAnalysis private[analyses] (
+        val project:     SomeProject,
+        selectSetEntity: SetEntitySelector
+) extends ReachableMethodAnalysis {
+
     private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
 
     private type State = TypePropagationState
 
     override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
 
-        val setEntity = getCorrespondingSetEntity(definedMethod)
+        val setEntity = selectSetEntity(definedMethod)
         val instantiatedTypesEOptP = propertyStore(setEntity, InstantiatedTypes.key)
         val calleesEOptP = propertyStore(definedMethod, Callees.key)
 
@@ -227,9 +232,6 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
         case _ ⇒
             sys.error("received unexpected update")
     }
-
-    // This is the method which should be overridden by XTA/FTA/MTA/CTA...
-    protected def getCorrespondingSetEntity(e: Entity): SetEntity
 
     private def handleUpdateOfCallees(eps: EPS[DefinedMethod, Callees])(implicit state: State): ProperPropertyComputationResult = {
         state.updateCalleeDependee(eps)
@@ -367,7 +369,7 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
     private def registerEntityForForwardPropagation(e: Entity, filters: Set[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         // TODO AB If we register a method for both forward and backward propagation, this is called twice.
         // (-> Check if this is a problem for performance and maybe memoize the result?)
-        val setEntity = getCorrespondingSetEntity(e)
+        val setEntity = selectSetEntity(e)
         if (setEntity == state.setEntity) {
             return ;
         }
@@ -381,7 +383,7 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
     }
 
     private def registerEntityForBackwardPropagation(e: Entity, mostPreciseUpperBound: ReferenceType)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
-        val setEntity = getCorrespondingSetEntity(e)
+        val setEntity = selectSetEntity(e)
         if (setEntity == state.setEntity) {
             return ;
         }
@@ -435,6 +437,7 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
                 return false;
             }
 
+            // TODO AB Document unsoundness.
             // If the filter type is not a project type (i.e., it is external), we assume that any candidate type
             // is a subtype. This can be any external type or project types for which we have incomplete supertype
             // information.
@@ -511,8 +514,8 @@ abstract class AbstractTypePropagationAnalysis private[analyses] ( final val pro
     }
 }
 
-abstract class AbstractTypePropagationAnalysisScheduler(
-        perMethodTypeSetEntity: PerMethodTypeSetEntity
+final class TypePropagationAnalysisScheduler(
+        val selectSetEntity: SetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
@@ -535,10 +538,7 @@ abstract class AbstractTypePropagationAnalysisScheduler(
             if (method.name != "main") {
                 OPALLogger.warn("xta", "initial type assignment to entry points other than 'main' methods not implemented yet!")(p.logContext)
             } else {
-                val setEntity = perMethodTypeSetEntity match {
-                    case AttachToDefinedMethod ⇒ method
-                    case AttachToClassFile     ⇒ method.definedMethod.classFile
-                }
+                val setEntity = selectSetEntity(method)
 
                 ps.preInitialize(setEntity, InstantiatedTypes.key) {
                     case _: EPK[_, _] ⇒ InterimEUBP(setEntity, InstantiatedTypes(initialInstantiatedTypes))
@@ -550,10 +550,8 @@ abstract class AbstractTypePropagationAnalysisScheduler(
         null
     }
 
-    protected def initializeAnalysis(project: SomeProject): AbstractTypePropagationAnalysis
-
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis = initializeAnalysis(project)
+        val analysis = new TypePropagationAnalysis(project, selectSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }

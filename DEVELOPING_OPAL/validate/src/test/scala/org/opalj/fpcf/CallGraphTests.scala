@@ -2,24 +2,23 @@
 package org.opalj
 package fpcf
 
-import scala.collection.JavaConverters._
-
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.fpcf.properties.callgraph.TypePropagationVariant
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.xta.AttachToClassFile
-import org.opalj.tac.fpcf.analyses.cg.xta.AttachToDefinedMethod
-import org.opalj.tac.fpcf.analyses.cg.xta.CTATypePropagationAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.xta.FTATypePropagationAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.xta.MTATypePropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
+import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
+import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.xta.XTATypePropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
+
+import scala.collection.JavaConverters._
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.
@@ -88,12 +87,16 @@ class CallGraphTests extends PropertiesTest {
     describe("the XTA call graph analysis is executed") {
         val as = executeAnalyses(
             Set(
-                new SimpleInstantiatedTypesAnalysisScheduler(AttachToDefinedMethod),
+                new SimpleInstantiatedTypesAnalysisScheduler(XTASetEntitySelector),
                 PropagationBasedCallGraphAnalysisScheduler,
-                XTATypePropagationAnalysisScheduler
+                new TypePropagationAnalysisScheduler(XTASetEntitySelector)
             )
         )
         as.propertyStore.shutdown()
+        // We need to manually store which variant was executed. Otherwise, there is no good way
+        // to get this information in the property matcher.
+        as.propertyStore.getOrCreateInformation(
+            TypePropagationVariant.id, TypePropagationVariant.XTA)
 
         validateProperties(
             as,
@@ -107,12 +110,14 @@ class CallGraphTests extends PropertiesTest {
     describe("the MTA call graph analysis is executed") {
         val as = executeAnalyses(
             Set(
-                new SimpleInstantiatedTypesAnalysisScheduler(AttachToClassFile),
+                new SimpleInstantiatedTypesAnalysisScheduler(MTASetEntitySelector),
                 PropagationBasedCallGraphAnalysisScheduler,
-                MTATypePropagationAnalysisScheduler
+                new TypePropagationAnalysisScheduler(MTASetEntitySelector)
             )
         )
         as.propertyStore.shutdown()
+        as.propertyStore.getOrCreateInformation(
+            TypePropagationVariant.id, TypePropagationVariant.MTA)
 
         validateProperties(
             as,
@@ -126,12 +131,14 @@ class CallGraphTests extends PropertiesTest {
     describe("the FTA call graph analysis is executed") {
         val as = executeAnalyses(
             Set(
-                new SimpleInstantiatedTypesAnalysisScheduler(AttachToDefinedMethod),
+                new SimpleInstantiatedTypesAnalysisScheduler(FTASetEntitySelector),
                 PropagationBasedCallGraphAnalysisScheduler,
-                FTATypePropagationAnalysisScheduler
+                new TypePropagationAnalysisScheduler(FTASetEntitySelector)
             )
         )
         as.propertyStore.shutdown()
+        as.propertyStore.getOrCreateInformation(
+            TypePropagationVariant.id, TypePropagationVariant.FTA)
 
         validateProperties(
             as,
@@ -145,12 +152,14 @@ class CallGraphTests extends PropertiesTest {
     describe("the CTA call graph analysis is executed") {
         val as = executeAnalyses(
             Set(
-                new SimpleInstantiatedTypesAnalysisScheduler(AttachToClassFile),
+                new SimpleInstantiatedTypesAnalysisScheduler(CTASetEntitySelector),
                 PropagationBasedCallGraphAnalysisScheduler,
-                CTATypePropagationAnalysisScheduler
+                new TypePropagationAnalysisScheduler(CTASetEntitySelector)
             )
         )
         as.propertyStore.shutdown()
+        as.propertyStore.getOrCreateInformation(
+            TypePropagationVariant.id, TypePropagationVariant.CTA)
 
         validateProperties(
             as,

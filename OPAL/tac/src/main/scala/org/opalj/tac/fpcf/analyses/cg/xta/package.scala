@@ -13,10 +13,10 @@ package object xta {
      * Within the context of propagation-based call graph construction algorithms,
      * each entity has a corresponding "set entity". The type set of an entity is
      * attached to its set entity. The set entity may be itself, or some other entity.
-     * A single set entity may be shared among multiple entities.
+     * The set of a single set entity may be shared among multiple entities.
      * The assignment of entity to set entity varies per algorithm. For example,
      * in XTA, the set entity of a DefinedMethod is the DefinedMethod itself, but
-     * in CTA, the set entity is the method's ClassFile.
+     * in CTA, the set entity is the method's class.
      */
     type SetEntity = Entity
 }

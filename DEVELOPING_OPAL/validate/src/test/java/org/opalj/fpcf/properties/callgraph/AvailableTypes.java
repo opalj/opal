@@ -1,15 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.callgraph;
 
-import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.cg.xta.AbstractTypePropagationAnalysis;
-import org.opalj.tac.fpcf.analyses.cg.xta.XTATypePropagationAnalysis;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.*;
 import static java.lang.annotation.RetentionPolicy.CLASS;
+import static org.opalj.fpcf.properties.callgraph.TypePropagationVariant.XTA;
 
 /**
  * Describes which types are known to be instantiated and available in the annotated
@@ -36,5 +36,5 @@ public @interface AvailableTypes {
      */
     String[] value() default {};
 
-    Class<? extends AbstractTypePropagationAnalysis>[] analyses() default { XTATypePropagationAnalysis.class };
+    TypePropagationVariant[] variants() default { XTA };
 }

@@ -34,16 +34,6 @@ import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * The set entity the type set of direct instantiations is attached to. XTA and FTA use the DefinedMethod,
- * MTA and CTA use the method's class file.
- *
- * TODO AB Maybe this can be unified, since the choice is made in multiple places...
- */
-sealed trait PerMethodTypeSetEntity
-case object AttachToDefinedMethod extends PerMethodTypeSetEntity
-case object AttachToClassFile extends PerMethodTypeSetEntity
-
-/**
  * Updates InstantiatedTypes attached to a method for each constructor
  * call or array allocation occurring within that method.
  *
@@ -59,18 +49,15 @@ case object AttachToClassFile extends PerMethodTypeSetEntity
  * @author Andreas Bauer
  */
 // TODO AB replace later with a more sophisticated analysis (based on the RTA one)
-class SimpleInstantiatedTypesAnalysis(
-        final val project:          SomeProject,
-        val perMethodTypeSetEntity: PerMethodTypeSetEntity
+final class SimpleInstantiatedTypesAnalysis(
+        val project:     SomeProject,
+        selectSetEntity: SetEntitySelector
 ) extends ReachableMethodAnalysis {
 
     override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
         val code = definedMethod.definedMethod.body.get
 
-        val targetSetEntity = perMethodTypeSetEntity match {
-            case AttachToDefinedMethod ⇒ definedMethod
-            case AttachToClassFile     ⇒ definedMethod.definedMethod.classFile
-        }
+        val targetSetEntity = selectSetEntity(definedMethod)
 
         val instantiatedObjectTypes = code.instructions.collect({
             case NEW(declType) ⇒ declType
@@ -184,11 +171,11 @@ class SimpleInstantiatedTypesAnalysis(
 }
 
 class SimpleInstantiatedTypesAnalysisScheduler(
-        val perMethodTypeSetEntity: PerMethodTypeSetEntity
+        selectSetEntity: SetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis = new SimpleInstantiatedTypesAnalysis(project, perMethodTypeSetEntity)
+        val analysis = new SimpleInstantiatedTypesAnalysis(project, selectSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
