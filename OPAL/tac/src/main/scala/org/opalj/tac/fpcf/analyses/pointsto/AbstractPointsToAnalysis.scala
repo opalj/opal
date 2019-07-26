@@ -79,8 +79,8 @@ case object UnsafeFakeField extends AField {
  * @author Florian Kuebler
  */
 trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]]
-        extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
-        with ReachableMethodAnalysis {
+    extends AbstractPointsToBasedAnalysis[Entity, PointsToSet]
+    with ReachableMethodAnalysis {
 
     protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
@@ -534,6 +534,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
     private[this] val ArrayT = ObjectType("java/lang/reflect/Array")
     private[this] val FieldT = ObjectType("java/lang/reflect/Field")
+    private[this] val MethodT = ObjectType("java/lang/reflect/Method")
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
 
     private[this] def handleDirectCall(
@@ -596,82 +597,188 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
          * TODO: Integrate into a TamiFlex analysis
          */
         val line = state.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
-        if (((target.declaringClassType eq ObjectType.Class) ||
-            (target.declaringClassType eq ConstructorT) ||
-            (target.declaringClassType eq ArrayT)) &&
-            target.name == "newInstance") {
-            val allocatedTypes = tamiFlexLogData.newInstance(state.method, line)
-
-            for (allocatedType ← allocatedTypes) {
-                val pointsToSet = createPointsToSet(
-                    pc, state.method, allocatedType, isConstant = false
-                )
-                val defSite = definitionSites(state.method.definedMethod, pc)
-                state.includeLocalPointsToSet(defSite, pointsToSet, AllocationSitePointsToSet.noFilter)
-            }
-        }
-
-        if ((target.declaringClassType eq ObjectType.Class) && target.name == "forName") {
-            val classTypes = tamiFlexLogData.forNames(state.method, line)
-            for (classType ← classTypes) {
-                state.includeLocalPointsToSet(
-                    definitionSites(state.method.definedMethod, pc),
-                    createPointsToSet(
-                        pc, state.method, classType, isConstant = true
-                    ),
-                    AllocationSitePointsToSet.noFilter
-
-                )
-            }
-        }
-
-        if (target.declaringClassType eq FieldT) {
-            target.name match {
-                case "get" ⇒
-                    val fields = tamiFlexLogData.fields(state.method, line)
-                    for (field ← fields) {
-                        if (field.isStatic) {
-                            handleGetStatic(field, pc)
-                        } else {
-                            handleGetField(RealField(field), pc, call.params.head.asVar.definedBy)
-                        }
-                    }
-
-                case "put" ⇒
-                    val fields = tamiFlexLogData.fields(state.method, line)
-                    for (field ← fields) {
-                        if (field.isStatic) {
-                            handlePutStatic(field, call.params(1).asVar.definedBy)
-                        } else {
-                            handlePutField(
-                                RealField(field),
-                                call.params.head.asVar.definedBy,
-                                call.params(1).asVar.definedBy
-                            )
-                        }
-                    }
-
-                case _ ⇒
-            }
-        }
-
         if (target.declaringClassType eq ArrayT) {
             target.name match {
+                case "newInstance" ⇒
+                    val allocatedTypes = tamiFlexLogData.classes(state.method, line)
+
+                    for (allocatedType ← allocatedTypes) {
+                        val pointsToSet = createPointsToSet(
+                            pc, state.method, allocatedType, isConstant = false
+                        )
+                        val defSite = definitionSites(state.method.definedMethod, pc)
+                        state.includeLocalPointsToSet(defSite, pointsToSet, AllocationSitePointsToSet.noFilter)
+                    }
                 case "get" ⇒
                     val arrays = tamiFlexLogData.arrays(state.method, line)
+
                     for (array ← arrays) {
                         handleArrayLoad(array, pc, call.params.head.asVar.definedBy)
                     }
-
-                case "put" ⇒
+                case "set" ⇒
                     val arrays = tamiFlexLogData.arrays(state.method, line)
+
                     for (array ← arrays) {
                         handleArrayStore(
                             array, call.params.head.asVar.definedBy, call.params(2).asVar.definedBy
                         )
                     }
+                case _ ⇒
+            }
+        } else if (target.declaringClassType eq ObjectType.Class) {
+            target.name match {
+                case "forName" ⇒
+                    val classTypes = tamiFlexLogData.classes(state.method, line)
+
+                    if (classTypes.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, ObjectType.Class, isConstant = true
+                            ),
+                            AllocationSitePointsToSet.noFilter
+
+                        )
+                    }
+                case "getDeclaredField" ⇒
+                    val fields = tamiFlexLogData.classes(state.method, line)
+                    if (fields.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, FieldT, isConstant = true
+                            ),
+                            AllocationSitePointsToSet.noFilter
+                        )
+                    }
+
+                case "getDeclaredFields" ⇒
+                    val classTypes = tamiFlexLogData.classes(state.method, line)
+
+                    if (classTypes.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, ArrayType(FieldT), isConstant = true
+                            ),
+                            AllocationSitePointsToSet.noFilter
+                        )
+                        // todo store something into the array
+                    }
+
+                case "getDeclaredMethod" ⇒
+                    val methods = tamiFlexLogData.methods(state.method, line)
+                    if (methods.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, MethodT, isConstant = true
+                            ),
+                            AllocationSitePointsToSet.noFilter
+
+                        )
+                    }
+
+                case "getDeclaredMethods" ⇒
+                    val classTypes = tamiFlexLogData.classes(state.method, line)
+
+                    if (classTypes.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, ArrayType(MethodT), isConstant = true
+                            ),
+                            AllocationSitePointsToSet.noFilter
+
+                        )
+                    }
+
+                case "getMethod" ⇒
+                    val methods = tamiFlexLogData.methods(state.method, line)
+                    if (methods.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, MethodT, isConstant = true
+                            ),
+                            AllocationSitePointsToSet.noFilter
+
+                        )
+                    }
+
+                case "getMethods" ⇒
+                    val classTypes = tamiFlexLogData.classes(state.method, line)
+
+                    if (classTypes.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, ArrayType(MethodT), isConstant = true
+                            ),
+                            AllocationSitePointsToSet.noFilter
+
+                        )
+                    }
+
+                case "newInstance" ⇒
+                    val allocatedTypes = tamiFlexLogData.classes(state.method, line)
+                    if (allocatedTypes.nonEmpty) {
+                        println(s"allocating ${allocatedTypes.mkString(",")}")
+                    }
+
+                    for (allocatedType ← allocatedTypes) {
+                        val pointsToSet = createPointsToSet(
+                            pc, state.method, allocatedType, isConstant = false
+                        )
+                        val defSite = definitionSites(state.method.definedMethod, pc)
+                        state.includeLocalPointsToSet(defSite, pointsToSet, AllocationSitePointsToSet.noFilter)
+                    }
 
                 case _ ⇒
+
+            }
+        } else if (target.declaringClassType eq ConstructorT) {
+            target.name match {
+                case "getModifiers" ⇒
+                // TODO
+                case "newInstance" ⇒
+                    val allocatedTypes = tamiFlexLogData.classes(state.method, line)
+                    if (allocatedTypes.nonEmpty) {
+                        println(s"allocating ${allocatedTypes.mkString(",")}")
+                    }
+
+                    for (allocatedType ← allocatedTypes) {
+                        val pointsToSet = createPointsToSet(
+                            pc, state.method, allocatedType, isConstant = false
+                        )
+                        val defSite = definitionSites(state.method.definedMethod, pc)
+                        state.includeLocalPointsToSet(defSite, pointsToSet, AllocationSitePointsToSet.noFilter)
+                    }
+            }
+
+        } else if (target.declaringClassType eq FieldT) {
+            if (target.name == "get") {
+                val fields = tamiFlexLogData.fields(state.method, line)
+
+                for (field ← fields) {
+                    if (field.isStatic) {
+                        handleGetStatic(field, pc)
+                    } else {
+                        handleGetField(RealField(field), pc, call.params.head.asVar.definedBy)
+                    }
+                }
+            } else if (target.name == "set") {
+                val fields = tamiFlexLogData.fields(state.method, line)
+
+                for (field ← fields) {
+                    if (field.isStatic) {
+                        handlePutStatic(field, call.params(1).asVar.definedBy)
+                    } else {
+                        handlePutField(
+                            RealField(field), call.params.head.asVar.definedBy, call.params(1).asVar.definedBy
+                        )
+                    }
+                }
             }
         }
 

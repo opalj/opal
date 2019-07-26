@@ -109,7 +109,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         tac:          TACode[TACMethodParameter, V]
     )(implicit indirectCalls: IndirectCalls): Unit = {
         val line = caller.definedMethod.body.flatMap(b ⇒ b.lineNumber(pc)).getOrElse(-1)
-        val targets = tamiFlexLogData.methodInvokes(caller, line)
+        val targets = tamiFlexLogData.methods(caller, line)
         if (targets.isEmpty)
             return ;
 
