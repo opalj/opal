@@ -28,6 +28,7 @@ import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.Field
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
+import org.opalj.tac.cg.AllocationSiteBasedPointsToScalaCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -66,7 +67,7 @@ object CallGraph extends ProjectAnalysisApplication {
         "[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"+"[-writeTimings=file]"+"[-writePointsToSets=file]"+"[-main=package.MainClass]"+"[-tamiflex-log=logfile]"
     }
 
-    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
+    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo|PointsToScala)".r
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
@@ -113,6 +114,7 @@ object CallGraph extends ProjectAnalysisApplication {
                 case "RTA"               ⇒ project.get(RTACallGraphKey)
                 case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
                 case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
+                case "PointsToScala"     ⇒ project.get(AllocationSiteBasedPointsToScalaCallGraphKey)
             }
         } { t ⇒ callGraphTime = t.toSeconds }
 
@@ -131,33 +133,35 @@ object CallGraph extends ProjectAnalysisApplication {
             }
         }
 
-        val ptss = ps.entities(AllocationSitePointsToSet.key).toList
-        import scala.collection.JavaConverters._
-        val statistic = ptss.groupBy(p ⇒ p.ub.elements.size).mapValues { spts ⇒
-            (spts.size, {
-                val unique = new java.util.IdentityHashMap[AllocationSitePointsToSet, AllocationSitePointsToSet]()
-                unique.putAll(spts.map(x ⇒ x.ub → x.ub).toMap.asJava)
-                unique.size()
-            })
-        }.map { case (size, (count, uniqueCount)) ⇒ (size, count, uniqueCount) }.toArray.sorted
-        println("size, count, unique count")
-        println(statistic.mkString("\n"))
+        if (cgAlgorithm == "PointsTo") {
+            val ptss = ps.entities(AllocationSitePointsToSet.key).toList
+            import scala.collection.JavaConverters._
+            val statistic = ptss.groupBy(p ⇒ p.ub.elements.size).mapValues { spts ⇒
+                (spts.size, {
+                    val unique = new java.util.IdentityHashMap[AllocationSitePointsToSet, AllocationSitePointsToSet]()
+                    unique.putAll(spts.map(x ⇒ x.ub → x.ub).toMap.asJava)
+                    unique.size()
+                })
+            }.map { case (size, (count, uniqueCount)) ⇒ (size, count, uniqueCount) }.toArray.sorted
+            println("size, count, unique count")
+            println(statistic.mkString("\n"))
 
-        println(s"PTSs ${ptss.size}")
-        println(s"PTS entries ${ptss.map(p ⇒ p.ub.elements.size).sum}")
+            println(s"PTSs ${ptss.size}")
+            println(s"PTS entries ${ptss.map(p ⇒ p.ub.elements.size).sum}")
 
-        val byType = ptss.groupBy(_.e.getClass)
-        println(s"DefSite PTSs: ${byType(classOf[DefinitionSite]).size}")
-        println(s"Parameter PTSs: ${byType(classOf[VirtualFormalParameter]).size}")
-        println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
-        println(s"Static Field PTSs: ${byType(classOf[Field]).size}")
-        println(s"Array PTSs: ${byType(classOf[ArrayEntity[Long]]).size}")
+            val byType = ptss.groupBy(_.e.getClass)
+            println(s"DefSite PTSs: ${byType(classOf[DefinitionSite]).size}")
+            println(s"Parameter PTSs: ${byType(classOf[VirtualFormalParameter]).size}")
+            println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
+            println(s"Static Field PTSs: ${byType(classOf[Field]).size}")
+            println(s"Array PTSs: ${byType(classOf[ArrayEntity[Long]]).size}")
 
-        println(s"DefSite PTS entries: ${byType(classOf[DefinitionSite]).map(_.ub.numElements).sum}")
-        println(s"Parameter PTS entries: ${byType(classOf[VirtualFormalParameter]).map(_.ub.numElements).sum}")
-        println(s"Instance Field PTS entries: ${byType(classOf[Tuple2[Long, Field]]).map(_.ub.numElements).sum}")
-        println(s"Static Field PTS entries: ${byType(classOf[Field]).map(_.ub.numElements).sum}")
-        println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
+            println(s"DefSite PTS entries: ${byType(classOf[DefinitionSite]).map(_.ub.numElements).sum}")
+            println(s"Parameter PTS entries: ${byType(classOf[VirtualFormalParameter]).map(_.ub.numElements).sum}")
+            println(s"Instance Field PTS entries: ${byType(classOf[Tuple2[Long, Field]]).map(_.ub.numElements).sum}")
+            println(s"Static Field PTS entries: ${byType(classOf[Field]).map(_.ub.numElements).sum}")
+            println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
+        }
 
         /*
         //Prints sizes of all array PTSs

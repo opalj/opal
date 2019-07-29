@@ -45,6 +45,7 @@ sealed trait AllocationSitePointsToSet
     }
 
     protected[this] def orderedTypes: Chain[ReferenceType]
+    override def types: UIDSet[ReferenceType]
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         included(other, 0, 0)

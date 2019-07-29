@@ -27,7 +27,9 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSetScala
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
+import org.opalj.br.fpcf.properties.pointsto.NoAllocationSitesScala
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
@@ -323,5 +325,28 @@ object AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler extends CallGr
         p: SomeProject
     ): AllocationSiteBasedPointsToBasedCallGraphAnalysis = {
         new AllocationSiteBasedPointsToBasedCallGraphAnalysis(p)
+    }
+}
+
+class AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis private[pointsto] (
+        final val project: SomeProject
+) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSetScala] {
+    override protected[this] val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSetScala] = {
+        AllocationSitePointsToSetScala.key
+    }
+
+    override protected def emptyPointsToSet: AllocationSitePointsToSetScala = NoAllocationSitesScala
+}
+
+object AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis extends CallGraphAnalysisScheduler {
+
+    override def uses: Set[PropertyBounds] = {
+        super.uses + PropertyBounds.ub(AllocationSitePointsToSetScala)
+    }
+
+    override def initializeAnalysis(
+        p: SomeProject
+    ): AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis = {
+        new AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis(p)
     }
 }

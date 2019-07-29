@@ -5,7 +5,6 @@ package fpcf
 package properties
 package pointsto
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Property
 
 /**
@@ -20,7 +19,7 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def numTypes: Int
 
-    def types: UIDSet[ReferenceType]
+    def types: Set[ReferenceType]
 
     def numElements: Int
 
