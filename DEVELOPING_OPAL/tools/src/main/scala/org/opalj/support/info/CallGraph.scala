@@ -4,12 +4,16 @@ package support
 package info
 
 import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintWriter
 import java.net.URL
 
 import scala.collection.JavaConverters._
 
 import com.typesafe.config.ConfigValueFactory
 
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
@@ -21,7 +25,6 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.Field
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
@@ -73,7 +76,7 @@ object CallGraph extends ProjectAnalysisApplication {
                     !p.startsWith("-callees=") &&
                     !p.startsWith("-writeCG=") &&
                     !p.startsWith("-writeTimings=") &&
-                    !p.startsWith("-writePointsToSets=") &&
+                    !p.startsWith("-writePointsToSets=") && // TODO: implement this
                     !p.startsWith("-main=") &&
                     !p.startsWith("-tamiflex-log=")
             }
@@ -87,7 +90,8 @@ object CallGraph extends ProjectAnalysisApplication {
         cgAlgorithm:  String,
         cgFile:       Option[String],
         timingsFile:  Option[String],
-        pointsToFile: Option[String]
+        pointsToFile: Option[String],
+        projectTime:  Seconds
     ): BasicReport = {
         // TODO: Implement output files
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -96,37 +100,53 @@ object CallGraph extends ProjectAnalysisApplication {
                 (dm.definedMethod.classFile.thisType eq dm.declaringClassType)
         }.toTraversable
 
-        implicit val ps: PropertyStore = project.get(PropertyStoreKey)
+        var propertyStoreTime: Seconds = Seconds.None
+        var callGraphTime: Seconds = Seconds.None
 
-        val cg = cgAlgorithm match {
-            case "CHA"               ⇒ project.get(CHACallGraphKey)
-            case "RTA"               ⇒ project.get(RTACallGraphKey)
-            case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
-            case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
+        implicit val ps: PropertyStore = time { project.get(PropertyStoreKey) } { t ⇒
+            propertyStoreTime = t.toSeconds
         }
 
-        //project.get(FPCFAnalysesManagerKey).runAll(AllocationSiteBasedPointsToAnalysisScheduler)
+        val cg = time {
+            cgAlgorithm match {
+                case "CHA"               ⇒ project.get(CHACallGraphKey)
+                case "RTA"               ⇒ project.get(RTACallGraphKey)
+                case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
+                case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
+            }
+        } { t ⇒ callGraphTime = t.toSeconds }
 
-        val ptss = ps.entities(TypeBasedPointsToSet.key).toList
-        val statistic = ptss.groupBy(p ⇒ p.ub.elements.size).mapValues(_.size).toArray.sorted
-        println(statistic.mkString("\n"))
+        if (timingsFile.isDefined) {
+            val runtime = new File(timingsFile.get)
+            val runtimeNew = !runtime.exists()
+            val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
+            try {
+                if (runtimeNew) {
+                    runtime.createNewFile()
+                    runtimeWriter.println("project;propertyStore;callGraph")
+                }
+                runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime")
+            } finally {
+                if (runtimeWriter != null) runtimeWriter.close()
+            }
+        }
 
-        val ptss2 = ps.entities(AllocationSitePointsToSet.key).toList
+        val ptss = ps.entities(AllocationSitePointsToSet.key).toList
         import scala.collection.JavaConverters._
-        val statistic2 = ptss2.groupBy(p ⇒ p.ub.elements.size).mapValues { spts ⇒
+        val statistic = ptss.groupBy(p ⇒ p.ub.elements.size).mapValues { spts ⇒
             (spts.size, {
                 val unique = new java.util.IdentityHashMap[AllocationSitePointsToSet, AllocationSitePointsToSet]()
                 unique.putAll(spts.map(x ⇒ x.ub → x.ub).toMap.asJava)
                 unique.size()
             })
-        }.toArray.sorted
-        println(statistic2.mkString("\n"))
+        }.map { case (size, (count, uniqueCount)) ⇒ (size, count, uniqueCount) }.toArray.sorted
+        println("size, count, unique count")
+        println(statistic.mkString("\n"))
 
-        println(s"TypeBased PTSs ${ptss.size}")
-        println(s"AllocSite PTSs ${ptss2.size}")
-        println(s"PTS entries ${ptss2.map(p ⇒ p.ub.elements.size).sum}")
+        println(s"PTSs ${ptss.size}")
+        println(s"PTS entries ${ptss.map(p ⇒ p.ub.elements.size).sum}")
 
-        val byType = ptss2.groupBy(_.e.getClass)
+        val byType = ptss.groupBy(_.e.getClass)
         println(s"DefSite PTSs: ${byType(classOf[DefinitionSite]).size}")
         println(s"Parameter PTSs: ${byType(classOf[VirtualFormalParameter]).size}")
         println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
@@ -285,14 +305,22 @@ object CallGraph extends ProjectAnalysisApplication {
                 )
             )
         }
+
+        var projectTime: Seconds = Seconds.None
+
+        val newProject = time {
+            Project.recreate(project, newConfig)
+        } { t ⇒ projectTime = t.toSeconds }
+
         performAnalysis(
-            Project.recreate(project, newConfig),
+            newProject,
             calleesSigs,
             callersSigs,
             cgAlgorithm,
             cgFile,
             timingsFile,
-            pointsToFile
+            pointsToFile,
+            projectTime
         )
     }
 }
