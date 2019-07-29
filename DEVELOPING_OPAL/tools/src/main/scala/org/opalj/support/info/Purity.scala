@@ -102,6 +102,7 @@ object Purity {
             "[-debug] (enable debug output from PropertyStore)\n"+
             "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
             "[-eval <path to evaluation directory>]\n"+
+            "[-j <number of threads to be used> (0 for the sequential implementation)]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
@@ -221,7 +222,7 @@ object Purity {
             try {
                 if (runtimeNew) {
                     runtime.createNewFile()
-                    runtimeWriter.println("project;tac;propertyStore;callGraph;analysis")
+                    runtimeWriter.println("project;propertyStore;callGraph;analysis")
                 }
                 runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime;$analysisTime")
             } finally {
@@ -373,6 +374,7 @@ object Purity {
         var multiProjects = false
         var eager = false
         var evaluationDir: Option[File] = None
+        var numThreads = 0 // TODO set the number of threads of the property store
 
         // PARSING PARAMETERS
         var i = 0
@@ -405,6 +407,7 @@ object Purity {
                 case "-debug"           ⇒ debug = true
                 case "-multi"           ⇒ multiProjects = true
                 case "-eval"            ⇒ evaluationDir = Some(new File(readNextArg()))
+                case "-j"               ⇒ numThreads = readNextArg().toInt
                 case "-noJDK"           ⇒ withoutJDK = true
                 case "-JDK" ⇒
                     cp = JRELibraryFolder; withoutJDK = true
