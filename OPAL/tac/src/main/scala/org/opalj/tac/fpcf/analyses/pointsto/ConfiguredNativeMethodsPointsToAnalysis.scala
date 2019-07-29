@@ -78,12 +78,7 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
             // the method is reachable, so we analyze it!
         }
 
-        if (dm.name == "getConstructor")
-            println()
-
         if (nativeMethodData.contains(dm)) {
-            if (dm.name == "getConstructor")
-                println()
             return handleNativeMethod(dm.asDefinedMethod);
         }
 

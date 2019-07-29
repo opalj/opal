@@ -180,9 +180,6 @@ sealed trait AllocationSitePointsToSet
         }
 
         val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) ⇒ r + t.id }
-        if (typeIds != asTypes) {
-            println()
-        }
         typeIds == asTypes
     }
     assert(numElements >= numTypes)

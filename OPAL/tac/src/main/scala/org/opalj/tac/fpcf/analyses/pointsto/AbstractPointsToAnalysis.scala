@@ -726,9 +726,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
                 case "newInstance" ⇒
                     val allocatedTypes = tamiFlexLogData.classes(state.method, line)
-                    if (allocatedTypes.nonEmpty) {
-                        println(s"allocating ${allocatedTypes.mkString(",")}")
-                    }
 
                     for (allocatedType ← allocatedTypes) {
                         val pointsToSet = createPointsToSet(
@@ -747,9 +744,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 // TODO
                 case "newInstance" ⇒
                     val allocatedTypes = tamiFlexLogData.classes(state.method, line)
-                    if (allocatedTypes.nonEmpty) {
-                        println(s"allocating ${allocatedTypes.mkString(",")}")
-                    }
 
                     for (allocatedType ← allocatedTypes) {
                         val pointsToSet = createPointsToSet(

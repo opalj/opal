@@ -131,7 +131,6 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
             methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(tac.stmts))).getOrElse(Seq.empty)
 
         for (target ← targets) {
-            println(s"added call: $caller -> $target")
             indirectCalls.addCall(
                 caller,
                 target,
