@@ -426,10 +426,10 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                             case _ ⇒ false
                         }
                         case ObjectType.Class ⇒ call.name match {
-                            case "forName" | "getDeclaredFields" | "getDeclaredMethods" |
-                                "getMethods" | "newInstance" ⇒
+                            case "forName" | "getDeclaredFields" | "getFields" |
+                                 "getDeclaredMethods" | "getMethods" | "newInstance" ⇒
                                 tamiFlexLogData.classes(state.method, line).nonEmpty
-                            case "getDeclaredField" ⇒
+                            case "getDeclaredField" | "getField" ⇒
                                 tamiFlexLogData.fields(state.method, line).nonEmpty
                             case "getDeclaredMethod" | "getMethod" ⇒
                                 tamiFlexLogData.methods(state.method, line).nonEmpty
@@ -687,6 +687,31 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                     }
 
                 case "getDeclaredFields" ⇒
+                    val classTypes = tamiFlexLogData.classes(state.method, line)
+                    if (classTypes.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, ArrayType(FieldT), isConstant = false
+                            ),
+                            AllocationSitePointsToSet.noFilter
+                        )
+                        // todo store something into the array
+                    }
+
+                case "getField" ⇒
+                    val fields = tamiFlexLogData.fields(state.method, line)
+                    if (fields.nonEmpty) {
+                        state.includeLocalPointsToSet(
+                            definitionSites(state.method.definedMethod, pc),
+                            createPointsToSet(
+                                pc, state.method, FieldT, isConstant = false
+                            ),
+                            AllocationSitePointsToSet.noFilter
+                        )
+                    }
+
+                case "getFields" ⇒
                     val classTypes = tamiFlexLogData.classes(state.method, line)
                     if (classTypes.nonEmpty) {
                         state.includeLocalPointsToSet(

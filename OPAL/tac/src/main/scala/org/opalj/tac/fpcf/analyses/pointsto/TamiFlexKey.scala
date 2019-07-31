@@ -151,6 +151,12 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                     case Array("Class.getDeclaredFields", classType, sourceMethod, sourceLine, _, _) ⇒
                         addClassType(classType, sourceMethod, sourceLine)
 
+                    case Array("Class.getField", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
+                        addField(fieldDesc, sourceMethod, sourceLine)
+
+                    case Array("Class.getFields", classType, sourceMethod, sourceLine, _, _) ⇒
+                        addClassType(classType, sourceMethod, sourceLine)
+
                     case Array("Class.getDeclaredMethod", methodDesc, sourceMethod, sourceLine, _, _) ⇒
                         addMethod(methodDesc, sourceMethod, sourceLine)
 
@@ -251,7 +257,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
             case regex(declaringClass, returnType, name, parameterTypes) ⇒
                 val declaringClassType = FieldType(toJVMType(declaringClass)).asObjectType
                 val jvmSignature = parameterTypes.split(',').map(toJVMType).mkString("(", "", ")"+toJVMType(returnType))
-                declaredMethods(declaringClassType, "", declaringClassType, name, MethodDescriptor(jvmSignature))
+                declaredMethods(declaringClassType, declaringClassType.packageName, declaringClassType, name, MethodDescriptor(jvmSignature))
         }
 
     }
