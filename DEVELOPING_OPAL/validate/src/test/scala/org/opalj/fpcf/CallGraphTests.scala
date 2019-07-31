@@ -96,7 +96,8 @@ class CallGraphTests extends PropertiesTest {
         // We need to manually store which variant was executed. Otherwise, there is no good way
         // to get this information in the property matcher.
         as.propertyStore.getOrCreateInformation(
-            TypePropagationVariant.id, TypePropagationVariant.XTA)
+            TypePropagationVariant.tag, TypePropagationVariant.XTA
+        )
 
         validateProperties(
             as,
@@ -117,7 +118,8 @@ class CallGraphTests extends PropertiesTest {
         )
         as.propertyStore.shutdown()
         as.propertyStore.getOrCreateInformation(
-            TypePropagationVariant.id, TypePropagationVariant.MTA)
+            TypePropagationVariant.tag, TypePropagationVariant.MTA
+        )
 
         validateProperties(
             as,
@@ -138,7 +140,8 @@ class CallGraphTests extends PropertiesTest {
         )
         as.propertyStore.shutdown()
         as.propertyStore.getOrCreateInformation(
-            TypePropagationVariant.id, TypePropagationVariant.FTA)
+            TypePropagationVariant.tag, TypePropagationVariant.FTA
+        )
 
         validateProperties(
             as,
@@ -159,7 +162,8 @@ class CallGraphTests extends PropertiesTest {
         )
         as.propertyStore.shutdown()
         as.propertyStore.getOrCreateInformation(
-            TypePropagationVariant.id, TypePropagationVariant.CTA)
+            TypePropagationVariant.tag, TypePropagationVariant.CTA
+        )
 
         validateProperties(
             as,

@@ -40,9 +40,9 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
 
         // Get the variant which was actually executed.
         val executedVariant =
-            p.get(PropertyStoreKey).getInformation[TypePropagationVariant](TypePropagationVariant.id) match {
-                case Some(variant) => variant
-                case None => sys.error("type propagation variant must be registered")
+            p.get(PropertyStoreKey).getInformation[TypePropagationVariant](TypePropagationVariant.tag) match {
+                case Some(variant) ⇒ variant
+                case None          ⇒ sys.error("type propagation variant must be registered")
             }
 
         // If none of the annotated variants match the executed ones, return...

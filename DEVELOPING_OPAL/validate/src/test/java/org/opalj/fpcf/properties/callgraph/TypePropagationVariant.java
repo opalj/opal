@@ -6,5 +6,5 @@ public enum TypePropagationVariant {
     FTA,
     CTA;
 
-    public static String id = "TypePropagationVariant";
+    public static String tag = "TypePropagationVariant";
 }

@@ -6,11 +6,6 @@ package analyses
 package cg
 package xta
 
-import java.io.File
-import java.io.FileOutputStream
-import java.io.PrintWriter
-import java.time.Instant
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -40,7 +35,6 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
@@ -52,89 +46,7 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.Code
-import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 import org.opalj.tac.fpcf.properties.TACAI
-
-// TODO AB Helpers for debugging and maybe evaluation, remove later...
-object TypePropagationTrace {
-    case class TypePropagation(targetEntity: Entity, types: UIDSet[ReferenceType])
-    case class Trace(events: mutable.ArrayBuffer[Event])
-    trait Event {
-        val typePropagations: mutable.ArrayBuffer[TypePropagation] = new mutable.ArrayBuffer[TypePropagation]()
-    }
-    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[DeclaredMethod]) extends Event
-    trait UpdateEvent extends Event
-    case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent
-    case class CalleesUpdate(receiver: Entity) extends UpdateEvent
-
-    // Global variable holding the type propagation trace of the last executed XTA analysis.
-    var LastTrace: Trace = _
-    var WriteTextualTrace: Boolean = true
-}
-
-// TODO AB For debugging, remove later...
-private[xta] class TypePropagationTrace {
-    // Textual trace
-    private val _out =
-        if (TypePropagationTrace.WriteTextualTrace) {
-            val file = new FileOutputStream(new File(s"C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\traces\\trace${Instant.now.getEpochSecond}.txt"))
-            new PrintWriter(file)
-        } else {
-            null
-        }
-
-    // Structural trace (for further evaluation)
-    val _trace = Trace(mutable.ArrayBuffer())
-    TypePropagationTrace.LastTrace = _trace
-
-    private def traceMsg(msg: String): Unit = {
-        if (TypePropagationTrace.WriteTextualTrace) {
-            _out.println(msg)
-            _out.flush()
-        }
-    }
-
-    private def simplifiedName(e: Any): String = e match {
-        case defM: DefinedMethod ⇒ s"${simplifiedName(defM.declaringClassType)}.${defM.name}(...)"
-        case rt: ReferenceType   ⇒ rt.toJava.substring(rt.toJava.lastIndexOf('.') + 1)
-        case _                   ⇒ e.toString
-    }
-
-    def traceInit(method: DefinedMethod)(implicit ps: PropertyStore, dm: DeclaredMethods): Unit = {
-        val initialTypes = {
-            val typeEOptP = ps(method, InstantiatedTypes.key)
-            if (typeEOptP.hasUBP) typeEOptP.ub.types
-            else UIDSet.empty[ReferenceType]
-        }
-        val initialCallees = {
-            val calleesEOptP = ps(method, Callees.key)
-            if (calleesEOptP.hasUBP) calleesEOptP.ub.callSites.flatMap(_._2)
-            else Iterator.empty
-        }
-        traceMsg(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
-        _trace.events += TypePropagationTrace.Init(method, initialTypes, initialCallees.toSet)
-    }
-
-    def traceCalleesUpdate(receiver: DefinedMethod): Unit = {
-        traceMsg(s"callee property update: ${simplifiedName(receiver)}")
-        _trace.events += TypePropagationTrace.CalleesUpdate(receiver)
-    }
-
-    def traceNewCallee(method: DefinedMethod, newCallee: DeclaredMethod): Unit = {
-        traceMsg(s"new callee for ${simplifiedName(method)}: ${simplifiedName(newCallee)}")
-        // TODO AB new callee trace?
-    }
-
-    def traceTypeUpdate(receiver: DefinedMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
-        traceMsg(s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
-        _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
-    }
-
-    def traceTypePropagation(targetEntity: Entity, propagatedTypes: UIDSet[ReferenceType]): Unit = {
-        traceMsg(s"propagate {${propagatedTypes.map(simplifiedName).mkString(", ")}} to ${simplifiedName(targetEntity)}")
-        _trace.events.last.typePropagations += TypePropagationTrace.TypePropagation(targetEntity, propagatedTypes)
-    }
-}
 
 final class TypePropagationAnalysis private[analyses] (
         val project:     SomeProject,
@@ -429,6 +341,7 @@ final class TypePropagationAnalysis private[analyses] (
             // If the answer is Unknown, we don't know for sure whether the candidate is a subtype of the filter type.
             // However, ClassHierarchy returns Unknown even for cases where it is very unlikely that this is the case.
             // Therefore, we take some more features into account to make the filtering more precise.
+            // Important note: This decision is a possible but unlikely cause of unsoundness in the call graph!
 
             // TODO AB This is extra logic necessary for now due to some quirk in ClassHierarchy.isASubtypeOf(..)
             // See: https://bitbucket.org/delors/opal/issues/182/
@@ -437,7 +350,6 @@ final class TypePropagationAnalysis private[analyses] (
                 return false;
             }
 
-            // TODO AB Document unsoundness.
             // If the filter type is not a project type (i.e., it is external), we assume that any candidate type
             // is a subtype. This can be any external type or project types for which we have incomplete supertype
             // information.
