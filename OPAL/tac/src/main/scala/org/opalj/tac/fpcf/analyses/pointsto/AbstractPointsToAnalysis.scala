@@ -661,8 +661,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 case _ ⇒
             }
         } else if (target.declaringClassType eq ObjectType.Class) {
-            if (state.method.name == "findClass" && state.method.declaringClassType == ObjectType("dacapo/TestHarness"))
-                println()
             target.name match {
                 case "forName" ⇒
                     val classTypes = tamiFlexLogData.classes(state.method, line)
