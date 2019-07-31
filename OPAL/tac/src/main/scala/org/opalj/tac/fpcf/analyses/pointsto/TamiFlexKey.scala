@@ -98,7 +98,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
-            oldSet.add(FieldType(toJVMType(arrayType)))
+            oldSet.add(FieldType(toJVMType(arrayType)).asArrayType)
         }
 
         @inline def addClassType(
@@ -106,7 +106,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
-            oldSet.add(FieldType(toJVMType(classType)))
+            oldSet.add(FieldType(toJVMType(classType)).asObjectType)
         }
 
         @inline def addField(
