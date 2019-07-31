@@ -39,14 +39,16 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
 ) extends TACAIBasedAnalysisState {
 
-    private[this] val getFields: ArrayBuffer[(DefinitionSite, AField)] = ArrayBuffer.empty
+    private[this] val getFields: ArrayBuffer[(DefinitionSite, AField, ReferenceType ⇒ Boolean)] =
+        ArrayBuffer.empty
     private[this] val putFields: ArrayBuffer[(IntTrieSet, AField)] = ArrayBuffer.empty
 
-    def addGetFieldEntity(fakeEntity: (DefinitionSite, AField)): Unit = {
+    def addGetFieldEntity(fakeEntity: (DefinitionSite, AField, ReferenceType ⇒ Boolean)): Unit = {
         getFields += fakeEntity
     }
 
-    def getFieldsIterator: Iterator[(DefinitionSite, AField)] = getFields.iterator
+    def getFieldsIterator: Iterator[(DefinitionSite, AField, ReferenceType ⇒ Boolean)] =
+        getFields.iterator
 
     def addPutFieldEntity(fakeEntity: (IntTrieSet, AField)): Unit = {
         putFields += fakeEntity
@@ -54,20 +56,25 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
     def putFieldsIterator: Iterator[(IntTrieSet, AField)] = putFields.iterator
 
-    private[this] val arrayLoads: ArrayBuffer[(DefinitionSite, ArrayType)] = ArrayBuffer.empty
+    private[this] val arrayLoads: ArrayBuffer[(DefinitionSite, ArrayType, ReferenceType ⇒ Boolean)] =
+        ArrayBuffer.empty
     private[this] val arrayStores: ArrayBuffer[(IntTrieSet, ArrayType)] = ArrayBuffer.empty
 
-    def addArrayLoadEntity(fakeEntity: (DefinitionSite, ArrayType)): Unit = {
+    def addArrayLoadEntity(
+        fakeEntity: (DefinitionSite, ArrayType, ReferenceType ⇒ Boolean)
+    ): Unit = {
         arrayLoads += fakeEntity
     }
 
-    def arrayLoadsIterator: Iterator[(DefinitionSite, ArrayType)] = arrayLoads.iterator
+    def arrayLoadsIterator: Iterator[(DefinitionSite, ArrayType, ReferenceType ⇒ Boolean)] =
+        arrayLoads.iterator
 
-    def addArrayStoredEntity(fakeEntity: (IntTrieSet, ArrayType)): Unit = {
+    def addArrayStoreEntity(fakeEntity: (IntTrieSet, ArrayType)): Unit = {
         arrayStores += fakeEntity
     }
 
-    def arrayStoresIterator: Iterator[(IntTrieSet, ArrayType)] = arrayStores.iterator
+    def arrayStoresIterator: Iterator[(IntTrieSet, ArrayType)] =
+        arrayStores.iterator
 
     private[this] val _allocationSitePointsToSet: mutable.Map[DefinitionSite, PointsToSet] = {
         mutable.Map.empty

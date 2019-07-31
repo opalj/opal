@@ -8,7 +8,7 @@ package pointsto
 import scala.collection.mutable
 import scala.io.Source
 
-import org.opalj.br.ArrayType
+import org.opalj.log.OPALLogger
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -24,7 +24,6 @@ class TamiFlexLogData(
         private[this] val _classes: scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[ReferenceType]],
         private[this] val _methods: scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]],
         private[this] val _fields:  scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[Field]],
-        private[this] val _arrays:  scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[ArrayType]]
 ) {
     private[this] def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"
@@ -74,21 +73,6 @@ class TamiFlexLogData(
             }
         }
     }
-
-    def arrays(source: DeclaredMethod, sourceLine: Int): scala.collection.Set[ArrayType] = {
-        val sourceDesc = toMethodDesc(source)
-        val key = (sourceDesc, sourceLine)
-        if (_arrays.contains(key))
-            _arrays(key)
-        else {
-            val fallbackKey = (sourceDesc, -1)
-            if (_arrays.contains(fallbackKey))
-                _arrays(fallbackKey)
-            else {
-                _arrays.getOrElse(("", -1), Set.empty)
-            }
-        }
-    }
 }
 
 /**
@@ -104,18 +88,17 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
     }
 
     override protected def compute(project: SomeProject): TamiFlexLogData = {
-        implicit val declaredMethods = project.get(DeclaredMethodsKey)
+        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val classes: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[ReferenceType]] = mutable.Map.empty
         val methods: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
         val fields: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[Field]] = mutable.Map.empty
-        val arrays: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[ArrayType]] = mutable.Map.empty
 
         @inline def addArrayType(
             arrayType: String, sourceMethod: String, sourceLine: String
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
-            oldSet.add(FieldType(toJVMType(arrayType)).asArrayType)
+            oldSet.add(FieldType(toJVMType(arrayType)))
         }
 
         @inline def addClassType(
@@ -123,7 +106,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
-            oldSet.add(FieldType(toJVMType(classType)).asObjectType)
+            oldSet.add(FieldType(toJVMType(classType)))
         }
 
         @inline def addField(
@@ -147,6 +130,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
         if (project.config.hasPath(configKey)) {
             val logName = project.config.getString(configKey)
+            OPALLogger.info("analysis configuration", s"Using tamiflex log file: $logName")(project.logContext)
             Source.fromFile(logName).getLines().foreach { line ⇒
                 line.split(";", -1) match {
                     case Array("Array.newInstance", arrayType, sourceMethod, sourceLine, _, _) ⇒
@@ -239,7 +223,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
         }
 
-        new TamiFlexLogData(classes, methods, fields, arrays)
+        new TamiFlexLogData(classes, methods, fields)
     }
 
     private[this] def toJVMType(javaType: String): String = {
