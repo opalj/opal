@@ -175,15 +175,15 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
                         oldSet.add(instantiatedType)
                         val oldInvokes = methods.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
-                        oldInvokes.add(
-                            declaredMethods(
-                                instantiatedType,
-                                "",
-                                instantiatedType,
-                                "<init>",
-                                MethodDescriptor.NoArgsAndReturnVoid
-                            )
+                        val constructor = declaredMethods(
+                            instantiatedType,
+                            instantiatedType.packageName,
+                            instantiatedType,
+                            "<init>",
+                            MethodDescriptor.NoArgsAndReturnVoid
                         )
+                        oldInvokes.add(constructor)
+
                     case Array("Constructor.getModifiers", constructorDesc, sourceMethod, sourceLine, _, _) ⇒
                         addMethod(constructorDesc, sourceMethod, sourceLine)
 
