@@ -44,7 +44,7 @@ object BaseDomain {
  * Configuration of a domain that uses the `l0` domains and
  * which also records the abstract-interpretation time control flow graph and def/use
  * information.
- * @tparam S The source file's type.
+ * @tparam Source The source file's type.
  */
 class BaseDomainWithDefUse[Source](
         project: Project[Source],
