@@ -31,3 +31,10 @@ class DefaultReferenceValuesDomain[Source](
     with l0.DefaultTypeLevelLongValues
     with l0.TypeLevelPrimitiveValuesConversions
     with l0.TypeLevelLongValuesShiftOperators
+
+class DefaultReferenceValuesDomainWithCFGAndDefUse[Source](
+        project: Project[Source],
+        method:  Method
+) extends DefaultReferenceValuesDomain(project, method)
+    with RefineDefUseUsingOrigins
+
