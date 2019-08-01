@@ -10,6 +10,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimUBP
@@ -122,7 +123,7 @@ class LoadedClassesAnalysis(
 
         def update(
             eop: EOptionP[_, LoadedClasses]
-        ): Option[EPS[SomeProject, LoadedClasses]] = eop match {
+        ): Option[InterimEP[SomeProject, LoadedClasses]] = eop match {
             case InterimUBP(ub: LoadedClasses) ⇒
                 val newUb = ub.classes ++ newLoadedClasses
                 // due to monotonicity:
