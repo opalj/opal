@@ -41,6 +41,8 @@ import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteToLong
+import org.opalj.br.ArrayType
+import org.opalj.br.FieldType
 
 /**
  * Applies the impact of preconfigured native methods to the points-to analysis.
@@ -98,10 +100,24 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
         for (PointsToRelation(lhs, rhs) ← data) {
             rhs match {
                 case asd: AllocationSiteDescription ⇒
-                    val instantiatedType = ObjectType(asd.instantiatedType)
-                    val as = allocationSiteToLong(dm, 0, instantiatedType)
-                    val pts = AllocationSitePointsToSet(as, instantiatedType)
-                    results += createPartialResultOpt(lhs.entity, pts).get
+                    if(asd.instantiatedType.startsWith("[")){
+                        val componentType = FieldType(asd.instantiatedType.substring(1))
+                        val instantiatedType = ArrayType(componentType)
+                        val as = allocationSiteToLong(dm, 0, instantiatedType)
+                        val pts = AllocationSitePointsToSet(as, instantiatedType)
+                        results += createPartialResultOpt(lhs.entity, pts).get
+                        if(componentType.isReferenceType){
+                            // Simulates that the array contains an element instantiated here
+                            val elementAs = allocationSiteToLong(dm, 0, componentType.asReferenceType)
+                            val arrayPTS = AllocationSitePointsToSet(elementAs, componentType.asReferenceType)
+                            results += createPartialResultOpt(ArrayEntity(as), arrayPTS).get
+                        }
+                    } else {
+                        val instantiatedType = ObjectType(asd.instantiatedType)
+                        val as = allocationSiteToLong(dm, 0, instantiatedType)
+                        val pts = AllocationSitePointsToSet(as, instantiatedType)
+                        results += createPartialResultOpt(lhs.entity, pts).get
+                    }
                 case _ ⇒
                     val pointsToEOptP = propertyStore(rhs.entity, AllocationSitePointsToSet.key)
 
