@@ -169,13 +169,22 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"${org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(pts.e.asInstanceOf[ArrayEntity[Long]].element)}\t${pts.ub.numElements}")*/
 
         /*
-        //Prints all allocation sites in the PTS of Object.<init>'s this parameter in Doop's format
-        val initThis = project.get(VirtualFormalParametersKey)(project.get(DeclaredMethodsKey)(ObjectType.Object, "", ObjectType.Object, "<init>", MethodDescriptor.NoArgsAndReturnVoid))(0)
-        val initThisPTS = ps(initThis, AllocationSitePointsToSet.key).ub
-        initThisPTS.elements.foreach { as ⇒
+        //Prints all allocation sites in the PTS of the entity underTest in Doop's format
+        val underTest = project.get(DeclaredMethodsKey)(ObjectType("java/io/UnixFileSystem"), "", ObjectType("java/io/UnixFileSystem"), "list", MethodDescriptor.withNoArgs(ArrayType(ObjectType.String)))
+        val underTestPTS = ps(underTest, AllocationSitePointsToSet.key).ub
+        underTestPTS.elements.foreach { as ⇒
             try {
                 val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
-                println(s"<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${project.classHierarchy.knownTypesMap(tId).toJava}")
+                println(s"<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${if(tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                if(tId < 0) {
+                    val arrPTS = ps(ArrayEntity(as), AllocationSitePointsToSet.key).ub
+                    arrPTS.elements.foreach {as ⇒
+                        try {
+                            val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
+                            println(s"\t<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${if(tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                        } catch { case _: Exception ⇒ }
+                    }
+                }
             } catch { case _: Exception ⇒ }
         }*/
 
