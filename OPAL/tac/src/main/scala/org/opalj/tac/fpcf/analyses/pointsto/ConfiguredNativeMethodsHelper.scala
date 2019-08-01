@@ -108,7 +108,12 @@ object EntityDescription {
             val name = c.getString("name")
             val desc = c.getString("desc")
             val instantiatedType = c.getString("instantiatedType")
-            AllocationSiteDescription(cf, name, desc, instantiatedType)
+            val arrayComponentTypes =
+                if (c.hasPath("arrayComponentTypes"))
+                    c.getStringList("arrayComponentTypes").asScala
+                else
+                    List.empty
+            AllocationSiteDescription(cf, name, desc, instantiatedType, arrayComponentTypes)
         } else /*MethodDescription*/ {
             MethodDescription.reader.read(c, "")
         }
@@ -175,7 +180,11 @@ case class ParameterDescription(
 }
 
 case class AllocationSiteDescription(
-        cf: String, name: String, desc: String, instantiatedType: String
+        cf: String,
+        name: String,
+        desc: String,
+        instantiatedType: String,
+        arrayComponentTypes: Seq[String]
 ) extends EntityDescription {
     override def entity(
         implicit

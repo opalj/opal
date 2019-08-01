@@ -41,7 +41,6 @@ import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteToLong
-import org.opalj.br.ArrayType
 import org.opalj.br.FieldType
 
 /**
@@ -101,15 +100,19 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
             rhs match {
                 case asd: AllocationSiteDescription ⇒
                     if(asd.instantiatedType.startsWith("[")){
-                        val componentType = FieldType(asd.instantiatedType.substring(1))
-                        val instantiatedType = ArrayType(componentType)
+                        val instantiatedType = FieldType(asd.instantiatedType).asArrayType
                         val as = allocationSiteToLong(dm, 0, instantiatedType)
                         val pts = AllocationSitePointsToSet(as, instantiatedType)
                         results += createPartialResultOpt(lhs.entity, pts).get
-                        if(componentType.isReferenceType){
-                            // Simulates that the array contains an element instantiated here
-                            val elementAs = allocationSiteToLong(dm, 0, componentType.asReferenceType)
-                            val arrayPTS = AllocationSitePointsToSet(elementAs, componentType.asReferenceType)
+                        if(asd.arrayComponentTypes.nonEmpty){
+                            var arrayPTS: AllocationSitePointsToSet = NoAllocationSites
+                            asd.arrayComponentTypes.foreach { componentTypeString ⇒
+                                val componentType = ObjectType(componentTypeString)
+                                val elementAs = allocationSiteToLong(dm, 0, componentType)
+                                arrayPTS = arrayPTS.included(
+                                    AllocationSitePointsToSet(elementAs, componentType)
+                                )
+                            }
                             results += createPartialResultOpt(ArrayEntity(as), arrayPTS).get
                         }
                     } else {
