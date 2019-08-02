@@ -308,6 +308,31 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
             state.setLocalPointsToSet(state.method, emptyPointsToSet, { t ⇒ classHierarchy.isSubtypeOf(t, method.returnType.asReferenceType) })
         }
 
+        tac.cfg.abnormalReturnNode.predecessors.foreach { throwingBB ⇒
+            val throwingStmt = tac.stmts(throwingBB.asBasicBlock.endPC)
+            throwingStmt match {
+                case Throw(_, UVar(_, defSites)) ⇒
+                    val entity = MethodExceptions(state.method)
+                    state.includeLocalPointsToSets(
+                        entity,
+                        currentPointsToOfDefSites(entity, defSites),
+                        { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
+                    )
+
+                case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] ⇒
+                    val entity = MethodExceptions(state.method)
+                    val callSite = definitionSites(state.method.definedMethod, throwingStmt.pc)
+                    state.includeLocalPointsToSet(
+                        entity,
+                        currentPointsTo(entity, CallExceptions(callSite)),
+                        { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
+                    )
+
+                case _ ⇒
+                    // TODO handle implicit exceptions (do that for Throw and Calls, too (NPE!))
+            }
+        }
+
         for (stmt ← tac.stmts) stmt match {
             case Assignment(pc, _, New(_, t)) ⇒
                 val defSite = definitionSites(method, pc)
@@ -432,7 +457,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         }
                         case ObjectType.Class ⇒ call.name match {
                             case "forName" | "getDeclaredFields" | "getFields" |
-                                 "getDeclaredMethods" | "getMethods" | "newInstance" ⇒
+                                "getDeclaredMethods" | "getMethods" | "newInstance" ⇒
                                 tamiFlexLogData.classes(state.method, line).nonEmpty
                             case "getDeclaredField" | "getField" ⇒
                                 tamiFlexLogData.fields(state.method, line).nonEmpty
@@ -524,13 +549,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 state.includeLocalPointsToSets(
                     state.method, currentPointsToOfDefSites(state.method, defSites),
                     { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, state.method.descriptor.returnType.asReferenceType) }
-                )
-
-            case Throw(_, UVar(_, defSites)) ⇒
-                val entity = MethodExceptions(state.method)
-                state.includeLocalPointsToSets(
-                    entity, currentPointsToOfDefSites(entity, defSites),
-                    { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
                 )
 
             case _ ⇒
