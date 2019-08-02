@@ -258,6 +258,15 @@ object DomainRegistry {
     )
 
     register(
+        "computations related to reference types track nullness, must alias and origin information; records the ai-time def-use information",
+        classOf[domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse[_]],
+        lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),
+        (project: SomeProject, method: Method) ⇒ {
+            new domain.l1.DefaultReferenceValuesDomainWithCFGAndDefUse(project, method)
+        }
+    )
+
+    register(
         "computations related to ints use intervals; tracks nullness, must alias and origin information of reference values",
         classOf[domain.l1.DefaultDomain[_]],
         lessPreciseDomains = Set(classOf[domain.l0.BaseDomain[_]]),

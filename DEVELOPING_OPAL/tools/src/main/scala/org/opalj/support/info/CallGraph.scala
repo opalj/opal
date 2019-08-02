@@ -27,6 +27,9 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.Field
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.ai.Domain
+import org.opalj.ai.domain.RecordDefUse
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToScalaCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
@@ -64,7 +67,7 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-algorithm=CHA|RTA|PointsTo]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"+"[-writeTimings=file]"+"[-writePointsToSets=file]"+"[-main=package.MainClass]"+"[-tamiflex-log=logfile]"
+        "[-algorithm=CHA|RTA|PointsTo]"+"[-domain=domain]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"+"[-writeTimings=file]"+"[-writePointsToSets=file]"+"[-main=package.MainClass]"+"[-tamiflex-log=logfile]"
     }
 
     private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo|PointsToScala)".r
@@ -73,6 +76,7 @@ object CallGraph extends ProjectAnalysisApplication {
         val remainingParameters =
             parameters.filter { p ⇒
                 !p.matches(algorithmRegex.regex) &&
+                    !p.startsWith("-domain=") &&
                     !p.startsWith("-callers=") &&
                     !p.startsWith("-callees=") &&
                     !p.startsWith("-writeCG=") &&
@@ -250,6 +254,7 @@ object CallGraph extends ProjectAnalysisApplication {
         parameters:    Seq[String],
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
+        var tacDomain: Option[String] = None
         var calleesSigs: List[String] = Nil
         var callersSigs: List[String] = Nil
         var cgAlgorithm: String = "RTA"
@@ -259,6 +264,7 @@ object CallGraph extends ProjectAnalysisApplication {
         var mainClass: Option[String] = None
         var tamiflexLog: Option[String] = None
 
+        val domainRegex = "-domain=(.*)".r
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
         val writeCGRegex = "-writeCG=(.*)".r
@@ -268,6 +274,10 @@ object CallGraph extends ProjectAnalysisApplication {
         val tamiflexLogRegex = "-tamiflex-log=(.*)".r
 
         parameters.foreach {
+            case domainRegex(domainClass) ⇒
+                if (tacDomain.isEmpty)
+                    tacDomain = Some(domainClass)
+                else throw new IllegalArgumentException("-domain was set twice")
             case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
             case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
             case algorithmRegex(algo)    ⇒ cgAlgorithm = algo
@@ -324,6 +334,13 @@ object CallGraph extends ProjectAnalysisApplication {
         val newProject = time {
             Project.recreate(project, newConfig)
         } { t ⇒ projectTime = t.toSeconds }
+
+        val domainFQN = tacDomain.getOrElse("org.opalj.ai.domain.l0.PrimitiveTACAIDomain")
+        val domain = Class.forName(domainFQN).asInstanceOf[Class[Domain with RecordDefUse]]
+        newProject.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            case None               ⇒ Set(domain)
+            case Some(requirements) ⇒ requirements + domain
+        }
 
         performAnalysis(
             newProject,
