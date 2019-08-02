@@ -875,45 +875,50 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     )(implicit state: State): Unit = {
         val fps = formalParameters(target)
 
-        if (fps != null) {
-            // handle receiver for non static methods
-            val receiverOpt = callees.indirectCallReceiver(pc, target)
-            if (receiverOpt.isDefined) {
-                val receiverDefSites = valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
-                handleCallReceiver(receiverDefSites, target, fps, isNonVirtualCall = false)
-            } else if (target.name == "<init>") {
-                handleCallReceiver(
-                    IntTrieSet(tac.pcToIndex(pc)), target, fps, isNonVirtualCall = false
-                )
-            } else {
-                // todo: distinguish between static methods and unavailable info
-            }
+        val indirectParams = callees.indirectCallParameters(pc, target)
+        val descriptor = target.descriptor
 
-            val indirectParams = callees.indirectCallParameters(pc, target)
-            val descriptor = target.descriptor
+        // Prevent spuriously matched targets (e.g. from tamiflex with unknown source line number)
+        // from interfering with the points-to analysis
+        // TODO That rather is a responsibility of the reflection analysis though
+        if(indirectParams.isEmpty || descriptor.parametersCount == indirectParams.size) {
+            if (fps != null) {
+                // handle receiver for non static methods
+                val receiverOpt = callees.indirectCallReceiver(pc, target)
+                if (receiverOpt.isDefined) {
+                    val receiverDefSites = valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
+                    handleCallReceiver(receiverDefSites, target, fps, isNonVirtualCall = false)
+                } else if (target.name == "<init>") {
+                    handleCallReceiver(
+                        IntTrieSet(tac.pcToIndex(pc)), target, fps, isNonVirtualCall = false
+                    )
+                } else {
+                    // todo: distinguish between static methods and unavailable info
+                }
 
-            for (i ← indirectParams.indices) {
-                val paramType = descriptor.parameterType(i)
-                if (paramType.isReferenceType) {
-                    val fp = fps(i + 1)
-                    val indirectParam = indirectParams(i)
-                    if (indirectParam.isDefined) {
-                        state.includeSharedPointsToSets(
-                            fp,
-                            currentPointsToOfDefSites(
-                                fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
-                            ),
-                            { t: ReferenceType ⇒
-                                classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
-                            }
-                        )
-                    } else {
-                        state.addIncompletePointsToInfo(pc)
+                for (i ← indirectParams.indices) {
+                    val paramType = descriptor.parameterType(i)
+                    if (paramType.isReferenceType) {
+                        val fp = fps(i + 1)
+                        val indirectParam = indirectParams(i)
+                        if (indirectParam.isDefined) {
+                            state.includeSharedPointsToSets(
+                                fp,
+                                currentPointsToOfDefSites(
+                                    fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+                                ),
+                                { t: ReferenceType ⇒
+                                    classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
+                                }
+                            )
+                        } else {
+                            state.addIncompletePointsToInfo(pc)
+                        }
                     }
                 }
+            } else {
+                state.addIncompletePointsToInfo(pc)
             }
-        } else {
-            state.addIncompletePointsToInfo(pc)
         }
     }
 

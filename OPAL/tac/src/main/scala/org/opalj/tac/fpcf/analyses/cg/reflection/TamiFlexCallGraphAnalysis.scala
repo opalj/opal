@@ -109,11 +109,14 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         tac:          TACode[TACMethodParameter, V]
     )(implicit indirectCalls: IndirectCalls): Unit = {
         val line = caller.definedMethod.body.flatMap(b ⇒ b.lineNumber(pc)).getOrElse(-1)
-        val targets = tamiFlexLogData.methods(caller, line)
+        val targets = tamiFlexLogData.methodInvocations(caller, line)
         if (targets.isEmpty)
             return ;
 
         val (methodInvokeReceiver, methodInvokeActualParamsOpt) = if (methodParams.size == 2) { // Method.invoke
+            // TODO we should probably match the method receiver information (e.g. points-to) to
+            // each of the target methods to prevent spurious invocations (e.g. because of unknown
+            // source line number
             (
                 methodParams.head.map(_.asVar),
                 methodParams(1).flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, tac.stmts, tac.cfg))

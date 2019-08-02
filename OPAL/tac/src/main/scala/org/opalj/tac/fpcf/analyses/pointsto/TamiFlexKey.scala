@@ -21,9 +21,12 @@ import org.opalj.br.FieldType
 import org.opalj.br.ReferenceType
 
 class TamiFlexLogData(
+        //TODO We shoul really split these according to the source (i.e., the reflection method) to
+        // increase precision and avoid spurious results esp. if line information is not available
         private[this] val _classes: scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[ReferenceType]],
         private[this] val _methods: scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]],
         private[this] val _fields:  scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[Field]],
+        private[this] val _methodInvocations: scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]]
 ) {
     private[this] def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"
@@ -55,6 +58,21 @@ class TamiFlexLogData(
                 _methods(fallbackKey)
             else {
                 _methods.getOrElse(("", -1), Set.empty)
+            }
+        }
+    }
+
+    def methodInvocations(source: DeclaredMethod, sourceLine: Int): scala.collection.Set[DeclaredMethod] = {
+        val sourceDesc = toMethodDesc(source)
+        val key = (sourceDesc, sourceLine)
+        if (_methodInvocations.contains(key))
+            _methodInvocations(key)
+        else {
+            val fallbackKey = (sourceDesc, -1)
+            if (_methodInvocations.contains(fallbackKey))
+                _methodInvocations(fallbackKey)
+            else {
+                _methodInvocations.getOrElse(("", -1), Set.empty)
             }
         }
     }
@@ -91,6 +109,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val classes: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[ReferenceType]] = mutable.Map.empty
         val methods: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
+        val methodInvocations: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
         val fields: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[Field]] = mutable.Map.empty
 
         @inline def addArrayType(
@@ -125,6 +144,15 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val method = toDeclaredMethod(methodDesc)
             val oldInvokes = methods.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+            oldInvokes.add(method)
+        }
+
+        @inline def addMethodInvocation(
+            methodDesc: String, sourceMethod: String, sourceLine: String
+        ): Unit = {
+            val line = if (sourceLine == "") -1 else sourceLine.toInt
+            val method = toDeclaredMethod(methodDesc)
+            val oldInvokes = methodInvocations.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
             oldInvokes.add(method)
         }
 
@@ -174,7 +202,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         val instantiatedType = FieldType(toJVMType(instantiatedTypeDesc)).asObjectType
                         val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
                         oldSet.add(instantiatedType)
-                        val oldInvokes = methods.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+                        val oldInvokes = methodInvocations.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
                         val constructor = declaredMethods(
                             instantiatedType,
                             instantiatedType.packageName,
@@ -185,14 +213,14 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         oldInvokes.add(constructor)
 
                     case Array("Constructor.getModifiers", constructorDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addMethod(constructorDesc, sourceMethod, sourceLine)
+                        //addMethod(constructorDesc, sourceMethod, sourceLine)
 
                     case Array("Constructor.newInstance", constructorDesc, sourceMethod, sourceLine, _, _) ⇒
                         val line = if (sourceLine == "") -1 else sourceLine.toInt
                         val constructor = toDeclaredMethod(constructorDesc)
                         val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
                         oldSet.add(constructor.declaringClassType)
-                        val oldInvokes = methods.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+                        val oldInvokes = methodInvocations.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
                         oldInvokes.add(constructor)
 
                     case Array("Field.getDeclaringClass", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
@@ -220,7 +248,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         addMethod(methodDesc, sourceMethod, sourceLine)
 
                     case Array("Method.invoke", methodDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addMethod(methodDesc, sourceMethod, sourceLine)
+                        addMethodInvocation(methodDesc, sourceMethod, sourceLine)
 
                     case e ⇒ throw new RuntimeException(s"unexpected log entry ${e.mkString(",")}")
 
@@ -229,7 +257,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
         }
 
-        new TamiFlexLogData(classes, methods, fields)
+        new TamiFlexLogData(classes, methods, fields, methodInvocations)
     }
 
     private[this] def toJVMType(javaType: String): String = {
