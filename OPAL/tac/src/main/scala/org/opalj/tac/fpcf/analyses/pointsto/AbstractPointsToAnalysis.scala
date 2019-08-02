@@ -27,6 +27,7 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.ValueInformation
@@ -409,6 +410,10 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 val arrayType = av.theUpperTypeBound
                 handleArrayLoad(arrayType, pc, arrayDefSites)
 
+            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsMultipleReferenceValue, arrayDefSites))) ⇒
+                val arrayType = av.leastUpperType.get.asArrayType
+                handleArrayLoad(arrayType, pc, arrayDefSites)
+
             case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
                 val callees: Callees = state.callees(ps)
                 val targets = callees.callees(pc)
@@ -509,6 +514,10 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
             case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) ⇒
                 val arrayType = av.theUpperTypeBound
+                handleArrayStore(arrayType, arrayDefSites, defSites)
+
+            case ArrayStore(_, UVar(av: IsMultipleReferenceValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) ⇒
+                val arrayType = av.leastUpperType.get.asArrayType
                 handleArrayStore(arrayType, arrayDefSites, defSites)
 
             case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) ⇒

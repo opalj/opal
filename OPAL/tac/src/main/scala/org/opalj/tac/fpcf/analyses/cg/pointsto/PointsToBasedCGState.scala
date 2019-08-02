@@ -179,11 +179,11 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         _virtualCallSites(callSite)
     }
 
-    def setPotentialTypesOfCallSite(
+    def addPotentialTypesOfCallSite(
         callSite: CallSiteT, potentialTypes: IntTrieSet
     ): Unit = {
-        assert(!_virtualCallSites.contains(callSite))
-        _virtualCallSites(callSite) = potentialTypes
+        _virtualCallSites(callSite) =
+            _virtualCallSites.getOrElse(callSite, IntTrieSet.empty) ++ potentialTypes
     }
 
     override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty

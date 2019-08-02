@@ -171,7 +171,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                 types += newType.id
             }
         }
-        state.setPotentialTypesOfCallSite(callSite, types)
+        state.addPotentialTypesOfCallSite(callSite, types)
     }
 
     @inline protected[this] def currentPointsToDefSite(
