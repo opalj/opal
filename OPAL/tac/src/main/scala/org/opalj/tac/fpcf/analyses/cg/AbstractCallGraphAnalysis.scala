@@ -116,7 +116,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     call.descriptor,
                     call.declaringClass,
                     stmt.pc,
-                    call.resolveCallTarget(state.method.declaringClassType.asObjectType),
+                    call.resolveCallTarget(state.method.declaringClassType),
                     calls
                 )
 
@@ -127,7 +127,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     call.descriptor,
                     call.declaringClass,
                     call.pc,
-                    call.resolveCallTarget(state.method.declaringClassType.asObjectType),
+                    call.resolveCallTarget(state.method.declaringClassType),
                     calls
                 )
 
@@ -256,7 +256,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         for (rv ← rvs) rv match {
             case _: IsSArrayValue ⇒
                 val tgtR = project.instanceCall(
-                    caller.declaringClassType.asObjectType,
+                    caller.declaringClassType,
                     ObjectType.Object,
                     call.name,
                     call.descriptor

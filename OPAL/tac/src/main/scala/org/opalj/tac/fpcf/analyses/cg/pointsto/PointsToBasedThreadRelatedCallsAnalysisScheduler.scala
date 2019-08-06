@@ -307,7 +307,7 @@ trait PointsToBasedThreadStartAnalysis[PointsToSet <: PointsToSetLike[_, _, Poin
         pc:            Int,
         indirectCalls: IndirectCalls
     ): Unit = {
-        val thisType = definedMethod.declaringClassType.asObjectType
+        val thisType = definedMethod.declaringClassType
         val preciseType = receiverValue.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
@@ -357,7 +357,7 @@ trait PointsToBasedThreadStartAnalysis[PointsToSet <: PointsToSetLike[_, _, Poin
         } else {
             val declTgt = declaredMethods(
                 preciseType,
-                definedMethod.declaringClassType.asObjectType.packageName,
+                definedMethod.declaringClassType.packageName,
                 preciseType,
                 name,
                 descriptor

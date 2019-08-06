@@ -259,7 +259,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     )(implicit state: State): Unit = {
         val fp = fps(0)
         val ptss = currentPointsToOfDefSites(fp, receiverDefSites)
-        val declClassType = target.declaringClassType.asObjectType
+        val declClassType = target.declaringClassType
         val tgtMethod = target.definedMethod
         val filter = if (isNonVirtualCall) {
             t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, declClassType)

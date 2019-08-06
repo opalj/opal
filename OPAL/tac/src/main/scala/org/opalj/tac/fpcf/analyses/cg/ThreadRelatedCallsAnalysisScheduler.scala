@@ -205,7 +205,7 @@ class ThreadStartAnalysis private[analyses] (
         pc:                 Int,
         vmReachableMethods: VMReachableMethods
     ): Unit = {
-        val thisType = definedMethod.declaringClassType.asObjectType
+        val thisType = definedMethod.declaringClassType
         val preciseType = receiver.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
@@ -248,7 +248,7 @@ class ThreadStartAnalysis private[analyses] (
         } else {
             val declTgt = declaredMethods(
                 preciseType,
-                definedMethod.declaringClassType.asObjectType.packageName,
+                definedMethod.declaringClassType.packageName,
                 preciseType,
                 name,
                 descriptor
@@ -326,7 +326,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         vmReachableMethods: VMReachableMethods
 
     ): Unit = {
-        val thisType = definedMethod.declaringClassType.asObjectType
+        val thisType = definedMethod.declaringClassType
         val preciseType = receiver.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
@@ -340,7 +340,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         } else {
             val declTgt = declaredMethods(
                 preciseType,
-                definedMethod.declaringClassType.asObjectType.packageName,
+                definedMethod.declaringClassType.packageName,
                 preciseType,
                 name,
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor

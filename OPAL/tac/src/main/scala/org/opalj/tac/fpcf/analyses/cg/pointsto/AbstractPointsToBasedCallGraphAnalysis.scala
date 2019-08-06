@@ -250,7 +250,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                             state.removeTypeForCallSite(callSite, theType)
                             val (pc, name, descriptor, declaredType) = callSite
                             val tgtR = project.instanceCall(
-                                state.method.declaringClassType.asObjectType,
+                                state.method.declaringClassType,
                                 theType,
                                 name,
                                 descriptor

@@ -96,7 +96,7 @@ class AbstractDoPrivilegedPointsToScalaCGAnalysis private[cg] (
             val dependeePointsTo = dependeeEOptP.ub
             dependeePointsTo.types.foreach { t ⇒
                 val callR = p.instanceCall(
-                    sourceMethod.declaringClassType.asObjectType,
+                    sourceMethod.declaringClassType,
                     t,
                     declaredTargetMethod.name,
                     declaredTargetMethod.descriptor

@@ -45,7 +45,7 @@ class CHACallGraphAnalysis private[analyses] (
     )(implicit state: CHAState): Unit = {
         for (tgt ← potentialTargets) {
             val tgtR = project.instanceCall(
-                caller.declaringClassType.asObjectType, tgt, call.name, call.descriptor
+                caller.declaringClassType, tgt, call.name, call.descriptor
             )
             handleCall(
                 caller, call.name, call.descriptor, call.declaringClass, pc, tgtR, calleesAndCallers

@@ -41,7 +41,6 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
@@ -220,12 +219,6 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def doDetermineFreshness(dm: DefinedMethod): ProperPropertyComputationResult = {
         if (dm.descriptor.returnType.isBaseType || dm.descriptor.returnType.isVoidType)
             return Result(dm, PrimitiveReturnValue);
-
-        if (dm.declaringClassType.isArrayType) {
-            if (dm.name == "clone" && dm.descriptor == MethodDescriptor.JustReturnsObject) {
-                return Result(dm, FreshReturnValue); // array.clone returns fresh value
-            }
-        }
 
         val m = dm.definedMethod
         if (m.body.isEmpty) // Can't analyze a method without body
