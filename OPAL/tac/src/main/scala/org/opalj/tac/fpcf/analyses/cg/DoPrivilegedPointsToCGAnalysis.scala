@@ -50,6 +50,10 @@ import org.opalj.br.ReferenceType
  * analysis even if the method is a [[org.opalj.br.VirtualDeclaredMethod]], the
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s must also be present for those methods.
  *
+ * TODO: This analysis produces direct calls from AccessController.doPrivileged to the corresponding
+ * run method. It should probably instead produce indirect calls from the caller of doPrivileged to
+ * the individual run method.
+ *
  * @author Florian Kuebler
  */
 class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
