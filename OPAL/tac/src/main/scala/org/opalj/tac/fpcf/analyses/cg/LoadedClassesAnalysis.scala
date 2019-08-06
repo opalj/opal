@@ -76,22 +76,35 @@ class LoadedClassesAnalysis(
                     return NoResult;
 
                 val method = declaredMethod.definedMethod
+                val declClassType = declaredMethod.declaringClassType
 
-                if (declaredMethod.declaringClassType ne method.classFile.thisType)
+                if (declClassType ne method.classFile.thisType)
                     return NoResult;
 
-                if (method.body.isEmpty)
-                    return NoResult; // we don't analyze native methods
+                val currentLoadedClasses = getCurrentLoadedClasses()
+                if (method.body.isEmpty) {
+                    if (!currentLoadedClasses.contains(declClassType)) {
+                        // todo only for interfaces with default methods
+                        val newLoadedClasses =
+                            getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
 
-                val tacaiEP = propertyStore(method, TACAI.key)
-                if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
-                    processMethod(declaredMethod, tacaiEP.asEPS)
+                        PartialResult[SomeProject, LoadedClasses](
+                            project, LoadedClasses.key, update(newLoadedClasses)
+                        )
+                    } else {
+                        NoResult
+                    }
                 } else {
-                    InterimPartialResult(
-                        Nil,
-                        Some(tacaiEP),
-                        continuationForTAC(declaredMethod)
-                    )
+                    val tacaiEP = propertyStore(method, TACAI.key)
+                    if (tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined) {
+                        processMethod(declaredMethod, tacaiEP.asEPS)
+                    } else {
+                        InterimPartialResult(
+                            Nil,
+                            Some(tacaiEP),
+                            continuationForTAC(declaredMethod)
+                        )
+                    }
                 }
         }
     }
@@ -118,43 +131,47 @@ class LoadedClassesAnalysis(
 
         // the method has callers. we have to analyze it
         val newLoadedClasses =
-            handleNewReachableMethod(declaredMethod, tacaiEP.ub.tac.get.stmts)
-
-        def update(
-            eop: EOptionP[_, LoadedClasses]
-        ): Option[EPS[SomeProject, LoadedClasses]] = eop match {
-            case InterimUBP(ub: LoadedClasses) ⇒
-                val newUb = ub.classes ++ newLoadedClasses
-                // due to monotonicity:
-                // the size check sufficiently replaces the subset check
-                if (newUb.size > ub.classes.size)
-                    Some(InterimEUBP(project, ub.updated(newLoadedClasses)))
-                else
-                    None
-
-            case _: EPK[_, _] ⇒
-                Some(
-                    InterimEUBP(project, org.opalj.br.fpcf.properties.cg.LoadedClasses(newLoadedClasses))
-                )
-
-            case r ⇒
-                throw new IllegalStateException(s"unexpected previous result $r")
-        }
+            handleNewReachableMethod(declaredMethod.declaringClassType, tacaiEP.ub.tac.get.stmts)
 
         if (tacaiEP.isRefinable) {
             InterimPartialResult(
                 if (newLoadedClasses.nonEmpty)
-                    Some(PartialResult(propertyStore, LoadedClasses.key, update))
+                    Some(PartialResult(propertyStore, LoadedClasses.key, update(newLoadedClasses)))
                 else
                     None,
                 Some(tacaiEP),
                 continuationForTAC(declaredMethod)
             )
         } else if (newLoadedClasses.nonEmpty) {
-            PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, update)
+            PartialResult[SomeProject, LoadedClasses](
+                project, LoadedClasses.key, update(newLoadedClasses)
+            )
         } else {
             NoResult
         }
+    }
+
+    private[this] def update(
+        newLoadedClasses: UIDSet[ObjectType]
+    )(
+        eop: EOptionP[_, LoadedClasses]
+    ): Option[EPS[SomeProject, LoadedClasses]] = eop match {
+        case InterimUBP(ub: LoadedClasses) ⇒
+            val newUb = ub.classes ++ newLoadedClasses
+            // due to monotonicity:
+            // the size check sufficiently replaces the subset check
+            if (newUb.size > ub.classes.size)
+                Some(InterimEUBP(project, ub.updated(newLoadedClasses)))
+            else
+                None
+
+        case _: EPK[_, _] ⇒
+            Some(
+                InterimEUBP(project, org.opalj.br.fpcf.properties.cg.LoadedClasses(newLoadedClasses))
+            )
+
+        case r ⇒
+            throw new IllegalStateException(s"unexpected previous result $r")
     }
 
     /**
@@ -167,50 +184,52 @@ class LoadedClassesAnalysis(
      *
      */
     def handleNewReachableMethod(
-        dm: DeclaredMethod, stmts: Array[Stmt[V]]
+        declClassType: ObjectType, stmts: Array[Stmt[V]]
     ): UIDSet[ObjectType] = {
-        val method = dm.definedMethod
-        val methodDCT = method.classFile.thisType
-        assert(dm.declaringClassType eq methodDCT)
-
         var newLoadedClasses = UIDSet.empty[ObjectType]
-
-        val currentLoadedClassesEPS: EOptionP[SomeProject, LoadedClasses] =
-            propertyStore(project, LoadedClasses.key)
-
-        val currentLoadedClasses = currentLoadedClassesEPS match {
-            case _: EPK[_, _] ⇒ UIDSet.empty[ObjectType]
-            case p: EPS[_, _] ⇒ p.ub.classes
-        }
+        val currentLoadedClasses = getCurrentLoadedClasses()
 
         @inline def isNewLoadedClass(dc: ObjectType): Boolean = {
             !currentLoadedClasses.contains(dc) && !newLoadedClasses.contains(dc)
         }
 
         // whenever a method is called the first time, its declaring class gets loaded
-        // todo what about resolution A <- B <- C: C::foo() and foo is def. in A.
-        if (isNewLoadedClass(methodDCT)) {
-            // todo only for interfaces with default methods
-            newLoadedClasses ++=
-                ch.allSupertypes(methodDCT, reflexive = true).filterNot(currentLoadedClasses.contains)
+        //TODO what about resolution A <- B <- C: C::foo() and foo is def. in A.
+        if (isNewLoadedClass(declClassType)) {
+            //TODO only for interfaces with default methods
+            newLoadedClasses ++= getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
         }
 
-        if (method.body.isDefined) {
-            for (stmt ← stmts) {
-                stmt match {
-                    // todo is dc sufficient enough?
-                    case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
-                        newLoadedClasses += dc
-                    case Assignment(_, _, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
-                        newLoadedClasses += dc
-                    case ExprStmt(_, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
-                        newLoadedClasses += dc
-                    case _ ⇒
-                }
+        for (stmt ← stmts) {
+            stmt match {
+                //TODO is dc sufficient?
+                case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
+                    newLoadedClasses += dc
+                case Assignment(_, _, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
+                    newLoadedClasses += dc
+                case ExprStmt(_, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
+                    newLoadedClasses += dc
+                case _ ⇒
             }
         }
 
         newLoadedClasses
+    }
+
+    private[this] def getSuperclassesNotYetLoaded(
+        declClassType: ObjectType, currentLoadedClasses: UIDSet[ObjectType]
+    ): UIDSet[ObjectType] = {
+        ch.allSupertypes(declClassType, reflexive = true).filterNot(currentLoadedClasses.contains)
+    }
+
+    private[this] def getCurrentLoadedClasses(): UIDSet[ObjectType] = {
+        val currentLoadedClassesEPS: EOptionP[SomeProject, LoadedClasses] =
+            propertyStore(project, LoadedClasses.key)
+
+        currentLoadedClassesEPS match {
+            case _: EPK[_, _] ⇒ UIDSet.empty
+            case p: EPS[_, _] ⇒ p.ub.classes
+        }
     }
 }
 
