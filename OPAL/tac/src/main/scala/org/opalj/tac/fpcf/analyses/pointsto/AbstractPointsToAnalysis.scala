@@ -286,20 +286,6 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
         implicit
         state: State
     ): ProperPropertyComputationResult = {
-
-        // TODO Do not handle this here!
-        // The garbage collector assigns every Reference to Reference.pending
-        if (state.method.declaringClassType == javaLangRefReference && state.method.definedMethod.isConstructor) {
-            val fieldOpt = p.resolveFieldReference(javaLangRefReference, "pending", javaLangRefReference)
-            if (fieldOpt.isDefined) {
-                state.includeSharedPointsToSet(
-                    fieldOpt.get,
-                    currentPointsToDefSite(fieldOpt.get, -1),
-                    AllocationSitePointsToSet.noFilter
-                )
-            }
-        }
-
         if (state.hasTACDependee)
             throw new IllegalStateException("points to analysis does not support refinement based tac")
         val tac = state.tac
