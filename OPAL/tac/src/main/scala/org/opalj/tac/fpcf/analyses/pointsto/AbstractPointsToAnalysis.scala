@@ -105,6 +105,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
+        // TODO remove that ugly hack
         if ((definedMethod.declaringClassType eq ObjectType.Class) && (definedMethod.name == "getConstructor") || definedMethod.name == "getDeclaredConstructor") {
             return Results();
         }
@@ -430,6 +431,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                 val targets = callees.callees(pc)
                 val defSiteObject = definitionSites(method, pc)
 
+                // TODO fix these ugly hacks
                 if (targetVar.value.isReferenceValue &&
                     // Unsafe.getObject and getObjectVolatile are handled like getField
                     ((call.declaringClass ne UnsafeT) || !call.name.startsWith("getObject"))) {
@@ -852,7 +854,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
 
     }
 
-    // todo: reduce code duplication
+    // TODO reduce code duplication
     private def handleIndirectCall(
         pc:      Int,
         target:  DeclaredMethod,
@@ -879,7 +881,7 @@ trait AbstractPointsToAnalysis[ElementType, PointsToSet >: Null <: PointsToSetLi
                         IntTrieSet(tac.pcToIndex(pc)), target, fps, isNonVirtualCall = false
                     )
                 } else {
-                    // todo: distinguish between static methods and unavailable info
+                    // TODO distinguish between static methods and unavailable info
                 }
 
                 for (i ← indirectParams.indices) {
