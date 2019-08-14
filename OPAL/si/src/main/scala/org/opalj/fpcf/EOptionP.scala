@@ -830,7 +830,7 @@ final class EPK[+E <: Entity, +P <: Property](
     override def toString: String = {
         val pkId = pk.id
         val pkName = PropertyKey.name(pkId)
-        s"EPK($e@${System.identityHashCode(e).toHexString},pkName=$pkName,pkId=$pkId)"
+        s"EPK($e@${System.identityHashCode(e).toHexString},$pkName#$pkId)"
     }
 }
 

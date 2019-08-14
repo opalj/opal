@@ -69,14 +69,14 @@ private[par] sealed abstract class EPKState {
     ): Option[(SomeEOptionP, Set[SomeEPK])]
     //  newEOptionP.isUpdatedComparedTo(eOptionP)
 
-/**
- * Atomically updates the underlying `EOptionP` value by applying the given update function;
- * if the update is relevant, the current set of dependers is cleared and returned along
- * with the old `eOptionP` value.
- */
+    /**
+     * Atomically updates the underlying `EOptionP` value by applying the given update function;
+     * if the update is relevant, the current set of dependers is cleared and returned along
+     * with the old `eOptionP` value.
+     */
     def update(
-                   u : UpdateComputation[_ <: Entity, _<: Property]
-                 ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])]
+        u: UpdateComputation[_ <: Entity, _ <: Property]
+    ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])]
     //  newEOptionP.isUpdatedComparedTo(eOptionP)
 
     /**
@@ -91,8 +91,14 @@ private[par] sealed abstract class EPKState {
      *
      * @note  This operation is idempotent; that is, adding the same EPK multiple times has no
      *        special effect.
+     *
+     * @param alwaysExceptIfFinal  The depender is always added unless the current eOptionP is final.
      */
-    def addDepender(expectedEOptionP: SomeEOptionP, someEPK: SomeEPK): Boolean
+    def addDepender(
+        expectedEOptionP:    SomeEOptionP,
+        someEPK:             SomeEPK,
+        alwaysExceptIfFinal: Boolean
+    ): Boolean
 
     /**
      * If a continuation function still exists and the given dependee is among the set
@@ -160,8 +166,8 @@ private[par] final class InterimEPKState(
 
     assert(eOptionP.isRefinable) // an update which makes it final is possible...
 
-    override def isRefinable: Boolean = true
-    override def isFinal: Boolean = false
+    override def isRefinable: Boolean = eOptionP.isRefinable
+    override def isFinal: Boolean = eOptionP.isFinal
 
     override def update(
         eOptionP:  SomeInterimEP,
@@ -194,29 +200,28 @@ private[par] final class InterimEPKState(
     }
 
     override def update(
-                           u : UpdateComputation[_ <: Entity, _<: Property]
-                       ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
+        u: UpdateComputation[_ <: Entity, _ <: Property]
+    ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
         withWriteLock {
             val oldEOptionP = this.eOptionP
-            val newEOptionPOption = u(oldEOptionP)
-            if(newEOptionPOption.isEmpty)
+            val newEOptionPOption = u.asInstanceOf[SomeEOptionP ⇒ Option[SomeInterimEP]](oldEOptionP)
+            if (newEOptionPOption.isEmpty)
                 return None;
 
             val newEOptionP = newEOptionPOption.get
             val isRelevantUpdate = newEOptionP.isUpdatedComparedTo(oldEOptionP)
-            if(isRelevantUpdate) {
+            if (isRelevantUpdate) {
                 this.eOptionP = newEOptionP
                 val oldDependers = this.dependers
                 this.dependers = Set.empty
-                Some((oldEOptionP,newEOptionP, oldDependers))
+                Some((oldEOptionP, newEOptionP, oldDependers))
             } else {
                 None
             }
         }
     }
 
-
-        override def finalUpdate(eOptionP: SomeFinalEP): Set[SomeEPK] = {
+    override def finalUpdate(eOptionP: SomeFinalEP): Set[SomeEPK] = {
         assert(this.eOptionP.isRefinable)
 
         withWriteLock {
@@ -227,11 +232,17 @@ private[par] final class InterimEPKState(
         }
     }
 
-    override def addDepender(expectedEOptionP: SomeEOptionP, someEPK: SomeEPK): Boolean = {
+    override def addDepender(
+        expectedEOptionP:    SomeEOptionP,
+        someEPK:             SomeEPK,
+        alwaysExceptIfFinal: Boolean
+    ): Boolean = {
         assert(expectedEOptionP.isRefinable)
 
         withWriteLock {
-            if (this.eOptionP eq expectedEOptionP) {
+            val thisEOptionP = this.eOptionP
+            if ((alwaysExceptIfFinal && !thisEOptionP.isFinal) ||
+                (thisEOptionP eq expectedEOptionP)) {
                 this.dependers += someEPK
                 true
             } else {
@@ -312,8 +323,8 @@ private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) exte
     }
 
     override def update(
-                           u : UpdateComputation[_ <: Entity, _<: Property]
-                       ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
+        u: UpdateComputation[_ <: Entity, _ <: Property]
+    ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
         throw new UnknownError(s"the final property $eOptionP can't be updated using $u")
     }
 
@@ -321,7 +332,11 @@ private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) exte
         throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
     }
 
-    override def addDepender(expectedEOptionP: SomeEOptionP, someEPK: SomeEPK): Boolean = false
+    override def addDepender(
+        expectedEOptionP:    SomeEOptionP,
+        someEPK:             SomeEPK,
+        alwaysExceptIfFinal: Boolean
+    ): Boolean = false
 
     override def prepareInvokeC(
         updatedDependeeEOptionP: SomeEOptionP

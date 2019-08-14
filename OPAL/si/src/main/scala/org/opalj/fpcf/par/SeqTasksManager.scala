@@ -37,11 +37,11 @@ class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         }
     }
 
-    def parallelize(f: ⇒ Unit)(implicit store: PKECPropertyStore): Unit = {
+    def doParallelize(f: ⇒ Unit)(implicit store: PKECPropertyStore): Unit = {
         f
     }
 
-    def forkResultHandler(
+    def doForkResultHandler(
         r: PropertyComputationResult
     )(
         implicit
@@ -50,7 +50,7 @@ class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         runnables.push(() ⇒ store.processResult(r))
     }
 
-    def schedulePropertyComputation[E <: Entity](
+    def doSchedulePropertyComputation[E <: Entity](
         e:  E,
         pc: PropertyComputation[E]
     )(
@@ -60,7 +60,7 @@ class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         runnables.push(() ⇒ store.processResult(pc(e)))
     }
 
-    def forkLazyPropertyComputation[E <: Entity, P <: Property](
+    def doForkLazyPropertyComputation[E <: Entity, P <: Property](
         epk: EPK[E, P],
         pc:  PropertyComputation[E]
     )(
@@ -70,8 +70,11 @@ class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         if (currentEvaluationDepth < MaxEvaluationDepth) {
             currentEvaluationDepth += 1
             try {
+                if (store.tracer.isDefined)
+                    store.tracer.get.immediateEvaluationOfLazyComputation(epk, currentEvaluationDepth, pc)
                 store.processResult(pc(epk.e))
-                store(epk)
+                val newEOptionP = store(epk)
+                newEOptionP
             } finally {
                 currentEvaluationDepth -= 1
             }
@@ -81,7 +84,7 @@ class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         }
     }
 
-    def forkOnUpdateContinuation(
+    def doForkOnUpdateContinuation(
         c:  OnUpdateContinuation,
         e:  Entity,
         pk: SomePropertyKey
@@ -93,7 +96,7 @@ class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         runnables.push(() ⇒ store.processResult(c(latestEPS)))
     }
 
-    def forkOnUpdateContinuation(
+    def doForkOnUpdateContinuation(
         c:       OnUpdateContinuation,
         finalEP: SomeFinalEP
     )(

@@ -76,7 +76,7 @@ package object fpcf {
 
     final type SomePartialResult = PartialResult[_ >: Null <: Entity, _ >: Null <: Property]
 
-    final type UpdateComputation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ Option[EPS[E, P]]
+    final type UpdateComputation[E <: Entity, P <: Property] = EOptionP[E, P] ⇒ Option[InterimEP[E, P]]
 
     /**
      * A function that takes an entity and returns a result. The result maybe:
@@ -134,4 +134,13 @@ package object fpcf {
     private[fpcf] final val AnalysisKey = PropertyKey.create[Entity, Null](AnalysisKeyName)
 
     private[fpcf] final val AnalysisKeyId = AnalysisKey.id
+
+    def hashCodeToHexString(o: AnyRef): String = {
+        System.identityHashCode(o).toHexString
+    }
+
+    def anyRefToShortString(o: AnyRef): String = {
+        o.getClass.getSimpleName+"@"+hashCodeToHexString(o)
+    }
+
 }

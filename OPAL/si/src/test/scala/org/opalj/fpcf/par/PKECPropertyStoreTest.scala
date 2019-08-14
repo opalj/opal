@@ -8,7 +8,7 @@ class PKECPropertyStoreTestWithDebugging
     ) {
 
     def createPropertyStore(): PropertyStore = {
-        val ps = PKECPropertyStore()
+        val ps = PKECPropertyStore(classOf[PropertyStoreTracer], new RecordAllPropertyStoreEvents())
         ps.suppressError = true
         ps
     }

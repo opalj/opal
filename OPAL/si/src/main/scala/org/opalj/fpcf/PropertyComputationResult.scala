@@ -188,8 +188,7 @@ final class InterimResult[P >: Null <: Property] private (
     }
 
     override def toString: String = {
-        s"InterimResult($eps-e@${System.identityHashCode(eps.e).toHexString}"+
-            s"dependees=${dependees.mkString("{", ",", "}")},c=$c)"
+        s"InterimResult($eps,dependees=${dependees.mkString("[", ", ", "]")},c=$c)"
     }
 }
 object InterimResult {

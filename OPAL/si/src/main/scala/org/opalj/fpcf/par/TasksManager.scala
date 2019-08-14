@@ -3,6 +3,8 @@ package org.opalj
 package fpcf
 package par
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
 trait TaskManagerFactory {
@@ -15,6 +17,8 @@ trait TaskManagerFactory {
 }
 
 abstract class TasksManager {
+
+    final val Debug = PropertyStore.Debug
 
     def MaxEvaluationDepth: Int
 
@@ -43,11 +47,32 @@ abstract class TasksManager {
 
     def awaitPoolQuiescence()(implicit store: PKECPropertyStore): Unit
 
-    def parallelize(f: ⇒ Unit)(implicit store: PKECPropertyStore): Unit
+    def parallelize(f: ⇒ Unit)(implicit store: PKECPropertyStore): Unit = {
+        incrementScheduledTasksCounter()
+        doParallelize(f)
+    }
 
-    def forkResultHandler(r: PropertyComputationResult)(implicit store: PKECPropertyStore): Unit
+    def doParallelize(f: ⇒ Unit)(implicit store: PKECPropertyStore): Unit
 
-    def schedulePropertyComputation[E <: Entity](
+    final def forkResultHandler(r: PropertyComputationResult)(implicit store: PKECPropertyStore): Unit = {
+        incrementScheduledTasksCounter()
+        doForkResultHandler(r)
+    }
+
+    def doForkResultHandler(r: PropertyComputationResult)(implicit store: PKECPropertyStore): Unit
+
+    final def schedulePropertyComputation[E <: Entity](
+        e:  E,
+        pc: PropertyComputation[E]
+    )(
+        implicit
+        store: PKECPropertyStore
+    ): Unit = {
+        incrementScheduledTasksCounter()
+        doSchedulePropertyComputation(e, pc)
+    }
+
+    def doSchedulePropertyComputation[E <: Entity](
         e:  E,
         pc: PropertyComputation[E]
     )(
@@ -66,7 +91,18 @@ abstract class TasksManager {
      * if no thread is analyzing the entity analyze it using the current thread to minimize
      * the overall number of notifications.
      */
-    def forkLazyPropertyComputation[E <: Entity, P <: Property](
+    final def forkLazyPropertyComputation[E <: Entity, P <: Property](
+        e:  EPK[E, P],
+        pc: PropertyComputation[E]
+    )(
+        implicit
+        store: PKECPropertyStore
+    ): EOptionP[E, P] = {
+        incrementScheduledTasksCounter()
+        doForkLazyPropertyComputation(e, pc)
+    }
+
+    def doForkLazyPropertyComputation[E <: Entity, P <: Property](
         e:  EPK[E, P],
         pc: PropertyComputation[E]
     )(
@@ -74,7 +110,19 @@ abstract class TasksManager {
         store: PKECPropertyStore
     ): EOptionP[E, P]
 
-    def forkOnUpdateContinuation(
+    final def forkOnUpdateContinuation(
+        c:  OnUpdateContinuation,
+        e:  Entity,
+        pk: SomePropertyKey
+    )(
+        implicit
+        store: PKECPropertyStore
+    ): Unit = {
+        incrementOnUpdateContinuationsCounter()
+        doForkOnUpdateContinuation(c, e, pk)
+    }
+
+    def doForkOnUpdateContinuation(
         c:  OnUpdateContinuation,
         e:  Entity,
         pk: SomePropertyKey
@@ -83,12 +131,37 @@ abstract class TasksManager {
         store: PKECPropertyStore
     ): Unit
 
-    def forkOnUpdateContinuation(
+    final def forkOnUpdateContinuation(
+        c:       OnUpdateContinuation,
+        finalEP: SomeFinalEP
+    )(
+        implicit
+        store: PKECPropertyStore
+    ): Unit = {
+        incrementOnUpdateContinuationsCounter()
+        doForkOnUpdateContinuation(c, finalEP)
+    }
+
+    def doForkOnUpdateContinuation(
         c:       OnUpdateContinuation,
         finalEP: SomeFinalEP
     )(
         implicit
         store: PKECPropertyStore
     ): Unit
+
+    private[this] val scheduledOnUpdateComputationsCounter = new AtomicInteger(0)
+    protected[this] def incrementOnUpdateContinuationsCounter(): Unit = {
+        if (Debug) scheduledOnUpdateComputationsCounter.incrementAndGet()
+    }
+    final def scheduledOnUpdateComputationsCount: Int = {
+        scheduledOnUpdateComputationsCounter.get()
+    }
+
+    private[this] val scheduledTasksCounter = new AtomicInteger(0)
+    protected[this] def incrementScheduledTasksCounter(): Unit = {
+        if (Debug) scheduledTasksCounter.incrementAndGet()
+    }
+    final def scheduledTasksCount: Int = scheduledTasksCounter.get()
 
 }
