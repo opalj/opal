@@ -93,35 +93,6 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         _allocationSitePointsToSet(ds) = pointsToSet
     }
 
-    private[this] val _localPointsToSets: mutable.Map[Entity, (PointsToSet, ReferenceType ⇒ Boolean)] = mutable.Map.empty
-
-    def setLocalPointsToSet(e: Entity, pointsToSet: PointsToSet, typeFilter: ReferenceType ⇒ Boolean): Unit = {
-        assert(!_localPointsToSets.contains(e))
-        _localPointsToSets(e) = (pointsToSet.filter(typeFilter), typeFilter)
-    }
-
-    def includeLocalPointsToSet(e: Entity, pointsToSet: PointsToSet, typeFilter: ReferenceType ⇒ Boolean): Unit = {
-        if (_localPointsToSets.contains(e)) {
-            val oldPointsToSet = _localPointsToSets(e)._1
-            val newPointsToSet = oldPointsToSet.included(pointsToSet, typeFilter)
-            _localPointsToSets(e) = (newPointsToSet, typeFilter)
-        } else {
-            _localPointsToSets(e) = (pointsToSet.filter(typeFilter), typeFilter)
-        }
-    }
-
-    def includeLocalPointsToSets(e: Entity, pointsToSets: Iterator[PointsToSet], typeFilter: ReferenceType ⇒ Boolean): Unit = {
-        pointsToSets.foreach(pointsToSet ⇒ includeLocalPointsToSet(e, pointsToSet, typeFilter))
-    }
-
-    def localPointsToSetsIterator: Iterator[(Entity, (PointsToSet, ReferenceType ⇒ Boolean))] = {
-        _localPointsToSets.iterator
-    }
-
-    def hasLocalPointsToSet(e: Entity): Boolean = _localPointsToSets.contains(e)
-
-    def localPointsToSet(e: Entity): PointsToSet = _localPointsToSets(e)._1
-
     private[this] val _sharedPointsToSets: mutable.Map[Entity, (PointsToSet, ReferenceType ⇒ Boolean)] = {
         mutable.Map.empty
     }

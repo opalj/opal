@@ -32,7 +32,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
     protected[this] implicit val definitionSites: DefinitionSites = {
         p.get(DefinitionSitesKey)
     }
-    implicit val formalParameters: VirtualFormalParameters = {
+    protected[this] implicit val formalParameters: VirtualFormalParameters = {
         p.get(VirtualFormalParametersKey)
     }
 

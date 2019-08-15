@@ -17,7 +17,6 @@ import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
@@ -85,7 +84,11 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         val tac = state.tac
         val method = state.method.definedMethod
         if (method.returnType.isReferenceType) {
-            state.setLocalPointsToSet(state.method, emptyPointsToSet, { t ⇒ classHierarchy.isSubtypeOf(t, method.returnType.asReferenceType) })
+            state.includeSharedPointsToSet(
+                state.method,
+                emptyPointsToSet,
+                t ⇒ classHierarchy.isSubtypeOf(t, method.returnType.asReferenceType)
+            )
         }
 
         tac.cfg.abnormalReturnNode.predecessors.foreach { throwingBB ⇒
@@ -93,7 +96,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             throwingStmt match {
                 case Throw(_, UVar(_, defSites)) ⇒
                     val entity = MethodExceptions(state.method)
-                    state.includeLocalPointsToSets(
+                    state.includeSharedPointsToSets(
                         entity,
                         currentPointsToOfDefSites(entity, defSites),
                         { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
@@ -102,7 +105,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] ⇒
                     val entity = MethodExceptions(state.method)
                     val callSite = definitionSites(state.method.definedMethod, throwingStmt.pc)
-                    state.includeLocalPointsToSet(
+                    state.includeSharedPointsToSet(
                         entity,
                         currentPointsTo(entity, CallExceptions(callSite)),
                         { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
@@ -191,7 +194,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒ t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
                     case _ ⇒ PointsToSetLike.noFilter
                 }
-                state.includeLocalPointsToSets(
+                state.includeSharedPointsToSets(
                     defSiteObject, currentPointsToOfDefSites(defSiteObject, defSites), filter
                 )
 
@@ -263,10 +266,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                                 PointsToSetLike.noFilter
                         }
                         if (state.hasCalleesDepenedee) {
-                            state.includeLocalPointsToSet(defSiteObject, emptyPointsToSet, filter)
+                            state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, filter)
                             state.addDependee(defSiteObject, state.calleesDependee)
                         }
-                        state.includeLocalPointsToSets(
+                        state.includeSharedPointsToSets(
                             defSiteObject,
                             targets.map(currentPointsTo(defSiteObject, _)),
                             filter
@@ -327,7 +330,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 handleArrayStore(arrayType, arrayDefSites, defSites)
 
             case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) ⇒
-                state.includeLocalPointsToSets(
+                state.includeSharedPointsToSets(
                     state.method, currentPointsToOfDefSites(state.method, defSites),
                     { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, state.method.descriptor.returnType.asReferenceType) }
                 )
@@ -359,16 +362,19 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         for (target ← callees.callees(pc)) {
             val targetExceptions = MethodExceptions(target)
 
-            state.includeLocalPointsToSet(
+            state.includeSharedPointsToSet(
                 callExceptions,
                 currentPointsTo(callExceptions, targetExceptions),
-                { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
+                t ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
             )
         }
         if (state.hasCalleesDepenedee) {
             state.addDependee(callExceptions, state.calleesDependee)
-            state.includeLocalPointsToSet(callExceptions, emptyPointsToSet,
-                { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) })
+            state.includeSharedPointsToSet(
+                callExceptions,
+                emptyPointsToSet,
+                t ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
+            )
         }
     }
 
@@ -478,7 +484,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                             pc, state.method, allocatedType, isConstant = false
                         )
                         val defSite = definitionSites(state.method.definedMethod, pc)
-                        state.includeLocalPointsToSet(defSite, pointsToSet, PointsToSetLike.noFilter)
+                        state.includeSharedPointsToSet(
+                            defSite, pointsToSet, PointsToSetLike.noFilter
+                        )
                     }
 
                 case "get" ⇒
@@ -504,7 +512,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "forName" ⇒
                     val classTypes = tamiFlexLogData.classes(state.method, line)
                     if (classTypes.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, ObjectType.Class, isConstant = false
@@ -516,7 +524,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "getDeclaredField" ⇒
                     val fields = tamiFlexLogData.fields(state.method, line)
                     if (fields.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, FieldT, isConstant = false
@@ -528,7 +536,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "getDeclaredFields" ⇒
                     val classTypes = tamiFlexLogData.classes(state.method, line)
                     if (classTypes.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, ArrayType(FieldT), isConstant = false
@@ -541,7 +549,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "getField" ⇒
                     val fields = tamiFlexLogData.fields(state.method, line)
                     if (fields.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, FieldT, isConstant = false
@@ -553,7 +561,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "getFields" ⇒
                     val classTypes = tamiFlexLogData.classes(state.method, line)
                     if (classTypes.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, ArrayType(FieldT), isConstant = false
@@ -566,7 +574,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "getDeclaredMethod" ⇒
                     val methods = tamiFlexLogData.methods(state.method, line)
                     if (methods.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, MethodT, isConstant = false
@@ -578,7 +586,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "getDeclaredMethods" ⇒
                     val classTypes = tamiFlexLogData.classes(state.method, line)
                     if (classTypes.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, ArrayType(MethodT), isConstant = false
@@ -590,7 +598,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "getMethod" ⇒
                     val methods = tamiFlexLogData.methods(state.method, line)
                     if (methods.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, MethodT, isConstant = false
@@ -602,7 +610,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 case "getMethods" ⇒
                     val classTypes = tamiFlexLogData.classes(state.method, line)
                     if (classTypes.nonEmpty) {
-                        state.includeLocalPointsToSet(
+                        state.includeSharedPointsToSet(
                             definitionSites(state.method.definedMethod, pc),
                             createPointsToSet(
                                 pc, state.method, ArrayType(MethodT), isConstant = false
@@ -618,7 +626,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                             pc, state.method, allocatedType, isConstant = false
                         )
                         val defSite = definitionSites(state.method.definedMethod, pc)
-                        state.includeLocalPointsToSet(defSite, pointsToSet, PointsToSetLike.noFilter)
+                        state.includeSharedPointsToSet(
+                            defSite, pointsToSet, PointsToSetLike.noFilter
+                        )
                     }
 
                 case _ ⇒
@@ -635,7 +645,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                             pc, state.method, allocatedType, isConstant = false
                         )
                         val defSite = definitionSites(state.method.definedMethod, pc)
-                        state.includeLocalPointsToSet(defSite, pointsToSet, PointsToSetLike.noFilter)
+                        state.includeSharedPointsToSet(
+                            defSite, pointsToSet, PointsToSetLike.noFilter
+                        )
                     }
                 case _ ⇒
             }
@@ -739,20 +751,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
         for ((e, pointsToSet) ← state.allocationSitePointsToSetsIterator) {
             results += Result(e, pointsToSet)
-        }
-
-        for ((e, (pointsToSet, typeFilter)) ← state.localPointsToSetsIterator) {
-            if (state.hasDependees(e)) {
-                val dependees = state.dependeesOf(e)
-                results += InterimResult.forUB(
-                    e,
-                    pointsToSet,
-                    dependees.values,
-                    continuationForLocal(e, dependees, pointsToSet, typeFilter)
-                )
-            } else {
-                results += Result(e, pointsToSet)
-            }
         }
 
         for ((e, (pointsToSet, typeFilter)) ← state.sharedPointsToSetsIterator) {
@@ -875,30 +873,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         Results(results)
     }
 
-    private[this] def continuationForLocal(
-        e: Entity, dependees: Map[SomeEPK, SomeEOptionP], pointsToSetUB: PointsToSet, typeFilter: ReferenceType ⇒ Boolean
+    override protected[this] def continuationForShared(
+        e: Entity, dependees: Map[SomeEPK, SomeEOptionP], typeFilter: ReferenceType ⇒ Boolean
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
-                val newDependees = updatedDependees(eps, dependees)
-                val newPointsToUB = updatedPointsToSet(
-                    pointsToSetUB,
-                    newDependeePointsTo,
-                    eps,
-                    dependees,
-                    typeFilter
-                )
-
-                if (newDependees.isEmpty) {
-                    Result(e, newPointsToUB)
-                } else {
-                    InterimResult.forUB(
-                        e,
-                        newPointsToUB,
-                        newDependees.values,
-                        continuationForLocal(e, newDependees, newPointsToUB, typeFilter)
-                    )
-                }
             case UBP(callees: Callees) ⇒
                 // this will never happen for method return values or method exceptions
                 val (defSite, dependeeIsExceptions) = e match {
@@ -906,11 +884,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     case ce: CallExceptions ⇒ (ce.defSite, true)
                 }
                 // TODO: Only handle new callees
-                val results = ArrayBuffer.empty[ProperPropertyComputationResult]
                 val tgts = callees.callees(defSite.pc)
 
                 var newDependees = updatedDependees(eps, dependees)
-                var newPointsToSet = pointsToSetUB
+                var newPointsToSet = emptyPointsToSet
                 tgts.foreach { target ⇒
                     val entity = if (dependeeIsExceptions) MethodExceptions(target) else target
                     // if we already have a dependency to that method, we do not need to process it
@@ -921,23 +898,16 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         if (p2s.isRefinable) {
                             newDependees += (p2s.toEPK → p2s)
                         }
-                        newPointsToSet = newPointsToSet.included(pointsToUB(p2s), typeFilter)
+                        newPointsToSet =
+                            newPointsToSet.included(pointsToUB(p2s), typeFilter)
                     }
                 }
 
-                if (newDependees.nonEmpty) {
-                    results += InterimResult.forUB(
-                        e,
-                        newPointsToSet,
-                        newDependees.values,
-                        continuationForLocal(e, newDependees, newPointsToSet, typeFilter)
-                    )
-                } else {
-                    results += Result(e, newPointsToSet)
-                }
+                updatedResults(e, newDependees, typeFilter, newPointsToSet, {
+                    old ⇒ old.included(newPointsToSet, typeFilter)
+                })
 
-                Results(results)
-            case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
+            case _ ⇒ super.continuationForShared(e, dependees, typeFilter)(eps)
         }
     }
 

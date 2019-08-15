@@ -74,7 +74,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             case _ ⇒
                 PointsToSetLike.noFilter
         }
-        state.includeLocalPointsToSet(
+        state.includeSharedPointsToSet(
             defSiteObject,
             currentPointsTo(defSiteObject, field),
             filter
@@ -179,22 +179,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             case ds: DefinitionSite if state.hasAllocationSitePointsToSet(ds) ⇒
                 state.allocationSitePointsToSet(ds)
 
-            case ds: DefinitionSite if state.hasLocalPointsToSet(ds) ⇒
-                if (!state.hasDependency(depender, EPK(dependee, pointsToPropertyKey))) {
-                    val p2s = propertyStore(dependee, pointsToPropertyKey)
-
-                    //TODO: is it safe to comment this assertion out?  assert(p2s.isEPK)
-                    state.addDependee(depender, p2s)
-                }
-
-                /*
-                // TODO: It might be even more efficient to forward the dependencies.
-                // However, this requires the continuation functions to handle Callees
-                if (state.hasDependees(ds))
-                    state.plainDependeesOf(ds).foreach(state.addDependee(depender, _))
-                 */
-
-                state.localPointsToSet(ds)
             case _ ⇒
                 val epk = EPK(dependee, pointsToPropertyKey)
                 val p2s = if (state.hasDependency(depender, epk)) {
@@ -424,53 +408,66 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
                 val newDependees = updatedDependees(eps, dependees)
-                if (newDependeePointsTo ne emptyPointsToSet) {
-                    val pr = PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
-                        e, pointsToPropertyKey, {
-                        case UBP(ub: PointsToSet @unchecked) ⇒
-                            val newPointsToSet = updatedPointsToSet(
-                                ub,
-                                newDependeePointsTo,
-                                eps,
-                                dependees,
-                                typeFilter
-                            )
 
-                            if (newPointsToSet ne ub) {
-                                Some(InterimEUBP(e, newPointsToSet))
-                            } else {
-                                None
-                            }
-
-                        case _: EPK[Entity, _] ⇒
-                            Some(InterimEUBP(
-                                e,
-                                newDependeePointsTo.filter(typeFilter)
-                            ))
-
-                        case eOptP ⇒
-                            throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-                    }
-                    )
-
-                    if (newDependees.nonEmpty) {
-                        val ipr = InterimPartialResult(
-                            newDependees.values, continuationForShared(e, newDependees, typeFilter)
+                updatedResults(e, newDependees, typeFilter, newDependeePointsTo, {
+                    old ⇒
+                        updatedPointsToSet(
+                            old,
+                            newDependeePointsTo,
+                            eps,
+                            dependees,
+                            typeFilter
                         )
-                        Results(pr, ipr)
-                    } else {
-                        pr
-                    }
-                } else if (newDependees.nonEmpty) {
-                    InterimPartialResult(
-                        newDependees.values,
-                        continuationForShared(e, newDependees, typeFilter)
-                    )
-                } else {
-                    Results()
-                }
+                })
 
             case _ ⇒ throw new IllegalArgumentException(s"unexpected update: $eps")
+        }
+    }
+
+    @inline protected[this] def updatedResults(
+        e:                   Entity,
+        newDependees:        Map[SomeEPK, SomeEOptionP],
+        typeFilter:          ReferenceType ⇒ Boolean,
+        newDependeePointsTo: PointsToSet,
+        updatePointsTo:      PointsToSet ⇒ PointsToSet
+    ): ProperPropertyComputationResult = {
+        if (newDependeePointsTo ne emptyPointsToSet) {
+            val pr = PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+                e,
+                pointsToPropertyKey,
+                {
+                    case UBP(ub: PointsToSet @unchecked) ⇒
+                        val newPointsToSet = updatePointsTo(ub)
+
+                        if (newPointsToSet ne ub) {
+                            Some(InterimEUBP(e, newPointsToSet))
+                        } else {
+                            None
+                        }
+
+                    case _: EPK[Entity, _] ⇒
+                        Some(InterimEUBP(e, newDependeePointsTo.filter(typeFilter)))
+
+                    case eOptP ⇒
+                        throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
+                }
+            )
+
+            if (newDependees.nonEmpty) {
+                val ipr = InterimPartialResult(
+                    newDependees.values, continuationForShared(e, newDependees, typeFilter)
+                )
+                Results(pr, ipr)
+            } else {
+                pr
+            }
+        } else if (newDependees.nonEmpty) {
+            InterimPartialResult(
+                newDependees.values,
+                continuationForShared(e, newDependees, typeFilter)
+            )
+        } else {
+            Results()
         }
     }
 }
