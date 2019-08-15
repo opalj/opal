@@ -16,6 +16,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.InterimUBP
@@ -400,7 +401,7 @@ final class TypePropagationAnalysis private[analyses] (
         newInstantiatedTypes: UIDSet[ReferenceType]
     )(
         eop: EOptionP[E, InstantiatedTypes]
-    ): Option[EPS[E, InstantiatedTypes]] = eop match {
+    ): Option[InterimEP[E, InstantiatedTypes]] = eop match {
         case InterimUBP(ub: InstantiatedTypes) ⇒
             val newUB = ub.updated(newInstantiatedTypes)
             if (newUB.types.size > ub.types.size)
