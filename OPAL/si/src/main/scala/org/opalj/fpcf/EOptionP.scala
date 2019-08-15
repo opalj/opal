@@ -796,7 +796,9 @@ final class EPK[+E <: Entity, +P <: Property](
     };
 
     override def isEPS: Boolean = false
-    override def asEPS: EPS[E, P] = throw new ClassCastException();
+    override def asEPS: EPS[E, P] = {
+        throw new ClassCastException()
+    };
 
     override def isEPK: Boolean = true
     override def asEPK: EPK[E, P] = this
