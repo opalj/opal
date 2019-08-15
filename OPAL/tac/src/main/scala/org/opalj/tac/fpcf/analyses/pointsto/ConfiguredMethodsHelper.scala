@@ -22,17 +22,17 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameters
 
-case class ConfiguredNativeMethods(nativeMethods: Array[NativeMethodData])
-object ConfiguredNativeMethods {
-    implicit val reader: ValueReader[ConfiguredNativeMethods] = (config: Config, path: String) ⇒ {
+case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])
+object ConfiguredMethods {
+    implicit val reader: ValueReader[ConfiguredMethods] = (config: Config, path: String) ⇒ {
         val c = config.getConfig(path)
         val configs = c.getConfigList("nativeMethods").asScala.toArray
-        val data = configs.map(c ⇒ NativeMethodData.reader.read(c, ""))
-        ConfiguredNativeMethods(data)
+        val data = configs.map(c ⇒ ConfiguredMethodData.reader.read(c, ""))
+        ConfiguredMethods(data)
     }
 }
 
-case class NativeMethodData(
+case class ConfiguredMethodData(
         cf:                String,
         name:              String,
         desc:              String,
@@ -49,8 +49,8 @@ case class NativeMethodData(
     }
 }
 
-object NativeMethodData {
-    implicit val reader: ValueReader[NativeMethodData] = (config: Config, path: String) ⇒ {
+object ConfiguredMethodData {
+    implicit val reader: ValueReader[ConfiguredMethodData] = (config: Config, path: String) ⇒ {
         val c = if (path.nonEmpty) config.getConfig(path) else config
         val cf = c.as[String]("cf")
         val name = c.getString("name")
@@ -67,7 +67,7 @@ object NativeMethodData {
             else
                 None
 
-        NativeMethodData(cf, name, desc, pointsTo, methodInvocations)
+        ConfiguredMethodData(cf, name, desc, pointsTo, methodInvocations)
     }
 }
 

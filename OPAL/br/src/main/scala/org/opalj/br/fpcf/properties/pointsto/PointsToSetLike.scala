@@ -47,3 +47,7 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def filter(typeFilter: ReferenceType ⇒ Boolean): T
 }
+
+object PointsToSetLike {
+    val noFilter = { t: ReferenceType ⇒ true }
+}

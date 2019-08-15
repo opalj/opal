@@ -77,7 +77,7 @@ sealed trait AllocationSitePointsToSet
     override def included(
         other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSet = {
-        if (typeFilter eq AllocationSitePointsToSet.noFilter)
+        if (typeFilter eq PointsToSetLike.noFilter)
             return included(other);
 
         var newTypes = types
@@ -113,7 +113,7 @@ sealed trait AllocationSitePointsToSet
         seenTypes:    Int,
         typeFilter:   ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSet = {
-        if (typeFilter eq AllocationSitePointsToSet.noFilter)
+        if (typeFilter eq PointsToSetLike.noFilter)
             return included(other, seenElements, seenTypes);
 
         var newTypes = types
@@ -143,7 +143,7 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
-        if (typeFilter eq AllocationSitePointsToSet.noFilter)
+        if (typeFilter eq PointsToSetLike.noFilter)
             return this;
 
         var newTypes = UIDSet.empty[ReferenceType]
@@ -187,8 +187,6 @@ sealed trait AllocationSitePointsToSet
 }
 
 object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaInformation {
-
-    val noFilter = { t: ReferenceType ⇒ true }
 
     def apply(
         allocationSite: AllocationSite, allocatedType: ReferenceType
@@ -376,7 +374,7 @@ case class AllocationSitePointsToSet1(
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
-        if ((typeFilter eq AllocationSitePointsToSet.noFilter) || typeFilter(allocatedType)) {
+        if ((typeFilter eq PointsToSetLike.noFilter) || typeFilter(allocatedType)) {
             this
         } else {
             NoAllocationSites

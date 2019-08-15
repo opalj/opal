@@ -22,6 +22,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -33,33 +34,27 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.ObjectType
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
-import org.opalj.br.fpcf.properties.pointsto.allocationSiteToLong
 import org.opalj.br.FieldType
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 
 /**
- * Applies the impact of preconfigured native methods to the points-to analysis.
+ * Applies the impact of preconfigured methods to the points-to analysis.
  *
  * TODO: example
  * TODO: refer to the config file
  *
  * @author Florian Kuebler
  */
-class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
-        final val project: SomeProject
-) extends FPCFAnalysis {
+trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
-    private[this] implicit val virtualFormalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
 
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
-        ConfiguredNativeMethods.reader.read(
+        ConfiguredMethods.reader.read(
             p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
         ).nativeMethods.map { v ⇒ (v.method, v.pointsTo) }.toMap
     }
@@ -99,36 +94,35 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
         for (PointsToRelation(lhs, rhs) ← data) {
             rhs match {
                 case asd: AllocationSiteDescription ⇒
-                    if(asd.instantiatedType.startsWith("[")){
+                    if (asd.instantiatedType.startsWith("[")) {
                         val instantiatedType = FieldType(asd.instantiatedType).asArrayType
-                        val as = allocationSiteToLong(dm, 0, instantiatedType)
-                        val pts = AllocationSitePointsToSet(as, instantiatedType)
+                        val pts = createPointsToSet(0, dm, instantiatedType, isConstant = false)
+                        var as: ElementType = null// TODO ugly hack
+                        pts.forNewestNElements(1)(as = _)
                         results += createPartialResultOpt(lhs.entity, pts).get
-                        if(asd.arrayComponentTypes.nonEmpty){
-                            var arrayPTS: AllocationSitePointsToSet = NoAllocationSites
+                        if (asd.arrayComponentTypes.nonEmpty) {
+                            var arrayPTS: PointsToSet = emptyPointsToSet
                             asd.arrayComponentTypes.foreach { componentTypeString ⇒
                                 val componentType = ObjectType(componentTypeString)
-                                val elementAs = allocationSiteToLong(dm, 0, componentType)
                                 arrayPTS = arrayPTS.included(
-                                    AllocationSitePointsToSet(elementAs, componentType)
+                                    createPointsToSet(0, dm, componentType, isConstant = false)
                                 )
                             }
                             results += createPartialResultOpt(ArrayEntity(as), arrayPTS).get
                         }
                     } else {
                         val instantiatedType = ObjectType(asd.instantiatedType)
-                        val as = allocationSiteToLong(dm, 0, instantiatedType)
-                        val pts = AllocationSitePointsToSet(as, instantiatedType)
+                        val pts = createPointsToSet(0, dm, instantiatedType, isConstant = false)
                         results += createPartialResultOpt(lhs.entity, pts).get
                     }
                 case _ ⇒
-                    val pointsToEOptP = propertyStore(rhs.entity, AllocationSitePointsToSet.key)
+                    val pointsToEOptP = propertyStore(rhs.entity, pointsToPropertyKey)
 
                     // the points-to set associated with the rhs
                     val pts = if (pointsToEOptP.hasUBP)
                         pointsToEOptP.ub
                     else
-                        NoAllocationSites
+                        emptyPointsToSet
 
                     // only create a partial result if there is some information to apply
                     // partial result that updates the points-to information
@@ -136,7 +130,9 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
 
                     // if the rhs is not yet final, we need to get updated if it changes
                     if (pointsToEOptP.isRefinable) {
-                        results += InterimPartialResult(prOpt, Some(pointsToEOptP), c(lhs.entity, pointsToEOptP))
+                        results += InterimPartialResult(
+                            prOpt, Some(pointsToEOptP), c(lhs.entity, pointsToEOptP)
+                        )
                     } else if (prOpt.isDefined) {
                         results += prOpt.get
                     }
@@ -145,10 +141,13 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
         Results(results)
     }
 
-    private[this] def createPartialResultOpt(lhs: Entity, newPointsTo: AllocationSitePointsToSet) = {
+    private[this] def createPartialResultOpt(
+        lhs:         Entity,
+        newPointsTo: PointsToSet
+    ): Option[PartialResult[Entity, PointsToSet]] = {
         if (newPointsTo.numTypes > 0) {
-            Some(PartialResult[Entity, AllocationSitePointsToSet](lhs, AllocationSitePointsToSet.key, {
-                case InterimUBP(ub: AllocationSitePointsToSet) ⇒
+            Some(PartialResult[Entity, PointsToSet](lhs, pointsToPropertyKey, {
+                case InterimUBP(ub: PointsToSet @unchecked) ⇒
                     // here we assert that updated returns the identity if pts is already contained
                     val newUB = ub.included(newPointsTo)
                     if (newUB eq ub) {
@@ -156,10 +155,10 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
                     } else {
                         Some(InterimEUBP(lhs, newUB))
                     }
-                case _: EPK[Entity, AllocationSitePointsToSet] ⇒
+                case _: EPK[Entity, PointsToSet] ⇒
                     Some(InterimEUBP(lhs, newPointsTo))
 
-                case fep: FinalEP[Entity, AllocationSitePointsToSet] ⇒
+                case fep: FinalEP[Entity, PointsToSet] ⇒
                     throw new IllegalStateException(s"unexpected final value $fep")
             }))
         } else
@@ -167,36 +166,40 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
     }
 
     private[this] def c(
-        lhs: Entity, rhsEOptP: EOptionP[Entity, AllocationSitePointsToSet]
+        lhs: Entity, rhsEOptP: EOptionP[Entity, PointsToSet]
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case UBPS(rhsUB: AllocationSitePointsToSet, rhsIsFinal) ⇒
+        case UBPS(rhsUB: PointsToSet @unchecked, rhsIsFinal) ⇒
             // there is no change, but still a dependency, just return this continuation
             if (rhsEOptP.hasUBP && (rhsEOptP.ub eq rhsUB) && eps.isRefinable) {
-                InterimPartialResult(Some(eps), c(lhs, eps.asInstanceOf[EPS[Entity, AllocationSitePointsToSet]]))
+                InterimPartialResult(Some(eps), c(lhs, eps.asInstanceOf[EPS[Entity, PointsToSet]]))
             } else {
-                val pr = PartialResult[Entity, AllocationSitePointsToSet](lhs, AllocationSitePointsToSet.key, {
-                    case InterimUBP(lhsUB: AllocationSitePointsToSet) ⇒
+                val pr = PartialResult[Entity, PointsToSet](
+                    lhs,
+                    pointsToPropertyKey,
+                    {
+                        case InterimUBP(lhsUB: PointsToSet @unchecked) ⇒
 
-                        // here we assert that updated returns the identity if pts is already contained
-                        val newUB = lhsUB.included(rhsUB)
-                        if (newUB eq lhsUB) {
-                            None
-                        } else {
-                            Some(InterimEUBP(lhs, newUB))
-                        }
+                            // here we assert that updated returns the identity if pts is already contained
+                            val newUB = lhsUB.included(rhsUB)
+                            if (newUB eq lhsUB) {
+                                None
+                            } else {
+                                Some(InterimEUBP(lhs, newUB))
+                            }
 
-                    case _: EPK[Entity, AllocationSitePointsToSet] ⇒
-                        Some(InterimEUBP(lhs, rhsUB))
+                        case _: EPK[Entity, PointsToSet] ⇒
+                            Some(InterimEUBP(lhs, rhsUB))
 
-                    case fep: FinalEP[Entity, AllocationSitePointsToSet] ⇒
-                        throw new IllegalStateException(s"unexpected final value $fep")
-                })
+                        case fep: FinalEP[Entity, PointsToSet] ⇒
+                            throw new IllegalStateException(s"unexpected final value $fep")
+                    }
+                )
 
                 if (rhsIsFinal) {
                     pr
                 } else {
                     InterimPartialResult(
-                        Some(pr), Some(eps), c(lhs, eps.asInstanceOf[EPS[Entity, AllocationSitePointsToSet]])
+                        Some(pr), Some(eps), c(lhs, eps.asInstanceOf[EPS[Entity, PointsToSet]])
                     )
                 }
             }
@@ -205,15 +208,19 @@ class ConfiguredNativeMethodsPointsToAnalysis private[analyses] (
     }
 }
 
-object ConfiguredNativeMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
+    val propertyKind: PropertyMetaInformation
+    val createAnalyis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis
+
     override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
-        AllocationSitePointsToSet
+        propertyKind
     )
 
-    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(AllocationSitePointsToSet)
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        PropertyBounds.ubs(propertyKind)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
@@ -225,8 +232,8 @@ object ConfiguredNativeMethodsPointsToAnalysisScheduler extends FPCFTriggeredAna
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
-    ): ConfiguredNativeMethodsPointsToAnalysis = {
-        val analysis = new ConfiguredNativeMethodsPointsToAnalysis(p)
+    ): ConfiguredMethodsPointsToAnalysis = {
+        val analysis = createAnalyis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
@@ -244,4 +251,28 @@ object ConfiguredNativeMethodsPointsToAnalysisScheduler extends FPCFTriggeredAna
      * Specifies the kind of the properties that will trigger the analysis to be registered.
      */
     override def triggeredBy: PropertyKind = Callers
+}
+
+class TypeBasedConfiguredMethodsPointsToAnalysis private[analyses] (
+    final val project: SomeProject
+) extends ConfiguredMethodsPointsToAnalysis with TypeBasedAnalysis
+
+object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
+        extends ConfiguredMethodsPointsToAnalysisScheduler {
+
+    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
+    override val createAnalyis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
+        new TypeBasedConfiguredMethodsPointsToAnalysis(_)
+}
+
+class AllocationSiteBasedConfiguredMethodsPointsToAnalysis private[analyses] (
+    final val project: SomeProject
+) extends ConfiguredMethodsPointsToAnalysis with AllocationSiteBasedAnalysis
+
+object AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
+    extends ConfiguredMethodsPointsToAnalysisScheduler {
+
+    override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
+    override val createAnalyis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
+        new AllocationSiteBasedConfiguredMethodsPointsToAnalysis(_)
 }

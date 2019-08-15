@@ -24,7 +24,7 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethods
+import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredMethods
 import org.opalj.tac.fpcf.analyses.pointsto.MethodDescription
 
 /**
@@ -54,7 +54,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
     // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
-        ConfiguredNativeMethods.reader.read(
+        ConfiguredMethods.reader.read(
             p.config, configKey
         ).nativeMethods.map { v ⇒ (v.method, v.methodInvocations) }.toMap
     }

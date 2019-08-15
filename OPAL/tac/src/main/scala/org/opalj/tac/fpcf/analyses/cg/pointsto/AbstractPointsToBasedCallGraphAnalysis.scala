@@ -14,7 +14,6 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.SomeEPS
 import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
@@ -24,21 +23,14 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSetScala
-import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
-import org.opalj.br.fpcf.properties.pointsto.NoAllocationSitesScala
-import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.tac.common.DefinitionSite
-import org.opalj.tac.common.DefinitionSites
-import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
-import org.opalj.tac.fpcf.analyses.pointsto.toEntity
-import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedScalaAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -51,17 +43,11 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
-    extends AbstractCallGraphAnalysis
-    with AbstractPointsToBasedAnalysis[CallSiteT, PointsToSet] {
-
-    protected[this] implicit val formalParameters: VirtualFormalParameters = {
-        p.get(VirtualFormalParametersKey)
-    }
-    protected[this] implicit val definitionSites: DefinitionSites = {
-        p.get(DefinitionSitesKey)
-    }
+        extends AbstractCallGraphAnalysis
+        with AbstractPointsToBasedAnalysis {
 
     override type State = PointsToBasedCGState[PointsToSet]
+    override type DependerType = CallSiteT
 
     override def handleVirtualCall(
         caller:            DefinedMethod,
@@ -144,7 +130,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         val callSite = (pc, call.name, call.descriptor, call.declaringClass)
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
-        val currentPointsToSets = currentPointsToDefSites(callSite, call.receiver.asVar.definedBy)
+        val currentPointsToSets = currentPointsToOfDefSites(callSite, call.receiver.asVar.definedBy)
         val pointsToSet = currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) ⇒ r.included(l) }
 
         var types = IntTrieSet.empty
@@ -172,59 +158,6 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
             }
         }
         state.addPotentialTypesOfCallSite(callSite, types)
-    }
-
-    @inline protected[this] def currentPointsToDefSite(
-        depender: CallSiteT, dependeeDefSite: Int
-    )(implicit state: State): PointsToSet = {
-        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            val pc = ai.pcOfMethodExternalException(dependeeDefSite)
-            val defSite = toEntity(pc, state.method, state.tac.stmts).asInstanceOf[DefinitionSite]
-            currentPointsTo(depender, CallExceptions(defSite))
-        } else if (ai.isImmediateVMException(dependeeDefSite)) {
-            // FIXME -  we need to get the actual exception type here
-            emptyPointsToSet
-        } else {
-            currentPointsTo(depender, toEntity(dependeeDefSite, state.method, state.tac.stmts))
-        }
-    }
-
-    @inline protected[this] def currentPointsTo(
-        depender: CallSiteT, dependee: Entity
-    )(implicit state: State): PointsToSet = {
-        if (state.hasPointsToDependee(dependee)) {
-            val p2s = state.getPointsToProperty(dependee)
-
-            // It might be the case that there a dependency for that points-to state in the state
-            // from another depender.
-            if (!state.hasPointsToDependency(depender, dependee)) {
-                state.addPointsToDependency(depender, p2s)
-            }
-            pointsToUB(p2s)
-        } else {
-            val p2s = propertyStore(dependee, pointsToPropertyKey)
-            if (p2s.isRefinable) {
-                state.addPointsToDependency(depender, p2s)
-            }
-            pointsToUB(p2s)
-        }
-    }
-
-    @inline protected[this] def currentPointsToDefSites(
-        depender: CallSiteT,
-        defSites: IntTrieSet
-    )(
-        implicit
-        state: State
-    ): Iterator[PointsToSet] = {
-        defSites.iterator.map[PointsToSet](currentPointsToDefSite(depender, _))
-    }
-
-    @inline private[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
-        if (eOptP.hasUBP)
-            eOptP.ub
-        else
-            emptyPointsToSet
     }
 
     override def c(
@@ -284,17 +217,32 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     ): PointsToBasedCGState[PointsToSet] = {
         new PointsToBasedCGState[PointsToSet](definedMethod, tacEP)
     }
+
+    @inline override protected[this] def currentPointsTo(
+        depender: DependerType, dependee: Entity
+    )(implicit state: State): PointsToSet = {
+        if (state.hasPointsToDependee(dependee)) {
+            val p2s = state.getPointsToProperty(dependee)
+
+            // It might be the case that there a dependency for that points-to state in the state
+            // from another depender.
+            if (!state.hasPointsToDependency(depender, dependee)) {
+                state.addPointsToDependency(depender, p2s)
+            }
+            pointsToUB(p2s)
+        } else {
+            val p2s = propertyStore(dependee, pointsToPropertyKey)
+            if (p2s.isRefinable) {
+                state.addPointsToDependency(depender, p2s)
+            }
+            pointsToUB(p2s)
+        }
+    }
 }
 
 class TypeBasedPointsToBasedCallGraphAnalysis private[pointsto] (
-        final val project: SomeProject
-) extends AbstractPointsToBasedCallGraphAnalysis[TypeBasedPointsToSet] {
-    override protected[this] val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
-        TypeBasedPointsToSet.key
-    }
-
-    override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
-}
+    final val project: SomeProject
+) extends AbstractPointsToBasedCallGraphAnalysis[TypeBasedPointsToSet] with TypeBasedAnalysis
 
 object TypeBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
@@ -306,14 +254,9 @@ object TypeBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysi
 }
 
 class AllocationSiteBasedPointsToBasedCallGraphAnalysis private[pointsto] (
-        final val project: SomeProject
-) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSet] {
-    override protected[this] val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {
-        AllocationSitePointsToSet.key
-    }
-
-    override protected def emptyPointsToSet: AllocationSitePointsToSet = NoAllocationSites
-}
+    final val project: SomeProject
+) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSet]
+        with AllocationSiteBasedAnalysis
 
 object AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
@@ -329,14 +272,9 @@ object AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler extends CallGr
 }
 
 class AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis private[pointsto] (
-        final val project: SomeProject
-) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSetScala] {
-    override protected[this] val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSetScala] = {
-        AllocationSitePointsToSetScala.key
-    }
-
-    override protected def emptyPointsToSet: AllocationSitePointsToSetScala = NoAllocationSitesScala
-}
+    final val project: SomeProject
+) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSetScala]
+        with AllocationSiteBasedScalaAnalysis
 
 object AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis extends CallGraphAnalysisScheduler {
 

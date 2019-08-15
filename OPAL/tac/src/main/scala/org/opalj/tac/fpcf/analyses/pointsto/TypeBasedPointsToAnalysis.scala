@@ -5,21 +5,9 @@ package fpcf
 package analyses
 package pointsto
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyKey
-import org.opalj.fpcf.PropertyKind
-import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.ReferenceType
-import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * An andersen-style points-to analysis, i.e. points-to sets are modeled as subsets.
@@ -39,60 +27,12 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 class TypeBasedPointsToAnalysis private[analyses] (
-        final val project: SomeProject
-) extends AbstractPointsToAnalysis[ReferenceType, TypeBasedPointsToSet] {
+    final val project: SomeProject
+) extends AbstractPointsToAnalysis with TypeBasedAnalysis
 
-    override protected[this] val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
-        TypeBasedPointsToSet.key
-    }
+object TypeBasedPointsToAnalysisScheduler extends AbstractPointsToAnalysisScheduler {
 
-    override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
-
-    override def createPointsToSet(
-        pc:             Int,
-        declaredMethod: DeclaredMethod,
-        allocatedType:  ReferenceType,
-        isConstant:     Boolean,
-        isEmptyArray:   Boolean        = false
-    ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
-}
-
-object TypeBasedPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
-    override type InitializationData = Null
-
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        Callers,
-        Callees,
-        TypeBasedPointsToSet,
-        TACAI
-    )
-
-    override def derivesCollaboratively: Set[PropertyBounds] = Set(PropertyBounds.ub(TypeBasedPointsToSet))
-
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        null
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def register(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): TypeBasedPointsToAnalysis = {
-        val analysis = new TypeBasedPointsToAnalysis(p)
-        // register the analysis for initial values for callers (i.e. methods becoming reachable)
-        ps.registerTriggeredComputation(Callers.key, analysis.analyze)
-        analysis
-    }
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-
-    override def triggeredBy: PropertyKind = Callers
+    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
+    override val createAnalysis: SomeProject ⇒ TypeBasedPointsToAnalysis =
+        new TypeBasedPointsToAnalysis(_)
 }
