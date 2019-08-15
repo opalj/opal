@@ -524,7 +524,8 @@ sealed abstract class PropertyStoreTest(
             {
                 val ps = createPropertyStore()
                 if (ps.MaxEvaluationDepth == 0) {
-                    it("should complete the computation of dependent lazy computations before the phase ends") {
+                    it("should complete the computation of dependent lazy computations "+
+                        "before the phase ends") {
 
                         info(s"PropertyStore@${System.identityHashCode(ps).toHexString}")
 
@@ -548,13 +549,12 @@ sealed abstract class PropertyStoreTest(
                             SuperPalindromeKey,
                             (e: Entity) ⇒ {
                                 invocationCount.incrementAndGet()
-
-                                val initiallyExpectedEP = EPK(e, PalindromeKey)
-                                ps(e, PalindromeKey) should be(initiallyExpectedEP)
+                                val initialSomeEOptionP = ps("e", PalindromeKey)
+                                initialSomeEOptionP should be(EPK("e", PalindromeKey))
 
                                 InterimResult(
                                     e, NoSuperPalindrome, SuperPalindrome,
-                                    Seq(initiallyExpectedEP),
+                                    Seq(initialSomeEOptionP),
                                     eps ⇒ {
                                         if (eps.lb == Palindrome /*&& ...*/ )
                                             Result(e, SuperPalindrome)
@@ -566,11 +566,11 @@ sealed abstract class PropertyStoreTest(
                             }
                         )
                         ps.scheduleEagerComputationForEntity("e") { e: String ⇒
-                            val initiallyExpectedEP = EPK("e", SuperPalindromeKey)
-                            ps("e", SuperPalindromeKey) should be(initiallyExpectedEP)
+                            val initialSomeEOptionP = ps("e", SuperPalindromeKey)
+                            initialSomeEOptionP should be(EPK("e", SuperPalindromeKey))
                             InterimResult(
                                 "e", Marker.NotMarked, Marker.IsMarked,
-                                Seq(initiallyExpectedEP),
+                                Seq(initialSomeEOptionP),
                                 eps ⇒ {
                                     // Depending on the scheduling, we can have a final result here as well.
                                     if (eps.isFinal) {
@@ -1609,7 +1609,8 @@ sealed abstract class PropertyStoreTest(
                 }
             }
 
-            it("should be possible to execute an analysis which analyzes a huge circle to compute the upper bound only") {
+            it("should be possible to execute an analysis which analyzes a huge circle "+
+                "to compute the upper bound only") {
                 import scala.collection.mutable
 
                 val testSizes = Set(1, 5, 50, 1000)
