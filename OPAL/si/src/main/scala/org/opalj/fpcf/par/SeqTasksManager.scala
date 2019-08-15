@@ -92,8 +92,11 @@ class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         implicit
         store: PKECPropertyStore
     ): Unit = {
-        val latestEPS = store(e, pk).asInstanceOf[SomeEPS]
-        runnables.push(() ⇒ store.processResult(c(latestEPS)))
+        val latestEPS = store(e, pk).asEPS // XXXX FIXME TODO move inside the closure below
+        runnables.push(() ⇒ {
+
+            store.processResult(c(latestEPS))
+        })
     }
 
     def doForkOnUpdateContinuation(

@@ -406,6 +406,9 @@ final class PKECPropertyStore(
             else
                 forkOnUpdateContinuation(cOption.get, newEPS.e, newEPS.pk)
         }
+        if (dependerEPK.pk == AnalysisKey) {
+            properties(AnalysisKey.id).remove(dependerEPK.e)
+        }
     }
 
     private[this] def handleFinalResult(
@@ -505,6 +508,7 @@ final class PKECPropertyStore(
         //    is triggered.
         val dependerEPK = interimEP.toEPK
         val dependerPKId = dependerEPK.pk.id
+        val suppressInterimUpdatesOf = this.suppressInterimUpdates(dependerPKId)
         dependees forall { processedDependee ⇒
             epkState.isCurrentC(c) /* <= this is just an optimization! */ && {
                 val processedDependeePKId = processedDependee.pk.id
@@ -514,15 +518,22 @@ final class PKECPropertyStore(
                     dependeeEPKState.addDepender(
                         processedDependee,
                         dependerEPK,
-                        alwaysExceptIfFinal = suppressInterimUpdates(dependerPKId)(processedDependeePKId)
+                        alwaysExceptIfFinal = suppressInterimUpdatesOf(processedDependeePKId)
                     )
                 if (!dependerAdded) {
+                    if (debug && dependeeEPKState.isEPK) {
+                        throw new IllegalArgumentException(
+                            dependees.mkString(
+                                "the dependees contains at least one externally constructed epk: ",
+                                ", ",
+                                ""
+                            )
+                        )
+                    }
                     // addDepender failed... i.e., the dependee was updated...
-                    val cOption = epkState.prepareInvokeC(c)
-                    if (cOption.isDefined) {
-                        val c = cOption.get
+                    if (epkState.prepareInvokeC(c)) {
                         // we now remove _our_ dependee registrations...
-                        dependees forall { registeredDependee ⇒
+                        dependees forall /* <= forall is just used to limit the iteration to the relevant dependees */ { registeredDependee ⇒
                             if (registeredDependee ne processedDependee) {
                                 val registeredDependeeEPKState =
                                     properties(registeredDependee.pk.id).get(registeredDependee.e)
@@ -546,8 +557,8 @@ final class PKECPropertyStore(
                         // clear possibly dangling dependees... which can happen if
                         // we have registered with a dependee which is updated while
                         // we still process the current dependees; based on the result
-                        // of running "c" the set of dependees is changed based on a EPK
-                        // basis when compared to this dependees. Now, we have to remove
+                        // of running "c" the set of dependees is changed
+                        // when compared to this dependees. Now, we have to remove
                         // those dependees that are no longer relevant.
                         // Basically, we check for each dependee if the dependee is still
                         // relevant. If not, we remove it. Note that a client is NOT
@@ -611,7 +622,7 @@ final class PKECPropertyStore(
         if (tracer.isDefined)
             tracer.get.appliedUpdateComputation(epkState, eOptionPWithDependersOption)
 
-        // 2. Notify dependers if required
+        // 2. Notify relevant dependers
         if (eOptionPWithDependersOption.isDefined) {
             val (oldEOptionP, newEOptionP, dependers) = eOptionPWithDependersOption.get
             if (oldEOptionP.isEPK) triggerComputations(e, pkId)
@@ -670,71 +681,66 @@ final class PKECPropertyStore(
                 val PartialResult(e, pk, u) = r
                 handlePartialResult(e, pk, u)
 
-            /*
+            case InterimPartialResult.id ⇒
+                val InterimPartialResult(prs, dependees, c) = r
+                // 1. Handle partial results.
+                prs foreach { pr ⇒ handlePartialResult(pr.e, pr.pk, pr.u) }
 
-            case PartialResult.id ⇒
-                val PartialResult(e, pk, _) = r
-                type E = e.type
-                type P = Property
-                val eOptionP = apply[E, P](e: E, pk: PropertyKey[P])
-
-                val partialResultsQueue = partialResults(pk.id).get(e)
-                var nextPartialResult = partialResultsQueue.poll()
-                var newEPSOption : Option[EPS[E,P]] = None
-                var doForceEvaluation = forceEvaluation
-                var theForceDependersNotifications = forceDependersNotifications
-                do {
-                    val NewProperty(PartialResult(_, _, u), nextForceEvaluation, nextForceDependersNotification  ) = nextPartialResult
-
-                    newEPSOption match {
-                        case Some(updatedEOptionP) ⇒
-                            XXX updateEOption has to be stored... if the update does not result in a new result!
-                    newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](updatedEOptionP)
-                        case None ⇒
-                            newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](eOptionP)
-                            if (newEPSOption.isEmpty) {
-                                if (tracer.isDefined) {
-                                    val partialResult = r.asInstanceOf[SomePartialResult]
-                                    tracer.get.uselessPartialResult(partialResult, eOptionP)
-                                }
-                                uselessPartialResultComputationCounter += 1
+                // 2. Register with dependees (as depender) and while doing so check if the value
+                //    was updated.
+                //    We stop the registration with the dependees when the continuation function
+                //    is triggered.
+                val dependerE = new FakeEntity()
+                val dependerEPK = EPK(dependerE, AnalysisKey)
+                val dependerPKId = AnalysisKey.id
+                val dependerEPKState = EPKState(dependerEPK, c, dependees)
+                properties(dependerPKId).put(dependerE, dependerEPKState)
+                dependees forall { processedDependee ⇒
+                    dependerEPKState.isCurrentC(c) /* <= this is just an optimization! */ && {
+                        val processedDependeePKId = processedDependee.pk.id
+                        val psPerDependeeKind = properties(processedDependeePKId)
+                        val dependeeEPKState = psPerDependeeKind.get(processedDependee.e)
+                        val dependerAdded =
+                            dependeeEPKState.addDepender(
+                                processedDependee,
+                                dependerEPK,
+                                alwaysExceptIfFinal = false
+                            )
+                        if (!dependerAdded) {
+                            // addDepender failed... i.e., the dependee was updated...
+                            if (dependerEPKState.prepareInvokeC(c)) {
+                                if (tracer.isDefined)
+                                    tracer.get.scheduledOnUpdateComputation(
+                                        dependerEPK,
+                                        processedDependee,
+                                        dependeeEPKState.eOptionP,
+                                        c
+                                    )
+                                forkOnUpdateContinuation(c, processedDependee.e, processedDependee.pk)
                             }
+                            // We now remove our dependee registrations; given that we use
+                            // each fake entity only once, there is no danger that we remove
+                            // wrong depender registrations.
+                            dependees forall { registeredDependee ⇒
+                                if (registeredDependee ne processedDependee) {
+                                    val registeredDependeeEPKState =
+                                        properties(registeredDependee.pk.id).get(registeredDependee.e)
+                                    registeredDependeeEPKState.removeDepender(dependerEPK)
+                                    if (tracer.isDefined)
+                                        tracer.get.removedDepender(dependerEPK, registeredDependeeEPKState)
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            false
+                        } else {
+                            true
+                        }
                     }
-                    nextPartialResult = partialResultsQueue.poll()
-                } while (nextPartialResult != null)
-
-                if (newEPSOption.isDefined) {
-                    val newEPS = newEPSOption.get
-                    val epk = newEPS.toEPK
-                    if (clearDependees(epk) > 0) {
-                        throw new IllegalStateException(
-                            s"partial result ($r) for property with dependees (and continuation function)"
-                        )
-                    }
-                    forceDependersNotifications -= epk
-                    if (isPropertyKeyForSimplePropertyBasedOnPKId(pk.id))
-                        updateAndNotifyForSimpleP(newEPS.e, newEPS.ub, isFinal = false, pcrs = pcrs)
-                    else
-                        updateAndNotifyForRegularP(newEPS.e, newEPS.lb, newEPS.ub, pcrs = pcrs)
                 }
-*/
+
         }
-
-        /*
-        do {
-            while (pcrs.nonEmpty) {
-                processResult(pcrs.pop())
-            }
-            if (forceDependersNotifications.nonEmpty) {
-                val epk = forceDependersNotifications.head
-                forceDependersNotifications = forceDependersNotifications.tail
-                val eps = properties(epk.pk.id).get(epk.e)
-                if (tracer.isDefined) tracer.get.delayedNotification(eps)
-
-                notifyDependers(eps, pcrs)
-            }
-        } while (forceDependersNotifications.nonEmpty || pcrs.nonEmpty)
-        */
     }
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
@@ -982,3 +988,4 @@ object PKECPropertyStore extends PropertyStoreFactory {
 
 }
 
+private[par] class FakeEntity()

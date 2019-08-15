@@ -6,10 +6,12 @@ package par
 import org.opalj.concurrent.Locking
 
 /**
- * Encapsulates the state of a single entity and its property of a specific kind.
+ * Encapsulates the state of a single entity and a property of a specific kind.
  *
- * @note Read the documentation of the methods to understand the behavior
- *       in case of concurrent access.
+ * @note The property may change (monotonically), but the property kind has to be stable.
+ *
+ * @note Read the documentation of the methods to understand the behavior in case of concurrent
+ *       access.
  */
 private[par] sealed abstract class EPKState {
 
@@ -17,7 +19,11 @@ private[par] sealed abstract class EPKState {
     // ------------------- PROPERTIES OF THIS EPK STATE ------------------------
     //
 
-    /** Returns `true` if this entity/property pair is not yet final. */
+    /**
+     * Returns `true` if this entity/property pair is not yet final.
+     *
+     * @note Even the InterimEPKState object may eventually reference a final property!
+     */
     def isRefinable: Boolean
 
     def isFinal: Boolean
@@ -34,24 +40,35 @@ private[par] sealed abstract class EPKState {
     /**
      * Returns `true` if no property has been computed yet; `false` otherwise.
      *
-     * @note Just a convenience method delegating to eOptionP.
+     * @note Just a convenience method for `eOptionP.isEPK`
      */
     final def isEPK: Boolean = eOptionP.isEPK
 
     /**
      * Returns the underlying entity.
      *
-     * @note Just a convenience method delegating to eOptionP.
+     * @note Just a convenience method for `eOptionP.e`.
      */
     final def e: Entity = eOptionP.e
 
+    /**
+     * Returns the underlying property key – which must never change.
+     *
+     * @note Just a convenience method for `eOptionP.pk`.
+     */
     final def pk: SomePropertyKey = eOptionP.pk
 
+    /**
+     * Returns the underlying property key if – which must never change.
+     *
+     * @note Just a convenience method for `eOptionP.pk.id`.
+     */
     final def pkId: Int = eOptionP.pk.id
 
     /**
-     * Atomically updates the underlying `EOptionP` value; if the update is relevant, the current set
-     * of dependers is cleared and returned along with the old `eOptionP` value.
+     * Atomically updates the underlying `EOptionP` value; if the update is relevant, the current
+     * dependers that should be informed are removed and returned along with the old
+     * `eOptionP` value.
      *
      * @note This function is only defined if the current `EOptionP` value is not already a
      *       final value. Hence, the client is required to handle (potentially) idempotent updates
@@ -60,6 +77,7 @@ private[par] sealed abstract class EPKState {
      * @note Update is never called concurrently, however, the changes still have to applied
      *       atomically because some of the other methods rely on a consistent snapshot regarding
      *       the relation of the values.
+     *
      * @param suppressInterimUpdates (See the corresponding property store datastructure.)
      */
     def update(
@@ -73,8 +91,8 @@ private[par] sealed abstract class EPKState {
 
     /**
      * Atomically updates the underlying `EOptionP` value by applying the given update function;
-     * if the update is relevant, the current set of dependers is cleared and returned along
-     * with the old `eOptionP` value.
+     * if the update is relevant, the current dependers that should be informed are removed and
+     * returned along with the old `eOptionP` value.
      */
     def update(
         u:                      SomeUpdateComputation,
@@ -90,12 +108,13 @@ private[par] sealed abstract class EPKState {
     /**
      * Adds the given EPK as a depender if the current `(this.)eOptionP`
      * equals the given `eOptionP` – based on a reference comparison. If this `eOptionP`
-     * has changed `false` will be returned (adding a depender was not successful); `true` otherwise.
+     * has changed `false` will be returned (adding the depender was not successful); `true`
+     * otherwise.
      *
      * @note  This operation is idempotent; that is, adding the same EPK multiple times has no
      *        special effect.
      *
-     * @param alwaysExceptIfFinal  The depender is always added unless the current eOptionP is final.
+     * @param alwaysExceptIfFinal The depender is always added unless the current eOptionP is final.
      */
     def addDepender(
         expectedEOptionP:    SomeEOptionP,
@@ -107,37 +126,36 @@ private[par] sealed abstract class EPKState {
      * If a continuation function still exists and the given dependee is among the set
      * of current dependees then the continuation function is cleared and returned.
      *
-     * (The set of dependees will not be updated!)
+     * @note The set of dependees will not be updated!
      */
     def prepareInvokeC(updatedDependeeEOptionP: SomeEOptionP): Option[OnUpdateContinuation]
 
     /**
-     * If the current continuation function is equal to the given function, the
-     * continuation function is cleared and returned (Some(c)); otherwise None is returned.
+     * If the current continuation function is reference equal to the given function the the
+     * continuation function is cleared and `true` is returned; otherwise `false` is returned.
      *
-     * (The set of dependees will not be updated!)
+     * @note The set of dependees will not be updated!
      */
-    def prepareInvokeC(expectedC: OnUpdateContinuation): Option[OnUpdateContinuation]
+    def prepareInvokeC(expectedC: OnUpdateContinuation): Boolean
 
     def clearDependees(): Unit
 
     /**
-     * Removes the given E/PK from the list of dependers of this EPKState.
+     * Removes the given EPK from the list of dependers of this EPKState.
      *
      * @note This method is always defined and never throws an exception for convenience purposes.
      */
     def removeDepender(someEPK: SomeEPK): Unit
 
     /**
-     * Returns `true` if the current continuation function `c` is reference equal to the
-     * given one.
+     * Returns `true` if the current continuation function `c` is reference equal to the given one.
      */
     def isCurrentC(c: OnUpdateContinuation): Boolean
 
     /**
      * Returns `true` if and only if this EPKState has dependees.
      *
-     * @note The set of dependees is only update when a property computation result is processed
+     * @note The set of dependees is only updated when a property computation result is processed
      *       and there exists, w.r.t. an Entity/Property Kind pair, always at most one
      *       `PropertyComputationResult`.
      */
@@ -256,8 +274,8 @@ private[par] final class InterimEPKState(
 
         withWriteLock {
             val thisEOptionP = this.eOptionP
-            if ((alwaysExceptIfFinal && !thisEOptionP.isFinal) ||
-                (thisEOptionP eq expectedEOptionP)) {
+            if ((thisEOptionP eq expectedEOptionP) ||
+                (alwaysExceptIfFinal && thisEOptionP.isRefinable)) {
                 this.dependers += someEPK
                 true
             } else {
@@ -289,15 +307,15 @@ private[par] final class InterimEPKState(
         }
     }
 
-    override def prepareInvokeC(expectedC: OnUpdateContinuation): Option[OnUpdateContinuation] = {
+    override def prepareInvokeC(expectedC: OnUpdateContinuation): Boolean = {
         assert(expectedC != null)
 
         withWriteLock {
             if (this.c eq expectedC) {
                 this.c = null
-                Some(expectedC)
+                true
             } else {
-                None
+                false
             }
         }
     }
@@ -361,8 +379,8 @@ private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) exte
         updatedDependeeEOptionP: SomeEOptionP
     ): Option[OnUpdateContinuation] = None
 
-    override def prepareInvokeC(expectedC: OnUpdateContinuation): Option[OnUpdateContinuation] = {
-        None
+    override def prepareInvokeC(expectedC: OnUpdateContinuation): Boolean = {
+        false
     }
 
     override def clearDependees(): Unit = { /* Nothing to do! */ }
