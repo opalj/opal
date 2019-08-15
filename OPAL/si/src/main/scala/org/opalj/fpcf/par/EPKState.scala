@@ -60,12 +60,14 @@ private[par] sealed abstract class EPKState {
      * @note Update is never called concurrently, however, the changes still have to applied
      *       atomically because some of the other methods rely on a consistent snapshot regarding
      *       the relation of the values.
+     * @param suppressInterimUpdates (See the corresponding property store datastructure.)
      */
     def update(
-        newEOptionP: SomeInterimEP,
-        c:           OnUpdateContinuation,
-        dependees:   Traversable[SomeEOptionP],
-        debug:       Boolean
+        newEOptionP:            SomeInterimEP,
+        c:                      OnUpdateContinuation,
+        dependees:              Traversable[SomeEOptionP],
+        suppressInterimUpdates: Array[Array[Boolean]],
+        debug:                  Boolean
     ): Option[(SomeEOptionP, Set[SomeEPK])]
     //  newEOptionP.isUpdatedComparedTo(eOptionP)
 
@@ -75,7 +77,8 @@ private[par] sealed abstract class EPKState {
      * with the old `eOptionP` value.
      */
     def update(
-        u: UpdateComputation[_ <: Entity, _ <: Property]
+        u:                      SomeUpdateComputation,
+        suppressInterimUpdates: Array[Array[Boolean]]
     ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])]
     //  newEOptionP.isUpdatedComparedTo(eOptionP)
 
@@ -170,29 +173,35 @@ private[par] final class InterimEPKState(
     override def isFinal: Boolean = eOptionP.isFinal
 
     override def update(
-        eOptionP:  SomeInterimEP,
-        c:         OnUpdateContinuation,
-        dependees: Traversable[SomeEOptionP],
-        debug:     Boolean
+        eOptionP:               SomeInterimEP,
+        c:                      OnUpdateContinuation,
+        dependees:              Traversable[SomeEOptionP],
+        suppressInterimUpdates: Array[Array[Boolean]], // <= the key belongs (outer array) identifies the depender
+        debug:                  Boolean
     ): Option[(SomeEOptionP, Set[SomeEPK])] = {
         assert(this.c == null)
         // The following _assert is not possible_, because we only strive for
         // eventual consistency w.r.t. the depender/dependee relation:
         // assert(this.dependees.isEmpty)
-
-        val oldEOptionP = this.eOptionP
-        if (debug) oldEOptionP.checkIsValidPropertiesUpdate(eOptionP, dependees)
-
-        val isRelevantUpdate = eOptionP.isUpdatedComparedTo(oldEOptionP)
+        val dependeePKId = this.eOptionP.pk.id
 
         withWriteLock {
+            val oldEOptionP = this.eOptionP
+            if (debug) oldEOptionP.checkIsValidPropertiesUpdate(eOptionP, dependees)
+
+            val isRelevantUpdate = eOptionP.isUpdatedComparedTo(oldEOptionP)
+
             this.c = c
             this.dependees = dependees
             if (isRelevantUpdate) {
                 this.eOptionP = eOptionP
-                val oldDependers = this.dependers
-                this.dependers = Set.empty
-                Some((oldEOptionP, oldDependers))
+                // IMPROVE Given that suppression is rarely required/used(?) it may be more efficient to filter those dependers that should not be informed and then substract that set from the original set.
+                val (suppressedDependers, dependersToBeNotified) =
+                    this.dependers.partition { dependerEPK ⇒
+                        suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
+                    }
+                this.dependers = suppressedDependers
+                Some((oldEOptionP, dependersToBeNotified))
             } else {
                 None
             }
@@ -200,8 +209,10 @@ private[par] final class InterimEPKState(
     }
 
     override def update(
-        u: UpdateComputation[_ <: Entity, _ <: Property]
+        u:                      SomeUpdateComputation,
+        suppressInterimUpdates: Array[Array[Boolean]] // <= the key belongs (outer array) identifies the depender
     ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
+        val dependeePKId = this.eOptionP.pk.id
         withWriteLock {
             val oldEOptionP = this.eOptionP
             val newEOptionPOption = u.asInstanceOf[SomeEOptionP ⇒ Option[SomeInterimEP]](oldEOptionP)
@@ -212,9 +223,13 @@ private[par] final class InterimEPKState(
             val isRelevantUpdate = newEOptionP.isUpdatedComparedTo(oldEOptionP)
             if (isRelevantUpdate) {
                 this.eOptionP = newEOptionP
-                val oldDependers = this.dependers
-                this.dependers = Set.empty
-                Some((oldEOptionP, newEOptionP, oldDependers))
+                // IMPROVE Given that suppression is rarely required/used(?) it may be more efficient to filter those dependers that should not be informed and then substract that set from the original set.
+                val (suppressedDependers, dependersToBeNotified) =
+                    this.dependers.partition { dependerEPK ⇒
+                        suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
+                    }
+                this.dependers = suppressedDependers
+                Some((oldEOptionP, newEOptionP, dependersToBeNotified))
             } else {
                 None
             }
@@ -289,10 +304,12 @@ private[par] final class InterimEPKState(
 
     def clearDependees(): Unit = this.dependees = null
 
-    override def removeDepender(someEPK: SomeEPK): Unit = withWriteLock {
-        // the write lock is required to avoid lost updates; e.g., if we have to
-        // remove two dependers "concurrently"
-        dependers -= someEPK
+    override def removeDepender(someEPK: SomeEPK): Unit = {
+        withWriteLock {
+            // the write lock is required to avoid lost updates; e.g., if we have to
+            // remove two dependers "concurrently"
+            dependers -= someEPK
+        }
     }
 
     override def isCurrentC(c: OnUpdateContinuation): Boolean = c eq this.c
@@ -314,16 +331,18 @@ private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) exte
     override def isFinal: Boolean = true
 
     override def update(
-        newEOptionP: SomeInterimEP,
-        c:           OnUpdateContinuation,
-        dependees:   Traversable[SomeEOptionP],
-        debug:       Boolean
+        newEOptionP:            SomeInterimEP,
+        c:                      OnUpdateContinuation,
+        dependees:              Traversable[SomeEOptionP],
+        suppressInterimUpdates: Array[Array[Boolean]],
+        debug:                  Boolean
     ): Option[(SomeEOptionP, Set[SomeEPK])] = {
         throw new UnknownError(s"the final property $eOptionP can't be updated to $newEOptionP")
     }
 
     override def update(
-        u: UpdateComputation[_ <: Entity, _ <: Property]
+        u:                      SomeUpdateComputation,
+        suppressInterimUpdates: Array[Array[Boolean]]
     ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
         throw new UnknownError(s"the final property $eOptionP can't be updated using $u")
     }

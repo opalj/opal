@@ -766,8 +766,7 @@ sealed abstract class PropertyStoreTest(
                 val nodeEntities = Set[Node](
                     nodeA, nodeB, nodeC, nodeD, nodeE, nodeF, nodeG, nodeH, nodeI, nodeJ, nodeR
                 )
-
-                val nodeEntitiesJustCycle = Set[Node](nodeB, nodeC, nodeD, nodeE, nodeR)
+                // val nodeEntitiesJustCycle = Set[Node](nodeB, nodeC, nodeD, nodeE, nodeR)
 
                 object ReachableNodes {
                     val Key: PropertyKey[ReachableNodes] =
@@ -1152,8 +1151,8 @@ sealed abstract class PropertyStoreTest(
                             ReachableNodesCount.Key,
                             new ReachableNodesCountViaReachableNodesAnalysis(ps)
                         )
-                        // nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
-                        nodeEntitiesJustCycle foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
+                        nodeEntities foreach { node ⇒ ps.force(node, ReachableNodesCount.Key) }
+
                         ps.waitOnPhaseCompletion()
                         info("scheduledTasksCount="+ps.scheduledTasksCount)
                         info(
@@ -1164,9 +1163,9 @@ sealed abstract class PropertyStoreTest(
                         val RNKey = ReachableNodes.Key
                         val RNCKey = ReachableNodesCount.Key
 
-                        // ps(nodeA, RNKey) should be(
-                        //    FinalEP(nodeA, ReachableNodes(nodeEntities - nodeA))
-                        // )
+                        ps(nodeA, RNKey) should be(
+                            FinalEP(nodeA, ReachableNodes(nodeEntities - nodeA))
+                        )
                         ps(nodeB, RNKey) should be(
                             FinalEP(nodeB, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                         )
@@ -1184,9 +1183,9 @@ sealed abstract class PropertyStoreTest(
                         )
                         // now let's check if we have the correct notification of the
                         // lazily dependent computations
-                        //ps(nodeA, RNCKey) should be(
-                        //    FinalEP(nodeA, ReachableNodesCount(nodeEntities.size - 1))
-                        //)
+                        ps(nodeA, RNCKey) should be(
+                            FinalEP(nodeA, ReachableNodesCount(nodeEntities.size - 1))
+                        )
                         ps(nodeB, RNCKey) should be(FinalEP(nodeB, ReachableNodesCount(5)))
                         ps(nodeC, RNCKey) should be(FinalEP(nodeC, ReachableNodesCount(0)))
                         ps(nodeD, RNCKey) should be(FinalEP(nodeD, ReachableNodesCount(5)))

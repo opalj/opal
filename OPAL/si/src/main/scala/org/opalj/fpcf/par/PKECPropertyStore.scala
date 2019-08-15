@@ -369,8 +369,8 @@ final class PKECPropertyStore(
     // Before a continuation function is called a depender has to be removed from
     // its dependees!
     private[par] def removeDependerFromDependeesAndClearDependees(
-                                                                     dependerEPK:         SomeEPK,
-                                                                     dependerEPKState: EPKState
+        dependerEPK:      SomeEPK,
+        dependerEPKState: EPKState
     ): Unit = {
         val dependees = dependerEPKState.dependees
         dependees foreach { dependee ⇒
@@ -390,28 +390,7 @@ final class PKECPropertyStore(
     private[this] def notifyDepender(
         dependerEPK: SomeEPK,
         oldEOptionP: SomeEOptionP,
-        interimEP:   SomeInterimEP
-    ): Unit = {
-        val dependerPKId = dependerEPK.pk.id
-        if (suppressInterimUpdates(dependerPKId)(interimEP.pk.id))
-            return ;
-
-        val dependerEPKState = properties(dependerPKId).get(dependerEPK.e)
-        val cOption = dependerEPKState.prepareInvokeC(oldEOptionP)
-        if (cOption.isDefined) {
-            // We first have to remove the depender from the dependees before
-            // we can fork the computation of the continuation function.
-            removeDependerFromDependeesAndClearDependees(dependerEPK, dependerEPKState)
-            if (tracer.isDefined)
-                tracer.get.scheduledOnUpdateComputation(dependerEPK, oldEOptionP, interimEP, cOption.get)
-            forkOnUpdateContinuation(cOption.get, interimEP.e, interimEP.pk)
-        }
-    }
-
-    private[this] def notifyDepender(
-        dependerEPK: SomeEPK,
-        oldEOptionP: SomeEOptionP,
-        finalEP:     SomeFinalEP
+        newEPS:      SomeEPS
     ): Unit = {
         val dependerPKId = dependerEPK.pk.id
         val dependerEPKState = properties(dependerPKId).get(dependerEPK.e)
@@ -421,8 +400,11 @@ final class PKECPropertyStore(
             // we can fork the computation of the continuation function.
             removeDependerFromDependeesAndClearDependees(dependerEPK, dependerEPKState)
             if (tracer.isDefined)
-                tracer.get.scheduledOnUpdateComputation(dependerEPK, oldEOptionP, finalEP, cOption.get)
-            forkOnUpdateContinuation(cOption.get, finalEP)
+                tracer.get.scheduledOnUpdateComputation(dependerEPK, oldEOptionP, newEPS, cOption.get)
+            if (newEPS.isFinal)
+                forkOnUpdateContinuation(cOption.get, newEPS.asFinal)
+            else
+                forkOnUpdateContinuation(cOption.get, newEPS.e, newEPS.pk)
         }
     }
 
@@ -504,7 +486,7 @@ final class PKECPropertyStore(
         //    concurrently with the second part.
         val eOptionPWithDependersOption: Option[(SomeEOptionP, Traversable[SomeEPK])] =
             if (epkStateUpdateRequired) {
-                epkState.update(interimEP, c, dependees, debug)
+                epkState.update(interimEP, c, dependees, suppressInterimUpdates, debug)
             } else {
                 None
             }
@@ -625,7 +607,7 @@ final class PKECPropertyStore(
         if (epkState == null) epkState = newEPKState
 
         // 1. Update the property if necessary.
-        val eOptionPWithDependersOption = epkState.update(u)
+        val eOptionPWithDependersOption = epkState.update(u, suppressInterimUpdates)
         if (tracer.isDefined)
             tracer.get.appliedUpdateComputation(epkState, eOptionPWithDependersOption)
 
