@@ -284,9 +284,6 @@ public class StaticMethodFlows {
     public static void externalWorld() {
         ArrayList<D> list = new ArrayList<>();
         list.add(new D());
-        // TODO AB If the formal parameter has type List<A> instead, ArrayList does NOT flow to the sink
-        // method, since OPAL does not know List is a supertype of ArrayList. Can this be fixed somehow?
-        // Even if withRT = true, it does not work.
         externalWorld_sink(list);
     }
 
