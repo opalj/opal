@@ -497,7 +497,7 @@ class ClassHierarchy private (
     }
 
     /**
-     * Retuns `Yes` if the class hierarchy contains subtypes of the given type and `No` if
+     * Returns `Yes` if the class hierarchy contains subtypes of the given type and `No` if
      * it contains no subtypes. `Unknown` is returned if the given type is not known.
      *
      * Please note, that the answer will be `No` even though the (running) project contains
@@ -1863,9 +1863,9 @@ class ClassHierarchy private (
      *
      * Is the `subtype` a [[ConcreteType]] without [[org.opalj.br.FormalTypeParameter]]s and the `supertype` is a [[GenericType]] then
      * we first have to check whether the `subtype` is a subtype of the given `supertype`. If not, then the `subtype` is not an actual
-     * subtype of the given `supertype`. Otherwise we have to find the definition of the `supertype` in the type defintion
-     * or the type definiton of a super class or a super interface (interface definiton of SomeInterface<String>).
-     * Once found the `supertype`, we can compare all [[TypeArgument]]s of the supertype defintion of the `subtype`
+     * subtype of the given `supertype`. Otherwise we have to find the definition of the `supertype` in the type definition
+     * or the type definition of a super class or a super interface (interface definition of SomeInterface<String>).
+     * Once found the `supertype`, we can compare all [[TypeArgument]]s of the supertype definition of the `subtype`
      * and the given `supertype`. (We are comparing String and String in this example)
      * If all of them are equal, `subtype` is an actual subtype of the `supertype`.
      * @example ========= 3 =========
@@ -1877,10 +1877,10 @@ class ClassHierarchy private (
      * is a subtype of the ContainerType of the `supertype`, we have to compare the shared [[TypeArgument]]s. In
      * our example the subtype Foo has two [[FormalTypeParameter]] (T,E) and the supertype Bar has only one
      * [[FormalTypeParameter]] (E). Since both of them specify E in the [[ClassSignature]] of Foo, they share E as
-     * [[FormalTypeParameter]]. So it is necessary to check whether the acctual bound [[TypeArgument]] at the
-     * postion of E is equal. At first we have to locate the shared parameter in the [[ClassSignature]], so it is possible
-     * to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the second postion
-     * of the [[FormalTypeParameter]]s of Foo and at the first postion of the [[FormalTypeParameter]]s of Bar. Second and last
+     * [[FormalTypeParameter]]. So it is necessary to check whether the actual bound [[TypeArgument]] at the
+     * position of E is equal. At first we have to locate the shared parameter in the [[ClassSignature]], so it is possible
+     * to find the correct [[TypeArgument]]s. The above example shows that the shared parameter E is in the second position
+     * of the [[FormalTypeParameter]]s of Foo and at the first position of the [[FormalTypeParameter]]s of Bar. Second and last
      * we know can compare the according [[TypeArgument]]s. All other parameters can be ignored because they are no important
      * to decide the subtype relation.
      */
