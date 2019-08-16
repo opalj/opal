@@ -936,7 +936,7 @@ final class PKECPropertyStore(
 
 }
 
-object PKECPropertyStore extends PropertyStoreFactory {
+object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
     final val TasksManagerKey = "org.opalj.fpcf.par.PKECPropertyStore.TasksManager"
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.par.PKECPropertyStore.MaxEvaluationDepth"

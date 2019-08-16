@@ -88,6 +88,8 @@ private[par] trait PropertyStoreTracer {
     def finalizedProperty(oldEOptionP: SomeEOptionP, finalEP: SomeFinalEP): Unit
 
     def firstException(t: Throwable): Unit
+
+    def toTxt: String
 }
 
 sealed trait StoreEvent {

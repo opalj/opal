@@ -5,12 +5,20 @@ package par
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 
-class PKECPropertyStoreTestWithDebuggingMaxEvalDepthDefault
-    extends PropertyStoreTestWithDebugging(
+abstract class PKECPropertyStoreTestWithDebugging
+    extends PropertyStoreTestWithDebugging[PKECPropertyStore](
         List(DefaultPropertyComputation, CheapPropertyComputation)
     ) {
 
-    def createPropertyStore(): PropertyStore = {
+    override def afterAll(ps: PKECPropertyStore): Unit = {
+        assert(ps.tracer.get.toTxt.size > 0) // basically just a smoke test
+    }
+}
+
+class PKECPropertyStoreTestWithDebuggingMaxEvalDepthDefault
+    extends PKECPropertyStoreTestWithDebugging {
+
+    def createPropertyStore(): PKECPropertyStore = {
         val ps = PKECPropertyStore(classOf[PropertyStoreTracer], new RecordAllPropertyStoreEvents())
         ps.suppressError = true
         ps
@@ -19,11 +27,9 @@ class PKECPropertyStoreTestWithDebuggingMaxEvalDepthDefault
 }
 
 class PKECPropertyStoreTestWithDebuggingMaxEvalDepth0
-    extends PropertyStoreTestWithDebugging(
-        List(DefaultPropertyComputation, CheapPropertyComputation)
-    ) {
+    extends PKECPropertyStoreTestWithDebugging {
 
-    def createPropertyStore(): PropertyStore = {
+    def createPropertyStore(): PKECPropertyStore = {
         import PKECPropertyStore.MaxEvaluationDepthKey
         val config = org.opalj.BaseConfig.withValue(MaxEvaluationDepthKey, fromAnyRef(0))
         val ps = PKECPropertyStore(
@@ -36,12 +42,21 @@ class PKECPropertyStoreTestWithDebuggingMaxEvalDepth0
 
 }
 
-class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth128
-    extends PropertyStoreTestWithoutDebugging(
+// *************************************************************************************************
+// ************************************* NO DEBUGGING **********************************************
+// *************************************************************************************************
+
+abstract class PKECPropertyStoreTestWithoutDebugging
+    extends PropertyStoreTestWithoutDebugging[PKECPropertyStore](
         List(DefaultPropertyComputation, CheapPropertyComputation)
     ) {
 
-    def createPropertyStore(): PropertyStore = {
+}
+
+class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth128
+    extends PKECPropertyStoreTestWithoutDebugging {
+
+    def createPropertyStore(): PKECPropertyStore = {
         val ps = PKECPropertyStore("Seq", 128)()
         ps.suppressError = true
         ps
@@ -50,11 +65,9 @@ class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth128
 }
 
 class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth0
-    extends PropertyStoreTestWithoutDebugging(
-        List(DefaultPropertyComputation, CheapPropertyComputation)
-    ) {
+    extends PKECPropertyStoreTestWithoutDebugging {
 
-    def createPropertyStore(): PropertyStore = {
+    def createPropertyStore(): PKECPropertyStore = {
         val ps = PKECPropertyStore("Seq", 0)()
         ps.suppressError = true
         ps

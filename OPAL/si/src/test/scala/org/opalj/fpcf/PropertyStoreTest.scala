@@ -19,13 +19,21 @@ import org.opalj.fpcf.fixtures._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-sealed abstract class PropertyStoreTest(
+sealed abstract class PropertyStoreTest[PS <: PropertyStore](
         val propertyComputationHints: Seq[PropertyComputationHint]
 ) extends FunSpec with Matchers with BeforeAndAfterAll {
 
     implicit val logContext: LogContext = GlobalLogContext
 
-    def createPropertyStore(): PropertyStore
+    def createPropertyStore(): PS
+
+    /**
+     * Called by the tests to perform some further general testing of the
+     * property store independent of the concrete test case.
+     *
+     * Called before the property store is shut down by the tests.
+     */
+    def afterAll(ps: PS): Unit = {}
 
     propertyComputationHints foreach { pch ⇒
         describe(s"using a PropertyStore (property computations use the hint=$pch)") {
@@ -78,6 +86,7 @@ sealed abstract class PropertyStoreTest(
                 ps.entities(PalindromeKey) should be('Empty)
                 ps.finalEntities(Palindrome) should be('Empty)
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -98,6 +107,7 @@ sealed abstract class PropertyStoreTest(
                 ps.toString(true).length should be > (0)
                 ps.toString(false).length should be > (0)
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -152,6 +162,7 @@ sealed abstract class PropertyStoreTest(
                     fail(s"unexpected: "+aEPK)
                 }
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -171,6 +182,7 @@ sealed abstract class PropertyStoreTest(
 
                 ps("a", PalindromeKey) should be(FinalEP("a", NoPalindrome))
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -204,6 +216,7 @@ sealed abstract class PropertyStoreTest(
                 ps("e2", PalindromeKey) should be(FinalEP("e2", Palindrome))
                 ps("e3", PalindromeKey) should be(FinalEP("e3", PalindromePropertyNotAnalyzed))
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -216,6 +229,7 @@ sealed abstract class PropertyStoreTest(
                 ps(EPK("aa", PalindromeKey)) should be(EPK("aa", PalindromeKey))
                 ps.waitOnPhaseCompletion()
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -245,6 +259,7 @@ sealed abstract class PropertyStoreTest(
                 ps.hasProperty("cbc", PalindromeKey) should be(false)
                 ps.hasProperty("aba", SuperPalindromeKey) should be(false)
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -281,6 +296,7 @@ sealed abstract class PropertyStoreTest(
                 ps.hasProperty("a", PalindromeKey) should be(true)
                 ps.hasProperty("d", PalindromeKey) should be(true)
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -299,6 +315,7 @@ sealed abstract class PropertyStoreTest(
                 ps("aba", PalindromeKey) should be(FinalEP("aba", Palindrome))
                 ps("abca", PalindromeKey) should be(FinalEP("abca", NoPalindrome))
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -321,6 +338,7 @@ sealed abstract class PropertyStoreTest(
                 ps("abca", PalindromeKey) should be(FinalEP("abca", NoPalindrome))
                 ps("abca", SuperPalindromeKey) should be(FinalEP("abca", NoSuperPalindrome))
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -342,6 +360,7 @@ sealed abstract class PropertyStoreTest(
                 val expected = Set(FinalEP("aba", Palindrome), FinalEP("aba", SuperPalindrome))
                 ps.properties("aba").toSet should be(expected)
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -368,6 +387,7 @@ sealed abstract class PropertyStoreTest(
 
                 ps.entities(Marker.NotMarked, Marker.NotMarked).toSet should be(es)
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -405,6 +425,7 @@ sealed abstract class PropertyStoreTest(
                 notMarkedEntities should be(Set("fd", "zu", "aaabbbaaa"))
                 ps.finalEntities(Marker.NotMarked).toSet should be(notMarkedEntities)
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -415,6 +436,7 @@ sealed abstract class PropertyStoreTest(
                 ps.set("aba", Palindrome)
                 assertThrows[IllegalStateException] { ps.set("aba", NoPalindrome) }
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -453,6 +475,7 @@ sealed abstract class PropertyStoreTest(
                     ps.properties(e).map(_.lb).toSet should be(Set(expected))
                 }
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -484,6 +507,7 @@ sealed abstract class PropertyStoreTest(
 
                 ps("aba", pk) should be(FinalEP("aba", Palindrome))
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -518,6 +542,7 @@ sealed abstract class PropertyStoreTest(
                     fail(s"invocation count should be 1; was ${invocationCount.get}")
                 }
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -614,6 +639,8 @@ sealed abstract class PropertyStoreTest(
                             FinalEP("dummyBADymmud", NoSuperPalindrome)
                         )
                     }
+
+                    afterAll(ps)
                     ps.shutdown()
                 }
             }
@@ -670,6 +697,8 @@ sealed abstract class PropertyStoreTest(
                     FinalEP("fragments", PalindromeFragments(Set("a", "e")))
                 )
                 processedStrings.keySet should be(Set("aNOa", "eNOe", "aBa", "eBe"))
+
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -728,6 +757,8 @@ sealed abstract class PropertyStoreTest(
                         FinalEP("fragments", PalindromeFragments(Set("a")))
                     )
                     processedStrings.keySet should be(Set("aNOa", "aBa"))
+
+                    afterAll(ps)
                     ps.shutdown()
                 }
 
@@ -1031,6 +1062,7 @@ sealed abstract class PropertyStoreTest(
                                     throw t;
                             }
 
+                            afterAll(ps)
                             ps.shutdown()
                         }
                     }
@@ -1066,6 +1098,7 @@ sealed abstract class PropertyStoreTest(
                         FinalEP(nodeR, ReachableNodes(Set(nodeB, nodeC, nodeD, nodeE, nodeR)))
                     )
 
+                    afterAll(ps)
                     ps.shutdown()
                 }
 
@@ -1129,6 +1162,7 @@ sealed abstract class PropertyStoreTest(
                             throw t;
                     }
 
+                    afterAll(ps)
                     ps.shutdown()
                 }
 
@@ -1192,6 +1226,7 @@ sealed abstract class PropertyStoreTest(
                         ps(nodeE, RNCKey) should be(FinalEP(nodeE, ReachableNodesCount(5)))
                         ps(nodeR, RNCKey) should be(FinalEP(nodeR, ReachableNodesCount(5)))
 
+                        afterAll(ps)
                         ps.shutdown()
                     }
 
@@ -1228,6 +1263,7 @@ sealed abstract class PropertyStoreTest(
                         ps(nodeE, RNCKey) should be(FinalEP(nodeE, ReachableNodesCount(5)))
                         ps(nodeR, RNCKey) should be(FinalEP(nodeR, ReachableNodesCount(5)))
 
+                        afterAll(ps)
                         ps.shutdown()
                     }
 
@@ -1279,6 +1315,7 @@ sealed abstract class PropertyStoreTest(
                         ps(nodeE, MKey) should be(FinalEP(nodeE, Marker.IsMarked))
                         ps(nodeR, MKey) should be(FinalEP(nodeR, Marker.IsMarked))
 
+                        afterAll(ps)
                         ps.shutdown()
                     }
 
@@ -1320,6 +1357,7 @@ sealed abstract class PropertyStoreTest(
                         ps(nodeE, MKey) should be(FinalEP(nodeE, Marker.IsMarked))
                         ps(nodeR, MKey) should be(FinalEP(nodeR, Marker.IsMarked))
 
+                        afterAll(ps)
                         ps.shutdown()
                     }
 
@@ -1369,6 +1407,7 @@ sealed abstract class PropertyStoreTest(
                         ps(nodeE, MKey) should be(FinalEP(nodeE, Marker.IsMarked))
                         ps(nodeR, MKey) should be(FinalEP(nodeR, Marker.IsMarked))
 
+                        afterAll(ps)
                         ps.shutdown()
                     }
 
@@ -1402,6 +1441,7 @@ sealed abstract class PropertyStoreTest(
                         ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
                         ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
 
+                        afterAll(ps)
                         ps.shutdown()
                     }
 
@@ -1435,6 +1475,7 @@ sealed abstract class PropertyStoreTest(
                     ps(nodeE, ReachableNodesCount.Key) should be(FinalEP(nodeE, expected))
                     ps(nodeR, ReachableNodesCount.Key) should be(FinalEP(nodeR, expected))
 
+                    afterAll(ps)
                     ps.shutdown()
                 }
 
@@ -1505,6 +1546,7 @@ sealed abstract class PropertyStoreTest(
                 ps(nodeLRoot, TreeLevelKey) should be(FinalEP(nodeLRoot, TreeLevel(1)))
                 ps(nodeLLRoot, TreeLevelKey) should be(FinalEP(nodeLLRoot, TreeLevel(2)))
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -1540,6 +1582,7 @@ sealed abstract class PropertyStoreTest(
                     }
                 }
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -1598,6 +1641,7 @@ sealed abstract class PropertyStoreTest(
                         }
                     }
 
+                    afterAll(ps)
                     ps.shutdown()
 
                     info(s"test succeeded with $testSize node(s) in a circle")
@@ -1665,6 +1709,7 @@ sealed abstract class PropertyStoreTest(
                         }
                     }
 
+                    afterAll(ps)
                     ps.shutdown()
 
                     info(s"test succeeded with $testSize node(s) in a circle")
@@ -1679,9 +1724,9 @@ sealed abstract class PropertyStoreTest(
     }
 }
 
-abstract class PropertyStoreTestWithDebugging(
+abstract class PropertyStoreTestWithDebugging[PS <: PropertyStore](
         propertyComputationHints: Seq[PropertyComputationHint] = List(CheapPropertyComputation, DefaultPropertyComputation)
-) extends PropertyStoreTest(propertyComputationHints) {
+) extends PropertyStoreTest[PS](propertyComputationHints) {
 
     private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
     private[this] var oldPropertyStoreTraceFallbacksSetting = PropertyStore.TraceFallbacks
@@ -1726,6 +1771,7 @@ abstract class PropertyStoreTestWithDebugging(
                     ) ⇒ // OK - EXPECTED
                 }
 
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -1797,8 +1843,9 @@ abstract class PropertyStoreTestWithDebugging(
                             e.printStackTrace()
                             fail(e.getMessage)
                     }
-
                 }
+
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -1871,8 +1918,9 @@ abstract class PropertyStoreTestWithDebugging(
                             e.printStackTrace()
                             fail(e.getMessage)
                     }
-
                 }
+
+                afterAll(ps)
                 ps.shutdown()
             }
 
@@ -1944,15 +1992,17 @@ abstract class PropertyStoreTestWithDebugging(
 
                     }
                 }
+
+                afterAll(ps)
                 ps.shutdown()
             }
         }
     }
 }
 
-abstract class PropertyStoreTestWithoutDebugging(
+abstract class PropertyStoreTestWithoutDebugging[PS <: PropertyStore](
         propertyComputationHints: Seq[PropertyComputationHint]
-) extends PropertyStoreTest(propertyComputationHints) {
+) extends PropertyStoreTest[PS](propertyComputationHints) {
 
     private[this] var oldPropertyStoreUpdateSetting = PropertyStore.Debug
     override def beforeAll(): Unit = PropertyStore.updateDebug(false)

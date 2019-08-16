@@ -867,7 +867,7 @@ final class PKESequentialPropertyStore protected (
  *
  * @author Michael Eichberg
  */
-object PKESequentialPropertyStore extends PropertyStoreFactory {
+object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialPropertyStore] {
 
     final type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
 
