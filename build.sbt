@@ -25,7 +25,7 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("http://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion in ThisBuild := "2.12.8"
+scalaVersion in ThisBuild := "2.12.9"
 
 ScalacConfiguration.globalScalacOptions
 
