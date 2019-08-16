@@ -28,7 +28,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 class ThreadStartAnalysis private[analyses] (
         final val project: SomeProject, final val threadStartMethod: DeclaredMethod
-) extends TACAIBasedAPIBasedCallGraphAnalysis {
+) extends TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = threadStartMethod
 
@@ -265,7 +265,7 @@ class ThreadStartAnalysis private[analyses] (
 
 class UncaughtExceptionHandlerAnalysis private[analyses] (
         final val project: SomeProject, final val setUncaughtExceptionHandlerMethod: DeclaredMethod
-) extends TACAIBasedAPIBasedCallGraphAnalysis {
+) extends TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = setUncaughtExceptionHandlerMethod
 

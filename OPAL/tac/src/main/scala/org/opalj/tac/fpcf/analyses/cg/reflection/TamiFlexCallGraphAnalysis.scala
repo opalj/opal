@@ -80,7 +80,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 
 class TamiFlexMethodInvokeAnalysis private[analyses] (
         final val project: SomeProject, override val apiMethod: DeclaredMethod
-) extends TACAIBasedAPIBasedCallGraphAnalysis {
+) extends TACAIBasedAPIBasedAnalysis {
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def processNewCaller(

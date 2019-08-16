@@ -25,6 +25,6 @@ object ConfiguredMethodsPointsToScalaAnalysisScheduler
         extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSetScala
-    override val createAnalyis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
+    override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
         new ConfiguredMethodsPointsToScalaAnalysis(_)
 }

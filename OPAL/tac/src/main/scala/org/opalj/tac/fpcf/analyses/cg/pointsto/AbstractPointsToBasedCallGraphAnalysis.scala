@@ -219,7 +219,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     }
 
     @inline override protected[this] def currentPointsTo(
-        depender: DependerType, dependee: Entity
+        depender: DependerType, dependee: Entity, typeFilter: ReferenceType ⇒ Boolean = { _ ⇒ true }
     )(implicit state: State): PointsToSet = {
         if (state.hasPointsToDependee(dependee)) {
             val p2s = state.getPointsToProperty(dependee)

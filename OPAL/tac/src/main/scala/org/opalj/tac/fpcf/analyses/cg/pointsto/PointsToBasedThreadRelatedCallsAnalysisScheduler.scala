@@ -24,6 +24,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.Method
@@ -36,7 +37,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait PointsToBasedThreadStartAnalysis
-        extends APIBasedCallGraphAnalysis
+        extends APIBasedAnalysis
         with AbstractPointsToBasedAnalysis {
 
     def threadStartMethod: DeclaredMethod
@@ -162,9 +163,11 @@ trait PointsToBasedThreadStartAnalysis
         val pointsToSet = currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) ⇒ r.included(l) }
 
         pointsToSet.forNewestNTypes(pointsToSet.numTypes) { tpe ⇒
-            handleType(
-                tpe.asObjectType, definedMethod, state.tac.stmts, receiver, pc, indirectCalls
-            )
+            if (classHierarchy.isSubtypeOf(tpe, ObjectType.Thread) ||
+                classHierarchy.isSubtypeOf(tpe, ObjectType.Runnable))
+                handleType(
+                    tpe.asObjectType, definedMethod, state.tac.stmts, receiver, pc, indirectCalls
+                )
         }
     }
 
@@ -354,7 +357,7 @@ trait PointsToBasedThreadStartAnalysis
     }
 
     @inline protected[this] def currentPointsTo(
-        depender: CallSiteT, dependee: Entity
+        depender: CallSiteT, dependee: Entity, typeFilter: ReferenceType ⇒ Boolean = { _ ⇒ true }
     )(implicit state: State): PointsToSet = {
         if (state.hasPointsToDependee(dependee)) {
             val p2s = state.getPointsToProperty(dependee)

@@ -173,7 +173,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     }
 
     @inline protected[this] def currentPointsTo(
-        depender: Entity, dependee: Entity
+        depender: Entity, dependee: Entity, typeFilter: ReferenceType ⇒ Boolean
     )(implicit state: State): PointsToSet = {
         dependee match {
             case ds: DefinitionSite if state.hasAllocationSitePointsToSet(ds) ⇒
@@ -183,11 +183,11 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 val epk = EPK(dependee, pointsToPropertyKey)
                 val p2s = if (state.hasDependency(depender, epk)) {
                     // IMPROVE: add a method to the state
-                    state.dependeesOf(depender)(epk)
+                    state.dependeesOf(depender)(epk)._1
                 } else {
                     val p2s = propertyStore(dependee, pointsToPropertyKey)
                     if (p2s.isRefinable) {
-                        state.addDependee(depender, p2s)
+                        state.addDependee(depender, p2s, typeFilter)
                     }
                     p2s
                 }
@@ -196,11 +196,12 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     }
 
     @inline protected[this] def updatedDependees(
-        eps: SomeEPS, oldDependees: Map[SomeEPK, SomeEOptionP]
-    ): Map[SomeEPK, SomeEOptionP] = {
+        eps: SomeEPS, oldDependees: Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
+    ): Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)] = {
         val epk = eps.toEPK
+        val typeFilter = oldDependees(epk)._2
         if (eps.isRefinable) {
-            oldDependees + (epk → eps)
+            oldDependees + (epk → ((eps, typeFilter)))
         } else {
             oldDependees - epk
         }
@@ -210,10 +211,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         oldPointsToSet:         PointsToSet,
         newDependeePointsToSet: PointsToSet,
         dependee:               SomeEPS,
-        oldDependees:           Map[SomeEPK, SomeEOptionP],
-        typeFilter:             ReferenceType ⇒ Boolean
+        oldDependees:           Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     ): PointsToSet = {
-        val oldDependeePointsTo = oldDependees(dependee.toEPK) match {
+        val (oldDependee, typeFilter) = oldDependees(dependee.toEPK)
+        val oldDependeePointsTo = oldDependee match {
             case UBP(ub: PointsToSet @unchecked)   ⇒ ub
             case _: EPK[_, PointsToSet @unchecked] ⇒ emptyPointsToSet
             case d ⇒
@@ -236,33 +237,33 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     protected[this] def continuationForNewAllocationSitesAtPutField(
         rhsDefSitesEPS: Traversable[SomeEPK],
         field:          AField,
-        dependees:      Map[SomeEPK, SomeEOptionP]
+        dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
                 val newDependees = updatedDependees(eps, dependees)
                 var results: List[ProperPropertyComputationResult] = List.empty
 
-                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
+                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
                     // TODO: Refactor
                     val fieldClassType = field.classType
                     val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
                     if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                        val typeFilter = { t: ReferenceType ⇒
+                            classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
+                        }
                         results ::= InterimPartialResult(
                             rhsDefSitesEPS,
                             continuationForShared(
                                 (as, field),
-                                rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
-                                { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
-                                }
+                                rhsDefSitesEPS.toIterator.map(d ⇒ d → ((d, typeFilter))).toMap
                             )
                         )
                     }
                 }
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
-                        newDependees.values,
+                        newDependees.values.map(_._1),
                         continuationForNewAllocationSitesAtPutField(
                             rhsDefSitesEPS, field, newDependees
                         )
@@ -277,34 +278,34 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     protected[this] def continuationForNewAllocationSitesAtArrayStore(
         rhsDefSitesEPS: Traversable[SomeEPK],
         arrayType:      ArrayType,
-        dependees:      Map[SomeEPK, SomeEOptionP]
+        dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
                 val newDependees = updatedDependees(eps, dependees)
                 var results: List[ProperPropertyComputationResult] = List.empty
 
-                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
+                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
                     val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
                     if (typeId < 0 &&
                         classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
                         !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
                         val componentType = ArrayType.lookup(typeId).componentType.asReferenceType
+                        val typeFilter = { t: ReferenceType ⇒
+                            classHierarchy.isSubtypeOf(t, componentType)
+                        }
                         results ::= InterimPartialResult(
                             rhsDefSitesEPS,
                             continuationForShared(
                                 ArrayEntity(as),
-                                rhsDefSitesEPS.toIterator.map(d ⇒ d → d).toMap,
-                                { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, componentType)
-                                }
+                                rhsDefSitesEPS.toIterator.map(d ⇒ d → ((d, typeFilter))).toMap
                             )
                         )
                     }
                 }
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
-                        newDependees.values,
+                        newDependees.values.map(_._1),
                         continuationForNewAllocationSitesAtArrayStore(
                             rhsDefSitesEPS, arrayType, newDependees
                         )
@@ -321,13 +322,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         defSiteObject: DefinitionSite,
         field:         AField,
         filter:        ReferenceType ⇒ Boolean,
-        dependees:     Map[SomeEPK, SomeEOptionP]
+        dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
                 val newDependees = updatedDependees(eps, dependees)
                 var nextDependees: List[SomeEPK] = Nil
-                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
+                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
                     // TODO: Refactor
                     val fieldClassType = field.classType
                     val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
@@ -341,7 +342,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 var results: List[ProperPropertyComputationResult] = Nil
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
-                        newDependees.values,
+                        newDependees.values.map(_._1),
                         continuationForNewAllocationSitesAtGetField(
                             defSiteObject, field, filter, newDependees
                         )
@@ -351,7 +352,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     results ::= InterimPartialResult(
                         nextDependees,
                         continuationForShared(
-                            defSiteObject, nextDependees.iterator.map(d ⇒ d → d).toMap, filter
+                            defSiteObject, nextDependees.iterator.map(d ⇒ d → ((d, filter))).toMap
                         )
                     )
                 }
@@ -365,13 +366,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         defSiteObject: DefinitionSite,
         arrayType:     ArrayType,
         filter:        ReferenceType ⇒ Boolean,
-        dependees:     Map[SomeEPK, SomeEOptionP]
+        dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
                 val newDependees = updatedDependees(eps, dependees)
                 var nextDependees: List[SomeEPK] = Nil
-                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK))) { as ⇒
+                newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
                     val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
                     if (typeId < 0 && classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)) {
                         val epk = EPK(ArrayEntity(as), pointsToPropertyKey)
@@ -383,7 +384,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 var results: List[ProperPropertyComputationResult] = Nil
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
-                        newDependees.values,
+                        newDependees.values.map(_._1),
                         continuationForNewAllocationSitesAtArrayLoad(
                             defSiteObject, arrayType, filter, newDependees
                         )
@@ -393,7 +394,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     results ::= InterimPartialResult(
                         nextDependees,
                         continuationForShared(
-                            defSiteObject, nextDependees.iterator.map(d ⇒ d → d).toMap, filter
+                            defSiteObject, nextDependees.iterator.map(d ⇒ d → ((d, filter))).toMap
                         )
                     )
                 }
@@ -403,20 +404,19 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     }
 
     protected[this] def continuationForShared(
-        e: Entity, dependees: Map[SomeEPK, SomeEOptionP], typeFilter: ReferenceType ⇒ Boolean
+        e: Entity, dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
                 val newDependees = updatedDependees(eps, dependees)
 
-                updatedResults(e, newDependees, typeFilter, newDependeePointsTo, {
+                updatedResults(e, newDependees, newDependeePointsTo, {
                     old ⇒
                         updatedPointsToSet(
                             old,
                             newDependeePointsTo,
                             eps,
-                            dependees,
-                            typeFilter
+                            dependees
                         )
                 })
 
@@ -426,8 +426,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
     @inline protected[this] def updatedResults(
         e:                   Entity,
-        newDependees:        Map[SomeEPK, SomeEOptionP],
-        typeFilter:          ReferenceType ⇒ Boolean,
+        newDependees:        Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
         newDependeePointsTo: PointsToSet,
         updatePointsTo:      PointsToSet ⇒ PointsToSet
     ): ProperPropertyComputationResult = {
@@ -446,7 +445,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                         }
 
                     case _: EPK[Entity, _] ⇒
-                        Some(InterimEUBP(e, newDependeePointsTo.filter(typeFilter)))
+                        Some(InterimEUBP(e, updatePointsTo(emptyPointsToSet)))
 
                     case eOptP ⇒
                         throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
@@ -455,7 +454,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
             if (newDependees.nonEmpty) {
                 val ipr = InterimPartialResult(
-                    newDependees.values, continuationForShared(e, newDependees, typeFilter)
+                    newDependees.values.map(_._1), continuationForShared(e, newDependees)
                 )
                 Results(pr, ipr)
             } else {
@@ -463,8 +462,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             }
         } else if (newDependees.nonEmpty) {
             InterimPartialResult(
-                newDependees.values,
-                continuationForShared(e, newDependees, typeFilter)
+                newDependees.values.map(_._1),
+                continuationForShared(e, newDependees)
             )
         } else {
             Results()

@@ -93,19 +93,21 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         _allocationSitePointsToSet(ds) = pointsToSet
     }
 
-    private[this] val _sharedPointsToSets: mutable.Map[Entity, (PointsToSet, ReferenceType ⇒ Boolean)] = {
+    private[this] val _sharedPointsToSets: mutable.Map[Entity, PointsToSet] = {
         mutable.Map.empty
     }
 
     def includeSharedPointsToSet(
-        e: Entity, pointsToSet: PointsToSet, typeFilter: ReferenceType ⇒ Boolean
+        e:           Entity,
+        pointsToSet: PointsToSet,
+        typeFilter:  ReferenceType ⇒ Boolean
     ): Unit = {
         if (_sharedPointsToSets.contains(e)) {
-            val oldPointsToSet = _sharedPointsToSets(e)._1
+            val oldPointsToSet = _sharedPointsToSets(e)
             val newPointsToSet = oldPointsToSet.included(pointsToSet, typeFilter)
-            _sharedPointsToSets(e) = (newPointsToSet, typeFilter)
+            _sharedPointsToSets(e) = newPointsToSet
         } else {
-            _sharedPointsToSets(e) = (pointsToSet.filter(typeFilter), typeFilter)
+            _sharedPointsToSets(e) = pointsToSet.filter(typeFilter)
         }
     }
 
@@ -115,12 +117,12 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         pointsToSets.foreach(pointsToSet ⇒ includeSharedPointsToSet(e, pointsToSet, typeFilter))
     }
 
-    def sharedPointsToSetsIterator: Iterator[(Entity, (PointsToSet, ReferenceType ⇒ Boolean))] = {
+    def sharedPointsToSetsIterator: Iterator[(Entity, PointsToSet)] = {
         _sharedPointsToSets.iterator
     }
 
     // TODO: should include PointsTo and Callees dependencies
-    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[SomeEOptionP]] = {
+    private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[(SomeEOptionP, ReferenceType ⇒ Boolean)]] = {
         mutable.Map.empty
     }
 
@@ -130,30 +132,31 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     final def addDependee(
-        depender: Entity,
-        dependee: SomeEOptionP
+        depender:   Entity,
+        dependee:   SomeEOptionP,
+        typeFilter: ReferenceType ⇒ Boolean
     ): Unit = {
         assert(
             !_dependerToDependees.contains(depender) ||
-                !_dependerToDependees(depender).exists(other ⇒ other.e == dependee.e && other.pk.id == dependee.pk.id)
+                !_dependerToDependees(depender).exists(other ⇒ other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
         )
         if (_dependerToDependees.contains(depender)) {
-            _dependerToDependees(depender) += dependee
+            _dependerToDependees(depender) += ((dependee, typeFilter))
         } else {
-            _dependerToDependees += (depender → mutable.Set(dependee))
+            _dependerToDependees += (depender → mutable.Set((dependee, typeFilter)))
         }
     }
 
     // IMPROVE: potentially inefficient exists check
     final def hasDependency(depender: Entity, dependee: SomeEPK): Boolean = {
         _dependerToDependees.contains(depender) &&
-            _dependerToDependees(depender).exists(other ⇒ other.e == dependee.e && other.pk.id == dependee.pk.id)
+            _dependerToDependees(depender).exists(other ⇒ other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
     }
 
     // IMPROVE: make it efficient
-    final def dependeesOf(depender: Entity): Map[SomeEPK, SomeEOptionP] = {
+    final def dependeesOf(depender: Entity): Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)] = {
         assert(_dependerToDependees.contains(depender))
-        _dependerToDependees(depender).iterator.map(dependee ⇒ (dependee.toEPK, dependee)).toMap
+        _dependerToDependees(depender).iterator.map(dependee ⇒ (dependee._1.toEPK, dependee)).toMap
     }
 
     private[this] var _calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None

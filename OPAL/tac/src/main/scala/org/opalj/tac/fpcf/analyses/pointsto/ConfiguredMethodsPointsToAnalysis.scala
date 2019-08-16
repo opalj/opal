@@ -74,20 +74,16 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
             // the method is reachable, so we analyze it!
         }
 
-        if (nativeMethodData.contains(dm)) {
-            return handleNativeMethod(dm.asDefinedMethod);
-        }
-
-        NoResult
+        if (nativeMethodData.contains(dm) && nativeMethodData(dm).nonEmpty)
+            handleNativeMethod(dm.asDefinedMethod, nativeMethodData(dm).get)
+        else
+            NoResult
     }
 
-    private[this] def handleNativeMethod(dm: DefinedMethod): PropertyComputationResult = {
-        val nativeMethodDataOpt = nativeMethodData(dm)
-        if (nativeMethodDataOpt.isEmpty)
-            return NoResult;
-
-        val data = nativeMethodDataOpt.get
-
+    private[this] def handleNativeMethod(
+        dm:   DefinedMethod,
+        data: Array[PointsToRelation]
+    ): PropertyComputationResult = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
 
         // for each configured points to relation, add all points-to info from the rhs to the lhs
@@ -97,8 +93,8 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
                     if (asd.instantiatedType.startsWith("[")) {
                         val instantiatedType = FieldType(asd.instantiatedType).asArrayType
                         val pts = createPointsToSet(0, dm, instantiatedType, isConstant = false)
-                        var as: ElementType = null// TODO ugly hack
-                        pts.forNewestNElements(1)(as = _)
+                        var arrayEntity: ArrayEntity[ElementType] = null // TODO ugly hack
+                        pts.forNewestNElements(1)(as ⇒ arrayEntity = ArrayEntity(as))
                         results += createPartialResultOpt(lhs.entity, pts).get
                         if (asd.arrayComponentTypes.nonEmpty) {
                             var arrayPTS: PointsToSet = emptyPointsToSet
@@ -108,7 +104,7 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
                                     createPointsToSet(0, dm, componentType, isConstant = false)
                                 )
                             }
-                            results += createPartialResultOpt(ArrayEntity(as), arrayPTS).get
+                            results += createPartialResultOpt(arrayEntity, arrayPTS).get
                         }
                     } else {
                         val instantiatedType = ObjectType(asd.instantiatedType)
@@ -209,8 +205,8 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
 }
 
 trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
-    val propertyKind: PropertyMetaInformation
-    val createAnalyis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis
+    def propertyKind: PropertyMetaInformation
+    def createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis
 
     override type InitializationData = Null
 
@@ -233,7 +229,7 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
     ): ConfiguredMethodsPointsToAnalysis = {
-        val analysis = createAnalyis(p)
+        val analysis = createAnalysis(p)
         // register the analysis for initial values for callers (i.e. methods becoming reachable)
         ps.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
@@ -261,7 +257,7 @@ object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
         extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalyis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
+    override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
         new TypeBasedConfiguredMethodsPointsToAnalysis(_)
 }
 
@@ -270,9 +266,9 @@ class AllocationSiteBasedConfiguredMethodsPointsToAnalysis private[analyses] (
 ) extends ConfiguredMethodsPointsToAnalysis with AllocationSiteBasedAnalysis
 
 object AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
-    extends ConfiguredMethodsPointsToAnalysisScheduler {
+        extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
-    override val createAnalyis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
+    override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
         new AllocationSiteBasedConfiguredMethodsPointsToAnalysis(_)
 }

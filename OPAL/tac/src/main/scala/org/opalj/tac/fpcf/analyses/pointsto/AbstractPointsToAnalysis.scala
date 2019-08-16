@@ -96,19 +96,21 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             throwingStmt match {
                 case Throw(_, UVar(_, defSites)) ⇒
                     val entity = MethodExceptions(state.method)
+                    val filter = { t: ReferenceType ⇒
+                        classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
+                    }
                     state.includeSharedPointsToSets(
-                        entity,
-                        currentPointsToOfDefSites(entity, defSites),
-                        { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
+                        entity, currentPointsToOfDefSites(entity, defSites, filter), filter
                     )
 
                 case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] ⇒
                     val entity = MethodExceptions(state.method)
                     val callSite = definitionSites(state.method.definedMethod, throwingStmt.pc)
+                    val filter = { t: ReferenceType ⇒
+                        classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
+                    }
                     state.includeSharedPointsToSet(
-                        entity,
-                        currentPointsTo(entity, CallExceptions(callSite)),
-                        { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
+                        entity, currentPointsTo(entity, CallExceptions(callSite), filter), filter
                     )
 
                 case _ ⇒
@@ -195,7 +197,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     case _ ⇒ PointsToSetLike.noFilter
                 }
                 state.includeSharedPointsToSets(
-                    defSiteObject, currentPointsToOfDefSites(defSiteObject, defSites), filter
+                    defSiteObject,
+                    currentPointsToOfDefSites(defSiteObject, defSites, filter),
+                    filter
                 )
 
             case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) ⇒
@@ -267,11 +271,11 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         }
                         if (state.hasCalleesDepenedee) {
                             state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, filter)
-                            state.addDependee(defSiteObject, state.calleesDependee)
+                            state.addDependee(defSiteObject, state.calleesDependee, filter)
                         }
                         state.includeSharedPointsToSets(
                             defSiteObject,
-                            targets.map(currentPointsTo(defSiteObject, _)),
+                            targets.map(currentPointsTo(defSiteObject, _, filter)),
                             filter
                         )
                     }
@@ -330,9 +334,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 handleArrayStore(arrayType, arrayDefSites, defSites)
 
             case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) ⇒
+                val filter = { t: ReferenceType ⇒
+                    classHierarchy.isSubtypeOf(
+                        t, state.method.descriptor.returnType.asReferenceType
+                    )
+                }
                 state.includeSharedPointsToSets(
-                    state.method, currentPointsToOfDefSites(state.method, defSites),
-                    { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, state.method.descriptor.returnType.asReferenceType) }
+                    state.method, currentPointsToOfDefSites(state.method, defSites, filter), filter
                 )
 
             case _ ⇒
@@ -359,21 +367,20 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
 
         val callExceptions = CallExceptions(definitionSites(state.method.definedMethod, pc))
+        val filter = { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
         for (target ← callees.callees(pc)) {
             val targetExceptions = MethodExceptions(target)
-
             state.includeSharedPointsToSet(
                 callExceptions,
-                currentPointsTo(callExceptions, targetExceptions),
-                t ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
+                currentPointsTo(callExceptions, targetExceptions, filter), filter
             )
         }
         if (state.hasCalleesDepenedee) {
-            state.addDependee(callExceptions, state.calleesDependee)
+            state.addDependee(callExceptions, state.calleesDependee, filter)
             state.includeSharedPointsToSet(
                 callExceptions,
                 emptyPointsToSet,
-                t ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
+                filter
             )
         }
     }
@@ -384,8 +391,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         fps:              ConstArray[VirtualFormalParameter],
         isNonVirtualCall: Boolean
     )(implicit state: State): Unit = {
-        val fp = fps(0)
-        val ptss = currentPointsToOfDefSites(fp, receiverDefSites)
         val declClassType = target.declaringClassType
         val tgtMethod = target.definedMethod
         val filter = if (isNonVirtualCall) {
@@ -402,6 +407,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 classHierarchy.isSubtypeOf(t, declClassType) &&
                     !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
         }
+        val fp = fps(0)
+        val ptss = currentPointsToOfDefSites(fp, receiverDefSites, filter)
         state.includeSharedPointsToSets(
             fp,
             ptss,
@@ -442,12 +449,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     val paramType = descriptor.parameterType(i)
                     if (paramType.isReferenceType) {
                         val fp = fps(i + 1)
+                        val filter = { t: ReferenceType ⇒
+                            classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
+                        }
                         state.includeSharedPointsToSets(
                             fp,
-                            currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy),
-                            { t: ReferenceType ⇒
-                                classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
-                            }
+                            currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy, filter),
+                            filter
                         )
                     }
                 }
@@ -478,7 +486,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         if (target.declaringClassType eq ArrayT) {
             target.name match {
                 case "newInstance" ⇒
-                    val allocatedTypes = tamiFlexLogData.classes(state.method, line)
+                /*val allocatedTypes = tamiFlexLogData.classes(state.method, line)
                     for (allocatedType ← allocatedTypes) {
                         val pointsToSet = createPointsToSet(
                             pc, state.method, allocatedType, isConstant = false
@@ -487,7 +495,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         state.includeSharedPointsToSet(
                             defSite, pointsToSet, PointsToSetLike.noFilter
                         )
-                    }
+                    }*/
 
                 case "get" ⇒
                     val arrays = tamiFlexLogData.classes(state.method, line)
@@ -726,14 +734,17 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         val fp = fps(i + 1)
                         val indirectParam = indirectParams(i)
                         if (indirectParam.isDefined) {
+                            val filter = { t: ReferenceType ⇒
+                                classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
+                            }
                             state.includeSharedPointsToSets(
                                 fp,
                                 currentPointsToOfDefSites(
-                                    fp, valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex)
+                                    fp,
+                                    valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex),
+                                    filter
                                 ),
-                                { t: ReferenceType ⇒
-                                    classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
-                                }
+                                filter
                             )
                         } else {
                             state.addIncompletePointsToInfo(pc)
@@ -753,13 +764,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             results += Result(e, pointsToSet)
         }
 
-        for ((e, (pointsToSet, typeFilter)) ← state.sharedPointsToSetsIterator) {
+        for ((e, pointsToSet) ← state.sharedPointsToSetsIterator) {
             // The shared entities are not affected by changes of the tac and use partial results.
             // Thus, we could simply recompute them on updates for the tac
             if (state.hasDependees(e)) {
                 val dependees = state.dependeesOf(e)
                 results += InterimPartialResult(
-                    dependees.values, continuationForShared(e, dependees, typeFilter)
+                    dependees.values.map(_._1), continuationForShared(e, dependees)
                 )
             }
             if (pointsToSet ne emptyPointsToSet) {
@@ -791,7 +802,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val dependees = state.dependeesOf(fakeEntity)
                 assert(dependees.nonEmpty)
                 results += InterimPartialResult(
-                    dependees.values,
+                    dependees.values.map(_._1),
                     continuationForNewAllocationSitesAtGetField(
                         defSite, field, filter, dependees
                     )
@@ -814,7 +825,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 assert(dependees.nonEmpty)
                 if (defSitesEPKs.nonEmpty)
                     results += InterimPartialResult(
-                        dependees.values,
+                        dependees.values.map(_._1),
                         continuationForNewAllocationSitesAtPutField(
                             defSitesEPKs, field, dependees
                         )
@@ -828,7 +839,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val dependees = state.dependeesOf(fakeEntity)
                 assert(dependees.nonEmpty)
                 results += InterimPartialResult(
-                    dependees.values,
+                    dependees.values.map(_._1),
                     continuationForNewAllocationSitesAtArrayLoad(
                         defSite, arrayType, filter, dependees
                     )
@@ -851,7 +862,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 assert(dependees.nonEmpty)
                 if (defSitesEPKs.nonEmpty)
                     results += InterimPartialResult(
-                        dependees.values,
+                        dependees.values.map(_._1),
                         continuationForNewAllocationSitesAtArrayStore(
                             defSitesEPKs, arrayType, dependees
                         )
@@ -874,7 +885,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     override protected[this] def continuationForShared(
-        e: Entity, dependees: Map[SomeEPK, SomeEOptionP], typeFilter: ReferenceType ⇒ Boolean
+        e: Entity, dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
             case UBP(callees: Callees) ⇒
@@ -886,6 +897,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 // TODO: Only handle new callees
                 val tgts = callees.callees(defSite.pc)
 
+                val typeFilter = dependees(eps.toEPK)._2
+
                 var newDependees = updatedDependees(eps, dependees)
                 var newPointsToSet = emptyPointsToSet
                 tgts.foreach { target ⇒
@@ -896,18 +909,17 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     if (!dependees.contains(EPK(entity, pointsToPropertyKey))) {
                         val p2s = ps(entity, pointsToPropertyKey)
                         if (p2s.isRefinable) {
-                            newDependees += (p2s.toEPK → p2s)
+                            newDependees += (p2s.toEPK → ((p2s, typeFilter)))
                         }
-                        newPointsToSet =
-                            newPointsToSet.included(pointsToUB(p2s), typeFilter)
+                        newPointsToSet = newPointsToSet.included(pointsToUB(p2s), typeFilter)
                     }
                 }
 
-                updatedResults(e, newDependees, typeFilter, newPointsToSet, {
+                updatedResults(e, newDependees, newPointsToSet, {
                     old ⇒ old.included(newPointsToSet, typeFilter)
                 })
 
-            case _ ⇒ super.continuationForShared(e, dependees, typeFilter)(eps)
+            case _ ⇒ super.continuationForShared(e, dependees)(eps)
         }
     }
 

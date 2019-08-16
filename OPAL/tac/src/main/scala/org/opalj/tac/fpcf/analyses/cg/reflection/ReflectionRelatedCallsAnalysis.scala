@@ -45,7 +45,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.TACAI
 
-sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedCallGraphAnalysis {
+sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedAnalysis {
 
     implicit final val HighSoundnessMode: Boolean = {
         val activated = try {

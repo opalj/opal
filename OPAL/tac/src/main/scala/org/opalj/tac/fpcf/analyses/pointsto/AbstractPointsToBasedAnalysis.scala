@@ -24,7 +24,7 @@ import org.opalj.tac.common.DefinitionSitesKey
 // TODO remove this
 trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
 
-    type ElementType >: Null
+    type ElementType
     type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
     type State <: TACAIBasedAnalysisState
     type DependerType
@@ -49,18 +49,22 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
 
     @inline protected[this] def currentPointsTo(
         depender: DependerType,
-        dependee: Entity
+        dependee: Entity,
+        typeFilter: ReferenceType ⇒ Boolean =  { _ ⇒ true }
     )(implicit state: State): PointsToSet
 
     @inline protected[this] def currentPointsToOfDefSites(
         depender: DependerType,
-        defSites: IntTrieSet
+        defSites: IntTrieSet,
+        typeFilter: ReferenceType ⇒ Boolean =  { _ ⇒ true }
     )(implicit state: State): Iterator[PointsToSet] = {
-        defSites.iterator.map[PointsToSet](currentPointsToDefSite(depender, _))
+        defSites.iterator.map[PointsToSet](currentPointsToOfDefSite(depender, _, typeFilter))
     }
 
-    @inline protected[this] def currentPointsToDefSite(
-        depender: DependerType, dependeeDefSite: Int
+    @inline protected[this] def currentPointsToOfDefSite(
+        depender: DependerType,
+        dependeeDefSite: Int,
+        typeFilter: ReferenceType ⇒ Boolean =  { _ ⇒ true }
     )(implicit state: State): PointsToSet = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
             val pc = ai.pcOfMethodExternalException(dependeeDefSite)
@@ -75,7 +79,9 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
                 isConstant = false
             )
         } else {
-            currentPointsTo(depender, toEntity(dependeeDefSite, state.method, state.tac.stmts))
+            currentPointsTo(
+                depender, toEntity(dependeeDefSite, state.method, state.tac.stmts), typeFilter
+            )
         }
     }
 
