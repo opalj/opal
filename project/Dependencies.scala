@@ -17,13 +17,13 @@ object Dependencies {
     val scalaxml = "1.2.0"
     val scalaparsercombinators = "1.1.2"
     val playjson = "2.7.4"
-    val ficus = "1.4.6"
-    val commonstext = "1.6"
+    val ficus = "1.4.7"
+    val commonstext = "1.7"
     val txtmark = "0.16"
     val jacksonDF = "2.9.9"
-    val fastutil = "8.2.2"
+    val fastutil = "8.3.0"
 
-    val openjfx = "12.0.1"
+    val openjfx = "12.0.2"
   }
 
   object library {
