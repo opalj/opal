@@ -38,6 +38,8 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
+import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
+import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
 
 /**
@@ -159,50 +161,62 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
             println(s"Static Field PTSs: ${byType(classOf[Field]).size}")
             println(s"Array PTSs: ${byType(classOf[ArrayEntity[Long]]).size}")
+            println(s"MethodException PTSs: ${byType(classOf[MethodExceptions]).size}")
+            println(s"CallException PTSs: ${byType(classOf[CallExceptions]).size}")
 
             println(s"DefSite PTS entries: ${byType(classOf[DefinitionSite]).map(_.ub.numElements).sum}")
             println(s"Parameter PTS entries: ${byType(classOf[VirtualFormalParameter]).map(_.ub.numElements).sum}")
             println(s"Instance Field PTS entries: ${byType(classOf[Tuple2[Long, Field]]).map(_.ub.numElements).sum}")
             println(s"Static Field PTS entries: ${byType(classOf[Field]).map(_.ub.numElements).sum}")
             println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
-        }
+            println(s"MethodException PTS entries: ${byType(classOf[MethodExceptions]).map(_.ub.numElements).sum}")
+            println(s"CallException PTS entries: ${byType(classOf[CallExceptions]).map(_.ub.numElements).sum}")
+            
+            /*
+            //Prints sizes of all array PTSs
+            for(pts <- byType(classOf[ArrayEntity[Long]]))
+                println(s"${org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(pts.e.asInstanceOf[ArrayEntity[Long]].element)}\t${pts.ub.numElements}")*/
 
-        /*
-        //Prints sizes of all array PTSs
-        for(pts <- byType(classOf[ArrayEntity[Long]]))
-            println(s"${org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(pts.e.asInstanceOf[ArrayEntity[Long]].element)}\t${pts.ub.numElements}")*/
-
-        /*
-        //Prints all allocation sites in the PTS of the entity underTest in Doop's format
-        val underTest = project.get(DeclaredMethodsKey)(ObjectType("java/io/UnixFileSystem"), "", ObjectType("java/io/UnixFileSystem"), "list", MethodDescriptor.withNoArgs(ArrayType(ObjectType.String)))
-        val underTestPTS = ps(underTest, AllocationSitePointsToSet.key).ub
-        underTestPTS.elements.foreach { as ⇒
-            try {
-                val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
-                println(s"<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${if(tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
-                if(tId < 0) {
-                    val arrPTS = ps(ArrayEntity(as), AllocationSitePointsToSet.key).ub
-                    arrPTS.elements.foreach {as ⇒
-                        try {
-                            val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
-                            println(s"\t<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${if(tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
-                        } catch { case _: Exception ⇒ }
+            /*
+            //Prints all allocation sites in the PTS of the entity underTest in Doop's format
+            val underTest = project.get(DeclaredMethodsKey)(ObjectType("java/io/UnixFileSystem"), "", ObjectType("java/io/UnixFileSystem"), "list", MethodDescriptor.withNoArgs(ArrayType(ObjectType.String)))
+            val underTestPTS = ps(underTest, AllocationSitePointsToSet.key).ub
+            underTestPTS.elements.foreach { as ⇒
+                try {
+                    val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
+                    println(s"<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${if(tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                    if(tId < 0) {
+                        val arrPTS = ps(ArrayEntity(as), AllocationSitePointsToSet.key).ub
+                        arrPTS.elements.foreach {as ⇒
+                            try {
+                                val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
+                                println(s"\t<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${if(tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                            } catch {
+                                case _: Exception ⇒
+                                    val tId = (as >> 39).toInt
+                                    println(s"new ${if (tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                            }
+                        }
                     }
+                } catch {
+                    case _: Exception ⇒
+                        val tId = (as >> 39).toInt
+                        println(s"new ${if (tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
                 }
-            } catch { case _: Exception ⇒ }
-        }*/
+            }*/
 
-        /*val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId)
-        p2.get({AllocationSiteBasedPointsToCallGraphKey})
-        val ps2 = p2.get(PropertyStoreKey)
+            /*val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId)
+            p2.get({AllocationSiteBasedPointsToCallGraphKey})
+            val ps2 = p2.get(PropertyStoreKey)
 
-        for {
-            FinalEP(e, p) ← ptss2
-            ub2 = ps2(e, AllocationSitePointsToSet.key).ub
-            if p.elements.size != ub2.elements.size
-        } {
-            println(s"$e\n\t${ub2.elements.iterator.map(org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(_)).mkString(",")}\n\t${p.elements.iterator.map(org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(_)).mkString(",")}")
-        }*/
+            for {
+                FinalEP(e, p) ← ptss2
+                ub2 = ps2(e, AllocationSitePointsToSet.key).ub
+                if p.elements.size != ub2.elements.size
+            } {
+                println(s"$e\n\t${ub2.elements.iterator.map(org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(_)).mkString(",")}\n\t${p.elements.iterator.map(org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(_)).mkString(",")}")
+            }*/
+        }
 
         val reachableMethods = cg.reachableMethods().toTraversable
 
