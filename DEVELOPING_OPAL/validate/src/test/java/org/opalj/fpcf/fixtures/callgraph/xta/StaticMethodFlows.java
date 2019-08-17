@@ -291,7 +291,7 @@ public class StaticMethodFlows {
             "java/util/ArrayList",
             "org/opalj/fpcf/fixtures/callgraph/xta/StaticMethodFlows$D"})
     public static void externalWorld_sink(ArrayList<D> list) {
-        // TODO AB Returned types is unused, why does this not require a call to sink?
+        // No call to sink required here, TAC does not optimize away the unused variable.
         D obj = list.get(0);
     }
 

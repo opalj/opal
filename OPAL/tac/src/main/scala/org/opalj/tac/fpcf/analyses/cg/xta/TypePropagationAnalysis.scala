@@ -342,7 +342,7 @@ final class TypePropagationAnalysis private[analyses] (
             // If the answer is Unknown, we don't know for sure whether the candidate is a subtype of the filter type.
             // However, ClassHierarchy returns Unknown even for cases where it is very unlikely that this is the case.
             // Therefore, we take some more features into account to make the filtering more precise.
-          
+
             // Important: This decision is a possible but unlikely cause of unsoundness in the call graph!
 
             // If the filter type is not a project type (i.e., it is external), we assume that any candidate type

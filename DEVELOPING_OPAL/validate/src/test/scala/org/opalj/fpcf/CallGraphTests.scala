@@ -88,7 +88,7 @@ class CallGraphTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 new SimpleInstantiatedTypesAnalysisScheduler(XTASetEntitySelector),
-                PropagationBasedCallGraphAnalysisScheduler,
+                new PropagationBasedCallGraphAnalysisScheduler(XTASetEntitySelector),
                 new TypePropagationAnalysisScheduler(XTASetEntitySelector)
             )
         )
@@ -112,7 +112,7 @@ class CallGraphTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 new SimpleInstantiatedTypesAnalysisScheduler(MTASetEntitySelector),
-                PropagationBasedCallGraphAnalysisScheduler,
+                new PropagationBasedCallGraphAnalysisScheduler(MTASetEntitySelector),
                 new TypePropagationAnalysisScheduler(MTASetEntitySelector)
             )
         )
@@ -134,7 +134,7 @@ class CallGraphTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 new SimpleInstantiatedTypesAnalysisScheduler(FTASetEntitySelector),
-                PropagationBasedCallGraphAnalysisScheduler,
+                new PropagationBasedCallGraphAnalysisScheduler(FTASetEntitySelector),
                 new TypePropagationAnalysisScheduler(FTASetEntitySelector)
             )
         )
@@ -156,7 +156,7 @@ class CallGraphTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 new SimpleInstantiatedTypesAnalysisScheduler(CTASetEntitySelector),
-                PropagationBasedCallGraphAnalysisScheduler,
+                new PropagationBasedCallGraphAnalysisScheduler(CTASetEntitySelector),
                 new TypePropagationAnalysisScheduler(CTASetEntitySelector)
             )
         )

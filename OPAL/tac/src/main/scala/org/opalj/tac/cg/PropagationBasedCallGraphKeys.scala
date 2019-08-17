@@ -42,7 +42,7 @@ trait PropagationBasedCallGraphKey extends AbstractCallGraphKey {
 
         // TODO AB Configure this properly depending on library/application (see: RTA key)
         List(
-            PropagationBasedCallGraphAnalysisScheduler,
+            new PropagationBasedCallGraphAnalysisScheduler(theSetEntitySelector),
             new SimpleInstantiatedTypesAnalysisScheduler(theSetEntitySelector),
             new TypePropagationAnalysisScheduler(theSetEntitySelector)
         )

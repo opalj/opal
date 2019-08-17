@@ -35,9 +35,10 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Andreas Bauer
  */
-// TODO AB code duplication: this is very similar to the RTACallGraphAnalysis (except for the entity of the type property).
+// TODO Duplication: This is quite similar to the RTACallGraphAnalysis (except for the entity of the type property).
 class PropagationBasedCallGraphAnalysis private[analyses] (
-        final val project: SomeProject
+        final val project:           SomeProject,
+        final val setEntitySelector: SetEntitySelector
 ) extends AbstractCallGraphAnalysis {
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
@@ -73,12 +74,11 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         // An analysis may add types which are relevant for this method to multiple set entities. For example,
         // exception types are tracked globally (via the set attached to the project). XTA will attach a per-method
         // type set to the DefinedMethod itself. CTA/MTA have merged sets for all methods of a class, attached to the
-        // class type.
-        val perMethodInstantiatedTypes = propertyStore(definedMethod, InstantiatedTypes.key)
-        val perClassInstantiatedTypes = propertyStore(definedMethod.definedMethod.classFile, InstantiatedTypes.key)
+        // class type. The relevant set entity is retrieved by querying the set entity selector.
+        val perMethodInstantiatedTypes = propertyStore(setEntitySelector(definedMethod), InstantiatedTypes.key)
         val perProjectInstantiatedTypes = propertyStore(project, InstantiatedTypes.key)
 
-        val typeSources = Iterable(perMethodInstantiatedTypes, perClassInstantiatedTypes, perProjectInstantiatedTypes)
+        val typeSources = Iterable(perMethodInstantiatedTypes, perProjectInstantiatedTypes)
 
         new PropagationBasedCGState(definedMethod, tacEP, typeSources)
     }
@@ -192,7 +192,9 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     }
 }
 
-object PropagationBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
+class PropagationBasedCallGraphAnalysisScheduler(
+        final val setEntitySelector: SetEntitySelector
+) extends CallGraphAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] =
         super.uses ++ PropertyBounds.ubs(InstantiatedTypes, Callees)
@@ -200,5 +202,6 @@ object PropagationBasedCallGraphAnalysisScheduler extends CallGraphAnalysisSched
     override def derivesCollaboratively: Set[PropertyBounds] =
         super.derivesCollaboratively ++ PropertyBounds.ubs(InstantiatedTypes)
 
-    override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = new PropagationBasedCallGraphAnalysis(p)
+    override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis =
+        new PropagationBasedCallGraphAnalysis(p, setEntitySelector)
 }
