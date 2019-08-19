@@ -69,7 +69,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
             val pc = ai.pcOfMethodExternalException(dependeeDefSite)
             val defSite = toEntity(pc, state.method, state.tac.stmts).asInstanceOf[DefinitionSite]
-            currentPointsTo(depender, CallExceptions(defSite))
+            currentPointsTo(depender, CallExceptions(defSite), typeFilter)
         } else if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here
             createPointsToSet(

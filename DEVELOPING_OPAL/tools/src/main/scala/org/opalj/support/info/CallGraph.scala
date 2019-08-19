@@ -156,6 +156,7 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"PTS entries ${ptss.map(p ⇒ p.ub.elements.size).sum}")
 
             val byType = ptss.groupBy(_.e.getClass)
+
             println(s"DefSite PTSs: ${byType(classOf[DefinitionSite]).size}")
             println(s"Parameter PTSs: ${byType(classOf[VirtualFormalParameter]).size}")
             println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
@@ -171,7 +172,7 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
             println(s"MethodException PTS entries: ${byType(classOf[MethodExceptions]).map(_.ub.numElements).sum}")
             println(s"CallException PTS entries: ${byType(classOf[CallExceptions]).map(_.ub.numElements).sum}")
-            
+
             /*
             //Prints sizes of all array PTSs
             for(pts <- byType(classOf[ArrayEntity[Long]]))
@@ -184,24 +185,24 @@ object CallGraph extends ProjectAnalysisApplication {
             underTestPTS.elements.foreach { as ⇒
                 try {
                     val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
-                    println(s"<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${if(tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                    println(s"<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${ReferenceType.lookup(tId).toJava}")
                     if(tId < 0) {
                         val arrPTS = ps(ArrayEntity(as), AllocationSitePointsToSet.key).ub
                         arrPTS.elements.foreach {as ⇒
                             try {
                                 val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
-                                println(s"\t<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${if(tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                                println(s"\t<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${ReferenceType.lookup(tId).toJava}")
                             } catch {
                                 case _: Exception ⇒
                                     val tId = (as >> 39).toInt
-                                    println(s"new ${if (tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                                    println(s"new ${ReferenceType.lookup(tId).toJava}")
                             }
                         }
                     }
                 } catch {
                     case _: Exception ⇒
                         val tId = (as >> 39).toInt
-                        println(s"new ${if (tId < 0) ArrayType.lookup(tId).toJava else project.classHierarchy.knownTypesMap(tId).toJava}")
+                        println(s"new ${ReferenceType.lookup(tId).toJava}")
                 }
             }*/
 

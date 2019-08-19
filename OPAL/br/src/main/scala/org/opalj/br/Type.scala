@@ -394,6 +394,14 @@ sealed abstract class ReferenceType extends FieldType {
 object ReferenceType {
 
     /**
+     * Enables the reverse lookup of a ReferenceType given a ReferenceType's id.
+     */
+    def lookup(id: Int): ReferenceType = {
+        if(id >= 0) ObjectType.lookup(id)
+        else ArrayType.lookup(id)
+    }
+
+    /**
      * Creates a representation of the described [[ReferenceType]].
      *
      * @param   rt A string as passed to `java.lang.Class.forName(...)` but in binary notation.
@@ -1048,6 +1056,52 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ObjectType {
 
+    // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
+    @volatile private[this] var objectTypes: Array[ObjectType] = new Array[ObjectType](0)
+
+    private[this] def updateObjectTypes(): Unit = {
+        if (nextId.get >= objectTypes.length) {
+            val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get + 1)
+            cacheRWLock.readLock().lock()
+            try {
+                cache.values.forEach { wot ⇒
+                    val ot = wot.get
+                    if (ot != null && ot.id < newObjectTypes.length) {
+                        newObjectTypes(ot.id) = ot
+                    }
+                }
+            } finally {
+                cacheRWLock.readLock().unlock()
+            }
+            this.objectTypes = newObjectTypes
+        }
+    }
+
+    /**
+     * Enables the reverse lookup of an ObjectType given an ObjectType's id.
+     */
+    def lookup(id: Int): ObjectType = {
+        var objectTypes = this.objectTypes
+        if (id < objectTypes.length) {
+            val ot = objectTypes(id)
+            if (ot == null) throw new IllegalArgumentException(s"$id is unknown")
+            ot
+        } else {
+            // Let's check if the type was created in the meantime!
+            updateObjectTypes()
+            objectTypes = this.objectTypes
+            if (id < objectTypes.length) {
+                val ot = objectTypes(id)
+                if (ot == null) throw new IllegalArgumentException(s"$id is unknown")
+                ot
+            } else {
+                throw new IllegalArgumentException(
+                    s"$id belongs to ObjectType created after the creation of the lookup map"
+                )
+            }
+        }
+    }
+
     private[this] val nextId = new AtomicInteger(0)
     private[this] val cacheRWLock = new ReentrantReadWriteLock();
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
@@ -1463,10 +1517,12 @@ object ArrayType {
     private[this] def updateArrayTypes(): Unit = {
         if (-nextId.get > arrayTypes.length) {
             val newArrayTypes = JArrays.copyOf(this.arrayTypes, -nextId.get)
-            cache.values.forEach { wat ⇒
-                val at = wat.get
-                if (at != null && -at.id < newArrayTypes.length) {
-                    newArrayTypes(-at.id) = at
+            cache.synchronized {
+                cache.values.forEach { wat ⇒
+                    val at = wat.get
+                    if (at != null && -at.id < newArrayTypes.length) {
+                        newArrayTypes(-at.id) = at
+                    }
                 }
             }
             this.arrayTypes = newArrayTypes

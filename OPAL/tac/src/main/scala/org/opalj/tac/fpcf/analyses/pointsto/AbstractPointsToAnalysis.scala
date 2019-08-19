@@ -781,8 +781,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         case _: EPK[Entity, _] ⇒
                             Some(InterimEUBP(e, pointsToSet))
 
-                        case UBP(ub: PointsToSet @unchecked) ⇒
-                            val newPointsTo = ub.included(pointsToSet, 0, 0)
+                        case eps @ UBP(ub: PointsToSet @unchecked) ⇒
+                            val newPointsTo = ub.included(pointsToSet, 0)
                             if (newPointsTo ne ub) {
                                 Some(InterimEUBP(e, newPointsTo))
                             } else {

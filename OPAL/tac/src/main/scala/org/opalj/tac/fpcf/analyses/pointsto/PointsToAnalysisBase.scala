@@ -55,7 +55,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     state.includeSharedPointsToSet(
                         defSiteObject,
                         // IMPROVE: Use LongRefPair to avoid boxing
-                        currentPointsTo(defSiteObject, (as, field)),
+                        currentPointsTo(defSiteObject, (as, field), filter),
                         filter
                     )
                 }
@@ -76,7 +76,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         }
         state.includeSharedPointsToSet(
             defSiteObject,
-            currentPointsTo(defSiteObject, field),
+            currentPointsTo(defSiteObject, field, filter),
             filter
         )
     }
@@ -105,7 +105,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)) {
                     state.includeSharedPointsToSet(
                         defSiteObject,
-                        currentPointsTo(defSiteObject, ArrayEntity(as)),
+                        currentPointsTo(defSiteObject, ArrayEntity(as), filter),
                         filter
                     )
                 }
@@ -118,6 +118,9 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     )(implicit state: State): Unit = {
         val fakeEntity = (rhsDefSites, field)
         state.addPutFieldEntity(fakeEntity)
+        val filter = { t: ReferenceType ⇒
+            classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
+        }
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
                 // TODO: Refactor
@@ -127,10 +130,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     val fieldEntity = (as, field)
                     state.includeSharedPointsToSets(
                         fieldEntity,
-                        currentPointsToOfDefSites(fieldEntity, rhsDefSites),
-                        { t: ReferenceType ⇒
-                            classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
-                        }
+                        currentPointsToOfDefSites(fieldEntity, rhsDefSites, filter),
+                        filter
                     )
                 }
             }
@@ -138,12 +139,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     }
 
     protected[this] def handlePutStatic(field: Field, rhsDefSites: IntTrieSet)(implicit state: State): Unit = {
+        val filter = { t: ReferenceType ⇒
+            classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
+        }
         state.includeSharedPointsToSets(
             field,
-            currentPointsToOfDefSites(field, rhsDefSites),
-            { t: ReferenceType ⇒
-                classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
-            }
+            currentPointsToOfDefSites(field, rhsDefSites, filter),
+            filter
         )
     }
 
@@ -160,12 +162,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
                     val arrayEntity = ArrayEntity(as)
                     val componentType = ArrayType.lookup(typeId).componentType.asReferenceType
+                    val filter = { t: ReferenceType ⇒
+                        classHierarchy.isSubtypeOf(t, componentType)
+                    }
                     state.includeSharedPointsToSets(
                         arrayEntity,
-                        currentPointsToOfDefSites(arrayEntity, rhsDefSites),
-                        { t: ReferenceType ⇒
-                            classHierarchy.isSubtypeOf(t, componentType)
-                        }
+                        currentPointsToOfDefSites(arrayEntity, rhsDefSites, filter),
+                        filter
                     )
                 }
             }
@@ -224,7 +227,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         oldPointsToSet.included(
             newDependeePointsToSet,
             oldDependeePointsTo.numElements,
-            oldDependeePointsTo.numTypes,
             typeFilter
         )
     }
@@ -435,7 +437,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 e,
                 pointsToPropertyKey,
                 {
-                    case UBP(ub: PointsToSet @unchecked) ⇒
+                    case eps @ UBP(ub: PointsToSet @unchecked) ⇒
                         val newPointsToSet = updatePointsTo(ub)
 
                         if (newPointsToSet ne ub) {
@@ -445,7 +447,11 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                         }
 
                     case _: EPK[Entity, _] ⇒
-                        Some(InterimEUBP(e, updatePointsTo(emptyPointsToSet)))
+                        val newPointsToSet = updatePointsTo(emptyPointsToSet)
+                        if(newPointsToSet ne emptyPointsToSet)
+                            Some(InterimEUBP(e, newPointsToSet))
+                        else
+                            None
 
                     case eOptP ⇒
                         throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")

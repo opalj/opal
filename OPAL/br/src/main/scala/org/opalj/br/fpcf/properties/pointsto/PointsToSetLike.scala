@@ -29,12 +29,12 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
 
     def included(other: T): T
 
-    def included(other: T, seenElements: Int, seenTypes: Int): T
+    def included(other: T, seenElements: Int): T
 
     def included(other: T, typeFilter: ReferenceType ⇒ Boolean): T
 
     def included(
-        other: T, seenElements: Int, seenTypes: Int, typeFilter: ReferenceType ⇒ Boolean
+        other: T, seenElements: Int, typeFilter: ReferenceType ⇒ Boolean
     ): T
 
     def includeOption(other: T): Option[T] = {

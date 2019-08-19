@@ -47,7 +47,7 @@ case class AllocationSitePointsToSetScala(
     }
 
     override def included(
-        other: AllocationSitePointsToSetScala, seenElements: Int, seenTypes: Int
+        other: AllocationSitePointsToSetScala, seenElements: Int
     ): AllocationSitePointsToSetScala = {
         included(other)
     }
@@ -63,7 +63,6 @@ case class AllocationSitePointsToSetScala(
     override def included(
         other:        AllocationSitePointsToSetScala,
         seenElements: Int,
-        seenTypes:    Int,
         typeFilter:   ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSetScala = {
         included(other, typeFilter)
