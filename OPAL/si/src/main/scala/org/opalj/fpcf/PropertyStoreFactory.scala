@@ -9,7 +9,7 @@ import org.opalj.log.LogContext
  *
  * @author Michael Eichberg
  */
-trait PropertyStoreFactory {
+trait PropertyStoreFactory[PS <: PropertyStore] {
 
     final def apply[T <: AnyRef](
         key:     Class[T],
@@ -17,7 +17,7 @@ trait PropertyStoreFactory {
     )(
         implicit
         logContext: LogContext
-    ): PropertyStore = {
+    ): PS = {
         apply(PropertyStoreContext(key, context))
     }
 
@@ -26,5 +26,5 @@ trait PropertyStoreFactory {
     )(
         implicit
         logContext: LogContext
-    ): PropertyStore
+    ): PS
 }

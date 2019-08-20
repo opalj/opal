@@ -73,6 +73,7 @@ final class PKESequentialPropertyStore protected (
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
+    // type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
     private[this] val dependers: Array[AnyRefMap[Entity, EntityDependers]] = {
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
@@ -84,6 +85,13 @@ final class PKESequentialPropertyStore protected (
     private[seq] def dependeesCount(eOptionP: SomeEOptionP): Int = {
         dependees(eOptionP.pk.id).get(eOptionP.e) match {
             case Some(dependees) ⇒ dependees.size
+            case _               ⇒ 0
+        }
+    }
+
+    private[seq] def liveDependeesCount(eOptionP: SomeEOptionP): Int = {
+        dependees(eOptionP.pk.id).get(eOptionP.e) match {
+            case Some(dependees) ⇒ dependees.count(dependee ⇒ store(dependee.toEPK).isRefinable)
             case _               ⇒ 0
         }
     }
@@ -103,6 +111,13 @@ final class PKESequentialPropertyStore protected (
         dependers(eOptionP.pk.id).get(eOptionP.e) match {
             case Some(dependers) ⇒ dependers.keys
             case _               ⇒ Nil
+        }
+    }
+
+    private[seq] def hasDependers(eOptionP: SomeEOptionP): Boolean = {
+        dependers(eOptionP.pk.id).get(eOptionP.e) match {
+            case Some(dependers) ⇒ dependers.nonEmpty
+            case _               ⇒ false
         }
     }
 
@@ -365,6 +380,7 @@ final class PKESequentialPropertyStore protected (
             val isFinal = eps.isFinal
             val theDependers = dependers(pkId).get(e)
             theDependers.foreach { dependersOfEPK ⇒
+                val currentDependers = dependersOfEPK.keys
                 dependersOfEPK foreach { cHint ⇒
                     val (dependerEPK, (c, _hint)) = cHint
                     // IMPROVE Give the PropertyComputationHint a (new) meaningful semantics
@@ -375,7 +391,7 @@ final class PKESequentialPropertyStore protected (
                             } else {
                                 new OnUpdateComputationTask(this, eps.toEPK, c)
                             }
-                        tasksManager.push(t, eps, newDependees, dependersOfEPK.keys)
+                        tasksManager.push(t, dependerEPK, eps, newDependees, currentDependers)
                         scheduledOnUpdateComputationsCounter += 1
                         removeDependerFromDependees(dependerEPK)
                     } else if (traceSuppressedNotifications) {
@@ -626,7 +642,7 @@ final class PKESequentialPropertyStore protected (
 
             case MultiResult.id ⇒
                 val MultiResult(results) = r
-                results foreach { ep ⇒ update(FinalEP(ep.e, ep.p), newDependees = Nil) }
+                results foreach { finalEP ⇒ update(finalEP, newDependees = Nil) }
 
             //
             // Methods which actually store results...
@@ -694,9 +710,8 @@ final class PKESequentialPropertyStore protected (
 
     protected[this] def processTasks(): Unit = {
         while (!tasksManager.isEmpty) {
-            val task = tasksManager.poll()
+            tasksManager.pollAndExecute()
             if (doTerminate) throw new InterruptedException()
-            task.apply()
         }
     }
 
@@ -852,12 +867,25 @@ final class PKESequentialPropertyStore protected (
  *
  * @author Michael Eichberg
  */
-object PKESequentialPropertyStore extends PropertyStoreFactory {
+object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialPropertyStore] {
 
     final type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
 
     final val TasksManagerKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.TasksManager"
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.MaxEvaluationDepth"
+
+    final val Strategies = List(
+        "ManyDirectDependenciesLast",
+        "ManyDirectDependersLast",
+        "ManyDependeesOfDirectDependersLast",
+        "ManyDependeesAndDependersOfDirectDependersLast",
+        "FIFO",
+        "LIFO" /*,
+        "ForwardAllDependeesLast",
+        "ForwardAllDependeesFirst",
+        "BackwardAllDependeesLast",
+        "BackwardAllDependeesFirst"*/
+    )
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
@@ -875,19 +903,6 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
         val maxEvaluationDepth = config.getInt(MaxEvaluationDepthKey)
         apply(taskManagerId, maxEvaluationDepth)(contextMap)
     }
-
-    final val Strategies = List(
-        "ManyDirectDependenciesLast",
-        "ManyDirectDependersLast",
-        "ManyDependeesOfDirectDependersLast",
-        "ManyDependeesAndDependersOfDirectDependersLast",
-        "FIFO",
-        "LIFO" /*,
-        "ForwardAllDependeesLast",
-        "ForwardAllDependeesFirst",
-        "BackwardAllDependeesLast",
-        "BackwardAllDependeesFirst"*/
-    )
 
     def apply(
         taskManagerId:      String,
@@ -907,16 +922,14 @@ object PKESequentialPropertyStore extends PropertyStoreFactory {
             case "ManyDirectDependersLast"    ⇒ new ManyDirectDependersLastTasksManager
             case "ManyDependeesOfDirectDependersLast" ⇒
                 new ManyDependeesOfDirectDependersLastTasksManager
-            case "ManyDependeesOfDirectDependersLastWithPKSplitting" ⇒
-                new ManyDependeesOfDirectDependersLastWithPKSplittingTasksManager
             case "ManyDependeesAndDependersOfDirectDependersLast" ⇒
                 new ManyDependeesAndDependersOfDirectDependersLastTasksManager
 
             case "ForwardAllDependeesLast" | "ForwardAllDependeesFirst" |
                 "BackwardAllDependeesLast" | "BackwardAllDependeesFirst" ⇒
                 val forward = taskManagerId.startsWith("Forward")
-                val manyDependeeslast = taskManagerId.endsWith("Last")
-                new AllDependeesTasksManager(forward, manyDependeeslast)
+                val manyDependeesLast = taskManagerId.endsWith("Last")
+                new AllDependeesTasksManager(forward, manyDependeesLast)
 
             case _ ⇒ throw new IllegalArgumentException(s"unknown task manager $taskManagerId")
         }

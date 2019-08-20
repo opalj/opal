@@ -782,19 +782,23 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override def hasLBP: Boolean = false
     override def lb: Nothing = throw new UnsupportedOperationException();
-    override private[fpcf] def toFinalELBP = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalELBP = throw new UnsupportedOperationException(toString);
 
     override def hasUBP: Boolean = false
     override def ub: Nothing = throw new UnsupportedOperationException();
-    override private[fpcf] def toFinalEUBP = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalEUBP = throw new UnsupportedOperationException(toString);
 
     override def isFinal: Boolean = false
     override def asFinal: FinalEP[E, P] = throw new ClassCastException();
 
-    override private[fpcf] def toFinalEP: FinalEP[E, P] = throw new UnsupportedOperationException();
+    override private[fpcf] def toFinalEP: FinalEP[E, P] = {
+        throw new UnsupportedOperationException(toString)
+    };
 
     override def isEPS: Boolean = false
-    override def asEPS: EPS[E, P] = throw new ClassCastException();
+    override def asEPS: EPS[E, P] = {
+        throw new ClassCastException()
+    };
 
     override def isEPK: Boolean = true
     override def asEPK: EPK[E, P] = this
@@ -828,7 +832,7 @@ final class EPK[+E <: Entity, +P <: Property](
     override def toString: String = {
         val pkId = pk.id
         val pkName = PropertyKey.name(pkId)
-        s"EPK($e@${System.identityHashCode(e).toHexString},pkName=$pkName,pkId=$pkId)"
+        s"EPK($e@${System.identityHashCode(e).toHexString},$pkName#$pkId)"
     }
 }
 

@@ -60,4 +60,5 @@ object Palindromes {
         type Self = PalindromeFragments
         def key: PropertyKey[PalindromeFragments] = PalindromeFragmentsKey
     }
+
 }

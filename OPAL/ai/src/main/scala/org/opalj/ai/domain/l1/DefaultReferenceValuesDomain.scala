@@ -8,7 +8,10 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.Project
 
 /**
- * This domain uses the l1 level ''stable'', partial domains.
+ * This domain uses (only) the l1 domain related to handling type information.
+ * I.e., this is the most basic domain that supports the tracking of precise type information;
+ * however, neither Strings nor class values are tracked and also the nullness of values is not
+ * refined after (an implicit) `NullPointerException`.
  *
  * @author Michael Eichberg
  */

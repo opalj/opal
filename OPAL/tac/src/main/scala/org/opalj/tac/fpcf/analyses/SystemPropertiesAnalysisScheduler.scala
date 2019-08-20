@@ -7,6 +7,7 @@ package analyses
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.PartialResult
@@ -52,7 +53,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
 
         def update(
             currentVal: EOptionP[SomeProject, SystemProperties]
-        ): Option[EPS[SomeProject, SystemProperties]] = currentVal match {
+        ): Option[InterimEP[SomeProject, SystemProperties]] = currentVal match {
             case UBP(ub) ⇒
                 var oldProperties = ub.properties
                 val noNewProperty = propertyMap.forall {

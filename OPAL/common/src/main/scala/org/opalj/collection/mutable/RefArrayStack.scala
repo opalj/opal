@@ -2,6 +2,8 @@
 package org.opalj.collection
 package mutable
 
+import java.util.{Arrays ⇒ JArrays}
+
 import scala.collection.mutable
 import scala.collection.generic
 
@@ -39,6 +41,8 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
      * referenced objects outlive the lifetime of the stack!
      */
     def resetSize(): Unit = size0 = 0
+
+    def clear(): Unit = { JArrays.fill(data, null); size0 = 0 }
 
     override def size: Int = size0
     override def length: Int = size0
