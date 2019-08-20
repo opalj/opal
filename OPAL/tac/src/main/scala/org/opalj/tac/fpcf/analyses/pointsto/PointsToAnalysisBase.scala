@@ -178,24 +178,18 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     @inline protected[this] def currentPointsTo(
         depender: Entity, dependee: Entity, typeFilter: ReferenceType ⇒ Boolean
     )(implicit state: State): PointsToSet = {
-        dependee match {
-            case ds: DefinitionSite if state.hasAllocationSitePointsToSet(ds) ⇒
-                state.allocationSitePointsToSet(ds)
-
-            case _ ⇒
-                val epk = EPK(dependee, pointsToPropertyKey)
-                val p2s = if (state.hasDependency(depender, epk)) {
-                    // IMPROVE: add a method to the state
-                    state.dependeesOf(depender)(epk)._1
-                } else {
-                    val p2s = propertyStore(dependee, pointsToPropertyKey)
-                    if (p2s.isRefinable) {
-                        state.addDependee(depender, p2s, typeFilter)
-                    }
-                    p2s
-                }
-                pointsToUB(p2s.asInstanceOf[EOptionP[Entity, PointsToSet]])
+        val epk = EPK(dependee, pointsToPropertyKey)
+        val p2s = if (state.hasDependency(depender, epk)) {
+            // IMPROVE: add a method to the state
+            state.dependeesOf(depender)(epk)._1
+        } else {
+            val p2s = propertyStore(dependee, pointsToPropertyKey)
+            if (p2s.isRefinable) {
+                state.addDependee(depender, p2s, typeFilter)
+            }
+            p2s
         }
+        pointsToUB(p2s.asInstanceOf[EOptionP[Entity, PointsToSet]])
     }
 
     @inline protected[this] def updatedDependees(
@@ -448,7 +442,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
                     case _: EPK[Entity, _] ⇒
                         val newPointsToSet = updatePointsTo(emptyPointsToSet)
-                        if(newPointsToSet ne emptyPointsToSet)
+                        if (newPointsToSet ne emptyPointsToSet)
                             Some(InterimEUBP(e, newPointsToSet))
                         else
                             None

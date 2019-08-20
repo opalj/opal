@@ -119,60 +119,11 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
 
         for (stmt ← tac.stmts) stmt match {
-            case Assignment(pc, _, New(_, t)) ⇒
-                val defSite = definitionSites(method, pc)
-                state.setAllocationSitePointsToSet(
-                    defSite,
-                    createPointsToSet(pc, state.method, t, isConstant = false)
-                )
+            case Assignment(pc, _, New(_, tpe)) ⇒
+                handleAllocation(pc, tpe)
 
             case Assignment(pc, _, NewArray(_, counts, tpe)) ⇒
-                @inline def countIsZero(theCounts: Seq[Expr[V]]): Boolean = {
-                    theCounts.head.asVar.definedBy.forall { ds ⇒
-                        ds >= 0 &&
-                            tac.stmts(ds).asAssignment.expr.isIntConst &&
-                            tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
-                    }
-                }
-
-                val defSite = definitionSites(method, pc)
-                val isEmptyArray = countIsZero(counts)
-                var arrayReferencePTS = createPointsToSet(
-                    pc, state.method, tpe, isConstant = false, isEmptyArray
-                )
-                state.setAllocationSitePointsToSet(
-                    defSite,
-                    arrayReferencePTS
-                )
-                var remainingCounts = counts.tail
-                var allocatedType: FieldType = tpe.componentType
-                var continue = !isEmptyArray
-                while (remainingCounts.nonEmpty && allocatedType.isArrayType && continue) {
-                    val theType = allocatedType.asArrayType
-
-                    // TODO: Ugly hack to get the only points-to element from the previously created PTS
-                    var arrayEntity: ArrayEntity[ElementType] = null
-                    arrayReferencePTS.forNewestNElements(1) { as ⇒ arrayEntity = ArrayEntity(as) }
-
-                    if (countIsZero(remainingCounts))
-                        continue = false
-
-                    arrayReferencePTS = createPointsToSet(
-                        pc,
-                        state.method,
-                        theType,
-                        isConstant = false,
-                        isEmptyArray = !continue
-                    )
-                    state.includeSharedPointsToSet(
-                        arrayEntity,
-                        arrayReferencePTS,
-                        { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, theType) }
-                    )
-
-                    remainingCounts = remainingCounts.tail
-                    allocatedType = theType.componentType
-                }
+                handleArrayAllocation(pc, counts, tpe)
 
             case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
                 val defSite = definitionSites(method, pc)
@@ -349,6 +300,71 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         // todo: we have to handle the exceptions that might implicitly be thrown by this method
 
         returnResult(state)
+    }
+
+    @inline private[this] def handleAllocation(
+        pc: Int, tpe: ReferenceType
+    )(implicit state: State): Unit = {
+        val defSite = definitionSites(state.method.definedMethod, pc)
+        if (!state.hasAllocationSitePointsToSet(defSite)) {
+            state.setAllocationSitePointsToSet(
+                defSite,
+                createPointsToSet(pc, state.method, tpe, isConstant = false)
+            )
+        }
+    }
+
+    @inline private[this] def handleArrayAllocation(
+        pc: Int, counts: Seq[Expr[V]], tpe: ArrayType
+    )(implicit state: State): Unit = {
+        val defSite = definitionSites(state.method.definedMethod, pc)
+        if (!state.hasAllocationSitePointsToSet(defSite)) {
+            @inline def countIsZero(theCounts: Seq[Expr[V]]): Boolean = {
+                theCounts.head.asVar.definedBy.forall { ds ⇒
+                    ds >= 0 &&
+                        state.tac.stmts(ds).asAssignment.expr.isIntConst &&
+                        state.tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
+                }
+            }
+
+            val isEmptyArray = countIsZero(counts)
+            var arrayReferencePTS = createPointsToSet(
+                pc, state.method, tpe, isConstant = false, isEmptyArray
+            )
+            state.setAllocationSitePointsToSet(
+                defSite,
+                arrayReferencePTS
+            )
+            var remainingCounts = counts.tail
+            var allocatedType: FieldType = tpe.componentType
+            var continue = !isEmptyArray
+            while (remainingCounts.nonEmpty && allocatedType.isArrayType && continue) {
+                val theType = allocatedType.asArrayType
+
+                // TODO: Ugly hack to get the only points-to element from the previously created PTS
+                var arrayEntity: ArrayEntity[ElementType] = null
+                arrayReferencePTS.forNewestNElements(1) { as ⇒ arrayEntity = ArrayEntity(as) }
+
+                if (countIsZero(remainingCounts))
+                    continue = false
+
+                arrayReferencePTS = createPointsToSet(
+                    pc,
+                    state.method,
+                    theType,
+                    isConstant = false,
+                    isEmptyArray = !continue
+                )
+                state.includeSharedPointsToSet(
+                    arrayEntity,
+                    arrayReferencePTS,
+                    { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, theType) }
+                )
+
+                remainingCounts = remainingCounts.tail
+                allocatedType = theType.componentType
+            }
+        }
     }
 
     // maps the points-to set of actual parameters (including *this*) the the formal parameters
@@ -852,10 +868,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val (defSites, arrayType) = fakeEntity
                 val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
                 val defSitesEPKs = defSitesWithoutExceptions.map[EPK[Entity, Property]] { ds ⇒
-                    val e = EPK(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
+                    val epk = EPK(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
                     // otherwise it might be the case that the property store does not know the epk
-                    ps(e)
-                    e
+                    ps(epk)
+                    epk
                 }.toTraversable
 
                 val dependees = state.dependeesOf(fakeEntity)
