@@ -76,21 +76,21 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     def arrayStoresIterator: Iterator[(IntTrieSet, ArrayType)] =
         arrayStores.iterator
 
-    private[this] val _allocationSitePointsToSet: mutable.Map[DefinitionSite, PointsToSet] = {
+    private[this] val _allocationSitePointsToSets: mutable.Map[DefinitionSite, PointsToSet] = {
         mutable.Map.empty
     }
 
-    def hasAllocationSitePointsToSet(e: DefinitionSite): Boolean = _allocationSitePointsToSet.contains(e)
+    def hasAllocationSitePointsToSet(e: DefinitionSite): Boolean = _allocationSitePointsToSets.contains(e)
 
-    def allocationSitePointsToSet(e: DefinitionSite): PointsToSet = _allocationSitePointsToSet(e)
+    def allocationSitePointsToSet(e: DefinitionSite): PointsToSet = _allocationSitePointsToSets(e)
 
     def allocationSitePointsToSetsIterator: Iterator[(DefinitionSite, PointsToSet)] = {
-        _allocationSitePointsToSet.iterator
+        _allocationSitePointsToSets.iterator
     }
 
     def setAllocationSitePointsToSet(ds: DefinitionSite, pointsToSet: PointsToSet): Unit = {
-        assert(!_allocationSitePointsToSet.contains(ds))
-        _allocationSitePointsToSet(ds) = pointsToSet
+        assert(!_allocationSitePointsToSets.contains(ds))
+        _allocationSitePointsToSets(ds) = pointsToSet
     }
 
     private[this] val _sharedPointsToSets: mutable.Map[Entity, PointsToSet] = {
