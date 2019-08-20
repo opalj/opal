@@ -52,6 +52,13 @@ private[par] trait PropertyStoreTracer {
         c:           OnUpdateContinuation
     ): Unit
 
+    def immediatelyRescheduledOnUpdateComputation(
+        dependerEPK: SomeEPK,
+        oldEOptionP: SomeEOptionP,
+        newEOptionP: SomeEOptionP,
+        c:           OnUpdateContinuation
+    ): Unit
+
     def scheduledOnUpdateComputation(
         dependerEPK: SomeEPK,
         oldEOptionP: SomeEOptionP,
@@ -268,6 +275,18 @@ case class ScheduledOnUpdateComputationEvent(
     }
 }
 
+case class ImmediatelyRescheduledOnUpdateComputationEvent(
+        eventId:     Int,
+        dependerEPK: SomeEPK,
+        oldEOptionP: SomeEOptionP,
+        newEOptionP: SomeEOptionP,
+        c:           OnUpdateContinuation
+) extends StoreEvent {
+    override def toTxt: String = {
+        s"$eventId: ImmediatelyRescheduledOnUpdateComputation($dependerEPK, $oldEOptionP => $newEOptionP,${anyRefToShortString(c)})"
+    }
+}
+
 case class ScheduledOnUpdateComputationForFinalEPEvent(
         eventId:     Int,
         dependerEPK: SomeEPK,
@@ -352,6 +371,18 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
         c:           OnUpdateContinuation
     ): Unit = {
         events offer ScheduledOnUpdateComputationEvent(
+            nextEventId(), dependerEPK, oldEOptionP, newEOptionP, c
+        )
+
+    }
+
+    override def immediatelyRescheduledOnUpdateComputation(
+        dependerEPK: SomeEPK,
+        oldEOptionP: SomeEOptionP,
+        newEOptionP: SomeEOptionP,
+        c:           OnUpdateContinuation
+    ): Unit = {
+        events offer ImmediatelyRescheduledOnUpdateComputationEvent(
             nextEventId(), dependerEPK, oldEOptionP, newEOptionP, c
         )
 

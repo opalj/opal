@@ -546,7 +546,7 @@ final class PKECPropertyStore(
                             }
                         }
                         if (tracer.isDefined)
-                            tracer.get.scheduledOnUpdateComputation(
+                            tracer.get.immediatelyRescheduledOnUpdateComputation(
                                 dependerEPK,
                                 processedDependee,
                                 dependeeEPKState.eOptionP,
@@ -683,6 +683,11 @@ final class PKECPropertyStore(
 
             case InterimPartialResult.id ⇒
                 val InterimPartialResult(prs, dependees, c) = r
+
+                if (debug && dependees.isEmpty) {
+                    throw new IllegalArgumentException(s"interim partial result $r without dependees")
+                }
+
                 // 1. Handle partial results.
                 prs foreach { pr ⇒ handlePartialResult(pr.e, pr.pk, pr.u) }
 
@@ -696,6 +701,7 @@ final class PKECPropertyStore(
                 val dependerEPKState = EPKState(dependerEPK, c, dependees)
                 properties(dependerPKId).put(dependerE, dependerEPKState)
                 dependees forall { processedDependee ⇒
+                    assert(processedDependee.isRefinable)
                     dependerEPKState.isCurrentC(c) /* <= this is just an optimization! */ && {
                         val processedDependeePKId = processedDependee.pk.id
                         val psPerDependeeKind = properties(processedDependeePKId)
@@ -710,7 +716,7 @@ final class PKECPropertyStore(
                             // addDepender failed... i.e., the dependee was updated...
                             if (dependerEPKState.prepareInvokeC(c)) {
                                 if (tracer.isDefined)
-                                    tracer.get.scheduledOnUpdateComputation(
+                                    tracer.get.immediatelyRescheduledOnUpdateComputation(
                                         dependerEPK,
                                         processedDependee,
                                         dependeeEPKState.eOptionP,
@@ -769,6 +775,8 @@ final class PKECPropertyStore(
             // We have reached quiescence....
 
             // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
+            //    (Please note that FakeEntities – related to InterimPartialResults –
+            //     which are associated with the "FakeAnalysisKey", are not handled here.)
             //    (Recall that we return fallback properties eagerly if no analysis is
             //    scheduled or will be scheduled, However, it is still possible that we will
             //    not have computed a property for a specific entity if the underlying
@@ -903,13 +911,23 @@ final class PKECPropertyStore(
 
                 pksToFinalize foreach { pk ⇒
                     parallelize {
-                        val interimEPSStates = properties(pk.id).values.asScala.filter(_.isRefinable)
-                        interimEPSStates foreach { interimEPKState ⇒
-                            val oldEOptionP = interimEPKState.eOptionP
-                            val finalEP = oldEOptionP.toFinalEP
-                            if (tracer.isDefined)
-                                tracer.get.finalizedProperty(oldEOptionP, finalEP)
-                            handleFinalResult(finalEP)
+                        if (pk == AnalysisKey) {
+                            assert(
+                                properties(pk.id).values.asScala.forall(!_.hasDependees),
+                                properties(pk.id).values.asScala.
+                                    filter(_.hasDependees).
+                                    mkString("fake entities with unexpected dependencies: [", ",", "]")
+                            )
+                            properties(pk.id) = new ConcurrentHashMap()
+                        } else {
+                            val interimEPSStates = properties(pk.id).values.asScala.filter(_.isRefinable)
+                            interimEPSStates foreach { interimEPKState ⇒
+                                val oldEOptionP = interimEPKState.eOptionP
+                                val finalEP = oldEOptionP.toFinalEP
+                                if (tracer.isDefined)
+                                    tracer.get.finalizedProperty(oldEOptionP, finalEP)
+                                handleFinalResult(finalEP)
+                            }
                         }
                     }
                 }
@@ -988,4 +1006,7 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
 }
 
-private[par] class FakeEntity()
+private[par] class FakeEntity() {
+
+    override def toString: String = "FakeEntity"
+}

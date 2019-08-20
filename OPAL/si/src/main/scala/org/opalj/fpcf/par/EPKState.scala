@@ -332,13 +332,13 @@ private[par] final class InterimEPKState(
 
     override def isCurrentC(c: OnUpdateContinuation): Boolean = c eq this.c
 
-    override def hasDependees: Boolean = dependees.nonEmpty
+    override def hasDependees: Boolean = dependees != null && dependees.nonEmpty
 
     override def toString: String = {
         "InterimEPKState("+
             s"eOptionP=${eOptionP},"+
             s"<hasOnUpdateComputation=${c != null}>,"+
-            s"dependees=$dependees,"+
+            s"dependees=${Option(dependees)},"+
             s"dependers=$dependers)"
     }
 }
