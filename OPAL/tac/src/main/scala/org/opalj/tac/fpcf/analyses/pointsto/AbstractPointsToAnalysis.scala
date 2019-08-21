@@ -814,7 +814,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (state.hasDependees(fakeEntity)) {
                 val (defSite, field, filter) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
-                assert(dependees.nonEmpty)
                 results += InterimPartialResult(
                     dependees.values.map(_._1),
                     continuationForNewAllocationSitesAtGetField(
@@ -837,8 +836,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
-                assert(dependees.nonEmpty)
-                if (defSitesEPSs.nonEmpty)
+                if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
                     results += InterimPartialResult(
                         dependees.values.map(_._1),
                         continuationForNewAllocationSitesAtPutField(
@@ -852,7 +850,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (state.hasDependees(fakeEntity)) {
                 val (defSite, arrayType, filter) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
-                assert(dependees.nonEmpty)
                 results += InterimPartialResult(
                     dependees.values.map(_._1),
                     continuationForNewAllocationSitesAtArrayLoad(
@@ -875,7 +872,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
-                assert(dependees.nonEmpty)
                 if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
                     results += InterimPartialResult(
                         dependees.values.map(_._1),
@@ -931,9 +927,15 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     }
                 }
 
-                val results = updatedResults(e, newDependees, newPointsToSet, {
-                    old ⇒ old.included(newPointsToSet, typeFilter)
-                })
+                val results = updatedResults(
+                    e,
+                    newDependees,
+                    newPointsToSet,
+                    { old ⇒
+                        old.included(newPointsToSet, typeFilter)
+                    },
+                    true
+                )
 
                 Results(results)
 

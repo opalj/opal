@@ -46,6 +46,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         val defSiteObject = definitionSites(state.method.definedMethod, pc)
         val fakeEntity = (defSiteObject, field, filter)
         state.addGetFieldEntity(fakeEntity)
+        state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
                 // TODO: Refactor
@@ -98,6 +99,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         }
         val fakeEntity = (defSiteObject, arrayType, filter)
         state.addArrayLoadEntity(fakeEntity)
+        state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
         currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
                 val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
@@ -250,7 +252,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                             classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
                         }
                         results ++= updatedResults(
-                            ArrayEntity(as),
+                            (as, field),
                             rhsDefSitesEPS.mapValues((_, typeFilter)),
                             knownPointsTo,
                             { _.included(knownPointsTo, typeFilter) }
@@ -408,15 +410,20 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             case UBP(newDependeePointsTo: PointsToSet @unchecked) ⇒
                 val newDependees = updatedDependees(eps, dependees)
 
-                val results = updatedResults(e, newDependees, newDependeePointsTo, {
-                    old ⇒
+                val results = updatedResults(
+                    e,
+                    newDependees,
+                    newDependeePointsTo,
+                    { old ⇒
                         updatedPointsToSet(
                             old,
                             newDependeePointsTo,
                             eps,
                             dependees
                         )
-                })
+                    },
+                    true
+                )
 
                 Results(results)
 
@@ -428,7 +435,8 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         e:                   Entity,
         newDependees:        Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
         newDependeePointsTo: PointsToSet,
-        updatePointsTo:      PointsToSet ⇒ PointsToSet
+        updatePointsTo:      PointsToSet ⇒ PointsToSet,
+        isUpdate:            Boolean                                               = false
     ): Seq[ProperPropertyComputationResult] = {
         var results: Seq[ProperPropertyComputationResult] = Seq.empty
 
@@ -439,32 +447,30 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             )
         }
 
-        if (newDependeePointsTo ne emptyPointsToSet) {
-            results +:= PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
-                e,
-                pointsToPropertyKey,
-                {
-                    case eps @ UBP(ub: PointsToSet @unchecked) ⇒
-                        val newPointsToSet = updatePointsTo(ub)
+        results +:= PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+            e,
+            pointsToPropertyKey,
+            {
+                case eps @ UBP(ub: PointsToSet @unchecked) ⇒
+                    val newPointsToSet = updatePointsTo(ub)
 
-                        if (newPointsToSet ne ub) {
-                            Some(InterimEUBP(e, newPointsToSet))
-                        } else {
-                            None
-                        }
+                    if (newPointsToSet ne ub) {
+                        Some(InterimEUBP(e, newPointsToSet))
+                    } else {
+                        None
+                    }
 
-                    case _: EPK[Entity, _] ⇒
-                        val newPointsToSet = updatePointsTo(emptyPointsToSet)
-                        if (newPointsToSet ne emptyPointsToSet)
-                            Some(InterimEUBP(e, newPointsToSet))
-                        else
-                            None
+                case _: EPK[Entity, _] ⇒
+                    val newPointsToSet = updatePointsTo(emptyPointsToSet)
+                    if (newPointsToSet ne emptyPointsToSet)
+                        Some(InterimEUBP(e, newPointsToSet))
+                    else
+                        None
 
-                    case eOptP ⇒
-                        throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-                }
-            )
-        }
+                case eOptP ⇒
+                    throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
+            }
+        )
 
         results
     }

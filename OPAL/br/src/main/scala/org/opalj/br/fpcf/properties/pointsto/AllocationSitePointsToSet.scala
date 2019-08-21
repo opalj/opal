@@ -277,9 +277,6 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     override def included(
         other: AllocationSitePointsToSet, seenElements: Int
     ): AllocationSitePointsToSet = {
-        if(seenElements > 0)
-            println()
-        //assert(seenElements == 0)
         other
     }
 
