@@ -13,7 +13,7 @@ import static org.opalj.fpcf.properties.callgraph.TypePropagationVariant.CTA;
  */
 
 @AvailableTypes(
-        value = {"java/lang/String", "[Ljava/lang/String;"},
+        value = {"[Ljava/lang/String;"},
         variants = CTA)
 public class SupplementaryTests {
 

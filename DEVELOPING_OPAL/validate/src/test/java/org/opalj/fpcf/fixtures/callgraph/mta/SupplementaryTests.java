@@ -16,7 +16,7 @@ import static org.opalj.fpcf.properties.callgraph.TypePropagationVariant.MTA;
  * @author Andreas Bauer
  */
 @AvailableTypes(
-        value = {"java/lang/String", "[Ljava/lang/String;"},
+        value = {"[Ljava/lang/String;"},
         variants = { MTA, CTA })
 public class SupplementaryTests {
 

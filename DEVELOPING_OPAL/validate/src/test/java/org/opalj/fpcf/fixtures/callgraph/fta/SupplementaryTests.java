@@ -16,7 +16,7 @@ import static org.opalj.fpcf.properties.callgraph.TypePropagationVariant.FTA;
 public class SupplementaryTests {
 
     @AvailableTypes(
-            value = {"java/lang/String", "[Ljava/lang/String;"},
+            value = {"[Ljava/lang/String;"},
             variants = FTA)
     public static void main(String[] args) {
         Scope1.test();

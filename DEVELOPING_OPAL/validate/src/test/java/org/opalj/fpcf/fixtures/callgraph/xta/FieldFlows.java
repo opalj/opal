@@ -5,7 +5,7 @@ import org.opalj.fpcf.properties.callgraph.AvailableTypes;
 public class FieldFlows {
     private static void sink(Object obj) { }
 
-    @AvailableTypes({"java/lang/String", "[Ljava/lang/String;"})
+    @AvailableTypes({"[Ljava/lang/String;"})
     public static void main(String[] args) {
         staticFieldFlowTest();
         staticArrayFieldFlowTest();

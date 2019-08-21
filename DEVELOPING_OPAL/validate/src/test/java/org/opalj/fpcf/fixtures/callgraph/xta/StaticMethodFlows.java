@@ -17,9 +17,9 @@ public class StaticMethodFlows {
     public static void sink(Object obj) {}
 
     // The main enty point. The annotation ensures that no values flow back from the called methods
-    // since the return type is void. Since it is a main method, string and string array are available
+    // since the return type is void. Since it is a main method, string array is an available type
     // by default.
-    @AvailableTypes({"java/lang/String", "[Ljava/lang/String;"})
+    @AvailableTypes({"[Ljava/lang/String;"})
     public static void main(String[] args) {
         // Call the tests. No data-flow here that should influence the results.
         parameterFlow();
