@@ -13,6 +13,7 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.UBP
@@ -29,10 +30,11 @@ import org.opalj.br.IntegerType
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
+import org.opalj.br.ReferenceType
 
 class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends PointsToAnalysisBase with AllocationSiteBasedAnalysis {
 
     //private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
     private[this] val ArrayT = ObjectType("java/lang/reflect/Array")
@@ -44,7 +46,7 @@ class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
 
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses = List(
-            new AllocationSiteBasedTamiFlexPointsToNewInstanceAnalysis(
+            new TamiFlexPointsToNewInstanceAnalysis[ElementType, PointsToSet](
                 project,
                 declaredMethods(
                     ArrayT,
@@ -54,9 +56,12 @@ class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
                     MethodDescriptor.apply(
                         RefArray(ObjectType.Class, IntegerType), ObjectType.Object
                     )
-                )
+                ),
+                pointsToPropertyKey,
+                emptyPointsToSet,
+                createPointsToSet
             ),
-            new AllocationSiteBasedTamiFlexPointsToNewInstanceAnalysis(
+            new TamiFlexPointsToNewInstanceAnalysis[ElementType, PointsToSet](
                 project,
                 declaredMethods(
                     ArrayT,
@@ -66,7 +71,10 @@ class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
                     MethodDescriptor.apply(
                         RefArray(ObjectType.Class, ArrayType(IntegerType)), ObjectType.Object
                     )
-                )
+                ),
+                pointsToPropertyKey,
+                emptyPointsToSet,
+                createPointsToSet
             )
         )
 
@@ -94,7 +102,25 @@ object AllocationSiteBasedTamiFlexPointsToAnalysisScheduler extends BasicFPCFEag
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 }
 
-trait TamiFlexPointsToNewInstanceAnalysis extends PointsToAnalysisBase with APIBasedAnalysis {
+class TamiFlexPointsToNewInstanceAnalysis[E, P >: Null <: PointsToSetLike[E, _, P]](
+        final val project:                                SomeProject,
+        override val apiMethod:                           DeclaredMethod,
+        override protected[this] val pointsToPropertyKey: PropertyKey[P],
+        override protected val emptyPointsToSet:          P,
+        val createPTS:                                    (Int, DeclaredMethod, ReferenceType, Boolean, Boolean) ⇒ P
+) extends PointsToAnalysisBase with APIBasedAnalysis {
+    override type ElementType = E
+    override type PointsToSet = P
+
+    override def createPointsToSet(
+        pc:             Int,
+        declaredMethod: DeclaredMethod,
+        allocatedType:  ReferenceType,
+        isConstant:     Boolean,
+        isEmptyArray:   Boolean
+    ): PointsToSet =
+        createPTS(pc, declaredMethod, allocatedType, isConstant, isEmptyArray)
+
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
 
     override def handleNewCaller(
@@ -135,11 +161,3 @@ trait TamiFlexPointsToNewInstanceAnalysis extends PointsToAnalysisBase with APIB
             Results()
     }
 }
-
-class TypeBasedTamiFlexPointsToNewInstanceAnalysis private[analyses] (
-    final val project: SomeProject, override val apiMethod: DeclaredMethod
-) extends TamiFlexPointsToNewInstanceAnalysis with TypeBasedAnalysis
-
-class AllocationSiteBasedTamiFlexPointsToNewInstanceAnalysis private[analyses] (
-    final val project: SomeProject, override val apiMethod: DeclaredMethod
-) extends TamiFlexPointsToNewInstanceAnalysis with AllocationSiteBasedAnalysis

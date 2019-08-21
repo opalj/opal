@@ -12,9 +12,12 @@ import scala.collection.JavaConverters._
 
 import com.typesafe.config.ConfigValueFactory
 
+import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -100,6 +103,15 @@ object CallGraph extends ProjectAnalysisApplication {
         pointsToFile: Option[String],
         projectTime:  Seconds
     ): BasicReport = {
+        project.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                implicit val lg: LogContext = project.logContext
+                val ps = PKESequentialPropertyStore.apply(context: _*)
+                ps
+            }
+        )
+
         // TODO: Implement output files
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm ⇒

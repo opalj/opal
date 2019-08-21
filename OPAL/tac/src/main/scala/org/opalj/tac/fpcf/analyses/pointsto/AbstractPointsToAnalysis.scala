@@ -789,27 +789,25 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     dependees.values.map(_._1), continuationForShared(e, dependees)
                 )
             }
-            if (pointsToSet ne emptyPointsToSet) {
-                results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
-                    e,
-                    pointsToPropertyKey,
-                    {
-                        case _: EPK[Entity, _] ⇒
-                            Some(InterimEUBP(e, pointsToSet))
+            results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+                e,
+                pointsToPropertyKey,
+                {
+                    case _: EPK[Entity, _] ⇒
+                        Some(InterimEUBP(e, pointsToSet))
 
-                        case eps @ UBP(ub: PointsToSet @unchecked) ⇒
-                            val newPointsTo = ub.included(pointsToSet, 0)
-                            if (newPointsTo ne ub) {
-                                Some(InterimEUBP(e, newPointsTo))
-                            } else {
-                                None
-                            }
+                    case eps @ UBP(ub: PointsToSet @unchecked) ⇒
+                        val newPointsTo = ub.included(pointsToSet, 0)
+                        if (newPointsTo ne ub) {
+                            Some(InterimEUBP(e, newPointsTo))
+                        } else {
+                            None
+                        }
 
-                        case eOptP ⇒
-                            throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-                    }
-                )
-            }
+                    case eOptP ⇒
+                        throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
+                }
+            )
         }
 
         for (fakeEntity ← state.getFieldsIterator) {
@@ -830,20 +828,21 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, field) = fakeEntity
                 val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
-                val defSitesEPKs = defSitesWithoutExceptions.map[EPK[Entity, Property]] { ds ⇒
-                    val e = EPK(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
-                    // otherwise it might be the case that the property store does not know the epk
-                    ps(e)
-                    e
-                }.toTraversable
+                var knownPointsTo = emptyPointsToSet
+                val defSitesEPSs = defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
+                    val rhsPTS =
+                        ps(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
+                    knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
+                    rhsPTS.toEPK → rhsPTS
+                }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
                 assert(dependees.nonEmpty)
-                if (defSitesEPKs.nonEmpty)
+                if (defSitesEPSs.nonEmpty)
                     results += InterimPartialResult(
                         dependees.values.map(_._1),
                         continuationForNewAllocationSitesAtPutField(
-                            defSitesEPKs, field, dependees
+                            knownPointsTo, defSitesEPSs, field, dependees
                         )
                     )
             }
@@ -867,20 +866,21 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, arrayType) = fakeEntity
                 val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
-                val defSitesEPKs = defSitesWithoutExceptions.map[EPK[Entity, Property]] { ds ⇒
-                    val epk = EPK(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
-                    // otherwise it might be the case that the property store does not know the epk
-                    ps(epk)
-                    epk
-                }.toTraversable
+                var knownPointsTo = emptyPointsToSet
+                val defSitesEPSs = defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
+                    val rhsPTS =
+                        ps(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
+                    knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
+                    rhsPTS.toEPK → rhsPTS
+                }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
                 assert(dependees.nonEmpty)
-                if (defSitesEPKs.nonEmpty)
+                if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
                     results += InterimPartialResult(
                         dependees.values.map(_._1),
                         continuationForNewAllocationSitesAtArrayStore(
-                            defSitesEPKs, arrayType, dependees
+                            knownPointsTo, defSitesEPSs, arrayType, dependees
                         )
                     )
             }
@@ -931,9 +931,11 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     }
                 }
 
-                updatedResults(e, newDependees, newPointsToSet, {
+                val results = updatedResults(e, newDependees, newPointsToSet, {
                     old ⇒ old.included(newPointsToSet, typeFilter)
                 })
+
+                Results(results)
 
             case _ ⇒ super.continuationForShared(e, dependees)(eps)
         }
