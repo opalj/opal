@@ -57,8 +57,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethodAnalysis {
 
-    private[this] val tamiFlexLogData = project.get(TamiFlexKey)
-
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
@@ -179,38 +177,29 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val defSiteObject = definitionSites(method, pc)
 
                 // TODO fix these ugly hacks
-                if (targetVar.value.isReferenceValue &&
+                if (call.descriptor.returnType.isReferenceType &&
                     // Unsafe.getObject and getObjectVolatile are handled like getField
                     ((call.declaringClass ne UnsafeT) || !call.name.startsWith("getObject"))) {
-
-                    val line = state.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
-                    val isTamiFlexControlled = call.declaringClass match {
-                        case ConstructorT ⇒ call.name == "newInstance" &&
-                            tamiFlexLogData.classes(state.method, "Constructor.newInstance", line).nonEmpty
-                        case FieldT ⇒ call.name == "get" &&
-                            tamiFlexLogData.fields(state.method, "Field.get*", line).nonEmpty
-                        case _ ⇒ false
+                    val index = tac.pcToIndex(pc)
+                    val nextStmt = tac.stmts(index + 1)
+                    val filter = nextStmt match {
+                        case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
+                            t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
+                        case _ ⇒
+                            PointsToSetLike.noFilter
                     }
-
-                    if (!isTamiFlexControlled) {
-                        val index = tac.pcToIndex(pc)
-                        val nextStmt = tac.stmts(index + 1)
-                        val filter = nextStmt match {
-                            case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
-                                t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
-                            case _ ⇒
-                                PointsToSetLike.noFilter
-                        }
-                        if (state.hasCalleesDepenedee) {
-                            state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, filter)
-                            state.addDependee(defSiteObject, state.calleesDependee, filter)
-                        }
-                        state.includeSharedPointsToSets(
-                            defSiteObject,
-                            targets.map(currentPointsTo(defSiteObject, _, filter)),
-                            filter
-                        )
+                    if (state.hasCalleesDepenedee) {
+                        state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, filter)
+                        state.addDependee(defSiteObject, state.calleesDependee, filter)
                     }
+                    state.includeSharedPointsToSets(
+                        defSiteObject,
+                        targets.collect {
+                            case target if target.descriptor.returnType.isReferenceType ⇒
+                                currentPointsTo(defSiteObject, target, filter)
+                        },
+                        filter
+                    )
                 }
                 handleCall(call, pc)
 
@@ -413,8 +402,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         )
     }
 
-    private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
-    private[this] val FieldT = ObjectType("java/lang/reflect/Field")
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
 
     private[this] def handleDirectCall(
@@ -471,53 +458,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
             val defSites = IntTrieSet(state.tac.pcToIndex(pc))
             handleArrayStore(ArrayType.ArrayOfObject, call.params(2).asVar.definedBy, defSites)
-        }
-
-        /*
-         * Special handling for Class|Array|Constructor.newInstance using tamiflex
-         * TODO: Integrate into a TamiFlex analysis
-         */
-        val line = state.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
-        if (target.declaringClassType eq ConstructorT) {
-            target.name match {
-                case "getModifiers" ⇒
-                // TODO
-                case "newInstance" ⇒
-                    val allocatedTypes = tamiFlexLogData.classes(state.method, "Constructor.newInstance", line)
-                    for (allocatedType ← allocatedTypes) {
-                        val pointsToSet = createPointsToSet(
-                            pc, state.method, allocatedType, isConstant = false
-                        )
-                        val defSite = definitionSites(state.method.definedMethod, pc)
-                        state.includeSharedPointsToSet(
-                            defSite, pointsToSet, PointsToSetLike.noFilter
-                        )
-                    }
-                case _ ⇒
-            }
-
-        } else if (target.declaringClassType eq FieldT) {
-            if (target.name == "get") {
-                val fields = tamiFlexLogData.fields(state.method, "Field.get*", line)
-                for (field ← fields) {
-                    if (field.isStatic) {
-                        handleGetStatic(field, pc)
-                    } else {
-                        handleGetField(RealField(field), pc, call.params.head.asVar.definedBy)
-                    }
-                }
-            } else if (target.name == "set") {
-                val fields = tamiFlexLogData.fields(state.method, "Field.set*", line)
-                for (field ← fields) {
-                    if (field.isStatic) {
-                        handlePutStatic(field, call.params(1).asVar.definedBy)
-                    } else {
-                        handlePutField(
-                            RealField(field), call.params.head.asVar.definedBy, call.params(1).asVar.definedBy
-                        )
-                    }
-                }
-            }
         }
 
         if (target.declaringClassType eq UnsafeT) {
@@ -636,12 +576,14 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     // if we already have a dependency to that method, we do not need to process it
                     // otherwise, it might still be the case that we processed it before but it is
                     // final and thus not part of dependees anymore
-                    if (!dependees.contains(EPK(entity, pointsToPropertyKey))) {
-                        val p2s = ps(entity, pointsToPropertyKey)
-                        if (p2s.isRefinable) {
-                            newDependees += (p2s.toEPK → ((p2s, typeFilter)))
+                    if (dependeeIsExceptions || target.descriptor.returnType.isReferenceType) {
+                        if (!dependees.contains(EPK(entity, pointsToPropertyKey))) {
+                            val p2s = ps(entity, pointsToPropertyKey)
+                            if (p2s.isRefinable) {
+                                newDependees += (p2s.toEPK → ((p2s, typeFilter)))
+                            }
+                            newPointsToSet = newPointsToSet.included(pointsToUB(p2s), typeFilter)
                         }
-                        newPointsToSet = newPointsToSet.included(pointsToUB(p2s), typeFilter)
                     }
                 }
 

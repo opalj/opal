@@ -149,7 +149,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         fieldDesc, sourceMethod, sourceLine, _, _) ⇒
                         addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Class.getDeclaredχonstructor" | "Class.getConstructor" |
+                    case Array("Class.getDeclaredConstructor" | "Class.getConstructor" |
                         "Class.getDeclaredMethod" | "Class.getMethod",
                         methodDesc, sourceMethod, sourceLine, _, _) ⇒
                         addMethod(methodDesc, sourceMethod, entries.head, sourceLine)

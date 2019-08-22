@@ -11,7 +11,6 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 
-import org.opalj.fpcf.Entity
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
@@ -81,14 +80,8 @@ object PointsToRelation {
     }
 }
 
-sealed trait EntityDescription {
-    def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): Entity
-}
+sealed trait EntityDescription
+
 object EntityDescription {
     implicit val reader: ValueReader[EntityDescription] = (config: Config, path: String) ⇒ {
         val c = config.getConfig(path)
@@ -123,15 +116,9 @@ object EntityDescription {
 case class MethodDescription(
         cf: String, name: String, desc: String
 ) extends EntityDescription {
-    override def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): DeclaredMethod = {
+    def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)
-        val descriptor = MethodDescriptor(desc)
-        declaredMethods(classType, classType.packageName, classType, name, descriptor)
+        declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
     }
 }
 
@@ -147,51 +134,35 @@ object MethodDescription {
 case class StaticFieldDescription(
         cf: String, name: String, fieldType: String
 ) extends EntityDescription {
-    override def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): Field = {
-        val classType = ObjectType(cf)
-        val ft = FieldType(fieldType)
-        val fieldOption = p.resolveFieldReference(classType, name, ft)
-        if (fieldOption.isEmpty) {
-            throw new RuntimeException(s"specified field $this is not part of the project.")
-        }
-        fieldOption.get
+    def fieldOption(project: SomeProject): Option[Field] = {
+        project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType))
     }
 }
 
 case class ParameterDescription(
         cf: String, name: String, desc: String, index: Int
 ) extends EntityDescription {
-    override def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): VirtualFormalParameter = {
+    def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)
-        val descriptor = MethodDescriptor(desc)
-        val dm = declaredMethods(classType, classType.packageName, classType, name, descriptor)
-        virtualFormalParameters(dm)(index)
+        declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
+    }
+
+    def fp(
+        method: DeclaredMethod, virtualFormalParameters: VirtualFormalParameters
+    ): VirtualFormalParameter = {
+        virtualFormalParameters(method)(index)
     }
 }
 
 case class AllocationSiteDescription(
-        cf: String,
-        name: String,
-        desc: String,
-        instantiatedType: String,
+        cf:                  String,
+        name:                String,
+        desc:                String,
+        instantiatedType:    String,
         arrayComponentTypes: Seq[String]
 ) extends EntityDescription {
-    override def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): Entity = {
-        throw new RuntimeException("this should only be used as rhs and not be stored in the property store")
+    def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
+        val classType = ObjectType(cf)
+        declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
     }
 }

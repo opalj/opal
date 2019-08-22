@@ -5,28 +5,16 @@ package fpcf
 package analyses
 package pointsto
 
-import scala.collection.mutable.ArrayBuffer
-
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.NoResult
-import org.opalj.fpcf.PartialResult
-import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBPS
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
@@ -40,6 +28,9 @@ import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.FieldType
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.ReferenceType
 
 /**
  * Applies the impact of preconfigured methods to the points-to analysis.
@@ -52,6 +43,7 @@ import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+    private lazy val virtualFormalParameters = project.get(VirtualFormalParametersKey)
 
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
         ConfiguredMethods.reader.read(
@@ -84,124 +76,132 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
         dm:   DefinedMethod,
         data: Array[PointsToRelation]
     ): PropertyComputationResult = {
-        val results = ArrayBuffer.empty[ProperPropertyComputationResult]
+        var nextFakePC = 0
+
+        implicit val state: State = new PointsToAnalysisState[ElementType, PointsToSet](dm, null)
 
         // for each configured points to relation, add all points-to info from the rhs to the lhs
         for (PointsToRelation(lhs, rhs) ← data) {
-            rhs match {
-                case asd: AllocationSiteDescription ⇒
-                    if (asd.instantiatedType.startsWith("[")) {
-                        val instantiatedType = FieldType(asd.instantiatedType).asArrayType
-                        val pts = createPointsToSet(0, dm, instantiatedType, isConstant = false)
-                        var arrayEntity: ArrayEntity[ElementType] = null // TODO ugly hack
-                        pts.forNewestNElements(1)(as ⇒ arrayEntity = ArrayEntity(as))
-                        results += createPartialResultOpt(lhs.entity, pts).get
-                        if (asd.arrayComponentTypes.nonEmpty) {
-                            var arrayPTS: PointsToSet = emptyPointsToSet
-                            asd.arrayComponentTypes.foreach { componentTypeString ⇒
-                                val componentType = ObjectType(componentTypeString)
-                                arrayPTS = arrayPTS.included(
-                                    createPointsToSet(0, dm, componentType, isConstant = false)
-                                )
-                            }
-                            results += createPartialResultOpt(arrayEntity, arrayPTS).get
-                        }
-                    } else {
-                        val instantiatedType = ObjectType(asd.instantiatedType)
-                        val pts = createPointsToSet(0, dm, instantiatedType, isConstant = false)
-                        results += createPartialResultOpt(lhs.entity, pts).get
-                    }
-                case _ ⇒
-                    val pointsToEOptP = propertyStore(rhs.entity, pointsToPropertyKey)
-
-                    // the points-to set associated with the rhs
-                    val pts = if (pointsToEOptP.hasUBP)
-                        pointsToEOptP.ub
-                    else
-                        emptyPointsToSet
-
-                    // only create a partial result if there is some information to apply
-                    // partial result that updates the points-to information
-                    val prOpt = createPartialResultOpt(lhs.entity, pts)
-
-                    // if the rhs is not yet final, we need to get updated if it changes
-                    if (pointsToEOptP.isRefinable) {
-                        results += InterimPartialResult(
-                            prOpt, Some(pointsToEOptP), c(lhs.entity, pointsToEOptP)
-                        )
-                    } else if (prOpt.isDefined) {
-                        results += prOpt.get
-                    }
-            }
+            handleGet(rhs, nextFakePC)
+            handlePut(lhs, nextFakePC)
+            nextFakePC += 1
         }
-        Results(results)
+
+        Results(createResults(state))
     }
 
-    private[this] def createPartialResultOpt(
-        lhs:         Entity,
-        newPointsTo: PointsToSet
-    ): Option[PartialResult[Entity, PointsToSet]] = {
-        if (newPointsTo.numTypes > 0) {
-            Some(PartialResult[Entity, PointsToSet](lhs, pointsToPropertyKey, {
-                case InterimUBP(ub: PointsToSet @unchecked) ⇒
-                    // here we assert that updated returns the identity if pts is already contained
-                    val newUB = ub.included(newPointsTo)
-                    if (newUB eq ub) {
-                        None
-                    } else {
-                        Some(InterimEUBP(lhs, newUB))
-                    }
-                case _: EPK[Entity, PointsToSet] ⇒
-                    Some(InterimEUBP(lhs, newPointsTo))
-
-                case fep: FinalEP[Entity, PointsToSet] ⇒
-                    throw new IllegalStateException(s"unexpected final value $fep")
-            }))
-        } else
-            None
+    @inline override protected[this] def currentPointsToOfDefSite(
+        depender:        DependerType,
+        dependeeDefSite: Int,
+        typeFilter:      ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+    )(implicit state: State): PointsToSet = {
+        currentPointsTo(
+            depender, definitionSites(state.method.definedMethod, dependeeDefSite), typeFilter
+        )
     }
 
-    private[this] def c(
-        lhs: Entity, rhsEOptP: EOptionP[Entity, PointsToSet]
-    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case UBPS(rhsUB: PointsToSet @unchecked, rhsIsFinal) ⇒
-            // there is no change, but still a dependency, just return this continuation
-            if (rhsEOptP.hasUBP && (rhsEOptP.ub eq rhsUB) && eps.isRefinable) {
-                InterimPartialResult(Some(eps), c(lhs, eps.asInstanceOf[EPS[Entity, PointsToSet]]))
-            } else {
-                val pr = PartialResult[Entity, PointsToSet](
-                    lhs,
-                    pointsToPropertyKey,
-                    {
-                        case InterimUBP(lhsUB: PointsToSet @unchecked) ⇒
-
-                            // here we assert that updated returns the identity if pts is already contained
-                            val newUB = lhsUB.included(rhsUB)
-                            if (newUB eq lhsUB) {
-                                None
-                            } else {
-                                Some(InterimEUBP(lhs, newUB))
-                            }
-
-                        case _: EPK[Entity, PointsToSet] ⇒
-                            Some(InterimEUBP(lhs, rhsUB))
-
-                        case fep: FinalEP[Entity, PointsToSet] ⇒
-                            throw new IllegalStateException(s"unexpected final value $fep")
-                    }
+    private[this] def handleGet(rhs: EntityDescription, pc: Int)(implicit state: State): Unit = {
+        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        rhs match {
+            case md: MethodDescription ⇒
+                val method = md.method(declaredMethods)
+                state.includeSharedPointsToSet(
+                    defSiteObject,
+                    currentPointsTo(defSiteObject, method, PointsToSetLike.noFilter),
+                    PointsToSetLike.noFilter
                 )
 
-                if (rhsIsFinal) {
-                    pr
-                } else {
-                    InterimPartialResult(
-                        Some(pr), Some(eps), c(lhs, eps.asInstanceOf[EPS[Entity, PointsToSet]])
+            case sfd: StaticFieldDescription ⇒
+                val fieldOption = sfd.fieldOption(p)
+                if (fieldOption.isDefined)
+                    handleGetStatic(fieldOption.get, pc)
+
+            case pd: ParameterDescription ⇒
+                val method = pd.method(declaredMethods)
+                val fp = pd.fp(method, virtualFormalParameters)
+                if (fp ne null) {
+                    state.includeSharedPointsToSet(
+                        defSiteObject,
+                        currentPointsTo(defSiteObject, fp, PointsToSetLike.noFilter),
+                        PointsToSetLike.noFilter
                     )
                 }
-            }
-        case _ ⇒
-            throw new IllegalArgumentException(s"unexpected update $eps")
+
+            case asd: AllocationSiteDescription ⇒
+                val method = asd.method(declaredMethods)
+                if (asd.instantiatedType.startsWith("[")) {
+                    val theInstantiatedType = FieldType(asd.instantiatedType).asArrayType
+                    val pts =
+                        createPointsToSet(0, method, theInstantiatedType, isConstant = false)
+                    state.includeSharedPointsToSet(defSiteObject, pts, PointsToSetLike.noFilter)
+                    if (asd.arrayComponentTypes.nonEmpty) {
+                        var arrayEntity: ArrayEntity[ElementType] = null // TODO ugly hack
+                        pts.forNewestNElements(1)(as ⇒ arrayEntity = ArrayEntity(as))
+                        var arrayPTS: PointsToSet = emptyPointsToSet
+                        asd.arrayComponentTypes.foreach { componentTypeString ⇒
+                            val componentType = ObjectType(componentTypeString)
+                            arrayPTS = arrayPTS.included(
+                                createPointsToSet(0, method, componentType, isConstant = false)
+                            )
+                        }
+                        state.includeSharedPointsToSet(
+                            arrayEntity, arrayPTS, PointsToSetLike.noFilter
+                        )
+                    }
+                } else {
+                    val theInstantiatedType = ObjectType(asd.instantiatedType)
+                    state.includeSharedPointsToSet(
+                        defSiteObject,
+                        createPointsToSet(0, method, theInstantiatedType, isConstant = false),
+                        PointsToSetLike.noFilter
+                    )
+                }
+        }
     }
+
+    private[this] def handlePut(lhs: EntityDescription, pc: Int)(implicit state: State): Unit =
+        lhs match {
+            case md: MethodDescription ⇒
+                val method = md.method(declaredMethods)
+                val returnType = method.descriptor.returnType.asReferenceType
+                val filter = { t: ReferenceType ⇒
+                    classHierarchy.isSubtypeOf(t, returnType)
+                }
+                state.includeSharedPointsToSet(
+                    method,
+                    currentPointsToOfDefSite(method, pc, filter),
+                    filter
+                )
+
+            case sfd: StaticFieldDescription ⇒
+                val fieldOption = sfd.fieldOption(p)
+                if (fieldOption.isDefined)
+                    handlePutStatic(fieldOption.get, IntTrieSet(pc))
+
+            case pd: ParameterDescription ⇒
+                val method = pd.method(declaredMethods)
+                val fp = pd.fp(method, virtualFormalParameters)
+                if (fp ne null) {
+                    val paramType = if(fp.origin == -1) {
+                        // TODO
+                        ObjectType.Object
+                    } else {
+                        method.descriptor.parameterType(-fp.origin - 1).asReferenceType
+                    }
+
+                    val filter = { t: ReferenceType ⇒
+                        classHierarchy.isSubtypeOf(t, paramType)
+                    }
+                    state.includeSharedPointsToSet(
+                        fp,
+                        currentPointsToOfDefSite(fp, pc, filter),
+                        filter
+                    )
+                }
+
+            case _: AllocationSiteDescription ⇒
+                throw new RuntimeException("AllocationSites must not be assigned to")
+        }
 }
 
 trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {

@@ -30,6 +30,8 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.Field
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.DefinedMethod
+import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
@@ -174,6 +176,7 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
             println(s"Static Field PTSs: ${byType(classOf[Field]).size}")
             println(s"Array PTSs: ${byType(classOf[ArrayEntity[Long]]).size}")
+            println(s"Return PTSs: ${byType(classOf[DefinedMethod]).size + byType(classOf[VirtualDeclaredMethod]).size}")
             println(s"MethodException PTSs: ${byType(classOf[MethodExceptions]).size}")
             println(s"CallException PTSs: ${byType(classOf[CallExceptions]).size}")
 
@@ -182,6 +185,7 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"Instance Field PTS entries: ${byType(classOf[Tuple2[Long, Field]]).map(_.ub.numElements).sum}")
             println(s"Static Field PTS entries: ${byType(classOf[Field]).map(_.ub.numElements).sum}")
             println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
+            println(s"Return PTS entries: ${byType(classOf[DefinedMethod]).map(_.ub.numElements).sum + byType(classOf[VirtualDeclaredMethod]).map(_.ub.numElements).sum}")
             println(s"MethodException PTS entries: ${byType(classOf[MethodExceptions]).map(_.ub.numElements).sum}")
             println(s"CallException PTS entries: ${byType(classOf[CallExceptions]).map(_.ub.numElements).sum}")
 
