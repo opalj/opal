@@ -6,7 +6,6 @@ package analyses
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.CheapPropertyComputation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -58,12 +57,9 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
             case FinalP(sdu) ⇒ Result(dm, sdu)
             case ep @ InterimLUBP(lb, ub) ⇒
-                InterimResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
+                InterimResult(dm, lb, ub, Seq(ep), c)
             case epk ⇒
-                InterimResult(
-                    dm, UsesVaryingData, UsesNoStaticData,
-                    Seq(epk), c, CheapPropertyComputation
-                )
+                InterimResult(dm, UsesVaryingData, UsesNoStaticData, Seq(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), StaticDataUsage.key))
@@ -188,7 +184,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     else {
                         InterimResult(
                             definedMethod, UsesVaryingData, maxLevel,
-                            dependees, c, CheapPropertyComputation
+                            dependees, c
                         )
                     }
 
@@ -200,7 +196,7 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                     else {
                         InterimResult(
                             definedMethod, UsesVaryingData, maxLevel,
-                            dependees, c, CheapPropertyComputation
+                            dependees, c
                         )
                     }
 
@@ -209,24 +205,15 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
                 case InterimUBP(UsesConstantDataOnly) ⇒
                     maxLevel = UsesConstantDataOnly
                     dependees += eps
-                    InterimResult(
-                        definedMethod, UsesVaryingData, maxLevel,
-                        dependees, c, CheapPropertyComputation
-                    )
+                    InterimResult(definedMethod, UsesVaryingData, maxLevel, dependees, c)
 
                 case _: InterimEP[_, _] ⇒
                     dependees += eps
-                    InterimResult(
-                        definedMethod, UsesVaryingData, maxLevel,
-                        dependees, c, CheapPropertyComputation
-                    )
+                    InterimResult(definedMethod, UsesVaryingData, maxLevel, dependees, c)
             }
         }
 
-        InterimResult(
-            definedMethod, UsesVaryingData, maxLevel,
-            dependees, c, CheapPropertyComputation
-        )
+        InterimResult(definedMethod, UsesVaryingData, maxLevel, dependees, c)
     }
 
     /** Called when the analysis is scheduled lazily. */

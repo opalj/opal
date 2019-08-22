@@ -21,13 +21,14 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 /**
  * A property store manages the execution of computations of properties related to concrete
  * entities as well as artificial entities (for example, methods, fields and classes of a program,
- * but, for another example, also the call graph as such). These computations may require and
- * provide information about other entities of the store and the property store implements the logic
- * to handle the computations related to the dependencies between the entities.
+ * but, for another example, also the call graph or the project as such). These computations may
+ * require and provide information about other entities of the store and the property store
+ * implements the logic to handle the computations related to the dependencies between the entities.
  * Furthermore, the property store may parallelize the computation of the properties as far as
  * possible without requiring users to take care of it;
  * users are also generally not required to think about the concurrency when implementing an
- * analysis as long as only immutable data-structures are used.
+ * analysis as long as the properties only use immutable data-structures and the analyses
+ * only use immutable data structures when interacting the property store.
  * The most basic concepts are also described in the SOAP paper:
  * "Lattice Based Modularization of Static Analyses"
  * (https://conf.researchr.org/event/issta-2018/soap-2018-papers-lattice-based-modularization-of-static-analyses)
@@ -36,17 +37,19 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  * The correct strategy, when using the PropertyStore, is to always continue computing the property
  * of an entity and to collect the dependencies on those elements that are (still) relevant.
  * I.e., if some information is not or just not completely available, the analysis should
- * still continue using the provided information and (internally) record the dependency.
- * Later on, when the analysis has computed its result, it reports the same and informs the
- * framework about its dependencies. Based on the later the framework will call back the analysis
- * when a dependency is updated. In general, an analysis should always try to minimize the number
+ * still continue using the provided information and (internally) record the dependency, by storing
+ * the returned property extension.
+ * Later on, when the analysis has computed its (interim) result, it reports the same and informs
+ * the framework about its dependencies.
+ * Based on the later the framework will call back the analysis when a dependency is updated.
+ * In general, an analysis should always try to minimize the number
  * of dependencies to the minimum set to enable the property store to suspend computations that
  * are no longer required.
  *
  * ===Core Requirements on Property Computation Functions (Modular Static Analyses)===
  *  The following requirements ensure correctness and determinism of the result.
- *  - '''At Most One Lazy Function per Property Kind''' A specific kind of property is (in each
- *    phase) always computed by only one registered lazy `PropertyComputation` function.
+ *  - '''At Most One Lazy Function per Property Kind''' A specific kind of property is
+ *    always computed by only one registered lazy `PropertyComputation` function.
  *    No other analysis is (conceptually) allowed to derive a value for an E/PK pairing
  *    for which a lazy function is registered. It is also not allowed to schedule a computation
  *    eagerly if a lazy computation is also registered.
@@ -57,21 +60,25 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  *    be executed concurrently for different entities. The [[OnUpdateContinuation]] functions
  *    are, however, executed sequentially w.r.t. one E/PK pair. This model generally does not
  *    require that users have to think about concurrent issues as long as the initial function
- *    is actually a pure function.
+ *    is actually a pure function, which is usually a non-issue.
  *
  *  - '''Non-Overlapping Results''' [[PropertyComputation]] functions that are invoked on different
  *    entities have to compute result sets that are disjoint unless a [[PartialResult]] is used.
  *    For example, an analysis that performs a computation on class files and
  *    that derives properties of a specific kind related to a class file's methods must ensure
  *    that two concurrent calls of the same analysis - running concurrently on two different
- *    class files - does not derive information about the same method. If results for a specific
+ *    class files - do not derive information about the same method. If results for a specific
  *    entity are collaboratively computed, then a [[PartialResult]] has to be used.
+ *
+ *  - '''If some partial result potentially contributes to the property of an entity,
+ *    the first partial result has to set the property to the default (typically "most precise")
+ *    value.'''
  *
  *  - '''Monoton''' a function which computes a property has to be monotonic.
  *
  * ===Cyclic Dependencies===
  * In general, it may happen that some analyses are mutually dependent and therefore no
- * final value is directly computed. In this case the current extension (the upper bound)
+ * final value is directly computed. In this case the current extension (the most precise result)
  * of the properties are committed as the final values when the phase end. If the analyses only
  * computed a lower bound that one will be used.
  *
@@ -84,7 +91,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  *    (2) [[registerLazyPropertyComputation]] or [[registerTriggeredComputation]],
  *    (3) [[scheduleEagerComputationForEntity]] / [[scheduleEagerComputationsForEntities]],
  *    (4) [[force]] and
- *    (5) (finally) [[PropertyStore#waitOnPhaseCompletion]] methods.
+ *    (5) (finally) [[PropertyStore#waitOnPhaseCompletion]].
  *    go back to (1).
  *    Hence, the previously mentioned methods MUST NOT be called by
  *    PropertyComputation/OnUpdateComputation functions. The methods to query the store (`apply`)
@@ -101,6 +108,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  *  - EPS =       Entity, Property and the State (final or intermediate)
  *  - EP =        Entity and some (final or intermediate) Property
  *  - EOptionP =  Entity and either a PropertyKey or (if available) a Property
+ *  - ps =        Property Store
  *
  * ==Exceptions==
  * In general, exceptions are only thrown if debugging is turned on due to the costs of checking
@@ -189,13 +197,14 @@ abstract class PropertyStore {
 
     /**
      * If set to `true` no new computations will be scheduled and running computations will
-     * be terminated. Afterwards, the store is no longer usable.
+     * be terminated. Afterwards, the store can be queried, but no new computations can
+     * be started.
      */
     @volatile var doTerminate: Boolean = false
 
     /**
      * Should be called when a PropertyStore is no longer going to be used to schedule
-     * computations and resources (such as Threads) should be freed.
+     * computations.
      *
      * Properties can still be queried after shutdown.
      */
@@ -441,6 +450,15 @@ abstract class PropertyStore {
         entities((otherEPS: SomeEPS) ⇒ otherEPS.isFinal && otherEPS.asFinal.p == p)
     }
 
+    /** @see `get(epk:EPK)` for details. */
+    def get[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Option[EOptionP[E, P]]
+
+    /**
+     * Returns the property of the respective property kind `pk` currently associated
+     * with the given element `e`. Does not trigger any computations.
+     */
+    def get[E <: Entity, P <: Property](epk: EPK[E, P]): Option[EOptionP[E, P]]
+
     /**
      * Associates the given property `p`, which has property kind `pk`, with the given entity
      * `e` iff `e` has no property of the respective kind. The set property is always final.
@@ -683,6 +701,8 @@ abstract class PropertyStore {
      *         is strictly more precise.
      * @note   Querying a property may trigger the (lazy) computation of the property.
      * @note   [[setupPhase]] has to be called before calling apply!
+     * @note   After all computations has finished one of the "pure" query methods (e.g.,
+     *         `entities` or `get` should be used.)
      *
      * @throws IllegalStateException If setup phase was not called or
      *         a previous computation result contained an epk which was not queried.
@@ -897,6 +917,12 @@ abstract class PropertyStore {
     def handleResult(r: PropertyComputationResult): Unit
 
     /**
+     * Executes the given function at some point between now and the return of a subsequent call
+     * of waitOnPhaseCompletion.
+     */
+    def execute(f: ⇒ Unit): Unit
+
+    /**
      * Awaits the completion of all property computations which were previously scheduled.
      * As soon as all initial computations have finished, dependencies on E/P pairs for which
      * no value was computed, will be identified and the fallback value will be used. After that,
@@ -932,7 +958,7 @@ abstract class PropertyStore {
 
     @volatile protected[this] var exception: Throwable = _ /*null*/
 
-    protected[this] def collectException(t: Throwable): Unit = {
+    protected[fpcf] def collectException(t: Throwable): Unit = {
         if (exception != null) {
             if (exception != t
                 && !t.isInstanceOf[InterruptedException]
@@ -956,12 +982,12 @@ abstract class PropertyStore {
         }
     }
 
-    @inline protected[this] def collectAndThrowException(t: Throwable): Nothing = {
+    @inline protected[fpcf] def collectAndThrowException(t: Throwable): Nothing = {
         collectException(t)
         throw t;
     }
 
-    @inline protected[this] def handleExceptions[U](f: ⇒ U): U = {
+    @inline /*visibility should be package and subclasses*/ def handleExceptions[U](f: ⇒ U): U = {
         if (exception != null) throw exception;
 
         try {

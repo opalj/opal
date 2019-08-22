@@ -7,8 +7,6 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.CheapPropertyComputation
-import org.opalj.fpcf.DefaultPropertyComputation
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
@@ -626,14 +624,7 @@ class FieldLocalityAnalysis private[analyses] (
         if (state.hasNoDependees)
             Result(state.field, state.temporaryState)
         else
-            InterimResult(
-                state.field,
-                NoLocalField,
-                state.temporaryState,
-                state.dependees,
-                c,
-                if (state.hasTacDependees) DefaultPropertyComputation else CheapPropertyComputation
-            )
+            InterimResult(state.field, NoLocalField, state.temporaryState, state.dependees, c)
     }
 }
 

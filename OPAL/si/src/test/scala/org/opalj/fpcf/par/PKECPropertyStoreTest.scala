@@ -6,12 +6,10 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 
 abstract class PKECPropertyStoreTestWithDebugging
-    extends PropertyStoreTestWithDebugging[PKECPropertyStore](
-        List(DefaultPropertyComputation, CheapPropertyComputation)
-    ) {
+    extends PropertyStoreTestWithDebugging[PKECPropertyStore] {
 
     override def afterAll(ps: PKECPropertyStore): Unit = {
-        assert(ps.tracer.get.toTxt.size > 0) // basically just a smoke test
+        assert(ps.tracer.get.toTxt.nonEmpty) // basically just a smoke test
     }
 }
 
@@ -26,12 +24,72 @@ class PKECPropertyStoreTestWithDebuggingMaxEvalDepthDefault
 
 }
 
-class PKECPropertyStoreTestWithDebuggingMaxEvalDepth0
+class PKECPropertyStoreTestWithDebuggingMaxEvalDepth32AndSeqTaskManager
     extends PKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
         import PKECPropertyStore.MaxEvaluationDepthKey
-        val config = org.opalj.BaseConfig.withValue(MaxEvaluationDepthKey, fromAnyRef(0))
+        import PKECPropertyStore.TasksManagerKey
+        val config = org.opalj.BaseConfig
+            .withValue(MaxEvaluationDepthKey, fromAnyRef(32))
+            .withValue(TasksManagerKey, fromAnyRef("Seq"))
+        val ps = PKECPropertyStore(
+            PropertyStoreContext(classOf[PropertyStoreTracer], new RecordAllPropertyStoreEvents()),
+            PropertyStoreContext(classOf[Config], config)
+        )
+        ps.suppressError = true
+        ps
+    }
+
+}
+
+class PKECPropertyStoreTestWithDebuggingMaxEvalDepth0AndSeqTaskManager
+    extends PKECPropertyStoreTestWithDebugging {
+
+    def createPropertyStore(): PKECPropertyStore = {
+        import PKECPropertyStore.MaxEvaluationDepthKey
+        import PKECPropertyStore.TasksManagerKey
+        val config = org.opalj.BaseConfig
+            .withValue(MaxEvaluationDepthKey, fromAnyRef(0))
+            .withValue(TasksManagerKey, fromAnyRef("Seq"))
+        val ps = PKECPropertyStore(
+            PropertyStoreContext(classOf[PropertyStoreTracer], new RecordAllPropertyStoreEvents()),
+            PropertyStoreContext(classOf[Config], config)
+        )
+        ps.suppressError = true
+        ps
+    }
+
+}
+
+class PKECPropertyStoreTestWithDebuggingMaxEvalDepth32AndParTaskManager
+    extends PKECPropertyStoreTestWithDebugging {
+
+    def createPropertyStore(): PKECPropertyStore = {
+        import PKECPropertyStore.MaxEvaluationDepthKey
+        import PKECPropertyStore.TasksManagerKey
+        val config = org.opalj.BaseConfig
+            .withValue(MaxEvaluationDepthKey, fromAnyRef(32))
+            .withValue(TasksManagerKey, fromAnyRef("Par"))
+        val ps = PKECPropertyStore(
+            PropertyStoreContext(classOf[PropertyStoreTracer], new RecordAllPropertyStoreEvents()),
+            PropertyStoreContext(classOf[Config], config)
+        )
+        ps.suppressError = true
+        ps
+    }
+
+}
+
+class PKECPropertyStoreTestWithDebuggingMaxEvalDepth0AndParTaskManager
+    extends PKECPropertyStoreTestWithDebugging {
+
+    def createPropertyStore(): PKECPropertyStore = {
+        import PKECPropertyStore.MaxEvaluationDepthKey
+        import PKECPropertyStore.TasksManagerKey
+        val config = org.opalj.BaseConfig
+            .withValue(MaxEvaluationDepthKey, fromAnyRef(0))
+            .withValue(TasksManagerKey, fromAnyRef("Par"))
         val ps = PKECPropertyStore(
             PropertyStoreContext(classOf[PropertyStoreTracer], new RecordAllPropertyStoreEvents()),
             PropertyStoreContext(classOf[Config], config)
@@ -47,13 +105,9 @@ class PKECPropertyStoreTestWithDebuggingMaxEvalDepth0
 // *************************************************************************************************
 
 abstract class PKECPropertyStoreTestWithoutDebugging
-    extends PropertyStoreTestWithoutDebugging[PKECPropertyStore](
-        List(DefaultPropertyComputation, CheapPropertyComputation)
-    ) {
+    extends PropertyStoreTestWithoutDebugging[PKECPropertyStore]
 
-}
-
-class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth128
+class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth128AndSeqTaskManager
     extends PKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
@@ -64,11 +118,22 @@ class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth128
 
 }
 
-class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth0
+class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth0AndSeqTaskManager
     extends PKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
         val ps = PKECPropertyStore("Seq", 0)()
+        ps.suppressError = true
+        ps
+    }
+
+}
+
+class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth1AndParTaskManager
+    extends PKECPropertyStoreTestWithoutDebugging {
+
+    def createPropertyStore(): PKECPropertyStore = {
+        val ps = PKECPropertyStore("Par", 1)()
         ps.suppressError = true
         ps
     }

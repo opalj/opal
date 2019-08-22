@@ -6,7 +6,6 @@ package analyses
 
 import scala.annotation.switch
 
-import org.opalj.fpcf.CheapPropertyComputation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -33,7 +32,9 @@ import org.opalj.br.instructions._
  *
  * @author Dominik Helm
  */
-class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomeProject)
+class L0AllocationFreenessAnalysis private[analyses] (
+        final val project: SomeProject
+)
     extends FPCFAnalysis {
 
     import project.nonVirtualCall
@@ -49,12 +50,9 @@ class L0AllocationFreenessAnalysis private[analyses] ( final val project: SomePr
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
             case FinalP(af) ⇒ Result(dm, af)
             case ep @ InterimLUBP(lb, ub) ⇒
-                InterimResult(dm, lb, ub, Seq(ep), c, CheapPropertyComputation)
+                InterimResult(dm, lb, ub, Seq(ep), c)
             case epk ⇒
-                InterimResult(
-                    dm, MethodWithAllocations, AllocationFreeMethod,
-                    Seq(epk), c, CheapPropertyComputation
-                )
+                InterimResult(dm, MethodWithAllocations, AllocationFreeMethod, Seq(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), AllocationFreeness.key))

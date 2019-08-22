@@ -25,7 +25,7 @@ class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         runnables.isEmpty
     }
 
-    def shutdown(): Unit = {
+    def shutdown()(implicit store: PKECPropertyStore): Unit = {
         runnables.clear()
     }
 

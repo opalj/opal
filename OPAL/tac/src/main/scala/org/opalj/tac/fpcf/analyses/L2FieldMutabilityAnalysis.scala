@@ -29,8 +29,6 @@ import org.opalj.br.fpcf.properties.PrematurelyReadField
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.fpcf.CheapPropertyComputation
-import org.opalj.fpcf.DefaultPropertyComputation
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -343,9 +341,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 NonFinalFieldByAnalysis,
                 state.fieldMutability,
                 state.dependees,
-                c,
-                if (state.tacDependees.isEmpty) CheapPropertyComputation
-                else DefaultPropertyComputation
+                c
             )
         else
             Result(state.field, state.fieldMutability)

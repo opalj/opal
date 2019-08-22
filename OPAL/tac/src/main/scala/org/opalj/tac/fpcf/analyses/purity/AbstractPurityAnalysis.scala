@@ -11,7 +11,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.CheapPropertyComputation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
@@ -604,23 +603,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
             case FinalP(p) ⇒ Result(dm, p)
             case ep @ InterimLUBP(lb, ub) ⇒
-                InterimResult.create(
-                    dm,
-                    lb,
-                    ub,
-                    Seq(ep),
-                    c,
-                    CheapPropertyComputation
-                )
+                InterimResult.create(dm, lb, ub, Seq(ep), c)
             case epk ⇒
-                org.opalj.fpcf.InterimResult(
-                    dm,
-                    ImpureByAnalysis,
-                    CompileTimePure,
-                    Seq(epk),
-                    c,
-                    CheapPropertyComputation
-                )
+                InterimResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))

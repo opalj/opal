@@ -162,9 +162,9 @@ private[par] sealed abstract class EPKState {
     def hasDependees: Boolean
 
     /**
-     * Returns the current set of depeendes. Defined if and only if this `EPKState` is refinable.
+     * Returns the current set of depeendes.
      *
-     * @note The set of dependees is only update when a property computation result is processed
+     * @note The set of dependees is only updated when a property computation result is processed
      *       and there exists, w.r.t. an Entity/Property Kind pair, always at most one
      *       `PropertyComputationResult`.
      */
@@ -387,7 +387,7 @@ private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) exte
     override def removeDepender(someEPK: SomeEPK): Unit = { /* Nothing to do! */ }
     override def isCurrentC(c: OnUpdateContinuation): Boolean = false
     override def hasDependees: Boolean = false
-    override def dependees: Traversable[SomeEOptionP] = Nil
+    override def dependees: Traversable[SomeEOptionP] = null
 
     override def toString: String = s"FinalEPKState(finalEP=$eOptionP)"
 }

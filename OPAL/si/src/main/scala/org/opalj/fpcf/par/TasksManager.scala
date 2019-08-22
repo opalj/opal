@@ -24,10 +24,10 @@ abstract class TasksManager {
 
     def isIdle: Boolean
 
-    def shutdown(): Unit
+    def shutdown()(implicit ps: PKECPropertyStore): Unit
 
     /**
-     * Called to enable the task manager to initialize its thread. Called after the setup
+     * Called to enable the task manager to initialize its threads. Called after the setup
      * of a phase has completed. The task manager is allowed to immediately start the
      * execution of scheduled tasks.
      *

@@ -4,7 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.CheapPropertyComputation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -67,8 +66,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
                         CompileTimeVaryingField,
                         CompileTimeConstantField,
                         Seq(dependee),
-                        c,
-                        CheapPropertyComputation
+                        c
                     )
 
                 case FinalP(LazyInitializedField) ⇒ Result(field, CompileTimeVaryingField)
@@ -77,14 +75,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             }
         }
 
-        org.opalj.fpcf.InterimResult(
-            field,
-            CompileTimeVaryingField,
-            CompileTimeConstantField,
-            Seq(dependee),
-            c,
-            CheapPropertyComputation
-        )
+        InterimResult(field, CompileTimeVaryingField, CompileTimeConstantField, Seq(dependee), c)
     }
 
     /** Called when the analysis is scheduled lazily. */

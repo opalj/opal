@@ -4,8 +4,6 @@ package tac
 package fpcf
 package analyses
 
-import org.opalj.fpcf.CheapPropertyComputation
-import org.opalj.fpcf.DefaultPropertyComputation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
@@ -243,11 +241,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 NonFinalFieldByAnalysis,
                 EffectivelyFinalField,
                 state.escapeDependees ++ state.tacDependees.valuesIterator.map(_._1),
-                c,
-                if (state.tacDependees.isEmpty)
-                    CheapPropertyComputation
-                else
-                    DefaultPropertyComputation
+                c
             )
     }
 

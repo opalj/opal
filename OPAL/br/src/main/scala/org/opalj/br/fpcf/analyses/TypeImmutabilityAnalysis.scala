@@ -4,7 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.fpcf.CheapPropertyComputation
 import org.opalj.fpcf.ELUBP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -80,14 +79,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             if (eps.isFinal)
                                 Result(t, thisUB)
                             else
-                                InterimResult(
-                                    t,
-                                    thisLB,
-                                    thisUB,
-                                    Seq(eps),
-                                    c,
-                                    CheapPropertyComputation
-                                )
+                                InterimResult(t, thisLB, thisUB, Seq(eps), c)
                     }
                 }
             }
@@ -98,15 +90,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 case eps @ InterimLUBP(lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
-                    InterimResult(
-                        t, thisLB, thisUB,
-                        Seq(eps), c, CheapPropertyComputation
-                    )
+                    InterimResult(t, thisLB, thisUB, Seq(eps), c)
                 case epk ⇒
-                    InterimResult(
-                        t, MutableType, ImmutableType,
-                        Seq(epk), c, CheapPropertyComputation
-                    )
+                    InterimResult(t, MutableType, ImmutableType, Seq(epk), c)
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]

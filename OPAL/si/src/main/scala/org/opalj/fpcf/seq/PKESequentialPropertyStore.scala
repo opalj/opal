@@ -24,9 +24,9 @@ import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
  * @author Michael Eichberg
  */
 final class PKESequentialPropertyStore protected (
-        final val ctx:                Map[Class[_], AnyRef],
-        final val tasksManager:       TasksManager,
-        final val MaxEvaluationDepth: Int
+        val ctx:                Map[Class[_], AnyRef],
+        val tasksManager:       TasksManager,
+        val MaxEvaluationDepth: Int
 )(
         implicit
         val logContext: LogContext
@@ -73,7 +73,7 @@ final class PKESequentialPropertyStore protected (
         Array.fill(PropertyKind.SupportedPropertyKinds) { mutable.AnyRefMap.empty }
     }
 
-    // type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
+    // type EntityDependers = AnyRefMap[SomeEPK, OnUpdateContinuation]
     private[this] val dependers: Array[AnyRefMap[Entity, EntityDependers]] = {
         Array.fill(SupportedPropertyKinds) { new AnyRefMap() }
     }
@@ -198,6 +198,17 @@ final class PKESequentialPropertyStore protected (
         ps(pk.id).valuesIterator.collect { case eps: SomeEPS ⇒ eps.asInstanceOf[EPS[Entity, P]] }
     }
 
+    override def get[E <: Entity, P <: Property](
+        e:  E,
+        pk: PropertyKey[P]
+    ): Option[EOptionP[E, P]] = {
+        ps(pk.id).get(e).asInstanceOf[Option[EOptionP[E, P]]]
+    }
+
+    override def get[E <: Entity, P <: Property](epk: EPK[E, P]): Option[EOptionP[E, P]] = {
+        get(epk.e, epk.pk)
+    }
+
     override protected[this] def doApply[E <: Entity, P <: Property](
         epk:  EPK[E, P],
         e:    E,
@@ -238,7 +249,7 @@ final class PKESequentialPropertyStore protected (
                                     }
                                     dependers(sourcePK.id)
                                         .getOrElseUpdate(e, AnyRefMap.empty)
-                                        .put(epk, (c, DefaultPropertyComputation))
+                                        .put(epk, c)
                                     dependees(pkId).put(e, List(sourceEPK))
                                 }
                             }
@@ -261,7 +272,7 @@ final class PKESequentialPropertyStore protected (
                             handleResult(lc(e))
                             evaluationDepth -= 1
                             // we now have a new result (at least an EPK)
-                            epss.get(e).get.asInstanceOf[EOptionP[E, P]]
+                            epss(e).asInstanceOf[EOptionP[E, P]]
                         } else {
                             scheduleLazyComputationForEntity(e)(lc)
                             // return the "current" result
@@ -381,9 +392,8 @@ final class PKESequentialPropertyStore protected (
             val theDependers = dependers(pkId).get(e)
             theDependers.foreach { dependersOfEPK ⇒
                 val currentDependers = dependersOfEPK.keys
-                dependersOfEPK foreach { cHint ⇒
-                    val (dependerEPK, (c, _hint)) = cHint
-                    // IMPROVE Give the PropertyComputationHint a (new) meaningful semantics
+                dependersOfEPK foreach { dependerEKPc ⇒
+                    val (dependerEPK, c) = dependerEKPc
                     if (isFinal || !suppressInterimUpdates(dependerEPK.pk.id)(pkId)) {
                         val t: QualifiedTask =
                             if (isFinal) {
@@ -487,29 +497,27 @@ final class PKESequentialPropertyStore protected (
                             continue = true
 
                         case Results(results) ⇒
-                            results.foreach { result ⇒
-                                result match {
-                                    case InterimPartialResult(newPartialResults, newProcessedDependees, newC) if nextC == null ⇒
-                                        nextPartialResults = newPartialResults
-                                        nextProcessedDependees = newProcessedDependees
-                                        nextC = newC
-                                        continue = true
+                            results.foreach {
+                                case InterimPartialResult(newPartialResults, newProcessedDependees, newC) if nextC == null ⇒
+                                    nextPartialResults = newPartialResults
+                                    nextProcessedDependees = newProcessedDependees
+                                    nextC = newC
+                                    continue = true
 
-                                    /*case InterimResult(newEPS @ SomeEPS(`e`, `pk`), newDependees, newC, _) ⇒
+                                /*case InterimResult(newEPS @ SomeEPS(`e`, `pk`), newDependees, newC, _) ⇒
                                         nextEPS = newEPS
                                         nextC = newC
                                         nextDependees = newDependees
                                         continue = true*/
 
-                                    case r: Result ⇒
-                                        update(r.finalEP, Nil)
+                                case r: Result ⇒
+                                    update(r.finalEP, Nil)
 
-                                    case PartialResult(e, pk, u) ⇒
-                                        handlePartialResult(e, pk, u)
+                                case PartialResult(e, pk, u) ⇒
+                                    handlePartialResult(e, pk, u)
 
-                                    case result ⇒
-                                        handleOtherResult(result)
-                                }
+                                case result ⇒
+                                    handleOtherResult(result)
                             }
 
                         case result ⇒
@@ -524,41 +532,12 @@ final class PKESequentialPropertyStore protected (
         } while (continue)
 
         (nextProcessedDependees, nextC)
-
-        /*
-        processedDependees forall { processedDependee ⇒
-            val processedDependeeE = processedDependee.e
-            val processedDependeePK = processedDependee.pk
-            val processedDependeePKId = processedDependeePK.id
-            val currentDependee = ps(processedDependeePKId)(processedDependeeE)
-            if (currentDependee.isUpdatedComparedTo(processedDependee)) {
-                // There were updates...
-                // hence, we will update the value for other analyses
-                // which want to get the most current value in the meantime,
-                // but we postpone notification of other analyses which are
-                // depending on it until we have the updated value (minimize
-                // the overall number of notifications.)
-                scheduledOnUpdateComputationsCounter += 1
-                val t = if (currentDependee.isFinal) {
-                    val dependeeFinalP = currentDependee.asFinal
-                    OnFinalUpdateComputationTask(this, dependeeFinalP, c)
-                } else {
-                    OnUpdateComputationTask(this, processedDependee.toEPK, c)
-                }
-                tasksManager.push(t, partialResults.map(pr ⇒ pr.epk), processedDependees)
-                false
-            } else {
-                true // <= no update
-            }
-        }
-        */
     }
 
     private[this] def processDependeesOfInterimResult(
         initialEPS:       SomeEPS,
         initialDependees: Traversable[SomeEOptionP],
-        initialC:         OnUpdateContinuation,
-        initialHint:      PropertyComputationHint
+        initialC:         OnUpdateContinuation
     ): (SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation) = {
         // The idea is to stack/aggregate all changes in dependees.
         val e = initialEPS.e
@@ -578,7 +557,7 @@ final class PKESequentialPropertyStore protected (
                 val currentDependee = ps(nextDependeePKId)(nextDependeeE)
                 if (currentDependee.isUpdatedComparedTo(nextDependee)) {
                     nextC(currentDependee.asEPS) match {
-                        case InterimResult(newEPS @ SomeEPS(`e`, `pk`), newDependees, newC, _) ⇒
+                        case InterimResult(newEPS @ SomeEPS(`e`, `pk`), newDependees, newC) ⇒
                             nextEPS = newEPS
                             nextC = newC
                             nextDependees = newDependees
@@ -600,16 +579,6 @@ final class PKESequentialPropertyStore protected (
                             nextDependees = Nil
                             nextC = null
                     }
-                    /*
-                        scheduledOnUpdateComputationsCounter += 1
-                        tasksManager.push(
-                            OnUpdateComputationTask(store, currentDependee.toEPK, initialC),
-                            initialEPS,
-                            initialDependees
-                        )
-                        nextDependees = Nil
-                        nextC = null
-                    */
                     true // <= abort processing current dependees
                 } else {
                     false
@@ -633,7 +602,7 @@ final class PKESequentialPropertyStore protected (
             // compute a/some property/properties for a given entity.
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs /*: Iterator[(PropertyComputation[e],e)]*/ , _) = r
+                val IncrementalResult(ir, npcs /*: Iterator[(PropertyComputation[e],e)]*/ ) = r
                 handleResult(ir)
                 npcs foreach { npc ⇒ val (pc, e) = npc; scheduleEagerComputationForEntity(e)(pc) }
 
@@ -670,7 +639,7 @@ final class PKESequentialPropertyStore protected (
                     newDependees foreach { dependee ⇒
                         val dependeeDependers =
                             dependers(dependee.pk.id).getOrElseUpdate(dependee.e, AnyRefMap.empty)
-                        dependeeDependers += (dependerAK, (newC, DefaultPropertyComputation))
+                        dependeeDependers += ((dependerAK, newC))
                     }
                     dependees(AnalysisKeyId).put(sourceE, newDependees)
                 } else {
@@ -684,11 +653,10 @@ final class PKESequentialPropertyStore protected (
                 val eps = ir.eps
                 val dependees = ir.dependees
                 val c = ir.c
-                val hint = ir.hint
                 // 1. let's check if a dependee is already updated...
                 //    If so, we directly schedule a task again to compute the property.
                 val (newEPS, newDependees, newC) =
-                    processDependeesOfInterimResult(eps, dependees, c, hint)
+                    processDependeesOfInterimResult(eps, dependees, c)
 
                 assert(newEPS.e == eps.e)
                 assert(newEPS.pk == eps.pk)
@@ -700,7 +668,7 @@ final class PKESequentialPropertyStore protected (
                     newDependees foreach { dependee ⇒
                         val dependeeDependers =
                             dependers(dependee.pk.id).getOrElseUpdate(dependee.e, AnyRefMap.empty)
-                        dependeeDependers += (dependerEPK, (newC, DefaultPropertyComputation))
+                        dependeeDependers += ((dependerEPK, newC))
                     }
                 }
         }
@@ -713,6 +681,10 @@ final class PKESequentialPropertyStore protected (
             tasksManager.pollAndExecute()
             if (doTerminate) throw new InterruptedException()
         }
+    }
+
+    override def execute(f: ⇒ Unit): Unit = handleExceptions {
+        f
     }
 
     override def waitOnPhaseCompletion(): Unit = handleExceptions {
@@ -869,7 +841,7 @@ final class PKESequentialPropertyStore protected (
  */
 object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialPropertyStore] {
 
-    final type EntityDependers = AnyRefMap[SomeEPK, (OnUpdateContinuation, PropertyComputationHint)]
+    final type EntityDependers = AnyRefMap[SomeEPK, OnUpdateContinuation]
 
     final val TasksManagerKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.TasksManager"
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.seq.PKESequentialPropertyStore.MaxEvaluationDepth"
