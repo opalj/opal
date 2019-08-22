@@ -9,8 +9,6 @@ import scala.annotation.tailrec
 import scala.collection.{Set ⇒ SomeSet}
 import scala.collection.mutable
 
-import org.opalj.fpcf.CheapPropertyComputation
-import org.opalj.fpcf.DefaultPropertyComputation
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.FinalE
@@ -221,8 +219,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                     entity,
                     createPropertyValue(Map.empty),
                     Seq(epk),
-                    _ ⇒ performAnalysis(entity),
-                    DefaultPropertyComputation
+                    _ ⇒ performAnalysis(entity)
                 );
 
             case tac ⇒
@@ -368,13 +365,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
         if (dependees.isEmpty) {
             Result(state.source, propertyValue)
         } else {
-            InterimResult.forUB(
-                state.source,
-                propertyValue,
-                dependees,
-                propertyUpdate,
-                DefaultPropertyComputation
-            )
+            InterimResult.forUB(state.source, propertyValue, dependees, propertyUpdate)
         }
     }
 
@@ -871,16 +862,10 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             case FinalP(p) ⇒ Result(source, p)
 
             case ep @ InterimUBP(ub: Property) ⇒
-                InterimResult.forUB(source, ub, Seq(ep), c, CheapPropertyComputation)
+                InterimResult.forUB(source, ub, Seq(ep), c)
 
             case epk ⇒
-                InterimResult.forUB(
-                    source,
-                    createPropertyValue(Map.empty),
-                    Seq(epk),
-                    c,
-                    CheapPropertyComputation
-                )
+                InterimResult.forUB(source, createPropertyValue(Map.empty), Seq(epk), c)
         }
         c(propertyStore((declaredMethods(source._1.definedMethod), source._2), propertyKey.key))
     }

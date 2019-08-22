@@ -59,7 +59,6 @@ import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
 import org.opalj.br.fpcf.properties.ThrownExceptions.UnresolvedInvokeDynamicInstruction
 import org.opalj.br.fpcf.properties.ThrownExceptions.MethodCalledThrowsUnknownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.SomeException
-import org.opalj.fpcf.CheapPropertyComputation
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimResult
@@ -81,8 +80,6 @@ import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 class L1ThrownExceptionsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
-
-    final val InterimResultsPropertyComputationHint = CheapPropertyComputation
 
     private[analyses] def lazilyDetermineThrownExceptions(
         e: Entity
@@ -381,20 +378,14 @@ class L1ThrownExceptionsAnalysis private[analyses] (
             if (dependees.isEmpty) {
                 Result(m, new ThrownExceptions(exceptions))
             } else {
-                org.opalj.fpcf.InterimResult(
-                    m, SomeException, new ThrownExceptions(exceptions),
-                    dependees, c, InterimResultsPropertyComputationHint
-                )
+                InterimResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
             }
         }
 
         if (dependees.isEmpty) {
             Result(m, new ThrownExceptions(exceptions))
         } else {
-            InterimResult(
-                m, SomeException, new ThrownExceptions(exceptions),
-                dependees, c, InterimResultsPropertyComputationHint
-            )
+            InterimResult(m, SomeException, new ThrownExceptions(exceptions), dependees, c)
         }
     }
 }

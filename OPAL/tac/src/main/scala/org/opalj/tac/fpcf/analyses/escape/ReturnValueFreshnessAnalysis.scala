@@ -8,8 +8,6 @@ package escape
 import scala.annotation.switch
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.CheapPropertyComputation
-import org.opalj.fpcf.DefaultPropertyComputation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
@@ -190,8 +188,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                         lb,
                         ub,
                         Set(eOptP),
-                        handleReturnValueFreshness,
-                        CheapPropertyComputation
+                        handleReturnValueFreshness
                     )
                 case _ ⇒
                     InterimResult(
@@ -199,8 +196,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                         NoFreshReturnValue,
                         FreshReturnValue,
                         Set(eOptP),
-                        handleReturnValueFreshness,
-                        CheapPropertyComputation
+                        handleReturnValueFreshness
                     )
             }
 
@@ -512,8 +508,7 @@ class ReturnValueFreshnessAnalysis private[analyses] (
                 NoFreshReturnValue,
                 state.ubRVF,
                 state.dependees,
-                continuation,
-                if (state.hasTacaiDependee) DefaultPropertyComputation else CheapPropertyComputation
+                continuation
             )
         else
             Result(state.dm, state.ubRVF)

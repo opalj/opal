@@ -177,6 +177,18 @@ final class PKECPropertyStore(
         properties.exists(propertiesOfKind ⇒ propertiesOfKind.containsKey(e))
     }
 
+    override def get[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Option[EOptionP[E, P]] = {
+        val state = properties(pk.id).get(e)
+        if (state == null)
+            None
+        else
+            Some(state.eOptionP.asInstanceOf[EOptionP[E, P]])
+    }
+
+    override def get[E <: Entity, P <: Property](epk: EPK[E, P]): Option[EOptionP[E, P]] = {
+        get(epk.e, epk.pk)
+    }
+
     // --------------------------------------------------------------------------------------------
     //
     // CORE IMPLEMENTATION - NOT THREAD SAFE PART
@@ -269,6 +281,8 @@ final class PKECPropertyStore(
         forcedEPKs.add(epk)
     }
 
+    override def execute(f: ⇒ Unit): Unit = handleExceptions { parallelize(f) }
+
     private[par] def triggerAndClearForcedEPKs(): Boolean = {
         val hadForcedEPKs = !forcedEPKs.isEmpty
         var forcedEPK = forcedEPKs.poll()
@@ -280,7 +294,7 @@ final class PKECPropertyStore(
         hadForcedEPKs
     }
 
-    override def handleResult(r: PropertyComputationResult): Unit = {
+    override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
         if (tracer.isDefined) tracer.get.scheduledResultProcessing(r)
         forkResultHandler(r)
     }
@@ -394,6 +408,13 @@ final class PKECPropertyStore(
     ): Unit = {
         val dependerPKId = dependerEPK.pk.id
         val dependerEPKState = properties(dependerPKId).get(dependerEPK.e)
+        if (dependerPKId == AnalysisKeyId && dependerEPKState == null)
+            // Recall that we delete dependerEPKState objects when they are not longer
+            // required; i.e., after they were triggered
+            return ;
+
+        assert(dependerEPKState != null, s"EPKState object went missing: $dependerEPK")
+
         val cOption = dependerEPKState.prepareInvokeC(oldEOptionP)
         if (cOption.isDefined) {
             // We first have to remove the depender from the dependees before
@@ -458,7 +479,6 @@ final class PKECPropertyStore(
     private[this] def handleInterimResult(
         interimEP: SomeInterimEP,
         c:         OnUpdateContinuation,
-        hint:      PropertyComputationHint,
         dependees: Traversable[SomeEOptionP]
     ): Unit = {
         val interimEPKId = interimEP.pk.id
@@ -554,7 +574,7 @@ final class PKECPropertyStore(
                             )
                         forkOnUpdateContinuation(c, processedDependee.e, processedDependee.pk)
                     } else {
-                        // clear possibly dangling dependees... which can happen if
+                        // Clear possibly dangling dependees... which can happen if
                         // we have registered with a dependee which is updated while
                         // we still process the current dependees; based on the result
                         // of running "c" the set of dependees is changed
@@ -569,10 +589,10 @@ final class PKECPropertyStore(
                         val currentDependees = epkState.dependees
                         dependees forall { registeredDependee ⇒
                             if (registeredDependee ne processedDependee) {
-                                if (currentDependees.forall(_ != registeredDependee)) {
+                                if (currentDependees == null ||
+                                    currentDependees.forall(_ != registeredDependee)) {
                                     val registeredDependeeEPKState =
-                                        properties(registeredDependee.pk.id)
-                                            .get(registeredDependee.e)
+                                        properties(registeredDependee.pk.id).get(registeredDependee.e)
                                     registeredDependeeEPKState.removeDepender(dependerEPK)
                                     if (tracer.isDefined)
                                         tracer.get.removedDepender(dependerEPK, registeredDependeeEPKState)
@@ -649,7 +669,7 @@ final class PKECPropertyStore(
             case Results.id ⇒ r.asResults.foreach { processResult }
 
             case IncrementalResult.id ⇒
-                val IncrementalResult(ir, npcs, propertyComputationsHint) = r
+                val IncrementalResult(ir, npcs) = r
                 processResult(ir)
                 npcs /*: Iterator[(PropertyComputation[e],e)]*/ foreach { npc ⇒
                     val (pc, e) = npc
@@ -673,7 +693,6 @@ final class PKECPropertyStore(
                 handleInterimResult(
                     interimR.eps,
                     interimR.c,
-                    interimR.hint,
                     interimR.dependees
                 )
 
@@ -749,207 +768,217 @@ final class PKECPropertyStore(
         }
     }
 
-    override def waitOnPhaseCompletion(): Unit = handleExceptions {
-        val maxPKIndex = PropertyKey.maxId
-
+    override def waitOnPhaseCompletion(): Unit = {
         prepareThreadPool()
 
-        // If some values were explicitly set, we have to trigger corresponding triggered
-        // computations.
-        setAndPreinitializedValues.foreach { epk ⇒ triggerComputations(epk.e, epk.pk.id) }
-        setAndPreinitializedValues = List.empty
+        handleExceptions {
+            val maxPKIndex = PropertyKey.maxId
 
-        val continueComputation = new AtomicBoolean(false)
-        do {
-            if (tracer.isDefined) tracer.get.startedMainLoop()
-            continueComputation.set(false)
+            // If some values were explicitly set, we have to trigger corresponding triggered
+            // computations.
+            setAndPreinitializedValues.foreach { epk ⇒ triggerComputations(epk.e, epk.pk.id) }
+            setAndPreinitializedValues = List.empty
 
-            triggerAndClearForcedEPKs() // Ignored the return value because we call awaitPoolQuiescence next
+            val continueComputation = new AtomicBoolean(false)
+            do {
+                if (tracer.isDefined) tracer.get.startedMainLoop()
 
-            awaitPoolQuiescence()
-            if (tracer.isDefined) tracer.get.reachedQuiescence()
+                continueComputation.set(false)
 
-            quiescenceCounter += 1
-            if (debug) trace("analysis progress", s"reached quiescence $quiescenceCounter")
+                triggerAndClearForcedEPKs() // Ignored the return value because we call awaitPoolQuiescence next
 
-            // We have reached quiescence....
+                awaitPoolQuiescence()
+                if (tracer.isDefined) tracer.get.reachedQuiescence()
 
-            // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
-            //    (Please note that FakeEntities – related to InterimPartialResults –
-            //     which are associated with the "FakeAnalysisKey", are not handled here.)
-            //    (Recall that we return fallback properties eagerly if no analysis is
-            //    scheduled or will be scheduled, However, it is still possible that we will
-            //    not have computed a property for a specific entity if the underlying
-            //    analysis doesn't compute one; in that case we need to put in fallback
-            //    values.)
-            var pkIdIterator = 0
-            while (pkIdIterator <= maxPKIndex) {
-                if (propertyKindsComputedInThisPhase(pkIdIterator)) {
-                    val pkId = pkIdIterator
-                    parallelize {
-                        val epkStateIterator =
-                            properties(pkId)
-                                .values.iterator().asScala
-                                .filter { epkState ⇒
-                                    epkState.isEPK &&
-                                        // There is no suppression; i.e., we have no dependees
-                                        epkState.dependees.isEmpty
+                quiescenceCounter += 1
+                if (debug) trace("analysis progress", s"reached quiescence $quiescenceCounter")
+
+                // We have reached quiescence....
+
+                // 1. Let's search for all EPKs (not EPS) and use the fall back for them.
+                //    (Please note that FakeEntities – related to InterimPartialResults –
+                //     which are associated with the "FakeAnalysisKey", are not handled here.)
+                //    (Recall that we return fallback properties eagerly if no analysis is
+                //    scheduled or will be scheduled, However, it is still possible that we will
+                //    not have computed a property for a specific entity if the underlying
+                //    analysis doesn't compute one; in that case we need to put in fallback
+                //    values.)
+                var pkIdIterator = 0
+                while (pkIdIterator <= maxPKIndex) {
+                    if (propertyKindsComputedInThisPhase(pkIdIterator)) {
+                        val pkId = pkIdIterator
+                        parallelize {
+                            val epkStateIterator =
+                                properties(pkId)
+                                    .values.iterator().asScala
+                                    .filter { epkState ⇒
+                                        epkState.isEPK &&
+                                            // There is no suppression; i.e., we have no dependees
+                                            epkState.dependees.isEmpty
+                                    }
+                            if (epkStateIterator.hasNext) continueComputation.set(true)
+                            epkStateIterator.foreach { epkState ⇒
+                                // TODO TRACE: println("State without dependees: "+epkState)
+                                val e = epkState.e
+                                val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
+                                val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
+                                if (traceFallbacks) {
+                                    trace("analysis progress", s"used fallback $p for $e")
                                 }
-                        if (epkStateIterator.hasNext) continueComputation.set(true)
-                        epkStateIterator.foreach { epkState ⇒
-                            // TODO TRACE: println("State without dependees: "+epkState)
-                            val e = epkState.e
-                            val reason = PropertyIsNotDerivedByPreviouslyExecutedAnalysis
-                            val p = fallbackPropertyBasedOnPKId(this, reason, e, pkId)
-                            if (traceFallbacks) {
-                                trace("analysis progress", s"used fallback $p for $e")
-                            }
-                            val finalEP = FinalEP(e, p)
-                            if (tracer.isDefined)
-                                tracer.get.computedFallback(
-                                    finalEP,
-                                    "the analysis didn't compute the property"
-                                )
-                            incrementFallbacksUsedForComputedPropertiesCounter()
-                            handleFinalResult(finalEP)
-                        }
-                    }
-                }
-                pkIdIterator += 1
-            }
-            awaitPoolQuiescence()
-
-            // 2. (Handle suppression)
-            //    Let's search for entities with interim properties where some dependers
-            //    were not yet notified about intermediate updates. In this case, the
-            //    current results of the dependers cannot be finalized; instead, we need
-            //    to finalize (the cyclic dependent) dependees first and notify the
-            //    dependers.
-            //    Recall, that collaboratively computed properties are not allowed to be
-            //    part of a cyclic computation if we also have suppressed notifications.
-            if (!continueComputation.get() && hasSuppressedNotifications) {
-                // Collect all InterimEPs to find cycles.
-                val interimEPKStates = ArrayBuffer.empty[EPKState]
-                var pkId = 0
-                while (pkId <= maxPKIndex) {
-                    if (propertyKindsComputedInThisPhase(pkId)) {
-                        properties(pkId).values.forEach { epkState ⇒
-                            if (epkState.isRefinable) interimEPKStates += epkState
-                        }
-                    }
-                    pkId += 1
-                }
-                val successors = (interimEPKState: EPKState) ⇒ {
-                    interimEPKState.dependees.map(eOptionP ⇒ properties(eOptionP.pk.id).get(eOptionP.e))
-                }
-                val cSCCs = graphs.closedSCCs(interimEPKStates, successors)
-                if (tracer.isDefined) {
-                    tracer.get.handlingInterimEPKsDueToSuppression(
-                        interimEPKStates.map(_.toString).mkString("[\n\t", ",\n\t", "]"),
-                        cSCCs
-                            .map(_.mkString("  cSCC=[\n\t\t", ",\n\t\t", "]"))
-                            .mkString("[\n\t", "\n\t", "]")
-                    )
-                }
-                continueComputation.set(cSCCs.nonEmpty)
-                for (cSCC ← cSCCs) {
-                    // Clear all dependees of all members of a cycle to avoid inner cycle
-                    // notifications!
-                    for (interimEPKState ← cSCC) {
-                        removeDependerFromDependeesAndClearDependees(
-                            interimEPKState.eOptionP.toEPK, interimEPKState
-                        )
-                    }
-                    // 2. set all values
-                    for (interimEPKState ← cSCC) {
-                        if (tracer.isDefined) {
-                            tracer.get.makingIntermediateEPKStateFinal(interimEPKState)
-                        }
-                        handleFinalResult(interimEPKState.eOptionP.toFinalEP)
-                    }
-                }
-            }
-
-            if (triggerAndClearForcedEPKs() /* forces the evaluation as a side-effect */ ) {
-                awaitPoolQuiescence()
-                continueComputation.set(true)
-            }
-
-            // 3. Let's finalize remaining interim EPS; e.g., those related to
-            //    collaboratively computed properties or "just all" if we don't have suppressed
-            //    notifications. Recall that we may have cycles if we have no suppressed
-            //    notifications, because in the latter case, we may have dependencies.
-            //    We used no fallbacks, but we may still have collaboratively computed properties
-            //    (e.g. CallGraph) which are not yet final; let's finalize them in the specified
-            //    order (i.e., let's finalize the subphase)!
-            while (!continueComputation.get() && subPhaseId < subPhaseFinalizationOrder.length) {
-                val pksToFinalize = subPhaseFinalizationOrder(subPhaseId)
-                if (debug) {
-                    trace(
-                        "analysis progress",
-                        pksToFinalize.map(PropertyKey.name).mkString("finalization of: ", ", ", "")
-                    )
-                }
-                if (tracer.isDefined) {
-                    tracer.get.subphaseFinalization(
-                        pksToFinalize.map(PropertyKey.name).mkString("finalization of: ", ", ", "")
-                    )
-                }
-                // The following will also kill dependers related to anonymous computations using
-                // the generic property key: "AnalysisKey"; i.e., those without explicit properties!
-                pksToFinalize foreach { pk ⇒
-                    val propertyKey = PropertyKey.key(pk.id)
-                    parallelize {
-                        val dependeesIt = properties(pk.id).elements().asScala.filter(_.hasDependees)
-                        if (dependeesIt.hasNext) continueComputation.set(true)
-                        dependeesIt foreach { epkState ⇒
-                            removeDependerFromDependeesAndClearDependees(EPK(epkState.e, propertyKey))
-                        }
-                    }
-                }
-                awaitPoolQuiescence()
-
-                pksToFinalize foreach { pk ⇒
-                    parallelize {
-                        if (pk == AnalysisKey) {
-                            assert(
-                                properties(pk.id).values.asScala.forall(!_.hasDependees),
-                                properties(pk.id).values.asScala.
-                                    filter(_.hasDependees).
-                                    mkString("fake entities with unexpected dependencies: [", ",", "]")
-                            )
-                            properties(pk.id) = new ConcurrentHashMap()
-                        } else {
-                            val interimEPSStates = properties(pk.id).values.asScala.filter(_.isRefinable)
-                            interimEPSStates foreach { interimEPKState ⇒
-                                val oldEOptionP = interimEPKState.eOptionP
-                                val finalEP = oldEOptionP.toFinalEP
+                                val finalEP = FinalEP(e, p)
                                 if (tracer.isDefined)
-                                    tracer.get.finalizedProperty(oldEOptionP, finalEP)
+                                    tracer.get.computedFallback(
+                                        finalEP,
+                                        "the analysis didn't compute the property"
+                                    )
+                                incrementFallbacksUsedForComputedPropertiesCounter()
                                 handleFinalResult(finalEP)
                             }
                         }
                     }
+                    pkIdIterator += 1
                 }
                 awaitPoolQuiescence()
 
-                if (triggerAndClearForcedEPKs()) {
+                // 2. (Handle suppression)
+                //    Let's search for entities with interim properties where some dependers
+                //    were not yet notified about intermediate updates. In this case, the
+                //    current results of the dependers cannot be finalized; instead, we need
+                //    to finalize (the cyclic dependent) dependees first and notify the
+                //    dependers.
+                //    Recall, that collaboratively computed properties are not allowed to be
+                //    part of a cyclic computation if we also have suppressed notifications.
+                if (!continueComputation.get() && hasSuppressedNotifications) {
+                    // Collect all InterimEPs to find cycles.
+                    val interimEPKStates = ArrayBuffer.empty[EPKState]
+                    var pkId = 0
+                    while (pkId <= maxPKIndex) {
+                        if (propertyKindsComputedInThisPhase(pkId)) {
+                            properties(pkId).values.forEach { epkState ⇒
+                                if (epkState.isRefinable) interimEPKStates += epkState
+                            }
+                        }
+                        pkId += 1
+                    }
+                    val successors = (interimEPKState: EPKState) ⇒ {
+                        interimEPKState.dependees.map(eOptionP ⇒ properties(eOptionP.pk.id).get(eOptionP.e))
+                    }
+                    val cSCCs = graphs.closedSCCs(interimEPKStates, successors)
+                    if (tracer.isDefined) {
+                        tracer.get.handlingInterimEPKsDueToSuppression(
+                            interimEPKStates.map(_.toString).mkString("[\n\t", ",\n\t", "]"),
+                            cSCCs
+                                .map(_.mkString("  cSCC=[\n\t\t", ",\n\t\t", "]"))
+                                .mkString("[\n\t", "\n\t", "]")
+                        )
+                    }
+                    continueComputation.set(cSCCs.nonEmpty)
+                    for (cSCC ← cSCCs) {
+                        // Clear all dependees of all members of a cycle to avoid inner cycle
+                        // notifications!
+                        for (interimEPKState ← cSCC) {
+                            removeDependerFromDependeesAndClearDependees(
+                                interimEPKState.eOptionP.toEPK, interimEPKState
+                            )
+                        }
+                        // 2. set all values
+                        for (interimEPKState ← cSCC) {
+                            if (tracer.isDefined) {
+                                tracer.get.makingIntermediateEPKStateFinal(interimEPKState)
+                            }
+                            handleFinalResult(interimEPKState.eOptionP.toFinalEP)
+                        }
+                    }
+                }
+
+                if (triggerAndClearForcedEPKs() /* forces the evaluation as a side-effect */ ) {
                     awaitPoolQuiescence()
                     continueComputation.set(true)
                 }
 
-                subPhaseId += 1
-            }
-        } while (continueComputation.get())
+                // 3. Let's finalize remaining interim EPS; e.g., those related to
+                //    collaboratively computed properties or "just all" if we don't have suppressed
+                //    notifications. Recall that we may have cycles if we have no suppressed
+                //    notifications, because in the latter case, we may have dependencies.
+                //    We used no fallbacks, but we may still have collaboratively computed properties
+                //    (e.g. CallGraph) which are not yet final; let's finalize them in the specified
+                //    order (i.e., let's finalize the subphase)!
+                while (!continueComputation.get() && subPhaseId < subPhaseFinalizationOrder.length) {
+                    val pksToFinalize = subPhaseFinalizationOrder(subPhaseId)
+                    if (debug) {
+                        trace(
+                            "analysis progress",
+                            pksToFinalize.map(PropertyKey.name).mkString("finalization of: ", ", ", "")
+                        )
+                    }
+                    if (tracer.isDefined) {
+                        tracer.get.subphaseFinalization(
+                            pksToFinalize.map(PropertyKey.name).mkString("finalization of: ", ", ", "")
+                        )
+                    }
+                    // The following will also kill dependers related to anonymous computations using
+                    // the generic property key: "AnalysisKey"; i.e., those without explicit properties!
+                    pksToFinalize foreach { pk ⇒
+                        val propertyKey = PropertyKey.key(pk.id)
+                        parallelize {
+                            val dependeesIt = properties(pk.id).elements().asScala.filter(_.hasDependees)
+                            if (dependeesIt.hasNext) continueComputation.set(true)
+                            dependeesIt foreach { epkState ⇒
+                                removeDependerFromDependeesAndClearDependees(EPK(epkState.e, propertyKey))
+                            }
+                        }
+                    }
+                    awaitPoolQuiescence()
 
-        // TODO assert that we don't have any more InterimEPKStates
+                    pksToFinalize foreach { pk ⇒
+                        parallelize {
+                            if (pk == AnalysisKey) {
+                                assert(
+                                    properties(pk.id).values.asScala.forall(!_.hasDependees),
+                                    properties(pk.id).values.asScala.
+                                        filter(_.hasDependees).
+                                        mkString("fake entities with unexpected dependencies: [", ",", "]")
+                                )
+                                properties(pk.id) = new ConcurrentHashMap()
+                            } else {
+                                val interimEPSStates = properties(pk.id).values.asScala.filter(_.isRefinable)
+                                interimEPSStates foreach { interimEPKState ⇒
+                                    val oldEOptionP = interimEPKState.eOptionP
+                                    val finalEP = oldEOptionP.toFinalEP
+                                    if (tracer.isDefined)
+                                        tracer.get.finalizedProperty(oldEOptionP, finalEP)
+                                    handleFinalResult(finalEP)
+                                }
+                            }
+                        }
+                    }
+                    awaitPoolQuiescence()
+
+                    if (triggerAndClearForcedEPKs()) {
+                        awaitPoolQuiescence()
+                        continueComputation.set(true)
+                    }
+
+                    subPhaseId += 1
+                }
+            } while (continueComputation.get())
+
+            // TODO assert that we don't have any more InterimEPKStates
+        }
 
         cleanUpThreadPool()
+
+        if (exception != null) throw exception;
     }
 
     override protected[this] def onFirstException(t: Throwable): Unit = {
         super.onFirstException(t)
         if (tracer.isDefined) tracer.get.firstException(t)
+    }
+
+    private[par] def propagateExceptions(): Unit = {
+        val exception = this.exception
+        if (exception != null) throw exception;
     }
 
 }
@@ -991,7 +1020,7 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
     ): PKECPropertyStore = {
         val tasksManager: TasksManager = taskManagerId match {
             case "Seq" ⇒ new SeqTasksManager(maxEvaluationDepth)
-
+            case "Par" ⇒ new ParTasksManager(maxEvaluationDepth)
             case _     ⇒ throw new IllegalArgumentException(s"unknown task manager $taskManagerId")
         }
 

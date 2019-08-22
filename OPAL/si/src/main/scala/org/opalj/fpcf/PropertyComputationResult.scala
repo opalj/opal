@@ -142,11 +142,10 @@ object MultiResult { private[fpcf] final val id = 2 }
 final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
         val dependees: Traversable[SomeEOptionP],
-        val c:         ProperOnUpdateContinuation,
-        val hint:      PropertyComputationHint
+        val c:         ProperOnUpdateContinuation
 ) extends ProperPropertyComputationResult { result ⇒
 
-    final def key: PropertyKey[P] = eps.pk
+    def key: PropertyKey[P] = eps.pk
 
     if (PropertyStore.Debug) { // TODO move to generic handleResult method ...
         if (dependees.isEmpty) {
@@ -200,16 +199,7 @@ object InterimResult {
         dependees: Traversable[SomeEOptionP],
         c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
-        new InterimResult[P](eps, dependees, c, DefaultPropertyComputation)
-    }
-
-    def apply[P >: Null <: Property](
-        eps:       InterimEP[Entity, P],
-        dependees: Traversable[SomeEOptionP],
-        c:         ProperOnUpdateContinuation,
-        hint:      PropertyComputationHint
-    ): InterimResult[P] = {
-        new InterimResult[P](eps, dependees, c, hint)
+        new InterimResult[P](eps, dependees, c)
     }
 
     def apply[P >: Null <: Property](
@@ -217,11 +207,10 @@ object InterimResult {
         lb:        P,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         ProperOnUpdateContinuation,
-        hint:      PropertyComputationHint    = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
         require(lb != null && ub != null)
-        new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c, hint)
+        new InterimResult[P](InterimELUBP(e, lb, ub), dependees, c)
     }
 
     def create[DependeeE <: Entity, DependeeP <: Property, P >: Null <: Property](
@@ -229,42 +218,38 @@ object InterimResult {
         lb:        P,
         ub:        P,
         dependees: Traversable[EOptionP[DependeeE, DependeeP]],
-        c:         QualifiedOnUpdateContinuation[DependeeE, DependeeP],
-        hint:      PropertyComputationHint                             = DefaultPropertyComputation
+        c:         QualifiedOnUpdateContinuation[DependeeE, DependeeP]
     ): InterimResult[P] = {
         require(lb != null && ub != null)
         new InterimResult[P](
             InterimELUBP(e, lb, ub),
             dependees,
-            c.asInstanceOf[ProperOnUpdateContinuation],
-            hint
+            c.asInstanceOf[ProperOnUpdateContinuation]
         )
     }
 
     def unapply[P >: Null <: Property](
         r: InterimResult[P]
-    ): Some[(SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation, PropertyComputationHint)] = {
-        Some((r.eps, r.dependees, r.c, r.hint))
+    ): Some[(SomeEPS, Traversable[SomeEOptionP], OnUpdateContinuation)] = {
+        Some((r.eps, r.dependees, r.c))
     }
 
     def forLB[P >: Null <: Property](
         e:         Entity,
         lb:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         ProperOnUpdateContinuation,
-        hint:      PropertyComputationHint    = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
-        new InterimResult[P](InterimELBP(e, lb), dependees, c, hint)
+        new InterimResult[P](InterimELBP(e, lb), dependees, c)
     }
 
     def forUB[P >: Null <: Property](
         e:         Entity,
         ub:        P,
         dependees: Traversable[SomeEOptionP],
-        c:         ProperOnUpdateContinuation,
-        hint:      PropertyComputationHint    = DefaultPropertyComputation
+        c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
-        new InterimResult[P](InterimEUBP(e, ub), dependees, c, hint)
+        new InterimResult[P](InterimEUBP(e, ub), dependees, c)
     }
 }
 
@@ -287,9 +272,8 @@ object InterimResult {
  *       computation returns `IncrementalResult` objects.
  */
 case class IncrementalResult[E <: Entity](
-        result:                   ProperPropertyComputationResult,
-        nextComputations:         Iterator[(PropertyComputation[E], E)],
-        propertyComputationsHint: PropertyComputationHint               = DefaultPropertyComputation
+        result:           ProperPropertyComputationResult,
+        nextComputations: Iterator[(PropertyComputation[E], E)]
 ) extends ProperPropertyComputationResult {
 
     private[fpcf] final def id = IncrementalResult.id
@@ -321,14 +305,14 @@ object Results {
         def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
     }
 
-    def apply(results: TraversableOnce[ProperPropertyComputationResult]) = new Results {
+    def apply(results: TraversableOnce[ProperPropertyComputationResult]): Results = new Results {
         def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
     }
 
     def apply(
         result:  ProperPropertyComputationResult,
         results: TraversableOnce[ProperPropertyComputationResult]
-    ) = new Results {
+    ): Results = new Results {
         def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
             f(result)
             results.foreach(f)
@@ -338,7 +322,7 @@ object Results {
     def apply(
         results: TraversableOnce[ProperPropertyComputationResult],
         result:  ProperPropertyComputationResult
-    ) = new Results {
+    ): Results = new Results {
         def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
             results.foreach(f)
             f(result)
@@ -348,7 +332,7 @@ object Results {
     def apply(
         resultOption: Option[ProperPropertyComputationResult],
         results:      TraversableOnce[ProperPropertyComputationResult]
-    ) = {
+    ): PropertyComputationResult = {
         if (resultOption.isEmpty && results.isEmpty)
             NoResult
         else
@@ -360,7 +344,7 @@ object Results {
             }
     }
 
-    def apply(results: ForeachRefIterator[ProperPropertyComputationResult]) = new Results {
+    def apply(results: ForeachRefIterator[ProperPropertyComputationResult]): Results = new Results {
         def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
     }
 }

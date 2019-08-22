@@ -53,6 +53,10 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     override def finalEntities[P <: Property](p: P): Iterator[Entity] = ???
 
+    override def get[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Option[EOptionP[E, P]] = ???
+
+    override def get[E <: Entity, P <: Property](epk: EPK[E, P]): Option[EOptionP[E, P]] = ???
+
     override def doSet(e: Entity, p: Property): Unit = ???
 
     override def doPreInitialize[E <: Entity, P <: Property](
@@ -71,6 +75,8 @@ class BasePropertyStoreMockup extends PropertyStore {
     override def force[E <: Entity, P <: Property](e: E, pk: PropertyKey[P]): Unit = ???
 
     override def isIdle: Boolean = true
+
+    override def execute(f: ⇒ Unit): Unit = ???
 
     override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],

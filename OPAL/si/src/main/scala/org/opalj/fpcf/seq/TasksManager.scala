@@ -11,7 +11,7 @@ import scala.collection.mutable
 trait TasksManager {
 
     /**
-     * Just a hint from the property store to the tasksmanager that some
+     * Just a hint from the property store to the tasks manager that some
      * computations related to entities are done directly by the property store.
      */
     def processing(e: Entity): Unit = {}

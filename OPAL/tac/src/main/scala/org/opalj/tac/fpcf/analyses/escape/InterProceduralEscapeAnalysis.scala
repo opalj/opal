@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package escape
 
-import org.opalj.fpcf.CheapPropertyComputation
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimLUBP
@@ -94,8 +93,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                                 lb,
                                 ub,
                                 Set(eOptionP),
-                                handleEscapeState,
-                                CheapPropertyComputation
+                                handleEscapeState
                             )
 
                         case _ ⇒
@@ -104,8 +102,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                                 GlobalEscape,
                                 NoEscape,
                                 Set(eOptionP),
-                                handleEscapeState,
-                                CheapPropertyComputation
+                                handleEscapeState
                             )
                     }
                 }

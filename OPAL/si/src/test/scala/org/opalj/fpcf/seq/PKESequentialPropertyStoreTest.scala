@@ -3,9 +3,7 @@ package org.opalj.fpcf
 package seq
 
 abstract class PKESequentialPropertyStoreWithDebugging
-    extends PropertyStoreTestWithDebugging[PKESequentialPropertyStore] {
-
-}
+    extends PropertyStoreTestWithDebugging[PKESequentialPropertyStore]
 
 class LIFOTaskskManagePKESequentialPropertyStoreTest
     extends PKESequentialPropertyStoreWithDebugging {
