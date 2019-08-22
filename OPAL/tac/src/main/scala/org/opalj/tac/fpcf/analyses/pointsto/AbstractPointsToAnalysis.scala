@@ -15,16 +15,12 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
@@ -189,25 +185,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                     val line = state.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
                     val isTamiFlexControlled = call.declaringClass match {
-                        case ArrayT ⇒ call.name match {
-                            case "newInstance" | "get" ⇒
-                                tamiFlexLogData.classes(state.method, line).nonEmpty
-                            case _ ⇒ false
-                        }
-                        case ObjectType.Class ⇒ call.name match {
-                            case "forName" | "getDeclaredFields" | "getFields" |
-                                "getDeclaredMethods" | "getMethods" | "newInstance" ⇒
-                                tamiFlexLogData.classes(state.method, line).nonEmpty
-                            case "getDeclaredField" | "getField" ⇒
-                                tamiFlexLogData.fields(state.method, line).nonEmpty
-                            case "getDeclaredMethod" | "getMethod" ⇒
-                                tamiFlexLogData.methods(state.method, line).nonEmpty
-                            case _ ⇒ false
-                        }
                         case ConstructorT ⇒ call.name == "newInstance" &&
-                            tamiFlexLogData.classes(state.method, line).nonEmpty
+                            tamiFlexLogData.classes(state.method, "Constructor.newInstance", line).nonEmpty
                         case FieldT ⇒ call.name == "get" &&
-                            tamiFlexLogData.fields(state.method, line).nonEmpty
+                            tamiFlexLogData.fields(state.method, "Field.get*", line).nonEmpty
                         case _ ⇒ false
                     }
 
@@ -299,7 +280,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
         // todo: we have to handle the exceptions that might implicitly be thrown by this method
 
-        returnResult(state)
+        Results(createResults(state))
     }
 
     @inline private[this] def handleAllocation(
@@ -433,9 +414,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     private[this] val ConstructorT = ObjectType("java/lang/reflect/Constructor")
-    private[this] val ArrayT = ObjectType("java/lang/reflect/Array")
     private[this] val FieldT = ObjectType("java/lang/reflect/Field")
-    private[this] val MethodT = ObjectType("java/lang/reflect/Method")
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
 
     private[this] def handleDirectCall(
@@ -499,171 +478,12 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
          * TODO: Integrate into a TamiFlex analysis
          */
         val line = state.method.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
-        if (target.declaringClassType eq ArrayT) {
-            target.name match {
-                case "newInstance" ⇒
-                /*val allocatedTypes = tamiFlexLogData.classes(state.method, line)
-                    for (allocatedType ← allocatedTypes) {
-                        val pointsToSet = createPointsToSet(
-                            pc, state.method, allocatedType, isConstant = false
-                        )
-                        val defSite = definitionSites(state.method.definedMethod, pc)
-                        state.includeSharedPointsToSet(
-                            defSite, pointsToSet, PointsToSetLike.noFilter
-                        )
-                    }*/
-
-                case "get" ⇒
-                    val arrays = tamiFlexLogData.classes(state.method, line)
-                    for (array ← arrays) {
-                        handleArrayLoad(array.asArrayType, pc, call.params.head.asVar.definedBy)
-                    }
-
-                case "set" ⇒
-                    val arrays = tamiFlexLogData.classes(state.method, line)
-                    for (array ← arrays) {
-                        handleArrayStore(
-                            array.asArrayType,
-                            call.params.head.asVar.definedBy,
-                            call.params(2).asVar.definedBy
-                        )
-                    }
-
-                case _ ⇒
-            }
-        } else if (target.declaringClassType eq ObjectType.Class) {
-            target.name match {
-                case "forName" ⇒
-                    val classTypes = tamiFlexLogData.classes(state.method, line)
-                    if (classTypes.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, ObjectType.Class, isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                    }
-
-                case "getDeclaredField" ⇒
-                    val fields = tamiFlexLogData.fields(state.method, line)
-                    if (fields.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, FieldT, isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                    }
-
-                case "getDeclaredFields" ⇒
-                    val classTypes = tamiFlexLogData.classes(state.method, line)
-                    if (classTypes.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, ArrayType(FieldT), isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                        // todo store something into the array
-                    }
-
-                case "getField" ⇒
-                    val fields = tamiFlexLogData.fields(state.method, line)
-                    if (fields.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, FieldT, isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                    }
-
-                case "getFields" ⇒
-                    val classTypes = tamiFlexLogData.classes(state.method, line)
-                    if (classTypes.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, ArrayType(FieldT), isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                        // todo store something into the array
-                    }
-
-                case "getDeclaredMethod" ⇒
-                    val methods = tamiFlexLogData.methods(state.method, line)
-                    if (methods.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, MethodT, isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                    }
-
-                case "getDeclaredMethods" ⇒
-                    val classTypes = tamiFlexLogData.classes(state.method, line)
-                    if (classTypes.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, ArrayType(MethodT), isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                    }
-
-                case "getMethod" ⇒
-                    val methods = tamiFlexLogData.methods(state.method, line)
-                    if (methods.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, MethodT, isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                    }
-
-                case "getMethods" ⇒
-                    val classTypes = tamiFlexLogData.classes(state.method, line)
-                    if (classTypes.nonEmpty) {
-                        state.includeSharedPointsToSet(
-                            definitionSites(state.method.definedMethod, pc),
-                            createPointsToSet(
-                                pc, state.method, ArrayType(MethodT), isConstant = false
-                            ),
-                            PointsToSetLike.noFilter
-                        )
-                    }
-
-                case "newInstance" ⇒
-                    val allocatedTypes = tamiFlexLogData.classes(state.method, line)
-                    for (allocatedType ← allocatedTypes) {
-                        val pointsToSet = createPointsToSet(
-                            pc, state.method, allocatedType, isConstant = false
-                        )
-                        val defSite = definitionSites(state.method.definedMethod, pc)
-                        state.includeSharedPointsToSet(
-                            defSite, pointsToSet, PointsToSetLike.noFilter
-                        )
-                    }
-
-                case _ ⇒
-
-            }
-        } else if (target.declaringClassType eq ConstructorT) {
+        if (target.declaringClassType eq ConstructorT) {
             target.name match {
                 case "getModifiers" ⇒
                 // TODO
                 case "newInstance" ⇒
-                    val allocatedTypes = tamiFlexLogData.classes(state.method, line)
+                    val allocatedTypes = tamiFlexLogData.classes(state.method, "Constructor.newInstance", line)
                     for (allocatedType ← allocatedTypes) {
                         val pointsToSet = createPointsToSet(
                             pc, state.method, allocatedType, isConstant = false
@@ -678,7 +498,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
         } else if (target.declaringClassType eq FieldT) {
             if (target.name == "get") {
-                val fields = tamiFlexLogData.fields(state.method, line)
+                val fields = tamiFlexLogData.fields(state.method, "Field.get*", line)
                 for (field ← fields) {
                     if (field.isStatic) {
                         handleGetStatic(field, pc)
@@ -687,7 +507,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     }
                 }
             } else if (target.name == "set") {
-                val fields = tamiFlexLogData.fields(state.method, line)
+                val fields = tamiFlexLogData.fields(state.method, "Field.set*", line)
                 for (field ← fields) {
                     if (field.isStatic) {
                         handlePutStatic(field, call.params(1).asVar.definedBy)
@@ -773,114 +593,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    private[this] def returnResult(state: State): ProperPropertyComputationResult = {
-        val results = ArrayBuffer.empty[ProperPropertyComputationResult]
-
-        for ((e, pointsToSet) ← state.allocationSitePointsToSetsIterator) {
-            results += Result(e, pointsToSet)
-        }
-
-        for ((e, pointsToSet) ← state.sharedPointsToSetsIterator) {
-            // The shared entities are not affected by changes of the tac and use partial results.
-            // Thus, we could simply recompute them on updates for the tac
-            if (state.hasDependees(e)) {
-                val dependees = state.dependeesOf(e)
-                results += InterimPartialResult(
-                    dependees.values.map(_._1), continuationForShared(e, dependees)
-                )
-            }
-            results += PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
-                e,
-                pointsToPropertyKey,
-                {
-                    case _: EPK[Entity, _] ⇒
-                        Some(InterimEUBP(e, pointsToSet))
-
-                    case eps @ UBP(ub: PointsToSet @unchecked) ⇒
-                        val newPointsTo = ub.included(pointsToSet, 0)
-                        if (newPointsTo ne ub) {
-                            Some(InterimEUBP(e, newPointsTo))
-                        } else {
-                            None
-                        }
-
-                    case eOptP ⇒
-                        throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-                }
-            )
-        }
-
-        for (fakeEntity ← state.getFieldsIterator) {
-            if (state.hasDependees(fakeEntity)) {
-                val (defSite, field, filter) = fakeEntity
-                val dependees = state.dependeesOf(fakeEntity)
-                results += InterimPartialResult(
-                    dependees.values.map(_._1),
-                    continuationForNewAllocationSitesAtGetField(
-                        defSite, field, filter, dependees
-                    )
-                )
-            }
-        }
-
-        for (fakeEntity ← state.putFieldsIterator) {
-            if (state.hasDependees(fakeEntity)) {
-                val (defSites, field) = fakeEntity
-                val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
-                var knownPointsTo = emptyPointsToSet
-                val defSitesEPSs = defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
-                    val rhsPTS =
-                        ps(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
-                    knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
-                    rhsPTS.toEPK → rhsPTS
-                }.filter(_._2.isRefinable).toMap
-
-                val dependees = state.dependeesOf(fakeEntity)
-                if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
-                    results += InterimPartialResult(
-                        dependees.values.map(_._1),
-                        continuationForNewAllocationSitesAtPutField(
-                            knownPointsTo, defSitesEPSs, field, dependees
-                        )
-                    )
-            }
-        }
-
-        for (fakeEntity ← state.arrayLoadsIterator) {
-            if (state.hasDependees(fakeEntity)) {
-                val (defSite, arrayType, filter) = fakeEntity
-                val dependees = state.dependeesOf(fakeEntity)
-                results += InterimPartialResult(
-                    dependees.values.map(_._1),
-                    continuationForNewAllocationSitesAtArrayLoad(
-                        defSite, arrayType, filter, dependees
-                    )
-                )
-            }
-        }
-
-        for (fakeEntity ← state.arrayStoresIterator) {
-            if (state.hasDependees(fakeEntity)) {
-                val (defSites, arrayType) = fakeEntity
-                val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
-                var knownPointsTo = emptyPointsToSet
-                val defSitesEPSs = defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
-                    val rhsPTS =
-                        ps(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
-                    knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
-                    rhsPTS.toEPK → rhsPTS
-                }.filter(_._2.isRefinable).toMap
-
-                val dependees = state.dependeesOf(fakeEntity)
-                if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
-                    results += InterimPartialResult(
-                        dependees.values.map(_._1),
-                        continuationForNewAllocationSitesAtArrayStore(
-                            knownPointsTo, defSitesEPSs, arrayType, dependees
-                        )
-                    )
-            }
-        }
+    override protected[this] def createResults(
+        state: State
+    ): ArrayBuffer[ProperPropertyComputationResult] = {
+        val results = super.createResults(state)
 
         if (state.hasCalleesDepenedee) {
             val calleesDependee = state.calleesDependee
@@ -893,12 +609,14 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             )
         }
 
-        Results(results)
+        results
     }
 
     override protected[this] def continuationForShared(
         e: Entity, dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
+        // The shared entities are not affected by changes of the tac and use partial results.
+        // Thus, we could simply recompute them on updates for the tac
         eps match {
             case UBP(callees: Callees) ⇒
                 // this will never happen for method return values or method exceptions
@@ -927,7 +645,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     }
                 }
 
-                val results = updatedResults(
+                val results = createPartialResults(
                     e,
                     newDependees,
                     newPointsToSet,
@@ -979,7 +697,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 state.setCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
 
-                returnResult(state)
+                Results(createResults(state))
             case _ ⇒ throw new IllegalArgumentException(s"unexpected eps $eps")
         }
     }

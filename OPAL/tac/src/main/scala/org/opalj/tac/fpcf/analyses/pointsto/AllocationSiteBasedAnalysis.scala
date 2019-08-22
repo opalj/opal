@@ -25,8 +25,8 @@ import org.opalj.br.fpcf.properties.pointsto.AllocationSite
 
 trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
 
-    override type ElementType = AllocationSite
-    override type PointsToSet = AllocationSitePointsToSet
+    override protected[this] type ElementType = AllocationSite
+    override protected[this] type PointsToSet = AllocationSitePointsToSet
 
     val configPrefix = "org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis"
     val mergeStringBuilderBuffer: Boolean =
@@ -44,7 +44,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
     val classConstPointsToSet = AllocationSitePointsToSet1(ClassId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.Class)
     var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
 
-    override def createPointsToSet(
+    override protected[this] def createPointsToSet(
         pc:             Int,
         declaredMethod: DeclaredMethod,
         allocatedType:  ReferenceType,
@@ -93,11 +93,11 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
         }
     }
 
-    override protected val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {
+    override protected[this] val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {
         AllocationSitePointsToSet.key
     }
 
-    override protected def emptyPointsToSet: AllocationSitePointsToSet = {
+    override protected[this] def emptyPointsToSet: AllocationSitePointsToSet = {
         NoAllocationSites
     }
 }

@@ -100,7 +100,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     def includeSharedPointsToSet(
         e:           Entity,
         pointsToSet: PointsToSet,
-        typeFilter:  ReferenceType ⇒ Boolean
+        typeFilter:  ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     ): Unit = {
         if (_sharedPointsToSets.contains(e)) {
             val oldPointsToSet = _sharedPointsToSets(e)

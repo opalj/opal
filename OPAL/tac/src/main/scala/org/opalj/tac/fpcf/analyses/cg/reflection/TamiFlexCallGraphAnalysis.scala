@@ -51,7 +51,8 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     MethodDescriptor.apply(
                         RefArray(ObjectType.Object, ArrayType.ArrayOfObject), ObjectType.Object
                     )
-                )
+                ),
+                "Method.invoke"
             ),
             new TamiFlexMethodInvokeAnalysis(
                 project,
@@ -61,7 +62,8 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     ObjectType.Class,
                     "newInstance",
                     MethodDescriptor.JustReturnsObject
-                )
+                ),
+                "Class.newInstance"
             ),
             new TamiFlexMethodInvokeAnalysis(
                 project,
@@ -71,7 +73,8 @@ class TamiFlexCallGraphAnalysis private[analyses] (
                     ConstructorT,
                     "newInstance",
                     MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
-                )
+                ),
+                "Constructor.newInstance"
             )
         )
         Results(analyses.map(_.registerAPIMethod()))
@@ -79,7 +82,7 @@ class TamiFlexCallGraphAnalysis private[analyses] (
 }
 
 class TamiFlexMethodInvokeAnalysis private[analyses] (
-        final val project: SomeProject, override val apiMethod: DeclaredMethod
+        final val project: SomeProject, override val apiMethod: DeclaredMethod, val key: String
 ) extends TACAIBasedAPIBasedAnalysis {
     final private[this] val tamiFlexLogData = project.get(TamiFlexKey)
 
@@ -109,7 +112,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         tac:          TACode[TACMethodParameter, V]
     )(implicit indirectCalls: IndirectCalls): Unit = {
         val line = caller.definedMethod.body.flatMap(b ⇒ b.lineNumber(pc)).getOrElse(-1)
-        val targets = tamiFlexLogData.methodInvocations(caller, line)
+        val targets = tamiFlexLogData.methods(caller, key, line)
         if (targets.isEmpty)
             return ;
 

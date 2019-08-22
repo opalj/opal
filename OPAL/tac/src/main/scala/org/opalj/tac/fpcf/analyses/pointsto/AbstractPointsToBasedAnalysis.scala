@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package pointsto
 
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -21,13 +20,12 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 
-// TODO remove this
 trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
 
-    type ElementType
-    type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
-    type State <: TACAIBasedAnalysisState
-    type DependerType
+    protected[this]type ElementType
+    protected[this]type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
+    protected[this]type State <: TACAIBasedAnalysisState
+    protected[this]type DependerType
 
     protected[this] implicit val definitionSites: DefinitionSites = {
         p.get(DefinitionSitesKey)
@@ -48,23 +46,23 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
     ): PointsToSet
 
     @inline protected[this] def currentPointsTo(
-        depender: DependerType,
-        dependee: Entity,
-        typeFilter: ReferenceType ⇒ Boolean =  { _ ⇒ true }
+        depender:   DependerType,
+        dependee:   Entity,
+        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet
 
     @inline protected[this] def currentPointsToOfDefSites(
-        depender: DependerType,
-        defSites: IntTrieSet,
-        typeFilter: ReferenceType ⇒ Boolean =  { _ ⇒ true }
+        depender:   DependerType,
+        defSites:   IntTrieSet,
+        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): Iterator[PointsToSet] = {
         defSites.iterator.map[PointsToSet](currentPointsToOfDefSite(depender, _, typeFilter))
     }
 
     @inline protected[this] def currentPointsToOfDefSite(
-        depender: DependerType,
+        depender:        DependerType,
         dependeeDefSite: Int,
-        typeFilter: ReferenceType ⇒ Boolean =  { _ ⇒ true }
+        typeFilter:      ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
             val pc = ai.pcOfMethodExternalException(dependeeDefSite)

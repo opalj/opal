@@ -23,71 +23,55 @@ import org.opalj.br.ReferenceType
 class TamiFlexLogData(
         //TODO We shoul really split these according to the source (i.e., the reflection method) to
         // increase precision and avoid spurious results esp. if line information is not available
-        private[this] val _classes: scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[ReferenceType]],
-        private[this] val _methods: scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]],
-        private[this] val _fields:  scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[Field]],
-        private[this] val _methodInvocations: scala.collection.Map[(String /*Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]]
+        private[this] val _classes: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[ReferenceType]],
+        private[this] val _methods: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]],
+        private[this] val _fields:  scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[Field]]
 ) {
     private[this] def toMethodDesc(method: DeclaredMethod): String = {
         s"${method.declaringClassType.toJava}.${method.name}"
     }
 
-    def classes(source: DeclaredMethod, sourceLine: Int): scala.collection.Set[ReferenceType] = {
+    def classes(source: DeclaredMethod, reflectionTarget: String, sourceLine: Int): scala.collection.Set[ReferenceType] = {
         val sourceDesc = toMethodDesc(source)
-        val key = (sourceDesc, sourceLine)
+        val key = (sourceDesc, reflectionTarget, sourceLine)
         if (_classes.contains(key))
             _classes(key)
         else {
-            val fallbackKey = (sourceDesc, -1)
+            val fallbackKey = (sourceDesc, reflectionTarget, -1)
             if (_classes.contains(fallbackKey))
                 _classes(fallbackKey)
             else {
-                _classes.getOrElse(("", -1), Set.empty)
+                _classes.getOrElse(("", reflectionTarget, -1), Set.empty)
             }
         }
     }
 
-    def methods(source: DeclaredMethod, sourceLine: Int): scala.collection.Set[DeclaredMethod] = {
+    def methods(source: DeclaredMethod, reflectionTarget: String, sourceLine: Int): scala.collection.Set[DeclaredMethod] = {
         val sourceDesc = toMethodDesc(source)
-        val key = (sourceDesc, sourceLine)
+        val key = (sourceDesc, reflectionTarget, sourceLine)
         if (_methods.contains(key))
             _methods(key)
         else {
-            val fallbackKey = (sourceDesc, -1)
+            val fallbackKey = (sourceDesc, reflectionTarget, -1)
             if (_methods.contains(fallbackKey))
                 _methods(fallbackKey)
             else {
-                _methods.getOrElse(("", -1), Set.empty)
+                _methods.getOrElse(("", reflectionTarget, -1), Set.empty)
             }
         }
     }
 
-    def methodInvocations(source: DeclaredMethod, sourceLine: Int): scala.collection.Set[DeclaredMethod] = {
+    def fields(source: DeclaredMethod, reflectionTarget: String, sourceLine: Int): scala.collection.Set[Field] = {
         val sourceDesc = toMethodDesc(source)
-        val key = (sourceDesc, sourceLine)
-        if (_methodInvocations.contains(key))
-            _methodInvocations(key)
-        else {
-            val fallbackKey = (sourceDesc, -1)
-            if (_methodInvocations.contains(fallbackKey))
-                _methodInvocations(fallbackKey)
-            else {
-                _methodInvocations.getOrElse(("", -1), Set.empty)
-            }
-        }
-    }
-
-    def fields(source: DeclaredMethod, sourceLine: Int): scala.collection.Set[Field] = {
-        val sourceDesc = toMethodDesc(source)
-        val key = (sourceDesc, sourceLine)
+        val key = (sourceDesc, reflectionTarget, sourceLine)
         if (_fields.contains(key))
             _fields(key)
         else {
-            val fallbackKey = (sourceDesc, -1)
+            val fallbackKey = (sourceDesc, reflectionTarget, -1)
             if (_fields.contains(fallbackKey))
                 _fields(fallbackKey)
             else {
-                _fields.getOrElse(("", -1), Set.empty)
+                _fields.getOrElse(("", reflectionTarget, -1), Set.empty)
             }
         }
     }
@@ -107,102 +91,76 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
     override protected def compute(project: SomeProject): TamiFlexLogData = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-        val classes: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[ReferenceType]] = mutable.Map.empty
-        val methods: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
-        val methodInvocations: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
-        val fields: mutable.Map[(String /*Method*/ , Int /*Line Number*/ ), mutable.Set[Field]] = mutable.Map.empty
-
-        @inline def addArrayType(
-            arrayType: String, sourceMethod: String, sourceLine: String
-        ): Unit = {
-            val line = if (sourceLine == "") -1 else sourceLine.toInt
-            val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
-            oldSet.add(FieldType(toJVMType(arrayType)).asArrayType)
-        }
+        val classes: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[ReferenceType]] = mutable.Map.empty
+        val methods: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty
+        val fields: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[Field]] = mutable.Map.empty
 
         @inline def addClassType(
-            classType: String, sourceMethod: String, sourceLine: String
+            classType: String, sourceMethod: String, reflectionTarget: String, sourceLine: String
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
-            val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+            val oldSet =
+                classes.getOrElseUpdate((sourceMethod, reflectionTarget, line), mutable.Set.empty)
             oldSet.add(FieldType(toJVMType(classType)).asReferenceType)
         }
 
         @inline def addField(
-            fieldDesc: String, sourceMethod: String, sourceLine: String
+            fieldDesc: String, sourceMethod: String, reflectionTarget: String, sourceLine: String
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
-            val oldSet = fields.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+            val oldSet =
+                fields.getOrElseUpdate((sourceMethod, reflectionTarget, line), mutable.Set.empty)
             val field = toField(fieldDesc, project)
             if (field.isDefined)
                 oldSet.add(field.get)
         }
 
         @inline def addMethod(
-            methodDesc: String, sourceMethod: String, sourceLine: String
+            methodDesc: String, sourceMethod: String, reflectionTarget: String, sourceLine: String
         ): Unit = {
             val line = if (sourceLine == "") -1 else sourceLine.toInt
             val method = toDeclaredMethod(methodDesc)
-            val oldInvokes = methods.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+            val oldInvokes =
+                methods.getOrElseUpdate((sourceMethod, reflectionTarget, line), mutable.Set.empty)
             oldInvokes.add(method)
         }
 
-        @inline def addMethodInvocation(
-            methodDesc: String, sourceMethod: String, sourceLine: String
-        ): Unit = {
-            val line = if (sourceLine == "") -1 else sourceLine.toInt
-            val method = toDeclaredMethod(methodDesc)
-            val oldInvokes = methodInvocations.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
-            oldInvokes.add(method)
-        }
+        // TODO: There are more methods that could probably be handled, e.g. "getAnnotations"
 
         if (project.config.hasPath(configKey)) {
             val logName = project.config.getString(configKey)
             OPALLogger.info("analysis configuration", s"Using tamiflex log file: $logName")(project.logContext)
             Source.fromFile(logName).getLines().foreach { line ⇒
-                line.split(";", -1) match {
-                    case Array("Array.newInstance", arrayType, sourceMethod, sourceLine, _, _) ⇒
-                        addArrayType(arrayType, sourceMethod, sourceLine)
+                val entries = line.split(";", -1)
+                entries match {
+                    case Array("Array.newInstance" | "Array.get*" | "Array.set*",
+                        arrayType, sourceMethod, sourceLine, _, _) ⇒
+                        addClassType(arrayType, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Array.get*", arrayType, sourceMethod, sourceLine, _, _) ⇒
-                        addArrayType(arrayType, sourceMethod, sourceLine)
+                    case Array("Class.forName" |
+                        "Class.getDeclaredConstructors" | "Class.getConstructors" |
+                        "Class.getDeclaredFields" | "Class.getFields" |
+                        "Class.getDeclaredMethods" | "Class.getMethods" |
+                        "Class.getModifiers",
+                        classType, sourceMethod, sourceLine, _, _) ⇒
+                        addClassType(classType, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Array.set*", arrayType, sourceMethod, sourceLine, _, _) ⇒
-                        addArrayType(arrayType, sourceMethod, sourceLine)
+                    case Array("Class.getDeclaredField" | "Class.getField",
+                        fieldDesc, sourceMethod, sourceLine, _, _) ⇒
+                        addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Class.forName", classType, sourceMethod, sourceLine, _, _) ⇒
-                        addClassType(classType, sourceMethod, sourceLine)
-
-                    case Array("Class.getDeclaredField", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addField(fieldDesc, sourceMethod, sourceLine)
-
-                    case Array("Class.getDeclaredFields", classType, sourceMethod, sourceLine, _, _) ⇒
-                        addClassType(classType, sourceMethod, sourceLine)
-
-                    case Array("Class.getField", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addField(fieldDesc, sourceMethod, sourceLine)
-
-                    case Array("Class.getFields", classType, sourceMethod, sourceLine, _, _) ⇒
-                        addClassType(classType, sourceMethod, sourceLine)
-
-                    case Array("Class.getDeclaredMethod", methodDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addMethod(methodDesc, sourceMethod, sourceLine)
-
-                    case Array("Class.getDeclaredMethods", classType, sourceMethod, sourceLine, _, _) ⇒
-                        addClassType(classType, sourceMethod, sourceLine)
-
-                    case Array("Class.getMethod", methodDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addMethod(methodDesc, sourceMethod, sourceLine)
-
-                    case Array("Class.getMethods", classType, sourceMethod, sourceLine, _, _) ⇒
-                        addClassType(classType, sourceMethod, sourceLine)
+                    case Array("Class.getDeclaredχonstructor" | "Class.getConstructor" |
+                        "Class.getDeclaredMethod" | "Class.getMethod",
+                        methodDesc, sourceMethod, sourceLine, _, _) ⇒
+                        addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
 
                     case Array("Class.newInstance", instantiatedTypeDesc, sourceMethod, sourceLine, _, _) ⇒
                         val line = if (sourceLine == "") -1 else sourceLine.toInt
                         val instantiatedType = FieldType(toJVMType(instantiatedTypeDesc)).asObjectType
-                        val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+                        val oldSet =
+                            classes.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
                         oldSet.add(instantiatedType)
-                        val oldInvokes = methodInvocations.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+                        val oldInvokes = methods.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
                         val constructor = declaredMethods(
                             instantiatedType,
                             instantiatedType.packageName,
@@ -213,42 +171,25 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
                         oldInvokes.add(constructor)
 
                     case Array("Constructor.getModifiers", constructorDesc, sourceMethod, sourceLine, _, _) ⇒
-                        //addMethod(constructorDesc, sourceMethod, sourceLine)
+                        addMethod(constructorDesc, sourceMethod, entries.head, sourceLine)
 
                     case Array("Constructor.newInstance", constructorDesc, sourceMethod, sourceLine, _, _) ⇒
                         val line = if (sourceLine == "") -1 else sourceLine.toInt
                         val constructor = toDeclaredMethod(constructorDesc)
-                        val oldSet = classes.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+                        val oldSet = classes.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
                         oldSet.add(constructor.declaringClassType)
-                        val oldInvokes = methodInvocations.getOrElseUpdate((sourceMethod, line), mutable.Set.empty)
+                        val oldInvokes = methods.getOrElseUpdate((sourceMethod, entries.head, line), mutable.Set.empty)
                         oldInvokes.add(constructor)
 
-                    case Array("Field.getDeclaringClass", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addField(fieldDesc, sourceMethod, sourceLine)
+                    case Array("Field.getDeclaringClass" | "Field.getModifiers" | "Field.getName" |
+                        "Field.get*" | "Field.set*",
+                        fieldDesc, sourceMethod, sourceLine, _, _) ⇒
+                        addField(fieldDesc, sourceMethod, entries.head, sourceLine)
 
-                    case Array("Field.getModifiers", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addField(fieldDesc, sourceMethod, sourceLine)
-
-                    case Array("Field.getName", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addField(fieldDesc, sourceMethod, sourceLine)
-
-                    case Array("Field.get*", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addField(fieldDesc, sourceMethod, sourceLine)
-
-                    case Array("Field.set*", fieldDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addField(fieldDesc, sourceMethod, sourceLine)
-
-                    case Array("Method.getDeclaringClass", methodDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addMethod(methodDesc, sourceMethod, sourceLine)
-
-                    case Array("Method.getModifiers", methodDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addMethod(methodDesc, sourceMethod, sourceLine)
-
-                    case Array("Method.getName", methodDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addMethod(methodDesc, sourceMethod, sourceLine)
-
-                    case Array("Method.invoke", methodDesc, sourceMethod, sourceLine, _, _) ⇒
-                        addMethodInvocation(methodDesc, sourceMethod, sourceLine)
+                    case Array("Method.getDeclaringClass" | "Method.getModifiers" |
+                        "Method.getName" | "Method.invoke",
+                        methodDesc, sourceMethod, sourceLine, _, _) ⇒
+                        addMethod(methodDesc, sourceMethod, entries.head, sourceLine)
 
                     case e ⇒ throw new RuntimeException(s"unexpected log entry ${e.mkString(",")}")
 
@@ -257,7 +198,7 @@ object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
 
         }
 
-        new TamiFlexLogData(classes, methods, fields, methodInvocations)
+        new TamiFlexLogData(classes, methods, fields)
     }
 
     private[this] def toJVMType(javaType: String): String = {

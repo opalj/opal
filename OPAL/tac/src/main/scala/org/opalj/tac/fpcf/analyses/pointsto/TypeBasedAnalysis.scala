@@ -14,16 +14,16 @@ import org.opalj.br.DeclaredMethod
 
 trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
 
-    override type ElementType = ReferenceType
-    override type PointsToSet = TypeBasedPointsToSet
+    override protected[this] type ElementType = ReferenceType
+    override protected[this] type PointsToSet = TypeBasedPointsToSet
 
     override protected[this] val pointsToPropertyKey: PropertyKey[TypeBasedPointsToSet] = {
         TypeBasedPointsToSet.key
     }
 
-    override protected def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
+    override protected[this]  def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
-    override def createPointsToSet(
+    override protected[this] def createPointsToSet(
         pc:             Int,
         declaredMethod: DeclaredMethod,
         allocatedType:  ReferenceType,

@@ -357,7 +357,9 @@ trait PointsToBasedThreadStartAnalysis
     }
 
     @inline protected[this] def currentPointsTo(
-        depender: CallSiteT, dependee: Entity, typeFilter: ReferenceType ⇒ Boolean = { _ ⇒ true }
+        depender:   CallSiteT,
+        dependee:   Entity,
+        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
         if (state.hasPointsToDependee(dependee)) {
             val p2s = state.getPointsToProperty(dependee)
