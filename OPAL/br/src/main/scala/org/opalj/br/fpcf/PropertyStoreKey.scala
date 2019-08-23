@@ -10,8 +10,6 @@ import org.opalj.log.OPALLogger
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.par.PKECPropertyStore
-//import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 
@@ -56,12 +54,12 @@ object PropertyStoreKey
             case Some(psFactory) ⇒
                 OPALLogger.info(
                     "analysis configuration",
-                    "the PropertyStore is created using project information key initialization data"
+                    s"the PropertyStore is initialized using: $psFactory"
                 )
                 psFactory(context)
             case None ⇒
-                //val ps = PKESequentialPropertyStore(context: _*)
-                val ps = PKECPropertyStore(context: _*)
+                // val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 ps
         }
     }
