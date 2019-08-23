@@ -1027,7 +1027,7 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
         OPALLogger.info(
             "property store",
-            s"using with $taskManagerId task manager and evaluation depth $maxEvaluationDepth"
+            s"using $taskManagerId task manager; evaluation depth $maxEvaluationDepth"
         )
 
         val ps =
