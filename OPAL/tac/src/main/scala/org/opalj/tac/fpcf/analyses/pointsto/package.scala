@@ -8,6 +8,7 @@ import org.opalj.fpcf.Entity
 import org.opalj.value.ValueInformation
 import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 
 package object pointsto {
@@ -18,7 +19,12 @@ package object pointsto {
         implicit
         formalParameters: VirtualFormalParameters, definitionSites: DefinitionSites
     ): Entity = {
-        if (defSite < 0) {
+        if (ai.isMethodExternalExceptionOrigin(defSite)) {
+            val pc = ai.pcOfMethodExternalException(defSite)
+            CallExceptions(toEntity(pc, method, stmts).asInstanceOf[DefinitionSite])
+        } else if (ai.isImmediateVMException(defSite)) {
+            null // TODO Implement
+        } else if (defSite < 0) {
             formalParameters.apply(method)(-1 - defSite)
         } else {
             definitionSites(method.definedMethod, stmts(defSite).pc)

@@ -16,7 +16,6 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 
@@ -64,11 +63,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
         dependeeDefSite: Int,
         typeFilter:      ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
-        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            val pc = ai.pcOfMethodExternalException(dependeeDefSite)
-            val defSite = toEntity(pc, state.method, state.tac.stmts).asInstanceOf[DefinitionSite]
-            currentPointsTo(depender, CallExceptions(defSite), typeFilter)
-        } else if (ai.isImmediateVMException(dependeeDefSite)) {
+        if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here
             createPointsToSet(
                 ai.pcOfImmediateVMException(dependeeDefSite),

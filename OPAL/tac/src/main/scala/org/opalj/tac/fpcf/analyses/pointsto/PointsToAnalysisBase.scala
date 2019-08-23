@@ -567,14 +567,16 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         for (fakeEntity ← state.putFieldsIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, field) = fakeEntity
-                val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
+                val defSitesWithoutExceptions =
+                    defSites.iterator.filterNot(ai.isImmediateVMException)
                 var knownPointsTo = emptyPointsToSet
-                val defSitesEPSs = defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
-                    val rhsPTS =
-                        ps(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
-                    knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
-                    rhsPTS.toEPK → rhsPTS
-                }.filter(_._2.isRefinable).toMap
+                val defSitesEPSs =
+                    defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
+                        val defSiteEntity = toEntity(ds, state.method, state.tac.stmts)
+                        val rhsPTS = ps(defSiteEntity, pointsToPropertyKey)
+                        knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
+                        rhsPTS.toEPK → rhsPTS
+                    }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
                 if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
@@ -603,14 +605,16 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         for (fakeEntity ← state.arrayStoresIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, arrayType) = fakeEntity
-                val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
+                val defSitesWithoutExceptions =
+                    defSites.iterator.filterNot(ai.isImmediateVMException)
                 var knownPointsTo = emptyPointsToSet
-                val defSitesEPSs = defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
-                    val rhsPTS =
-                        ps(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
-                    knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
-                    rhsPTS.toEPK → rhsPTS
-                }.filter(_._2.isRefinable).toMap
+                val defSitesEPSs =
+                    defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
+                        val defSiteEntity = toEntity(ds, state.method, state.tac.stmts)
+                        val rhsPTS = ps(defSiteEntity, pointsToPropertyKey)
+                        knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
+                        rhsPTS.toEPK → rhsPTS
+                    }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
                 if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
