@@ -43,7 +43,7 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
      *
      * @return `Nil`.
      */
-    override def requirements: ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
         Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey)
     }
 

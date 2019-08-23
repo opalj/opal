@@ -19,6 +19,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredMethodsPointsToScalaAnalys
  * @author Florian Kuebler
  */
 object AllocationSiteBasedPointsToScalaCallGraphKey extends AbstractCallGraphKey {
+
     override protected def callGraphSchedulers(
         project: SomeProject
     ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
@@ -31,4 +32,5 @@ object AllocationSiteBasedPointsToScalaCallGraphKey extends AbstractCallGraphKey
             DoPrivilegedPointsToScalaCGAnalysisScheduler
         )
     }
+
 }

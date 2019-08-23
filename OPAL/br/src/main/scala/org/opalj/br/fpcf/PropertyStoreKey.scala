@@ -40,7 +40,7 @@ object PropertyStoreKey
      *
      * @return `Nil`.
      */
-    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Creates a new empty property store using the current [[parallelismLevel]].

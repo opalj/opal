@@ -30,7 +30,7 @@ object EagerDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUs
     /**
      * TACAI code has no special prerequisites.
      */
-    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an factory which computes and caches the 3-address code of a method when required.

@@ -26,7 +26,7 @@ object ComputeTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse] {
     /**
      * TACAI code has no special prerequisites.
      */
-    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an factory which computes the 3-address code of a method anew when called.

@@ -40,7 +40,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         project: SomeProject
     ): Traversable[ComputationSpecification[FPCFAnalysis]]
 
-    override def requirements: ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
         Seq(
             DeclaredMethodsKey,
             InitialEntryPointsKey,

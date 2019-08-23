@@ -69,7 +69,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      *
      * @return `Nil`.
      */
-    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     // TODO [Java9+] Needs to be updated for Java9+ projects which use Modules.
     /**

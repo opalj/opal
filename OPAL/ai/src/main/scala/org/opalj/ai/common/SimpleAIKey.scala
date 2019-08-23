@@ -42,7 +42,7 @@ object SimpleAIKey
     /**
      * The SimpleAIKey has no special prerequisites.
      */
-    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which performs and caches the result of the abstract interpretation of a

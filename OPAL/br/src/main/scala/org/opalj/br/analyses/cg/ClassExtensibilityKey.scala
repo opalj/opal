@@ -26,7 +26,7 @@ object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, N
     /**
      * The [[ClassExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
      */
-    override def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(ClosedPackagesKey)
 
     /**
      * Computes the direct type extensibility information for the given project.

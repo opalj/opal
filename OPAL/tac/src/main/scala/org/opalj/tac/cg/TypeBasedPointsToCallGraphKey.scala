@@ -17,6 +17,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
  * @author Florian Kuebler
  */
 object TypeBasedPointsToCallGraphKey extends AbstractCallGraphKey {
+
     override protected def callGraphSchedulers(
         project: SomeProject
     ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
@@ -27,4 +28,5 @@ object TypeBasedPointsToCallGraphKey extends AbstractCallGraphKey {
         //DoPrivilegedPointsToCGAnalysisScheduler
         )
     }
+
 }
