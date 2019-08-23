@@ -3,11 +3,10 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
@@ -37,7 +36,7 @@ object RTACallGraphKey extends AbstractCallGraphKey {
 
     override def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
+    ): Traversable[FPCFAnalysisScheduler] = {
         // in case the library entrypoints finder is configured, we want to use the
         // EagerLibraryEntryPointsAnalysis
         val isLibrary =

@@ -3,9 +3,8 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 
 /**
@@ -18,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 object CHACallGraphKey extends AbstractCallGraphKey {
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
+    ): Traversable[FPCFAnalysisScheduler] = {
         List(CHACallGraphAnalysisScheduler)
     }
 }

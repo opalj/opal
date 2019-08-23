@@ -9,7 +9,6 @@ import scala.collection.JavaConverters._
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -18,7 +17,6 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
@@ -38,7 +36,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
      */
     protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[ComputationSpecification[FPCFAnalysis]]
+    ): Traversable[FPCFAnalysisScheduler]
 
     override def requirements: ProjectInformationKeys = {
         Seq(
@@ -64,13 +62,15 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         ).asScala.flatMap(resolveAnalysisRunner(_))
 
         // TODO make TACAI analysis configurable
-        var analyses: List[ComputationSpecification[FPCFAnalysis]] =
+        var analyses: List[FPCFAnalysisScheduler] =
             List(
                 LazyTACAIProvider
             )
 
         analyses ++= callGraphSchedulers(project)
         analyses ++= registeredAnalyses
+
+        //analyses.foreach { _.requiredProjectInformation.foreach(project.get(_)) }
 
         manager.runAll(analyses)
 

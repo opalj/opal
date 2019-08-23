@@ -404,18 +404,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             state.addIncompletePointsToInfo(pc)
         }
 
-        /*
-        Special handling for System.arraycopy
-        Uses a fake defsite at the (method!)call to simulate an array load and store
-        TODO Integrate into ConfiguredMethodsPointsToAnalysis
-         */
-        if ((target.declaringClassType eq ObjectType.System) && target.name == "arraycopy") {
-            handleArrayLoad(ArrayType.ArrayOfObject, pc, call.params.head.asVar.definedBy)
-
-            val defSites = IntTrieSet(state.tac.pcToIndex(pc))
-            handleArrayStore(ArrayType.ArrayOfObject, call.params(2).asVar.definedBy, defSites)
-        }
-
         if (target.declaringClassType eq UnsafeT) {
             target.name match {
                 case "getObject" | "getObjectVolatile" ⇒
