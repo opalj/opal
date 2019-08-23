@@ -17,7 +17,7 @@ sealed abstract class DeclaredMethod {
      * The declaring type; the returned type may not define the method; it could be defined by
      * one or more super classes/interfaces in case of Java 8+.
      */
-    def declaringClassType: ReferenceType
+    def declaringClassType: ObjectType
 
     def name: String
 
@@ -91,7 +91,7 @@ sealed abstract class DeclaredMethod {
  * may have several package-private methods with the same signature.
  */
 final class VirtualDeclaredMethod private[br] (
-        override val declaringClassType: ReferenceType,
+        override val declaringClassType: ObjectType,
         override val name:               String,
         override val descriptor:         MethodDescriptor,
         override val id:                 Int
@@ -121,7 +121,7 @@ final class VirtualDeclaredMethod private[br] (
  * class along with a reference to the original declaration.
  */
 final class DefinedMethod private[br] (
-        override val declaringClassType: ReferenceType,
+        override val declaringClassType: ObjectType,
         override val definedMethod:      Method,
         override val id:                 Int
 ) extends DeclaredMethod {
@@ -146,7 +146,7 @@ final class DefinedMethod private[br] (
 }
 
 final class MultipleDefinedMethods private[br] (
-        override val declaringClassType: ReferenceType,
+        override val declaringClassType: ObjectType,
         override val definedMethods:     ConstArray[Method],
         override val id:                 Int
 ) extends DeclaredMethod {

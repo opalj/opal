@@ -3,8 +3,9 @@ package org.opalj
 package br
 package fpcf
 
-import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.ProjectInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
 
 /**
  * The ''key'' object to get the [[FPCFAnalysesManager]].
@@ -17,9 +18,8 @@ import org.opalj.br.analyses.ProjectInformationKey
  */
 object FPCFAnalysesManagerKey extends ProjectInformationKey[FPCFAnalysesManager, Nothing] {
 
-    protected def requirements = List(PropertyStoreKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = List(PropertyStoreKey)
 
-    protected def compute(project: SomeProject): FPCFAnalysesManager = {
-        new FPCFAnalysesManager(project)
-    }
+    override def compute(project: SomeProject): FPCFAnalysesManager = new FPCFAnalysesManager(project)
+
 }

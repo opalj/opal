@@ -36,7 +36,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 class OOSWriteObjectAnalysis private[analyses] (
         final val project: SomeProject
-) extends TACAIBasedAPIBasedCallGraphAnalysis {
+) extends TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         ObjectOutputStreamType,
@@ -183,7 +183,7 @@ class OOSWriteObjectAnalysis private[analyses] (
  */
 class OISReadObjectAnalysis private[analyses] (
         final val project: SomeProject
-) extends TACAIBasedAPIBasedCallGraphAnalysis {
+) extends TACAIBasedAPIBasedAnalysis {
 
     final val ObjectInputValidationType = ObjectType("java/io/ObjectInputValidation")
     final val ObjectInputType = ObjectType("java/io/ObjectInput")

@@ -40,12 +40,12 @@ object PropertyStoreKey
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Creates a new empty property store using the current [[parallelismLevel]].
      */
-    override protected def compute(project: SomeProject): PropertyStore = {
+    override def compute(project: SomeProject): PropertyStore = {
         implicit val logContext: LogContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(

@@ -78,7 +78,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
         val instantiatedTypesUB: UIDSet[ObjectType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
 
-        val declaredType = declaredMethod.declaringClassType.asObjectType
+        val declaredType = declaredMethod.declaringClassType
 
         // if the current type is already instantiated, no work is left
         if (instantiatedTypesUB.contains(declaredType))
@@ -119,7 +119,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                 return partialResult(declaredType);
 
             // actually it must be the direct subtype! -- we did the first check to return early
-            project.classFile(caller.declaringClassType.asObjectType).foreach { cf ⇒
+            project.classFile(caller.declaringClassType).foreach { cf ⇒
                 cf.superclassType.foreach { supertype ⇒
                     if (supertype != declaredType)
                         return partialResult(declaredType);

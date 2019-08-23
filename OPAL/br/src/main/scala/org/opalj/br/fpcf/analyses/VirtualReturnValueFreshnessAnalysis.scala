@@ -45,12 +45,8 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
-        if (m.declaringClassType.isArrayType) {
-            throw new NotImplementedError()
-        }
-
         val methods = project.virtualCall(
-            m.declaringClassType.asObjectType.packageName,
+            m.declaringClassType.packageName,
             m.declaringClassType,
             m.name,
             m.descriptor

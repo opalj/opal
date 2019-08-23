@@ -253,6 +253,7 @@ final class PKECPropertyStore(
                 case epkState ⇒
                     pc(epkState.eOptionP.asInstanceOf[EOptionP[E, P]])
             }
+        assert(newInterimEP.isRefinable)
         val newEPKState = EPKState(newInterimEP)
         if (tracer.isDefined) tracer.get.preInitialize(oldEPKState, newEPKState)
         propertiesOfKind.put(e, newEPKState)

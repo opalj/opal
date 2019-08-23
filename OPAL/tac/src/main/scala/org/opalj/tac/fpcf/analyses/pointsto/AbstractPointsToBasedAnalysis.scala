@@ -13,82 +13,77 @@ import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 
-/**
- * Defines a trait with convenience methods often required by points-to based analyses.
- *
- * @author Florian Kuebler
- */
-trait AbstractPointsToBasedAnalysis[Depender, PointsToSet <: PointsToSetLike[_, _, _]] extends FPCFAnalysis {
+trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
 
-    type State <: AbstractPointsToState[Depender, PointsToSet]
+    protected[this] type ElementType
+    protected[this] type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
+    protected[this] type State <: TACAIBasedAnalysisState
+    protected[this] type DependerType
+
+    protected[this] implicit val definitionSites: DefinitionSites = {
+        p.get(DefinitionSitesKey)
+    }
+    protected[this] implicit val formalParameters: VirtualFormalParameters = {
+        p.get(VirtualFormalParametersKey)
+    }
 
     protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet]
     protected[this] def emptyPointsToSet: PointsToSet
 
-    protected[this] val formalParameters: VirtualFormalParameters =
-        p.get(VirtualFormalParametersKey)
-
-    protected[this] val definitionSites: DefinitionSites = p.get(DefinitionSitesKey)
-
-    @inline protected[this] def toEntity(
-        defSite: Int
-    )(implicit state: TACAIBasedAnalysisState): Entity = {
-        if (defSite < 0) {
-            formalParameters.apply(state.method)(-1 - defSite)
-        } else {
-            definitionSites(state.method.definedMethod, state.tac.stmts(defSite).pc)
-        }
-    }
+    protected[this] def createPointsToSet(
+        pc:             Int,
+        declaredMethod: DeclaredMethod,
+        allocatedType:  ReferenceType,
+        isConstant:     Boolean,
+        isEmptyArray:   Boolean        = false
+    ): PointsToSet
 
     @inline protected[this] def currentPointsTo(
-        depender: Depender, dependeeDefSite: Int
+        depender:   DependerType,
+        dependee:   Entity,
+        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+    )(implicit state: State): PointsToSet
+
+    @inline protected[this] def currentPointsToOfDefSites(
+        depender:   DependerType,
+        defSites:   IntTrieSet,
+        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+    )(implicit state: State): Iterator[PointsToSet] = {
+        defSites.iterator.map[PointsToSet](currentPointsToOfDefSite(depender, _, typeFilter))
+    }
+
+    @inline protected[this] def currentPointsToOfDefSite(
+        depender:        DependerType,
+        dependeeDefSite: Int,
+        typeFilter:      ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
         if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            // FIXME ask what exception has been thrown
-            emptyPointsToSet
+            val pc = ai.pcOfMethodExternalException(dependeeDefSite)
+            val defSite = toEntity(pc, state.method, state.tac.stmts).asInstanceOf[DefinitionSite]
+            currentPointsTo(depender, CallExceptions(defSite), typeFilter)
         } else if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here
-            emptyPointsToSet
+            createPointsToSet(
+                ai.pcOfImmediateVMException(dependeeDefSite),
+                state.method,
+                ObjectType.Throwable,
+                isConstant = false
+            )
         } else {
-            currentPointsTo(depender, toEntity(dependeeDefSite))
+            currentPointsTo(
+                depender, toEntity(dependeeDefSite, state.method, state.tac.stmts), typeFilter
+            )
         }
     }
 
-    @inline protected[this] def currentPointsTo(
-        depender: Depender, dependee: Entity
-    )(implicit state: State): PointsToSet = {
-        if (state.hasPointsToDependee(dependee)) {
-            val p2s = state.getPointsToProperty(dependee)
-
-            // It might be the case that there a dependency for that points-to state in the state
-            // from another depender.
-            if (!state.hasPointsToDependency(depender, dependee)) {
-                state.addPointsToDependency(depender, p2s)
-            }
-            pointsToUB(p2s)
-        } else {
-            val p2s = propertyStore(dependee, pointsToPropertyKey)
-            if (p2s.isRefinable) {
-                state.addPointsToDependency(depender, p2s)
-            }
-            pointsToUB(p2s)
-        }
-    }
-
-    @inline protected[this] def currentPointsTo(
-        depender: Depender,
-        defSites: IntTrieSet
-    )(
-        implicit
-        state: State
-    ): Iterator[PointsToSet] = {
-        defSites.iterator.map[PointsToSet](currentPointsTo(depender, _))
-    }
-
-    @inline private[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
+    @inline protected[this] def pointsToUB(eOptP: EOptionP[Entity, PointsToSet]): PointsToSet = {
         if (eOptP.hasUBP)
             eOptP.ub
         else

@@ -40,7 +40,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         project: SomeProject
     ): Traversable[ComputationSpecification[FPCFAnalysis]]
 
-    override protected def requirements: ProjectInformationKeys = {
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
         Seq(
             DeclaredMethodsKey,
             InitialEntryPointsKey,
@@ -49,7 +49,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         )
     }
 
-    override protected def compute(project: SomeProject): CallGraph = {
+    override def compute(project: SomeProject): CallGraph = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         implicit val logContext = project.logContext

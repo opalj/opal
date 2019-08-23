@@ -83,7 +83,7 @@ class RTACallGraphAnalysis private[analyses] (
         for (possibleTgtType ← potentialTargets) {
             if (state.instantiatedTypesUB.contains(possibleTgtType)) {
                 val tgtR = project.instanceCall(
-                    caller.declaringClassType.asObjectType,
+                    caller.declaringClassType,
                     possibleTgtType,
                     call.name,
                     call.descriptor

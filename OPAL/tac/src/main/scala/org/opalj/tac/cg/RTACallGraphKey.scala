@@ -33,11 +33,11 @@ import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
  */
 object RTACallGraphKey extends AbstractCallGraphKey {
 
-    override protected def requirements: ProjectInformationKeys = {
-        super.requirements :+ InitialInstantiatedTypesKey
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
+        super.requirements(project) :+ InitialInstantiatedTypesKey
     }
 
-    override protected def callGraphSchedulers(
+    override def callGraphSchedulers(
         project: SomeProject
     ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
         // in case the library entrypoints finder is configured, we want to use the

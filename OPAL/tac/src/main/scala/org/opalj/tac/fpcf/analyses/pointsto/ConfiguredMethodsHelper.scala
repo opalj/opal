@@ -22,17 +22,17 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameters
 
-case class ConfiguredNativeMethods(nativeMethods: Array[NativeMethodData])
-object ConfiguredNativeMethods {
-    implicit val reader: ValueReader[ConfiguredNativeMethods] = (config: Config, path: String) ⇒ {
+case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])
+object ConfiguredMethods {
+    implicit val reader: ValueReader[ConfiguredMethods] = (config: Config, path: String) ⇒ {
         val c = config.getConfig(path)
         val configs = c.getConfigList("nativeMethods").asScala.toArray
-        val data = configs.map(c ⇒ NativeMethodData.reader.read(c, ""))
-        ConfiguredNativeMethods(data)
+        val data = configs.map(c ⇒ ConfiguredMethodData.reader.read(c, ""))
+        ConfiguredMethods(data)
     }
 }
 
-case class NativeMethodData(
+case class ConfiguredMethodData(
         cf:                String,
         name:              String,
         desc:              String,
@@ -49,8 +49,8 @@ case class NativeMethodData(
     }
 }
 
-object NativeMethodData {
-    implicit val reader: ValueReader[NativeMethodData] = (config: Config, path: String) ⇒ {
+object ConfiguredMethodData {
+    implicit val reader: ValueReader[ConfiguredMethodData] = (config: Config, path: String) ⇒ {
         val c = if (path.nonEmpty) config.getConfig(path) else config
         val cf = c.as[String]("cf")
         val name = c.getString("name")
@@ -67,7 +67,7 @@ object NativeMethodData {
             else
                 None
 
-        NativeMethodData(cf, name, desc, pointsTo, methodInvocations)
+        ConfiguredMethodData(cf, name, desc, pointsTo, methodInvocations)
     }
 }
 
@@ -89,6 +89,7 @@ sealed trait EntityDescription {
         virtualFormalParameters: VirtualFormalParameters
     ): Entity
 }
+
 object EntityDescription {
     implicit val reader: ValueReader[EntityDescription] = (config: Config, path: String) ⇒ {
         val c = config.getConfig(path)
@@ -96,7 +97,7 @@ object EntityDescription {
             val cf = c.getString("cf")
             val name = c.getString("name")
             val fieldType = c.getString("fieldType")
-            FieldDescription(cf, name, fieldType)
+            StaticFieldDescription(cf, name, fieldType)
         } else if (c.hasPath("index")) {
             val cf = c.getString("cf")
             val name = c.getString("name")
@@ -108,7 +109,12 @@ object EntityDescription {
             val name = c.getString("name")
             val desc = c.getString("desc")
             val instantiatedType = c.getString("instantiatedType")
-            AllocationSiteDescription(cf, name, desc, instantiatedType)
+            val arrayComponentTypes =
+                if (c.hasPath("arrayComponentTypes"))
+                    c.getStringList("arrayComponentTypes").asScala
+                else
+                    List.empty
+            AllocationSiteDescription(cf, name, desc, instantiatedType, arrayComponentTypes)
         } else /*MethodDescription*/ {
             MethodDescription.reader.read(c, "")
         }
@@ -128,6 +134,10 @@ case class MethodDescription(
         val descriptor = MethodDescriptor(desc)
         declaredMethods(classType, classType.packageName, classType, name, descriptor)
     }
+    def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
+        val classType = ObjectType(cf)
+        declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
+    }
 }
 
 object MethodDescription {
@@ -139,7 +149,7 @@ object MethodDescription {
     }
 }
 
-case class FieldDescription(
+case class StaticFieldDescription(
         cf: String, name: String, fieldType: String
 ) extends EntityDescription {
     override def entity(
@@ -155,6 +165,9 @@ case class FieldDescription(
             throw new RuntimeException(s"specified field $this is not part of the project.")
         }
         fieldOption.get
+    }
+    def fieldOption(project: SomeProject): Option[Field] = {
+        project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType))
     }
 }
 
@@ -172,10 +185,26 @@ case class ParameterDescription(
         val dm = declaredMethods(classType, classType.packageName, classType, name, descriptor)
         virtualFormalParameters(dm)(index)
     }
+    def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
+        val classType = ObjectType(cf)
+        declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
+    }
+
+    def fp(
+        method: DeclaredMethod, virtualFormalParameters: VirtualFormalParameters
+    ): VirtualFormalParameter = {
+        val fps = virtualFormalParameters(method)
+        if (fps eq null) null
+        else fps(index)
+    }
 }
 
 case class AllocationSiteDescription(
-        cf: String, name: String, desc: String, instantiatedType: String
+        cf:                  String,
+        name:                String,
+        desc:                String,
+        instantiatedType:    String,
+        arrayComponentTypes: Seq[String]
 ) extends EntityDescription {
     override def entity(
         implicit
@@ -184,5 +213,9 @@ case class AllocationSiteDescription(
         virtualFormalParameters: VirtualFormalParameters
     ): Entity = {
         throw new RuntimeException("this should only be used as rhs and not be stored in the property store")
+    }
+    def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
+        val classType = ObjectType(cf)
+        declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
     }
 }

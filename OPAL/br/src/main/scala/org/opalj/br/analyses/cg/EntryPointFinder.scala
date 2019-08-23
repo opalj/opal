@@ -69,7 +69,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
             packagesToExclude.exists { prefix ⇒
                 ep.declaringClassFile.thisType.packageName.startsWith(prefix)
             }
-        }
+        }.filterNot(ep ⇒ ep.classFile.thisType == ObjectType("WrapperGenerator"))
     }
 }
 
