@@ -10,12 +10,12 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.{Arrays ⇒ JArrays}
 
 import com.typesafe.config.Config
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 
@@ -1023,6 +1023,11 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
             case "Par" ⇒ new ParTasksManager(maxEvaluationDepth)
             case _     ⇒ throw new IllegalArgumentException(s"unknown task manager $taskManagerId")
         }
+
+        OPALLogger.info(
+            "property store",
+            s"using with $taskManagerId task manager and evaluation depth $maxEvaluationDepth"
+        )
 
         val ps =
             new PKECPropertyStore(
