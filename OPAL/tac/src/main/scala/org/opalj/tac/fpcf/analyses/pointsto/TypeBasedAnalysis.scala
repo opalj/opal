@@ -21,7 +21,7 @@ trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
         TypeBasedPointsToSet.key
     }
 
-    override protected[this]  def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
+    override protected[this] def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
     override protected[this] def createPointsToSet(
         pc:             Int,

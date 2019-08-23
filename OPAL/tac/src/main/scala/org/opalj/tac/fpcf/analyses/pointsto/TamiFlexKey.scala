@@ -85,11 +85,9 @@ class TamiFlexLogData(
 object TamiFlexKey extends ProjectInformationKey[TamiFlexLogData, Nothing] {
     val configKey = "org.opalj.tac.fpcf.analyses.pointsto.TamiFlex.logFile"
 
-    override protected def requirements: ProjectInformationKeys = {
-        Seq(DeclaredMethodsKey)
-    }
+    override def requirements: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    override protected def compute(project: SomeProject): TamiFlexLogData = {
+    override def compute(project: SomeProject): TamiFlexLogData = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val classes: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[ReferenceType]] = mutable.Map.empty
         val methods: mutable.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), mutable.Set[DeclaredMethod]] = mutable.Map.empty

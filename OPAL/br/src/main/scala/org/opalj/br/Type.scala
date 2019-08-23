@@ -397,7 +397,7 @@ object ReferenceType {
      * Enables the reverse lookup of a ReferenceType given a ReferenceType's id.
      */
     def lookup(id: Int): ReferenceType = {
-        if(id >= 0) ObjectType.lookup(id)
+        if (id >= 0) ObjectType.lookup(id)
         else ArrayType.lookup(id)
     }
 

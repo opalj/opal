@@ -9,7 +9,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 class AllocationSiteBasedPointsToAnalysis private[analyses] (
-    final val project: SomeProject
+        final val project: SomeProject
 ) extends AbstractPointsToAnalysis with AllocationSiteBasedAnalysis
 
 object AllocationSiteBasedPointsToAnalysisScheduler extends AbstractPointsToAnalysisScheduler {

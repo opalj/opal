@@ -180,7 +180,7 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
                 val method = pd.method(declaredMethods)
                 val fp = pd.fp(method, virtualFormalParameters)
                 if (fp ne null) {
-                    if(fp.origin == -1) {
+                    if (fp.origin == -1) {
                         handleCallReceiver(IntTrieSet(0), method, isNonVirtualCall = true)
                     } else {
                         handleCallParameter(IntTrieSet(0), -fp.origin - 2, method)
@@ -238,11 +238,11 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
 }
 
 class TypeBasedConfiguredMethodsPointsToAnalysis private[analyses] (
-    final val project: SomeProject
+        final val project: SomeProject
 ) extends ConfiguredMethodsPointsToAnalysis with TypeBasedAnalysis
 
 object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
-        extends ConfiguredMethodsPointsToAnalysisScheduler {
+    extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
@@ -250,11 +250,11 @@ object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
 }
 
 class AllocationSiteBasedConfiguredMethodsPointsToAnalysis private[analyses] (
-    final val project: SomeProject
+        final val project: SomeProject
 ) extends ConfiguredMethodsPointsToAnalysis with AllocationSiteBasedAnalysis
 
 object AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
-        extends ConfiguredMethodsPointsToAnalysisScheduler {
+    extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =

@@ -30,9 +30,9 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 sealed trait AllocationSitePointsToSet
-        extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
-        with OrderedProperty
-        with AllocationSitePointsToSetPropertyMetaInformation {
+    extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
+    with OrderedProperty
+    with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
@@ -62,7 +62,7 @@ sealed trait AllocationSitePointsToSet
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             val oldAllocationSites = newAllocationSites
             newAllocationSites += allocationSite
-            if(newAllocationSites ne oldAllocationSites){
+            if (newAllocationSites ne oldAllocationSites) {
                 val oldTypes = newTypes
                 newTypes += tpe
                 if (newTypes ne oldTypes)
@@ -89,7 +89,7 @@ sealed trait AllocationSitePointsToSet
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val newAllocationSites = r + allocationSite
-                if(newAllocationSites ne r) {
+                if (newAllocationSites ne r) {
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
@@ -124,7 +124,7 @@ sealed trait AllocationSitePointsToSet
             if (typeFilter(tpe)) {
                 val oldAllocationSites = newAllocationSites
                 newAllocationSites += allocationSite
-                if(newAllocationSites ne oldAllocationSites) {
+                if (newAllocationSites ne oldAllocationSites) {
                     val oldTypes = newTypes
                     newTypes += tpe
                     if (newTypes ne oldTypes)
@@ -151,7 +151,7 @@ sealed trait AllocationSitePointsToSet
                 val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
                 if (typeFilter(tpe)) {
                     val newAllocationSites = r + allocationSite
-                    if(newAllocationSites ne r) {
+                    if (newAllocationSites ne r) {
                         val oldTypes = newTypes
                         newTypes += tpe
                         if (newTypes ne oldTypes)

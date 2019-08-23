@@ -89,7 +89,7 @@ object ConfiguredPurityKey extends ProjectInformationKey[ConfiguredPurity, Nothi
 
     override def requirements: ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
 
-    override protected def compute(project: SomeProject): ConfiguredPurity = {
+    override def compute(project: SomeProject): ConfiguredPurity = {
         val ps = project.get(PropertyStoreKey)
         val declaredMethods = project.get(DeclaredMethodsKey)
         new ConfiguredPurity(project, ps, declaredMethods)

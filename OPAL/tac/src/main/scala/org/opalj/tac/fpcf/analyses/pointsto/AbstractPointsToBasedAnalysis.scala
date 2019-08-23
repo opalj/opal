@@ -22,10 +22,10 @@ import org.opalj.tac.common.DefinitionSitesKey
 
 trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
 
-    protected[this]type ElementType
-    protected[this]type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
-    protected[this]type State <: TACAIBasedAnalysisState
-    protected[this]type DependerType
+    protected[this] type ElementType
+    protected[this] type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
+    protected[this] type State <: TACAIBasedAnalysisState
+    protected[this] type DependerType
 
     protected[this] implicit val definitionSites: DefinitionSites = {
         p.get(DefinitionSitesKey)

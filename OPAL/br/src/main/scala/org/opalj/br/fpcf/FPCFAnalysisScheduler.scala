@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.opalj.fpcf.ComputationSpecification
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 
 /**
@@ -20,6 +21,15 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
+
+    /**
+     * Returns all [[org.opalj.br.analyses.ProjectInformationKey]]s required by the analyses.
+     *
+     * This information is in particular required by keys which - when the key is computed - make use of
+     * other keys which are not statically known at compile time. If a single key that is (transitively)
+     * used is not correctly listed, a deadlock will _always_ occur.
+     */
+    def requiredProjectInformation: ProjectInformationKeys = ???
 
     /**
      * The unique id of this factory.
