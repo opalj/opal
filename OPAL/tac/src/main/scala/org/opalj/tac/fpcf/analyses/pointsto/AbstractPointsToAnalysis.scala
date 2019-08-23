@@ -39,11 +39,15 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.analyses.cg.V
@@ -586,6 +590,9 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     def createAnalysis: SomeProject ⇒ AbstractPointsToAnalysis
 
     override type InitializationData = Null
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

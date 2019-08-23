@@ -34,6 +34,9 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToAnalysisBase
@@ -409,6 +412,9 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 }
 
 object DoPrivilegedPointsToCGAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(AllocationSitePointsToSet))
 

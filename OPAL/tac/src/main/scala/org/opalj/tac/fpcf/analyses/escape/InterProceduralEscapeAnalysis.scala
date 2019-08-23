@@ -26,6 +26,7 @@ import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -150,6 +151,9 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
 sealed trait InterProceduralEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, IsOverridableMethodKey)
+
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(EscapeProperty)
 
     override def uses: Set[PropertyBounds] = Set(
@@ -163,6 +167,9 @@ object EagerInterProceduralEscapeAnalysis
     extends InterProceduralEscapeAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
     type V = DUVar[ValueInformation]
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ DefinitionSitesKey
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new InterProceduralEscapeAnalysis(p)

@@ -41,6 +41,7 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldLocality
@@ -511,6 +512,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 sealed trait ReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReturnValueFreshness)
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] = {
         Set(

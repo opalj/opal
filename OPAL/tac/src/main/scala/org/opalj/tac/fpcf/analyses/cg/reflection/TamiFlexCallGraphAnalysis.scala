@@ -22,6 +22,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -37,8 +38,10 @@ import org.opalj.tac.fpcf.properties.TACAI
 class TamiFlexCallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
+
     val declaredMethods = project.get(DeclaredMethodsKey)
     val ConstructorT = ObjectType("java/lang/reflect/Constructor")
+
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses = List(
             new TamiFlexMethodInvokeAnalysis(
@@ -149,6 +152,9 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
 }
 
 object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, TamiFlexKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

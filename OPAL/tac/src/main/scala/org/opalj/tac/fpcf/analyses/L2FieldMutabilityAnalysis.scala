@@ -63,6 +63,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
@@ -1067,6 +1068,14 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
 trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        TypeExtensibilityKey,
+        ClosedPackagesKey,
+        FieldAccessInformationKey,
+        DefinitionSitesKey,
+        DeclaredMethodsKey
+    )
+
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(Purity),
         PropertyBounds.lub(FieldPrematurelyRead),
@@ -1083,8 +1092,8 @@ trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  * Executor for the field mutability analysis.
  */
 object EagerL2FieldMutabilityAnalysis
-    extends L2FieldMutabilityAnalysisScheduler
-    with BasicFPCFEagerAnalysisScheduler {
+        extends L2FieldMutabilityAnalysisScheduler
+        with BasicFPCFEagerAnalysisScheduler {
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L2FieldMutabilityAnalysis(p)
@@ -1102,8 +1111,8 @@ object EagerL2FieldMutabilityAnalysis
  * Executor for the lazy field mutability analysis.
  */
 object LazyL2FieldMutabilityAnalysis
-    extends L2FieldMutabilityAnalysisScheduler
-    with BasicFPCFLazyAnalysisScheduler {
+        extends L2FieldMutabilityAnalysisScheduler
+        with BasicFPCFLazyAnalysisScheduler {
 
     final override def register(
         p:      SomeProject,

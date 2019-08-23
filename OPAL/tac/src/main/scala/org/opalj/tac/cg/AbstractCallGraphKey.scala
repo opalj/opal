@@ -44,22 +44,26 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             InitialEntryPointsKey,
             PropertyStoreKey,
             FPCFAnalysesManagerKey
-        )
+        ) ++
+            callGraphSchedulers(project).flatMap(_.requiredProjectInformation) ++
+            registeredAnalyses(project).flatMap(_.requiredProjectInformation)
+    }
+
+    private[this] def registeredAnalyses(project: SomeProject): Seq[FPCFAnalysisScheduler] = {
+        implicit val logContext = project.logContext
+        val config = project.config
+
+        // TODO use FPCFAnaylsesRegistry here
+        config.getStringList(
+            "org.opalj.tac.cg.CallGraphKey.modules"
+        ).asScala.flatMap(resolveAnalysisRunner(_))
     }
 
     override def compute(project: SomeProject): CallGraph = {
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
-        implicit val logContext = project.logContext
 
         val manager = project.get(FPCFAnalysesManagerKey)
-
-        val config = project.config
-
-        // TODO use FPCFAnaylsesRegistry here
-        val registeredAnalyses = config.getStringList(
-            "org.opalj.tac.cg.CallGraphKey.modules"
-        ).asScala.flatMap(resolveAnalysisRunner(_))
 
         // TODO make TACAI analysis configurable
         var analyses: List[FPCFAnalysisScheduler] =
@@ -68,9 +72,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             )
 
         analyses ++= callGraphSchedulers(project)
-        analyses ++= registeredAnalyses
-
-        //analyses.foreach { _.requiredProjectInformation.foreach(project.get(_)) }
+        analyses ++= registeredAnalyses(project)
 
         manager.runAll(analyses)
 

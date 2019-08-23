@@ -34,6 +34,7 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSetScala
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSitesScala
 
 /**
@@ -359,6 +360,9 @@ class DoPrivilegedPointsToScalaCGAnalysis private[cg] (
 }
 
 object DoPrivilegedPointsToScalaCGAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey)
 
     override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(AllocationSitePointsToSetScala))
 

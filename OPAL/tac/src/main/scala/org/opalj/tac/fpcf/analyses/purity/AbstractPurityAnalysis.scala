@@ -44,7 +44,6 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.analyses.ConfiguredPurity
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
@@ -91,7 +90,6 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
     val rater: DomainSpecificRater
 
-    protected[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
     protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     val configuredPurity: ConfiguredPurity = project.get(ConfiguredPurityKey)

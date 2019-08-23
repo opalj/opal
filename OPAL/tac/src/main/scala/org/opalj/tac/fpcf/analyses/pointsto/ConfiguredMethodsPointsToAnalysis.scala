@@ -33,6 +33,8 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.tac.common.DefinitionSitesKey
 
 /**
  * Applies the impact of preconfigured methods to the points-to analysis.
@@ -216,6 +218,9 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
     def createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis
 
     override type InitializationData = Null
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

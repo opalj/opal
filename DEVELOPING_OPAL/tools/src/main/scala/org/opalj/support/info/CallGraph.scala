@@ -18,6 +18,7 @@ import org.opalj.util.Seconds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.par.PKECPropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -42,6 +43,7 @@ import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.pointsto.AField
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
@@ -109,7 +111,10 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                val ps = PKECPropertyStore.apply(context: _*)
+                val ps = if (1 % 2 == 1)
+                    PKECPropertyStore.apply(context: _*)
+                else
+                    PKESequentialPropertyStore.apply(context: _*)
                 ps
             }
         )
