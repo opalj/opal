@@ -43,14 +43,16 @@ object InitialEntryPointsKey extends ProjectInformationKey[Traversable[Method], 
      *
      * @return `Nil`.
      */
-    def requirements = Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey)
+    override def requirements: ProjectInformationKeys = {
+        Seq(TypeExtensibilityKey, ClosedPackagesKey, IsOverridableMethodKey)
+    }
 
     /**
      * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
      * The instantiated class has to satisfy the interface and needs to provide a single
      * constructor parameterized over a Project.
      */
-    override protected def compute(project: SomeProject): Traversable[Method] = {
+    override def compute(project: SomeProject): Traversable[Method] = {
         val key = ConfigKeyPrefix+"analysis"
         val configuredAnalysis = project.config.as[Option[String]](key)
         val entryPointFinder = configuredAnalysis

@@ -46,14 +46,14 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] 
      *
      * @return `Nil`.
      */
-    def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.
      * The instantiated class has to satisfy the interface and needs to provide a single
      * constructor parameterized over a Project.
      */
-    override protected def compute(project: SomeProject): ClosedPackages = {
+    override def compute(project: SomeProject): ClosedPackages = {
         try {
             val key = ConfigKeyPrefix+"analysis"
             val configuredAnalysis = project.config.as[Option[String]](key)

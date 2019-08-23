@@ -97,8 +97,8 @@ private[immutable] sealed trait UIDTrieSetNode[T <: UID] {
  * The common superclass of the leafs of the trie.
  */
 private[immutable] sealed abstract class UIDTrieSetLeaf[T <: UID]
-        extends UIDTrieSet[T]
-        with UIDTrieSetNode[T] {
+    extends UIDTrieSet[T]
+    with UIDTrieSetNode[T] {
 
     final override private[immutable] def containsId(id: Int, key: Int): Boolean = {
         this.containsId(id)

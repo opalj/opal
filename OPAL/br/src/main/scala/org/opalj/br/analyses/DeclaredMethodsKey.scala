@@ -69,13 +69,13 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     // TODO [Java9+] Needs to be updated for Java9+ projects which use Modules.
     /**
      * Collects all declared methods.
      */
-    override protected def compute(p: SomeProject): DeclaredMethods = {
+    override def compute(p: SomeProject): DeclaredMethods = {
 
         val result: ConcurrentHashMap[ReferenceType, ConcurrentHashMap[MethodContext, DeclaredMethod]] =
             new ConcurrentHashMap

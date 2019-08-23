@@ -435,9 +435,9 @@ private class TestProjectInformationKey extends ProjectInformationKey[Object, No
 
     val theResult = new Object()
 
-    protected def compute(project: SomeProject): Object = theResult
+    override def compute(project: SomeProject): Object = theResult
 
-    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
+    override def requirements: Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
 
 }
 
@@ -447,9 +447,9 @@ private class TestProjectInformationWithDependenciesKey extends ProjectInformati
 
     val depdencies = List(new TestProjectInformationKey, new TestProjectInformationKey)
 
-    protected def compute(project: SomeProject): Object = theResult
+    override def compute(project: SomeProject): Object = theResult
 
-    protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = depdencies
+    override def requirements: Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = depdencies
 
 }
 

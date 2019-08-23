@@ -38,10 +38,10 @@ abstract class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
 ) extends PointsToAnalysisBase { self ⇒
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this]type ElementType = self.ElementType
-        override protected[this]type PointsToSet = self.PointsToSet
-        override protected[this]type State = self.State
-        override protected[this]type DependerType = self.DependerType
+        override protected[this] type ElementType = self.ElementType
+        override protected[this] type PointsToSet = self.PointsToSet
+        override protected[this] type State = self.State
+        override protected[this] type DependerType = self.DependerType
 
         override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
             self.pointsToPropertyKey
@@ -184,7 +184,7 @@ object AllocationSiteBasedTamiFlexPointsToAnalysisScheduler extends BasicFPCFEag
 }
 
 abstract class TamiFlexPointsToArrayGetAnalysis( final val project: SomeProject)
-        extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
+    extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         TamiFlexPointsToAnalysis.ArrayT,
@@ -226,7 +226,7 @@ abstract class TamiFlexPointsToArrayGetAnalysis( final val project: SomeProject)
 }
 
 abstract class TamiFlexPointsToArraySetAnalysis( final val project: SomeProject)
-        extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
+    extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         TamiFlexPointsToAnalysis.ArrayT,
@@ -384,7 +384,7 @@ abstract class TamiFlexPointsToClassGetMembersAnalysis(
 }
 
 abstract class TamiFlexPointsToFieldGetAnalysis( final val project: SomeProject)
-        extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
+    extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         TamiFlexPointsToAnalysis.FieldT,
@@ -426,7 +426,7 @@ abstract class TamiFlexPointsToFieldGetAnalysis( final val project: SomeProject)
 }
 
 abstract class TamiFlexPointsToFieldSetAnalysis( final val project: SomeProject)
-        extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
+    extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         TamiFlexPointsToAnalysis.FieldT,

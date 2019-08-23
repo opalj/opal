@@ -19,12 +19,12 @@ object FieldAccessInformationKey extends ProjectInformationKey[FieldAccessInform
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the field access information.
      */
-    override protected def compute(project: SomeProject): FieldAccessInformation = {
+    override def compute(project: SomeProject): FieldAccessInformation = {
         FieldAccessInformationAnalysis.doAnalyze(project, defaultIsInterrupted)
     }
 }

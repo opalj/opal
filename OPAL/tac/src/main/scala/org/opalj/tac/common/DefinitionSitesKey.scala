@@ -16,9 +16,7 @@ import org.opalj.br.analyses.SomeProject
  */
 object DefinitionSitesKey extends ProjectInformationKey[DefinitionSites, Nothing] {
 
-    override protected def requirements: ProjectInformationKeys = Seq.empty
+    override def requirements: ProjectInformationKeys = Seq.empty
 
-    override protected def compute(project: SomeProject): DefinitionSites = {
-        new DefinitionSites(project)
-    }
+    override def compute(project: SomeProject): DefinitionSites = new DefinitionSites(project)
 }
