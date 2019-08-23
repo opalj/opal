@@ -9,7 +9,6 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -41,7 +40,6 @@ import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
@@ -371,37 +369,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    private[this] def handleCallReceiver(
-        receiverDefSites: IntTrieSet,
-        target:           DeclaredMethod,
-        fps:              ConstArray[VirtualFormalParameter],
-        isNonVirtualCall: Boolean
-    )(implicit state: State): Unit = {
-        val declClassType = target.declaringClassType
-        val tgtMethod = target.definedMethod
-        val filter = if (isNonVirtualCall) {
-            t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, declClassType)
-        } else {
-            val overrides =
-                if (project.overridingMethods.contains(tgtMethod))
-                    project.overridingMethods(tgtMethod).map(_.classFile.thisType) -
-                        declClassType
-                else
-                    Set.empty
-            // TODO this might not be 100% correct in some corner cases
-            t: ReferenceType ⇒
-                classHierarchy.isSubtypeOf(t, declClassType) &&
-                    !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
-        }
-        val fp = fps(0)
-        val ptss = currentPointsToOfDefSites(fp, receiverDefSites, filter)
-        state.includeSharedPointsToSets(
-            fp,
-            ptss,
-            filter
-        )
-    }
-
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
 
     private[this] def handleDirectCall(
@@ -420,7 +387,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         _: StaticMethodCall[V] ⇒ true
                     case _ ⇒ false
                 }
-                handleCallReceiver(receiverOpt.get.asVar.definedBy, target, fps, isNonVirtualCall)
+                handleCallReceiver(receiverOpt.get.asVar.definedBy, target, isNonVirtualCall)
             }
 
             val descriptor = target.descriptor
@@ -428,18 +395,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (call.params.size == descriptor.parametersCount) {
                 // handle params
                 for (i ← 0 until descriptor.parametersCount) {
-                    val paramType = descriptor.parameterType(i)
-                    if (paramType.isReferenceType) {
-                        val fp = fps(i + 1)
-                        val filter = { t: ReferenceType ⇒
-                            classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
-                        }
-                        state.includeSharedPointsToSets(
-                            fp,
-                            currentPointsToOfDefSites(fp, call.params(i).asVar.definedBy, filter),
-                            filter
-                        )
-                    }
+                    handleCallParameter(call.params(i).asVar.definedBy, i, target)
                 }
             } else {
                 // it is not needed to mark it as incomplete here
@@ -451,7 +407,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         /*
         Special handling for System.arraycopy
         Uses a fake defsite at the (method!)call to simulate an array load and store
-        TODO Integrate into ConfiguredNativeMethodsPointsToAnalysis
+        TODO Integrate into ConfiguredMethodsPointsToAnalysis
          */
         if ((target.declaringClassType eq ObjectType.System) && target.name == "arraycopy") {
             handleArrayLoad(ArrayType.ArrayOfObject, pc, call.params.head.asVar.definedBy)
@@ -495,10 +451,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val receiverOpt = callees.indirectCallReceiver(pc, target)
                 if (receiverOpt.isDefined) {
                     val receiverDefSites = valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
-                    handleCallReceiver(receiverDefSites, target, fps, isNonVirtualCall = false)
+                    handleCallReceiver(receiverDefSites, target, isNonVirtualCall = false)
                 } else if (target.name == "<init>") {
                     handleCallReceiver(
-                        IntTrieSet(tac.pcToIndex(pc)), target, fps, isNonVirtualCall = false
+                        IntTrieSet(tac.pcToIndex(pc)), target, isNonVirtualCall = false
                     )
                 } else {
                     // TODO distinguish between static methods and unavailable info
@@ -507,20 +463,12 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 for (i ← indirectParams.indices) {
                     val paramType = descriptor.parameterType(i)
                     if (paramType.isReferenceType) {
-                        val fp = fps(i + 1)
                         val indirectParam = indirectParams(i)
                         if (indirectParam.isDefined) {
-                            val filter = { t: ReferenceType ⇒
-                                classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
-                            }
-                            state.includeSharedPointsToSets(
-                                fp,
-                                currentPointsToOfDefSites(
-                                    fp,
-                                    valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex),
-                                    filter
-                                ),
-                                filter
+                            handleCallParameter(
+                                valueOriginsOfPCs(indirectParam.get._2, tac.pcToIndex),
+                                i,
+                                target
                             )
                         } else {
                             state.addIncompletePointsToInfo(pc)

@@ -76,15 +76,13 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
         dm:   DefinedMethod,
         data: Array[PointsToRelation]
     ): PropertyComputationResult = {
-        var nextFakePC = 0
-
         implicit val state: State = new PointsToAnalysisState[ElementType, PointsToSet](dm, null)
 
         // for each configured points to relation, add all points-to info from the rhs to the lhs
         for (PointsToRelation(lhs, rhs) ← data) {
-            handleGet(rhs, nextFakePC)
-            handlePut(lhs, nextFakePC)
-            nextFakePC += 1
+            handleGet(rhs)
+            handlePut(lhs)
+            //nextFakePC += 1
         }
 
         Results(createResults(state))
@@ -100,8 +98,8 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
         )
     }
 
-    private[this] def handleGet(rhs: EntityDescription, pc: Int)(implicit state: State): Unit = {
-        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+    private[this] def handleGet(rhs: EntityDescription)(implicit state: State): Unit = {
+        val defSiteObject = definitionSites(state.method.definedMethod, 0)
         rhs match {
             case md: MethodDescription ⇒
                 val method = md.method(declaredMethods)
@@ -114,7 +112,7 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
             case sfd: StaticFieldDescription ⇒
                 val fieldOption = sfd.fieldOption(p)
                 if (fieldOption.isDefined)
-                    handleGetStatic(fieldOption.get, pc)
+                    handleGetStatic(fieldOption.get, 0)
 
             case pd: ParameterDescription ⇒
                 val method = pd.method(declaredMethods)
@@ -159,7 +157,7 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
         }
     }
 
-    private[this] def handlePut(lhs: EntityDescription, pc: Int)(implicit state: State): Unit =
+    private[this] def handlePut(lhs: EntityDescription)(implicit state: State): Unit =
         lhs match {
             case md: MethodDescription ⇒
                 val method = md.method(declaredMethods)
@@ -169,34 +167,24 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
                 }
                 state.includeSharedPointsToSet(
                     method,
-                    currentPointsToOfDefSite(method, pc, filter),
+                    currentPointsToOfDefSite(method, 0, filter),
                     filter
                 )
 
             case sfd: StaticFieldDescription ⇒
                 val fieldOption = sfd.fieldOption(p)
                 if (fieldOption.isDefined)
-                    handlePutStatic(fieldOption.get, IntTrieSet(pc))
+                    handlePutStatic(fieldOption.get, IntTrieSet(0))
 
             case pd: ParameterDescription ⇒
                 val method = pd.method(declaredMethods)
                 val fp = pd.fp(method, virtualFormalParameters)
                 if (fp ne null) {
-                    val paramType = if(fp.origin == -1) {
-                        // TODO
-                        ObjectType.Object
+                    if(fp.origin == -1) {
+                        handleCallReceiver(IntTrieSet(0), method, isNonVirtualCall = true)
                     } else {
-                        method.descriptor.parameterType(-fp.origin - 1).asReferenceType
+                        handleCallParameter(IntTrieSet(0), -fp.origin - 2, method)
                     }
-
-                    val filter = { t: ReferenceType ⇒
-                        classHierarchy.isSubtypeOf(t, paramType)
-                    }
-                    state.includeSharedPointsToSet(
-                        fp,
-                        currentPointsToOfDefSite(fp, pc, filter),
-                        filter
-                    )
                 }
 
             case _: AllocationSiteDescription ⇒

@@ -28,12 +28,64 @@ import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.isEmptyArrayAllocationSite
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.DeclaredMethod
 import org.opalj.tac.common.DefinitionSite
 
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
     override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
     override protected[this]type DependerType = Entity
+
+    protected[this] def handleCallReceiver(
+        receiverDefSites: IntTrieSet,
+        target:           DeclaredMethod,
+        isNonVirtualCall: Boolean
+    )(implicit state: State): Unit = {
+        val fps = formalParameters(target)
+        val declClassType = target.declaringClassType
+        val tgtMethod = target.definedMethod
+        val filter = if (isNonVirtualCall) {
+            t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, declClassType)
+        } else {
+            val overrides =
+                if (project.overridingMethods.contains(tgtMethod))
+                    project.overridingMethods(tgtMethod).map(_.classFile.thisType) -
+                        declClassType
+                else
+                    Set.empty
+            // TODO this might not be 100% correct in some corner cases
+            t: ReferenceType ⇒
+                classHierarchy.isSubtypeOf(t, declClassType) &&
+                    !overrides.exists(st ⇒ classHierarchy.isSubtypeOf(t, st))
+        }
+        val fp = fps(0)
+        val ptss = currentPointsToOfDefSites(fp, receiverDefSites, filter)
+        state.includeSharedPointsToSets(
+            fp,
+            ptss,
+            filter
+        )
+    }
+
+    protected[this] def handleCallParameter(
+        paramDefSites: IntTrieSet,
+        paramIndex:    Int,
+        target:        DeclaredMethod
+    )(implicit state: State): Unit = {
+        val fps = formalParameters(target)
+        val paramType = target.descriptor.parameterType(paramIndex)
+        if (paramType.isReferenceType) {
+            val fp = fps(paramIndex + 1)
+            val filter = { t: ReferenceType ⇒
+                classHierarchy.isSubtypeOf(t, paramType.asReferenceType)
+            }
+            state.includeSharedPointsToSets(
+                fp,
+                currentPointsToOfDefSites(fp, paramDefSites, filter),
+                filter
+            )
+        }
+    }
 
     protected[this] def handleGetField(
         field: AField, pc: Int, objRefDefSites: IntTrieSet
