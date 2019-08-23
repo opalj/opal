@@ -20,7 +20,7 @@ object TypeExtensibilityKey extends ProjectInformationKey[ObjectType ⇒ Answer,
      *
      * @return Seq(ClassExtensibilityKey).
      */
-    override def requirements = Seq(ClassExtensibilityKey)
+    override def requirements(project: SomeProject) = Seq(ClassExtensibilityKey)
 
     override def compute(project: SomeProject): ObjectType ⇒ Answer = new TypeExtensibilityAnalysis(project)
 }

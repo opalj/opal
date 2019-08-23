@@ -87,7 +87,7 @@ class ConfiguredPurity(
 
 object ConfiguredPurityKey extends ProjectInformationKey[ConfiguredPurity, Nothing] {
 
-    override def requirements: ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(PropertyStoreKey, DeclaredMethodsKey)
 
     override def compute(project: SomeProject): ConfiguredPurity = {
         val ps = project.get(PropertyStoreKey)

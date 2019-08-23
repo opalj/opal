@@ -46,7 +46,7 @@ object ClosedPackagesKey extends ProjectInformationKey[ClosedPackages, Nothing] 
      *
      * @return `Nil`.
      */
-    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Reflectively instantiates a ''ClosedPackagesAnalysis'' for the given project.

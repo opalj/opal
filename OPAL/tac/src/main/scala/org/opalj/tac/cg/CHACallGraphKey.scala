@@ -15,9 +15,11 @@ import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
  * @author Florian Kuebler
  */
 object CHACallGraphKey extends AbstractCallGraphKey {
+
     override protected def callGraphSchedulers(
         project: SomeProject
     ): Traversable[FPCFAnalysisScheduler] = {
         List(CHACallGraphAnalysisScheduler)
     }
+
 }

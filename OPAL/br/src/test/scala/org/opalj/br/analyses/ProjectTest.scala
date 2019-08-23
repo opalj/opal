@@ -437,7 +437,7 @@ private class TestProjectInformationKey extends ProjectInformationKey[Object, No
 
     override def compute(project: SomeProject): Object = theResult
 
-    override def requirements: Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
 
 }
 
@@ -449,7 +449,7 @@ private class TestProjectInformationWithDependenciesKey extends ProjectInformati
 
     override def compute(project: SomeProject): Object = theResult
 
-    override def requirements: Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = depdencies
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[_ <: AnyRef, _ <: AnyRef]] = depdencies
 
 }
 

@@ -18,7 +18,7 @@ import org.opalj.br.analyses.SomeProject
  */
 object FPCFAnalysesManagerKey extends ProjectInformationKey[FPCFAnalysesManager, Nothing] {
 
-    override def requirements: ProjectInformationKeys = List(PropertyStoreKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = List(PropertyStoreKey)
 
     override def compute(project: SomeProject): FPCFAnalysesManager = new FPCFAnalysesManager(project)
 

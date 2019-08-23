@@ -28,7 +28,7 @@ object InitialInstantiatedTypesKey extends ProjectInformationKey[Traversable[Obj
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey."
 
-    override def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(ClosedPackagesKey)
 
     override def compute(project: SomeProject): Traversable[ObjectType] = {
         val key = ConfigKeyPrefix+"analysis"

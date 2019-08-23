@@ -32,7 +32,9 @@ import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
  */
 object RTACallGraphKey extends AbstractCallGraphKey {
 
-    override def requirements: ProjectInformationKeys = super.requirements :+ InitialInstantiatedTypesKey
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
+        super.requirements(project) :+ InitialInstantiatedTypesKey
+    }
 
     override def callGraphSchedulers(
         project: SomeProject

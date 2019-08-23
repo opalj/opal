@@ -28,7 +28,7 @@ object StringConstantsInformationKey
      *
      * @return `Nil`.
      */
-    override def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the field access information.

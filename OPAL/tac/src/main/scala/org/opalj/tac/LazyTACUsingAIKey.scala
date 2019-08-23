@@ -27,7 +27,9 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      * The TACAI code is created using the results of the abstract interpretation
      * of the underlying methods using the SimpleAIKey.
      */
-    override def requirements: Seq[ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
+    override def requirements(
+        project: SomeProject
+    ): Seq[ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
         Seq(SimpleAIKey)
     }
 

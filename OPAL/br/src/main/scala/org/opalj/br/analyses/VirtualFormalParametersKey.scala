@@ -46,7 +46,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
     /**
      * The key uses the `VirtualForwardingMethodsKey`.
      */
-    override def requirements: ProjectInformationKeys = List(DeclaredMethodsKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = List(DeclaredMethodsKey)
 
     /**
      * Collects all virtual formal parameters.
