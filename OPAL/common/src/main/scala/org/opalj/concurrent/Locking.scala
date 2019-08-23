@@ -25,13 +25,13 @@ trait Locking {
      * Acquires the write lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    protected[this] final def withWriteLock[B](f: ⇒ B): B = Locking.withWriteLock(rwLock)(f)
+    @inline protected[this] final def withWriteLock[B](f: ⇒ B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    protected[this] final def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
+    @inline protected[this] final def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
 }
 /**
  * Defines several convenience methods related to using `(Reentrant(ReadWrite))Lock`s.
