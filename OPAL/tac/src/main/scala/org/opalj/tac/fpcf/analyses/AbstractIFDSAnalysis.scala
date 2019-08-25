@@ -37,6 +37,7 @@ import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.analyses.AbstractIFDSAnalysis.V
 import org.opalj.tac.fpcf.properties.IFDSProperty
@@ -918,6 +919,8 @@ abstract class IFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFLazyAnalys
     def property: IFDSPropertyMetaInformation[IFDSFact]
 
     final override def derivesLazily: Some[PropertyBounds] = Some(PropertyBounds.ub(property))
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override val uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(TACAI))
 

@@ -11,7 +11,6 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 
-import org.opalj.fpcf.Entity
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
@@ -75,25 +74,21 @@ case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
 object PointsToRelation {
     implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) ⇒ {
         val c = if (path.nonEmpty) config.getConfig(path) else config
-        val lhs = EntityDescription.reader.read(c, "lhs")
-        val rhs = EntityDescription.reader.read(c, "rhs")
+        val lhs = EntityDescription.reader.read(c.getConfig("lhs"), "")
+        val rhs = EntityDescription.reader.read(c.getConfig("rhs"), "")
         PointsToRelation(lhs, rhs)
     }
 }
 
-sealed trait EntityDescription {
-    def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): Entity
-}
+sealed trait EntityDescription
 
 object EntityDescription {
-    implicit val reader: ValueReader[EntityDescription] = (config: Config, path: String) ⇒ {
-        val c = config.getConfig(path)
-        if (c.hasPath("fieldType")) {
+    implicit val reader: ValueReader[EntityDescription] = (c: Config, path: String) ⇒ {
+        if(c.hasPath("array")){
+            val arrayType = c.getString("arrayType")
+            val array = reader.read(c.getConfig("array"), "")
+            ArrayDescription(array, arrayType)
+        }else if (c.hasPath("fieldType")) {
             val cf = c.getString("cf")
             val name = c.getString("name")
             val fieldType = c.getString("fieldType")
@@ -124,16 +119,6 @@ object EntityDescription {
 case class MethodDescription(
         cf: String, name: String, desc: String
 ) extends EntityDescription {
-    override def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): DeclaredMethod = {
-        val classType = ObjectType(cf)
-        val descriptor = MethodDescriptor(desc)
-        declaredMethods(classType, classType.packageName, classType, name, descriptor)
-    }
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)
         declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
@@ -152,39 +137,12 @@ object MethodDescription {
 case class StaticFieldDescription(
         cf: String, name: String, fieldType: String
 ) extends EntityDescription {
-    override def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): Field = {
-        val classType = ObjectType(cf)
-        val ft = FieldType(fieldType)
-        val fieldOption = p.resolveFieldReference(classType, name, ft)
-        if (fieldOption.isEmpty) {
-            throw new RuntimeException(s"specified field $this is not part of the project.")
-        }
-        fieldOption.get
-    }
     def fieldOption(project: SomeProject): Option[Field] = {
         project.resolveFieldReference(ObjectType(cf), name, FieldType(fieldType))
     }
 }
 
-case class ParameterDescription(
-        cf: String, name: String, desc: String, index: Int
-) extends EntityDescription {
-    override def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): VirtualFormalParameter = {
-        val classType = ObjectType(cf)
-        val descriptor = MethodDescriptor(desc)
-        val dm = declaredMethods(classType, classType.packageName, classType, name, descriptor)
-        virtualFormalParameters(dm)(index)
-    }
+case class ParameterDescription(cf: String, name: String, desc: String, index: Int) extends EntityDescription {
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)
         declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
@@ -206,16 +164,13 @@ case class AllocationSiteDescription(
         instantiatedType:    String,
         arrayComponentTypes: Seq[String]
 ) extends EntityDescription {
-    override def entity(
-        implicit
-        p:                       SomeProject,
-        declaredMethods:         DeclaredMethods,
-        virtualFormalParameters: VirtualFormalParameters
-    ): Entity = {
-        throw new RuntimeException("this should only be used as rhs and not be stored in the property store")
-    }
     def method(declaredMethods: DeclaredMethods): DeclaredMethod = {
         val classType = ObjectType(cf)
         declaredMethods(classType, classType.packageName, classType, name, MethodDescriptor(desc))
     }
 }
+
+case class ArrayDescription(
+    array:     EntityDescription,
+    arrayType: String
+) extends EntityDescription

@@ -33,8 +33,8 @@ import org.opalj.tac.common.DefinitionSite
 
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
-    override protected[this] type DependerType = Entity
+    override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this]type DependerType = Entity
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,
@@ -87,18 +87,28 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         }
     }
 
-    protected[this] def handleGetField(
-        field: AField, pc: Int, objRefDefSites: IntTrieSet
-    )(implicit state: State): Unit = {
-        val tac = state.tac
-        val index = tac.pcToIndex(pc)
-        val nextStmt = tac.stmts(index + 1)
-        val filter = nextStmt match {
-            case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
-                t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
-            case _ ⇒
-                PointsToSetLike.noFilter
+    private[this] def getFilter(
+        pc: Int, checkForCast: Boolean
+    )(implicit state: State): ReferenceType ⇒ Boolean = {
+        if (checkForCast) {
+            val tac = state.tac
+            val index = tac.pcToIndex(pc)
+            val nextStmt = tac.stmts(index + 1)
+            nextStmt match {
+                case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
+                    t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
+                case _ ⇒
+                    PointsToSetLike.noFilter
+            }
+        } else {
+            PointsToSetLike.noFilter
         }
+    }
+
+    protected[this] def handleGetField(
+        field: AField, pc: Int, objRefDefSites: IntTrieSet, checkForCast: Boolean = true
+    )(implicit state: State): Unit = {
+        val filter = getFilter(pc, checkForCast)
         val defSiteObject = definitionSites(state.method.definedMethod, pc)
         val fakeEntity = (defSiteObject, field, filter)
         state.addGetFieldEntity(fakeEntity)
@@ -120,17 +130,11 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         }
     }
 
-    protected[this] def handleGetStatic(field: Field, pc: Int)(implicit state: State): Unit = {
+    protected[this] def handleGetStatic(
+        field: Field, pc: Int, checkForCast: Boolean = true
+    )(implicit state: State): Unit = {
+        val filter = getFilter(pc, checkForCast)
         val defSiteObject = definitionSites(state.method.definedMethod, pc)
-        val tac = state.tac
-        val index = tac.pcToIndex(pc)
-        val nextStmt = tac.stmts(index + 1)
-        val filter = nextStmt match {
-            case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
-                t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
-            case _ ⇒
-                PointsToSetLike.noFilter
-        }
         state.includeSharedPointsToSet(
             defSiteObject,
             currentPointsTo(defSiteObject, field, filter),
@@ -139,20 +143,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     }
 
     protected[this] def handleArrayLoad(
-        arrayType: ArrayType, pc: Int, arrayDefSites: IntTrieSet
+        arrayType: ArrayType, pc: Int, arrayDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
+        val filter = getFilter(pc, checkForCast)
         val defSiteObject = definitionSites(state.method.definedMethod, pc)
-        val tac = state.tac
-        val index = tac.pcToIndex(pc)
-        val nextStmt = tac.stmts(index + 1)
-        val filter = nextStmt match {
-            case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
-                t: ReferenceType ⇒ {
-                    classHierarchy.isSubtypeOf(t, cmpTpe)
-                }
-            case _ ⇒
-                PointsToSetLike.noFilter
-        }
         val fakeEntity = (defSiteObject, arrayType, filter)
         state.addArrayLoadEntity(fakeEntity)
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
@@ -567,14 +561,16 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         for (fakeEntity ← state.putFieldsIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, field) = fakeEntity
-                val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
+                val defSitesWithoutExceptions =
+                    defSites.iterator.filterNot(ai.isImmediateVMException)
                 var knownPointsTo = emptyPointsToSet
-                val defSitesEPSs = defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
-                    val rhsPTS =
-                        ps(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
-                    knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
-                    rhsPTS.toEPK → rhsPTS
-                }.filter(_._2.isRefinable).toMap
+                val defSitesEPSs =
+                    defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
+                        val defSiteEntity = toEntity(ds)(state)
+                        val rhsPTS = ps(defSiteEntity, pointsToPropertyKey)
+                        knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
+                        rhsPTS.toEPK → rhsPTS
+                    }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
                 if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
@@ -603,14 +599,16 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         for (fakeEntity ← state.arrayStoresIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, arrayType) = fakeEntity
-                val defSitesWithoutExceptions = defSites.iterator.filterNot(ai.isImplicitOrExternalException)
+                val defSitesWithoutExceptions =
+                    defSites.iterator.filterNot(ai.isImmediateVMException)
                 var knownPointsTo = emptyPointsToSet
-                val defSitesEPSs = defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
-                    val rhsPTS =
-                        ps(toEntity(ds, state.method, state.tac.stmts), pointsToPropertyKey)
-                    knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
-                    rhsPTS.toEPK → rhsPTS
-                }.filter(_._2.isRefinable).toMap
+                val defSitesEPSs =
+                    defSitesWithoutExceptions.map[(EPK[Entity, Property], EOptionP[Entity, Property])] { ds ⇒
+                        val defSiteEntity = toEntity(ds)(state)
+                        val rhsPTS = ps(defSiteEntity, pointsToPropertyKey)
+                        knownPointsTo = knownPointsTo.included(pointsToUB(rhsPTS))
+                        rhsPTS.toEPK → rhsPTS
+                    }.filter(_._2.isRefinable).toMap
 
                 val dependees = state.dependeesOf(fakeEntity)
                 if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))

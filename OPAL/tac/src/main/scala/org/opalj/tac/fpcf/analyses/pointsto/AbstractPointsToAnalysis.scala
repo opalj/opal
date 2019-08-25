@@ -39,11 +39,15 @@ import org.opalj.br.ReferenceType
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.ReachableMethodAnalysis
 import org.opalj.tac.fpcf.analyses.cg.valueOriginsOfPCs
 import org.opalj.tac.fpcf.analyses.cg.V
@@ -404,18 +408,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             state.addIncompletePointsToInfo(pc)
         }
 
-        /*
-        Special handling for System.arraycopy
-        Uses a fake defsite at the (method!)call to simulate an array load and store
-        TODO Integrate into ConfiguredMethodsPointsToAnalysis
-         */
-        if ((target.declaringClassType eq ObjectType.System) && target.name == "arraycopy") {
-            handleArrayLoad(ArrayType.ArrayOfObject, pc, call.params.head.asVar.definedBy)
-
-            val defSites = IntTrieSet(state.tac.pcToIndex(pc))
-            handleArrayStore(ArrayType.ArrayOfObject, call.params(2).asVar.definedBy, defSites)
-        }
-
         if (target.declaringClassType eq UnsafeT) {
             target.name match {
                 case "getObject" | "getObjectVolatile" ⇒
@@ -598,6 +590,9 @@ trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     def createAnalysis: SomeProject ⇒ AbstractPointsToAnalysis
 
     override type InitializationData = Null
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

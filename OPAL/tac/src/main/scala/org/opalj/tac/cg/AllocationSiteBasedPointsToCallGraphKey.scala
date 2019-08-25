@@ -3,9 +3,8 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.pointsto.AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.DoPrivilegedPointsToCGAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler
@@ -23,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToA
 object AllocationSiteBasedPointsToCallGraphKey extends AbstractCallGraphKey {
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
+    ): Traversable[FPCFAnalysisScheduler] = {
         List(
             AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler, // TODO make this one independent
             AllocationSiteBasedPointsToAnalysisScheduler,

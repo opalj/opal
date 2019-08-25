@@ -17,6 +17,11 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
+<<<<<<< HEAD
+=======
+import org.opalj.fpcf.par.PKECPropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
+>>>>>>> PointsToAllocationSites
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -41,6 +46,7 @@ import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.pointsto.AField
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
@@ -108,8 +114,15 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
+<<<<<<< HEAD
                 // val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+=======
+                val ps = if (1 % 2 == 1)
+                    PKECPropertyStore.apply(context: _*)
+                else
+                    PKESequentialPropertyStore.apply(context: _*)
+>>>>>>> PointsToAllocationSites
                 ps
             }
         )
@@ -173,7 +186,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
             println(s"DefSite PTSs: ${byType(classOf[DefinitionSite]).size}")
             println(s"Parameter PTSs: ${byType(classOf[VirtualFormalParameter]).size}")
-            println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
+            println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, AField]]).size}")
             println(s"Static Field PTSs: ${byType(classOf[Field]).size}")
             println(s"Array PTSs: ${byType(classOf[ArrayEntity[Long]]).size}")
             println(s"Return PTSs: ${byType(classOf[DefinedMethod]).size + byType(classOf[VirtualDeclaredMethod]).size}")
@@ -182,7 +195,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
             println(s"DefSite PTS entries: ${byType(classOf[DefinitionSite]).map(_.ub.numElements).sum}")
             println(s"Parameter PTS entries: ${byType(classOf[VirtualFormalParameter]).map(_.ub.numElements).sum}")
-            println(s"Instance Field PTS entries: ${byType(classOf[Tuple2[Long, Field]]).map(_.ub.numElements).sum}")
+            println(s"Instance Field PTS entries: ${byType(classOf[Tuple2[Long, AField]]).map(_.ub.numElements).sum}")
             println(s"Static Field PTS entries: ${byType(classOf[Field]).map(_.ub.numElements).sum}")
             println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
             println(s"Return PTS entries: ${byType(classOf[DefinedMethod]).map(_.ub.numElements).sum + byType(classOf[VirtualDeclaredMethod]).map(_.ub.numElements).sum}")

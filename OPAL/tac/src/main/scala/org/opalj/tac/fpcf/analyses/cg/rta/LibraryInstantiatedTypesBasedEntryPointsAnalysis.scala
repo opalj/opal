@@ -27,6 +27,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -132,6 +133,8 @@ object EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis extends BasicFPCFEa
         propertyStore.scheduleEagerComputationsForEntities(Iterator(project))(analysis.start)
         analysis
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(InstantiatedTypes)

@@ -6,6 +6,7 @@ package analyses
 package pointsto
 
 import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.NoResult
@@ -30,7 +31,10 @@ import org.opalj.br.FieldType
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.ArrayType
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.tac.common.DefinitionSitesKey
 
 /**
  * Applies the impact of preconfigured methods to the points-to analysis.
@@ -78,28 +82,24 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
     ): PropertyComputationResult = {
         implicit val state: State = new PointsToAnalysisState[ElementType, PointsToSet](dm, null)
 
+        var nextPC = 1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
         for (PointsToRelation(lhs, rhs) ← data) {
-            handleGet(rhs)
-            handlePut(lhs)
-            //nextFakePC += 1
+            nextPC = handleGet(rhs, 0, nextPC)
+            nextPC = handlePut(lhs, 0, nextPC)
         }
 
         Results(createResults(state))
     }
 
-    @inline override protected[this] def currentPointsToOfDefSite(
-        depender:        DependerType,
-        dependeeDefSite: Int,
-        typeFilter:      ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
-    )(implicit state: State): PointsToSet = {
-        currentPointsTo(
-            depender, definitionSites(state.method.definedMethod, dependeeDefSite), typeFilter
-        )
+    @inline override protected[this] def toEntity(defSite: Int)(implicit state: State): Entity = {
+        definitionSites(state.method.definedMethod, defSite)
     }
 
-    private[this] def handleGet(rhs: EntityDescription)(implicit state: State): Unit = {
-        val defSiteObject = definitionSites(state.method.definedMethod, 0)
+    private[this] def handleGet(
+        rhs: EntityDescription, pc: Int, nextPC: Int
+    )(implicit state: State): Int = {
+        val defSiteObject = definitionSites(state.method.definedMethod, pc)
         rhs match {
             case md: MethodDescription ⇒
                 val method = md.method(declaredMethods)
@@ -112,7 +112,7 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
             case sfd: StaticFieldDescription ⇒
                 val fieldOption = sfd.fieldOption(p)
                 if (fieldOption.isDefined)
-                    handleGetStatic(fieldOption.get, 0)
+                    handleGetStatic(fieldOption.get, pc, checkForCast = false)
 
             case pd: ParameterDescription ⇒
                 val method = pd.method(declaredMethods)
@@ -130,7 +130,7 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
                 if (asd.instantiatedType.startsWith("[")) {
                     val theInstantiatedType = FieldType(asd.instantiatedType).asArrayType
                     val pts =
-                        createPointsToSet(0, method, theInstantiatedType, isConstant = false)
+                        createPointsToSet(pc, method, theInstantiatedType, isConstant = false)
                     state.includeSharedPointsToSet(defSiteObject, pts, PointsToSetLike.noFilter)
                     if (asd.arrayComponentTypes.nonEmpty) {
                         var arrayEntity: ArrayEntity[ElementType] = null // TODO ugly hack
@@ -139,7 +139,7 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
                         asd.arrayComponentTypes.foreach { componentTypeString ⇒
                             val componentType = ObjectType(componentTypeString)
                             arrayPTS = arrayPTS.included(
-                                createPointsToSet(0, method, componentType, isConstant = false)
+                                createPointsToSet(pc, method, componentType, isConstant = false)
                             )
                         }
                         state.includeSharedPointsToSet(
@@ -150,14 +150,25 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
                     val theInstantiatedType = ObjectType(asd.instantiatedType)
                     state.includeSharedPointsToSet(
                         defSiteObject,
-                        createPointsToSet(0, method, theInstantiatedType, isConstant = false),
+                        createPointsToSet(pc, method, theInstantiatedType, isConstant = false),
                         PointsToSetLike.noFilter
                     )
                 }
+
+            case ArrayDescription(array, arrayType) ⇒
+                val arrayPC = nextPC
+                val theNextPC = handleGet(array, arrayPC, nextPC) + 1
+                handleArrayLoad(
+                    ArrayType(ObjectType(arrayType)), pc, IntTrieSet(arrayPC), checkForCast = false
+                )
+                return theNextPC;
         }
+        nextPC
     }
 
-    private[this] def handlePut(lhs: EntityDescription)(implicit state: State): Unit =
+    private[this] def handlePut(
+        lhs: EntityDescription, pc: Int, nextPC: Int
+    )(implicit state: State): Int = {
         lhs match {
             case md: MethodDescription ⇒
                 val method = md.method(declaredMethods)
@@ -189,7 +200,17 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
 
             case _: AllocationSiteDescription ⇒
                 throw new RuntimeException("AllocationSites must not be assigned to")
+
+            case ArrayDescription(array, arrayType) ⇒
+                val arrayPC = nextPC
+                val theNextPC = handleGet(array, arrayPC, nextPC) + 1
+                handleArrayStore(
+                    ArrayType(ObjectType(arrayType)), IntTrieSet(arrayPC), IntTrieSet(0)
+                )
+                return theNextPC;
         }
+        nextPC
+    }
 }
 
 trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
@@ -197,6 +218,9 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
     def createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis
 
     override type InitializationData = Null
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
@@ -238,11 +262,11 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
 }
 
 class TypeBasedConfiguredMethodsPointsToAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends ConfiguredMethodsPointsToAnalysis with TypeBasedAnalysis
 
 object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
-    extends ConfiguredMethodsPointsToAnalysisScheduler {
+        extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
@@ -250,11 +274,11 @@ object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
 }
 
 class AllocationSiteBasedConfiguredMethodsPointsToAnalysis private[analyses] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends ConfiguredMethodsPointsToAnalysis with AllocationSiteBasedAnalysis
 
 object AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
-    extends ConfiguredMethodsPointsToAnalysisScheduler {
+        extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =

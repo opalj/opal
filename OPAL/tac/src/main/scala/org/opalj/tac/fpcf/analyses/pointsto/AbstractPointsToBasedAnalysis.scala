@@ -16,16 +16,15 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
-import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 
 trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
 
-    protected[this] type ElementType
-    protected[this] type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
-    protected[this] type State <: TACAIBasedAnalysisState
-    protected[this] type DependerType
+    protected[this]type ElementType
+    protected[this]type PointsToSet >: Null <: PointsToSetLike[ElementType, _, PointsToSet]
+    protected[this]type State <: TACAIBasedAnalysisState
+    protected[this]type DependerType
 
     protected[this] implicit val definitionSites: DefinitionSites = {
         p.get(DefinitionSitesKey)
@@ -64,11 +63,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
         dependeeDefSite: Int,
         typeFilter:      ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
-        if (ai.isMethodExternalExceptionOrigin(dependeeDefSite)) {
-            val pc = ai.pcOfMethodExternalException(dependeeDefSite)
-            val defSite = toEntity(pc, state.method, state.tac.stmts).asInstanceOf[DefinitionSite]
-            currentPointsTo(depender, CallExceptions(defSite), typeFilter)
-        } else if (ai.isImmediateVMException(dependeeDefSite)) {
+        if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here
             createPointsToSet(
                 ai.pcOfImmediateVMException(dependeeDefSite),
@@ -77,9 +72,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
                 isConstant = false
             )
         } else {
-            currentPointsTo(
-                depender, toEntity(dependeeDefSite, state.method, state.tac.stmts), typeFilter
-            )
+            currentPointsTo(depender, toEntity(dependeeDefSite), typeFilter)
         }
     }
 
@@ -88,5 +81,9 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
             eOptP.ub
         else
             emptyPointsToSet
+    }
+
+    @inline protected[this] def toEntity(defSite: Int)(implicit state: State): Entity = {
+        pointsto.toEntity(defSite, state.method, state.tac.stmts)
     }
 }

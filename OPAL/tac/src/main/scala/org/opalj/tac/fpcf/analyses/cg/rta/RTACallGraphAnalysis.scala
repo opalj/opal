@@ -20,6 +20,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -183,6 +184,9 @@ class RTACallGraphAnalysis private[analyses] (
 }
 
 object RTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ IsOverridableMethodKey
 
     override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(InstantiatedTypes)
 

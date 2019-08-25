@@ -25,6 +25,7 @@ import org.opalj.fpcf.UBP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -235,6 +236,8 @@ class LoadedClassesAnalysis(
 }
 
 object LoadedClassesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         LoadedClasses,

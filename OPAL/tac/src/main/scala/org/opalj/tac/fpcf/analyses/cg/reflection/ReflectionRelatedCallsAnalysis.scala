@@ -39,6 +39,7 @@ import org.opalj.br.InvokeVirtualMethodHandle
 import org.opalj.br.NewInvokeSpecialMethodHandle
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.BooleanType
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -797,6 +798,8 @@ class ReflectionRelatedCallsAnalysis private[analyses] (
 }
 
 object ReflectionRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,
