@@ -17,11 +17,6 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
-<<<<<<< HEAD
-=======
-import org.opalj.fpcf.par.PKECPropertyStore
-import org.opalj.fpcf.seq.PKESequentialPropertyStore
->>>>>>> PointsToAllocationSites
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -114,15 +109,8 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-<<<<<<< HEAD
                 // val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-=======
-                val ps = if (1 % 2 == 1)
-                    PKECPropertyStore.apply(context: _*)
-                else
-                    PKESequentialPropertyStore.apply(context: _*)
->>>>>>> PointsToAllocationSites
                 ps
             }
         )
