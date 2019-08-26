@@ -265,7 +265,7 @@ final class TypePropagationAnalysis private[analyses] (
 
         // This is the only place where we can find out whether a VirtualDeclaredMethod is static or not!
         val isStaticCall = bytecode.instructions(pc).isInstanceOf[INVOKESTATIC]
-        assert(!callee.hasSingleDefinedMethod || (isStaticCall && callee.asDefinedMethod.definedMethod.isStatic))
+        assert(!callee.hasSingleDefinedMethod || !isStaticCall || (isStaticCall && callee.asDefinedMethod.definedMethod.isStatic))
 
         // If the call is not static, we need to take the implicit "this" parameter into account.
         if (!isStaticCall) {
@@ -373,7 +373,10 @@ final class TypePropagationAnalysis private[analyses] (
         newTypes:        UIDSet[ReferenceType],
         filters:         Set[ReferenceType]
     ): Option[PartialResult[E, InstantiatedTypes]] = {
-        assert(newTypes.nonEmpty)
+
+        if (newTypes.isEmpty) {
+            return None;
+        }
 
         val filteredTypes = newTypes.filter(nt ⇒ filters.exists(f ⇒ candidateMatchesTypeFilter(nt, f)))
 
