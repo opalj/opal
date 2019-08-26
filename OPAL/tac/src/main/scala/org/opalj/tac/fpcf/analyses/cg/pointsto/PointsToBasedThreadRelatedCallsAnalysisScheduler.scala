@@ -40,8 +40,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait PointsToBasedThreadStartAnalysis
-        extends APIBasedAnalysis
-        with AbstractPointsToBasedAnalysis {
+    extends APIBasedAnalysis
+    with AbstractPointsToBasedAnalysis {
 
     def threadStartMethod: DeclaredMethod
     override val apiMethod: DeclaredMethod = threadStartMethod
@@ -444,8 +444,8 @@ trait PointsToBasedThreadRelatedCallsAnalysis extends FPCFAnalysis {
 }
 
 class TypeBasedPointsToBasedThreadStartAnalysis private[pointsto] (
-    final val project:                    SomeProject,
-    override final val threadStartMethod: DeclaredMethod
+        final val project:                    SomeProject,
+        override final val threadStartMethod: DeclaredMethod
 ) extends PointsToBasedThreadStartAnalysis with AllocationSiteBasedAnalysis
 
 class TypeBasedPointsToBasedThreadRelatedCallsAnalysis private[analyses] (
@@ -478,8 +478,8 @@ object TypeBasedPointsToBasedThreadRelatedCallsAnalysisScheduler extends BasicFP
 }
 
 class AllocationSiteBasedPointsToBasedThreadStartAnalysis private[pointsto] (
-    final val project:                    SomeProject,
-    override final val threadStartMethod: DeclaredMethod
+        final val project:                    SomeProject,
+        override final val threadStartMethod: DeclaredMethod
 ) extends PointsToBasedThreadStartAnalysis with AllocationSiteBasedAnalysis
 
 class AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysis private[analyses] (

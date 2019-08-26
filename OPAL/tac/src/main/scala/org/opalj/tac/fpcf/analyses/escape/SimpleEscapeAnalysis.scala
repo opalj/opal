@@ -31,17 +31,17 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class SimpleEscapeAnalysisContext(
-    val entity:                  Entity,
-    val defSitePC:               ValueOrigin,
-    val targetMethod:            Method,
-    val declaredMethods:         DeclaredMethods,
-    val virtualFormalParameters: VirtualFormalParameters,
-    val project:                 SomeProject,
-    val propertyStore:           PropertyStore
+        val entity:                  Entity,
+        val defSitePC:               ValueOrigin,
+        val targetMethod:            Method,
+        val declaredMethods:         DeclaredMethods,
+        val virtualFormalParameters: VirtualFormalParameters,
+        val project:                 SomeProject,
+        val propertyStore:           PropertyStore
 ) extends AbstractEscapeAnalysisContext
-        with PropertyStoreContainer
-        with VirtualFormalParametersContainer
-        with DeclaredMethodsContainer
+    with PropertyStoreContainer
+    with VirtualFormalParametersContainer
+    with DeclaredMethodsContainer
 
 /**
  * A simple escape analysis that can handle [[org.opalj.tac.common.DefinitionSiteLike]]s and
@@ -52,11 +52,11 @@ class SimpleEscapeAnalysisContext(
  * @author Florian Kuebler
  */
 class SimpleEscapeAnalysis( final val project: SomeProject)
-        extends DefaultEscapeAnalysis
-        with ConstructorSensitiveEscapeAnalysis
-        with ConfigurationBasedConstructorEscapeAnalysis
-        with SimpleFieldAwareEscapeAnalysis
-        with ExceptionAwareEscapeAnalysis {
+    extends DefaultEscapeAnalysis
+    with ConstructorSensitiveEscapeAnalysis
+    with ConfigurationBasedConstructorEscapeAnalysis
+    with SimpleFieldAwareEscapeAnalysis
+    with ExceptionAwareEscapeAnalysis {
 
     override type AnalysisContext = SimpleEscapeAnalysisContext
     override type AnalysisState = AbstractEscapeAnalysisState
@@ -110,8 +110,8 @@ trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
  * A companion object used to start the analysis.
  */
 object EagerSimpleEscapeAnalysis
-        extends SimpleEscapeAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends SimpleEscapeAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
         super.requiredProjectInformation :+ DefinitionSitesKey
@@ -130,8 +130,8 @@ object EagerSimpleEscapeAnalysis
 }
 
 object LazySimpleEscapeAnalysis
-        extends SimpleEscapeAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends SimpleEscapeAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new SimpleEscapeAnalysis(p)

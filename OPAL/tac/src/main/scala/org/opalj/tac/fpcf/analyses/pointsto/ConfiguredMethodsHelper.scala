@@ -84,11 +84,11 @@ sealed trait EntityDescription
 
 object EntityDescription {
     implicit val reader: ValueReader[EntityDescription] = (c: Config, path: String) ⇒ {
-        if(c.hasPath("array")){
+        if (c.hasPath("array")) {
             val arrayType = c.getString("arrayType")
             val array = reader.read(c.getConfig("array"), "")
             ArrayDescription(array, arrayType)
-        }else if (c.hasPath("fieldType")) {
+        } else if (c.hasPath("fieldType")) {
             val cf = c.getString("cf")
             val name = c.getString("name")
             val fieldType = c.getString("fieldType")
@@ -171,6 +171,6 @@ case class AllocationSiteDescription(
 }
 
 case class ArrayDescription(
-    array:     EntityDescription,
-    arrayType: String
+        array:     EntityDescription,
+        arrayType: String
 ) extends EntityDescription

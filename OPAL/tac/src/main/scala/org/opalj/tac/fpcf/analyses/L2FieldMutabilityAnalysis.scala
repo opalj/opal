@@ -1092,8 +1092,8 @@ trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  * Executor for the field mutability analysis.
  */
 object EagerL2FieldMutabilityAnalysis
-        extends L2FieldMutabilityAnalysisScheduler
-        with BasicFPCFEagerAnalysisScheduler {
+    extends L2FieldMutabilityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L2FieldMutabilityAnalysis(p)
@@ -1111,8 +1111,8 @@ object EagerL2FieldMutabilityAnalysis
  * Executor for the lazy field mutability analysis.
  */
 object LazyL2FieldMutabilityAnalysis
-        extends L2FieldMutabilityAnalysisScheduler
-        with BasicFPCFLazyAnalysisScheduler {
+    extends L2FieldMutabilityAnalysisScheduler
+    with BasicFPCFLazyAnalysisScheduler {
 
     final override def register(
         p:      SomeProject,
