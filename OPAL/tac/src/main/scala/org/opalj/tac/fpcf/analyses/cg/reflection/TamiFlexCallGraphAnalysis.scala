@@ -168,10 +168,6 @@ object TamiFlexCallGraphAnalysisScheduler extends BasicFPCFEagerAnalysisSchedule
     )
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-<<<<<<< HEAD
-        p.get(TamiFlexKey)
-=======
->>>>>>> PointsToAllocationSites
         val analysis = new TamiFlexCallGraphAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
