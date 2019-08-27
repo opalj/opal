@@ -167,7 +167,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val arrayType = av.leastUpperType.get.asArrayType
                 handleArrayLoad(arrayType, pc, arrayDefSites)
 
-            case Assignment(pc, targetVar, call: FunctionCall[DUVar[ValueInformation]]) ⇒
+            case Assignment(pc, _, call: FunctionCall[DUVar[ValueInformation]]) ⇒
                 val callees: Callees = state.callees(ps)
                 val targets = callees.callees(pc)
                 val defSiteObject = definitionSites(method, pc)
