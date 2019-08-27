@@ -81,14 +81,14 @@ class PKECPropertyStoreTestWithDebuggingMaxEvalDepth32AndParTaskManager
 
 }
 
-class PKECPropertyStoreTestWithDebuggingMaxEvalDepth0AndParTaskManager
+class PKECPropertyStoreTestWithDebuggingMaxEvalDepth1AndParTaskManager
     extends PKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
         import PKECPropertyStore.MaxEvaluationDepthKey
         import PKECPropertyStore.TasksManagerKey
         val config = org.opalj.BaseConfig
-            .withValue(MaxEvaluationDepthKey, fromAnyRef(0))
+            .withValue(MaxEvaluationDepthKey, fromAnyRef(1))
             .withValue(TasksManagerKey, fromAnyRef("Par"))
         val ps = PKECPropertyStore(
             PropertyStoreContext(classOf[PropertyStoreTracer], new RecordAllPropertyStoreEvents()),

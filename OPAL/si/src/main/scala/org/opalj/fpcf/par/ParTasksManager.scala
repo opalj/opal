@@ -125,7 +125,9 @@ class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         } finally {
             decrementTasks()
         }
-        if (es != null) {
+        val es = this.es
+        val tasks = this.tasks
+        if (es != null && tasks != null) {
             es.submit(r)
             tasks.incrementAndGet()
         } else {

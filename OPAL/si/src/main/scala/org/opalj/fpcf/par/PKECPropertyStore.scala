@@ -510,7 +510,10 @@ final class PKECPropertyStore(
         //    concurrently with the second part.
         val eOptionPWithDependersOption: Option[(SomeEOptionP, Traversable[SomeEPK])] =
             if (epkStateUpdateRequired) {
-                epkState.update(interimEP, c, dependees, suppressInterimUpdates, debug)
+                epkState.update(
+                    interimEP, c, dependees,
+                    hasSuppressedDependers, suppressInterimUpdates, debug
+                )
             } else {
                 None
             }
@@ -639,7 +642,8 @@ final class PKECPropertyStore(
         if (epkState == null) epkState = newEPKState
 
         // 1. Update the property if necessary.
-        val eOptionPWithDependersOption = epkState.update(u, suppressInterimUpdates)
+        val eOptionPWithDependersOption =
+            epkState.update(u, hasSuppressedDependers, suppressInterimUpdates)
         if (tracer.isDefined)
             tracer.get.appliedUpdateComputation(epkState, eOptionPWithDependersOption)
 
