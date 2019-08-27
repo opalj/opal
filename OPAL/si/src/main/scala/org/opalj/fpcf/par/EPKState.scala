@@ -230,13 +230,18 @@ private[par] final class InterimEPKState(
             val isRelevantUpdate = eOptionP.isUpdatedComparedTo(oldEOptionP)
             if (isRelevantUpdate) {
                 this.eOptionP = eOptionP
-                // IMPROVE Given that suppression is rarely required/used(?) it may be more efficient to filter those dependers that should not be informed and then substract that set from the original set.
-                val (suppressedDependers, dependersToBeNotified) =
-                    this.dependers.partition { dependerEPK ⇒
-                        suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
-                    }
-                this.dependers = suppressedDependers
-                Some((oldEOptionP, dependersToBeNotified))
+                val oldDependers = this.dependers
+                if (oldDependers.nonEmpty) {
+                    // IMPROVE Given that suppression is rarely required/used(?) it may be more efficient to filter those dependers that should not be informed and then substract that set from the original set.
+                    val (suppressedDependers, dependersToBeNotified) =
+                        oldDependers.partition { dependerEPK ⇒
+                            suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
+                        }
+                    this.dependers = suppressedDependers
+                    Some((oldEOptionP, dependersToBeNotified))
+                } else {
+                    Some((oldEOptionP, oldDependers /* <= basically "NIL" */ ))
+                }
             } else {
                 None
             }
@@ -265,7 +270,7 @@ private[par] final class InterimEPKState(
                     if (hasSuppressedDependers(dependeePKId)) {
                         // IMPROVE Given that suppression is rarely required/used(?) it may be more efficient to filter those dependers that should not be informed and then substract that set from the original set.
                         val (suppressedDependers, dependersToBeNotified) =
-                            this.dependers.partition { dependerEPK ⇒
+                            oldDependers.partition { dependerEPK ⇒
                                 suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
                             }
                         //println("u: "+suppressedDependers.size+" vs. "+dependersToBeNotified.size)
