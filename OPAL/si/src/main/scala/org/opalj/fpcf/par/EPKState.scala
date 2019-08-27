@@ -231,7 +231,6 @@ private[par] final class InterimEPKState(
                     this.dependers.partition { dependerEPK ⇒
                         suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
                     }
-                println(suppressedDependers.size+" vs. "+dependersToBeNotified.size)
                 this.dependers = suppressedDependers
                 Some((oldEOptionP, dependersToBeNotified))
             } else {
@@ -262,7 +261,6 @@ private[par] final class InterimEPKState(
                         this.dependers.partition { dependerEPK ⇒
                             suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
                         }
-                    println(suppressedDependers.size+" vs. "+dependersToBeNotified.size)
                     this.dependers = suppressedDependers
                     Some((oldEOptionP, newEOptionP, dependersToBeNotified))
                 } else {
