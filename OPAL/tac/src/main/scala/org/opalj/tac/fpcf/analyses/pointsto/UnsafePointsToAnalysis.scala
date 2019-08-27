@@ -172,7 +172,7 @@ abstract class UnsafeGetPointsToAnalysis(
         val theObject = params.head
 
         if (theObject.isDefined) {
-            handleGetField(UnsafeFakeField, pc, theObject.get.asVar.definedBy)
+            handleGetField(None, pc, theObject.get.asVar.definedBy)
         }
 
         Results(createResults(state))
@@ -203,7 +203,7 @@ abstract class UnsafePutPointsToAnalysis(
         val storeObject = params(index)
 
         if (baseObject.isDefined && storeObject.isDefined) {
-            handlePutField(UnsafeFakeField, baseObject.get.asVar.definedBy, storeObject.get.asVar.definedBy)
+            handlePutField(None, baseObject.get.asVar.definedBy, storeObject.get.asVar.definedBy)
         }
 
         Results(createResults(state))

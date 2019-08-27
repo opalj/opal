@@ -429,7 +429,7 @@ abstract class TamiFlexPointsToFieldGetAnalysis( final val project: SomeProject)
             if (field.isStatic) {
                 handleGetStatic(field, pc)
             } else if (theObject.isDefined) {
-                handleGetField(RealField(field), pc, theObject.get.asVar.definedBy)
+                handleGetField(Some(field), pc, theObject.get.asVar.definedBy)
             }
         }
 
@@ -474,7 +474,7 @@ abstract class TamiFlexPointsToFieldSetAnalysis( final val project: SomeProject)
                     handlePutStatic(field, storeVal.get.asVar.definedBy)
                 } else if (theObject.isDefined) {
                     handlePutField(
-                        RealField(field), theObject.get.asVar.definedBy, storeVal.get.asVar.definedBy
+                        Some(field), theObject.get.asVar.definedBy, storeVal.get.asVar.definedBy
                     )
                 }
             }

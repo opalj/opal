@@ -146,7 +146,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    handleGetField(RealField(fieldOpt.get), pc, objRefDefSites)
+                    handleGetField(fieldOpt, pc, objRefDefSites)
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
@@ -226,7 +226,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
-                    handlePutField(RealField(fieldOpt.get), objRefDefSites, defSites)
+                    handlePutField(fieldOpt, objRefDefSites, defSites)
                 } else {
                     state.addIncompletePointsToInfo(pc)
                 }
