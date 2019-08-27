@@ -10,8 +10,8 @@ import org.opalj.concurrent.Locking
  *
  * @note The property may change (monotonically), but the property kind has to be stable.
  *
- * @note Read the documentation of the methods to understand the behavior in case of concurrent
- *       access.
+ * @note All methods are effectively thread safe; i.e., clients will always see a
+ *       consistent state.
  */
 private[par] sealed abstract class EPKState {
 
@@ -153,26 +153,37 @@ private[par] sealed abstract class EPKState {
     def isCurrentC(c: OnUpdateContinuation): Boolean
 
     /**
-     * Returns `true` if and only if this EPKState has dependees.
+     * Returns `true` if and only if this `EPKState` has dependees.
      *
-     * @note The set of dependees is only updated when a property computation result is processed
-     *       and there exists, w.r.t. an Entity/Property Kind pair, always at most one
+     * @note The set of dependees is only updated when a property computation result is processed.
+     *       There exists, w.r.t. an Entity/Property kind pair, always at most one
      *       `PropertyComputationResult`.
+     *       (Partially computed properties never have dependees on their own.)
      */
     def hasDependees: Boolean
 
     /**
-     * Returns the current set of depeendes.
+     * Returns the current set of depeendes or `null`.
      *
-     * @note The set of dependees is only updated when a property computation result is processed
-     *       and there exists, w.r.t. an Entity/Property Kind pair, always at most one
+     * @note The set of dependees is only updated when a property computation result is processed.
+     *       There exists, w.r.t. an Entity/Property kind pair, always at most one
      *       `PropertyComputationResult`.
+     *       (Partially computed properties never have dependees on their own.)
      */
     def dependees: Traversable[SomeEOptionP]
 
 }
 
 /**
+ * Represents the intermediate property of a specific kind related to a specific entity.
+ *
+ * @note Though an `InterimEPKState` object primarily stores `InterimEP` objects, it may
+ *       eventually reference a `FinalEP` object to ensure that clients, which didn't get
+ *       the update `FinalEPKState` object are still able to determine that the analysis
+ *       of the respective property has finished.
+ *
+ * @note Basically every `InterimEPKState` object is eventually lifted to a `FinalEPKState`
+ *       object which requires no more synchronization and also less memory.
  *
  * @param eOptionP The current property extension; never null.
  * @param c The on update continuation function; null if triggered.
@@ -191,26 +202,28 @@ private[par] final class InterimEPKState(
     override def isFinal: Boolean = eOptionP.isFinal
 
     override def update(
-        eOptionP:               SomeInterimEP,
-        c:                      OnUpdateContinuation,
-        dependees:              Traversable[SomeEOptionP],
-        suppressInterimUpdates: Array[Array[Boolean]], // <= the key belongs (outer array) identifies the depender
+        eOptionP:  SomeInterimEP,
+        c:         OnUpdateContinuation,
+        dependees: Traversable[SomeEOptionP],
+        // BASICALLY CONSTANTS...:
+        suppressInterimUpdates: Array[Array[Boolean]],
         debug:                  Boolean
     ): Option[(SomeEOptionP, Set[SomeEPK])] = {
         assert(this.c == null)
-        // The following _assert is not possible_, because we only strive for
+        // The following assert is not possible, because we only strive for
         // eventual consistency w.r.t. the depender/dependee relation:
         // assert(this.dependees.isEmpty)
+
         val dependeePKId = this.eOptionP.pk.id
 
         withWriteLock {
             val oldEOptionP = this.eOptionP
             if (debug) oldEOptionP.checkIsValidPropertiesUpdate(eOptionP, dependees)
 
-            val isRelevantUpdate = eOptionP.isUpdatedComparedTo(oldEOptionP)
-
             this.c = c
             this.dependees = dependees
+
+            val isRelevantUpdate = eOptionP.isUpdatedComparedTo(oldEOptionP)
             if (isRelevantUpdate) {
                 this.eOptionP = eOptionP
                 // IMPROVE Given that suppression is rarely required/used(?) it may be more efficient to filter those dependers that should not be informed and then substract that set from the original set.
@@ -218,6 +231,7 @@ private[par] final class InterimEPKState(
                     this.dependers.partition { dependerEPK ⇒
                         suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
                     }
+                println(suppressedDependers.size+" vs. "+dependersToBeNotified.size)
                 this.dependers = suppressedDependers
                 Some((oldEOptionP, dependersToBeNotified))
             } else {
@@ -242,12 +256,18 @@ private[par] final class InterimEPKState(
             if (isRelevantUpdate) {
                 this.eOptionP = newEOptionP
                 // IMPROVE Given that suppression is rarely required/used(?) it may be more efficient to filter those dependers that should not be informed and then substract that set from the original set.
-                val (suppressedDependers, dependersToBeNotified) =
-                    this.dependers.partition { dependerEPK ⇒
-                        suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
-                    }
-                this.dependers = suppressedDependers
-                Some((oldEOptionP, newEOptionP, dependersToBeNotified))
+                val oldDependers = this.dependers
+                if (oldDependers.nonEmpty) {
+                    val (suppressedDependers, dependersToBeNotified) =
+                        this.dependers.partition { dependerEPK ⇒
+                            suppressInterimUpdates(dependerEPK.pk.id)(dependeePKId)
+                        }
+                    println(suppressedDependers.size+" vs. "+dependersToBeNotified.size)
+                    this.dependers = suppressedDependers
+                    Some((oldEOptionP, newEOptionP, dependersToBeNotified))
+                } else {
+                    Some((oldEOptionP, newEOptionP, oldDependers /*<= there are none!*/ ))
+                }
             } else {
                 None
             }
