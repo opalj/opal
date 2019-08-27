@@ -120,7 +120,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     state.includeSharedPointsToSet(
                         defSiteObject,
                         // IMPROVE: Use LongRefPair to avoid boxing
-                        currentPointsTo(defSiteObject, (as, fieldOpt.orNull), filter),
+                        currentPointsTo(defSiteObject, (as, fieldOpt.getOrElse(UnsafeFakeField)), filter),
                         filter
                     )
                 }
@@ -178,7 +178,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             pts.forNewestNElements(pts.numElements) { as ⇒
                 if (fieldOpt.isEmpty ||
                     classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
-                    val fieldEntity = (as, fieldOpt.orNull)
+                    val fieldEntity = (as, fieldOpt.getOrElse(UnsafeFakeField))
                     state.includeSharedPointsToSets(
                         fieldEntity,
                         currentPointsToOfDefSites(fieldEntity, rhsDefSites, filter),
@@ -284,7 +284,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     protected[this] def continuationForNewAllocationSitesAtPutField(
         knownPointsTo:  PointsToSet,
         rhsDefSitesEPS: Map[SomeEPK, SomeEOptionP],
-        fieldOpt:          Option[Field],
+        fieldOpt:       Option[Field],
         dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
@@ -302,7 +302,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                             PointsToSetLike.noFilter
 
                         results ++= createPartialResults(
-                            (as, fieldOpt.orNull),
+                            (as, fieldOpt.getOrElse(UnsafeFakeField)),
                             rhsDefSitesEPS.mapValues((_, typeFilter)),
                             knownPointsTo,
                             { _.included(knownPointsTo, typeFilter) }
@@ -367,7 +367,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     // todo name
     protected[this] def continuationForNewAllocationSitesAtGetField(
         defSiteObject: DefinitionSite,
-        fieldOpt:         Option[Field],
+        fieldOpt:      Option[Field],
         filter:        ReferenceType ⇒ Boolean,
         dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
@@ -379,7 +379,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
                     if (fieldOpt.isEmpty ||
                         classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
-                        val fieldEntries = ps((as, fieldOpt.orNull), pointsToPropertyKey)
+                        val fieldEntries = ps((as, fieldOpt.getOrElse(UnsafeFakeField)), pointsToPropertyKey)
                         newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)
                         if (fieldEntries.isRefinable)
                             nextDependees ::= fieldEntries
