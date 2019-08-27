@@ -112,10 +112,10 @@ final class TypePropagationAnalysis private[analyses] (
                 if (fieldWrite.declaredFieldType.isReferenceType) {
                     fieldWrite.resolveField match {
                         case Some(f: Field) ⇒
-                            registerEntityForForwardPropagation(f, Set(f.fieldType.asReferenceType))
+                            registerEntityForForwardPropagation(f, UIDSet(f.fieldType.asReferenceType))
                         case None ⇒
                             val ef = ExternalField(fieldWrite.declaringClass, fieldWrite.name, fieldWrite.declaredFieldType)
-                            registerEntityForForwardPropagation(ef, Set(ef.declaredFieldType.asReferenceType))
+                            registerEntityForForwardPropagation(ef, UIDSet(ef.declaredFieldType.asReferenceType))
                     }
                 }
             }
@@ -188,7 +188,7 @@ final class TypePropagationAnalysis private[analyses] (
     private def processArrayTypes(unseenTypes: UIDSet[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         for (t ← unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
             if (state.methodWritesArrays) {
-                registerEntityForForwardPropagation(at, Set(at.componentType.asReferenceType))
+                registerEntityForForwardPropagation(at, UIDSet(at.componentType.asReferenceType))
             }
             if (state.methodReadsArrays) {
                 registerEntityForBackwardPropagation(at, at.componentType.asReferenceType)
@@ -255,8 +255,8 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def maybeRegisterMethodForForwardPropagation(callee: DeclaredMethod, pc: Int, bytecode: Code)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
-        // Pre-process parameter types
-        val params = mutable.Set[ReferenceType]()
+        val params = UIDSet.newBuilder[ReferenceType]
+
         for (param ← callee.descriptor.parameterTypes) {
             if (param.isReferenceType) {
                 params += param.asReferenceType
@@ -273,15 +273,15 @@ final class TypePropagationAnalysis private[analyses] (
         }
 
         // If we do not have any params at this point, there is no forward propagation!
-        if (params.isEmpty) {
+        val typeFilters = params.result()
+        if (typeFilters.isEmpty) {
             return ;
         }
 
-        // TODO AB toSet is not a constant time operation(?)
-        registerEntityForForwardPropagation(callee, params.toSet)
+        registerEntityForForwardPropagation(callee, typeFilters)
     }
 
-    private def registerEntityForForwardPropagation(e: Entity, filters: Set[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+    private def registerEntityForForwardPropagation(e: Entity, filters: UIDSet[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         // TODO AB If we register a method for both forward and backward propagation, this is called twice.
         // (-> Check if this is a problem for performance and maybe memoize the result?)
         val setEntity = selectSetEntity(e)
@@ -303,7 +303,7 @@ final class TypePropagationAnalysis private[analyses] (
             return ;
         }
 
-        val filter = Set(mostPreciseUpperBound)
+        val filter = UIDSet(mostPreciseUpperBound)
 
         if (!state.backwardPropagationDependeeIsRegistered(setEntity)) {
             val dependee = propertyStore(setEntity, InstantiatedTypes.key)

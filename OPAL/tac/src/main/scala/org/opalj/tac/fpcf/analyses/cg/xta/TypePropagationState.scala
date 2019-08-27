@@ -6,11 +6,7 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
-import org.opalj.br.Method
-import org.opalj.br.PC
-import org.opalj.br.ReferenceType
+import org.opalj.br.{ClassHierarchy, DeclaredMethod, DefinedMethod, Method, PC, ReferenceType}
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
@@ -93,11 +89,11 @@ final class TypePropagationState(
     /////////////////////////////////////////////
 
     private[this] var _forwardPropagationEntities: mutable.Set[SetEntity] = mutable.Set.empty
-    private[this] var _forwardPropagationFilters: mutable.Map[SetEntity, Set[ReferenceType]] = mutable.Map.empty
+    private[this] var _forwardPropagationFilters: mutable.Map[SetEntity, UIDSet[ReferenceType]] = mutable.Map.empty
 
     def forwardPropagationEntities: Traversable[SetEntity] = _forwardPropagationEntities
 
-    def forwardPropagationFilters(setEntity: SetEntity): Set[ReferenceType] = _forwardPropagationFilters(setEntity)
+    def forwardPropagationFilters(setEntity: SetEntity): UIDSet[ReferenceType] = _forwardPropagationFilters(setEntity)
 
     /**
      * Registers a new set entity to consider for forward propagation alongside a set of filters. If the
@@ -108,17 +104,17 @@ final class TypePropagationState(
      * @return True if the set of filters has changed compared to the ones which were previously known, otherwise
      *         False.
      */
-    def registerForwardPropagationEntity(setEntity: SetEntity, typeFilters: Set[ReferenceType]): Boolean = {
+    def registerForwardPropagationEntity(setEntity: SetEntity, typeFilters: UIDSet[ReferenceType])(implicit classHierarchy: ClassHierarchy): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _forwardPropagationEntities.contains(setEntity)
         if (!alreadyExists) {
+            val compactedFilters = classHierarchy.rootTypes(typeFilters)
             _forwardPropagationEntities += setEntity
-            _forwardPropagationFilters += setEntity -> typeFilters
+            _forwardPropagationFilters += setEntity -> compactedFilters
             true
         } else {
             val existingTypeFilters = _forwardPropagationFilters(setEntity)
-            // TODO AB Implement compacting! E.g. if we have one Object in the list of filters, all other filters are not needed.
-            val newFilters = existingTypeFilters union typeFilters
+            val newFilters = classHierarchy.rootTypes(existingTypeFilters union typeFilters)
             _forwardPropagationFilters.update(setEntity, newFilters)
             newFilters != existingTypeFilters
         }
@@ -132,7 +128,7 @@ final class TypePropagationState(
 
     private[this] var _backwardPropagationDependees: mutable.Map[SetEntity, EOptionP[SetEntity, InstantiatedTypes]] =
         mutable.Map.empty
-    private[this] var _backwardPropagationFilters: mutable.Map[SetEntity, Set[ReferenceType]] = mutable.Map.empty
+    private[this] var _backwardPropagationFilters: mutable.Map[SetEntity, UIDSet[ReferenceType]] = mutable.Map.empty
 
     def backwardPropagationDependeeInstantiatedTypes(setEntity: SetEntity): UIDSet[ReferenceType] = {
         val dependee = _backwardPropagationDependees(setEntity)
@@ -145,19 +141,19 @@ final class TypePropagationState(
     def backwardPropagationDependeeIsRegistered(setEntity: SetEntity): Boolean =
         _backwardPropagationDependees.contains(setEntity)
 
-    def backwardPropagationFilters(setEntity: SetEntity): Traversable[ReferenceType] =
+    def backwardPropagationFilters(setEntity: SetEntity): UIDSet[ReferenceType] =
         _backwardPropagationFilters(setEntity)
 
-    def updateBackwardPropagationFilters(setEntity: SetEntity, typeFilters: Set[ReferenceType]): Boolean = {
+    def updateBackwardPropagationFilters(setEntity: SetEntity, typeFilters: UIDSet[ReferenceType])(implicit classHierarchy: ClassHierarchy): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _backwardPropagationFilters.contains(setEntity)
         if (!alreadyExists) {
-            _backwardPropagationFilters += setEntity -> typeFilters
+            val compactedFilters = classHierarchy.rootTypes(typeFilters)
+            _backwardPropagationFilters += setEntity -> compactedFilters
             true
         } else {
             val existingTypeFilters = _backwardPropagationFilters(setEntity)
-            // TODO AB Implement compacting! E.g. if we have one Object in the list of filters, all other filters are not needed.
-            val newFilters = existingTypeFilters union typeFilters
+            val newFilters = classHierarchy.rootTypes(existingTypeFilters union typeFilters)
             _backwardPropagationFilters.update(setEntity, newFilters)
             newFilters != existingTypeFilters
         }
