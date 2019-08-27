@@ -3,7 +3,7 @@ package org.opalj
 package fpcf
 package par
 
-import org.opalj.concurrent.Locking
+//import org.opalj.concurrent.Locking
 
 /**
  * Encapsulates the state of a single entity and a property of a specific kind.
@@ -198,7 +198,7 @@ private[par] final class InterimEPKState(
         @volatile var c:         OnUpdateContinuation,
         @volatile var dependees: Traversable[SomeEOptionP],
         @volatile var dependers: Set[SomeEPK]
-) extends EPKState with Locking {
+) extends EPKState /*with Locking*/ {
 
     assert(eOptionP.isRefinable) // an update which makes it final is possible...
 
@@ -219,8 +219,7 @@ private[par] final class InterimEPKState(
         // assert(this.dependees.isEmpty)
 
         val dependeePKId = this.eOptionP.pk.id
-
-        withWriteLock {
+        this.synchronized {
             val oldEOptionP = this.eOptionP
             if (debug) oldEOptionP.checkIsValidPropertiesUpdate(eOptionP, dependees)
 
@@ -254,7 +253,7 @@ private[par] final class InterimEPKState(
         suppressInterimUpdates: Array[Array[Boolean]]
     ): Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])] = {
         val dependeePKId = this.eOptionP.pk.id
-        withWriteLock {
+        this.synchronized {
             val oldEOptionP = this.eOptionP
             val newEOptionPOption = u.asInstanceOf[SomeEOptionP ⇒ Option[SomeInterimEP]](oldEOptionP)
             if (newEOptionPOption.isEmpty)
@@ -292,7 +291,7 @@ private[par] final class InterimEPKState(
     override def finalUpdate(eOptionP: SomeFinalEP): Set[SomeEPK] = {
         assert(this.eOptionP.isRefinable)
 
-        withWriteLock {
+        this.synchronized {
             this.eOptionP = eOptionP
             val oldDependers = this.dependers
             this.dependers = Set.empty
@@ -307,7 +306,7 @@ private[par] final class InterimEPKState(
     ): Boolean = {
         assert(expectedEOptionP.isRefinable)
 
-        withWriteLock {
+        this.synchronized {
             val thisEOptionP = this.eOptionP
             if ((thisEOptionP eq expectedEOptionP) ||
                 (alwaysExceptIfFinal && thisEOptionP.isRefinable)) {
@@ -322,8 +321,10 @@ private[par] final class InterimEPKState(
     override def prepareInvokeC(
         updatedDependeeEOptionP: SomeEOptionP
     ): Option[OnUpdateContinuation] = {
+        if (this.c eq null)
+            return None;
 
-        withWriteLock {
+        this.synchronized {
             val c = this.c
             if (c != null) {
                 // IMPROVE ? Use a set based contains check.
@@ -343,9 +344,10 @@ private[par] final class InterimEPKState(
     }
 
     override def prepareInvokeC(expectedC: OnUpdateContinuation): Boolean = {
-        assert(expectedC != null)
+        if (this.c ne expectedC)
+            return false;
 
-        withWriteLock {
+        this.synchronized {
             if (this.c eq expectedC) {
                 this.c = null
                 true
@@ -355,13 +357,16 @@ private[par] final class InterimEPKState(
         }
     }
 
-    def clearDependees(): Unit = this.dependees = null
+    override def clearDependees(): Unit = this.dependees = null
 
     override def removeDepender(someEPK: SomeEPK): Unit = {
-        withWriteLock {
-            // the write lock is required to avoid lost updates; e.g., if we have to
-            // remove two dependers "concurrently"
-            dependers -= someEPK
+        if (this.dependers.isEmpty)
+            return ;
+
+        this.synchronized {
+            // The write lock is required to avoid lost updates; e.g., if
+            // two dependers are removed "concurrently".
+            this.dependers -= someEPK
         }
     }
 
@@ -414,12 +419,11 @@ private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) exte
 
     override def prepareInvokeC(
         updatedDependeeEOptionP: SomeEOptionP
-    ): Option[OnUpdateContinuation] = None
-
-    override def prepareInvokeC(expectedC: OnUpdateContinuation): Boolean = {
-        false
+    ): Option[OnUpdateContinuation] = {
+        None
     }
 
+    override def prepareInvokeC(expectedC: OnUpdateContinuation): Boolean = false
     override def clearDependees(): Unit = { /* Nothing to do! */ }
     override def removeDepender(someEPK: SomeEPK): Unit = { /* Nothing to do! */ }
     override def isCurrentC(c: OnUpdateContinuation): Boolean = false
