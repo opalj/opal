@@ -44,6 +44,8 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
         isEmptyArray:   Boolean        = false
     ): PointsToSet
 
+    protected[this] def getTypeOf(element: ElementType): ReferenceType
+
     @inline protected[this] def currentPointsTo(
         depender:   DependerType,
         dependee:   Entity,

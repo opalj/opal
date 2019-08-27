@@ -240,10 +240,10 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 ) extends PointsToAnalysisBase with AllocationSiteBasedAnalysis { self ⇒
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this] type ElementType = self.ElementType
-        override protected[this] type PointsToSet = self.PointsToSet
-        override protected[this] type State = self.State
-        override protected[this] type DependerType = self.DependerType
+        override protected[this]type ElementType = self.ElementType
+        override protected[this]type PointsToSet = self.PointsToSet
+        override protected[this]type State = self.State
+        override protected[this]type DependerType = self.DependerType
 
         override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
             self.pointsToPropertyKey
@@ -256,15 +256,21 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             allocatedType:  ReferenceType,
             isConstant:     Boolean,
             isEmptyArray:   Boolean
-        ): PointsToSet =
+        ): PointsToSet = {
             self.createPointsToSet(pc, declaredMethod, allocatedType, isConstant, isEmptyArray)
+        }
 
         override protected[this] def currentPointsTo(
             depender:   DependerType,
             dependee:   Entity,
             typeFilter: ReferenceType ⇒ Boolean
-        )(implicit state: State): PointsToSet =
+        )(implicit state: State): PointsToSet = {
             self.currentPointsTo(depender, dependee, typeFilter)
+        }
+
+        override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
+            self.getTypeOf(element)
+        }
     }
 
     def analyze(p: SomeProject): PropertyComputationResult = {

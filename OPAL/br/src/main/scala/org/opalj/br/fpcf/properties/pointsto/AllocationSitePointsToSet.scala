@@ -30,9 +30,9 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 sealed trait AllocationSitePointsToSet
-    extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
-    with OrderedProperty
-    with AllocationSitePointsToSetPropertyMetaInformation {
+        extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
+        with OrderedProperty
+        with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
@@ -266,6 +266,8 @@ case class AllocationSitePointsToSetN private[pointsto] (
     }
 
     override def hashCode: Int = elements.hashCode()
+
+    override def getNewestElement(): AllocationSite = elements.head
 }
 
 object NoAllocationSites extends AllocationSitePointsToSet {
@@ -307,6 +309,8 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = {
         assert(n == 0)
     }
+
+    override def getNewestElement(): AllocationSite = throw new NoSuchElementException
 }
 
 case class AllocationSitePointsToSet1(
@@ -398,4 +402,6 @@ case class AllocationSitePointsToSet1(
     }
 
     override def hashCode: Int = (allocationSite ^ (allocationSite >> 32)).toInt
+
+    override def getNewestElement(): AllocationSite = allocationSite
 }

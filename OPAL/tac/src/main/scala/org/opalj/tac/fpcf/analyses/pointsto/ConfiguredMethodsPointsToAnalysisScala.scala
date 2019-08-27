@@ -17,14 +17,10 @@ import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSetScala
  *
  * @author Florian Kuebler
  */
-class ConfiguredMethodsPointsToScalaAnalysis private[analyses] (
-        final val project: SomeProject
-) extends ConfiguredMethodsPointsToAnalysis with AllocationSiteBasedScalaAnalysis
-
 object ConfiguredMethodsPointsToScalaAnalysisScheduler
     extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSetScala
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
-        new ConfiguredMethodsPointsToScalaAnalysis(_)
+        new ConfiguredMethodsPointsToAnalysis(_) with AllocationSiteBasedScalaAnalysis
 }

@@ -22,11 +22,12 @@ import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet1
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.pointsto.AllocationSite
+import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 
 trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type ElementType = AllocationSite
-    override protected[this] type PointsToSet = AllocationSitePointsToSet
+    override protected[this]type ElementType = AllocationSite
+    override protected[this]type PointsToSet = AllocationSitePointsToSet
 
     val configPrefix = "org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis"
     val mergeStringBuilderBuffer: Boolean =
@@ -91,6 +92,10 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
                 } else
                     createNewPointsToSet()
         }
+    }
+
+    override protected[this] def getTypeOf(element: AllocationSite): ReferenceType = {
+        ReferenceType.lookup(allocationSiteLongToTypeId(element))
     }
 
     override protected[this] val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {

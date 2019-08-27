@@ -26,11 +26,11 @@ sealed trait AllocationSitePointsToSetScalaPropertyMetaInformation extends Prope
 }
 
 case class AllocationSitePointsToSetScala(
-        override val elements: Set[AllocationSite],
-        override val types:    UIDSet[ReferenceType] // TODO: Use normal Set here
+    override val elements: Set[AllocationSite],
+    override val types:    UIDSet[ReferenceType] // TODO: Use normal Set here
 ) extends PointsToSetLike[AllocationSite, Set[AllocationSite], AllocationSitePointsToSetScala]
-    with OrderedProperty
-    with AllocationSitePointsToSetScalaPropertyMetaInformation {
+        with OrderedProperty
+        with AllocationSitePointsToSetScalaPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSetScala] = AllocationSitePointsToSetScala.key
 
@@ -81,6 +81,13 @@ case class AllocationSitePointsToSetScala(
     override def numElements: Int = elements.size
 
     override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = elements.foreach(f)
+
+    override def getNewestElement(): AllocationSite = {
+        if (numElements == 1)
+            elements.head
+        else
+            throw new NoSuchElementException
+    }
 
     assert {
         var asTypes = IntTrieSet.empty

@@ -44,7 +44,9 @@ import org.opalj.tac.common.DefinitionSitesKey
  *
  * @author Florian Kuebler
  */
-trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
+abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
+        final val project: SomeProject
+) extends PointsToAnalysisBase {
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
     private lazy val virtualFormalParameters = project.get(VirtualFormalParametersKey)
@@ -133,8 +135,7 @@ trait ConfiguredMethodsPointsToAnalysis extends PointsToAnalysisBase {
                         createPointsToSet(pc, method, theInstantiatedType, isConstant = false)
                     state.includeSharedPointsToSet(defSiteObject, pts, PointsToSetLike.noFilter)
                     if (asd.arrayComponentTypes.nonEmpty) {
-                        var arrayEntity: ArrayEntity[ElementType] = null // TODO ugly hack
-                        pts.forNewestNElements(1)(as ⇒ arrayEntity = ArrayEntity(as))
+                        val arrayEntity = ArrayEntity(pts.getNewestElement())
                         var arrayPTS: PointsToSet = emptyPointsToSet
                         asd.arrayComponentTypes.foreach { componentTypeString ⇒
                             val componentType = ObjectType(componentTypeString)
@@ -261,26 +262,18 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
     override def triggeredBy: PropertyKind = Callers
 }
 
-class TypeBasedConfiguredMethodsPointsToAnalysis private[analyses] (
-        final val project: SomeProject
-) extends ConfiguredMethodsPointsToAnalysis with TypeBasedAnalysis
-
 object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
-    extends ConfiguredMethodsPointsToAnalysisScheduler {
+        extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
-        new TypeBasedConfiguredMethodsPointsToAnalysis(_)
+        new ConfiguredMethodsPointsToAnalysis(_) with TypeBasedAnalysis
 }
 
-class AllocationSiteBasedConfiguredMethodsPointsToAnalysis private[analyses] (
-        final val project: SomeProject
-) extends ConfiguredMethodsPointsToAnalysis with AllocationSiteBasedAnalysis
-
 object AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
-    extends ConfiguredMethodsPointsToAnalysisScheduler {
+        extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
-        new AllocationSiteBasedConfiguredMethodsPointsToAnalysis(_)
+        new ConfiguredMethodsPointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

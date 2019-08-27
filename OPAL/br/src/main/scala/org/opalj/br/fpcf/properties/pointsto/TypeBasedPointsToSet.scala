@@ -107,6 +107,8 @@ case class TypeBasedPointsToSet private[properties] (
     override def filter(
         typeFilter: ReferenceType ⇒ Boolean
     ): TypeBasedPointsToSet = ???
+
+    override def getNewestElement(): ReferenceType = orderedTypes.head
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {

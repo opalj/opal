@@ -30,4 +30,6 @@ trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
         isConstant:     Boolean,
         isEmptyArray:   Boolean        = false
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
+
+    override protected[this] def getTypeOf(element: ReferenceType): ReferenceType = element
 }

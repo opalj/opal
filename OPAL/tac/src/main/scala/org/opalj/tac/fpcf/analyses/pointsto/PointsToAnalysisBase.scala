@@ -33,8 +33,8 @@ import org.opalj.tac.common.DefinitionSite
 
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
-    override protected[this] type DependerType = Entity
+    override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this]type DependerType = Entity
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,
@@ -115,10 +115,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
-                // TODO: Refactor
-                val fieldClassType = field.classType
-                val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                if (classHierarchy.isSubtypeOf(getTypeOf(as), field.classType)) {
                     state.includeSharedPointsToSet(
                         defSiteObject,
                         // IMPROVE: Use LongRefPair to avoid boxing
@@ -175,10 +172,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         }
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
-                // TODO: Refactor
-                val fieldClassType = field.classType
-                val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                if (classHierarchy.isSubtypeOf(getTypeOf(as), field.classType)) {
                     val fieldEntity = (as, field)
                     state.includeSharedPointsToSets(
                         fieldEntity,
@@ -294,10 +288,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 var results: List[ProperPropertyComputationResult] = List.empty
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
-                    // TODO: Refactor
-                    val fieldClassType = field.classType
-                    val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                    if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                    if (classHierarchy.isSubtypeOf(getTypeOf(as), field.classType)) {
                         val typeFilter = { t: ReferenceType ⇒
                             classHierarchy.isSubtypeOf(t, field.fieldType.asReferenceType)
                         }
@@ -377,10 +368,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 var nextDependees: List[SomeEOptionP] = Nil
                 var newPointsTo = emptyPointsToSet
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
-                    // TODO: Refactor
-                    val fieldClassType = field.classType
-                    val asTypeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
-                    if (fieldClassType.id == asTypeId || classHierarchy.subtypeInformation(fieldClassType).get.containsId(asTypeId)) {
+                    if (classHierarchy.isSubtypeOf(getTypeOf(as), field.classType)) {
                         val fieldEntries = ps((as, field), pointsToPropertyKey)
                         newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)
                         if (fieldEntries.isRefinable)

@@ -62,14 +62,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     override def processMethod(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        // TODO remove that ugly hack
-        if ((definedMethod.declaringClassType eq ObjectType.Class) && (definedMethod.name == "getConstructor") || definedMethod.name == "getDeclaredConstructor") {
-            return Results();
-        }
         doProcessMethod(new PointsToAnalysisState[ElementType, PointsToSet](definedMethod, tacEP))
     }
-
-    val javaLangRefReference = ObjectType("java/lang/ref/Reference")
 
     private[this] def doProcessMethod(
         implicit
@@ -178,10 +172,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val targets = callees.callees(pc)
                 val defSiteObject = definitionSites(method, pc)
 
-                // TODO fix these ugly hacks
-                if (call.descriptor.returnType.isReferenceType &&
-                    // Unsafe.getObject and getObjectVolatile are handled like getField
-                    ((call.declaringClass ne UnsafeT) || !call.name.startsWith("getObject"))) {
+                if (call.descriptor.returnType.isReferenceType) {
                     val index = tac.pcToIndex(pc)
                     val nextStmt = tac.stmts(index + 1)
                     val filter = nextStmt match {
@@ -312,10 +303,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             var continue = !isEmptyArray
             while (remainingCounts.nonEmpty && allocatedType.isArrayType && continue) {
                 val theType = allocatedType.asArrayType
-
-                // TODO: Ugly hack to get the only points-to element from the previously created PTS
-                var arrayEntity: ArrayEntity[ElementType] = null
-                arrayReferencePTS.forNewestNElements(1) { as ⇒ arrayEntity = ArrayEntity(as) }
+                val arrayEntity = ArrayEntity(arrayReferencePTS.getNewestElement())
 
                 if (countIsZero(remainingCounts))
                     continue = false
@@ -373,8 +361,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
     }
 
-    private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
-
     private[this] def handleDirectCall(
         call: Call[V], pc: Int, target: DeclaredMethod
     )(implicit state: State): Unit = {
@@ -407,19 +393,6 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         } else {
             state.addIncompletePointsToInfo(pc)
         }
-
-        if (target.declaringClassType eq UnsafeT) {
-            target.name match {
-                case "getObject" | "getObjectVolatile" ⇒
-                    handleGetField(UnsafeFakeField, pc, call.params.head.asVar.definedBy)
-                case "putObject" | "putObjectVolatile" | "putOrderedObject" ⇒
-                    handlePutField(UnsafeFakeField, call.params.head.asVar.definedBy, call.params(2).asVar.definedBy)
-                case "compareAndSwapObject" ⇒
-                    handlePutField(UnsafeFakeField, call.params.head.asVar.definedBy, call.params(3).asVar.definedBy)
-                case _ ⇒
-            }
-        }
-
     }
 
     // TODO reduce code duplication
