@@ -33,8 +33,8 @@ import org.opalj.tac.common.DefinitionSite
 
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
-    override protected[this]type DependerType = Entity
+    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this] type DependerType = Entity
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,
@@ -284,7 +284,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     protected[this] def continuationForNewAllocationSitesAtPutField(
         knownPointsTo:  PointsToSet,
         rhsDefSitesEPS: Map[SomeEPK, SomeEOptionP],
-        fieldOpt:          Option[Field],
+        fieldOpt:       Option[Field],
         dependees:      Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
@@ -367,7 +367,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     // todo name
     protected[this] def continuationForNewAllocationSitesAtGetField(
         defSiteObject: DefinitionSite,
-        fieldOpt:         Option[Field],
+        fieldOpt:      Option[Field],
         filter:        ReferenceType ⇒ Boolean,
         dependees:     Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {

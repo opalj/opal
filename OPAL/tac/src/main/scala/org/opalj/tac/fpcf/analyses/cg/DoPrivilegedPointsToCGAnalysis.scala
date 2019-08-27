@@ -240,10 +240,10 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
 ) extends PointsToAnalysisBase with AllocationSiteBasedAnalysis { self ⇒
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this]type ElementType = self.ElementType
-        override protected[this]type PointsToSet = self.PointsToSet
-        override protected[this]type State = self.State
-        override protected[this]type DependerType = self.DependerType
+        override protected[this] type ElementType = self.ElementType
+        override protected[this] type PointsToSet = self.PointsToSet
+        override protected[this] type State = self.State
+        override protected[this] type DependerType = self.DependerType
 
         override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
             self.pointsToPropertyKey

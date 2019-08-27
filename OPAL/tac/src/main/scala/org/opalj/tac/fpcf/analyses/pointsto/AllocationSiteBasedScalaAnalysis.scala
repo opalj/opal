@@ -26,8 +26,8 @@ import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 
 trait AllocationSiteBasedScalaAnalysis extends AbstractPointsToBasedAnalysis {
 
-    override protected[this]type ElementType = AllocationSite
-    override protected[this]type PointsToSet = AllocationSitePointsToSetScala
+    override protected[this] type ElementType = AllocationSite
+    override protected[this] type PointsToSet = AllocationSitePointsToSetScala
 
     val configPrefix = "org.opalj.fpcf.analyses.AllocationSiteBasedPointsToAnalysis"
     val mergeStringBuilderBuffer: Boolean =

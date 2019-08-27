@@ -263,7 +263,7 @@ trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisSc
 }
 
 object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
-        extends ConfiguredMethodsPointsToAnalysisScheduler {
+    extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
@@ -271,7 +271,7 @@ object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
 }
 
 object AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
-        extends ConfiguredMethodsPointsToAnalysisScheduler {
+    extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
