@@ -642,16 +642,37 @@ final class PKECPropertyStore(
         if (epkState == null) epkState = newEPKState
 
         // 1. Update the property if necessary.
-        val eOptionPWithDependersOption =
+        val interimEPWithDependersOption =
             epkState.update(u, hasSuppressedDependers, suppressInterimUpdates)
+        handlePartialResultUpdate(epkState, interimEPWithDependersOption)
+    }
+
+    // NOTES REGARDING CONCURRENCY
+    // W.r.t. one EPK there may be multiple executions of this method concurrently!
+    private[this] def handlePrecomputedPartialResult(
+        expectedEOptionP: SomeEOptionP,
+        updatedInterimEP: SomeInterimEP,
+        u:                UpdateComputation[_ <: Entity, _ <: Property]
+    ): Unit = {
+        val pkId = expectedEOptionP.pk.id
+        val epkState = properties(pkId).get(expectedEOptionP.e)
+        val interimEPWithDependersOption =
+            epkState.update(expectedEOptionP, updatedInterimEP, u, hasSuppressedDependers, suppressInterimUpdates)
+        handlePartialResultUpdate(epkState, interimEPWithDependersOption)
+    }
+
+    private[this] def handlePartialResultUpdate(
+        epkState:                     EPKState,
+        interimEPWithDependersOption: Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
+    ): Unit = {
         if (tracer.isDefined)
-            tracer.get.appliedUpdateComputation(epkState, eOptionPWithDependersOption)
+            tracer.get.appliedUpdateComputation(epkState, interimEPWithDependersOption)
 
         // 2. Notify relevant dependers
-        if (eOptionPWithDependersOption.isDefined) {
-            val (oldEOptionP, newEOptionP, dependers) = eOptionPWithDependersOption.get
-            if (oldEOptionP.isEPK) triggerComputations(e, pkId)
-            dependers.foreach(epk ⇒ notifyDepender(epk, oldEOptionP, newEOptionP))
+        if (interimEPWithDependersOption.isDefined) {
+            val (oldEOptionP, newInterimEP, dependers) = interimEPWithDependersOption.get
+            if (oldEOptionP.isEPK) triggerComputations(oldEOptionP.e, oldEOptionP.pk.id)
+            dependers.foreach(epk ⇒ notifyDepender(epk, oldEOptionP, newInterimEP))
         }
     }
 
@@ -704,6 +725,10 @@ final class PKECPropertyStore(
             case PartialResult.id ⇒
                 val PartialResult(e, pk, u) = r
                 handlePartialResult(e, pk, u)
+
+            case PrecomputedPartialResult.id ⇒
+                val PrecomputedPartialResult(expectedEOptionP, updatedInterimEP, u) = r
+                handlePrecomputedPartialResult(expectedEOptionP, updatedInterimEP, u)
 
             case InterimPartialResult.id ⇒
                 val InterimPartialResult(prs, dependees, c) = r

@@ -70,7 +70,7 @@ sealed trait AllocationSitePointsToSet
             }
         }
 
-        if (elements eq newAllocationSites)
+        if (newAllocationSites.size == elements.size)
             return this;
 
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
@@ -101,7 +101,7 @@ sealed trait AllocationSitePointsToSet
             }
         }
 
-        if (elements eq newAllocationSites)
+        if (newAllocationSites.size == elements.size)
             return this;
 
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
@@ -133,7 +133,7 @@ sealed trait AllocationSitePointsToSet
             }
         }
 
-        if (elements eq newAllocationSites)
+        if (newAllocationSites.size == elements.size)
             return this;
 
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
