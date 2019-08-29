@@ -33,8 +33,8 @@ import org.opalj.tac.common.DefinitionSite
 
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
-    override protected[this]type DependerType = Entity
+    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this] type DependerType = Entity
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,
@@ -495,12 +495,12 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             )
         }
 
-        if(!isUpdate || (newPointsToSet ne emptyPointsToSet)) {
+        if (!isUpdate || (newPointsToSet ne emptyPointsToSet)) {
             PrecomputedPartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
                 e,
                 pointsToPropertyKey,
                 (eoptp: EOptionP[Entity, PointsToSetLike[_, _, PointsToSet]]) ⇒ eoptp match {
-                    case UBP(ub: PointsToSet@unchecked) ⇒
+                    case UBP(ub: PointsToSet @unchecked) ⇒
                         val newPointsToSet = updatePointsTo(ub)
                         if (newPointsToSet ne ub) {
                             Some(InterimEUBP(e, newPointsToSet))
