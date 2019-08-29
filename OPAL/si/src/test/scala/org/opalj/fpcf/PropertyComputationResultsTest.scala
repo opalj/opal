@@ -18,8 +18,7 @@ class PropertyComputationResultsTest extends FunSuite {
                 IncrementalResult.id,
                 InterimResult.id,
                 Results.id,
-                PartialResult.id,
-                IdempotentResult.id
+                PartialResult.id
             )
 
         assert(resultTypeIds.toSet.toList.sorted === resultTypeIds.sorted)
