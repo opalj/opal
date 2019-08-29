@@ -192,13 +192,15 @@ private[par] sealed abstract class EPKState {
  * @param dependees The dependees.
  */
 private[par] final class InterimEPKState(
-        @volatile var eOptionP:  SomeEOptionP,
-        @volatile var c:         OnUpdateContinuation,
-        @volatile var dependees: Traversable[SomeEOptionP],
-        @volatile var dependers: Set[SomeEPK]
+        @volatile var eOptionP:      SomeEOptionP,
+        @volatile var c:             OnUpdateContinuation,
+        @volatile var dependees:     Traversable[SomeEOptionP],
+        private[this] var dependers: Set[SomeEPK] // <= Only accessed when explicitly synchronized.
 ) extends EPKState /*with Locking*/ {
 
     assert(eOptionP.isRefinable) // an update which makes it final is possible...
+
+    private[this] final val thisPKId: Int = eOptionP.pk.id
 
     override def isRefinable: Boolean = eOptionP.isRefinable
     override def isFinal: Boolean = eOptionP.isFinal
