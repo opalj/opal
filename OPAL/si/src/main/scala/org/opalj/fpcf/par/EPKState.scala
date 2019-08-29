@@ -3,8 +3,6 @@ package org.opalj
 package fpcf
 package par
 
-//import org.opalj.concurrent.Locking
-
 /**
  * Encapsulates the state of a single entity and a property of a specific kind.
  *
