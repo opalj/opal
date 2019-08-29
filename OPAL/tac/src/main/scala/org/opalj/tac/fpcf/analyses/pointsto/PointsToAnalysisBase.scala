@@ -33,8 +33,8 @@ import org.opalj.tac.common.DefinitionSite
 
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
-    override protected[this]type DependerType = Entity
+    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this] type DependerType = Entity
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,

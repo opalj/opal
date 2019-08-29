@@ -270,9 +270,9 @@ private[par] final class InterimEPKState(
             // The test whether we have a relevant update or not should have been done
             // by the update function - it must return "None" if the update is not
             // relevant; i.e., there is no change.
-            if (PropertyStore.Debug && !newInterimEP.isUpdatedComparedTo(oldEOptionP)){
+            if (PropertyStore.Debug && !newInterimEP.isUpdatedComparedTo(oldEOptionP)) {
                 throw new IllegalArgumentException(
-                     s"the update ($u) computed an irrelevant update: $oldEOptionP => $newInterimEP"
+                    s"the update ($u) computed an irrelevant update: $oldEOptionP => $newInterimEP"
                 )
             }
 
