@@ -30,9 +30,9 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 sealed trait AllocationSitePointsToSet
-        extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
-        with OrderedProperty
-        with AllocationSitePointsToSetPropertyMetaInformation {
+    extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
+    with OrderedProperty
+    with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
