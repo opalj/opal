@@ -502,6 +502,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 val results = createPartialResults(
                     e,
+                    newPointsToSet,
                     newDependees,
                     { old ⇒
                         old.included(newPointsToSet, typeFilter)
