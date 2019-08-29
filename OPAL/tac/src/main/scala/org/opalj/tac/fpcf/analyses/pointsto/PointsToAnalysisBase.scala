@@ -621,5 +621,5 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
         results
     }
-    
+
 }
