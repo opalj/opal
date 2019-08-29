@@ -33,8 +33,8 @@ import org.opalj.tac.common.DefinitionSite
 
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
-    override protected[this] type DependerType = Entity
+    override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this]type DependerType = Entity
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,
@@ -304,7 +304,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                         results ++= createPartialResults(
                             (as, fieldOpt.getOrElse(UnsafeFakeField)),
                             rhsDefSitesEPS.mapValues((_, typeFilter)),
-                            knownPointsTo,
                             { _.included(knownPointsTo, typeFilter) }
                         )
                     }
@@ -345,7 +344,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                         results ++= createPartialResults(
                             ArrayEntity(as),
                             rhsDefSitesEPS.mapValues((_, typeFilter)),
-                            knownPointsTo,
                             { _.included(knownPointsTo, typeFilter) }
                         )
                     }
@@ -389,7 +387,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 var results: Seq[ProperPropertyComputationResult] = createPartialResults(
                     defSiteObject,
                     nextDependees.iterator.map(d ⇒ d.toEPK → ((d, filter))).toMap,
-                    newPointsTo,
                     { _.included(newPointsTo, filter) }
                 )
 
@@ -433,7 +430,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     createPartialResults(
                         defSiteObject,
                         nextDependees.iterator.map(d ⇒ d.toEPK → ((d, filter))).toMap,
-                        newPointsTo,
                         { _.included(newPointsTo, filter) }
                     )
 
@@ -461,7 +457,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 val results = createPartialResults(
                     e,
                     newDependees,
-                    newDependeePointsTo,
                     { old ⇒
                         updatedPointsToSet(
                             old,
@@ -480,11 +475,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     }
 
     @inline protected[this] def createPartialResults(
-        e:                   Entity,
-        newDependees:        Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
-        newDependeePointsTo: PointsToSet,
-        updatePointsTo:      PointsToSet ⇒ PointsToSet,
-        isUpdate:            Boolean                                               = false
+        e:              Entity,
+        newDependees:   Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
+        updatePointsTo: PointsToSet ⇒ PointsToSet,
+        isUpdate:       Boolean                                               = false
     ): Seq[ProperPropertyComputationResult] = {
         var results: Seq[ProperPropertyComputationResult] = Seq.empty
 
@@ -495,14 +489,16 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             )
         }
 
-        if (!isUpdate || (newDependeePointsTo ne emptyPointsToSet)) {
+        val old = pointsToUB(ps(e, pointsToPropertyKey))
+        val testPTS = updatePointsTo(old)
+
+        if (!isUpdate || (testPTS ne old)) {
             results +:= PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
                 e,
                 pointsToPropertyKey,
                 {
                     case eps @ UBP(ub: PointsToSet @unchecked) ⇒
                         val newPointsToSet = updatePointsTo(ub)
-
                         if (newPointsToSet ne ub) {
                             Some(InterimEUBP(e, newPointsToSet))
                         } else {
@@ -538,7 +534,6 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             results ++= createPartialResults(
                 e,
                 if (state.hasDependees(e)) state.dependeesOf(e) else Map.empty,
-                pointsToSet,
                 { _.included(pointsToSet) }
             )
         }
@@ -621,5 +616,4 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
         results
     }
-    
 }
