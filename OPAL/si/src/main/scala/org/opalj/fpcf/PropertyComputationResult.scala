@@ -464,16 +464,3 @@ object InterimPartialResult {
     }
 }
 
-/**************************************************************************************************\
- *
- *                              ONLY USED INTERNALLY BY THE FRAMEWORK!
- *
-\**************************************************************************************************/
-
-private[fpcf] case class IdempotentResult(
-        finalP: SomeFinalEP
-) extends FinalPropertyComputationResult {
-    private[fpcf] final def id = IdempotentResult.id
-
-}
-private[fpcf] object IdempotentResult { private[fpcf] final val id = 9 }
