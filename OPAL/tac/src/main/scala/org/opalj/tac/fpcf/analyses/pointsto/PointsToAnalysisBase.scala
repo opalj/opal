@@ -13,7 +13,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.PrecomputedPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.Result
@@ -33,8 +33,8 @@ import org.opalj.tac.common.DefinitionSite
 
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
-    override protected[this] type DependerType = Entity
+    override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this]type DependerType = Entity
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,
@@ -303,6 +303,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
                         results ++= createPartialResults(
                             (as, fieldOpt.getOrElse(UnsafeFakeField)),
+                            knownPointsTo,
                             rhsDefSitesEPS.mapValues((_, typeFilter)),
                             { _.included(knownPointsTo, typeFilter) }
                         )
@@ -343,6 +344,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                         }
                         results ++= createPartialResults(
                             ArrayEntity(as),
+                            knownPointsTo,
                             rhsDefSitesEPS.mapValues((_, typeFilter)),
                             { _.included(knownPointsTo, typeFilter) }
                         )
@@ -386,6 +388,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
                 var results: Seq[ProperPropertyComputationResult] = createPartialResults(
                     defSiteObject,
+                    newPointsTo,
                     nextDependees.iterator.map(d ⇒ d.toEPK → ((d, filter))).toMap,
                     { _.included(newPointsTo, filter) }
                 )
@@ -429,6 +432,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 var results: Seq[ProperPropertyComputationResult] =
                     createPartialResults(
                         defSiteObject,
+                        newPointsTo,
                         nextDependees.iterator.map(d ⇒ d.toEPK → ((d, filter))).toMap,
                         { _.included(newPointsTo, filter) }
                     )
@@ -456,6 +460,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
                 val results = createPartialResults(
                     e,
+                    newDependeePointsTo,
                     newDependees,
                     { old ⇒
                         updatedPointsToSet(
@@ -476,6 +481,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
     @inline protected[this] def createPartialResults(
         e:              Entity,
+        newPointsToSet: PointsToSet,
         newDependees:   Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)],
         updatePointsTo: PointsToSet ⇒ PointsToSet,
         isUpdate:       Boolean                                               = false
@@ -489,15 +495,12 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             )
         }
 
-        val old = pointsToUB(ps(e, pointsToPropertyKey))
-        val testPTS = updatePointsTo(old)
-
-        if (!isUpdate || (testPTS ne old)) {
-            results +:= PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+        if(!isUpdate || (newPointsToSet ne emptyPointsToSet)) {
+            PrecomputedPartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
                 e,
                 pointsToPropertyKey,
-                {
-                    case eps @ UBP(ub: PointsToSet @unchecked) ⇒
+                (eoptp: EOptionP[Entity, PointsToSetLike[_, _, PointsToSet]]) ⇒ eoptp match {
+                    case UBP(ub: PointsToSet@unchecked) ⇒
                         val newPointsToSet = updatePointsTo(ub)
                         if (newPointsToSet ne ub) {
                             Some(InterimEUBP(e, newPointsToSet))
@@ -515,7 +518,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     case eOptP ⇒
                         throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
                 }
-            )
+            ).foreach(results +:= _)
         }
 
         results
@@ -533,6 +536,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         for ((e, pointsToSet) ← state.sharedPointsToSetsIterator) {
             results ++= createPartialResults(
                 e,
+                pointsToSet,
                 if (state.hasDependees(e)) state.dependeesOf(e) else Map.empty,
                 { _.included(pointsToSet) }
             )
