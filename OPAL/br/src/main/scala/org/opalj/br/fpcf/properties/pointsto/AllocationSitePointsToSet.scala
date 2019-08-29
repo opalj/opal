@@ -30,9 +30,9 @@ sealed trait AllocationSitePointsToSetPropertyMetaInformation extends PropertyMe
 }
 
 sealed trait AllocationSitePointsToSet
-    extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
-    with OrderedProperty
-    with AllocationSitePointsToSetPropertyMetaInformation {
+        extends PointsToSetLike[AllocationSite, LongLinkedSet, AllocationSitePointsToSet]
+        with OrderedProperty
+        with AllocationSitePointsToSetPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSet] = AllocationSitePointsToSet.key
 
@@ -70,7 +70,7 @@ sealed trait AllocationSitePointsToSet
             }
         }
 
-        if (newAllocationSites.size == elements.size)
+        if (newAllocationSites eq elements)
             return this;
 
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
@@ -101,7 +101,7 @@ sealed trait AllocationSitePointsToSet
             }
         }
 
-        if (newAllocationSites.size == elements.size)
+        if (newAllocationSites eq elements)
             return this;
 
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
@@ -133,7 +133,7 @@ sealed trait AllocationSitePointsToSet
             }
         }
 
-        if (newAllocationSites.size == elements.size)
+        if (newAllocationSites eq elements)
             return this;
 
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
@@ -167,7 +167,6 @@ sealed trait AllocationSitePointsToSet
             return this;
 
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
-
     }
 
     assert {
@@ -370,6 +369,69 @@ case class AllocationSitePointsToSet1(
         // Note, that we can not assert, that seenElements is between 0 and 1, as this can
         // happen by unordered partial results.
         included(other)
+    }
+
+    override def included(
+        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+    ): AllocationSitePointsToSet = {
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return included(other);
+
+        var newTypes = types
+        var newOrderedTypes = orderedTypes
+
+        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
+            val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
+            if (typeFilter(tpe)) {
+                val newAllocationSites = r + allocationSite
+                if (newAllocationSites ne r) {
+                    val oldTypes = newTypes
+                    newTypes += tpe
+                    if (newTypes ne oldTypes)
+                        newOrderedTypes :&:= tpe
+                }
+                newAllocationSites
+            } else {
+                r
+            }
+        }
+
+        if (newAllocationSites.size == 1)
+            return this;
+
+        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
+    }
+
+    override def included(
+        other:        AllocationSitePointsToSet,
+        seenElements: Int,
+        typeFilter:   ReferenceType ⇒ Boolean
+    ): AllocationSitePointsToSet = {
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return included(other, seenElements);
+
+        var newAllocationSites = elements
+        var newTypes = types
+        var newOrderedTypes = orderedTypes
+
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+            val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
+            if (typeFilter(tpe)) {
+                val oldAllocationSites = newAllocationSites
+                newAllocationSites += allocationSite
+                if (newAllocationSites ne oldAllocationSites) {
+                    val oldTypes = newTypes
+                    newTypes += tpe
+                    if (newTypes ne oldTypes)
+                        newOrderedTypes :&:= tpe
+                }
+            }
+        }
+
+        if (newAllocationSites.size == 1)
+            return this;
+
+        AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
