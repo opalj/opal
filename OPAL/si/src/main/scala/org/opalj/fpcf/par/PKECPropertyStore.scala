@@ -395,13 +395,6 @@ final class PKECPropertyStore(
         dependerEPKState.clearDependees()
     }
 
-    private[this] def removeDependerFromDependeesAndClearDependees(dependerEPK: SomeEPK): Unit = {
-        removeDependerFromDependeesAndClearDependees(
-            dependerEPK,
-            properties(dependerEPK.pk.id).get(dependerEPK.e)
-        )
-    }
-
     private[this] def notifyDepender(
         dependerEPK: SomeEPK,
         oldEOptionP: SomeEOptionP,
@@ -948,16 +941,27 @@ final class PKECPropertyStore(
                     }
                     // The following will also kill dependers related to anonymous computations using
                     // the generic property key: "AnalysisKey"; i.e., those without explicit properties!
+                    properties.foreach { psPerKind ⇒
+                        parallelize {
+                            psPerKind.values().forEach { _.cleanUp(pksToFinalize) }
+                        }
+                    }
+                    /*
                     pksToFinalize foreach { pk ⇒
                         val propertyKey = PropertyKey.key(pk.id)
                         parallelize {
                             val dependeesIt = properties(pk.id).elements().asScala.filter(_.hasDependees)
                             if (dependeesIt.hasNext) continueComputation.set(true)
                             dependeesIt foreach { epkState ⇒
-                                removeDependerFromDependeesAndClearDependees(EPK(epkState.e, propertyKey))
+                                val dependerEPK = EPK(epkState.e, propertyKey)
+                                     removeDependerFromDependeesAndClearDependees(
+            dependerEPK,
+            properties(dependerEPK.pk.id).get(dependerEPK.e)
+        )
                             }
                         }
                     }
+                   */
                     awaitPoolQuiescence()
 
                     pksToFinalize foreach { pk ⇒

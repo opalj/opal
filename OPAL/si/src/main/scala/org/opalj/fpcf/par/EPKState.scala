@@ -181,6 +181,12 @@ private[par] sealed abstract class EPKState {
      */
     def dependees: Traversable[SomeEOptionP]
 
+    /**
+     * Removes the depender/dependee relations related to the given pksTOFinalize
+     *
+     * __This method is not thread safe. Concurrent execution is NOT supported.__
+     */
+    def cleanUp(pksToFinalize: List[PropertyKind]): Unit
 }
 
 /**
@@ -199,15 +205,25 @@ private[par] sealed abstract class EPKState {
  * @param dependees The dependees.
  */
 private[par] final class InterimEPKState(
-        @volatile var eOptionP:      SomeEOptionP,
-        @volatile var c:             OnUpdateContinuation,
-        @volatile var dependees:     Traversable[SomeEOptionP],
-        private[this] var dependers: Set[SomeEPK] // <= Only accessed when explicitly synchronized.
+        @volatile var eOptionP:                SomeEOptionP,
+        @volatile var c:                       OnUpdateContinuation,
+        @volatile var dependees:               Traversable[SomeEOptionP],
+        @volatile private[this] var dependers: Set[SomeEPK]
 ) extends EPKState /*with Locking*/ {
 
     assert(eOptionP.isRefinable) // an update which makes it final is possible...
 
     private[this] final val thisPKId = eOptionP.pk.id
+
+    // NOT THREAD SAFE!
+    override def cleanUp(pksToFinalize: List[PropertyKind]): Unit = {
+        pksToFinalize.foreach { pkToFinalize ⇒
+            if (eOptionP.pk == pkToFinalize) {
+                clearDependees()
+            }
+            dependers = dependers.filter(dependerEPK ⇒ !pksToFinalize.contains(dependerEPK.pk))
+        }
+    }
 
     override def isRefinable: Boolean = eOptionP.isRefinable
     override def isFinal: Boolean = eOptionP.isFinal
@@ -474,6 +490,8 @@ private[par] final class FinalEPKState(override val eOptionP: SomeEOptionP) exte
     override def isCurrentC(c: OnUpdateContinuation): Boolean = false
     override def hasDependees: Boolean = false
     override def dependees: Traversable[SomeEOptionP] = null
+
+    override def cleanUp(pksToFinalize: List[PropertyKind]): Unit = { /* Nothing to do! */ }
 
     override def toString: String = s"FinalEPKState(finalEP=$eOptionP)"
 }
