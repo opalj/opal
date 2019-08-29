@@ -884,7 +884,12 @@ final class PKECPropertyStore(
                         pkId += 1
                     }
                     val successors = (interimEPKState: EPKState) ⇒ {
-                        interimEPKState.dependees.map(eOptionP ⇒ properties(eOptionP.pk.id).get(eOptionP.e))
+                        val dependees = interimEPKState.dependees
+                        if (dependees != null) {
+                            interimEPKState.dependees.map(eOptionP ⇒ properties(eOptionP.pk.id).get(eOptionP.e))
+                        } else {
+                            Traversable.empty
+                        }
                     }
                     val cSCCs = graphs.closedSCCs(interimEPKStates, successors)
                     if (tracer.isDefined) {
@@ -942,8 +947,11 @@ final class PKECPropertyStore(
                     // The following will also kill dependers related to anonymous computations using
                     // the generic property key: "AnalysisKey"; i.e., those without explicit properties!
                     properties.foreach { psPerKind ⇒
-                        parallelize {
-                            psPerKind.values().forEach { _.cleanUp(pksToFinalize) }
+                        val eps = psPerKind.values()
+                        if (!eps.isEmpty) {
+                            parallelize {
+                                eps.forEach { _.cleanUp(pksToFinalize) }
+                            }
                         }
                     }
                     /*
