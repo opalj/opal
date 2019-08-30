@@ -49,14 +49,13 @@ final class PKECPropertyStore(
     //
     //
 
-    import tasksManager.prepareThreadPool
+    import tasksManager.phaseSetupCompleted
     import tasksManager.awaitPoolQuiescence
     import tasksManager.parallelize
     import tasksManager.forkResultHandler
     import tasksManager.forkOnUpdateContinuation
     import tasksManager.forkLazyPropertyComputation
     import tasksManager.schedulePropertyComputation
-    import tasksManager.cleanUpThreadPool
 
     // --------------------------------------------------------------------------------------------
     //
@@ -792,7 +791,7 @@ final class PKECPropertyStore(
     }
 
     override def waitOnPhaseCompletion(): Unit = {
-        prepareThreadPool()
+        phaseSetupCompleted()
 
         handleExceptions {
             val maxPKIndex = PropertyKey.maxId
@@ -1007,9 +1006,6 @@ final class PKECPropertyStore(
 
             // TODO assert that we don't have any more InterimEPKStates
         }
-
-        cleanUpThreadPool()
-
         if (exception != null) throw exception;
     }
 
@@ -1031,7 +1027,8 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.par.PKECPropertyStore.MaxEvaluationDepth"
 
     final val Strategies = List(
-        "Seq"
+        "Seq",
+        "Par"
     )
 
     def apply(

@@ -35,25 +35,27 @@ class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
 
     @volatile private[this] var latch: CountDownLatch = new CountDownLatch(1)
 
-    def prepareThreadPool()(implicit ps: PKECPropertyStore): Unit = {
-        // Initialize the thread pool and all helper data structures.
-        nextThreadId = new AtomicInteger(1)
-        es = Executors.newFixedThreadPool(
-            MaxThreads,
-            (r: Runnable) ⇒ {
-                val threadId = nextThreadId.getAndIncrement()
-                new Thread(r, s"PKECPropertyStore-Thread #$threadId")
-            }: Thread
-        )
-        tasks = new AtomicInteger(0)
-        currentEvaluationDepth = 0
+    def phaseSetupCompleted()(implicit ps: PKECPropertyStore): Unit = {
+        if (es == null) {
+            // Initialize the thread pool and all helper data structures.
+            nextThreadId = new AtomicInteger(1)
+            es = Executors.newFixedThreadPool(
+                MaxThreads,
+                (r: Runnable) ⇒ {
+                    val threadId = nextThreadId.getAndIncrement()
+                    new Thread(r, s"PKECPropertyStore-Thread #$threadId")
+                }: Thread
+            )
+            tasks = new AtomicInteger(0)
+            currentEvaluationDepth = 0
+        }
 
         // Submit the scheduled tasks.
         queuedTasks.foreach { t ⇒ es.submit(t); tasks.incrementAndGet() }
         queuedTasks.clear()
     }
 
-    def cleanUpThreadPool()(implicit ps: PKECPropertyStore): Unit = {
+    def shutdown()(implicit ps: PKECPropertyStore): Unit = {
         assert(
             ps.doTerminate || tasks == null || tasks.get == 0,
             "some tasks are still running/are still scheduled"
@@ -68,10 +70,6 @@ class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         es = null
         nextThreadId = null
         tasks = null
-    }
-
-    def shutdown()(implicit ps: PKECPropertyStore): Unit = {
-        cleanUpThreadPool()
 
         // We have to ensure that "the every/the last latch" is count down!
         latch.countDown()
