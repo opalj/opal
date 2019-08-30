@@ -415,6 +415,10 @@ private[par] final class InterimEPKState(
 
     override def removeDepender(someEPK: SomeEPK): Unit = {
         this.synchronized {
+            val dependers = this.dependers
+            if (dependers == null)
+                return ;
+
             // The write lock is required to avoid lost updates; e.g., if
             // two dependers are removed "concurrently".
             this.dependers -= someEPK

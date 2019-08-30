@@ -233,7 +233,13 @@ class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
     ): Unit = {
         es.submit((() ⇒
             try {
-                val r = try { c(finalEP) } catch { case t: Throwable ⇒ ps.collectAndThrowException(t) }
+                val r = try {
+                    c(finalEP)
+                } catch {
+                    case t: Throwable ⇒
+                        val ex = new Error(s"unknown error after applying $c to $finalEP", t)
+                        ps.collectAndThrowException(ex)
+                }
                 ps.processResult(r)
             } finally {
                 decrementTasks()
