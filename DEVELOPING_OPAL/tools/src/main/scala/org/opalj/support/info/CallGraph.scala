@@ -138,6 +138,14 @@ object CallGraph extends ProjectAnalysisApplication {
             }
         } { t ⇒ callGraphTime = t.toSeconds }
 
+        try {
+            ps.shutdown()
+        } catch {
+            case t: Throwable ⇒
+                Console.err.println("PropertyStore shutdown failed: ")
+                t.printStackTrace()
+        }
+
         if (timingsFile.isDefined) {
             val runtime = new File(timingsFile.get)
             val runtimeNew = !runtime.exists()
