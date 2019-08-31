@@ -36,9 +36,10 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 
-//import scala.language.existentials
+import scala.collection.mutable.ListBuffer
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
@@ -46,7 +47,7 @@ import org.opalj.fpcf.SomeEPS
  *
  * This analysis is adapted from the RTA version. Instead of adding the instantiations to the type
  * set of the Project, they are added to the type set of the calling method. Which entity the type
- * set is attached to depends on the call graph variant used.
+ * is attached to depends on the call graph variant used.
  *
  * @author Florian Kuebler
  * @author Andreas Bauer
@@ -81,15 +82,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             // the method is reachable, so we analyze it!
         }
 
-        // the set of types that are definitely initialized at this point in time
-        //val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-        //val instantiatedTypesUB: UIDSet[ReferenceType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
-
         val declaredType = declaredMethod.declaringClassType.asObjectType
-
-        // if the current type is already instantiated, no work is left
-        //if (instantiatedTypesUB.contains(declaredType))
-        //    return NoResult;
 
         val cfOpt = project.classFile(declaredType)
 
@@ -103,103 +96,127 @@ class InstantiatedTypesAnalysis private[analyses] (
     }
 
     private[this] def processCallers(
-        declaredMethod:   DeclaredMethod,
-        declaredType:     ObjectType,
-        callersEOptP:     EOptionP[DeclaredMethod, Callers],
-        callersUB:        Callers,
-        seenSuperCallers: Set[DeclaredMethod]
+        declaredMethod: DeclaredMethod,
+        declaredType:   ObjectType,
+        callersEOptP:   EOptionP[DeclaredMethod, Callers],
+        callersUB:      Callers,
+        seenCallers:    Set[DeclaredMethod]
     ): PropertyComputationResult = {
-        var newSeenSuperCallers = seenSuperCallers
+        var newSeenCallers = seenCallers
+        val partialResults = new ListBuffer[PartialResult[SetEntity, InstantiatedTypes]]()
         for {
             (caller, _, _) ← callersUB.callers
             // if we already analyzed the caller, we do not need to do it twice
             // note, that this is only needed for the continuation
-            if !newSeenSuperCallers.contains(caller)
+            if !seenCallers.contains(caller)
         } {
-            if (caller.name != "<init>") {
-                return partialResult(caller, declaredType);
-            }
+            processSingleCaller(declaredMethod, declaredType, caller, partialResults)
 
-            // the constructor is called from another constructor. it is only an new instantiated
-            // type if it was no super call. Thus the caller must be a subtype
-            if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType))
-                return partialResult(caller, declaredType);
-
-            // actually it must be the direct subtype! -- we did the first check to return early
-            project.classFile(caller.declaringClassType.asObjectType).foreach { cf ⇒
-                cf.superclassType.foreach { supertype ⇒
-                    if (supertype != declaredType)
-                        return partialResult(caller, declaredType);
-                }
-            }
-
-            // if the caller is not available, we have to assume that it was no super call
-            if (!caller.hasSingleDefinedMethod) {
-                return partialResult(caller, declaredType);
-            }
-
-            val callerMethod = caller.definedMethod
-
-            // if the caller has no body, we have to assume that it was no super call
-            if (callerMethod.body.isEmpty)
-                return partialResult(caller, declaredType);
-
-            val supercall = INVOKESPECIAL(
-                declaredType,
-                isInterface = false,
-                "<init>",
-                declaredMethod.descriptor
-            )
-
-            val pcsOfSuperCalls = callerMethod.body.get.collectInstructionsWithPC {
-                case pcAndInstr @ PCAndInstruction(_, `supercall`) ⇒ pcAndInstr
-            }
-
-            assert(pcsOfSuperCalls.nonEmpty)
-
-            // there can be only one super call, so there must be an explicit call
-            if (pcsOfSuperCalls.size > 1)
-                return partialResult(caller, declaredType);
-
-            // there is exactly the current call as potential super call, it still might no super
-            // call if the class has another constructor that calls the super. In that case
-            // there must either be a new of the `declaredType`
-            val newInstr = NEW(declaredType)
-            val hasNew = callerMethod.body.get.exists {
-                case (_, i) ⇒ i == newInstr
-            }
-            if (hasNew)
-                return partialResult(caller, declaredType);
-
-            // to call is a super call, we should remember the call, in order to not evaluate it
-            // again, if there are new callers!
-            newSeenSuperCallers += caller
+            // remember the caller so we don't process it again later
+            newSeenCallers += caller
         }
 
         if (callersEOptP.isFinal) {
             NoResult
         } else {
-            InterimPartialResult(
-                Some(callersEOptP),
-                continuation(declaredMethod, declaredType, newSeenSuperCallers)
-            )
+            val reRegistration =
+                InterimPartialResult(
+                    Some(callersEOptP),
+                    continuation(declaredMethod, declaredType, newSeenCallers)
+                )
+
+            Results(reRegistration, partialResults)
+        }
+    }
+
+    private[this] def processSingleCaller(
+        declaredMethod:   DeclaredMethod,
+        declaredType:     ObjectType,
+        caller:           DeclaredMethod,
+        partialResults:   ListBuffer[PartialResult[SetEntity, InstantiatedTypes]]
+    ): Unit = {
+        if (caller.name != "<init>") {
+            partialResults += partialResult(declaredType, caller);
+            return;
+        }
+
+        // the constructor is called from another constructor. it is only an new instantiated
+        // type if it was no super call. Thus the caller must be a subtype
+        if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType)) {
+            partialResults += partialResult(declaredType, caller);
+            return;
+        }
+
+        // actually it must be the direct subtype! -- we did the first check to return early
+        project.classFile(caller.declaringClassType.asObjectType).foreach { cf ⇒
+            cf.superclassType.foreach { supertype ⇒
+                if (supertype != declaredType) {
+                    partialResults += partialResult(declaredType, caller);
+                    return;
+                }
+            }
+        }
+
+        // if the caller is not available, we have to assume that it was no super call
+        if (!caller.hasSingleDefinedMethod) {
+            partialResults +=  partialResult(declaredType, caller);
+            return;
+        }
+
+        val callerMethod = caller.definedMethod
+
+        // if the caller has no body, we have to assume that it was no super call
+        if (callerMethod.body.isEmpty) {
+            partialResults += partialResult(declaredType, caller);
+            return;
+        }
+
+        val supercall = INVOKESPECIAL(
+            declaredType,
+            isInterface = false,
+            "<init>",
+            declaredMethod.descriptor
+        )
+
+        val pcsOfSuperCalls = callerMethod.body.get.collectInstructionsWithPC {
+            case pcAndInstr @ PCAndInstruction(_, `supercall`) ⇒ pcAndInstr
+        }
+
+        assert(pcsOfSuperCalls.nonEmpty)
+
+        // there can be only one super call, so there must be an explicit call
+        if (pcsOfSuperCalls.size > 1) {
+            partialResults += partialResult(declaredType, caller);
+            return;
+        }
+
+        // there is exactly the current call as potential super call, it still might no super
+        // call if the class has another constructor that calls the super. In that case
+        // there must either be a new of the `declaredType`
+        val newInstr = NEW(declaredType)
+        val hasNew = callerMethod.body.get.exists {
+            case (_, i) ⇒ i == newInstr
+        }
+        if (hasNew) {
+            partialResults += partialResult(declaredType, caller);
         }
     }
 
     private[this] def continuation(
         declaredMethod:   DeclaredMethod,
         declaredType:     ObjectType,
-        seenSuperCallers: Set[DeclaredMethod]
+        seenCallers: Set[DeclaredMethod]
     )(someEPS: SomeEPS): PropertyComputationResult = {
         val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processCallers(declaredMethod, declaredType, eps, eps.ub, seenSuperCallers)
-
+        processCallers(declaredMethod, declaredType, eps, eps.ub, seenCallers)
     }
 
-    private[this] def partialResult(
-        caller:       DeclaredMethod,
-        declaredType: ObjectType
+    private def partialResult(
+        declaredType: ObjectType,
+        caller: DeclaredMethod
     ): PartialResult[SetEntity, InstantiatedTypes] = {
+
+        // Subtypes of Throwable are tracked globally.
         val setEntity =
             if (classHierarchy.isSubtypeOf(declaredType, ObjectType.Throwable))
                 project
@@ -224,27 +241,6 @@ class InstantiatedTypesAnalysis private[analyses] (
 }
 
 object InstantiatedTypesAnalysis {
-    def update2(
-        p:                    SomeProject,
-        newInstantiatedTypes: UIDSet[ObjectType]
-    )(
-        eop: EOptionP[SomeProject, InstantiatedTypes]
-    ): Option[InterimEP[SomeProject, InstantiatedTypes]] = eop match {
-        case InterimUBP(ub: InstantiatedTypes) ⇒
-            val newUB = ub.updated(newInstantiatedTypes)
-            if (newUB.types.size > ub.types.size)
-                Some(InterimEUBP(p, newUB))
-            else
-                None
-
-        case _: EPK[_, _] ⇒
-            throw new IllegalStateException(
-                "the instantiated types property should be pre initialized"
-            )
-
-        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
-    }
-
     // TODO Duplication: Something like this appears in several places.
     def update[E >: Null <: Entity](
         entity:               E,
@@ -292,9 +288,9 @@ class InstantiatedTypesAnalysisScheduler(
     }
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
+        // TODO AB Is this needed or can this be removed?
         //val initialInstantiatedTypes = UIDSet(p.get(InitialInstantiatedTypesKey).toSeq: _*)
 
-        // TODO AB what is this
         //ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
         //    case _: EPK[_, _] ⇒ InterimEUBP(p, org.opalj.br.fpcf.properties.cg.InstantiatedTypes(initialInstantiatedTypes))
         //    case eps          ⇒ throw new IllegalStateException(s"unexpected property: $eps")

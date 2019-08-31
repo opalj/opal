@@ -87,7 +87,7 @@ final class ArrayInstantiationsAnalysis(
             PartialResult(
                 targetSetEntity,
                 InstantiatedTypes.key,
-                update(targetSetEntity, UIDSet((instantiatedNonExceptionTypes ++ instantiatedArrays).toSeq: _*))
+                update(targetSetEntity, UIDSet((instantiatedArrays).toSeq: _*))
             ),
             exceptionTypePartialResult ++ multidimensionalArrayPartialResults
         )
