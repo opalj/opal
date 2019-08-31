@@ -130,21 +130,21 @@ class InstantiatedTypesAnalysis private[analyses] (
     }
 
     private[this] def processSingleCaller(
-        declaredMethod:   DeclaredMethod,
-        declaredType:     ObjectType,
-        caller:           DeclaredMethod,
-        partialResults:   ListBuffer[PartialResult[SetEntity, InstantiatedTypes]]
+        declaredMethod: DeclaredMethod,
+        declaredType:   ObjectType,
+        caller:         DeclaredMethod,
+        partialResults: ListBuffer[PartialResult[SetEntity, InstantiatedTypes]]
     ): Unit = {
         if (caller.name != "<init>") {
             partialResults += partialResult(declaredType, caller);
-            return;
+            return ;
         }
 
         // the constructor is called from another constructor. it is only an new instantiated
         // type if it was no super call. Thus the caller must be a subtype
         if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType)) {
             partialResults += partialResult(declaredType, caller);
-            return;
+            return ;
         }
 
         // actually it must be the direct subtype! -- we did the first check to return early
@@ -152,15 +152,15 @@ class InstantiatedTypesAnalysis private[analyses] (
             cf.superclassType.foreach { supertype ⇒
                 if (supertype != declaredType) {
                     partialResults += partialResult(declaredType, caller);
-                    return;
+                    return ;
                 }
             }
         }
 
         // if the caller is not available, we have to assume that it was no super call
         if (!caller.hasSingleDefinedMethod) {
-            partialResults +=  partialResult(declaredType, caller);
-            return;
+            partialResults += partialResult(declaredType, caller);
+            return ;
         }
 
         val callerMethod = caller.definedMethod
@@ -168,7 +168,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // if the caller has no body, we have to assume that it was no super call
         if (callerMethod.body.isEmpty) {
             partialResults += partialResult(declaredType, caller);
-            return;
+            return ;
         }
 
         val supercall = INVOKESPECIAL(
@@ -187,7 +187,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         // there can be only one super call, so there must be an explicit call
         if (pcsOfSuperCalls.size > 1) {
             partialResults += partialResult(declaredType, caller);
-            return;
+            return ;
         }
 
         // there is exactly the current call as potential super call, it still might no super
@@ -203,9 +203,9 @@ class InstantiatedTypesAnalysis private[analyses] (
     }
 
     private[this] def continuation(
-        declaredMethod:   DeclaredMethod,
-        declaredType:     ObjectType,
-        seenCallers: Set[DeclaredMethod]
+        declaredMethod: DeclaredMethod,
+        declaredType:   ObjectType,
+        seenCallers:    Set[DeclaredMethod]
     )(someEPS: SomeEPS): PropertyComputationResult = {
         val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
         processCallers(declaredMethod, declaredType, eps, eps.ub, seenCallers)
@@ -213,7 +213,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     private def partialResult(
         declaredType: ObjectType,
-        caller: DeclaredMethod
+        caller:       DeclaredMethod
     ): PartialResult[SetEntity, InstantiatedTypes] = {
 
         // Subtypes of Throwable are tracked globally.
