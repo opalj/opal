@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.SetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 
@@ -89,7 +89,7 @@ class CallGraphTests extends PropertiesTest {
     def schedulersForPropagationBasedAlgorithms(selector: SetEntitySelector): Set[ComputationSpecification[FPCFAnalysis]] = {
         Set(
             // Still needed for arrays...
-            new SimpleInstantiatedTypesAnalysisScheduler(selector),
+            new ArrayInstantiationsAnalysisScheduler(selector),
             // Handles type instantiations.
             new InstantiatedTypesAnalysisScheduler(selector),
             // Creates callers/callees based on locally available types.

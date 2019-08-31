@@ -35,6 +35,7 @@ public class StaticMethodFlows {
         externalTypeFilter();
         returnOptimization();
         genericContainer();
+        throwableInstantiation();
     }
 
     // === Parameter flow ===
@@ -438,6 +439,18 @@ public class StaticMethodFlows {
         // This method's parameter is a raw type.
         Object obj = c.get();
         sink(obj);
+    }
+
+    // === Throwable instantiation ===
+    // Subtypes of Throwable are tracked globally. Thus, even though they are instantiated
+    // locally, the type is added to the global type set instead of the method's type set.
+    // This is due to the fact that exception handling in Java causes non-standard,
+    // hard to track flows of data.
+
+    @AvailableTypes // Empty set. "Exception" is added to the global type set instead.
+    private static void throwableInstantiation() {
+        Exception e = new Exception();
+        sink(e);
     }
 
     // === Test Class Hierarchies ===

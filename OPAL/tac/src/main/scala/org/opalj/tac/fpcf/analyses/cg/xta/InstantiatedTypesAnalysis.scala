@@ -200,7 +200,12 @@ class InstantiatedTypesAnalysis private[analyses] (
         caller:       DeclaredMethod,
         declaredType: ObjectType
     ): PartialResult[SetEntity, InstantiatedTypes] = {
-        val setEntity = setEntitySelector(caller)
+        val setEntity =
+            if (classHierarchy.isSubtypeOf(declaredType, ObjectType.Throwable))
+                project
+            else
+                setEntitySelector(caller)
+
         PartialResult[SetEntity, InstantiatedTypes](
             setEntity,
             InstantiatedTypes.key,

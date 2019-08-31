@@ -6,11 +6,23 @@ package analyses
 package cg
 package xta
 
+import org.opalj.br.ArrayType
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.instructions.CreateNewArrayInstruction
+import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimUBP
@@ -20,18 +32,6 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.br.ArrayType
-import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.instructions.NEW
-import org.opalj.br.Method
-import org.opalj.br.ReferenceType
-import org.opalj.br.instructions.CreateNewArrayInstruction
-import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -49,8 +49,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Andreas Bauer
  */
-// TODO AB replace later with a more sophisticated analysis (based on the RTA one)
-final class SimpleInstantiatedTypesAnalysis(
+final class ArrayInstantiationsAnalysis(
         val project:     SomeProject,
         selectSetEntity: SetEntitySelector
 ) extends ReachableMethodAnalysis {
@@ -65,8 +64,8 @@ final class SimpleInstantiatedTypesAnalysis(
         })
 
         // Exception types are tracked globally.
-        val instantiatedExceptionTypes =
-            instantiatedObjectTypes.filter(classHierarchy.isSubtypeOf(_, ObjectType.Throwable))
+        val (instantiatedExceptionTypes, instantiatedNonExceptionTypes) =
+            instantiatedObjectTypes.partition(classHierarchy.isSubtypeOf(_, ObjectType.Throwable))
         val exceptionTypePartialResult =
             if (instantiatedExceptionTypes.nonEmpty)
                 Some(PartialResult(
@@ -88,7 +87,7 @@ final class SimpleInstantiatedTypesAnalysis(
             PartialResult(
                 targetSetEntity,
                 InstantiatedTypes.key,
-                update(targetSetEntity, UIDSet((instantiatedObjectTypes ++ instantiatedArrays).toSeq: _*))
+                update(targetSetEntity, UIDSet((instantiatedNonExceptionTypes ++ instantiatedArrays).toSeq: _*))
             ),
             exceptionTypePartialResult ++ multidimensionalArrayPartialResults
         )
@@ -171,12 +170,12 @@ final class SimpleInstantiatedTypesAnalysis(
     }
 }
 
-class SimpleInstantiatedTypesAnalysisScheduler(
+class ArrayInstantiationsAnalysisScheduler(
         selectSetEntity: SetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
-        val analysis = new SimpleInstantiatedTypesAnalysis(project, selectSetEntity)
+        val analysis = new ArrayInstantiationsAnalysis(project, selectSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }

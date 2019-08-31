@@ -13,7 +13,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.SetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.xta.SimpleInstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 
@@ -43,7 +43,7 @@ trait PropagationBasedCallGraphKey extends AbstractCallGraphKey {
         // TODO AB Configure this properly depending on library/application (see: RTA key)
         List(
             new PropagationBasedCallGraphAnalysisScheduler(theSetEntitySelector),
-            new SimpleInstantiatedTypesAnalysisScheduler(theSetEntitySelector),
+            new ArrayInstantiationsAnalysisScheduler(theSetEntitySelector),
             new TypePropagationAnalysisScheduler(theSetEntitySelector)
         )
     }
