@@ -8,12 +8,13 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.ComputationSpecification
+import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
+import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.SetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 
@@ -40,9 +41,9 @@ trait PropagationBasedCallGraphKey extends AbstractCallGraphKey {
     ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
         val theSetEntitySelector = setEntitySelector()
 
-        // TODO AB Configure this properly depending on library/application (see: RTA key)
         List(
             new PropagationBasedCallGraphAnalysisScheduler(theSetEntitySelector),
+            new InstantiatedTypesAnalysisScheduler(theSetEntitySelector),
             new ArrayInstantiationsAnalysisScheduler(theSetEntitySelector),
             new TypePropagationAnalysisScheduler(theSetEntitySelector)
         )
