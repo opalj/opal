@@ -91,7 +91,9 @@ final class TypePropagationAnalysis private[analyses] (
             case stmt @ Assignment(_, _, expr) if expr.isFieldRead ⇒ {
                 val fieldRead = expr.asFieldRead
                 if (fieldRead.declaredFieldType.isReferenceType) {
-                    // Checkcast optimization. TODO document.
+                    // Internally, generic fields have type "Object" due to type erasure. In many cases
+                    // (but not all!), the Java compiler will place the "actual" return type within a checkcast
+                    // instruction right after the field read instruction.
                     val nextInstruction = bytecode.instructions(bytecode.pcOfNextInstruction(stmt.pc))
                     val mostPreciseFieldType =
                         if (nextInstruction.isCheckcast)
@@ -195,20 +197,22 @@ final class TypePropagationAnalysis private[analyses] (
             }
         }
     }
+    
+    private def isIgnoredCallee(callee: DeclaredMethod): Boolean = {
+        // Special case: Object.<init> is implicitly called as a super call by any method X.<init> when X does
+        // not have a supertype.
+        // The "this" type X will flow to the type set of Object.<init>. Since Object.<init> is usually
+        // part of the external world, the external world type set is then polluted with any type which
+        // was constructed anywhere in the program.
+        callee.declaringClassType == ObjectType.Object && callee.name == "<init>"
+    }
 
     private def processCallees(callees: Callees)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         val bytecode = state.method.definedMethod.body.get
         for {
             pc ← callees.callSitePCs
             callee ← callees.callees(pc)
-            if !state.isSeenCallee(pc, callee)
-
-            // Special case: Object.<init> is implicitly called as a super call by any method X.<init>.
-            // The "this" type X will flow to the type set of Object.<init>. Since Object.<init> is usually
-            // part of the external world, the external world type set is then polluted with any types which
-            // was constructed anywhere in the program.
-            // TODO AB Maybe this case can be handled more gracefully. There is some more info in the paper.
-            if !(callee.declaringClassType == ObjectType.Object && callee.name == "<init>")
+            if !state.isSeenCallee(pc, callee) && !isIgnoredCallee(callee)
         } {
             // Some sanity checks ...
             // Methods with multiple defined methods should never appear as callees.
@@ -265,6 +269,7 @@ final class TypePropagationAnalysis private[analyses] (
 
         // This is the only place where we can find out whether a VirtualDeclaredMethod is static or not!
         val isStaticCall = bytecode.instructions(pc).isInstanceOf[INVOKESTATIC]
+        // Sanity check.
         assert(!callee.hasSingleDefinedMethod || !isStaticCall || (isStaticCall && callee.asDefinedMethod.definedMethod.isStatic))
 
         // If the call is not static, we need to take the implicit "this" parameter into account.
