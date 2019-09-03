@@ -361,34 +361,13 @@ final class TypePropagationAnalysis private[analyses] (
             val partialResult = PartialResult[E, InstantiatedTypes](
                 targetSetEntity,
                 InstantiatedTypes.key,
-                updateInstantiatedTypes(targetSetEntity, filteredTypes)
+                InstantiatedTypes.update(targetSetEntity, filteredTypes)
             )
 
             Some(partialResult)
         } else {
             None
         }
-    }
-
-    // TODO AB something like this appears in several places; should maybe move to some Utils class
-    private def updateInstantiatedTypes[E >: Null <: Entity](
-        entity:               E,
-        newInstantiatedTypes: UIDSet[ReferenceType]
-    )(
-        eop: EOptionP[E, InstantiatedTypes]
-    ): Option[InterimEP[E, InstantiatedTypes]] = eop match {
-        case InterimUBP(ub: InstantiatedTypes) ⇒
-            val newUB = ub.updated(newInstantiatedTypes)
-            if (newUB.types.size > ub.types.size)
-                Some(InterimEUBP(entity, newUB))
-            else
-                None
-
-        case _: EPK[_, _] ⇒
-            val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
-            Some(InterimEUBP(entity, newUB))
-
-        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
 
     private def returnResults(

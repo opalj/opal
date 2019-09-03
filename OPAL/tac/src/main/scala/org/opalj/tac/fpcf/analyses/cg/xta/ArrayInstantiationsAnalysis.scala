@@ -9,7 +9,6 @@ package xta
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -17,13 +16,7 @@ import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CreateNewArrayInstruction
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.InterimEP
-import org.opalj.fpcf.InterimEUBP
-import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -67,7 +60,7 @@ final class ArrayInstantiationsAnalysis(
             PartialResult(
                 targetSetEntity,
                 InstantiatedTypes.key,
-                update(targetSetEntity, UIDSet(instantiatedArrays.toSeq: _*))
+                InstantiatedTypes.update(targetSetEntity, UIDSet(instantiatedArrays.toSeq: _*))
             ),
             multidimensionalArrayPartialResults
         )
@@ -103,31 +96,14 @@ final class ArrayInstantiationsAnalysis(
 
             val targetAT = ArrayType(dim + 1, at.elementType)
             val assignedAT = targetAT.componentType.asArrayType
-            buffer += PartialResult(targetAT, InstantiatedTypes.key, update(targetAT, UIDSet(assignedAT)))
+            buffer += PartialResult(
+                targetAT,
+                InstantiatedTypes.key,
+                InstantiatedTypes.update(targetAT, UIDSet(assignedAT))
+            )
         }
 
         buffer.result()
-    }
-
-    // TODO AB code duplication; something like this appears in many places
-    def update[E <: Entity](
-        entity:               E,
-        newInstantiatedTypes: UIDSet[ReferenceType]
-    )(
-        eop: EOptionP[E, InstantiatedTypes]
-    ): Option[InterimEP[E, InstantiatedTypes]] = eop match {
-        case InterimUBP(ub: InstantiatedTypes) ⇒
-            val newUB = ub.updated(newInstantiatedTypes)
-            if (newUB.types.size > ub.types.size)
-                Some(InterimEUBP(entity, newUB))
-            else
-                None
-
-        case _: EPK[_, _] ⇒
-            val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
-            Some(InterimEUBP(entity, newUB))
-
-        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
 }
 

@@ -6,8 +6,13 @@ package properties
 package cg
 
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
+import org.opalj.fpcf.InterimEP
+import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
@@ -82,6 +87,39 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
                     throw new IllegalStateException(s"No analysis is scheduled for property: $name")
             }
         )
+    }
+
+    /**
+     * Returns an update function to use for PartialResults.
+     *
+     * If the entity has a pre-existing type set, the update function performs a set union of
+     * the existing and new types. If the type set does not exist, it will be newly created with
+     * the given type set.
+     *
+     * @param entity The entity to update.
+     * @param newInstantiatedTypes Set of new types to add to the entity's type set.
+     * @param eop The state of the property when the update takes place.
+     * @tparam E The type of the entity.
+     * @return Returns the new property state when the update changed the property, otherwise None.
+     */
+    def update[E >: Null <: Entity](
+        entity:               E,
+        newInstantiatedTypes: UIDSet[ReferenceType]
+    )(
+        eop: EOptionP[E, InstantiatedTypes]
+    ): Option[InterimEP[E, InstantiatedTypes]] = eop match {
+        case InterimUBP(ub: InstantiatedTypes) ⇒
+            val newUB = ub.updated(newInstantiatedTypes)
+            if (newUB.types.size > ub.types.size)
+                Some(InterimEUBP(entity, newUB))
+            else
+                None
+
+        case _: EPK[_, _] ⇒
+            val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
+            Some(InterimEUBP(entity, newUB))
+
+        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
     }
 }
 
