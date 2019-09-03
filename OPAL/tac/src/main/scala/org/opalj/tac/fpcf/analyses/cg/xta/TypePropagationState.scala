@@ -21,7 +21,6 @@ final class TypePropagationState(
         val setEntity:                             SetEntity,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
 
-        // TODO AB Maybe this can be incorporated into the _backwardPropagationDependees?
         private[this] var _ownInstantiatedTypesDependee: EOptionP[SetEntity, InstantiatedTypes],
         private[this] var _calleeDependee:               EOptionP[DefinedMethod, Callees]
 ) extends TACAIBasedAnalysisState {
@@ -187,16 +186,14 @@ final class TypePropagationState(
     override def dependees: List[SomeEOptionP] = {
         var dependees = super.dependees
 
-        // TODO AB Re-check these.
-
         dependees ::= _ownInstantiatedTypesDependee
 
         if (calleeDependee.isDefined)
             dependees ::= calleeDependee.get
 
-        // TODO AB Copy must be immutable, "view" to the map?
-        if (_backwardPropagationDependees.nonEmpty)
-            dependees ++= _backwardPropagationDependees.values
+        // Note: The values are copied here. The "++" operator on List
+        // forces immediate evaluation of the map values iterator.
+        dependees ++= _backwardPropagationDependees.values
 
         dependees
     }
