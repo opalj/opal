@@ -255,7 +255,7 @@ object InstantiatedTypesAnalysisScheduler extends FPCFTriggeredAnalysisScheduler
     }
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        val initialInstantiatedTypes = UIDSet(p.get(InitialInstantiatedTypesKey).toSeq: _*)
+        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
 
         ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
             case _: EPK[_, _] ⇒ InterimEUBP(p, org.opalj.br.fpcf.properties.cg.InstantiatedTypes(initialInstantiatedTypes))
