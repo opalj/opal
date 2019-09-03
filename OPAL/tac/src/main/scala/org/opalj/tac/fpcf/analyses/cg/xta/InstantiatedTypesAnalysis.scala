@@ -6,18 +6,18 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.PCAndInstruction
-import org.opalj.br.ReferenceType
+import org.opalj.br._
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
@@ -38,7 +38,9 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -265,15 +267,12 @@ object InstantiatedTypesAnalysis {
 }
 
 class InstantiatedTypesAnalysisScheduler(
-        val setEntitySelector: SetEntitySelector
-) extends FPCFTriggeredAnalysisScheduler {
+        val selectSetEntity: SetEntitySelector
+) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override type InitializationData = Null
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        InstantiatedTypes,
-        Callers
-    )
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes, Callers)
 
     override def triggeredBy: PropertyKey[Callers] = Callers.key
 
@@ -282,30 +281,181 @@ class InstantiatedTypesAnalysisScheduler(
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new InstantiatedTypesAnalysis(p, setEntitySelector)
+        val analysis = new InstantiatedTypesAnalysis(p, selectSetEntity)
         ps.registerTriggeredComputation(triggeredBy, analysis.analyze)
         analysis
     }
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        // TODO AB Is this needed or can this be removed?
-        //val initialInstantiatedTypes = UIDSet(p.get(InitialInstantiatedTypesKey).toSeq: _*)
-
-        //ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
-        //    case _: EPK[_, _] ⇒ InterimEUBP(p, org.opalj.br.fpcf.properties.cg.InstantiatedTypes(initialInstantiatedTypes))
-        //    case eps          ⇒ throw new IllegalStateException(s"unexpected property: $eps")
-        //}
-
+        assignInitialTypeSets(p, ps)
         null
     }
 
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
+    def assignInitialTypeSets(p: SomeProject, ps: PropertyStore): Unit = {
+        val packageIsClosed = p.get(ClosedPackagesKey)
+        val declaredMethods = p.get(DeclaredMethodsKey)
+        val entryPoints = p.get(InitialEntryPointsKey)
+        val initialInstantiatedTypes = p.get(InitialInstantiatedTypesKey)
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
+        // While processing entry points and fields, we keep track of all array types we see, as well as subtypes and
+        // lower-dimensional types. These types also need to be pre-initialized. Note: This set only contains ArrayTypes
+        // whose element type is an ObjectType. Arrays of primitive types can be ignored.
+        val seenArrayTypes = mutable.Set[ArrayType]()
 
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
+        def initialize(setEntity: SetEntity, types: Traversable[ReferenceType]): Unit = {
+            ps.preInitialize(setEntity, InstantiatedTypes.key) {
+                case UBP(typeSet) ⇒
+                    InterimEUBP(setEntity, typeSet.updated(types))
+                case _: EPK[_, _] ⇒
+                    InterimEUBP(setEntity, InstantiatedTypes(UIDSet(types.toSeq: _*)))
+                case eps ⇒
+                    sys.error(s"unexpected property: $eps")
+            }
+        }
+
+        def isRelevantArrayType(rt: Type): Boolean =
+            rt.isArrayType && rt.asArrayType.elementType.isObjectType
+
+        // For each method which is also an entry point, we assume that the caller has passed all subtypes of the
+        // method's parameter types to the method.
+        for (
+            ep ← entryPoints;
+            dm = declaredMethods(ep)
+        ) {
+            // TODO AB Sanity check: If this throws, there is a bug here.
+            if (dm.declaringClassType != ep.classFile.thisType) {
+                sys.error("Irrelevant method for initial type assignment.")
+            }
+
+            val typeFilters = mutable.Set[ReferenceType]()
+            val arrayTypeAssignments = mutable.Set[ArrayType]()
+
+            // It's possible that this could throw.
+            if (!dm.definedMethod.isStatic) {
+                typeFilters += dm.declaringClassType
+            }
+
+            for (pt ← dm.descriptor.parameterTypes) {
+                if (pt.isObjectType) {
+                    typeFilters += pt.asObjectType
+                } else if (isRelevantArrayType(pt)) {
+                    seenArrayTypes += pt.asArrayType
+
+                    val dim = pt.asArrayType.dimensions
+                    val et = pt.asArrayType.elementType.asObjectType
+                    p.classHierarchy.allSubtypesForeachIterator(et, reflexive = true).foreach { subtype ⇒
+                        val at = ArrayType(dim, subtype)
+                        arrayTypeAssignments += at
+                    }
+                }
+            }
+
+            // Initial assignments of ObjectTypes
+            val objectTypeAssignments = initialInstantiatedTypes.filter(iit ⇒ typeFilters.exists(tf ⇒
+                p.classHierarchy.isSubtypeOf(iit, tf)))
+
+            val initialAssignment = arrayTypeAssignments ++ objectTypeAssignments
+
+            val dmSetEntity = selectSetEntity(dm)
+
+            initialize(dmSetEntity, initialAssignment)
+        }
+
+        // Returns true if the field's type indicates that the field should be pre-initialized.
+        def fieldIsRelevant(f: Field): Boolean = {
+            // Only fields which are ArrayType or ObjectType are relevant.
+            f.fieldType.isReferenceType &&
+                // If the field is an ArrayType, then the array's element type must be an ObjectType.
+                // In other words: We don't care about arrays of primitive types (e.g. int[]) which
+                // do not have to be pre-initialized.
+                (!f.fieldType.isArrayType || f.fieldType.asArrayType.elementType.isObjectType)
+        }
+
+        // Returns true if a field can be written by the user of a library containing that field.
+        def fieldIsAccessible(f: Field): Boolean = {
+            // Public fields can always be accessed.
+            f.isPublic ||
+                // Protected fields can only be accessed by subclasses. In that case, the library
+                // user can create a subclass of the type containing the field and add a setter method.
+                // This only applies if the field's type can be extended in the first place.
+                (f.isProtected && !f.classFile.isEffectivelyFinal) ||
+                // If the field is package private, it can only be written if the package is
+                // open for modification. In that case, the library user can put a method
+                // writing that field into the field's type's namespace.
+                (f.isPackagePrivate && !packageIsClosed(f.classFile.thisType.packageName))
+        }
+
+        for (
+            iit ← initialInstantiatedTypes;
+            // Only object types should be initially instantiated.
+            ot = iit.asObjectType
+        ) {
+            // Assign initial types to all accessable fields.
+            p.classFile(ot) match {
+                case Some(cf) ⇒
+                    for (f ← cf.fields if fieldIsRelevant(f) && f.isNotFinal && fieldIsAccessible(f)) {
+                        val fieldType = f.fieldType.asReferenceType
+
+                        val initialAssignments = fieldType match {
+                            case ot: ObjectType ⇒
+                                initialInstantiatedTypes.filter(
+                                    p.classHierarchy.isSubtypeOf(_, ot)
+                                )
+
+                            case at: ArrayType ⇒
+                                seenArrayTypes += at
+
+                                val dim = at.dimensions
+                                val et = at.elementType.asObjectType
+                                p.classHierarchy.allSubtypes(et, reflexive = true).map(
+                                    ArrayType(dim, _)
+                                )
+
+                        }
+
+                        val fieldSetEntity = selectSetEntity(f)
+                        initialize(fieldSetEntity, initialAssignments)
+                    }
+                case None ⇒
+                    // Sanity check. If some other class than String is not available, there is probably a bug here.
+                    if (ot != ObjectType.String)
+                        sys.error(s"Class file of $ot is not available.")
+            }
+        }
+
+        // Next, process all ArrayTypes that have been seen while processing entry points and fields,
+        // and initialize their type sets.
+
+        // Remember which ArrayTypes were processed, so we don't do it twice.
+        val initializedArrayTypes = mutable.Set[ArrayType]()
+
+        def initializeArrayType(at: ArrayType): Unit = {
+            // If this type has already been initialized, we skip it.
+            if (initializedArrayTypes.contains(at)) {
+                return ;
+            }
+
+            initializedArrayTypes += at
+
+            val et = at.elementType.asObjectType
+            val subtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
+
+            val dim = at.dimensions
+            if (dim > 1) {
+                // Initialize multidimensional ArrayType. E.g., if at == A[][] and A is a supertype of A1,
+                // we need to assign A[] and A1[] to the type set of A[][].
+                val assignedArrayTypes = subtypes.map(ArrayType(dim - 1, _))
+                initialize(at, assignedArrayTypes)
+
+                // After that, we also need to initialize the ArrayTypes which were just assigned. It is possible
+                // that these were types which were not initially seen when processing entry points and fields.
+                assignedArrayTypes foreach initializeArrayType
+            } else {
+                // If dim == 1, we just need to assign the "pure" ObjectTypes to the ArrayType.
+                initialize(at, subtypes)
+            }
+        }
+
+        seenArrayTypes foreach initializeArrayType
+    }
 }
