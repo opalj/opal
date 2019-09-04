@@ -7,29 +7,26 @@ package cg
 package xta
 
 import org.opalj.br._
-import org.opalj.br.analyses.cg.ClosedPackagesKey
-import org.opalj.br.analyses.cg.InitialEntryPointsKey
-import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.NEW
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.NoResult
 import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.PropertyBounds
@@ -228,7 +225,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         PartialResult[SetEntity, InstantiatedTypes](
             setEntity,
             InstantiatedTypes.key,
-            InstantiatedTypesAnalysis.update(setEntity, UIDSet(declaredType))
+            InstantiatedTypes.update(setEntity, UIDSet(declaredType))
         )
     }
 
@@ -240,30 +237,6 @@ class InstantiatedTypesAnalysis private[analyses] (
             case _              ⇒ UIDSet.empty
         }
     }
-}
-
-object InstantiatedTypesAnalysis {
-    // TODO Duplication: Something like this appears in several places.
-    def update[E >: Null <: Entity](
-        entity:               E,
-        newInstantiatedTypes: UIDSet[ReferenceType]
-    )(
-        eop: EOptionP[E, InstantiatedTypes]
-    ): Option[InterimEP[E, InstantiatedTypes]] = eop match {
-        case InterimUBP(ub: InstantiatedTypes) ⇒
-            val newUB = ub.updated(newInstantiatedTypes)
-            if (newUB.types.size > ub.types.size)
-                Some(InterimEUBP(entity, newUB))
-            else
-                None
-
-        case _: EPK[_, _] ⇒
-            val newUB = InstantiatedTypes.apply(newInstantiatedTypes)
-            Some(InterimEUBP(entity, newUB))
-
-        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
-    }
-
 }
 
 class InstantiatedTypesAnalysisScheduler(
