@@ -22,6 +22,15 @@ import org.opalj.value.ValueInformation
 
 import scala.collection.mutable.ListBuffer
 
+/**
+ * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
+ * algorithms.
+ *
+ * @param project Project under analysis
+ * @param selectSetEntity Function which, for each entity, selects which entity its type set is attached to.
+ *
+ * @author Andreas Bauer
+ */
 final class TypePropagationAnalysis private[analyses] (
         val project:     SomeProject,
         selectSetEntity: SetEntitySelector
@@ -53,7 +62,6 @@ final class TypePropagationAnalysis private[analyses] (
 
     /**
      * Processes the method upon initialization. Finds field/array accesses and wires up dependencies accordingly.
-     * @param state
      */
     private def processTACStatements(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
         val bytecode = state.method.definedMethod.body.get

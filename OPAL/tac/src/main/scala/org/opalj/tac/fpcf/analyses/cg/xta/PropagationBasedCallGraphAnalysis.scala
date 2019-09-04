@@ -35,7 +35,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Andreas Bauer
  */
-// TODO Duplication: This is quite similar to the RTACallGraphAnalysis (except for the entity of the type property).
 class PropagationBasedCallGraphAnalysis private[analyses] (
         final val project:           SomeProject,
         final val setEntitySelector: SetEntitySelector

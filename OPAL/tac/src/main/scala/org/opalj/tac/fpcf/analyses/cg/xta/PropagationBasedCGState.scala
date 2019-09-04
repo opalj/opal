@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import scala.collection.mutable
 
 /**
- * Manages the state used by the [[PropagationBasedCallGraphAnalysis]].
+ * Manages the state of each method analyzed by [[PropagationBasedCallGraphAnalysis]].
  *
  * @author Andreas Bauer
  */

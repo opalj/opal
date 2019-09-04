@@ -88,7 +88,7 @@ class CallGraphTests extends PropertiesTest {
 
     def schedulersForPropagationBasedAlgorithms(selector: SetEntitySelector): Set[ComputationSpecification[FPCFAnalysis]] = {
         Set(
-            // Still needed for arrays...
+            // Handles array instantiations.
             new ArrayInstantiationsAnalysisScheduler(selector),
             // Handles type instantiations.
             new InstantiatedTypesAnalysisScheduler(selector),

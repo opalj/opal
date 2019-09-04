@@ -16,6 +16,15 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.collection.mutable
 
+/**
+ * Manages the state of each method analyzed by [[TypePropagationAnalysis]].
+ *
+ * @param method The method under analysis.
+ * @param setEntity The entity which holds the type set of the method.
+ * @param _tacDependee Dependee for the three-address code of the method.
+ * @param _ownInstantiatedTypesDependee Dependee for the type set of the method.
+ * @param _calleeDependee Dependee for the callee property of the method.
+ */
 final class TypePropagationState(
         override val method:                       DefinedMethod,
         val setEntity:                             SetEntity,
@@ -25,7 +34,6 @@ final class TypePropagationState(
         private[this] var _calleeDependee:               EOptionP[DefinedMethod, Callees]
 ) extends TACAIBasedAnalysisState {
 
-    // Array stuff
     var methodWritesArrays: Boolean = false
     var methodReadsArrays: Boolean = false
 

@@ -57,7 +57,6 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
                     prop.asInstanceOf[InstantiatedTypes].types
                 case None ⇒
                     implicit val ctx: LogContext = p.logContext
-                    // TODO AB maybe this should be an error after all, re-check later
                     OPALLogger.warn("property matcher", s"Expected property InstantiatedTypes was not computed for $entity.")
                     UIDSet.empty[ReferenceType]
             }
