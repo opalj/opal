@@ -112,8 +112,8 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                             source match {
                                 case Variable(index) if expr.asVar.definedBy.contains(index) ⇒
                                     TwoElementSet.twoElementSet(source, Variable(stmt.index))
-                                case ArrayElement(index, taintIndex) if expr.asVar.definedBy.contains(index) ⇒
-                                    TwoElementSet.twoElementSet(source, ArrayElement(stmt.index, taintIndex))
+                                /*case ArrayElement(index, taintIndex) if expr.asVar.definedBy.contains(index) ⇒
+                                    TwoElementSet.twoElementSet(source, ArrayElement(stmt.index, taintIndex))*/
                                 case _ ⇒ Collections.singleton(source)
                             }
                         }
@@ -183,13 +183,15 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                 } else if (true||(callee.descriptor.returnType eq ObjectType.Class) ||
                     (callee.descriptor.returnType eq ObjectType.Object) ||
                     (callee.descriptor.returnType eq ObjectType.String)) {
-                    source: Fact ⇒
-                        (source match {
+                    source: Fact ⇒ {
+                        val facts = new java.util.HashSet[Fact]()
+                        source match {
                             case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
-                                asCall(stmt.stmt).allParams.zipWithIndex.collect {
-                                    case (param, paramIdx) if param.asVar.definedBy.contains(index) ⇒
-                                        Variable(paramToIndex(paramIdx, !callee.isStatic))
-                                }.toSet[Fact]
+                                asCall(stmt.stmt).allParams.iterator.zipWithIndex.foreach {
+                                    case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
+                                        facts.add(Variable(paramToIndex(pIndex, !callee.isStatic)))
+                                    case _ ⇒ // Nothing to do
+                                }
 
                             /*case ArrayElement(index, taintedIndex) ⇒
                                 // Taint element of formal parameter if element of actual parameter is tainted
@@ -201,15 +203,18 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                             case InstanceField(index, declClass, taintedField) ⇒
                                 // Taint field of formal parameter if field of actual parameter is tainted
                                 // Only if the formal parameter is of a type that may have that field!
-                                asCall(stmt.stmt).allParams.zipWithIndex.collect {
-                                    case (param, paramIdx) if param.asVar.definedBy.contains(index) &&
-                                        (paramToIndex(paramIdx, !callee.isStatic) != -1 ||
+                                asCall(stmt.stmt).allParams.iterator.zipWithIndex.foreach {
+                                    case (param, pIndex) if param.asVar.definedBy.contains(index) &&
+                                        (paramToIndex(pIndex, !callee.isStatic) != -1 ||
                                             classHierarchy.isSubtypeOf(declClass, callee.classFile.thisType)) ⇒
-                                        InstanceField(paramToIndex(paramIdx, !callee.isStatic), declClass, taintedField)
-                                }.toSet[Fact]
-                            case sf: StaticField ⇒ Set(sf).asInstanceOf[Set[Fact]]
-                            case _               ⇒ Set.empty[Fact]
-                        }).asJava
+                                        facts.add(InstanceField(paramToIndex(pIndex, !callee.isStatic), declClass, taintedField))
+                                    case _ ⇒ // Nothing to do
+                                }
+                            case sf: StaticField ⇒ facts.add(sf)
+                            case _ ⇒
+                        }
+                        facts
+                    }
                 } else KillAll.v()
             }
 
