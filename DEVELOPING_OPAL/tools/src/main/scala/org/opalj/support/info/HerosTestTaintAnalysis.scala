@@ -406,9 +406,11 @@ object HerosTestTaintAnalysis {
             manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
         } { t ⇒ println(s"CG took ${t.toSeconds}") }
 
-        time {
-            val solver = new IFDSSolver(new HerosTestTaintAnalysis(p, new OpalICFG(p), initialMethods))
-            solver.solve()
-        } { t ⇒ println(s"Time: ${t.toSeconds}") }
+        for(i ← (0 until 5)) {
+            time {
+                val solver = new IFDSSolver(new HerosTestTaintAnalysis(p, new OpalICFG(p), initialMethods))
+                solver.solve()
+            } { t ⇒ println(s"Time: ${t.toSeconds}") }
+        }
     }
 }
