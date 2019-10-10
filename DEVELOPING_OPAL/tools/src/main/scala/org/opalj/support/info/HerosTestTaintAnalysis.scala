@@ -159,6 +159,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                 }
 
             override def getCallFlowFunction(stmt: Statement, callee: Method): FlowFunction[Fact] = {
+                val allParams = asCall(stmt.stmt).allParams
                 if (callee.name == "sink") {
                     source: Fact ⇒
                         {
@@ -174,7 +175,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                     source: Fact ⇒
                         {
                             source match {
-                                case Variable(index) if asCall(stmt.stmt).allParams.exists(p ⇒ p.asVar.definedBy.contains(index)) ⇒
+                                case Variable(index) if asCall(stmt.stmt).params.exists(p ⇒ p.asVar.definedBy.contains(index)) ⇒
                                     println(s"Found flow: $stmt")
                                 case _ ⇒
                             }
@@ -188,7 +189,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                             val facts = new java.util.HashSet[Fact]()
                             source match {
                                 case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
-                                    asCall(stmt.stmt).allParams.iterator.zipWithIndex.foreach {
+                                    allParams.iterator.zipWithIndex.foreach {
                                         case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
                                             facts.add(Variable(paramToIndex(pIndex, !callee.isStatic)))
                                         case _ ⇒ // Nothing to do
@@ -204,7 +205,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                                 case InstanceField(index, declClass, taintedField) ⇒
                                     // Taint field of formal parameter if field of actual parameter is tainted
                                     // Only if the formal parameter is of a type that may have that field!
-                                    asCall(stmt.stmt).allParams.iterator.zipWithIndex.foreach {
+                                    allParams.iterator.zipWithIndex.foreach {
                                         case (param, pIndex) if param.asVar.definedBy.contains(index) &&
                                             (paramToIndex(pIndex, !callee.isStatic) != -1 ||
                                                 classHierarchy.isSubtypeOf(declClass, callee.classFile.thisType)) ⇒
@@ -290,7 +291,7 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                     source: Fact ⇒
                         {
                             source match {
-                                case Variable(index) if call.allParams.exists(p ⇒ p.asVar.definedBy.contains(index)) ⇒
+                                case Variable(index) if call.params.exists(p ⇒ p.asVar.definedBy.contains(index)) ⇒
                                     /*if (HerosTestTaintAnalysis.initialMethods.contains(stmt.method)) {
                                         println(s"flow: "+stmt.method.toJava)
                                         Collections.singleton(source)
