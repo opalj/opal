@@ -50,7 +50,7 @@ import org.opalj.tac.LazyDetachedTACAIKey
 case object NullFact extends Fact
 
 class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map[Method, util.Set[Fact]])
-        extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
+    extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
 
     override def numThreads(): Int = 4
 
@@ -180,41 +180,42 @@ class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map
                             }
                             Collections.emptySet()
                         }
-                } else if (true||(callee.descriptor.returnType eq ObjectType.Class) ||
+                } else if (true || (callee.descriptor.returnType eq ObjectType.Class) ||
                     (callee.descriptor.returnType eq ObjectType.Object) ||
                     (callee.descriptor.returnType eq ObjectType.String)) {
-                    source: Fact ⇒ {
-                        val facts = new java.util.HashSet[Fact]()
-                        source match {
-                            case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
-                                asCall(stmt.stmt).allParams.iterator.zipWithIndex.foreach {
-                                    case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
-                                        facts.add(Variable(paramToIndex(pIndex, !callee.isStatic)))
-                                    case _ ⇒ // Nothing to do
-                                }
+                    source: Fact ⇒
+                        {
+                            val facts = new java.util.HashSet[Fact]()
+                            source match {
+                                case Variable(index) ⇒ // Taint formal parameter if actual parameter is tainted
+                                    asCall(stmt.stmt).allParams.iterator.zipWithIndex.foreach {
+                                        case (param, pIndex) if param.asVar.definedBy.contains(index) ⇒
+                                            facts.add(Variable(paramToIndex(pIndex, !callee.isStatic)))
+                                        case _ ⇒ // Nothing to do
+                                    }
 
-                            /*case ArrayElement(index, taintedIndex) ⇒
+                                /*case ArrayElement(index, taintedIndex) ⇒
                                 // Taint element of formal parameter if element of actual parameter is tainted
                                 asCall(stmt.stmt).allParams.zipWithIndex.collect {
                                     case (param, paramIdx) if param.asVar.definedBy.contains(index) ⇒
                                         ArrayElement(paramToIndex(paramIdx, !callee.isStatic), taintedIndex)
                                 }.asInstanceOf[Seq[Fact]]*/
 
-                            case InstanceField(index, declClass, taintedField) ⇒
-                                // Taint field of formal parameter if field of actual parameter is tainted
-                                // Only if the formal parameter is of a type that may have that field!
-                                asCall(stmt.stmt).allParams.iterator.zipWithIndex.foreach {
-                                    case (param, pIndex) if param.asVar.definedBy.contains(index) &&
-                                        (paramToIndex(pIndex, !callee.isStatic) != -1 ||
-                                            classHierarchy.isSubtypeOf(declClass, callee.classFile.thisType)) ⇒
-                                        facts.add(InstanceField(paramToIndex(pIndex, !callee.isStatic), declClass, taintedField))
-                                    case _ ⇒ // Nothing to do
-                                }
-                            case sf: StaticField ⇒ facts.add(sf)
-                            case _ ⇒
+                                case InstanceField(index, declClass, taintedField) ⇒
+                                    // Taint field of formal parameter if field of actual parameter is tainted
+                                    // Only if the formal parameter is of a type that may have that field!
+                                    asCall(stmt.stmt).allParams.iterator.zipWithIndex.foreach {
+                                        case (param, pIndex) if param.asVar.definedBy.contains(index) &&
+                                            (paramToIndex(pIndex, !callee.isStatic) != -1 ||
+                                                classHierarchy.isSubtypeOf(declClass, callee.classFile.thisType)) ⇒
+                                            facts.add(InstanceField(paramToIndex(pIndex, !callee.isStatic), declClass, taintedField))
+                                        case _ ⇒ // Nothing to do
+                                    }
+                                case sf: StaticField ⇒ facts.add(sf)
+                                case _               ⇒
+                            }
+                            facts
                         }
-                        facts
-                    }
                 } else KillAll.v()
             }
 
@@ -379,7 +380,8 @@ object HerosTestTaintAnalysis {
     def main(args: Array[String]): Unit = {
         val p = Project(new File(args(args.length - 1)))
 
-        p.getOrCreateProjectInformationKeyInitializationData(LazyDetachedTACAIKey,
+        p.getOrCreateProjectInformationKeyInitializationData(
+            LazyDetachedTACAIKey,
             (m: Method) ⇒ new PrimitiveTACAIDomain(p, m)
         )
 
@@ -406,7 +408,7 @@ object HerosTestTaintAnalysis {
             manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
         } { t ⇒ println(s"CG took ${t.toSeconds}") }
 
-        for(i ← (0 until 5)) {
+        for (i ← (0 until 5)) {
             time {
                 val solver = new IFDSSolver(new HerosTestTaintAnalysis(p, new OpalICFG(p), initialMethods))
                 solver.solve()

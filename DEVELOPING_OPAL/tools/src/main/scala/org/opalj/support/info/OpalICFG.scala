@@ -98,8 +98,8 @@ class OpalICFG(project: SomeProject) extends InterproceduralCFG[Statement, Metho
 
     def getCalleesOfCallAt(callInstr: Statement): JCollection[Method] = {
         val FinalEP(_, callees) = ps(declaredMethods(callInstr.method), Callees.key)
-        callees.callees(callInstr.stmt.pc).collect{
-            case d: DefinedMethod ⇒ List(d.definedMethod)
+        callees.callees(callInstr.stmt.pc).collect {
+            case d: DefinedMethod           ⇒ List(d.definedMethod)
             case md: MultipleDefinedMethods ⇒ md.definedMethods
         }.flatten.filter(_.body.isDefined).toList.asJava
     }
