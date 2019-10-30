@@ -268,7 +268,7 @@ class InstantiatedTypesAnalysisScheduler(
         val packageIsClosed = p.get(ClosedPackagesKey)
         val declaredMethods = p.get(DeclaredMethodsKey)
         val entryPoints = p.get(InitialEntryPointsKey)
-        val initialInstantiatedTypes = p.get(InitialInstantiatedTypesKey)
+        val initialInstantiatedTypes = p.get(InitialInstantiatedTypesKey).toSet
 
         // While processing entry points and fields, we keep track of all array types we see, as well as subtypes and
         // lower-dimensional types. These types also need to be pre-initialized. Note: This set only contains ArrayTypes
@@ -317,8 +317,10 @@ class InstantiatedTypesAnalysisScheduler(
                     val dim = pt.asArrayType.dimensions
                     val et = pt.asArrayType.elementType.asObjectType
                     p.classHierarchy.allSubtypesForeachIterator(et, reflexive = true).foreach { subtype ⇒
-                        val at = ArrayType(dim, subtype)
-                        arrayTypeAssignments += at
+                        if (initialInstantiatedTypes.contains(subtype)) {
+                            val at = ArrayType(dim, subtype)
+                            arrayTypeAssignments += at
+                        }
                     }
                 }
             }
@@ -380,7 +382,7 @@ class InstantiatedTypesAnalysisScheduler(
 
                                 val dim = at.dimensions
                                 val et = at.elementType.asObjectType
-                                p.classHierarchy.allSubtypes(et, reflexive = true).map(
+                                p.classHierarchy.allSubtypes(et, reflexive = true).intersect(initialInstantiatedTypes).map(
                                     ArrayType(dim, _)
                                 )
 
@@ -411,7 +413,7 @@ class InstantiatedTypesAnalysisScheduler(
             initializedArrayTypes += at
 
             val et = at.elementType.asObjectType
-            val subtypes = p.classHierarchy.allSubtypes(et, reflexive = true)
+            val subtypes = p.classHierarchy.allSubtypes(et, reflexive = true).intersect(initialInstantiatedTypes)
 
             val dim = at.dimensions
             if (dim > 1) {
