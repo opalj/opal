@@ -81,9 +81,9 @@ final class TypePropagationAnalysis private[analyses] (
                             fieldRead.declaredFieldType.asReferenceType
 
                     fieldRead.resolveField match {
-                        case Some(f: Field) ⇒
+                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) ⇒
                             registerEntityForBackwardPropagation(f, mostPreciseFieldType)
-                        case None ⇒
+                        case _ ⇒
                             val ef = ExternalField(fieldRead.declaringClass, fieldRead.name, fieldRead.declaredFieldType)
                             registerEntityForBackwardPropagation(ef, mostPreciseFieldType)
                     }
@@ -92,9 +92,9 @@ final class TypePropagationAnalysis private[analyses] (
             case fieldWrite: FieldWriteAccessStmt[DUVar[ValueInformation]] ⇒ {
                 if (fieldWrite.declaredFieldType.isReferenceType) {
                     fieldWrite.resolveField match {
-                        case Some(f: Field) ⇒
+                        case Some(f: Field) if project.isProjectType(f.classFile.thisType) ⇒
                             registerEntityForForwardPropagation(f, UIDSet(f.fieldType.asReferenceType))
-                        case None ⇒
+                        case _ ⇒
                             val ef = ExternalField(fieldWrite.declaringClass, fieldWrite.name, fieldWrite.declaredFieldType)
                             registerEntityForForwardPropagation(ef, UIDSet(ef.declaredFieldType.asReferenceType))
                     }
