@@ -21,23 +21,23 @@ import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 
 /**
-  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
-  * Palsberg's propagation-based algorithms.
-  *
-  * @see [[AbstractCallGraphKey]] for further details.
-  *
-  * If the [[org.opalj.br.analyses.cg.LibraryEntryPointsFinder]] is scheduled
-  * the analysis will schedule
-  * [[org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis]].
-  *
-  * Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
-  * and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before
-  * hand.
-  * Furthermore, you can configure the analysis mode (Library or Application) in the configuration
-  * of these keys.
-  *
-  * @author Andreas Bauer
-  */
+ * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
+ * Palsberg's propagation-based algorithms.
+ *
+ * @see [[AbstractCallGraphKey]] for further details.
+ *
+ * If the [[org.opalj.br.analyses.cg.LibraryEntryPointsFinder]] is scheduled
+ * the analysis will schedule
+ * [[org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis]].
+ *
+ * Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
+ * and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before
+ * hand.
+ * Furthermore, you can configure the analysis mode (Library or Application) in the configuration
+ * of these keys.
+ *
+ * @author Andreas Bauer
+ */
 trait PropagationBasedCallGraphKey extends AbstractCallGraphKey {
 
     override protected def requirements: ProjectInformationKeys = {

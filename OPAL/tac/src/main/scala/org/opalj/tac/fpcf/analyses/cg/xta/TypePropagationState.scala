@@ -6,7 +6,12 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.{ClassHierarchy, DeclaredMethod, DefinedMethod, Method, PC, ReferenceType}
+import org.opalj.br.ClassHierarchy
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
@@ -111,7 +116,13 @@ final class TypePropagationState(
      * @return True if the set of filters has changed compared to the ones which were previously known, otherwise
      *         False.
      */
-    def registerForwardPropagationEntity(setEntity: SetEntity, typeFilters: UIDSet[ReferenceType])(implicit classHierarchy: ClassHierarchy): Boolean = {
+    def registerForwardPropagationEntity(
+        setEntity:   SetEntity,
+        typeFilters: UIDSet[ReferenceType]
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
+    ): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _forwardPropagationEntities.contains(setEntity)
         if (!alreadyExists) {
@@ -151,7 +162,13 @@ final class TypePropagationState(
     def backwardPropagationFilters(setEntity: SetEntity): UIDSet[ReferenceType] =
         _backwardPropagationFilters(setEntity)
 
-    def updateBackwardPropagationFilters(setEntity: SetEntity, typeFilters: UIDSet[ReferenceType])(implicit classHierarchy: ClassHierarchy): Boolean = {
+    def updateBackwardPropagationFilters(
+        setEntity:   SetEntity,
+        typeFilters: UIDSet[ReferenceType]
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
+    ): Boolean = {
         assert(typeFilters.nonEmpty)
         val alreadyExists = _backwardPropagationFilters.contains(setEntity)
         if (!alreadyExists) {

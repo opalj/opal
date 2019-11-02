@@ -44,7 +44,10 @@ final class ArrayInstantiationsAnalysis(
         selectSetEntity: SetEntitySelector
 ) extends ReachableMethodAnalysis {
 
-    override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
+    override def processMethod(
+        definedMethod: DefinedMethod,
+        tacEP:         EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
         val code = definedMethod.definedMethod.body.get
 
         val targetSetEntity = selectSetEntity(definedMethod)
@@ -83,7 +86,9 @@ final class ArrayInstantiationsAnalysis(
      * @param arrays ArrayTypes which were found to be instantiated within the method.
      * @return Partial results for the implicit assignments.
      */
-    def multidimensionalArrayInitialAssignments(arrays: Iterable[ArrayType]): Iterable[PartialResult[ArrayType, InstantiatedTypes]] = {
+    def multidimensionalArrayInitialAssignments(
+        arrays: Iterable[ArrayType]
+    ): Iterable[PartialResult[ArrayType, InstantiatedTypes]] = {
 
         val buffer = mutable.Iterable.newBuilder[PartialResult[ArrayType, InstantiatedTypes]]
 

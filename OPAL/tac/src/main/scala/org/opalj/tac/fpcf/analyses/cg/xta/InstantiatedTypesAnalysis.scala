@@ -295,11 +295,6 @@ class InstantiatedTypesAnalysisScheduler(
             ep ← entryPoints;
             dm = declaredMethods(ep)
         ) {
-            // TODO AB Sanity check: If this throws, there is a bug here.
-            if (dm.declaringClassType != ep.classFile.thisType) {
-                sys.error("Irrelevant method for initial type assignment.")
-            }
-
             val typeFilters = mutable.Set[ReferenceType]()
             val arrayTypeAssignments = mutable.Set[ArrayType]()
 
@@ -382,9 +377,10 @@ class InstantiatedTypesAnalysisScheduler(
 
                                 val dim = at.dimensions
                                 val et = at.elementType.asObjectType
-                                p.classHierarchy.allSubtypes(et, reflexive = true).intersect(initialInstantiatedTypes).map(
-                                    ArrayType(dim, _)
-                                )
+                                p.classHierarchy.allSubtypes(et, reflexive = true)
+                                    .intersect(initialInstantiatedTypes).map(
+                                        ArrayType(dim, _)
+                                    )
 
                         }
 

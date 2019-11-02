@@ -6,19 +6,36 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br._
+import org.opalj.br.ArrayType
+import org.opalj.br.Code
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Field
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf._
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.InterimPartialResult
+import org.opalj.fpcf.PartialResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyKind
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.value.ValueInformation
 
 import scala.collection.mutable.ListBuffer
 
@@ -26,9 +43,8 @@ import scala.collection.mutable.ListBuffer
  * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
  * algorithms.
  *
- * @param project Project under analysis
+ * @param project         Project under analysis
  * @param selectSetEntity Function which, for each entity, selects which entity its type set is attached to.
- *
  * @author Andreas Bauer
  */
 final class TypePropagationAnalysis private[analyses] (
@@ -40,7 +56,10 @@ final class TypePropagationAnalysis private[analyses] (
 
     private type State = TypePropagationState
 
-    override def processMethod(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): ProperPropertyComputationResult = {
+    override def processMethod(
+        definedMethod: DefinedMethod,
+        tacEP:         EPS[Method, TACAI]
+    ): ProperPropertyComputationResult = {
 
         val setEntity = selectSetEntity(definedMethod)
         val instantiatedTypesEOptP = propertyStore(setEntity, InstantiatedTypes.key)
@@ -89,7 +108,7 @@ final class TypePropagationAnalysis private[analyses] (
                     }
                 }
             }
-            case fieldWrite: FieldWriteAccessStmt[DUVar[ValueInformation]] ⇒ {
+            case fieldWrite: FieldWriteAccessStmt[_] ⇒ {
                 if (fieldWrite.declaredFieldType.isReferenceType) {
                     fieldWrite.resolveField match {
                         case Some(f: Field) if project.isProjectType(f.classFile.thisType) ⇒
@@ -103,7 +122,7 @@ final class TypePropagationAnalysis private[analyses] (
             case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID ⇒ {
                 state.methodReadsArrays = true
             }
-            case stmt: Stmt[DUVar[ValueInformation]] if stmt.astID == ArrayStore.ASTID ⇒ {
+            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID ⇒ {
                 state.methodWritesArrays = true
             }
             case _ ⇒
@@ -129,14 +148,24 @@ final class TypePropagationAnalysis private[analyses] (
             sys.error("received unexpected update")
     }
 
-    private def handleUpdateOfCallees(eps: EPS[DefinedMethod, Callees])(implicit state: State): ProperPropertyComputationResult = {
+    private def handleUpdateOfCallees(
+        eps: EPS[DefinedMethod, Callees]
+    )(
+        implicit
+        state: State
+    ): ProperPropertyComputationResult = {
         state.updateCalleeDependee(eps)
         implicit val partialResults: ListBuffer[SomePartialResult] = new ListBuffer[SomePartialResult]()
         processCallees(eps.ub)
         returnResults(partialResults)
     }
 
-    private def handleUpdateOfOwnTypeSet(eps: EPS[SetEntity, InstantiatedTypes])(implicit state: State): ProperPropertyComputationResult = {
+    private def handleUpdateOfOwnTypeSet(
+        eps: EPS[SetEntity, InstantiatedTypes]
+    )(
+        implicit
+        state: State
+    ): ProperPropertyComputationResult = {
         val previouslySeenTypes = state.ownInstantiatedTypes.size
         state.updateOwnInstantiatedTypesDependee(eps)
         val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
@@ -154,7 +183,12 @@ final class TypePropagationAnalysis private[analyses] (
         returnResults(partialResults)
     }
 
-    private def handleUpdateOfBackwardPropagationTypeSet(eps: EPS[SetEntity, InstantiatedTypes])(implicit state: State): ProperPropertyComputationResult = {
+    private def handleUpdateOfBackwardPropagationTypeSet(
+        eps: EPS[SetEntity, InstantiatedTypes]
+    )(
+        implicit
+        state: State
+    ): ProperPropertyComputationResult = {
         val setEntity = eps.e
         val previouslySeenTypes = state.seenTypes(setEntity)
         state.updateBackwardPropagationDependee(eps)
@@ -166,7 +200,13 @@ final class TypePropagationAnalysis private[analyses] (
         returnResults(propagationResult)
     }
 
-    private def processArrayTypes(unseenTypes: UIDSet[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+    private def processArrayTypes(
+        unseenTypes: UIDSet[ReferenceType]
+    )(
+        implicit
+        state:          State,
+        partialResults: ListBuffer[SomePartialResult]
+    ): Unit = {
         for (t ← unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
             if (state.methodWritesArrays) {
                 registerEntityForForwardPropagation(at, UIDSet(at.componentType.asReferenceType))
@@ -186,7 +226,13 @@ final class TypePropagationAnalysis private[analyses] (
         callee.declaringClassType == ObjectType.Object && callee.name == "<init>"
     }
 
-    private def processCallees(callees: Callees)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+    private def processCallees(
+        callees: Callees
+    )(
+        implicit
+        state:          State,
+        partialResults: ListBuffer[SomePartialResult]
+    ): Unit = {
         val bytecode = state.method.definedMethod.body.get
         for {
             pc ← callees.callSitePCs
@@ -198,7 +244,8 @@ final class TypePropagationAnalysis private[analyses] (
             assert(!callee.hasMultipleDefinedMethods)
             // Instances of DefinedMethod we see should only be those where the method is defined in the class file of
             // the declaring class type (i.e., it is not a DefinedMethod instance of some inherited method).
-            assert(!callee.hasSingleDefinedMethod || (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType))
+            assert(!callee.hasSingleDefinedMethod ||
+                (callee.declaringClassType == callee.asDefinedMethod.definedMethod.classFile.thisType))
 
             // Remember callee (with PC) so we don't have to process it again later.
             state.addSeenCallee(pc, callee)
@@ -209,35 +256,15 @@ final class TypePropagationAnalysis private[analyses] (
         }
     }
 
-    private def maybeRegisterMethodForBackwardPropagation(callee: DeclaredMethod, pc: Int, bytecode: Code)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
-        val returnValueIsUsed = {
-            val tacIndex = state.tac.pcToIndex(pc)
-            val tacInstr = state.tac.instructions(tacIndex)
-            tacInstr.isAssignment
-        }
-
-        if (returnValueIsUsed) {
-            // Internally, generic methods have return type "Object" due to type erasure. In many cases
-            // (but not all!), the Java compiler will place the "actual" return type within a checkcast
-            // instruction right after the call.
-            val mostPreciseReturnType = {
-                val nextPc = bytecode.pcOfNextInstruction(pc)
-                val nextInstruction = bytecode.instructions(nextPc)
-                if (nextInstruction.isCheckcast) {
-                    nextInstruction.asInstanceOf[CHECKCAST].referenceType
-                } else {
-                    callee.descriptor.returnType
-                }
-            }
-
-            // Return type could also be a basic type (i.e., int). We don't care about those.
-            if (mostPreciseReturnType.isReferenceType) {
-                registerEntityForBackwardPropagation(callee, mostPreciseReturnType.asReferenceType)
-            }
-        }
-    }
-
-    private def maybeRegisterMethodForForwardPropagation(callee: DeclaredMethod, pc: Int, bytecode: Code)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+    private def maybeRegisterMethodForForwardPropagation(
+        callee:   DeclaredMethod,
+        pc:       Int,
+        bytecode: Code
+    )(
+        implicit
+        state:          State,
+        partialResults: ListBuffer[SomePartialResult]
+    ): Unit = {
         val params = UIDSet.newBuilder[ReferenceType]
 
         for (param ← callee.descriptor.parameterTypes) {
@@ -265,9 +292,51 @@ final class TypePropagationAnalysis private[analyses] (
         registerEntityForForwardPropagation(callee, typeFilters)
     }
 
-    private def registerEntityForForwardPropagation(e: Entity, filters: UIDSet[ReferenceType])(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
-        // TODO AB If we register a method for both forward and backward propagation, this is called twice.
-        //  (-> Check if this is a problem for performance and maybe memoize the result?)
+    private def maybeRegisterMethodForBackwardPropagation(
+        callee:   DeclaredMethod,
+        pc:       Int,
+        bytecode: Code
+    )(
+        implicit
+        state:          State,
+        partialResults: ListBuffer[SomePartialResult]
+    ): Unit = {
+        val returnValueIsUsed = {
+            val tacIndex = state.tac.pcToIndex(pc)
+            val tacInstr = state.tac.instructions(tacIndex)
+            tacInstr.isAssignment
+        }
+
+        if (returnValueIsUsed) {
+            // Internally, generic methods have return type "Object" due to type erasure. In many cases
+            // (but not all!), the Java compiler will place the "actual" return type within a checkcast
+            // instruction right after the call.
+            val mostPreciseReturnType = {
+                val nextPc = bytecode.pcOfNextInstruction(pc)
+                val nextInstruction = bytecode.instructions(nextPc)
+                if (nextInstruction.isCheckcast) {
+                    nextInstruction.asInstanceOf[CHECKCAST].referenceType
+                } else {
+                    callee.descriptor.returnType
+                }
+            }
+
+            // Return type could also be a basic type (i.e., int). We don't care about those.
+            if (mostPreciseReturnType.isReferenceType) {
+                registerEntityForBackwardPropagation(callee, mostPreciseReturnType.asReferenceType)
+            }
+        }
+    }
+
+    private def registerEntityForForwardPropagation(
+        e:       Entity,
+        filters: UIDSet[ReferenceType]
+    )(
+        implicit
+        state:          State,
+        partialResults: ListBuffer[SomePartialResult]
+    ): Unit = {
+        // Propagation from and to the same entity can be ignored.
         val setEntity = selectSetEntity(e)
         if (setEntity == state.setEntity) {
             return ;
@@ -281,7 +350,14 @@ final class TypePropagationAnalysis private[analyses] (
         }
     }
 
-    private def registerEntityForBackwardPropagation(e: Entity, mostPreciseUpperBound: ReferenceType)(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+    private def registerEntityForBackwardPropagation(
+        e:                     Entity,
+        mostPreciseUpperBound: ReferenceType
+    )(
+        implicit
+        state:          State,
+        partialResults: ListBuffer[SomePartialResult]
+    ): Unit = {
         val setEntity = selectSetEntity(e)
         if (setEntity == state.setEntity) {
             return ;
