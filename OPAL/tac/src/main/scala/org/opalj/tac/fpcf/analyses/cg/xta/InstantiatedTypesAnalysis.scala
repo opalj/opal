@@ -298,7 +298,6 @@ class InstantiatedTypesAnalysisScheduler(
             val typeFilters = mutable.Set[ReferenceType]()
             val arrayTypeAssignments = mutable.Set[ArrayType]()
 
-            // It's possible that this could throw.
             if (!dm.definedMethod.isStatic) {
                 typeFilters += dm.declaringClassType
             }
