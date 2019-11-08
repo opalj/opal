@@ -73,7 +73,22 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-algorithm=CHA|RTA|PointsTo]"+"[-domain=domain]"+"[-callers=method]"+"[-callees=method]"+"[-writeCG=file]"+"[-writeTimings=file]"+"[-writePointsToSets=file]"+"[-main=package.MainClass]"+"[-tamiflex-log=logfile]"
+        "[-algorithm=CHA|RTA|PointsTo]"+
+            "[-domain=domain]"+
+            "[-callers=method]"+
+            "[-callees=method]"+
+            "[-writeCG=file]"+
+            "[-writeTimings=file]"+
+            "[-writePointsToSets=file]"+
+            "[-main=package.MainClass]"+
+            "[-tamiflex-log=logfile]"+
+            "[-finalizerAnalysis=<yes|no|default>]"+
+            "[-loadedClassesAnalysis=<yes|no|default>]"+
+            "[-staticInitializerAnalysis=<yes|no|default>]"+
+            "[-reflectionAnalysis=<yes|no|default>]"+
+            "[-serializationAnalysis=<yes|no|default>]"+
+            "[-threadRelatedCallsAnalysis=<yes|no|default>]"+
+            "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
     }
 
     private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo|PointsToScala)".r
@@ -89,7 +104,14 @@ object CallGraph extends ProjectAnalysisApplication {
                     !p.startsWith("-writeTimings=") &&
                     !p.startsWith("-writePointsToSets=") && // TODO: implement this
                     !p.startsWith("-main=") &&
-                    !p.startsWith("-tamiflex-log=")
+                    !p.startsWith("-tamiflex-log=") &&
+                    !p.startsWith("-finalizerAnalysis=") &&
+                    !p.startsWith("-loadedClassesAnalysis=") &&
+                    !p.startsWith("-staticInitializerAnalysis=") &&
+                    !p.startsWith("-reflectionAnalysis=") &&
+                    !p.startsWith("-serializationAnalysis=") &&
+                    !p.startsWith("-threadRelatedCallsAnalysis=") &&
+                    !p.startsWith("-configuredNativeMethodsAnalysis=")
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
     }
@@ -312,6 +334,28 @@ object CallGraph extends ProjectAnalysisApplication {
         val mainClassRegex = "-main=(.*)".r
         val tamiflexLogRegex = "-tamiflex-log=(.*)".r
 
+        val finalizerAnalysisRegex = "-finalizerAnalysis=(.*)".r
+        val loadedClassesAnalysisRegex = "-loadedClassesAnalysis=(.*)".r
+        val staticInitializerAnalysisRegex = "-staticInitializerAnalysis=(.*)".r
+        val reflectionAnalysisRegex = "-reflectionAnalysis=(.*)".r
+        val serializationAnalysisRegex = "-serializationAnalysis=(.*)".r
+        val threadRelatedCallsAnalysisRegex = "-threadRelatedCallsAnalysis=(.*)".r
+        val configuredNativeMethodsAnalysisRegex = "-configuredNativeMethodsAnalysis=(.*)".r
+
+        var newConfig = project.config
+        var modules = newConfig.getStringList("org.opalj.tac.cg.CallGraphKey.modules").asScala.toSet
+
+        def analyisOption(option: String, analysis: String): Unit = {
+            option match {
+                case "yes" ⇒
+                    modules += s"org.opalj.tac.fpcf.analyses.cg.${analysis}Scheduler"
+                case "no" ⇒
+                    modules -= s"org.opalj.tac.fpcf.analyses.cg.${analysis}Scheduler"
+                case "default" ⇒
+                case _         ⇒ throw new IllegalArgumentException(s"illegal value for $analysis")
+            }
+        }
+
         parameters.foreach {
             case domainRegex(domainClass) ⇒
                 if (tacDomain.isEmpty)
@@ -340,15 +384,29 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (tamiflexLog.isEmpty)
                     tamiflexLog = Some(fileName)
                 else throw new IllegalArgumentException("-tamiflex-log was set twice")
+            case finalizerAnalysisRegex(option) ⇒
+                analyisOption(option, "FinalizerAnalysis")
+            case loadedClassesAnalysisRegex(option) ⇒
+                analyisOption(option, "LoadedClassesAnalysis")
+            case staticInitializerAnalysisRegex(option) ⇒
+                analyisOption(option, "StaticInitializerAnalysis")
+            case reflectionAnalysisRegex(option) ⇒
+                analyisOption(option, "reflection.ReflectionRelatedCallsAnalysis")
+            case serializationAnalysisRegex(option) ⇒
+                analyisOption(option, "SerializationRelatedCallsAnalysis")
+            case threadRelatedCallsAnalysisRegex(option) ⇒
+                analyisOption(option, "ThreadRelatedCallsAnalysis")
+            case configuredNativeMethodsAnalysisRegex(option) ⇒
+                analyisOption(option, "ConfiguredNativeMethodsCallGraphAnalysis")
         }
 
-        var newConfig = if (tamiflexLog.isDefined)
-            project.config.withValue(
+        if (tamiflexLog.isDefined) {
+            newConfig = newConfig.withValue(
                 TamiFlexKey.configKey,
                 ConfigValueFactory.fromAnyRef(tamiflexLog.get)
             )
-        else
-            project.config
+            modules += "org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler"
+        }
 
         if (mainClass.isDefined) {
             val key = s"${InitialEntryPointsKey.ConfigKeyPrefix}entryPoints"
@@ -367,6 +425,11 @@ object CallGraph extends ProjectAnalysisApplication {
                 )
             )
         }
+      
+        newConfig = newConfig.withValue(
+            "org.opalj.tac.cg.CallGraphKey.modules",
+            ConfigValueFactory.fromIterable(modules.asJava)
+        )
 
         var projectTime: Seconds = Seconds.None
 
