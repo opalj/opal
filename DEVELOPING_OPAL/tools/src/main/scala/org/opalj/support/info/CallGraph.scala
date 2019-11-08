@@ -345,7 +345,7 @@ object CallGraph extends ProjectAnalysisApplication {
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
         val writeCGRegex = "-writeCG=(.*)".r
-        val writeCGRegex = "-writeStatistics=(.*)".r
+        val writeStatsRegex = "-writeStatistics=(.*)".r
         val writeTimingsRegex = "-writeTimings=(.*)".r
         val writePointsToSetsRegex = "-writePointsToSets=(.*)".r
         val mainClassRegex = "-main=(.*)".r
