@@ -78,6 +78,7 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-callers=method]"+
             "[-callees=method]"+
             "[-writeCG=file]"+
+            "[-writeStatistics=file]"+
             "[-writeTimings=file]"+
             "[-writePointsToSets=file]"+
             "[-main=package.MainClass]"+
@@ -101,6 +102,7 @@ object CallGraph extends ProjectAnalysisApplication {
                     !p.startsWith("-callers=") &&
                     !p.startsWith("-callees=") &&
                     !p.startsWith("-writeCG=") &&
+                    !p.startsWith("-writeStatistics=") &&
                     !p.startsWith("-writeTimings=") &&
                     !p.startsWith("-writePointsToSets=") && // TODO: implement this
                     !p.startsWith("-main=") &&
@@ -122,6 +124,7 @@ object CallGraph extends ProjectAnalysisApplication {
         callersSigs:  List[String],
         cgAlgorithm:  String,
         cgFile:       Option[String],
+        statsFile:    Option[String],
         timingsFile:  Option[String],
         pointsToFile: Option[String],
         projectTime:  Seconds
@@ -300,6 +303,18 @@ object CallGraph extends ProjectAnalysisApplication {
             CallGraphSerializer.writeCG(cg, new File(cgFile.get))
         }
 
+        if (statsFile.nonEmpty) {
+            val stats = new File(statsFile.get)
+            val statsWriter = new PrintWriter(new FileOutputStream(stats, true))
+            try {
+                stats.createNewFile()
+                statsWriter.println("methods;reachable;edges")
+                statsWriter.println(s"${allMethods.size};${reachableMethods.size};$numEdges")
+            } finally {
+                if (statsWriter != null) statsWriter.close()
+            }
+        }
+
         val message =
             s"""|# of methods: ${allMethods.size}
                 |# of reachable methods: ${reachableMethods.size}
@@ -320,6 +335,7 @@ object CallGraph extends ProjectAnalysisApplication {
         var callersSigs: List[String] = Nil
         var cgAlgorithm: String = "RTA"
         var cgFile: Option[String] = None
+        var statsFile: Option[String] = None
         var timingsFile: Option[String] = None
         var pointsToFile: Option[String] = None
         var mainClass: Option[String] = None
@@ -329,6 +345,7 @@ object CallGraph extends ProjectAnalysisApplication {
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
         val writeCGRegex = "-writeCG=(.*)".r
+        val writeCGRegex = "-writeStatistics=(.*)".r
         val writeTimingsRegex = "-writeTimings=(.*)".r
         val writePointsToSetsRegex = "-writePointsToSets=(.*)".r
         val mainClassRegex = "-main=(.*)".r
@@ -368,6 +385,10 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (cgFile.isEmpty)
                     cgFile = Some(fileName)
                 else throw new IllegalArgumentException("-writeCG was set twice")
+            case writeStatsRegex(fileName) ⇒
+                if (statsFile.isEmpty)
+                    statsFile = Some(fileName)
+                else throw new IllegalArgumentException("-writeStatistics was set twice")
             case writeTimingsRegex(fileName) ⇒
                 if (timingsFile.isEmpty)
                     timingsFile = Some(fileName)
@@ -425,7 +446,7 @@ object CallGraph extends ProjectAnalysisApplication {
                 )
             )
         }
-      
+
         newConfig = newConfig.withValue(
             "org.opalj.tac.cg.CallGraphKey.modules",
             ConfigValueFactory.fromIterable(modules.asJava)
@@ -450,6 +471,7 @@ object CallGraph extends ProjectAnalysisApplication {
             callersSigs,
             cgAlgorithm,
             cgFile,
+            statsFile,
             timingsFile,
             pointsToFile,
             projectTime
