@@ -11,7 +11,6 @@ import java.util.Calendar
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.collection.immutable.Chain
@@ -57,6 +56,8 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.log.LogContext
 import org.opalj.tac.cg.AbstractCallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
@@ -117,6 +118,7 @@ object Purity {
         callGraphKey:          AbstractCallGraphKey,
         withoutJDK:            Boolean,
         individual:            Boolean,
+        numThreads:            Int,
         closedWorldAssumption: Boolean,
         isLibrary:             Boolean,
         debug:                 Boolean,
@@ -171,6 +173,19 @@ object Purity {
             case None               ⇒ Set(domain)
             case Some(requirements) ⇒ requirements + domain
         }
+
+        project.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                implicit val lg: LogContext = project.logContext
+                if (numThreads == 0) {
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                } else {
+                    PropertyStoreKey.parallelismLevel = numThreads
+                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                }
+            }
+        )
 
         PropertyStore.updateDebug(debug)
         val ps = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
@@ -374,7 +389,7 @@ object Purity {
         var multiProjects = false
         var eager = false
         var evaluationDir: Option[File] = None
-        var numThreads = 0 // TODO set the number of threads of the property store
+        var numThreads = PropertyStoreKey.parallelismLevel
 
         // PARSING PARAMETERS
         var i = 0
@@ -542,6 +557,7 @@ object Purity {
                         callGraphKey,
                         withoutJDK,
                         individual,
+                        numThreads,
                         cwa,
                         isLibrary || (subp eq JRELibraryFolder),
                         debug,
@@ -560,6 +576,7 @@ object Purity {
                     callGraphKey,
                     withoutJDK,
                     individual,
+                    numThreads,
                     cwa,
                     isLibrary || (cp eq JRELibraryFolder),
                     debug,
