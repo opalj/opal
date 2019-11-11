@@ -57,7 +57,10 @@ import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.log.DevNullLogger
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.AbstractCallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
@@ -83,6 +86,8 @@ import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
  * @author Dominik Helm
  */
 object Purity {
+
+    OPALLogger.register(GlobalLogContext, DevNullLogger)
 
     def usage: String = {
         "Usage: java …PurityAnalysisEvaluation \n"+

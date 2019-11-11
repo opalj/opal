@@ -34,6 +34,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.log.DevNullLogger
+import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToScalaCallGraphKey
@@ -66,6 +67,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  * @author Florian Kuebler
  */
 object CallGraph extends ProjectAnalysisApplication {
+
+    OPALLogger.register(GlobalLogContext, DevNullLogger)
 
     override def title: String = "Call Graph Analysis"
 
@@ -134,8 +137,8 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                // val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                 val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                // val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 ps
             }
         )
@@ -381,8 +384,6 @@ object CallGraph extends ProjectAnalysisApplication {
                 case _         ⇒ throw new IllegalArgumentException(s"illegal value for $analysis")
             }
         }
-
-        OPALLogger.register(project.logContext, DevNullLogger)
 
         parameters.foreach {
             case domainRegex(domainClass) ⇒
