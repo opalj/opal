@@ -9,9 +9,7 @@ import java.io.PrintWriter
 import java.net.URL
 
 import scala.collection.JavaConverters._
-
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -34,6 +32,8 @@ import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.log.DevNullLogger
+import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToScalaCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
@@ -372,6 +372,8 @@ object CallGraph extends ProjectAnalysisApplication {
                 case _         ⇒ throw new IllegalArgumentException(s"illegal value for $analysis")
             }
         }
+
+        OPALLogger.register(project.logContext, DevNullLogger)
 
         parameters.foreach {
             case domainRegex(domainClass) ⇒
