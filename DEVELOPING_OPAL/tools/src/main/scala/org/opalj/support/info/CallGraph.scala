@@ -68,7 +68,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  */
 object CallGraph extends ProjectAnalysisApplication {
 
-    OPALLogger.register(GlobalLogContext, DevNullLogger)
+    OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
     override def title: String = "Call Graph Analysis"
 

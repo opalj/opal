@@ -87,7 +87,7 @@ import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
  */
 object Purity {
 
-    OPALLogger.register(GlobalLogContext, DevNullLogger)
+    OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
     def usage: String = {
         "Usage: java …PurityAnalysisEvaluation \n"+
