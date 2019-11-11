@@ -382,7 +382,8 @@ private[par] final class InterimEPKState(
             val c = this.c
             if (c != null) {
                 // IMPROVE ? Use a set based contains check.
-                val isDependee = this.dependees.exists(dependee ⇒
+                val isDependee = (this.dependees ne null /*TODO Ugly hack to fix NPE because of ProperyStore bug*/) &&
+                    this.dependees.exists(dependee ⇒
                     dependee.e == updatedDependeeEOptionP.e &&
                         dependee.pk == updatedDependeeEOptionP.pk)
                 if (isDependee) {
