@@ -15,6 +15,7 @@ import com.typesafe.config.ConfigValueFactory
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.br.analyses.BasicReport
@@ -204,23 +205,31 @@ object CallGraph extends ProjectAnalysisApplication {
 
             val byType = ptss.groupBy(_.e.getClass)
 
-            println(s"DefSite PTSs: ${byType(classOf[DefinitionSite]).size}")
-            println(s"Parameter PTSs: ${byType(classOf[VirtualFormalParameter]).size}")
-            println(s"Instance Field PTSs: ${byType(classOf[Tuple2[Long, Field]]).size}")
-            println(s"Static Field PTSs: ${byType(classOf[Field]).size}")
-            println(s"Array PTSs: ${byType(classOf[ArrayEntity[Long]]).size}")
-            println(s"Return PTSs: ${byType(classOf[DefinedMethod]).size + byType(classOf[VirtualDeclaredMethod]).size}")
-            println(s"MethodException PTSs: ${byType(classOf[MethodExceptions]).size}")
-            println(s"CallException PTSs: ${byType(classOf[CallExceptions]).size}")
+            def getNum(tpe: Class[_ <: Entity]): Int = {
+              byType.get(tpe).map(_.size).getOrElse(0)
+            }
 
-            println(s"DefSite PTS entries: ${byType(classOf[DefinitionSite]).map(_.ub.numElements).sum}")
-            println(s"Parameter PTS entries: ${byType(classOf[VirtualFormalParameter]).map(_.ub.numElements).sum}")
-            println(s"Instance Field PTS entries: ${byType(classOf[Tuple2[Long, Field]]).map(_.ub.numElements).sum}")
-            println(s"Static Field PTS entries: ${byType(classOf[Field]).map(_.ub.numElements).sum}")
-            println(s"Array PTS entries: ${byType(classOf[ArrayEntity[Long]]).map(_.ub.numElements).sum}")
-            println(s"Return PTS entries: ${byType(classOf[DefinedMethod]).map(_.ub.numElements).sum + byType(classOf[VirtualDeclaredMethod]).map(_.ub.numElements).sum}")
-            println(s"MethodException PTS entries: ${byType(classOf[MethodExceptions]).map(_.ub.numElements).sum}")
-            println(s"CallException PTS entries: ${byType(classOf[CallExceptions]).map(_.ub.numElements).sum}")
+            def getEntries(tpe: Class[_ <: Entity]): Int = {
+              byType.get(tpe).map(_.map(_.ub.numElements).sum).getOrElse(0)
+            }
+
+            println(s"DefSite PTSs: ${getNum(classOf[DefinitionSite])}")
+            println(s"Parameter PTSs: ${getNum(classOf[VirtualFormalParameter])}")
+            println(s"Instance Field PTSs: ${getNum(classOf[Tuple2[Long, Field]])}")
+            println(s"Static Field PTSs: ${getNum(classOf[Field])}")
+            println(s"Array PTSs: ${getNum(classOf[ArrayEntity[Long]])}")
+            println(s"Return PTSs: ${getNum(classOf[DefinedMethod]) + getNum(classOf[VirtualDeclaredMethod])}")
+            println(s"MethodException PTSs: ${getNum(classOf[MethodExceptions])}")
+            println(s"CallException PTSs: ${getNum(classOf[CallExceptions])}")
+
+            println(s"DefSite PTS entries: ${getEntries(classOf[DefinitionSite])}")
+            println(s"Parameter PTS entries: ${getEntries(classOf[VirtualFormalParameter])}")
+            println(s"Instance Field PTS entries: ${getEntries(classOf[Tuple2[Long, Field]])}")
+            println(s"Static Field PTS entries: ${getEntries(classOf[Field])}")
+            println(s"Array PTS entries: ${getEntries(classOf[ArrayEntity[Long]])}")
+            println(s"Return PTS entries: ${getEntries(classOf[DefinedMethod]) + getEntries(classOf[VirtualDeclaredMethod])}")
+            println(s"MethodException PTS entries: ${getEntries(classOf[MethodExceptions])}")
+            println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
 
             /*
             //Prints sizes of all array PTSs
