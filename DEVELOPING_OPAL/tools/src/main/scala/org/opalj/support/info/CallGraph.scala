@@ -137,7 +137,7 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                 val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 // val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 ps
             }
@@ -209,11 +209,11 @@ object CallGraph extends ProjectAnalysisApplication {
             val byType = ptss.groupBy(_.e.getClass)
 
             def getNum(tpe: Class[_ <: Entity]): Int = {
-              byType.get(tpe).map(_.size).getOrElse(0)
+                byType.get(tpe).map(_.size).getOrElse(0)
             }
 
             def getEntries(tpe: Class[_ <: Entity]): Int = {
-              byType.get(tpe).map(_.map(_.ub.numElements).sum).getOrElse(0)
+                byType.get(tpe).map(_.map(_.ub.numElements).sum).getOrElse(0)
             }
 
             println(s"DefSite PTSs: ${getNum(classOf[DefinitionSite])}")

@@ -371,10 +371,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             // handle receiver for non static methods
             if (receiverOpt.isDefined) {
                 val isNonVirtualCall = call match {
-                    case _: NonVirtualFunctionCall[V] |
-                        _: NonVirtualMethodCall[V] |
-                        _: StaticFunctionCall[V] |
-                        _: StaticMethodCall[V] ⇒ true
+                    case _: NonVirtualFunctionCall[V] | _: NonVirtualMethodCall[V] ⇒ true
                     case _ ⇒ false
                 }
                 handleCallReceiver(receiverOpt.get.asVar.definedBy, target, isNonVirtualCall)
@@ -414,7 +411,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             if (fps != null) {
                 // handle receiver for non static methods
                 val receiverOpt = callees.indirectCallReceiver(pc, target)
-                if (receiverOpt.isDefined) {
+                if (receiverOpt.isDefined && !target.definedMethod.isStatic) {
                     val receiverDefSites = valueOriginsOfPCs(receiverOpt.get._2, tac.pcToIndex)
                     handleCallReceiver(receiverDefSites, target, isNonVirtualCall = false)
                 } else if (target.name == "<init>") {
