@@ -13,6 +13,7 @@ import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.ShallowImmutableField
 import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
@@ -62,6 +63,10 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
       .toString() + "\n" +
       "Shallow Immutable Fields: " + propertyStore
       .finalEntities(ShallowImmutableField)
+      .toList
+      .toString() + "\n" +
+      "Dependet Immutable Fields:" + propertyStore
+      .finalEntities(DependentImmutableField)
       .toList
       .toString() + "\n" +
       "Deep Immutable Fields: " + propertyStore

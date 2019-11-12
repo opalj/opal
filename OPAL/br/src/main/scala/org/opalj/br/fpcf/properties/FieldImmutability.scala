@@ -17,6 +17,8 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
  *
  * [[ShallowImmutableField]] A field with an immutable reference and a shallow immutable or mutable data type
  *
+ * [[DependentImmutableField]] A field which immutability depends on its type.
+ *
  * [[DeepImmutableField]] A field with an immutable reference and a deep immutable field type
  *
  * @author Tobias Peter Roth
@@ -43,5 +45,7 @@ case object MutableField extends FieldImmutability
 sealed trait ImmutableField extends FieldImmutability
 
 case object ShallowImmutableField extends ImmutableField
+
+case object DependentImmutableField extends ImmutableField
 
 case object DeepImmutableField extends ImmutableField
