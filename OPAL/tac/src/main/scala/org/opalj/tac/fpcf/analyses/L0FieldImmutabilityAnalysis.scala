@@ -2,6 +2,7 @@
 package org.opalj.br.fpcf.analyses
 
 import org.opalj.br.Field
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
@@ -11,17 +12,15 @@ import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.DeepImmutableField
-import org.opalj.br.fpcf.properties.EscapeProperty
+import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.ImmutableContainerType
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.ImmutableType
+import org.opalj.br.fpcf.properties.LazyInitializedReference
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.MutableType
-import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.ReferenceImmutability
 import org.opalj.br.fpcf.properties.ShallowImmutableField
 import org.opalj.br.fpcf.properties.TypeImmutability
@@ -75,7 +74,13 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     var dependencies: Set[EOptionP[Entity, Property]] = Set.empty
 
     def hasImmutableType(field: Field): Option[Boolean] = {
+      println("Field:: " + field)
+      println(field.fieldType)
+      println(field.fieldType.isBaseType)
+      if (field.fieldType.isArrayType) return Some(true); //TODO
+      if (field.fieldType.isBaseType) return Some(true);
       val result = propertyStore(field.fieldType, TypeImmutability.key)
+      println("result: " + result)
       result match {
         case FinalEP(e, t) if (t == ImmutableType || t == ImmutableContainerType) => {
           println("has immutable type")
@@ -100,7 +105,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
           println("has mutable reference")
           Some(false)
         }
-        case FinalEP(_, ImmutableReference) => {
+        case FinalEP(_, ImmutableReference | LazyInitializedReference) => { //TODO
           println("has immutable Reference")
           Some(true)
         }
@@ -111,32 +116,38 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
           None
         }
       }
-
     }
 
     val state: State = new State()
 
     def createResult(state: State): ProperPropertyComputationResult = {
+      println("reference Immutability: " + state.referenceImmutability)
+      println("type immutabiliy: " + state.typeImmutability)
+
       state.referenceImmutability match {
         case Some(false) => Result(field, MutableField)
         case Some(true) => {
-          state.typeImmutability match {
-            case Some(true) => Result(field, DeepImmutableField)
-            case Some(false) => Result(field, ShallowImmutableField)
-            case None if (dependencies.isEmpty) => Result(field, ShallowImmutableField)
-            case None => {
-              InterimResult(
-                field,
-                MutableField,
-                DeepImmutableField,
-                dependencies,
-                c(state)
-              )
+          //If the field type is object. It is a generic field
+          if (field.fieldType == ObjectType("java/lang/Object"))
+            Result(field, DependentImmutableField)
+          else
+            state.typeImmutability match {
+              case Some(true)                     => Result(field, DeepImmutableField)
+              case Some(false)                    => Result(field, ShallowImmutableField)
+              case None if (dependencies.isEmpty) => Result(field, ShallowImmutableField)
+              case None => {
+                InterimResult(
+                  field,
+                  MutableField,
+                  DeepImmutableField,
+                  dependencies,
+                  c(state)
+                )
+              }
             }
-          }
         }
+        case None if (dependencies.isEmpty) => Result(field, MutableField)
         case None => {
-          println("first interim")
           println(dependencies)
           InterimResult(
             field,
@@ -178,7 +189,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
           state.referenceImmutability = Some(false)
         }
 
-        case x @ FinalEP(_, ImmutableReference) => {
+        case x @ FinalEP(_, ImmutableReference | LazyInitializedReference) => { //TODO
           println(x)
           println("has immutable reference. Determined by continuation function.")
           state.referenceImmutability = Some(true)
@@ -201,14 +212,15 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 trait L0FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
   final override def uses: Set[PropertyBounds] = Set(
-    PropertyBounds.lub(Purity),
-    PropertyBounds.lub(FieldPrematurelyRead),
+    //PropertyBounds.lub(Purity),
+    //PropertyBounds.lub(FieldPrematurelyRead),
     PropertyBounds.ub(TACAI),
-    PropertyBounds.lub(FieldMutability),
-    PropertyBounds.lub(EscapeProperty),
+    //PropertyBounds.lub(FieldMutability),
+    //PropertyBounds.lub(EscapeProperty),
+    PropertyBounds.lub(ReferenceImmutability),
     PropertyBounds.lub(TypeImmutability),
-    PropertyBounds.lub(FieldImmutability),
-    PropertyBounds.ub(EscapeProperty)
+    PropertyBounds.lub(FieldImmutability)
+    //PropertyBounds.ub(EscapeProperty)
   )
 
   final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
