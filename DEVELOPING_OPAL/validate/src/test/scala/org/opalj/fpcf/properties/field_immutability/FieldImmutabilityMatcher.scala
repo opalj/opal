@@ -3,8 +3,13 @@ package org.opalj.fpcf.properties.field_immutability
 
 import org.opalj.br.{AnnotationLike, ObjectType}
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties._
-import org.opalj.fpcf.{Entity, Property}
+import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.MutableField
+import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 /**
@@ -27,6 +32,7 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
+
     }
 
     def validateProperty(
@@ -49,5 +55,7 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
 class MutableFieldMatcher extends FieldImmutabilityMatcher(MutableField)
 
 class ShallowImmutableFieldMatcher extends FieldImmutabilityMatcher(ShallowImmutableField)
+
+class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(DependentImmutableField)
 
 class DeepImmutableFieldMatcher extends FieldImmutabilityMatcher(DeepImmutableField)

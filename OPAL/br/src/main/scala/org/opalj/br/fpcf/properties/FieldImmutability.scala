@@ -7,7 +7,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
-  type Self = FieldImmutability
+    type Self = FieldImmutability
 
 }
 
@@ -25,19 +25,19 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
  */
 sealed trait FieldImmutability extends Property with FieldImmutabilityPropertyMetaInformation {
 
-  final def key: PropertyKey[FieldImmutability] = FieldImmutability.key
+    final def key: PropertyKey[FieldImmutability] = FieldImmutability.key
 }
 
 object FieldImmutability extends FieldImmutabilityPropertyMetaInformation {
 
-  final val PropertyKeyName = "opalj.FieldImmutability"
+    final val PropertyKeyName = "opalj.FieldImmutability"
 
-  final val key: PropertyKey[FieldImmutability] = {
-    PropertyKey.create(
-      PropertyKeyName,
-      MutableField
-    )
-  }
+    final val key: PropertyKey[FieldImmutability] = {
+        PropertyKey.create(
+            PropertyKeyName,
+            MutableField
+        )
+    }
 }
 
 case object MutableField extends FieldImmutability

@@ -4,7 +4,7 @@ import org.opalj.fpcf.properties.class_immutability.MutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.MutableFieldAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 
-@MutableClassAnnotation("because of public fields")
+@MutableClassAnnotation("It has Mutable Fields")
 public class TrivialMutableClass {
     @MutableReferenceAnnotation("public")
     @MutableFieldAnnotation("mutable reference")

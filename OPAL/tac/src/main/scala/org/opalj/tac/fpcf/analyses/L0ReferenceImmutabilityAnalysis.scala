@@ -8,11 +8,8 @@ import scala.annotation.switch
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.fpcf.properties._
-import org.opalj.fpcf._
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
-import org.opalj.br._
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
@@ -31,6 +28,41 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.isImmediateVMException
 import org.opalj.ai.pcOfImmediateVMException
 import org.opalj.ai.pcOfMethodExternalException
+import org.opalj.br.ClassFile
+import org.opalj.br.ComputationalTypeFloat
+import org.opalj.br.ComputationalTypeInt
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.Field
+import org.opalj.br.FloatType
+import org.opalj.br.Method
+import org.opalj.br.PC
+import org.opalj.br.PCs
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.ImmutableReference
+import org.opalj.br.fpcf.properties.LazyInitializedReference
+import org.opalj.br.fpcf.properties.MutableReference
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.NotPrematurelyReadField
+import org.opalj.br.fpcf.properties.PrematurelyReadField
+import org.opalj.br.fpcf.properties.ReferenceImmutability
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.InterimEP
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.InterimUBP
+import org.opalj.fpcf.LBP
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.fpcf.Result
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
@@ -315,7 +347,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
      * dependees or as Result otherwise.
      */
     def createResult()(implicit state: State): ProperPropertyComputationResult = {
-        if (state.hasDependees && (state.referenceImmutability ne NonFinalFieldByAnalysis))
+        if (state.hasDependees && (state.referenceImmutability ne MutableReference)) //NonFinalFieldByAnalysis))
             InterimResult(
                 state.field,
                 MutableReference, //NonFinalFieldByAnalysis,
@@ -500,8 +532,18 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         method: Method,
         code:   Array[Stmt[V]]
     )(implicit state: State): Boolean = {
-        method.descriptor.parametersCount == 0 &&
-            !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
+        val result = (method.descriptor.parametersCount == 0 && !isNonDeterministic(
+            propertyStore(declaredMethods(method), Purity.key)
+        ))
+        println("paramsCount: "+method.descriptor.parametersCount == 0)
+        println(
+            "isnondeterministic-result: "+isNonDeterministic(
+                propertyStore(declaredMethods(method), Purity.key)
+            ).toString
+        )
+        println(propertyStore(declaredMethods(method), Purity.key))
+        println("lazyInitializerIsDeterministic: "+result)
+        result
     }
 
     /**
@@ -1023,8 +1065,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     def isNonDeterministic(
         eop: EOptionP[DeclaredMethod, Purity]
     )(implicit state: State): Boolean = eop match {
-        case LBP(p: Purity) if p.isDeterministic ⇒
-            false
+        case LBP(p: Purity) if p.isDeterministic  ⇒ false
         case UBP(p: Purity) if !p.isDeterministic ⇒ true
         case _ ⇒
             state.purityDependees += eop
@@ -1040,6 +1081,9 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     )(implicit state: State): Boolean = eop match {
         case FinalEP(e, ImmutableReference) ⇒ true
         case FinalEP(e, MutableReference)   ⇒ false
+        //
+        case LBP(ImmutableReference)        ⇒ true
+        case UBP(MutableReference)          ⇒ false
 
         /**
          * case LBP(_: ImmutableReference) ⇒ //FinalField) ⇒
@@ -1058,8 +1102,8 @@ trait L0ReferenceImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(Purity),
         PropertyBounds.lub(FieldPrematurelyRead),
         PropertyBounds.ub(TACAI),
-        PropertyBounds.ub(EscapeProperty),
-        PropertyBounds.lub(ReferenceImmutability)
+        PropertyBounds.lub(ReferenceImmutability),
+        PropertyBounds.ub(EscapeProperty)
     )
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReferenceImmutability)

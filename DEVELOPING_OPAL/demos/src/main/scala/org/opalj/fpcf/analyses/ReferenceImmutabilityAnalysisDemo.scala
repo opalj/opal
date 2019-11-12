@@ -2,6 +2,7 @@
 package org.opalj.fpcf.analyses
 
 import java.net.URL
+
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -9,6 +10,7 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.ImmutableReference
+import org.opalj.br.fpcf.properties.LazyInitializedReference
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
@@ -20,37 +22,42 @@ import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
  */
 object ReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-    override def title: String = "runs the EagerL0ReferenceImmutabilityAnalysis"
+  override def title: String = "runs the EagerL0ReferenceImmutabilityAnalysis"
 
-    override def description: String =
-        "runs the EagerL0ReferenceImmutabilityAnalysis"
+  override def description: String =
+    "runs the EagerL0ReferenceImmutabilityAnalysis"
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
-        val result = analyze(project)
-        BasicReport(result)
-    }
+  override def doAnalyze(
+      project: Project[URL],
+      parameters: Seq[String],
+      isInterrupted: () => Boolean
+  ): BasicReport = {
+    val result = analyze(project)
+    BasicReport(result)
+  }
 
-    def analyze(project: Project[URL]): String = {
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
+  def analyze(project: Project[URL]): String = {
+    val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-        val (propertyStore, _) = analysesManager.runAll(
-            EagerUnsoundPrematurelyReadFieldsAnalysis,
-            EagerL0PurityAnalysis,
-            EagerL1FieldMutabilityAnalysis,
-            EagerL0ReferenceImmutabilityAnalysis
-        );
+    val (propertyStore, _) = analysesManager.runAll(
+      EagerUnsoundPrematurelyReadFieldsAnalysis,
+      EagerL0PurityAnalysis,
+      EagerL1FieldMutabilityAnalysis,
+      EagerL0ReferenceImmutabilityAnalysis
+    );
 
-        "Mutable References: "+propertyStore
-            .finalEntities(MutableReference)
-            .toList
-            .toString()+"\n"+
-            "Immutable References: "+propertyStore
-            .finalEntities(ImmutableReference)
-            .toList
-            .toString()
-    }
+    "Mutable References: " + propertyStore
+      .finalEntities(MutableReference)
+      .toList
+      .toString() + "\n" +
+      "Lazy Initialized Reference: " + propertyStore
+      .finalEntities(LazyInitializedReference)
+      .toList
+      .toString() + "\n" +
+      "Immutable References: " + propertyStore
+      .finalEntities(ImmutableReference)
+      .toList
+      .toString()
+  }
+
 }

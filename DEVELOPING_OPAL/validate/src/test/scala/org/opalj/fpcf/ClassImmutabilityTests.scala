@@ -6,15 +6,14 @@ import java.net.URL
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
  * @author Tobias Peter Roth
@@ -28,27 +27,32 @@ class ClassImmutabilityTests extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
-    describe("no analysis is scheduled") {
-        val as = executeAnalyses(Set.empty)
-        as.propertyStore.shutdown()
-        validateProperties(as, fieldsWithAnnotations(as.project), Set("ReferenceImmutability"))
-    }
-
-    describe("the org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis is executed") {
+    /**
+     * describe("no analysis is scheduled") {
+     * val as = executeAnalyses(Set.empty)
+     * as.propertyStore.shutdown()
+     * validateProperties(as, fieldsWithAnnotations(as.project), Set("ClassImmutability_new"))
+     * }*
+     */
+    describe("the org.opalj.fpcf.analyses.LxClassImmutabilityAnalysis is executed") {
+        println(1)
         val as = executeAnalyses(
             Set(
-                EagerClassImmutabilityAnalysis,
-                EagerTypeImmutabilityAnalysis,
-                EagerUnsoundPrematurelyReadFieldsAnalysis,
-                EagerL0ReferenceImmutabilityAnalysis,
-                EagerL0PurityAnalysis,
-                EagerL1FieldMutabilityAnalysis,
-                EagerL0FieldImmutabilityAnalysis,
+/****/
+                LazyTypeImmutabilityAnalysis,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyL0ReferenceImmutabilityAnalysis,
+                LazyL2PurityAnalysis,
+                LazyL2FieldMutabilityAnalysis,
+                LazyClassImmutabilityAnalysis,
                 EagerLxClassImmutabilityAnalysis_new
             )
         )
+        println(2)
         as.propertyStore.shutdown()
-        validateProperties(as, fieldsWithAnnotations(as.project), Set("ClassImmutability_new"))
+        println(3)
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("ClassImmutability_new")) //Set("ClassImmutability_new"))
+        println(4)
     }
     /**
      * describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
@@ -77,5 +81,4 @@ class ClassImmutabilityTests extends PropertiesTest {
      * validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldMutability"))
      * } *
      */
-
 }

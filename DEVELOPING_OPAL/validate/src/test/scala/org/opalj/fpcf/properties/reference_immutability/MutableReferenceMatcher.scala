@@ -1,23 +1,25 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.class_immutability
+package org.opalj.fpcf.properties.reference_immutability
 
 import org.opalj.br.AnnotationLike
+import org.opalj.br.BooleanValue
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.ClassImmutability_new
-import org.opalj.br.fpcf.properties.DeepImmutableClass
-import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.br.fpcf.properties.ShallowImmutableClass
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.br.fpcf.properties.FieldPrematurelyRead
+import org.opalj.br.fpcf.properties.MutableReference
+import org.opalj.br.fpcf.properties.PrematurelyReadField
 import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 /**
  * @author Tobias Peter Roth
  */
-class ClassImmutabilityMatcher(val property: ClassImmutability_new)
-    extends AbstractPropertyMatcher {
+class MutableReferenceMatcher extends AbstractPropertyMatcher {
+
+    val property = MutableReference
 
     final private val PropertyReasonID = 0
 
@@ -33,8 +35,21 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new)
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
-        analyses.exists(as.contains)
+        if (!analyses.exists(as.contains)) return false;
 
+        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead")
+            .asInstanceOf[BooleanValue]
+            .value
+
+        if (prematurelyRead) {
+            val propertyStore = p.get(PropertyStoreKey)
+            propertyStore(entity, FieldPrematurelyRead.key) match {
+                case FinalP(PrematurelyReadField) ⇒ true
+                case _                            ⇒ false
+            }
+        } else {
+            true
+        }
     }
 
     def validateProperty(
@@ -44,25 +59,12 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new)
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        println(11)
         if (!properties.exists(p ⇒ p == property)) {
             // ... when we reach this point the expected property was not found.
-            println(22)
-            val r = Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
-            println(33)
-            r
+            Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
-            println(44)
             None
         }
     }
 
 }
-
-class MutableClassMatcher extends ClassImmutabilityMatcher(MutableClass)
-
-class DependentImmutableClassMatcher extends ClassImmutabilityMatcher(DependentImmutableClass)
-
-class ShallowImmutableClassMatcher extends ClassImmutabilityMatcher(ShallowImmutableClass)
-
-class DeepImmutableClassMatcher extends ClassImmutabilityMatcher(DeepImmutableClass)
