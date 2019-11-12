@@ -109,6 +109,7 @@ object Purity {
             "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
             "[-eval <path to evaluation directory>]\n"+
             "[-j <number of threads to be used> (0 for the sequential implementation)]\n"+
+            "[-analysisName <analysisName which defines the analysis within the results file>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
@@ -119,6 +120,7 @@ object Purity {
         analysis:              FPCFLazyAnalysisScheduler,
         support:               List[FPCFAnalysisScheduler],
         domain:                Class[_ <: Domain with RecordDefUse],
+        configurationName:     Option[String],
         rater:                 DomainSpecificRater,
         callGraphKey:          AbstractCallGraphKey,
         withoutJDK:            Boolean,
@@ -235,21 +237,6 @@ object Purity {
         } { t ⇒ analysisTime = t.toSeconds }
         ps.shutdown()
 
-        if (projectEvalDir.isDefined) {
-            val runtime = new File(projectEvalDir.get, "runtime.csv")
-            val runtimeNew = !runtime.exists()
-            val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
-            try {
-                if (runtimeNew) {
-                    runtime.createNewFile()
-                    runtimeWriter.println("project;propertyStore;callGraph;analysis")
-                }
-                runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime;$analysisTime")
-            } finally {
-                if (runtimeWriter != null) runtimeWriter.close()
-            }
-        }
-
         val purityEs = ps(analyzedMethods, br.fpcf.properties.Purity.key).filter {
             case FinalP(p) ⇒ p ne ImpureByLackOfInformation
             case ep        ⇒ throw new RuntimeException(s"non final purity result $ep")
@@ -275,6 +262,62 @@ object Purity {
         val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, ImpureByAnalysis) ⇒ m }
 
         if (projectEvalDir.isDefined) {
+
+            // WRITE ANALYSIS OUTPUT
+
+            val output = new File(projectEvalDir.get, "purityResults.csv")
+            val newFile = !output.exists()
+            val outputWriter = new PrintWriter(new FileOutputStream(output, true))
+            try {
+                if(newFile) {
+                    output.createNewFile()
+                    outputWriter.println(
+                        "analysisName;project time;propertyStore time;" +
+                        "callGraph time;analysis time; total time;" +
+                        "compile time pure;pure;domain-specific pure;"+
+                        "side-effect free;domain-specific side-effect free;"+
+                        "externally pure;domain-specific externally pure;"+
+                        "externally side-effect free; domain-specific externally side-effect "+
+                        "free;contextually pure;domain-specific contextually pure;"+
+                        "contextually side-effect free;domain-specific contextually "+
+                        "side-effect free;impure;count"
+                    )
+                }
+                val totalTime = projectTime.+(propertyStoreTime).+(callGraphTime).+(analysisTime)
+                outputWriter.println(
+                    s"${configurationName.get};$projectTime;"+
+                        s"$propertyStoreTime;$callGraphTime;$analysisTime;$totalTime;" +
+                        s"${compileTimePure.size};${pure.size};${dPure.size};"+
+                        s"${sideEffectFree.size};${dSideEffectFree.size};"+
+                        s"${externallyPure.size};${dExternallyPure.size};"+
+                        s"${contextuallyPure.size};${dContextuallyPure.size};"+
+                        s"${externallySideEffectFree.size};"+
+                        s"${dExternallySideEffectFree.size};"+
+                        s"${contextuallySideEffectFree.size};"+
+                        s"${dContextuallySideEffectFree.size};"+
+                        s"${lbImpure.size};${purityEs.size}"
+                )
+            } finally {
+                if (outputWriter != null) outputWriter.close()
+            }
+
+            // WRITE RUNTIME INFORMATION
+
+            val runtime = new File(projectEvalDir.get, "runtime.csv")
+            val runtimeNew = !runtime.exists()
+            val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
+            try {
+                if (runtimeNew) {
+                    runtime.createNewFile()
+                    runtimeWriter.println("analysisName;project time;propertyStore time;callGraph time;analysis time; total time;")
+                }
+                runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime;$analysisTime")
+            } finally {
+                if (runtimeWriter != null) runtimeWriter.close()
+            }
+
+            // WRITE CONTENT INFORMATION
+
             val results = new File(projectEvalDir.get, "method-results.csv")
             val resultsNew = !results.exists()
             val resultsWriter = new PrintWriter(new FileOutputStream(results, !individual))
@@ -386,6 +429,7 @@ object Purity {
         var domainName: Option[String] = None
         var raterName: Option[String] = None
         var callGraphName: Option[String] = None
+        var configurationName: Option[String] = None
         var withoutJDK = false
         var individual = false
         var isLibrary = false
@@ -420,6 +464,7 @@ object Purity {
                 case "-domain"          ⇒ domainName = Some(readNextArg())
                 case "-rater"           ⇒ raterName = Some(readNextArg())
                 case "-callGraph"       ⇒ callGraphName = Some(readNextArg())
+                case "-analysisName"    ⇒ configurationName = Some(readNextArg())
                 case "-eager"           ⇒ eager = true
                 case "-individual"      ⇒ individual = true
                 case "-closedWorld"     ⇒ cwa = true
@@ -428,6 +473,7 @@ object Purity {
                 case "-multi"           ⇒ multiProjects = true
                 case "-eval"            ⇒ evaluationDir = Some(new File(readNextArg()))
                 case "-j"               ⇒ numThreads = readNextArg().toInt
+                case "-analysisName"               ⇒ numThreads = readNextArg().toInt
                 case "-noJDK"           ⇒ withoutJDK = true
                 case "-JDK" ⇒
                     cp = JRELibraryFolder; withoutJDK = true
@@ -437,6 +483,11 @@ object Purity {
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
             }
             i += 1
+        }
+
+        if(configurationName.isEmpty){
+            // TODO if no name is given use configured analysis as name
+            configurationName = Some(s"RUN-${Calendar.getInstance().getTime().toString}")
         }
 
         if (cp eq null) {
@@ -558,6 +609,7 @@ object Purity {
                         analysis,
                         support,
                         d,
+                        configurationName,
                         rater,
                         callGraphKey,
                         withoutJDK,
@@ -577,6 +629,7 @@ object Purity {
                     analysis,
                     support,
                     d,
+                    configurationName,
                     rater,
                     callGraphKey,
                     withoutJDK,

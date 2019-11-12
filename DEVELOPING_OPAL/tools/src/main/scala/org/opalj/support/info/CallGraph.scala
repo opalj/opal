@@ -7,6 +7,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.net.URL
+import java.util.Calendar
 
 import scala.collection.JavaConverters._
 import com.typesafe.config.ConfigValueFactory
@@ -82,8 +83,8 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-callers=method]"+
             "[-callees=method]"+
             "[-writeCG=file]"+
-            "[-writeStatistics=file]"+
-            "[-writeTimings=file]"+
+            "[-analysisName=name]"+
+            "[-writeOutput=file]"+
             "[-writePointsToSets=file]"+
             "[-main=package.MainClass]"+
             "[-tamiflex-log=logfile]"+
@@ -105,9 +106,9 @@ object CallGraph extends ProjectAnalysisApplication {
                     !p.startsWith("-domain=") &&
                     !p.startsWith("-callers=") &&
                     !p.startsWith("-callees=") &&
+                    !p.startsWith("-analysisName=") &&
                     !p.startsWith("-writeCG=") &&
-                    !p.startsWith("-writeStatistics=") &&
-                    !p.startsWith("-writeTimings=") &&
+                    !p.startsWith("-writeOutput=") &&
                     !p.startsWith("-writePointsToSets=") && // TODO: implement this
                     !p.startsWith("-main=") &&
                     !p.startsWith("-tamiflex-log=") &&
@@ -126,10 +127,10 @@ object CallGraph extends ProjectAnalysisApplication {
         project:      Project[URL],
         calleesSigs:  List[String],
         callersSigs:  List[String],
+        analysisName:  Option[String],
         cgAlgorithm:  String,
         cgFile:       Option[String],
-        statsFile:    Option[String],
-        timingsFile:  Option[String],
+        outputFile:    Option[String],
         pointsToFile: Option[String],
         projectTime:  Seconds
     ): BasicReport = {
@@ -173,21 +174,6 @@ object CallGraph extends ProjectAnalysisApplication {
             case t: Throwable ⇒
                 Console.err.println("PropertyStore shutdown failed: ")
                 t.printStackTrace()
-        }
-
-        if (timingsFile.isDefined) {
-            val runtime = new File(timingsFile.get)
-            val runtimeNew = !runtime.exists()
-            val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
-            try {
-                if (runtimeNew) {
-                    runtime.createNewFile()
-                    runtimeWriter.println("project;propertyStore;callGraph")
-                }
-                runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime")
-            } finally {
-                if (runtimeWriter != null) runtimeWriter.close()
-            }
         }
 
         if (cgAlgorithm == "PointsTo") {
@@ -315,16 +301,29 @@ object CallGraph extends ProjectAnalysisApplication {
             CallGraphSerializer.writeCG(cg, new File(cgFile.get))
         }
 
-        if (statsFile.nonEmpty) {
-            val stats = new File(statsFile.get)
-            val statsWriter = new PrintWriter(new FileOutputStream(stats, true))
+        if(outputFile.isDefined) {
+            val output = new File(outputFile.get)
+            val newOutputFile = !output.exists()
+            val outputWriter = new PrintWriter(new FileOutputStream(output, true))
             try {
-                stats.createNewFile()
-                statsWriter.println("methods;reachable;edges")
-                statsWriter.println(s"${allMethods.size};${reachableMethods.size};$numEdges")
+                if(newOutputFile) {
+                    output.createNewFile()
+                    outputWriter.println(
+                        "analysisName;project time;propertyStore time;callGraph time;total time;" +
+                        "methods;reachable;edges"
+                    )
+                }
+
+                val totalTime = projectTime.+(propertyStoreTime).+(callGraphTime)
+                outputWriter.println(
+                    s"${analysisName.get};$projectTime;$propertyStoreTime;$callGraphTime;$totalTime;"
+                        + s"${allMethods.size};${reachableMethods.size};$numEdges"
+                )
+
             } finally {
-                if (statsWriter != null) statsWriter.close()
+                outputWriter.close()
             }
+
         }
 
         val message =
@@ -346,9 +345,9 @@ object CallGraph extends ProjectAnalysisApplication {
         var calleesSigs: List[String] = Nil
         var callersSigs: List[String] = Nil
         var cgAlgorithm: String = "RTA"
+        var analysisName: Option[String] = None
         var cgFile: Option[String] = None
-        var statsFile: Option[String] = None
-        var timingsFile: Option[String] = None
+        var outputFile: Option[String] = None
         var pointsToFile: Option[String] = None
         var mainClass: Option[String] = None
         var tamiflexLog: Option[String] = None
@@ -356,9 +355,9 @@ object CallGraph extends ProjectAnalysisApplication {
         val domainRegex = "-domain=(.*)".r
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
+        val analysisNameRegex = "-analysisName=(.*)".r
         val writeCGRegex = "-writeCG=(.*)".r
-        val writeStatsRegex = "-writeStatistics=(.*)".r
-        val writeTimingsRegex = "-writeTimings=(.*)".r
+        val writeOutputRegex = "-writeOutput=(.*)".r
         val writePointsToSetsRegex = "-writePointsToSets=(.*)".r
         val mainClassRegex = "-main=(.*)".r
         val tamiflexLogRegex = "-tamiflex-log=(.*)".r
@@ -393,18 +392,18 @@ object CallGraph extends ProjectAnalysisApplication {
             case callersRegex(methodSig) ⇒ callersSigs ::= methodSig
             case calleesRegex(methodSig) ⇒ calleesSigs ::= methodSig
             case algorithmRegex(algo)    ⇒ cgAlgorithm = algo
+            case analysisNameRegex(name) ⇒
+                if (analysisName.isEmpty)
+                    analysisName = Some(name)
+                else throw new IllegalArgumentException("-analysisName was set twice")
             case writeCGRegex(fileName) ⇒
                 if (cgFile.isEmpty)
                     cgFile = Some(fileName)
                 else throw new IllegalArgumentException("-writeCG was set twice")
-            case writeStatsRegex(fileName) ⇒
-                if (statsFile.isEmpty)
-                    statsFile = Some(fileName)
-                else throw new IllegalArgumentException("-writeStatistics was set twice")
-            case writeTimingsRegex(fileName) ⇒
-                if (timingsFile.isEmpty)
-                    timingsFile = Some(fileName)
-                else throw new IllegalArgumentException("-writeTimings was set twice")
+            case writeOutputRegex(fileName) ⇒
+                if (outputFile.isEmpty)
+                    outputFile = Some(fileName)
+                else throw new IllegalArgumentException("-writeOutput was set twice")
             case writePointsToSetsRegex(fileName) ⇒
                 if (pointsToFile.isEmpty)
                     pointsToFile = Some(fileName)
@@ -477,14 +476,18 @@ object CallGraph extends ProjectAnalysisApplication {
             case Some(requirements) ⇒ requirements + domain
         }
 
+        if(analysisName.isEmpty){
+            analysisName = Some(s"RUN-${Calendar.getInstance().getTime().toString}")
+        }
+
         performAnalysis(
             newProject,
             calleesSigs,
             callersSigs,
+            analysisName,
             cgAlgorithm,
             cgFile,
-            statsFile,
-            timingsFile,
+            outputFile,
             pointsToFile,
             projectTime
         )
