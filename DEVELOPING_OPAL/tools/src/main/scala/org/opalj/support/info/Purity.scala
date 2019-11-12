@@ -473,7 +473,6 @@ object Purity {
                 case "-multi"           ⇒ multiProjects = true
                 case "-eval"            ⇒ evaluationDir = Some(new File(readNextArg()))
                 case "-j"               ⇒ numThreads = readNextArg().toInt
-                case "-analysisName"               ⇒ numThreads = readNextArg().toInt
                 case "-noJDK"           ⇒ withoutJDK = true
                 case "-JDK" ⇒
                     cp = JRELibraryFolder; withoutJDK = true
