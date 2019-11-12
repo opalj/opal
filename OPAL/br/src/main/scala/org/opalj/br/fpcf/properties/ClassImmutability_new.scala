@@ -6,7 +6,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait ClassImmutabilityPropertyMetaInformation_new extends PropertyMetaInformation {
-  final type Self = ClassImmutability_new
+    final type Self = ClassImmutability_new
 }
 
 /**
@@ -27,18 +27,18 @@ sealed trait ClassImmutabilityPropertyMetaInformation_new extends PropertyMetaIn
 sealed trait ClassImmutability_new
     extends Property
     with ClassImmutabilityPropertyMetaInformation_new {
-  final def key: PropertyKey[ClassImmutability_new] = ClassImmutability_new.key
+    final def key: PropertyKey[ClassImmutability_new] = ClassImmutability_new.key
 }
 
 object ClassImmutability_new extends ClassImmutabilityPropertyMetaInformation_new {
 
-  /**
-   * The key associated with every [[ClassImmutability_new]] property.
-   */
-  final val key: PropertyKey[ClassImmutability_new] = PropertyKey.create(
-    "opalj.ClassImmutability_new",
-    MutableClass
-  )
+    /**
+     * The key associated with every [[ClassImmutability_new]] property.
+     */
+    final val key: PropertyKey[ClassImmutability_new] = PropertyKey.create(
+        "opalj.ClassImmutability_new",
+        MutableClass
+    )
 }
 
 case object MutableClass extends ClassImmutability_new

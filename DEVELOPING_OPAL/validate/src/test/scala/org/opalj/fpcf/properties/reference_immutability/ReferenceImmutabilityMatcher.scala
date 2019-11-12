@@ -6,7 +6,6 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedReference
-import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.ReferenceImmutability
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
@@ -49,10 +48,7 @@ class ReferenceImmutabilityMatcher(val property: ReferenceImmutability)
             None
         }
     }
-
 }
-
-class MutableReferenceMatcher extends ReferenceImmutabilityMatcher(MutableReference)
 
 class LazyInitializedReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedReference)
 

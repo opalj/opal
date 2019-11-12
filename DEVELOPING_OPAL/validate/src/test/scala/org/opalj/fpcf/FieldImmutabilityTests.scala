@@ -6,16 +6,15 @@ import java.net.URL
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
  * @author Tobias Peter Roth
@@ -32,21 +31,22 @@ class FieldImmutabilityTests extends PropertiesTest {
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
         as.propertyStore.shutdown()
-        validateProperties(as, fieldsWithAnnotations(as.project), Set("ReferenceImmutability"))
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
     }
 
     describe("the org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis is executed") {
         val as = executeAnalyses(
             Set(
-                EagerTypeImmutabilityAnalysis,
-                EagerUnsoundPrematurelyReadFieldsAnalysis,
-                EagerClassImmutabilityAnalysis,
-                EagerL0ReferenceImmutabilityAnalysis,
-                EagerL0PurityAnalysis,
-                EagerL1FieldMutabilityAnalysis,
-                EagerSimpleEscapeAnalysis,
-                TACAITransformer,
-                EagerL0FieldImmutabilityAnalysis
+                LazyTypeImmutabilityAnalysis,
+                LazyL2FieldMutabilityAnalysis,
+                LazyL0ReferenceImmutabilityAnalysis,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyL2PurityAnalysis,
+                LazyInterProceduralEscapeAnalysis,
+                EagerL0FieldImmutabilityAnalysis,
+                LazyClassImmutabilityAnalysis
+            // LazySimpleEscapeAnalysis,
+            // TACAITransformer
             )
         )
         as.propertyStore.shutdown()

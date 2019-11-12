@@ -21,7 +21,7 @@ import org.opalj.br.fpcf.properties.LazyInitializedField
  */
 class FieldMutabilityMatcher(val property: FieldMutability) extends AbstractPropertyMatcher {
 
-    private final val PropertyReasonID = 0
+    final private val PropertyReasonID = 0
 
     override def isRelevant(
         p:      SomeProject,
