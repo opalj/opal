@@ -57,6 +57,7 @@ import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.PropertyStoreContext
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.DevNullLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -110,6 +111,7 @@ object Purity {
             "[-eval <path to evaluation directory>]\n"+
             "[-j <number of threads to be used> (0 for the sequential implementation)]\n"+
             "[-analysisName <analysisName which defines the analysis within the results file>]\n"+
+            "[-schedulingStrategy <schedulingStrategy which defines the analysis within the results file>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
@@ -121,6 +123,7 @@ object Purity {
         support:               List[FPCFAnalysisScheduler],
         domain:                Class[_ <: Domain with RecordDefUse],
         configurationName:     Option[String],
+        schedulingStrategy:     Option[String],
         rater:                 DomainSpecificRater,
         callGraphKey:          AbstractCallGraphKey,
         withoutJDK:            Boolean,
@@ -154,18 +157,25 @@ object Purity {
         var callGraphTime: Seconds = Seconds.None
 
         // todo: use variables for the constants
-        val baseConfig = if (isLibrary)
+        implicit var config: Config = if (isLibrary)
             ConfigFactory.load("LibraryProject.conf")
         else
             ConfigFactory.load("ApplicationProject.conf")
 
         // todo in case of application this value is already set
-        implicit val config: Config =
-            if (closedWorldAssumption) baseConfig.withValue(
+        if (closedWorldAssumption) {
+            config = config.withValue(
                 "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
             )
-            else baseConfig
+        }
+
+        if(schedulingStrategy.isDefined) {
+            config = config.withValue(
+                PKESequentialPropertyStore.TasksManagerKey,
+                ConfigValueFactory.fromAnyRef(schedulingStrategy.get)
+            )
+        }
 
         val project = time {
             Project(
@@ -430,6 +440,7 @@ object Purity {
         var raterName: Option[String] = None
         var callGraphName: Option[String] = None
         var configurationName: Option[String] = None
+        var schedulingStrategy: Option[String] = None
         var withoutJDK = false
         var individual = false
         var isLibrary = false
@@ -465,6 +476,7 @@ object Purity {
                 case "-rater"           ⇒ raterName = Some(readNextArg())
                 case "-callGraph"       ⇒ callGraphName = Some(readNextArg())
                 case "-analysisName"    ⇒ configurationName = Some(readNextArg())
+                case "-schedulingStrategy"    ⇒ schedulingStrategy = Some(readNextArg())
                 case "-eager"           ⇒ eager = true
                 case "-individual"      ⇒ individual = true
                 case "-closedWorld"     ⇒ cwa = true
@@ -485,7 +497,6 @@ object Purity {
         }
 
         if(configurationName.isEmpty){
-            // TODO if no name is given use configured analysis as name
             configurationName = Some(s"RUN-${Calendar.getInstance().getTime().toString}")
         }
 
@@ -609,6 +620,7 @@ object Purity {
                         support,
                         d,
                         configurationName,
+                        schedulingStrategy,
                         rater,
                         callGraphKey,
                         withoutJDK,
@@ -629,6 +641,7 @@ object Purity {
                     support,
                     d,
                     configurationName,
+                    schedulingStrategy,
                     rater,
                     callGraphKey,
                     withoutJDK,

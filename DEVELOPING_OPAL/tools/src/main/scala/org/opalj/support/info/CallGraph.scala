@@ -34,6 +34,7 @@ import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.DevNullLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
@@ -84,6 +85,7 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-callees=method]"+
             "[-writeCG=file]"+
             "[-analysisName=name]"+
+            "[-schedulingStrategy=name]"+
             "[-writeOutput=file]"+
             "[-writePointsToSets=file]"+
             "[-main=package.MainClass]"+
@@ -107,6 +109,7 @@ object CallGraph extends ProjectAnalysisApplication {
                     !p.startsWith("-callers=") &&
                     !p.startsWith("-callees=") &&
                     !p.startsWith("-analysisName=") &&
+                    !p.startsWith("-schedulingStrategy=") &&
                     !p.startsWith("-writeCG=") &&
                     !p.startsWith("-writeOutput=") &&
                     !p.startsWith("-writePointsToSets=") && // TODO: implement this
@@ -346,6 +349,7 @@ object CallGraph extends ProjectAnalysisApplication {
         var callersSigs: List[String] = Nil
         var cgAlgorithm: String = "RTA"
         var analysisName: Option[String] = None
+        var schedulingStrategy: Option[String] = None
         var cgFile: Option[String] = None
         var outputFile: Option[String] = None
         var pointsToFile: Option[String] = None
@@ -356,6 +360,7 @@ object CallGraph extends ProjectAnalysisApplication {
         val callersRegex = "-callers=(.*)".r
         val calleesRegex = "-callees=(.*)".r
         val analysisNameRegex = "-analysisName=(.*)".r
+        val schedulingStrategyRegex = "-schedulingStrategy=(.*)".r
         val writeCGRegex = "-writeCG=(.*)".r
         val writeOutputRegex = "-writeOutput=(.*)".r
         val writePointsToSetsRegex = "-writePointsToSets=(.*)".r
@@ -396,6 +401,10 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (analysisName.isEmpty)
                     analysisName = Some(name)
                 else throw new IllegalArgumentException("-analysisName was set twice")
+            case schedulingStrategyRegex(name) ⇒
+                if (schedulingStrategy.isEmpty)
+                    schedulingStrategy = Some(name)
+                else throw new IllegalArgumentException("-schedulingStrategy was set twice")
             case writeCGRegex(fileName) ⇒
                 if (cgFile.isEmpty)
                     cgFile = Some(fileName)
@@ -438,6 +447,13 @@ object CallGraph extends ProjectAnalysisApplication {
                 ConfigValueFactory.fromAnyRef(tamiflexLog.get)
             )
             modules += "org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler"
+        }
+
+        if(schedulingStrategy.isDefined) {
+            newConfig = newConfig.withValue(
+                PKESequentialPropertyStore.TasksManagerKey,
+                ConfigValueFactory.fromAnyRef(schedulingStrategy.get)
+            )
         }
 
         if (mainClass.isDefined) {
