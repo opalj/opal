@@ -317,10 +317,12 @@ object CallGraph extends ProjectAnalysisApplication {
                     )
                 }
 
-                val totalTime = projectTime.+(propertyStoreTime).+(callGraphTime)
+                val totalTime = projectTime + propertyStoreTime + callGraphTime
                 outputWriter.println(
-                    s"${analysisName.get};$projectTime;$propertyStoreTime;$callGraphTime;$totalTime;"
-                        + s"${allMethods.size};${reachableMethods.size};$numEdges"
+                    s"${analysisName.get};${projectTime.toString(false)};"+
+                        s"${propertyStoreTime.toString(false)};"+
+                        s"${callGraphTime.toString(false)};${totalTime.toString(false)};"+
+                        s"${allMethods.size};${reachableMethods.size};$numEdges"
                 )
 
             } finally {

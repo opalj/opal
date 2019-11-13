@@ -293,10 +293,12 @@ object Purity {
                         "side-effect free;impure;count"
                     )
                 }
-                val totalTime = projectTime.+(propertyStoreTime).+(callGraphTime).+(analysisTime)
+                val totalTime = projectTime + propertyStoreTime + callGraphTime + analysisTime
                 outputWriter.println(
-                    s"${configurationName.get};$projectTime;"+
-                        s"$propertyStoreTime;$callGraphTime;$analysisTime;$totalTime;" +
+                    s"${configurationName.get};${projectTime.toString(false)};"+
+                        s"${propertyStoreTime.toString(false)};"+
+                        s"${callGraphTime.toString(false)};${analysisTime.toString(false)};"+
+                        s"${totalTime.toString(false)};" +
                         s"${compileTimePure.size};${pure.size};${dPure.size};"+
                         s"${sideEffectFree.size};${dSideEffectFree.size};"+
                         s"${externallyPure.size};${dExternallyPure.size};"+
