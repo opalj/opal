@@ -56,6 +56,8 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.DevNullLogger
@@ -561,9 +563,13 @@ object Purity {
 
             case Some("L1")          ⇒ support ::= LazyL1FieldMutabilityAnalysis
 
-            case Some("L2") if eager ⇒ support ::= EagerL2FieldMutabilityAnalysis
+            case Some("L2") if eager ⇒
+                support ::= EagerL2FieldMutabilityAnalysis
+                support ::= EagerUnsoundPrematurelyReadFieldsAnalysis
 
-            case Some("L2")          ⇒ support ::= LazyL2FieldMutabilityAnalysis
+            case Some("L2")          ⇒
+                support ::= LazyL2FieldMutabilityAnalysis
+                support ::= LazyUnsoundPrematurelyReadFieldsAnalysis
 
             case Some("none")        ⇒
 
