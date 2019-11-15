@@ -6,7 +6,6 @@ package analyses
 package cg
 
 import scala.annotation.tailrec
-
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
@@ -22,12 +21,13 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
-import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
+import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
+import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.Method
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -250,6 +250,7 @@ class OISReadObjectAnalysis private[analyses] (
                 if !cf.isInterfaceDeclaration
                 if ch.isSubtypeOf(castType, ObjectType.Serializable)
             } {
+
                 if (ch.isSubtypeOf(castType, ObjectType.Externalizable)) {
                     // call to `readExternal`
                     val readExternal = p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
@@ -309,11 +310,15 @@ class OISReadObjectAnalysis private[analyses] (
                     // in order to let the instantiated types be correct. Note, that the JVM would
                     // not call the constructor
                     // Note, that we assume that there is a constructor
-                    val constructor = cf.constructors.next()
+                    // Note that we have to do a String comparison since methods with ObjectType
+                    // descriptors are not sorted consistently across runs
+                    val constructor = cf.constructors.map[(String, Method)]  { cf =>
+                        (cf.descriptor.toJava, cf)
+                    }.minBy(t => t._1)._2
+
                     calleesAndCallers.addCall(
                         definedMethod, declaredMethods(constructor), pc, UnknownParam, None
                     )
-
                 }
 
                 // call to `readResolve`
