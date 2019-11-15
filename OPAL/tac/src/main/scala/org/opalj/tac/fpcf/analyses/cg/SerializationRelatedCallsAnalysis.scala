@@ -21,8 +21,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
-import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
+import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
+import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -312,9 +312,9 @@ class OISReadObjectAnalysis private[analyses] (
                     // Note, that we assume that there is a constructor
                     // Note that we have to do a String comparison since methods with ObjectType
                     // descriptors are not sorted consistently across runs
-                    val constructor = cf.constructors.map[(String, Method)]  { cf =>
+                    val constructor = cf.constructors.map[(String, Method)] { cf ⇒
                         (cf.descriptor.toJava, cf)
-                    }.minBy(t => t._1)._2
+                    }.minBy(t ⇒ t._1)._2
 
                     calleesAndCallers.addCall(
                         definedMethod, declaredMethods(constructor), pc, UnknownParam, None

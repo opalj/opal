@@ -18,6 +18,7 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.properties.TACAI
 
 /**
  * TODO
@@ -25,8 +26,8 @@ import org.opalj.tac.common.DefinitionSitesKey
  * @author Dominik Helm
  */
 class AllocationSiteBasedPointsToBasedThreadStartScalaAnalysis private[pointsto] (
-    final val project:                    SomeProject,
-    override final val threadStartMethod: DeclaredMethod
+        final val project:                    SomeProject,
+        override final val threadStartMethod: DeclaredMethod
 ) extends PointsToBasedThreadStartAnalysis with AllocationSiteBasedScalaAnalysis
 
 class AllocationSiteBasedPointsToBasedThreadRelatedCallsScalaAnalysis private[analyses] (
