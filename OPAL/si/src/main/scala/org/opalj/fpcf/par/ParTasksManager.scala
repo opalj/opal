@@ -12,6 +12,10 @@ import scala.collection.mutable.Buffer
 
 import org.opalj.log.OPALLogger
 
+object ParTasksManagerConfig {
+    @volatile var MaxThreads = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+}
+
 /**
  * A task manager which performs all tasks in parallel using a standard fixed thread pool.
  * This store is intended to be used for debugging and evaluation purposes only, because it
@@ -21,7 +25,7 @@ import org.opalj.log.OPALLogger
  */
 class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
 
-    private val MaxThreads = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+    val MaxThreads = ParTasksManagerConfig.MaxThreads
 
     // The idea is to start the execution of analyses when the store's "waitOnPhaseCompletion"
     // method is called.

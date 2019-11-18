@@ -148,7 +148,7 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (threads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    PropertyStoreKey.parallelismLevel = threads
+                    org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = threads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
             }

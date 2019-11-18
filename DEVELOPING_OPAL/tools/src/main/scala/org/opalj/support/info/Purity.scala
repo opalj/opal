@@ -200,7 +200,7 @@ object Purity {
                 if (numThreads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    PropertyStoreKey.parallelismLevel = numThreads
+                    org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = numThreads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
             }
