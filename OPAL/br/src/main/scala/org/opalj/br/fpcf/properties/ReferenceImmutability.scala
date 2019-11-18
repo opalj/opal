@@ -7,7 +7,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait ReferenceImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
-  type Self = ReferenceImmutability
+    type Self = ReferenceImmutability
 
 }
 
@@ -28,19 +28,19 @@ sealed trait ReferenceImmutabilityPropertyMetaInformation extends PropertyMetaIn
 sealed trait ReferenceImmutability
     extends Property
     with ReferenceImmutabilityPropertyMetaInformation {
-  final def key: PropertyKey[ReferenceImmutability] = ReferenceImmutability.key
+    final def key: PropertyKey[ReferenceImmutability] = ReferenceImmutability.key
 }
 
 object ReferenceImmutability extends ReferenceImmutabilityPropertyMetaInformation {
 
-  final val PropertyKeyName = "opalj.ReferenceImmutability"
+    final val PropertyKeyName = "opalj.ReferenceImmutability"
 
-  final val key: PropertyKey[ReferenceImmutability] = {
-    PropertyKey.create(
-      PropertyKeyName,
-      MutableReference
-    )
-  }
+    final val key: PropertyKey[ReferenceImmutability] = {
+        PropertyKey.create(
+            PropertyKeyName,
+            MutableReference
+        )
+    }
 }
 
 case object MutableReference extends ReferenceImmutability

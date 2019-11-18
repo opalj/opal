@@ -14,10 +14,11 @@ import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.DeepImmutableType
 import org.opalj.br.fpcf.properties.MutableType_new
 import org.opalj.br.fpcf.properties.ShallowImmutableType
+//import org.opalj.br.fpcf.properties.ShallowImmutableType
 import org.opalj.tac.fpcf.analyses.EagerLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerLxClassImmutabilityAnalysis_new
 
 /**
  * Runs the EagerLxClassImmutabilityAnalysis_new as well as analysis needed for improving the result
@@ -48,9 +49,9 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL0ReferenceImmutabilityAnalysis,
             LazyL0PurityAnalysis,
-            LazyL1FieldMutabilityAnalysis,
+            LazyL2FieldMutabilityAnalysis,
             LazyL0FieldImmutabilityAnalysis,
-            LazyLxClassImmutabilityAnalysis_new,
+            EagerLxClassImmutabilityAnalysis_new,
             EagerLxTypeImmutabilityAnalysis_new
         )
         "Mutable Type: "+propertyStore

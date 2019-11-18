@@ -7,19 +7,18 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.DeepImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.ShallowImmutableField
-import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
  * Runs the EagerL0FieldImmutabilityAnalysis including analysis needed for improving the result.
@@ -46,15 +45,26 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     val analysesManager = project.get(FPCFAnalysesManagerKey)
 
     val (propertyStore, _) = analysesManager.runAll(
-      EagerTypeImmutabilityAnalysis,
-      EagerUnsoundPrematurelyReadFieldsAnalysis,
-      EagerClassImmutabilityAnalysis,
-      EagerL0ReferenceImmutabilityAnalysis,
-      EagerL0PurityAnalysis,
-      EagerL1FieldMutabilityAnalysis,
-      EagerSimpleEscapeAnalysis,
-      TACAITransformer,
-      EagerL0FieldImmutabilityAnalysis
+      /**
+       * LazyTypeImmutabilityAnalysis,
+       * LazyUnsoundPrematurelyReadFieldsAnalysis,
+       * LazyClassImmutabilityAnalysis,
+       * LazyL0ReferenceImmutabilityAnalysis,
+       * LazyL0PurityAnalysis,
+       * LazyL1FieldMutabilityAnalysis,
+       * LazySimpleEscapeAnalysis,
+       * TACAITransformer,
+       * LazyLxTypeImmutabilityAnalysis_new,
+       * EagerL0FieldImmutabilityAnalysis*
+       */
+      LazyTypeImmutabilityAnalysis,
+      LazyUnsoundPrematurelyReadFieldsAnalysis,
+      LazyL2PurityAnalysis,
+      LazyL2FieldMutabilityAnalysis,
+      LazyClassImmutabilityAnalysis,
+      LazyL0ReferenceImmutabilityAnalysis,
+      EagerL0FieldImmutabilityAnalysis,
+      LazyLxTypeImmutabilityAnalysis_new
     );
 
     "Mutable Fields: " + propertyStore
