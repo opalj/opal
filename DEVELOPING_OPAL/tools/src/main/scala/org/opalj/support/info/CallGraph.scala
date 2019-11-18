@@ -130,10 +130,10 @@ object CallGraph extends ProjectAnalysisApplication {
         project:      Project[URL],
         calleesSigs:  List[String],
         callersSigs:  List[String],
-        analysisName:  Option[String],
+        analysisName: Option[String],
         cgAlgorithm:  String,
         cgFile:       Option[String],
-        outputFile:    Option[String],
+        outputFile:   Option[String],
         pointsToFile: Option[String],
         projectTime:  Seconds
     ): BasicReport = {
@@ -304,16 +304,16 @@ object CallGraph extends ProjectAnalysisApplication {
             CallGraphSerializer.writeCG(cg, new File(cgFile.get))
         }
 
-        if(outputFile.isDefined) {
+        if (outputFile.isDefined) {
             val output = new File(outputFile.get)
             val newOutputFile = !output.exists()
             val outputWriter = new PrintWriter(new FileOutputStream(output, true))
             try {
-                if(newOutputFile) {
+                if (newOutputFile) {
                     output.createNewFile()
                     outputWriter.println(
-                        "analysisName;project time;propertyStore time;callGraph time;total time;" +
-                        "methods;reachable;edges"
+                        "analysisName;project time;propertyStore time;callGraph time;total time;"+
+                            "methods;reachable;edges"
                     )
                 }
 
@@ -451,7 +451,7 @@ object CallGraph extends ProjectAnalysisApplication {
             modules += "org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler"
         }
 
-        if(schedulingStrategy.isDefined) {
+        if (schedulingStrategy.isDefined) {
             newConfig = newConfig.withValue(
                 PKESequentialPropertyStore.TasksManagerKey,
                 ConfigValueFactory.fromAnyRef(schedulingStrategy.get)
@@ -494,7 +494,7 @@ object CallGraph extends ProjectAnalysisApplication {
             case Some(requirements) ⇒ requirements + domain
         }
 
-        if(analysisName.isEmpty){
+        if (analysisName.isEmpty) {
             analysisName = Some(s"RUN-${Calendar.getInstance().getTime().toString}")
         }
 

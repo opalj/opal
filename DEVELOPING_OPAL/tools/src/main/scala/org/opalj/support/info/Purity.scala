@@ -125,7 +125,7 @@ object Purity {
         support:               List[FPCFAnalysisScheduler],
         domain:                Class[_ <: Domain with RecordDefUse],
         configurationName:     Option[String],
-        schedulingStrategy:     Option[String],
+        schedulingStrategy:    Option[String],
         rater:                 DomainSpecificRater,
         callGraphKey:          AbstractCallGraphKey,
         withoutJDK:            Boolean,
@@ -172,7 +172,7 @@ object Purity {
             )
         }
 
-        if(schedulingStrategy.isDefined) {
+        if (schedulingStrategy.isDefined) {
             config = config.withValue(
                 PKESequentialPropertyStore.TasksManagerKey,
                 ConfigValueFactory.fromAnyRef(schedulingStrategy.get)
@@ -281,18 +281,18 @@ object Purity {
             val newFile = !output.exists()
             val outputWriter = new PrintWriter(new FileOutputStream(output, true))
             try {
-                if(newFile) {
+                if (newFile) {
                     output.createNewFile()
                     outputWriter.println(
-                        "analysisName;project time;propertyStore time;" +
-                        "callGraph time;analysis time; total time;" +
-                        "compile time pure;pure;domain-specific pure;"+
-                        "side-effect free;domain-specific side-effect free;"+
-                        "externally pure;domain-specific externally pure;"+
-                        "externally side-effect free; domain-specific externally side-effect "+
-                        "free;contextually pure;domain-specific contextually pure;"+
-                        "contextually side-effect free;domain-specific contextually "+
-                        "side-effect free;impure;count"
+                        "analysisName;project time;propertyStore time;"+
+                            "callGraph time;analysis time; total time;"+
+                            "compile time pure;pure;domain-specific pure;"+
+                            "side-effect free;domain-specific side-effect free;"+
+                            "externally pure;domain-specific externally pure;"+
+                            "externally side-effect free; domain-specific externally side-effect "+
+                            "free;contextually pure;domain-specific contextually pure;"+
+                            "contextually side-effect free;domain-specific contextually "+
+                            "side-effect free;impure;count"
                     )
                 }
                 val totalTime = projectTime + propertyStoreTime + callGraphTime + analysisTime
@@ -300,7 +300,7 @@ object Purity {
                     s"${configurationName.get};${projectTime.toString(false)};"+
                         s"${propertyStoreTime.toString(false)};"+
                         s"${callGraphTime.toString(false)};${analysisTime.toString(false)};"+
-                        s"${totalTime.toString(false)};" +
+                        s"${totalTime.toString(false)};"+
                         s"${compileTimePure.size};${pure.size};${dPure.size};"+
                         s"${sideEffectFree.size};${dSideEffectFree.size};"+
                         s"${externallyPure.size};${dExternallyPure.size};"+
@@ -470,26 +470,26 @@ object Purity {
 
         while (i < args.length) {
             args(i) match {
-                case "-cp"              ⇒ cp = new File(readNextArg())
-                case "-projectDir"      ⇒ projectDir = Some(readNextArg())
-                case "-libDir"          ⇒ libDir = Some(readNextArg())
-                case "-analysis"        ⇒ analysisName = Some(readNextArg())
-                case "-fieldMutability" ⇒ fieldMutabilityAnalysisName = Some(readNextArg())
-                case "-escape"          ⇒ escapeAnalysisName = Some(readNextArg())
-                case "-domain"          ⇒ domainName = Some(readNextArg())
-                case "-rater"           ⇒ raterName = Some(readNextArg())
-                case "-callGraph"       ⇒ callGraphName = Some(readNextArg())
-                case "-analysisName"    ⇒ configurationName = Some(readNextArg())
-                case "-schedulingStrategy"    ⇒ schedulingStrategy = Some(readNextArg())
-                case "-eager"           ⇒ eager = true
-                case "-individual"      ⇒ individual = true
-                case "-closedWorld"     ⇒ cwa = true
-                case "-library"         ⇒ isLibrary = true
-                case "-debug"           ⇒ debug = true
-                case "-multi"           ⇒ multiProjects = true
-                case "-eval"            ⇒ evaluationDir = Some(new File(readNextArg()))
-                case "-j"               ⇒ numThreads = readNextArg().toInt
-                case "-noJDK"           ⇒ withoutJDK = true
+                case "-cp"                 ⇒ cp = new File(readNextArg())
+                case "-projectDir"         ⇒ projectDir = Some(readNextArg())
+                case "-libDir"             ⇒ libDir = Some(readNextArg())
+                case "-analysis"           ⇒ analysisName = Some(readNextArg())
+                case "-fieldMutability"    ⇒ fieldMutabilityAnalysisName = Some(readNextArg())
+                case "-escape"             ⇒ escapeAnalysisName = Some(readNextArg())
+                case "-domain"             ⇒ domainName = Some(readNextArg())
+                case "-rater"              ⇒ raterName = Some(readNextArg())
+                case "-callGraph"          ⇒ callGraphName = Some(readNextArg())
+                case "-analysisName"       ⇒ configurationName = Some(readNextArg())
+                case "-schedulingStrategy" ⇒ schedulingStrategy = Some(readNextArg())
+                case "-eager"              ⇒ eager = true
+                case "-individual"         ⇒ individual = true
+                case "-closedWorld"        ⇒ cwa = true
+                case "-library"            ⇒ isLibrary = true
+                case "-debug"              ⇒ debug = true
+                case "-multi"              ⇒ multiProjects = true
+                case "-eval"               ⇒ evaluationDir = Some(new File(readNextArg()))
+                case "-j"                  ⇒ numThreads = readNextArg().toInt
+                case "-noJDK"              ⇒ withoutJDK = true
                 case "-JDK" ⇒
                     cp = JRELibraryFolder; withoutJDK = true
 
@@ -500,7 +500,7 @@ object Purity {
             i += 1
         }
 
-        if(configurationName.isEmpty){
+        if (configurationName.isEmpty) {
             configurationName = Some(s"RUN-${Calendar.getInstance().getTime().toString}")
         }
 
@@ -567,11 +567,11 @@ object Purity {
                 support ::= EagerL2FieldMutabilityAnalysis
                 support ::= EagerUnsoundPrematurelyReadFieldsAnalysis
 
-            case Some("L2")          ⇒
+            case Some("L2") ⇒
                 support ::= LazyL2FieldMutabilityAnalysis
                 support ::= LazyUnsoundPrematurelyReadFieldsAnalysis
 
-            case Some("none")        ⇒
+            case Some("none") ⇒
 
             case None ⇒ analysis match {
                 case LazyL0PurityAnalysis ⇒ LazyL0FieldMutabilityAnalysis

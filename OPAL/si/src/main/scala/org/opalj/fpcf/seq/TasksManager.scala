@@ -202,13 +202,13 @@ private[seq] final class ManyDirectDependenciesFirstTasksManager
     }
 
     override def push(
-                         task:             QualifiedTask,
-                         taskEPK:          SomeEPK,
-                         eOptionP:         SomeEOptionP,
-                         dependees:        Traversable[SomeEOptionP],
-                         currentDependers: Traversable[SomeEPK]
-                     ): Unit = {
-        val weight = - (Math.max(1, dependees.size) * Math.max(1, currentDependers.size))
+        task:             QualifiedTask,
+        taskEPK:          SomeEPK,
+        eOptionP:         SomeEOptionP,
+        dependees:        Traversable[SomeEOptionP],
+        currentDependers: Traversable[SomeEPK]
+    ): Unit = {
+        val weight = -(Math.max(1, dependees.size) * Math.max(1, currentDependers.size))
         this.tasks.add(new WeightedQualifiedTask(task, weight))
     }
 
@@ -273,12 +273,12 @@ private[seq] final class ManyDirectDependersFirstTasksManager
     }
 
     override def push(
-                         task:             QualifiedTask,
-                         taskEPK:          SomeEPK,
-                         eOptionP:         SomeEOptionP,
-                         dependees:        Traversable[SomeEOptionP],
-                         currentDependers: Traversable[SomeEPK]
-                     ): Unit = {
+        task:             QualifiedTask,
+        taskEPK:          SomeEPK,
+        eOptionP:         SomeEOptionP,
+        dependees:        Traversable[SomeEOptionP],
+        currentDependers: Traversable[SomeEPK]
+    ): Unit = {
         this.tasks.add(new WeightedQualifiedTask(task, -(currentDependers.size)))
     }
 
@@ -372,12 +372,12 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
     }
 
     override def push(
-                         task:                              QualifiedTask,
-                         taskEPK:                           SomeEPK,
-                         updatedEOptionP:                   SomeEOptionP,
-                         updatedEOptionPDependees:          Traversable[SomeEOptionP],
-                         currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
-                     ): Unit = {
+        task:                              QualifiedTask,
+        taskEPK:                           SomeEPK,
+        updatedEOptionP:                   SomeEOptionP,
+        updatedEOptionPDependees:          Traversable[SomeEOptionP],
+        currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
+    ): Unit = {
         if (task.isTriggeredByFinalProperty && ps.dependeesCount(taskEPK) == 1) {
             task()
         } else {
@@ -461,12 +461,12 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
     }
 
     override def push(
-                         task:             QualifiedTask,
-                         taskEPK:          SomeEPK,
-                         eOptionP:         SomeEOptionP,
-                         dependees:        Traversable[SomeEOptionP],
-                         currentDependers: Traversable[SomeEPK]
-                     ): Unit = {
+        task:             QualifiedTask,
+        taskEPK:          SomeEPK,
+        eOptionP:         SomeEOptionP,
+        dependees:        Traversable[SomeEOptionP],
+        currentDependers: Traversable[SomeEPK]
+    ): Unit = {
         var weight = 0
         currentDependers foreach { epk ⇒
             weight -= ps.dependeesCount(epk) + ps.dependersCount(epk)

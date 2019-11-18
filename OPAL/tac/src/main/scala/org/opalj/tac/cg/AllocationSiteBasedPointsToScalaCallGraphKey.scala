@@ -4,10 +4,12 @@ package org.opalj.tac.cg
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.pointsto.AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TamiFlexCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.DoPrivilegedPointsToScalaCGAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.pointsto.AllocationSiteBasedPointsToBasedThreadRelatedCallsScalaAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToScalaAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToScalaAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToAnalysisScalaScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToScalaAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredMethodsPointsToScalaAnalysisScheduler
 
 /**
@@ -26,9 +28,11 @@ object AllocationSiteBasedPointsToScalaCallGraphKey extends AbstractCallGraphKey
             AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis,
             AllocationSiteBasedPointsToScalaAnalysisScheduler,
             ConfiguredMethodsPointsToScalaAnalysisScheduler,
-            TamiFlexCallGraphAnalysisScheduler,
             AllocationSiteBasedTamiFlexPointsToAnalysisScalaScheduler,
-            DoPrivilegedPointsToScalaCGAnalysisScheduler
+            DoPrivilegedPointsToScalaCGAnalysisScheduler,
+            AllocationSiteBasedArraycopyPointsToScalaAnalysisScheduler,
+            AllocationSiteBasedUnsafePointsToScalaAnalysisScheduler,
+            AllocationSiteBasedPointsToBasedThreadRelatedCallsScalaAnalysisScheduler
         )
     }
 
