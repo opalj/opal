@@ -3,7 +3,7 @@ package org.opalj.fpcf.properties.type_immutability;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.TypeImmutabilityAnalysis_new;
+import org.opalj.tac.fpcf.analyses.LxTypeImmutabilityAnalysis_new;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -24,7 +24,5 @@ public @interface MutableTypeAnnotation {
      */
     String value();// default = "N/A";
 
-    Class<? extends FPCFAnalysis>[] analyses() default {
-            TypeImmutabilityAnalysis_new.class
-    };
+    Class<? extends FPCFAnalysis>[] analyses() default {LxTypeImmutabilityAnalysis_new.class};
 }
