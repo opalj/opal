@@ -88,6 +88,7 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-schedulingStrategy=name]"+
             "[-writeOutput=file]"+
             "[-writePointsToSets=file]"+
+            "[-j=<number of threads>]"+
             "[-main=package.MainClass]"+
             "[-tamiflex-log=logfile]"+
             "[-finalizerAnalysis=<yes|no|default>]"+
@@ -114,6 +115,7 @@ object CallGraph extends ProjectAnalysisApplication {
                     !p.startsWith("-writeOutput=") &&
                     !p.startsWith("-writePointsToSets=") && // TODO: implement this
                     !p.startsWith("-main=") &&
+                    !p.startsWith("-j=") &&
                     !p.startsWith("-tamiflex-log=") &&
                     !p.startsWith("-finalizerAnalysis=") &&
                     !p.startsWith("-loadedClassesAnalysis=") &&
@@ -135,15 +137,20 @@ object CallGraph extends ProjectAnalysisApplication {
         cgFile:       Option[String],
         outputFile:   Option[String],
         pointsToFile: Option[String],
+        numThreads: Option[Int],
         projectTime:  Seconds
     ): BasicReport = {
         project.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                // val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                ps
+                val threads = numThreads.getOrElse(0) // We chose the sequential store as default
+                if (threads == 0) {
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                } else {
+                    PropertyStoreKey.parallelismLevel = threads
+                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                }
             }
         )
 
@@ -357,6 +364,7 @@ object CallGraph extends ProjectAnalysisApplication {
         var pointsToFile: Option[String] = None
         var mainClass: Option[String] = None
         var tamiflexLog: Option[String] = None
+        var numThreads: Option[Int] = None
 
         val domainRegex = "-domain=(.*)".r
         val callersRegex = "-callers=(.*)".r
@@ -365,6 +373,7 @@ object CallGraph extends ProjectAnalysisApplication {
         val schedulingStrategyRegex = "-schedulingStrategy=(.*)".r
         val writeCGRegex = "-writeCG=(.*)".r
         val writeOutputRegex = "-writeOutput=(.*)".r
+        val numThreadsRegex = "-j=(.*)".r
         val writePointsToSetsRegex = "-writePointsToSets=(.*)".r
         val mainClassRegex = "-main=(.*)".r
         val tamiflexLogRegex = "-tamiflex-log=(.*)".r
@@ -407,6 +416,10 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (schedulingStrategy.isEmpty)
                     schedulingStrategy = Some(name)
                 else throw new IllegalArgumentException("-schedulingStrategy was set twice")
+            case numThreadsRegex(threads) ⇒
+                if (numThreads.isEmpty)
+                    numThreads = Some(Integer.parseInt(threads))
+                else throw new IllegalArgumentException("-j was set twice")
             case writeCGRegex(fileName) ⇒
                 if (cgFile.isEmpty)
                     cgFile = Some(fileName)
@@ -507,6 +520,7 @@ object CallGraph extends ProjectAnalysisApplication {
             cgFile,
             outputFile,
             pointsToFile,
+            numThreads,
             projectTime
         )
     }
