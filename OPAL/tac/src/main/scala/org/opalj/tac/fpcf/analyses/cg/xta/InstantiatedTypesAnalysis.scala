@@ -286,6 +286,10 @@ class InstantiatedTypesAnalysisScheduler(
             }
         }
 
+        // Some cooperative analyses originally meant for RTA may require the global type set
+        // to be pre-initialized. For that purpose, an empty type set is sufficient.
+        initialize(p, Traversable.empty)
+
         def isRelevantArrayType(rt: Type): Boolean =
             rt.isArrayType && rt.asArrayType.elementType.isObjectType
 
