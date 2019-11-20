@@ -26,11 +26,12 @@ sealed trait AllocationSitePointsToSetScalaPropertyMetaInformation extends Prope
 }
 
 case class AllocationSitePointsToSetScala(
-        override val elements: Set[AllocationSite],
-        override val types:    UIDSet[ReferenceType] // TODO: Use normal Set here
+    override val elements: Set[AllocationSite],
+    override val types:    Set[ReferenceType], // TODO: Use normal Set here
+    val orderedTypes:      List[ReferenceType]
 ) extends PointsToSetLike[AllocationSite, Set[AllocationSite], AllocationSitePointsToSetScala]
-    with OrderedProperty
-    with AllocationSitePointsToSetScalaPropertyMetaInformation {
+        with OrderedProperty
+        with AllocationSitePointsToSetScalaPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSetScala] = AllocationSitePointsToSetScala.key
 
@@ -43,21 +44,57 @@ case class AllocationSitePointsToSetScala(
     }
 
     override def included(other: AllocationSitePointsToSetScala): AllocationSitePointsToSetScala = {
-        AllocationSitePointsToSetScala(elements ++ other.elements, types ++ other.types)
+        included(other, 0)
     }
 
     override def included(
         other: AllocationSitePointsToSetScala, seenElements: Int
     ): AllocationSitePointsToSetScala = {
-        included(other)
+        var newAllocationSites = elements
+        var newTypes = types
+        var newOrderedTypes = orderedTypes
+
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+            val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
+            val oldAllocationSites = newAllocationSites
+            newAllocationSites += allocationSite
+            if (newAllocationSites.size != oldAllocationSites.size) {
+                val oldTypes = newTypes
+                newTypes += tpe
+                if (newTypes.size != oldTypes.size)
+                    newOrderedTypes ::= tpe
+            }
+        }
+
+        AllocationSitePointsToSetScala(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def included(
         other: AllocationSitePointsToSetScala, typeFilter: ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSetScala = {
-        val newTypes = types ++ other.types.filter(typeFilter)
-        val newElements = elements ++ other.elements.filter(as ⇒ newTypes.containsId(allocationSiteLongToTypeId(as)))
-        AllocationSitePointsToSetScala(newElements, newTypes)
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return included(other);
+
+        var newTypes = types
+        var newOrderedTypes = orderedTypes
+
+        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
+            val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
+            if (typeFilter(tpe)) {
+                val newAllocationSites = r + allocationSite
+                if (newAllocationSites.size != r.size) {
+                    val oldTypes = newTypes
+                    newTypes += tpe
+                    if (newTypes.size != oldTypes.size)
+                        newOrderedTypes ::= tpe
+                }
+                newAllocationSites
+            } else {
+                r
+            }
+        }
+
+        AllocationSitePointsToSetScala(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def included(
@@ -65,16 +102,61 @@ case class AllocationSitePointsToSetScala(
         seenElements: Int,
         typeFilter:   ReferenceType ⇒ Boolean
     ): AllocationSitePointsToSetScala = {
-        included(other, typeFilter)
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return included(other, seenElements);
+
+        var newAllocationSites = elements
+        var newTypes = types
+        var newOrderedTypes = orderedTypes
+
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+            val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
+            if (typeFilter(tpe)) {
+                val oldAllocationSites = newAllocationSites
+                newAllocationSites += allocationSite
+                if (newAllocationSites.size != oldAllocationSites.size) {
+                    val oldTypes = newTypes
+                    newTypes += tpe
+                    if (newTypes.size != oldTypes.size)
+                        newOrderedTypes ::= tpe
+                }
+            }
+        }
+
+        AllocationSitePointsToSetScala(newAllocationSites, newTypes, newOrderedTypes)
     }
 
     override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSetScala = {
-        val filteredTypes = types.filter(typeFilter)
-        val filteredElements = elements.filter(as ⇒ filteredTypes.containsId(allocationSiteLongToTypeId(as)))
-        AllocationSitePointsToSetScala(filteredElements, filteredTypes)
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return this;
+
+        var newTypes = UIDSet.empty[ReferenceType]
+        var newOrderedTypes = List.empty[ReferenceType]
+
+        val newAllocationSites =
+            elements.foldLeft(Set.empty[AllocationSite]) { (r, allocationSite) ⇒
+                val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
+                if (typeFilter(tpe)) {
+                    val newAllocationSites = r + allocationSite
+                    if (newAllocationSites.size != r.size) {
+                        val oldTypes = newTypes
+                        newTypes += tpe
+                        if (newTypes.size != oldTypes.size)
+                            newOrderedTypes ::= tpe
+                    }
+                    newAllocationSites
+                } else {
+                    r
+                }
+            }
+
+        if (newAllocationSites.size == elements.size)
+            return this;
+
+        AllocationSitePointsToSetScala(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = types.foreach(f)
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = orderedTypes.iterator.take(n).foreach(f)
 
     override def numTypes: Int = types.size
 
@@ -83,7 +165,7 @@ case class AllocationSitePointsToSetScala(
     override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = elements.foreach(f)
 
     override def getNewestElement(): AllocationSite = {
-        if (numElements == 1)
+        if (elements.size == 1)
             elements.head
         else
             throw new NoSuchElementException
@@ -101,7 +183,7 @@ case class AllocationSitePointsToSetScala(
     assert(numElements >= numTypes)
 }
 
-object NoAllocationSitesScala extends AllocationSitePointsToSetScala(Set.empty, UIDSet.empty)
+object NoAllocationSitesScala extends AllocationSitePointsToSetScala(Set.empty, Set.empty, Nil)
 
 object AllocationSitePointsToSetScala extends AllocationSitePointsToSetScalaPropertyMetaInformation {
 
