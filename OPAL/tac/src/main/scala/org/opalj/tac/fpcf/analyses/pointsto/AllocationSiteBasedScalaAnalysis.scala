@@ -9,7 +9,6 @@ import scala.annotation.switch
 
 import scala.collection.immutable.IntMap
 
-import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.PropertyKey
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSetScala
 import org.opalj.br.fpcf.properties.pointsto.NoAllocationSitesScala
@@ -39,10 +38,10 @@ trait AllocationSiteBasedScalaAnalysis extends AbstractPointsToBasedAnalysis {
     val mergeExceptions: Boolean = project.config.getBoolean(s"$configPrefix.mergeExceptions")
 
     // TODO: Create merged pointsTo allocation site
-    val stringBuilderPointsToSet = AllocationSitePointsToSetScala(Set(StringBuilderId.toLong << 39 | 0x3FFFFFFFFFL), UIDSet(ObjectType.StringBuilder))
-    val stringBufferPointsToSet = AllocationSitePointsToSetScala(Set(StringBufferId.toLong << 39 | 0x3FFFFFFFFFL), UIDSet(ObjectType.StringBuffer))
-    val stringConstPointsToSet = AllocationSitePointsToSetScala(Set(StringId.toLong << 39 | 0x3FFFFFFFFFL), UIDSet(ObjectType.String))
-    val classConstPointsToSet = AllocationSitePointsToSetScala(Set(ClassId.toLong << 39 | 0x3FFFFFFFFFL), UIDSet(ObjectType.Class))
+    val stringBuilderPointsToSet = AllocationSitePointsToSetScala(Set(StringBuilderId.toLong << 39 | 0x3FFFFFFFFFL), Set(ObjectType.StringBuilder), List(ObjectType.StringBuilder))
+    val stringBufferPointsToSet = AllocationSitePointsToSetScala(Set(StringBufferId.toLong << 39 | 0x3FFFFFFFFFL), Set(ObjectType.StringBuffer), List(ObjectType.StringBuffer))
+    val stringConstPointsToSet = AllocationSitePointsToSetScala(Set(StringId.toLong << 39 | 0x3FFFFFFFFFL), Set(ObjectType.String), List(ObjectType.String))
+    val classConstPointsToSet = AllocationSitePointsToSetScala(Set(ClassId.toLong << 39 | 0x3FFFFFFFFFL), Set(ObjectType.Class), List(ObjectType.Class))
     var exceptionPointsToSets: IntMap[AllocationSitePointsToSetScala] = IntMap()
 
     override protected[this] def createPointsToSet(
@@ -54,7 +53,7 @@ trait AllocationSiteBasedScalaAnalysis extends AbstractPointsToBasedAnalysis {
     ): AllocationSitePointsToSetScala = {
         @inline def createNewPointsToSet(): AllocationSitePointsToSetScala = {
             val as = allocationSiteToLong(declaredMethod, pc, allocatedType, isEmptyArray)
-            new AllocationSitePointsToSetScala(Set(as), UIDSet(allocatedType))
+            new AllocationSitePointsToSetScala(Set(as), Set(allocatedType), List(allocatedType))
         }
 
         (allocatedType.id: @switch) match {
@@ -87,7 +86,8 @@ trait AllocationSiteBasedScalaAnalysis extends AbstractPointsToBasedAnalysis {
                     else {
                         val newPts = new AllocationSitePointsToSetScala(
                             Set(allocatedType.id.toLong << 39 | 0x3FFFFFFFFFL),
-                            UIDSet(allocatedType)
+                            Set(allocatedType),
+                            List(allocatedType)
                         )
                         exceptionPointsToSets += allocatedType.id → newPts
                         newPts
