@@ -16,6 +16,7 @@ import org.opalj.br.fpcf.properties.DeepImmutableClass
 import org.opalj.br.fpcf.properties.DependentImmutableClass
 import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.ShallowImmutableClass
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
@@ -44,6 +45,8 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     def analyze(project: Project[URL]): String = {
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
+
+        analysesManager.project.get(RTACallGraphKey)
 
         val (propertyStore, _) = analysesManager.runAll(
             LazyTypeImmutabilityAnalysis,

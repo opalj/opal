@@ -7,13 +7,15 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedReference
 import org.opalj.br.fpcf.properties.MutableReference
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
  * Runs the EagerL0ReferenceImmutabilityAnalysis including all analysis needed for improving the result.
@@ -38,12 +40,16 @@ object ReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
     def analyze(project: Project[URL]): String = {
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-
+        analysesManager.project.get(RTACallGraphKey)
         val (propertyStore, _) = analysesManager.runAll(
+            //EagerUnsoundPrematurelyReadFieldsAnalysis,
+            //EagerL2PurityAnalysis,
+            //EagerL2FieldMutabilityAnalysis,
+            EagerL0ReferenceImmutabilityAnalysis,
+            LazyL2FieldMutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL0PurityAnalysis,
-            TACAITransformer,
-            EagerL0ReferenceImmutabilityAnalysis
+            LazyL2PurityAnalysis,
+            LazyInterProceduralEscapeAnalysis
         );
 
         "Mutable References: "+propertyStore

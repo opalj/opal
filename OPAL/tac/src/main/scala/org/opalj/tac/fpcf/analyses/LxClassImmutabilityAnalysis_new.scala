@@ -217,8 +217,8 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
           }
           case FinalP(ShallowImmutableField) => hasShallowImmutableFields = true
           case FinalEP(f, DependentImmutableField) => {
-            println("FieldType: " + f.asField.fieldType)
-            println("FieldTypeSignature: " + f.asField.fieldTypeSignature.get.toJVMSignature)
+            //println("FieldType: "+f.asField.fieldType)
+            //println("FieldTypeSignature: "+f.asField.fieldTypeSignature.get.toJVMSignature)
             hasDependentImmutableFields = true
           }
           case FinalP(DeepImmutableField) =>

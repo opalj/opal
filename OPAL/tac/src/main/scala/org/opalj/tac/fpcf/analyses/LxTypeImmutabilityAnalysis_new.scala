@@ -34,6 +34,7 @@ import org.opalj.br.fpcf.properties.ClassImmutability_new
 import org.opalj.br.fpcf.properties.DeepImmutableClass
 import org.opalj.br.fpcf.properties.DeepImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableClass
+import org.opalj.br.fpcf.properties.DependentImmutableType
 import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableType_new
 import org.opalj.br.fpcf.properties.ShallowImmutableClass
@@ -127,8 +128,8 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                     joinedImmutability = ShallowImmutableType // ImmutableContainerType
                     maxImmutability = ShallowImmutableType //ImmutableContainerType
                 case FinalP(DependentImmutableClass) ⇒
-                    joinedImmutability = ShallowImmutableType
-                    maxImmutability = ShallowImmutableType
+                    joinedImmutability = DependentImmutableType
+                    maxImmutability = DependentImmutableType
 
                 case eps @ InterimLUBP(lb, ub) ⇒
                     joinedImmutability = lb.correspondingTypeImmutability
@@ -149,6 +150,10 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                     case FinalP(ShallowImmutableType) ⇒ //ImmutableContainerType) =>
                         joinedImmutability = joinedImmutability.meet(ShallowImmutableType) //ImmutableContainerType)
                         maxImmutability = ShallowImmutableType //ImmutableContainerType
+
+                    case FinalP(DependentImmutableType) ⇒
+                        joinedImmutability = joinedImmutability.meet(DependentImmutableType)
+                        maxImmutability = DependentImmutableType
 
                     case eps @ InterimLUBP(subtypeLB, subtypeUB) ⇒
                         joinedImmutability = joinedImmutability.meet(subtypeLB)
@@ -220,11 +225,15 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                         case UBP(x) if (x == MutableType_new || x == MutableClass) ⇒ //MutableType | _: MutableObject) =>
                             Result(t, MutableType_new) //MutableType)
 
-                        case FinalEP(e, x) if (x == ShallowImmutableType || x == DependentImmutableClass || x == ShallowImmutableClass) ⇒ //ImmutableContainerType | ImmutableContainer) =>
+                        case FinalEP(e, x) if (x == ShallowImmutableType || x == ShallowImmutableClass) ⇒ //ImmutableContainerType | ImmutableContainer) =>
                             maxImmutability = ShallowImmutableType //ImmutableContainerType
                             dependencies = dependencies - e
                             nextResult()
-
+                        case FinalEP(e, x) if (x == DependentImmutableClass || x == DependentImmutableType) ⇒ {
+                            maxImmutability = DependentImmutableType
+                            dependencies = dependencies - e
+                            nextResult()
+                        }
                         case eps @ InterimEUBP(e, subtypeP) ⇒
                             dependencies = dependencies.updated(e, eps)
                             subtypeP match {

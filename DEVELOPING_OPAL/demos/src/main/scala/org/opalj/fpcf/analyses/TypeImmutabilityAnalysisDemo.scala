@@ -12,6 +12,7 @@ import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.DependentImmutableType
 import org.opalj.br.fpcf.properties.MutableType_new
 import org.opalj.br.fpcf.properties.ShallowImmutableType
 //import org.opalj.br.fpcf.properties.ShallowImmutableType
@@ -60,6 +61,10 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             .toString()+"\n"+
             "Shallow Immutable Type: "+propertyStore
             .finalEntities(ShallowImmutableType)
+            .toList
+            .toString()+"\n"+
+            "Dependent Immutable Type: "+propertyStore
+            .finalEntities(DependentImmutableType)
             .toList
             .toString()+"\n"+
             "Deep Immutable Type: "+propertyStore
