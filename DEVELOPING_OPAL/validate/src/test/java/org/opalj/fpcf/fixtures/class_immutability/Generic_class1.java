@@ -3,9 +3,11 @@ package org.opalj.fpcf.fixtures.class_immutability;
 import org.opalj.fpcf.properties.class_immutability.DependentImmutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.DependentImmutableFieldAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
+import org.opalj.fpcf.properties.type_immutability.DependentImmutableTypeAnnotation;
 
+@DependentImmutableTypeAnnotation("Dependent Immutability of T1,...,T5")
 @DependentImmutableClassAnnotation("Dependent Immutability of T1,...,T5")
-public class Generic_class1<T1,T2,T3,T4,T5> {
+public final class Generic_class1<T1,T2,T3,T4,T5> {
     @DependentImmutableFieldAnnotation("T1")
     @ImmutableReferenceAnnotation("effectively")
     private T1 t1;

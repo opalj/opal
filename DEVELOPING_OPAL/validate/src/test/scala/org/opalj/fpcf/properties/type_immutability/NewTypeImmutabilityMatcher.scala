@@ -5,6 +5,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.DependentImmutableType
 import org.opalj.br.fpcf.properties.MutableType_new
 import org.opalj.br.fpcf.properties.ShallowImmutableType
 import org.opalj.br.fpcf.properties.TypeImmutability_new
@@ -53,5 +54,7 @@ class NewTypeImmutabilityMatcher(val property: TypeImmutability_new)
 class NewMutableTypeMatcher extends NewTypeImmutabilityMatcher(MutableType_new)
 
 class ShallowImmutableTypeMatcher extends NewTypeImmutabilityMatcher(ShallowImmutableType)
+
+class DependentImmutableTypeMatcher extends NewTypeImmutabilityMatcher(DependentImmutableType)
 
 class DeepImmutableTypeMatcher extends NewTypeImmutabilityMatcher(DeepImmutableType)

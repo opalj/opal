@@ -48,7 +48,7 @@ case object MutableClass extends ClassImmutability_new {
 
 case object DependentImmutableClass extends ClassImmutability_new {
   override def correspondingTypeImmutability: TypeImmutability_new =
-    ShallowImmutableType //TODO check
+    DependentImmutableType //TODO check
 }
 
 case object ShallowImmutableClass extends ClassImmutability_new {
