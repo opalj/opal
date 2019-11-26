@@ -4,14 +4,13 @@ package br
 package fpcf
 
 import com.typesafe.config.Config
-
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.fpcf.par.PKECPropertyStore
-//import org.opalj.fpcf.seq.PKESequentialPropertyStore
+//import org.opalj.fpcf.par.PKECPropertyStore
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 
@@ -60,8 +59,8 @@ object PropertyStoreKey
                 )
                 psFactory(context)
             case None ⇒
-                //val ps = PKESequentialPropertyStore(context: _*)
-                val ps = PKECPropertyStore(context: _*)
+                val ps = PKESequentialPropertyStore(context: _*)
+                //val ps = PKECPropertyStore(context: _*)
                 ps
         }
     }
