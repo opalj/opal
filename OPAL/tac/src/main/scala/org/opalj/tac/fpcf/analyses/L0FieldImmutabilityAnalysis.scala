@@ -4,6 +4,7 @@ package org.opalj.br.fpcf.analyses
 import org.opalj.br.Field
 import org.opalj.br.FieldType
 import org.opalj.br.ObjectType
+import org.opalj.br.TypeVariableSignature
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
@@ -77,6 +78,10 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
       field: Field
   ): ProperPropertyComputationResult = {
 
+    println("Field Attributes: " + field.asField.attributes.toList.collectFirst({
+      case TypeVariableSignature(t) => t
+    }))
+
     var dependencies: Set[EOptionP[Entity, Property]] = Set.empty
 
     def handleTypeImmutability(objectType: FieldType)(state: State): Option[Boolean] = {
@@ -91,6 +96,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         }
         case FinalEP(e, DependentImmutableType) => {
           println("has dependent immutable type")
+          //TODO under construction
           state.dependentTypeImmutability = Some(true)
           return Some(false);
         }
@@ -166,14 +172,26 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         case Some(false) => Result(field, MutableField)
         case Some(true) => {
           //If the field type is object. It is a generic field
-          if (field.fieldType == ObjectType("java/lang/Object"))
-            Result(field, DependentImmutableField)
-          else
+          //Test Dependent... //TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          //if (field.fieldType == ObjectType("java/lang/Object")) {
+          val genericString = field.asField.attributes.toList.collectFirst({
+            case TypeVariableSignature(t) => t
+          })
+          if (!field.attributes.isEmpty && genericString != None) {
+
+            //if(genericString!=None)
+            //    println("Generic String: "+genericString)
+            //    println(
+            //        "test: "+DependentImmutableField(genericString).genericString
+            //   }
+            Result(field, DependentImmutableField(genericString)) //genericString))
+
+          } else
             state.typeImmutability match {
               case Some(true) => Result(field, DeepImmutableField)
               case Some(false) => {
                 state.dependentTypeImmutability match {
-                  case Some(true) => Result(field, DependentImmutableField)
+                  case Some(true) => Result(field, DependentImmutableField())
                   case _          => Result(field, ShallowImmutableField)
                 }
               }

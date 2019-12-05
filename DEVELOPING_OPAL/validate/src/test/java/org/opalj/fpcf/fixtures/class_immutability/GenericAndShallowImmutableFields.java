@@ -12,9 +12,9 @@ import org.opalj.fpcf.properties.type_mutability.MutableType;
 @ShallowImmutableClassAnnotation("")
 public class GenericAndShallowImmutableFields<T1, T2> {
 
-    @DependentImmutableFieldAnnotation("")
+    @DependentImmutableFieldAnnotation(value = "T1", genericString = "T1")
     private T1 t1;
-    @DependentImmutableFieldAnnotation("")
+    @DependentImmutableFieldAnnotation(value = "T2", genericString = "T2")
     private T2 t2;
     @ShallowImmutableFieldAnnotation("")
     private TrivialMutableClass  tmc;

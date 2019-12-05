@@ -8,7 +8,6 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
@@ -39,7 +38,6 @@ class FieldImmutabilityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis is executed") {
         val as = executeAnalyses(
             Set(
-                LazyTypeImmutabilityAnalysis,
                 LazyL2FieldMutabilityAnalysis,
                 LazyL0ReferenceImmutabilityAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,

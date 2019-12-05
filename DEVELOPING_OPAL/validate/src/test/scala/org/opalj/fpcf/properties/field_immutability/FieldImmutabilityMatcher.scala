@@ -42,7 +42,13 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(p ⇒ p == property)) {
+        if (!properties.exists(p ⇒ {
+            p match {
+                case DependentImmutableField(_) if property == DependentImmutableField() ⇒ true
+                case _ if p == property ⇒ true
+                case _ ⇒ false
+            }
+        })) { //p == property)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
@@ -56,6 +62,6 @@ class MutableFieldMatcher extends FieldImmutabilityMatcher(MutableField)
 
 class ShallowImmutableFieldMatcher extends FieldImmutabilityMatcher(ShallowImmutableField)
 
-class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(DependentImmutableField)
+class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(DependentImmutableField())
 
 class DeepImmutableFieldMatcher extends FieldImmutabilityMatcher(DeepImmutableField)

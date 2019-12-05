@@ -46,6 +46,17 @@ sealed trait ImmutableField extends FieldImmutability
 
 case object ShallowImmutableField extends ImmutableField
 
-case object DependentImmutableField extends ImmutableField
-
+case class DependentImmutableField(var genericString: Option[String] = None)
+    extends ImmutableField
+    with FieldImmutability //{
+// def genericString: Option[String] = None
+//}
+/**
+ * case object DependentImmutableField extends DependentImmutableField_ {
+ * def setGenericString(s: Option[String]) = {
+ * genericString = s
+ * this
+ * }
+ * }*
+ */
 case object DeepImmutableField extends ImmutableField

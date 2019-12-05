@@ -11,7 +11,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
-    final type Self = ClassImmutability
+  final type Self = ClassImmutability
 
 }
 
@@ -86,25 +86,26 @@ sealed trait ClassImmutability
     extends OrderedProperty
     with ClassImmutabilityPropertyMetaInformation {
 
-    final def key: PropertyKey[ClassImmutability] = ClassImmutability.key
+  final def key: PropertyKey[ClassImmutability] = ClassImmutability.key
 
-    def correspondingTypeImmutability: TypeImmutability
+  def correspondingTypeImmutability: TypeImmutability
 
-    /** `true` if instances of the class are mutable. */
-    def isMutable: Boolean
+  /** `true` if instances of the class are mutable. */
+  def isMutable: Boolean
 }
+
 /**
  * Common constants use by all [[ClassImmutability]] properties associated with methods.
  */
 object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
 
-    /**
-     * The key associated with every [[ClassImmutability]] property.
-     */
-    final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
-        "opalj.ClassImmutability",
-        MutableObjectDueToUnresolvableDependency
-    )
+  /**
+   * The key associated with every [[ClassImmutability]] property.
+   */
+  final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
+    "opalj.ClassImmutability",
+    MutableObjectDueToUnresolvableDependency
+  )
 }
 
 /**
@@ -117,11 +118,11 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
  */
 case object ImmutableObject extends ClassImmutability {
 
-    final val correspondingTypeImmutability = ImmutableType
+  final val correspondingTypeImmutability = ImmutableType
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
-    final def isMutable: Boolean = false
+  final def isMutable: Boolean = false
 }
 
 /**
@@ -131,45 +132,45 @@ case object ImmutableObject extends ClassImmutability {
  */
 case object ImmutableContainer extends ClassImmutability {
 
-    final val correspondingTypeImmutability = ImmutableContainerType
+  final val correspondingTypeImmutability = ImmutableContainerType
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == ImmutableObject) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
-        }
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+    if (other == ImmutableObject) {
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
     }
+  }
 
-    final def isMutable: Boolean = false
+  final def isMutable: Boolean = false
 }
 
 sealed trait MutableObject extends ClassImmutability {
 
-    def reason: String
-    final val correspondingTypeImmutability = MutableType
+  def reason: String
+  final val correspondingTypeImmutability = MutableType
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == ImmutableObject || other == ImmutableContainer) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
-        }
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+    if (other == ImmutableObject || other == ImmutableContainer) {
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
+  }
 
-    final def isMutable: Boolean = true
+  final def isMutable: Boolean = true
 
-    final override def toString: String = s"MutableObject(reason=$reason)"
+  final override def toString: String = s"MutableObject(reason=$reason)"
 }
 
 case object MutableObjectDueToIncompleteAnalysis extends MutableObject {
-    final def reason = "analysis has not yet completed"
+  final def reason = "analysis has not yet completed"
 }
 
 case object MutableObjectByAnalysis extends MutableObject {
-    final def reason = "determined by analysis"
+  final def reason = "determined by analysis"
 }
 
 case object MutableObjectDueToUnknownSupertypes extends MutableObject {
-    final def reason = "the type hierarchy is upwards incomplete"
+  final def reason = "the type hierarchy is upwards incomplete"
 }
 
 case object MutableObjectDueToUnresolvableDependency extends MutableObject {
-    final def reason = "a dependency cannot be resolved"
+  final def reason = "a dependency cannot be resolved"
 }

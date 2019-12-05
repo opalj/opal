@@ -44,24 +44,26 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new)
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        println(11)
-        if (!properties.exists(p ⇒ p == property)) {
+        if (!properties.exists(p ⇒ {
+            p match {
+                case DependentImmutableClass(_) if property == DependentImmutableClass() ⇒ true
+                case _ if p == property ⇒ true
+                case _ ⇒ false
+            }
+        })) { //p == property)) {
             // ... when we reach this point the expected property was not found.
-            println(22)
-            val r = Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
-            println(33)
-            r
+            Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
-            println(44)
             None
         }
+
     }
 
 }
 
 class MutableClassMatcher extends ClassImmutabilityMatcher(MutableClass)
 
-class DependentImmutableClassMatcher extends ClassImmutabilityMatcher(DependentImmutableClass)
+class DependentImmutableClassMatcher extends ClassImmutabilityMatcher(DependentImmutableClass())
 
 class ShallowImmutableClassMatcher extends ClassImmutabilityMatcher(ShallowImmutableClass)
 
