@@ -11,11 +11,11 @@ import org.opalj.fpcf.properties.type_mutability.MutableType;
 @DependentImmutableClassAnnotation("")
 public final class GenericAndDeepImmutableFields<T1, T2> {
 
-    @DependentImmutableFieldAnnotation("")
+    @DependentImmutableFieldAnnotation(value = "T1", genericString = "T1")
     @ImmutableReferenceAnnotation("")
     private T1 t1;
 
-    @DependentImmutableFieldAnnotation("")
+    @DependentImmutableFieldAnnotation(value = "T2", genericString = "T2")
     @ImmutableReferenceAnnotation("")
     private T2 t2;
 

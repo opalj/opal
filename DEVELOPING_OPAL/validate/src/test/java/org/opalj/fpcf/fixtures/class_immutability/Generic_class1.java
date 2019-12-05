@@ -8,19 +8,19 @@ import org.opalj.fpcf.properties.type_immutability.DependentImmutableTypeAnnotat
 @DependentImmutableTypeAnnotation("Dependent Immutability of T1,...,T5")
 @DependentImmutableClassAnnotation("Dependent Immutability of T1,...,T5")
 public final class Generic_class1<T1,T2,T3,T4,T5> {
-    @DependentImmutableFieldAnnotation("T1")
+    @DependentImmutableFieldAnnotation(value = "T1",genericString = "T1")
     @ImmutableReferenceAnnotation("effectively")
     private T1 t1;
-    @DependentImmutableFieldAnnotation("T2")
+    @DependentImmutableFieldAnnotation(value = "T2", genericString =  "T2")
     @ImmutableReferenceAnnotation("effectively")
     private T2 t2;
-    @DependentImmutableFieldAnnotation("T3")
+    @DependentImmutableFieldAnnotation(value = "T3", genericString = "T3")
     @ImmutableReferenceAnnotation("effectively")
     private T3 t3;
-    @DependentImmutableFieldAnnotation("T4")
+    @DependentImmutableFieldAnnotation(value = "T4", genericString = "T3")
     @ImmutableReferenceAnnotation("effectively")
     private T4 t4;
-    @DependentImmutableFieldAnnotation("T5")
+    @DependentImmutableFieldAnnotation(value = "T5", genericString = "T5")
     @ImmutableReferenceAnnotation("effectively")
     private T5 t5;
 

@@ -24,6 +24,8 @@ public @interface DependentImmutableFieldAnnotation {
      */
     String value() ; // default = "N/A";
 
+    String genericString();
+
     Class<? extends FPCFAnalysis>[] analyses() default {
             L0FieldImmutabilityAnalysis.class
     };

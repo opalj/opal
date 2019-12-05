@@ -13,10 +13,13 @@ import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.DeepImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
@@ -44,6 +47,8 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
   def analyze(project: Project[URL]): String = {
     val analysesManager = project.get(FPCFAnalysesManagerKey)
 
+    analysesManager.project.get(RTACallGraphKey)
+
     val (propertyStore, _) = analysesManager.runAll(
       /**
        * LazyTypeImmutabilityAnalysis,
@@ -57,6 +62,8 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
        * LazyLxTypeImmutabilityAnalysis_new,
        * EagerL0FieldImmutabilityAnalysis*
        */
+
+      LazyLxClassImmutabilityAnalysis_new,
       LazyTypeImmutabilityAnalysis,
       LazyUnsoundPrematurelyReadFieldsAnalysis,
       LazyL2PurityAnalysis,
@@ -76,12 +83,24 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
       .toList
       .toString() + "\n" +
       "Dependet Immutable Fields:" + propertyStore
-      .finalEntities(DependentImmutableField)
+      .finalEntities(DependentImmutableField(None))
       .toList
       .toString() + "\n" +
       "Deep Immutable Fields: " + propertyStore
       .finalEntities(DeepImmutableField)
       .toList
-      .toString()
+      .toString() + "\n" +
+      propertyStore
+        .entities(FieldImmutability.key)
+        /**
+         * .entities(x ⇒ {
+         * x.asEPS.pk match {
+         * case DependentImmutableField(_) ⇒ true
+         * case _                          ⇒ false
+         * }
+         * })*
+         */
+        .toList
+        .toString
   }
 }

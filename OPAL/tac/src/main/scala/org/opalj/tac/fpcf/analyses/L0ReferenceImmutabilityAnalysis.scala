@@ -601,7 +601,14 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                                         taCode.stmts,
                                         taCode.cfg,
                                         taCode.pcToIndex
-                                    ))
+                                    ) /**&& !isDoubleCheckedLocking(
+                                        index,
+                                        defaultValue.get,
+                                        method,
+                                        taCode.stmts,
+                                        taCode.cfg,
+                                        taCode.pcToIndex
+                                    )**/ )
                                         return true;
 
                                     state.referenceImmutability = LazyInitializedReference //LazyInitializedField
@@ -910,15 +917,16 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         defaultValue: Any,
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]]
-    )(implicit state: State): Option[(Int, Int, Int)] = {
+    ): Option[(Int, Int, Int)] = {
         val startBB = cfg.bb(fieldWrite).asBasicBlock
 
         var enqueuedBBs: Set[CFGNode] = startBB.predecessors
         var worklist: List[BasicBlock] = getPredecessors(startBB, Set.empty)
 
         var result: Option[(Int, Int)] = None
-
+        println("worklist initial: "+worklist)
         while (worklist.nonEmpty) {
+            println("worklist "+worklist)
             val curBB = worklist.head
             worklist = worklist.tail
 
@@ -929,8 +937,13 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             (cfStmt.astID: @switch) match {
                 case If.ASTID ⇒
                     val ifStmt = cfStmt.asIf
+                    println("ifstmt: "+ifStmt)
+                    println("curBB: "+curBB)
+                    println("startBB: "+startBB)
+                    println("result.isDefined "+result.isDefined)
+                    println("result: "+result)
                     ifStmt.condition match {
-                        case EQ if curBB != startBB && isGuard(ifStmt, defaultValue, code) ⇒
+                        case EQ if curBB != startBB ⇒ //&&  isGuard(ifStmt, defaultValue, code) ⇒
                             if (result.isDefined) {
                                 if (result.get._1 != endPC || result.get._2 != endPC + 1)
                                     return None;
@@ -938,7 +951,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                                 result = Some((endPC, endPC + 1))
                             }
 
-                        case NE if curBB != startBB && isGuard(ifStmt, defaultValue, code) ⇒
+                        case NE if curBB != startBB ⇒ //&& isGuard(ifStmt, defaultValue, code) ⇒
                             if (result.isDefined) {
                                 if (result.get._1 != endPC || result.get._2 != ifStmt.targetStmt)
                                     return None;
@@ -1037,7 +1050,8 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             isGuardInternal(ifStmt.rightExpr.asVar)
         } else if (isDefaultConst(ifStmt.rightExpr) && ifStmt.leftExpr.isVar) {
             isGuardInternal(ifStmt.leftExpr.asVar)
-        } else false
+        } else
+            isGuardInternal(ifStmt.leftExpr.asVar) || isGuardInternal(ifStmt.rightExpr.asVar) // || false //TODO
     }
 
     /**
@@ -1087,6 +1101,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
 
         /**
          * case LBP(_: ImmutableReference) ⇒ //FinalField) ⇒
+         *
          * true
          * case UBP(_: MutableReference) ⇒ false // NonFinalField) ⇒ false *
          */
@@ -1094,8 +1109,74 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             state.referenceImmutabilityDependees += eop
             true
     }
-}
 
+    //-------------------------------------------------- double checked locking
+    def isDoubleCheckedLocking(
+        writeIndex:   Int,
+        defaultValue: Any,
+        method:       Method,
+        code:         Array[Stmt[V]],
+        cfg:          CFG[Stmt[V], TACStmts[V]],
+        pcToIndex:    Array[Int]
+    )(implicit state: State): Boolean = {
+        //val a = state.field
+        //val write = code(writeIndex).asFieldWriteAccessStmt
+        //println("Purity Information: "+propertyStore(declaredMethods(method), Purity.key))
+        //println(isNonDeterministic(propertyStore(declaredMethods(method), Purity.key)))
+        if (!method.isStatic || !state.field.isStatic) {
+            false
+        } else {
+            //-----------------------------
+            /**
+             * val reads = fieldAccessInformation.readAccesses(state.field)
+             * if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
+             * return false; // Reads outside the (single) lazy initialization method
+             * }
+             *
+             * // There must be a guarding if-Statement
+             * // The guardIndex is the index of the if-Statement, the guardedIndex is the index of the
+             * // first statement that is executed after the if-Statement if the field's value was not the
+             * // default value
+             * val (guardIndex, guardedIndex, readIndex) =
+             * findGuard(writeIndex, defaultValue, code, cfg) match {
+             * case Some((guard, guarded, read)) ⇒ (guard, guarded, read)
+             * case None                         ⇒ return false;
+             * }
+             * // Detect only simple patterns where the lazily initialized value is returned immediately
+             * // if (!checkImmediateReturn(write, writeIndex, readIndex, code))
+             * //     return false;
+             *
+             * println(
+             * "Check writes (is double checked locking): "+checkWrites(
+             * write,
+             * writeIndex,
+             * guardIndex,
+             * guardedIndex,
+             * method,
+             * code,
+             * cfg
+             * )
+             * )
+             * // The value written must be computed deterministically and the writes guarded correctly
+             * if (!checkWrites(write, writeIndex, guardIndex, guardedIndex, method, code, cfg))
+             * return false;
+             *
+             * // Field reads (except for the guard) may only be executed if the field's value is not the
+             * // default value
+             * if (!checkReads(reads, readIndex, guardedIndex, writeIndex, cfg, pcToIndex))
+             * return false;
+             *
+             * true
+             */
+            //-----------------------------
+
+            //}
+
+            false
+        }
+    }
+    //-------------------------------------------------- double checked locking
+}
 trait L0ReferenceImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set(

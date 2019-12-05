@@ -14,7 +14,7 @@ public class GenericAndMutableFields<T1, T2> {
     @MutableFieldAnnotation("Because of mutable reference")
     @MutableReferenceAnnotation("Because of public field")
     public T1 t1;
-    @DependentImmutableFieldAnnotation("Because of generic type")
+    @DependentImmutableFieldAnnotation(value = "Because of generic type", genericString = "T2")
     @ImmutableReferenceAnnotation("Because of effectively immutable final")
     private T2 t2;
     GenericAndMutableFields(T1 t1, T2 t2){
