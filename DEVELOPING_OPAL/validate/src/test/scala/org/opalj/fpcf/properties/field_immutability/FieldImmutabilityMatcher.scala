@@ -44,9 +44,9 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
     ): Option[String] = {
         if (!properties.exists(p ⇒ {
             p match {
-                case DependentImmutableField(_) if property == DependentImmutableField() ⇒ true
-                case _ if p == property ⇒ true
-                case _ ⇒ false
+                case DependentImmutableField(_) ⇒ property == DependentImmutableField() //TODO optimize
+                case _                          ⇒ p == property
+
             }
         })) { //p == property)) {
             // ... when we reach this point the expected property was not found.

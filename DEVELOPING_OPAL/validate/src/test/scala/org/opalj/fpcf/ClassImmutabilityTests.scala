@@ -51,16 +51,12 @@ class ClassImmutabilityTests extends PropertiesTest {
         EagerLxClassImmutabilityAnalysis_new
       )
     )
-
-    println(2)
     as.propertyStore.shutdown()
-    println(3)
     validateProperties(
       as,
       classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3)),
       Set("ClassImmutability_new")
     )
-    println(4)
   }
   /**
    * describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {

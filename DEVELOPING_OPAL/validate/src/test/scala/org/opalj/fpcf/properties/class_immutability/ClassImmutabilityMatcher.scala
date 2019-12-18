@@ -46,9 +46,8 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new)
     ): Option[String] = {
         if (!properties.exists(p ⇒ {
             p match {
-                case DependentImmutableClass(_) if property == DependentImmutableClass() ⇒ true
-                case _ if p == property ⇒ true
-                case _ ⇒ false
+                case DependentImmutableClass(_) ⇒ property == DependentImmutableClass()
+                case _                          ⇒ p == property
             }
         })) { //p == property)) {
             // ... when we reach this point the expected property was not found.
