@@ -132,13 +132,9 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
       field: Field
   ): ProperPropertyComputationResult = {
     implicit val state: State = State(field)
-    println(
-      "field.isPrematurelyRead " + isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key))
-    )
     // Fields are not final if they are read prematurely!
     if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key)))
       return Result(field, MutableReference); //Result(field, NonFinalFieldByAnalysis);
-    println("field.isFinal " + field.isFinal)
     if (field.isFinal)
       return createResult();
 
@@ -224,10 +220,8 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
       taCode <- getTACAI(method, pcs)
     } {
       if (methodUpdatesField(method, taCode, pcs)) {
-        println("method updates field: true")
         return Result(field, MutableReference); //return Result(field, NonFinalFieldByAnalysis);
-      } else
-        println("method updates field: false")
+      }
 
     }
 
@@ -445,9 +439,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     if (!checkImmediateReturn(write, writeIndex, readIndex, code))
       return false;
 
-    println(
-      "Check writes: " + checkWrites(write, writeIndex, guardIndex, guardedIndex, method, code, cfg)
-    )
     // The value written must be computed deterministically and the writes guarded correctly
     if (!checkWrites(write, writeIndex, guardIndex, guardedIndex, method, code, cfg))
       return false;
@@ -535,14 +526,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     val result = (method.descriptor.parametersCount == 0 && !isNonDeterministic(
       propertyStore(declaredMethods(method), Purity.key)
     ))
-    println("paramsCount: " + method.descriptor.parametersCount == 0)
-    println(
-      "isnondeterministic-result: " + isNonDeterministic(
-        propertyStore(declaredMethods(method), Purity.key)
-      ).toString
-    )
-    println(propertyStore(declaredMethods(method), Purity.key))
-    println("lazyInitializerIsDeterministic: " + result)
     result
   }
 
@@ -555,7 +538,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
       taCode: TACode[TACMethodParameter, V],
       pcs: PCs
   )(implicit state: State): Boolean = {
-    println("xxxxxx")
     val field = state.field
     val stmts = taCode.stmts
     for (pc <- pcs) {
