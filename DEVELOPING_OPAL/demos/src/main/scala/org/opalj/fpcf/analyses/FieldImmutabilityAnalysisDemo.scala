@@ -50,19 +50,6 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     analysesManager.project.get(RTACallGraphKey)
 
     val (propertyStore, _) = analysesManager.runAll(
-      /**
-       * LazyTypeImmutabilityAnalysis,
-       * LazyUnsoundPrematurelyReadFieldsAnalysis,
-       * LazyClassImmutabilityAnalysis,
-       * LazyL0ReferenceImmutabilityAnalysis,
-       * LazyL0PurityAnalysis,
-       * LazyL1FieldMutabilityAnalysis,
-       * LazySimpleEscapeAnalysis,
-       * TACAITransformer,
-       * LazyLxTypeImmutabilityAnalysis_new,
-       * EagerL0FieldImmutabilityAnalysis*
-       */
-
       LazyLxClassImmutabilityAnalysis_new,
       LazyTypeImmutabilityAnalysis,
       LazyUnsoundPrematurelyReadFieldsAnalysis,
@@ -92,14 +79,6 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
       .toString() + "\n" +
       propertyStore
         .entities(FieldImmutability.key)
-        /**
-         * .entities(x ⇒ {
-         * x.asEPS.pk match {
-         * case DependentImmutableField(_) ⇒ true
-         * case _                          ⇒ false
-         * }
-         * })*
-         */
         .toList
         .toString
   }

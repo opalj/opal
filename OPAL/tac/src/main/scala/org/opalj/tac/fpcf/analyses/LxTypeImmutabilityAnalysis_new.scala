@@ -69,7 +69,7 @@ class LxTypeImmutabilityAnalysis_new(final val project: SomeProject) extends FPC
   ): ProperPropertyComputationResult = {
     typeExtensibility(t) match {
       case Yes | Unknown =>
-        println("Yes Unknown"); Result(t, MutableType_new) // MutableType)
+        Result(t, MutableType_new) // MutableType)
       case No => step2(t)
     }
   }
@@ -81,9 +81,7 @@ class LxTypeImmutabilityAnalysis_new(final val project: SomeProject) extends FPC
     if (cf.exists(_.isFinal) || directSubtypes.isEmpty /*... the type is not extensible*/ ) {
 
       val c = new ProperOnUpdateContinuation { c =>
-        println("c function called")
         def apply(eps: SomeEPS): ProperPropertyComputationResult = {
-          println("EPS: " + eps)
           eps match {
             case ELUBP(_, lb: ClassImmutability_new, ub: ClassImmutability_new) =>
               val thisLB = lb.correspondingTypeImmutability
@@ -95,11 +93,10 @@ class LxTypeImmutabilityAnalysis_new(final val project: SomeProject) extends FPC
           }
         }
       }
+
       val resultToMatch = ps(t, ClassImmutability_new.key)
-      println("Result1: " + resultToMatch)
       resultToMatch match {
         case x @ FinalP(p) => {
-          println("x::: " + x.p.correspondingTypeImmutability)
           Result(t, p.correspondingTypeImmutability);
         }
 
@@ -108,7 +105,6 @@ class LxTypeImmutabilityAnalysis_new(final val project: SomeProject) extends FPC
           val thisLB = lb.correspondingTypeImmutability
           InterimResult(t, thisLB, thisUB, Seq(eps), c)
         case epk => {
-          println("here ")
           InterimResult(t, MutableType_new, DeepImmutableType, Seq(epk), c)
         }
         //InterimResult(t, MutableType, ImmutableType, Seq(epk), c)
@@ -120,7 +116,6 @@ class LxTypeImmutabilityAnalysis_new(final val project: SomeProject) extends FPC
       var maxImmutability: TypeImmutability_new = DeepImmutableType // ImmutableType
 
       val resultToMatch2 = ps(t, ClassImmutability_new.key)
-      println("Result2: " + resultToMatch2)
       resultToMatch2 match {
         case FinalP(DeepImmutableClass) => //ImmutableObject) =>
         case FinalP(MutableClass) => //(_: MutableObject) =>
