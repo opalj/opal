@@ -219,7 +219,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
     var maxLocalImmutability: ClassImmutability = superClassInformation match {
       case UBP(ImmutableContainer) => ImmutableContainer
-      case _                       => ImmutableObject
+      case _ => ImmutableObject
     }
 
     if (cf.fields.exists(f => !f.isStatic && f.fieldType.isArrayType)) {
@@ -463,7 +463,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
       .map(ot => (ot, project.classFile(ot)))
       .foreach {
         case (_, Some(cf)) => cfs ::= cf
-        case (t, None)     =>
+        case (t, None) =>
           // This handles the case where the class hierarchy is at least partially
           // based on a pre-configured class hierarchy (*.ths file).
           // E.g., imagine that you analyze a lib which contains a class that inherits
