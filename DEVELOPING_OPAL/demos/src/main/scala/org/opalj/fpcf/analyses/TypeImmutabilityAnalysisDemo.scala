@@ -49,16 +49,6 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         analysesManager.project.get(RTACallGraphKey)
 
         val (propertyStore, _) = analysesManager.runAll(
-            /**
-             * LazyTypeImmutabilityAnalysis,
-             * LazyUnsoundPrematurelyReadFieldsAnalysis,
-             * LazyL0ReferenceImmutabilityAnalysis,
-             * LazyL0PurityAnalysis,
-             * LazyL2FieldMutabilityAnalysis,
-             * LazyL0FieldImmutabilityAnalysis,
-             * EagerLxClassImmutabilityAnalysis_new,
-             * EagerLxTypeImmutabilityAnalysis_new*
-             */
             //LazyTypeImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL2PurityAnalysis,

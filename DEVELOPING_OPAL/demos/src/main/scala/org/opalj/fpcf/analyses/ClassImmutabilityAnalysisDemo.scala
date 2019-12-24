@@ -10,7 +10,6 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.ClassImmutability_new
 import org.opalj.br.fpcf.properties.DeepImmutableClass
@@ -49,7 +48,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     analysesManager.project.get(RTACallGraphKey)
 
     val (propertyStore, _) = analysesManager.runAll(
-      LazyTypeImmutabilityAnalysis,
+      //LazyTypeImmutabilityAnalysis,
       LazyUnsoundPrematurelyReadFieldsAnalysis,
       LazyL2PurityAnalysis,
       LazyL2FieldMutabilityAnalysis,
