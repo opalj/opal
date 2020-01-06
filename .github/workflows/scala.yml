@@ -1,0 +1,13 @@
+name: Scala CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run tests
+      run: sbt -J-Xmx20G test
