@@ -60,10 +60,7 @@ import org.opalj.br.fpcf.analyses.EagerUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.log.DevNullLogger
-import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.AbstractCallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
@@ -90,7 +87,7 @@ import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
  */
 object Purity {
 
-    OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
+    //OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
     def usage: String = {
         "Usage: java …PurityAnalysisEvaluation \n"+
@@ -197,12 +194,17 @@ object Purity {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                if (numThreads == 0) {
+                /*if (numThreads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
                     org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = numThreads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                }
+                }*/
+                //org.opalj.fpcf.par.YAPPS(context: _*)
+                org.opalj.fpcf.par.DHTPropertyStore(context: _*)
+                //org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 4
+                //org.opalj.fpcf.par.PKECPropertyStore(context: _*)
             }
         )
 

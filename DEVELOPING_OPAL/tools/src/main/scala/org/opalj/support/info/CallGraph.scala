@@ -10,7 +10,9 @@ import java.net.URL
 import java.util.Calendar
 
 import scala.collection.JavaConverters._
+
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -35,9 +37,6 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.log.DevNullLogger
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToScalaCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
@@ -70,7 +69,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  */
 object CallGraph extends ProjectAnalysisApplication {
 
-    OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
+    //OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
     override def title: String = "Call Graph Analysis"
 
@@ -137,20 +136,25 @@ object CallGraph extends ProjectAnalysisApplication {
         cgFile:       Option[String],
         outputFile:   Option[String],
         pointsToFile: Option[String],
-        numThreads: Option[Int],
+        numThreads:   Option[Int],
         projectTime:  Seconds
     ): BasicReport = {
         project.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                val threads = numThreads.getOrElse(0) // We chose the sequential store as default
+                /*val threads = numThreads.getOrElse(0) // We chose the sequential store as default
                 if (threads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
                     org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = threads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                }
+                }*/
+                //org.opalj.fpcf.par.YAPPS(context: _*)
+                org.opalj.fpcf.par.DHTPropertyStore(context: _*)
+                //org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 4
+                //org.opalj.fpcf.par.PKECPropertyStore(context: _*)
             }
         )
 
@@ -188,7 +192,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
         if (cgAlgorithm == "PointsTo") {
             val ptss = ps.entities(AllocationSitePointsToSet.key).toList
-            import scala.collection.JavaConverters._
+            /*import scala.collection.JavaConverters._
             val statistic = ptss.groupBy(p ⇒ p.ub.elements.size).mapValues { spts ⇒
                 (spts.size, {
                     val unique = new java.util.IdentityHashMap[AllocationSitePointsToSet, AllocationSitePointsToSet]()
@@ -197,7 +201,7 @@ object CallGraph extends ProjectAnalysisApplication {
                 })
             }.map { case (size, (count, uniqueCount)) ⇒ (size, count, uniqueCount) }.toArray.sorted
             println("size, count, unique count")
-            println(statistic.mkString("\n"))
+            println(statistic.mkString("\n"))*/
 
             println(s"PTSs ${ptss.size}")
             println(s"PTS entries ${ptss.map(p ⇒ p.ub.elements.size).sum}")
