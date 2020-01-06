@@ -271,11 +271,11 @@ abstract class PropertyStore {
         val s =
             if (debug)
                 mutable.LinkedHashMap(
-                    "scheduled tasks" ->
+                    "scheduled tasks" →
                         scheduledTasksCount,
-                    "scheduled on update computations" ->
+                    "scheduled on update computations" →
                         scheduledOnUpdateComputationsCount,
-                    "computations of fallback properties for computed properties" ->
+                    "computations of fallback properties for computed properties" →
                         fallbacksUsedForComputedPropertiesCount
                 )
             else
@@ -620,8 +620,7 @@ abstract class PropertyStore {
         // Save the information about the finalization order (of properties which are
         // collaboratively computed).
         val cleanUpSubPhase =
-            (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet) +
-                AnalysisKey
+            (propertyKindsComputedInThisPhase -- finalizationOrder.flatten.toSet) + AnalysisKey
         this.subPhaseFinalizationOrder =
             if (cleanUpSubPhase.isEmpty) {
                 finalizationOrder.toArray

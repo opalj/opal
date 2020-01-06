@@ -107,6 +107,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
 
         Results(indirectCalls.partialResults(caller))
     }
+
     private[this] def handleMethodInvoke(
         caller:       DefinedMethod,
         pc:           Int,

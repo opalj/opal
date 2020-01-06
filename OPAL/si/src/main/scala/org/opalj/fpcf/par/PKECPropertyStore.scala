@@ -428,14 +428,14 @@ final class PKECPropertyStore(
     private[this] def handleFinalResult(
         finalEP:                     SomeFinalEP,
         potentiallyIdemPotentUpdate: Boolean     = true // TODO: THIS IS A HORRIBLE WORKAROUND
-                                       ): Unit = {
+    ): Unit = {
         val e = finalEP.e
         val pkId = finalEP.pk.id
         val oldEPKState = properties(pkId).put(e, EPKState(finalEP))
         var invokeTriggeredComputations = true
         if (oldEPKState != null) {
             if (oldEPKState.isFinal) {
-                if (oldEPKState.eOptionP==finalEP && potentiallyIdemPotentUpdate) {
+                if (oldEPKState.eOptionP == finalEP && potentiallyIdemPotentUpdate) {
                     if (tracer.isDefined)
                         tracer.get.idempotentUpdate(properties(pkId).get(e))
                     return ; // IDEMPOTENT UPDATE
