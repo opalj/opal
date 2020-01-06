@@ -25,13 +25,12 @@ import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualMethodCall
 
 /**
- * Analyzes a project for how a particular class is used within that project. This means that this
- * analysis collect information on which methods are called on objects of that class as well as how
- * often.
+ * Analyzes a project for how a particular class is used within that project. Collects information
+ * on which methods are called on objects of that class as well as how often.
  *
- * The analysis can be configured by passing the following optional parameters: `class` (the class
- * to analyze), `granularity` (fine- or coarse-grained; defines which information will be gathered
- * by an analysis run). For further information see
+ * The analysis can be configured by passing the following parameters: `class` (the class to
+ * analyze) and `granularity` (fine or coarse; defines which information will be gathered by an
+ * analysis run; this parameter is optional). For further information see
  * [[ClassUsageAnalysis.analysisSpecificParametersDescription]].
  *
  * @author Patrick Mell
@@ -148,7 +147,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
         project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): ReportableAnalysisResult = {
         val (className, isFineGrainedAnalysis) = getAnalysisParameters(parameters)
-        val resultMap: ConcurrentHashMap[String, AtomicInteger] = new ConcurrentHashMap
+        val resultMap: ConcurrentHashMap[String, AtomicInteger] = new ConcurrentHashMap()
         val tacProvider = project.get(LazyDetachedTACAIKey)
 
         project.parForeachMethodWithBody() { methodInfo ⇒
@@ -156,7 +155,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
                 (stmt.astID: @switch) match {
                     case Assignment.ASTID | ExprStmt.ASTID ⇒
                         stmt.asAssignmentLike.expr match {
-                            case c: Call[V]@unchecked ⇒
+                            case c: Call[V] @unchecked ⇒
                                 processCall(c, resultMap, className, isFineGrainedAnalysis)
                             case _ ⇒
                         }
