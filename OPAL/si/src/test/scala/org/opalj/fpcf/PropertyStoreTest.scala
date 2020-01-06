@@ -558,7 +558,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                     ps.set("dummyymmud", SuperPalindrome)
                     ps.set("dummyBADymmud", NoSuperPalindrome)
 
-                    ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey), Set.empty)
+                    ps.setupPhase(Set(PalindromeKey, SuperPalindromeKey, Marker.Key), Set.empty)
 
                     val invocationCount = new AtomicInteger(0)
                     ps.registerLazyPropertyComputation(
@@ -907,7 +907,8 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                                     } else {
                                         None
                                     }
-                                case _ ⇒ ???
+                                case _ ⇒
+                                    ???
                             }
                     )
                 }
