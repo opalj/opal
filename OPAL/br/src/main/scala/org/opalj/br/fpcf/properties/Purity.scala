@@ -225,11 +225,11 @@ object Purity extends PurityPropertyMetaInformation {
         case _ if name.startsWith("ContextuallyPure{") ⇒
             Some(ContextuallyPure(parseParams(name.substring(17, name.length - 1))))
         case _ if name.startsWith("ContextuallySideEffectFree{") ⇒
-            Some(ContextuallyPure(parseParams(name.substring(27, name.length - 1))))
+            Some(ContextuallySideEffectFree(parseParams(name.substring(27, name.length - 1))))
         case _ if name.startsWith("DContextuallyPure{") ⇒
-            Some(ContextuallyPure(parseParams(name.substring(18, name.length - 1))))
+            Some(DContextuallyPure(parseParams(name.substring(18, name.length - 1))))
         case _ if name.startsWith("DContextuallySideEffectFree{") ⇒
-            Some(ContextuallyPure(parseParams(name.substring(28, name.length - 1))))
+            Some(DContextuallySideEffectFree(parseParams(name.substring(28, name.length - 1))))
         case _ ⇒ None
     }
 

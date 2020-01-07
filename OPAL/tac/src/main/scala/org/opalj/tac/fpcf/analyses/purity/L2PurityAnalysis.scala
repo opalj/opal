@@ -303,8 +303,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         treatParamsAsFresh: Boolean,
         excludedDefSites:   IntTrieSet   = EmptyIntTrieSet
     )(implicit state: State): Boolean = {
-        if (expr eq null) // Expression is unknown due to an indirect call (e.g. reflection)
-            return false;
+        if (expr eq null) {
+            // Expression is unknown due to an indirect call (e.g. reflection)
+            atMost(otherwise)
+            return false
+        };
 
         if (expr.isConst)
             return true;
@@ -729,6 +732,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *     - classes files for class types returned (for their mutability)
      */
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
+        if(state.definedMethod.definedMethod.toJava == "com.sun.jmx.mbeanserver.MBeanIntrospector{ static boolean isValidParameter(java.lang.reflect.Method,java.lang.Object,int) }")
+            println()
         val oldPurity = state.ubPurity
         eps.ub.key match {
             case Purity.key ⇒
@@ -851,9 +856,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             s += 1
         }
 
+        if(state.definedMethod.definedMethod.toJava == "com.sun.jmx.mbeanserver.MBeanIntrospector{ static boolean isValidParameter(java.lang.reflect.Method,java.lang.Object,int) }")
+            println()
+
         val callees = propertyStore(state.definedMethod, Callees.key)
-        if (!checkPurityOfCallees(callees))
+        if (!checkPurityOfCallees(callees)) {
+            assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
             return Result(state.definedMethod, state.ubPurity)
+        }
 
         if (callees.hasUBP)
             state.rvfCallSites.foreach {
