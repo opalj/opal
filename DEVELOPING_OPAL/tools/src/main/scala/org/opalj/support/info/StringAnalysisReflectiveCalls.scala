@@ -18,7 +18,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.br.instructions.Instruction
@@ -26,15 +25,11 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.ReferenceType
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
@@ -42,22 +37,12 @@ import org.opalj.tac.StaticFunctionCall
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.analyses.string_analysis.P
 import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.DUVar
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 
 /**
@@ -76,7 +61,7 @@ import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnal
  *
  * @author Patrick Mell
  */
-object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
+object StringAnalysisReflectiveCalls extends ProjectAnalysisApplication {
 
     private type ResultMapType = mutable.Map[String, ListBuffer[StringConstancyInformation]]
 
@@ -268,24 +253,8 @@ object StringAnalysisReflectiveCalls extends DefaultOneStepAnalysis {
         project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
     ): ReportableAnalysisResult = {
         val manager = project.get(FPCFAnalysesManagerKey)
+        project.get(RTACallGraphKey)
         implicit val (propertyStore, analyses) = manager.runAll(
-            TACAITransformer,
-            LazyL0BaseAIAnalysis,
-            RTACallGraphAnalysisScheduler,
-            TriggeredStaticInitializerAnalysis,
-            TriggeredLoadedClassesAnalysis,
-            TriggeredFinalizerAnalysisScheduler,
-            TriggeredThreadRelatedCallsAnalysis,
-            TriggeredSerializationRelatedCallsAnalysis,
-            TriggeredReflectionRelatedCallsAnalysis,
-            TriggeredSystemPropertiesAnalysis,
-            TriggeredInstantiatedTypesAnalysis,
-            LazyCalleesAnalysis(Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )),
             LazyInterproceduralStringAnalysis
         // LazyIntraproceduralStringAnalysis
         )

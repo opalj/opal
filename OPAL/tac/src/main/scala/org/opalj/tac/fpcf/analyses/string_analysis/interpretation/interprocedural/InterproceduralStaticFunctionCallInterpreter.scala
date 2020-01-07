@@ -37,7 +37,7 @@ class InterproceduralStaticFunctionCallInterpreter(
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
         params:          List[Seq[StringConstancyInformation]],
-        declaredMethods: DeclaredMethods,
+        declaredMethods: DeclaredMethods
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = StaticFunctionCall[V]

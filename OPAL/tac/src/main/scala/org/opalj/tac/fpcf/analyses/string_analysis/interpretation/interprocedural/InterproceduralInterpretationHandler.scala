@@ -10,8 +10,8 @@ import org.opalj.fpcf.Result
 import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.FieldAccessInformation
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.ai.ImmediateVMExceptionsOriginOffset
 import org.opalj.tac.fpcf.analyses.string_analysis.V
@@ -68,7 +68,7 @@ class InterproceduralInterpretationHandler(
         ps:                     PropertyStore,
         declaredMethods:        DeclaredMethods,
         fieldAccessInformation: FieldAccessInformation,
-        state:                  InterproceduralComputationState,
+        state:                  InterproceduralComputationState
 ) extends InterpretationHandler(tac) {
 
     /**
@@ -422,7 +422,7 @@ object InterproceduralInterpretationHandler {
         ps:                     PropertyStore,
         declaredMethods:        DeclaredMethods,
         fieldAccessInformation: FieldAccessInformation,
-        state:                  InterproceduralComputationState,
+        state:                  InterproceduralComputationState
     ): InterproceduralInterpretationHandler = new InterproceduralInterpretationHandler(
         tac, ps, declaredMethods, fieldAccessInformation, state
     )

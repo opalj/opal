@@ -26,11 +26,11 @@ import org.opalj.tac.fpcf.analyses.string_analysis.InterproceduralComputationSta
  * @author Patrick Mell
  */
 class InterproceduralNonVirtualMethodCallInterpreter(
-        cfg: CFG[Stmt[V], TACStmts[V]],
+        cfg:             CFG[Stmt[V], TACStmts[V]],
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
-        declaredMethods: DeclaredMethods,
+        declaredMethods: DeclaredMethods
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualMethodCall[V]

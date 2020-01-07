@@ -21,12 +21,12 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.FieldType
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyLevel
 import org.opalj.tac.Stmt
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.AbstractPathFinder
@@ -108,7 +108,7 @@ class InterproceduralStringAnalysis(
      * bounds can be used for the interim result.
      */
     private def getInterimResult(
-        state: InterproceduralComputationState,
+        state: InterproceduralComputationState
     ): InterimResult[StringConstancyProperty] = InterimResult(
         state.entity,
         computeNewLowerBound(state),
@@ -237,7 +237,7 @@ class InterproceduralStringAnalysis(
 
         if (requiresCallersInfo) {
             val dm = declaredMethods(state.entity._2)
-            val callersEOptP = ps(dm, CallersProperty.key)
+            val callersEOptP = ps(dm, Callers.key)
             if (callersEOptP.hasUBP) {
                 state.callers = callersEOptP.ub
                 if (!registerParams(state)) {
@@ -296,7 +296,7 @@ class InterproceduralStringAnalysis(
                     state.computedLeanPath.elements.head match {
                         case FlatPathElement(i) ⇒
                             state.fpe2sci.contains(i) && state.fpe2sci(i).length == 1 &&
-                            state.fpe2sci(i).head == StringConstancyInformation.getNeutralElement
+                                state.fpe2sci(i).head == StringConstancyInformation.getNeutralElement
                         case _ ⇒ false
                     }
                 } else false
@@ -357,8 +357,8 @@ class InterproceduralStringAnalysis(
                     state.dependees = eps :: state.dependees
                     getInterimResult(state)
             }
-            case CallersProperty.key ⇒ eps match {
-                case FinalP(callers: CallersProperty) ⇒
+            case Callers.key ⇒ eps match {
+                case FinalP(callers: Callers) ⇒
                     state.callers = callers
                     if (state.dependees.isEmpty) {
                         registerParams(state)
@@ -514,7 +514,7 @@ class InterproceduralStringAnalysis(
         val callers = state.callers.callers(declaredMethods).toSeq
         if (callers.length > callersThreshold) {
             state.params.append(
-                state.entity._2.parameterTypes.map{
+                state.entity._2.parameterTypes.map {
                     _: FieldType ⇒ StringConstancyInformation.lb
                 }.to[ListBuffer]
             )
@@ -523,7 +523,7 @@ class InterproceduralStringAnalysis(
 
         var hasIntermediateResult = false
         callers.zipWithIndex.foreach {
-            case ((m, pc), methodIndex) ⇒
+            case ((m, pc, _), methodIndex) ⇒
                 val tac = propertyStore(m.definedMethod, TACAI.key).ub.tac.get
                 val params = tac.stmts(tac.pcToIndex(pc)) match {
                     case Assignment(_, _, fc: FunctionCall[V]) ⇒ fc.params
@@ -917,7 +917,7 @@ sealed trait InterproceduralStringAnalysisScheduler extends FPCFAnalysisSchedule
  * Executor for the lazy analysis.
  */
 object LazyInterproceduralStringAnalysis
-        extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
+    extends InterproceduralStringAnalysisScheduler with FPCFLazyAnalysisScheduler {
 
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData

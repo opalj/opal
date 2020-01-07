@@ -34,7 +34,7 @@ class InterproceduralFieldInterpreter(
         state:                  InterproceduralComputationState,
         exprHandler:            InterproceduralInterpretationHandler,
         ps:                     PropertyStore,
-        fieldAccessInformation: FieldAccessInformation,
+        fieldAccessInformation: FieldAccessInformation
 ) extends AbstractStringInterpreter(state.tac.cfg, exprHandler) {
 
     override type T = FieldRead[V]
@@ -140,9 +140,9 @@ class InterproceduralFieldInterpreter(
      * [[PutStatic]] or [[PutField]].
      */
     private def extractUVarFromPut(field: Stmt[V]): V = field match {
-        case PutStatic(_, _, _, _, value) ⇒ value.asVar
+        case PutStatic(_, _, _, _, value)   ⇒ value.asVar
         case PutField(_, _, _, _, _, value) ⇒ value.asVar
-        case _ ⇒ throw new IllegalArgumentException(s"Type of $field is currently not supported!")
+        case _                              ⇒ throw new IllegalArgumentException(s"Type of $field is currently not supported!")
     }
 
 }

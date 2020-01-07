@@ -20,8 +20,8 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
-import org.opalj.br.fpcf.cg.properties.Callees
 import org.opalj.br.fpcf.properties.StringConstancyProperty
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.Stmt
@@ -35,8 +35,8 @@ import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.PathTransformer
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.SubPath
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.WindowPathFinder
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.DUVar
+import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.TACMethodParameter
 import org.opalj.tac.TACode
 
@@ -88,7 +88,7 @@ class IntraproceduralStringAnalysis(
         // sci stores the final StringConstancyInformation (if it can be determined now at all)
         var sci = StringConstancyProperty.lb.stringConstancyInformation
 
-        val tacProvider = p.get(DefaultTACAIKey)
+        val tacProvider = p.get(EagerDetachedTACAIKey)
         val tac = tacProvider(data._2)
 
         // Uncomment the following code to get the TAC from the property store
