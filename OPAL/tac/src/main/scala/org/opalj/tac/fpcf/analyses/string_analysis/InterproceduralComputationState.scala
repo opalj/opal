@@ -8,10 +8,10 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.cg.properties.Callees
-import org.opalj.br.fpcf.cg.properties.CallersProperty
 import org.opalj.br.fpcf.properties.string_definition.StringConstancyInformation
 import org.opalj.br.Method
+import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.tac.fpcf.analyses.string_analysis.preprocessing.Path
 import org.opalj.tac.DUVar
 import org.opalj.tac.TACMethodParameter
@@ -60,7 +60,7 @@ case class InterproceduralComputationState(entity: P, fieldWriteThreshold: Int =
     /**
      * Callers information regarding the declared method that corresponds to the entity's method
      */
-    var callers: CallersProperty = _
+    var callers: Callers = _
 
     /**
      * If not empty, this routine can only produce an intermediate result

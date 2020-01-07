@@ -17,32 +17,17 @@ import org.opalj.br.cfg.CFG
 import org.opalj.br.Annotations
 import org.opalj.br.fpcf.properties.StringConstancyProperty
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.cg.properties.ReflectionRelatedCallees
-import org.opalj.br.fpcf.cg.properties.SerializationRelatedCallees
-import org.opalj.br.fpcf.cg.properties.StandardInvokeCallees
-import org.opalj.br.fpcf.cg.properties.ThreadRelatedIncompleteCallSites
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
-import org.opalj.tac.DefaultTACAIKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.fpcf.analyses.cg.reflection.TriggeredReflectionRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.RTACallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredFinalizerAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.TriggeredSerializationRelatedCallsAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.V
-import org.opalj.tac.fpcf.analyses.TriggeredSystemPropertiesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.LazyCalleesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredStaticInitializerAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredThreadRelatedCallsAnalysis
-import org.opalj.tac.fpcf.analyses.TACAITransformer
-import org.opalj.tac.fpcf.analyses.cg.TriggeredInstantiatedTypesAnalysis
-import org.opalj.tac.fpcf.analyses.cg.TriggeredLoadedClassesAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
+import org.opalj.tac.EagerDetachedTACAIKey
+import org.opalj.tac.cg.RTACallGraphKey
 
 /**
  * @param fqTestMethodsClass The fully-qualified name of the class that contains the test methods.
@@ -90,7 +75,7 @@ sealed class StringAnalysisTestRunner(
         // We need a "method to entity" matching for the evaluation (see further below)
         val m2e = mutable.HashMap[Method, Entity]()
 
-        val tacProvider = p.get(DefaultTACAIKey)
+        val tacProvider = p.get(EagerDetachedTACAIKey)
         allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)(
                 (exists, a) ⇒ exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
@@ -219,7 +204,7 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
         project: Project[URL]
     ): Iterable[(V, Method)] = {
         val entitiesToAnalyze = ListBuffer[(V, Method)]()
-        val tacProvider = project.get(DefaultTACAIKey)
+        val tacProvider = project.get(EagerDetachedTACAIKey)
         project.allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)(
                 (exists, a) ⇒ exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
@@ -244,25 +229,9 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
         )
         val p = Project(runner.getRelevantProjectFiles, Array[File]())
 
+        p.get(RTACallGraphKey)
         val manager = p.get(FPCFAnalysesManagerKey)
         val analysesToRun = Set(
-            TACAITransformer,
-            LazyL0BaseAIAnalysis,
-            RTACallGraphAnalysisScheduler,
-            TriggeredStaticInitializerAnalysis,
-            TriggeredLoadedClassesAnalysis,
-            TriggeredFinalizerAnalysisScheduler,
-            TriggeredThreadRelatedCallsAnalysis,
-            TriggeredSerializationRelatedCallsAnalysis,
-            TriggeredReflectionRelatedCallsAnalysis,
-            TriggeredSystemPropertiesAnalysis,
-            TriggeredInstantiatedTypesAnalysis,
-            LazyCalleesAnalysis(Set(
-                StandardInvokeCallees,
-                SerializationRelatedCallees,
-                ReflectionRelatedCallees,
-                ThreadRelatedIncompleteCallSites
-            )),
             LazyInterproceduralStringAnalysis
         )
 

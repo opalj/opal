@@ -728,21 +728,6 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         )
     }
 
-    /**
-     * @return Returns the dominator tree of this CFG.
-     *
-     * @see [[DominatorTree.apply]]
-     */
-    def dominatorTree: DominatorTree = {
-        DominatorTree(
-            0,
-            basicBlocks.head.predecessors.nonEmpty,
-            foreachSuccessor,
-            foreachPredecessor,
-            basicBlocks.last.endPC
-        )
-    }
-
     // We use this variable for caching, as the loop information of a CFG are permanent and do not
     // need to be recomputed (see findNaturalLoops for usage)
     private var naturalLoops: Option[List[List[Int]]] = None

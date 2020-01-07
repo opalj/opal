@@ -42,7 +42,7 @@ class VirtualFunctionCallPreparationInterpreter(
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
         declaredMethods: DeclaredMethods,
-        params:          List[Seq[StringConstancyInformation]],
+        params:          List[Seq[StringConstancyInformation]]
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = VirtualFunctionCall[V]

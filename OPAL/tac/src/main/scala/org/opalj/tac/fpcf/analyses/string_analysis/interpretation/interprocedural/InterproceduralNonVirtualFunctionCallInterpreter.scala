@@ -31,7 +31,7 @@ class InterproceduralNonVirtualFunctionCallInterpreter(
         exprHandler:     InterproceduralInterpretationHandler,
         ps:              PropertyStore,
         state:           InterproceduralComputationState,
-        declaredMethods: DeclaredMethods,
+        declaredMethods: DeclaredMethods
 ) extends AbstractStringInterpreter(cfg, exprHandler) {
 
     override type T = NonVirtualFunctionCall[V]

@@ -53,7 +53,7 @@ object StringConstancyProperty extends Property with StringConstancyPropertyMeta
             (_: PropertyStore, _: FallbackReason, _: Entity) ⇒ {
                 // TODO: Using simple heuristics, return a better value for some easy cases
                 lb
-            },
+            }
         )
     }
 

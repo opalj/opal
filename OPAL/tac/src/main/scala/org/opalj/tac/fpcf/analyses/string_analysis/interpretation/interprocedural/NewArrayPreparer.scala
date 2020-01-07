@@ -95,7 +95,7 @@ class NewArrayPreparer(
                 allResults = toAppend :: allResults
             }
             state.appendToFpe2Sci(defSite, resultSci)
-            FinalEP(new Integer(defSite), StringConstancyProperty(resultSci))
+            FinalEP(Integer.valueOf(defSite), StringConstancyProperty(resultSci))
         }
     }
 

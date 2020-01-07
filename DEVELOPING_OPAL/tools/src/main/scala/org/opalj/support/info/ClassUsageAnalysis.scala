@@ -11,15 +11,15 @@ import scala.collection.mutable.ListBuffer
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.DefaultOneStepAnalysis
 import org.opalj.br.analyses.Project
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.ReportableAnalysisResult
 import org.opalj.tac.Assignment
 import org.opalj.tac.Call
 import org.opalj.tac.ExprStmt
-import org.opalj.tac.SimpleTACAIKey
 import org.opalj.tac.VirtualFunctionCall
 import org.opalj.tac.fpcf.analyses.cg.V
+import org.opalj.tac.EagerDetachedTACAIKey
 
 /**
  * Analyzes a project for how a particular class is used within that project. Collects information
@@ -32,7 +32,7 @@ import org.opalj.tac.fpcf.analyses.cg.V
  *
  * @author Patrick Mell
  */
-object ClassUsageAnalysis extends DefaultOneStepAnalysis {
+object ClassUsageAnalysis extends ProjectAnalysisApplication {
 
     implicit val logContext: GlobalLogContext.type = GlobalLogContext
 
@@ -139,7 +139,7 @@ object ClassUsageAnalysis extends DefaultOneStepAnalysis {
     ): ReportableAnalysisResult = {
         setAnalysisParameters(parameters)
         val resultMap = mutable.Map[String, Int]()
-        val tacProvider = project.get(SimpleTACAIKey)
+        val tacProvider = project.get(EagerDetachedTACAIKey)
 
         project.allMethodsWithBody.foreach { m ⇒
             tacProvider(m).stmts.foreach { stmt ⇒
