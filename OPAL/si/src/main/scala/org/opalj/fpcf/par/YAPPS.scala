@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
-import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.ControlThrowable
@@ -387,15 +386,9 @@ class YAPPS(
     def updateDependees(depender: YappsEPKState, newDependees: Traversable[SomeEOptionP]): Unit = {
         val dependerEpk = depender.eOptP.toEPK
         val suppressedPKs = suppressInterimUpdates(dependerEpk.pk.id)
-        newDependees.exists { dependee ⇒
+        newDependees.forall { dependee ⇒
             val dependeeState = ps(dependee.pk.id).get(dependee.e)
-            val updatedDependee = dependeeState.addDepender(dependerEpk, dependee)
-            if ((updatedDependee ne null) && (updatedDependee.isFinal || !suppressedPKs(dependee.pk.id))) {
-                scheduleTask(new YappsContinuationTask(dependerEpk, updatedDependee, dependee))
-                true
-            } else {
-                false
-            }
+            dependeeState.addDependerOrScheduleContinuation(dependerEpk, dependee, suppressedPKs)
         }
     }
 
@@ -790,16 +783,29 @@ class YAPPS(
             updateDependees(this, newDependees)
         }
 
-        def addDepender(depender: SomeEPK, dependee: SomeEOptionP): SomeEPS = {
+        def addDependerOrScheduleContinuation(
+            depender:      SomeEPK,
+            dependee:      SomeEOptionP,
+            suppressedPKs: Array[Boolean]
+        ): Boolean = {
             dependersLock.lockInterruptibly()
-            val result = if ((eOptP eq dependee) || eOptP.isEPK) {
-                dependers += depender
-                null
-            } else {
-                eOptP.asEPS
+            try {
+                val theEOptP = eOptP
+                // If the epk state is already updated (compared to the given dependee)
+                // AND that update must not be suppressed (either final or not a suppressed PK).
+                if ((theEOptP ne dependee) &&
+                    // Note that the dependee might be a different reference of an equivalent EPK.
+                    theEOptP.isEPS &&
+                    (theEOptP.isFinal || !suppressedPKs(dependee.pk.id))) {
+                    scheduleTask(new YappsContinuationTask(depender, theEOptP.asEPS, dependee))
+                    false
+                } else {
+                    dependers += depender
+                    true
+                }
+            } finally {
+                dependersLock.unlock()
             }
-            dependersLock.unlock()
-            result
         }
 
         def removeDepender(epk: SomeEPK): Unit = {
@@ -835,16 +841,21 @@ class YAPPS(
         }
 
         def applyContinuation(dependee: SomeEPS, oldDependee: SomeEOptionP /*TODO remove*/ ): Unit = {
-            // Just tryLock - if there is already an update performed, that will re-trigger updates if necessary
-            val locked = lock.tryLock(0, TimeUnit.SECONDS) // Can't use tryLock(), as we need interruptability
-            if (locked) {
-                val theDependees = dependees
-                if (theDependees != null && theDependees.exists {
-                    _.toEPK == oldDependee.toEPK
-                })
-                    handleResult(c(ps(dependee.pk.id).get(dependee.e).eOptP.asEPS))
-                lock.unlock()
+            // IMPROVE: Use tryLock() instead
+            lock.lockInterruptibly()
+            val theDependees = dependees
+            // We are still interessted in that dependee?
+            if (theDependees != null && theDependees.exists {
+                // IMPROVE: We should be able to avoid the toEPK.
+                _.toEPK == oldDependee.toEPK
+            }) {
+                // We always retrieve the most up-to-date state of the dependee.
+                val currentDependee = ps(dependee.pk.id).get(dependee.e).eOptP.asEPS
+                // IMPROVE: If we would know about ordering, we could only perform the operation
+                // if the given value of the dependee is actually the "newest".
+                handleResult(c(currentDependee))
             }
+            lock.unlock()
         }
 
     }
