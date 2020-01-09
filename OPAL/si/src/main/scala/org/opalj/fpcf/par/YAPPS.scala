@@ -671,7 +671,6 @@ class YAPPS(
         val priority = 0
 
         override def apply(): Unit = {
-            println(s"Running exec. task")
             f
         }
     }
@@ -682,7 +681,6 @@ class YAPPS(
         val priority = 0
 
         override def apply(): Unit = {
-            println(s"Running set task for $finalEP")
             handleFinalResult(finalEP)
         }
     }
@@ -694,7 +692,6 @@ class YAPPS(
         val priority = 0
 
         override def apply(): Unit = {
-            println(s"Running comp. task for $e")
             handleResult(pc(e))
         }
     }
@@ -707,7 +704,6 @@ class YAPPS(
         val priority = 0
 
         override def apply(): Unit = {
-            println(s"Running lazy comp. task for $e, $pkId")
             val state = ps(pkId).get(e)
             state.lock.lock()
             if (state.eOptP.isEPK)
@@ -720,7 +716,6 @@ class YAPPS(
         val priority = 0
 
         override def apply(): Unit = {
-            println(s"Running continuation task for $dependee -> $depender")
             val epkState = ps(depender.pk.id).get(depender.e)
             if (epkState ne null)
                 epkState.applyContinuation(dependee, oldDependee)

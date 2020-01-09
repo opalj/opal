@@ -200,8 +200,8 @@ object Purity {
                     org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = numThreads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }*/
-                //org.opalj.fpcf.par.YAPPS(context: _*)
-                org.opalj.fpcf.par.DHTPropertyStore(context: _*)
+                org.opalj.fpcf.par.YAPPS(context: _*)
+                //org.opalj.fpcf.par.DHTPropertyStore(context: _*)
                 //org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 4
                 //org.opalj.fpcf.par.PKECPropertyStore(context: _*)
