@@ -773,9 +773,10 @@ class YAPPS(
             lock.unlock()
             if (theEOptP.isEPK) triggerComputations(theEOptP.e, theEOptP.pk.id)
             if (interimEP.isUpdatedComparedTo(theEOptP)) {
-                dependersLock.lock()
+                dependersLock.lockInterruptibly()
                 val theDependers = dependers
-                //FIXME clear dependers
+                // Clear all dependers that will be notified, they will re-register if required
+                dependers = dependers.filter(d => suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
                 dependersLock.unlock()
                 notifyDependers(interimEP, theEOptP, theDependers)
             }
