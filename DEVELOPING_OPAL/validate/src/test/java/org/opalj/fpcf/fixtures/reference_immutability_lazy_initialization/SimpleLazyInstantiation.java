@@ -4,11 +4,11 @@ import org.opalj.fpcf.properties.reference_immutability_lazy_initialization.NotT
 
 public class SimpleLazyInstantiation{
 	@NotThreadSafeLazyInitializationAnnotation("")
-	private SimpleLazyInstantiation instance;
+	private static SimpleLazyInstantiation instance;
 	
-	public SimpleLazyInstantiation init() {
-		SimpleLazyInstantiation result;
-		result = instance == null ? new SimpleLazyInstantiation() : instance;
-		return result;
+	public static SimpleLazyInstantiation init() {
+		if(instance==null)
+			instance = new SimpleLazyInstantiation();
+		return instance;
 	}
 }
