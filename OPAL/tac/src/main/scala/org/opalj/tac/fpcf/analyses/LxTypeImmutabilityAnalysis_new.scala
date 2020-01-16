@@ -56,7 +56,7 @@ class LxTypeImmutabilityAnalysis_new(final val project: SomeProject) extends FPC
       e: Entity
   ): ProperPropertyComputationResult = e match {
     case t: ObjectType => step1(typeExtensibility)(t)
-    case _ => throw new IllegalArgumentException(s"$e is not an ObjectType")
+    case _             => throw new IllegalArgumentException(s"$e is not an ObjectType")
   }
 
   /**
