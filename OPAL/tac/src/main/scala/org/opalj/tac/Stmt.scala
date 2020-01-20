@@ -350,7 +350,7 @@ object AssignmentLikeStmt {
   def unapply[V <: Var[V]](stmt: Stmt[V]): Option[(PC, Expr[V])] = {
     stmt match {
       case s: AssignmentLikeStmt[V] => Some((s.pc, s.expr))
-      case _ => None
+      case _                        => None
     }
   }
 
@@ -1080,9 +1080,9 @@ object VirtualFunctionCallStatement {
 
   def unapply[V <: Var[V]](stmt: Stmt[V]): Option[VirtualFunctionCall[V]] = {
     stmt match {
-      case ExprStmt(_, vfc: VirtualFunctionCall[V]) => Some(vfc)
+      case ExprStmt(_, vfc: VirtualFunctionCall[V])      => Some(vfc)
       case Assignment(_, _, vfc: VirtualFunctionCall[V]) => Some(vfc)
-      case _ => None
+      case _                                             => None
     }
   }
 }
@@ -1095,9 +1095,9 @@ object NonVirtualFunctionCallStatement {
 
   def unapply[V <: Var[V]](stmt: Stmt[V]): Option[NonVirtualFunctionCall[V]] = {
     stmt match {
-      case ExprStmt(_, vfc: NonVirtualFunctionCall[V]) => Some(vfc)
+      case ExprStmt(_, vfc: NonVirtualFunctionCall[V])      => Some(vfc)
       case Assignment(_, _, vfc: NonVirtualFunctionCall[V]) => Some(vfc)
-      case _ => None
+      case _                                                => None
     }
   }
 }
@@ -1110,9 +1110,9 @@ object StaticFunctionCallStatement {
 
   def unapply[V <: Var[V]](stmt: Stmt[V]): Option[StaticFunctionCall[V]] = {
     stmt match {
-      case ExprStmt(_, vfc: StaticFunctionCall[V]) => Some(vfc)
+      case ExprStmt(_, vfc: StaticFunctionCall[V])      => Some(vfc)
       case Assignment(_, _, vfc: StaticFunctionCall[V]) => Some(vfc)
-      case _ => None
+      case _                                            => None
     }
   }
 }
