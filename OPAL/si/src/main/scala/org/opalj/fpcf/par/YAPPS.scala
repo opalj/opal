@@ -75,16 +75,14 @@ class YAPPS(
 
     override def toString(printProperties: Boolean): String =
         if (printProperties) {
-            var pkId = 0
-            while (pkId <= PropertyKey.maxId) {
+            val properties = for (pkId ← 0 to PropertyKey.maxId) yield {
                 var entities: List[String] = List.empty
                 ps(pkId).forEachValue(Long.MaxValue, { state: YappsEPKState ⇒
                     entities ::= state.eOptP.toString.replace("\n", "\n\t")
                 })
                 entities.sorted.mkString(s"Entities for property key $pkId:\n\t", "\n\t", "\n")
-                pkId += 1
             }
-            ps.mkString("PropertyStore(\n\t", "\n\t", "\n)")
+            properties.mkString("PropertyStore(\n\t", "\n\t", "\n)")
         } else {
             s"PropertyStore(properties=${ps.iterator.map(_.size).sum})"
         }
@@ -771,7 +769,7 @@ class YAPPS(
                 dependersLock.lockInterruptibly()
                 val theDependers = dependers
                 // Clear all dependers that will be notified, they will re-register if required
-                dependers = dependers.filter(d => suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
+                dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
                 dependersLock.unlock()
                 notifyDependers(interimEP, theEOptP, theDependers)
             }
