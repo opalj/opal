@@ -49,10 +49,14 @@ import org.opalj.tac.LazyDetachedTACAIKey
 
 case object NullFact extends Fact
 
-class HerosTestTaintAnalysis(p: SomeProject, icfg: OpalICFG, initialMethods: Map[Method, util.Set[Fact]])
-    extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
+class HerosTestTaintAnalysis(
+        p:              SomeProject,
+        icfg:           OpalICFG,
+        initialMethods: Map[Method, util.Set[Fact]],
+        threadCount:    Int
+) extends DefaultIFDSTabulationProblem[Statement, Fact, Method, OpalICFG](icfg) {
 
-    override def numThreads(): Int = 4
+    override def numThreads(): Int = threadCount
 
     val classHierarchy: ClassHierarchy = p.classHierarchy
 
@@ -379,7 +383,9 @@ object HerosTestTaintAnalysis {
         (if (includeThis) -1 else -2) - param
 
     def main(args: Array[String]): Unit = {
-        val p = Project(new File(args(args.length - 1)))
+        val cg = new File(args(0))
+        val p = Project(new File(args(1)))
+        val threadCount = args(2).toInt
 
         p.getOrCreateProjectInformationKeyInitializationData(
             LazyDetachedTACAIKey,
@@ -406,12 +412,12 @@ object HerosTestTaintAnalysis {
 
         PerformanceEvaluation.time {
             val manager = p.get(FPCFAnalysesManagerKey)
-            manager.runAll(new CallGraphDeserializerScheduler(new File(args(args.length - 2))))
+            manager.runAll(new CallGraphDeserializerScheduler(cg))
         } { t ⇒ println(s"CG took ${t.toSeconds}") }
 
-        for (i ← (0 until 5)) {
+        for (_ ← 0 until 7) {
             time {
-                val solver = new IFDSSolver(new HerosTestTaintAnalysis(p, new OpalICFG(p), initialMethods))
+                val solver = new IFDSSolver(new HerosTestTaintAnalysis(p, new OpalICFG(p), initialMethods, threadCount))
                 solver.solve()
             } { t ⇒ println(s"Time: ${t.toSeconds}") }
         }
