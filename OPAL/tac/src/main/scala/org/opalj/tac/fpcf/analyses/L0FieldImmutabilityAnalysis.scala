@@ -90,34 +90,39 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         "determine generic field imm-------------------------------------------------------------------"
       )
       var genericFields: Set[ObjectType] = Set.empty
-      state.field.fieldTypeSignature.head match {
-        case ClassTypeSignature(_, SimpleClassTypeSignature(name, typeArguments), _) => {
-          typeArguments.foreach(
-            ta => {
-              ta match {
-                case ProperTypeArgument(
-                    varianceIndicator,
-                    ClassTypeSignature(
-                      packageIdentifier1,
-                      SimpleClassTypeSignature(
-                        packageIdentifier2,
-                        typeArguments2
-                      ),
-                      _
-                    )
-                    ) => {
-                  packageIdentifier1 match {
-                    case Some(pid1) => genericFields += ObjectType(pid1 + packageIdentifier2)
-                    case _ => genericFields += ObjectType(packageIdentifier2)
+      state.field.fieldTypeSignature match {
+        case Some(fts) =>
+          //}
+          //state.field.fieldTypeSignature.head
+          fts match {
+            case ClassTypeSignature(_, SimpleClassTypeSignature(name, typeArguments), _) => {
+              typeArguments.foreach(
+                ta => {
+                  ta match {
+                    case ProperTypeArgument(
+                        varianceIndicator,
+                        ClassTypeSignature(
+                          packageIdentifier1,
+                          SimpleClassTypeSignature(
+                            packageIdentifier2,
+                            typeArguments2
+                          ),
+                          _
+                        )
+                        ) => {
+                      packageIdentifier1 match {
+                        case Some(pid1) => genericFields += ObjectType(pid1 + packageIdentifier2)
+                        case _ => genericFields += ObjectType(packageIdentifier2)
+                      }
+
+                    }
+                    case _ =>
                   }
-
                 }
-                case _ =>
-              }
-
+              )
             }
-          )
-        }
+            case _ =>
+          }
         case _ =>
       }
       genericFields.foreach(f => println("generic Field: " + f))
@@ -152,7 +157,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
           //---------------------------------------------------------------------------------------
           state.typeImmutability = determineGenericFieldImmutability(state)
           //---------------------------------------------------------------------------------------
-          //state.dependentTypeImmutability = Some(true)
+          //statfielde.dependentTypeImmutability = Some(true)
           return state.typeImmutability;
         }
 
@@ -163,6 +168,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
           return Some(false);
         }
         case x @ _ => {
+          println("x: " + x)
           dependencies += x
           return None; //TODO check!!!!! None;
         }
@@ -277,6 +283,11 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         }
         case None if (dependencies.isEmpty) => Result(field, MutableField)
         case None => {
+          println("last step: ")
+          println("field: " + field)
+          println("MutableField: " + MutableField)
+          println("DeepImmutableField: " + DeepImmutableField)
+          println("dependencies: " + dependencies)
           InterimResult(
             field,
             MutableField,
@@ -285,7 +296,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             c(state)
           )
         }
-
       }
     }
     def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = {

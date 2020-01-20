@@ -42,6 +42,7 @@ import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedReference
+import org.opalj.br.fpcf.properties.LazyInitializedField
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.NotPrematurelyReadField
@@ -386,9 +387,9 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         !isImmutableReference(newEP)
     }
 
-    if (isNotFinal)
+    if (isNotFinal) {
       Result(state.field, MutableReference) //Result(state.field, NonFinalFieldByAnalysis)
-    else
+    } else
       createResult()
   }
 
@@ -411,6 +412,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
       cfg: CFG[Stmt[V], TACStmts[V]],
       pcToIndex: Array[Int]
   )(implicit state: State): Boolean = {
+    println("PS: " + propertyStore(declaredMethods(method), Purity.key))
     val write = code(writeIndex).asFieldWriteAccessStmt
 
     if (state.field.fieldType.computationalType != ComputationalTypeInt &&
@@ -574,8 +576,21 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                   if (defaultValue.isEmpty)
                     return true;
 
+                  //TODO Lazy Initialization here
+                  /**
+                   * val liResult = propertyStore(field, ReferenceImmutabilityLazyInitialization.key)
+                   *
+                   * liResult match {
+                   * case FinalP(NoLazyInitialization)            => return true;
+                   * case FinalP(NotThreadSafeLazyInitialization) => return true;
+                   * case FinalP(LazyInitialization) =>
+                   * state.referenceImmutability = LazyInitializedReference
+                   * case _ => return true;
+                   * }
+                   */
                   // A field written outside an initializer must be lazily
                   // initialized or it is non-final
+
                   if (!isLazyInitialization(
                         index,
                         defaultValue.get,
@@ -586,7 +601,8 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                       ))
                     return true;
 
-                  state.referenceImmutability = LazyInitializedReference //LazyInitializedField
+                  state.referenceImmutability = LazyInitializedReference
+                  LazyInitializedField
                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
                   // note that here we assume real three address code (flat hierarchy)
 
