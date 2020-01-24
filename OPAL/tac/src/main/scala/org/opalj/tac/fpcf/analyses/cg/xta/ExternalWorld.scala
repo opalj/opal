@@ -11,7 +11,7 @@ import org.opalj.br.ObjectType
 
 /**
  * Entity which is used for types flow from/to the "external world".
- * 
+ *
  * @author Andreas Bauer
  */
 object ExternalWorld

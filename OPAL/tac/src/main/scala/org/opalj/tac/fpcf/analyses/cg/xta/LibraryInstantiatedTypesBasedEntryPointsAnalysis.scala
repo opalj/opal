@@ -6,6 +6,8 @@ package analyses
 package cg
 package xta
 
+import java.util.concurrent.ConcurrentHashMap
+
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
@@ -35,8 +37,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
 
-import scala.collection.mutable
-
 /**
  * In a library analysis scenario, this analysis complements the call graph by marking public
  * methods of instantiated types reachable by unknown callers from outside the library.
@@ -50,16 +50,17 @@ import scala.collection.mutable
  * @author Dominik Helm
  * @author Andreas Bauer
  */
-class InstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
+class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses](
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-    private val globallySeenTypes: mutable.Set[ObjectType] = mutable.Set[ObjectType]()
+    // TODO: Use a Scala set
+    private val globallySeenTypes = new ConcurrentHashMap[ObjectType, Boolean]()
 
     def analyze(se: SetEntity): PropertyComputationResult = {
         val instantiatedTypes: EOptionP[SetEntity, InstantiatedTypes] =
-            propertyStore(project, InstantiatedTypes.key)
+            propertyStore(se, InstantiatedTypes.key)
 
         handleInstantiatedTypes(instantiatedTypes, 0)
     }
@@ -107,8 +108,8 @@ class InstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
 
     def analyzeTypes(types: Iterator[ReferenceType]): Iterator[DeclaredMethod] = {
         types.flatMap {
-            case ot: ObjectType if !globallySeenTypes.contains(ot) ⇒
-                globallySeenTypes += ot
+            case ot: ObjectType if !globallySeenTypes.containsKey(ot) ⇒
+                globallySeenTypes.put(ot, true)
                 project.classFile(ot).map { cf ⇒
                     cf.methodsWithBody.filter(m ⇒ !m.isStatic && m.isPublic)
                 }.getOrElse(RefIterator.empty)
@@ -143,7 +144,7 @@ object LibraryInstantiatedTypesBasedEntryPointsAnalysis extends BasicFPCFTrigger
         propertyStore: PropertyStore,
         i:             Null
     ): FPCFAnalysis = {
-        val analysis = new InstantiatedTypesBasedEntryPointsAnalysis(project)
+        val analysis = new LibraryInstantiatedTypesBasedEntryPointsAnalysis(project)
         propertyStore.registerTriggeredComputation(InstantiatedTypes.key, analysis.analyze)
         analysis
     }
