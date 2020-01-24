@@ -126,13 +126,13 @@ final class TypePropagationState(
         assert(typeFilters.nonEmpty)
         val alreadyExists = _forwardPropagationEntities.contains(setEntity)
         if (!alreadyExists) {
-            val compactedFilters = classHierarchy.rootTypes(typeFilters)
+            val compactedFilters = rootTypes(typeFilters)
             _forwardPropagationEntities += setEntity
-            _forwardPropagationFilters += setEntity -> compactedFilters
+            _forwardPropagationFilters += setEntity → compactedFilters
             true
         } else {
             val existingTypeFilters = _forwardPropagationFilters(setEntity)
-            val newFilters = classHierarchy.rootTypes(existingTypeFilters union typeFilters)
+            val newFilters = rootTypes(existingTypeFilters union typeFilters)
             _forwardPropagationFilters.update(setEntity, newFilters)
             newFilters != existingTypeFilters
         }
@@ -172,12 +172,12 @@ final class TypePropagationState(
         assert(typeFilters.nonEmpty)
         val alreadyExists = _backwardPropagationFilters.contains(setEntity)
         if (!alreadyExists) {
-            val compactedFilters = classHierarchy.rootTypes(typeFilters)
-            _backwardPropagationFilters += setEntity -> compactedFilters
+            val compactedFilters = rootTypes(typeFilters)
+            _backwardPropagationFilters += setEntity → compactedFilters
             true
         } else {
             val existingTypeFilters = _backwardPropagationFilters(setEntity)
-            val newFilters = classHierarchy.rootTypes(existingTypeFilters union typeFilters)
+            val newFilters = rootTypes(existingTypeFilters union typeFilters)
             _backwardPropagationFilters.update(setEntity, newFilters)
             newFilters != existingTypeFilters
         }
@@ -221,5 +221,34 @@ final class TypePropagationState(
         dependees ++= _backwardPropagationDependees.values
 
         dependees
+    }
+
+    /////////////////////////////////////////////
+    //                                         //
+    //      general helper functions           //
+    //                                         //
+    /////////////////////////////////////////////
+
+    /**
+     * For a given set of reference types, returns all types in the set for which no other type in
+     * the set is a supertype.
+     *
+     * For example: If the set contains types A and B where B is a subtype of A, a single-element
+     * set of A is returned.
+     *
+     * If the type java.lang.Object is in the input set, a single-element set containing just
+     * java.lang.Object is returned, since Object is a supertype of all other types.
+     */
+    // IMPROVE: could be implemented with linear runtime.
+    private[this] def rootTypes(
+        types: UIDSet[ReferenceType]
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
+    ): UIDSet[ReferenceType] = {
+        if (types.size <= 1)
+            return types;
+
+        types.filter(t1 ⇒ !types.exists(t2 ⇒ t1 != t2 && classHierarchy.isSubtypeOf(t1, t2)))
     }
 }

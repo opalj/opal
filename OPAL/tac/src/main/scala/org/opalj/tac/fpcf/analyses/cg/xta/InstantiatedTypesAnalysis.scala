@@ -43,10 +43,14 @@ import scala.collection.mutable.ListBuffer
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
  * constructors do not result in additional instantiated types.
+ * The analysis does not just looks for "new" instructions, in order to support reflection.
  *
  * This analysis is adapted from the RTA version. Instead of adding the instantiations to the type
  * set of the Project, they are added to the type set of the calling method. Which entity the type
  * is attached to depends on the call graph variant used.
+ *
+ *
+ * TODO: Refactor this and the rta version in order to provide a common base-class.
  *
  * @author Florian Kuebler
  * @author Andreas Bauer
@@ -134,6 +138,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         caller:         DeclaredMethod,
         partialResults: ListBuffer[PartialResult[SetEntity, InstantiatedTypes]]
     ): Unit = {
+        // a constructor is called by a non-constructor method, there will be an initialization.
         if (caller.name != "<init>") {
             partialResults += partialResult(declaredType, caller);
             return ;
@@ -191,7 +196,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         // there is exactly the current call as potential super call, it still might no super
         // call if the class has another constructor that calls the super. In that case
-        // there must either be a new of the `declaredType`
+        // there must either be a new of the `declaredType` or it is a super call.
         val newInstr = NEW(declaredType)
         val hasNew = callerMethod.body.get.exists {
             case (_, i) ⇒ i == newInstr
@@ -270,9 +275,10 @@ class InstantiatedTypesAnalysisScheduler(
         val entryPoints = p.get(InitialEntryPointsKey)
         val initialInstantiatedTypes = p.get(InitialInstantiatedTypesKey).toSet
 
-        // While processing entry points and fields, we keep track of all array types we see, as well as subtypes and
-        // lower-dimensional types. These types also need to be pre-initialized. Note: This set only contains ArrayTypes
-        // whose element type is an ObjectType. Arrays of primitive types can be ignored.
+        // While processing entry points and fields, we keep track of all array types we see, as
+        // well as subtypes and lower-dimensional types. These types also need to be
+        // pre-initialized. Note: This set only contains ArrayTypes whose element type is an
+        // ObjectType. Arrays of primitive types can be ignored.
         val seenArrayTypes = mutable.Set[ArrayType]()
 
         def initialize(setEntity: SetEntity, types: Traversable[ReferenceType]): Unit = {

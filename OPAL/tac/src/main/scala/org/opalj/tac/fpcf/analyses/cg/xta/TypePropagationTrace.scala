@@ -27,14 +27,13 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 
 /**
- * This is used in [[TypePropagationAnalysis]] and logs all individual steps of the type propagation as a trace.
- * A simplified textual trace can also be output if the setting "WriteTextualTrace" is set to true. This may be helpful
- * for debugging.
+ * This is used in [[TypePropagationAnalysis]] and logs all individual steps of the type propagation
+ * as a trace. A simplified textual trace can also be output if the setting "WriteTextualTrace" is
+ * set to true. This may be helpful for debugging.
  *
- * All tracing methods called by the [[TypePropagationTrace]] are marked elidable, meaning that the compiler will remove
- * them unless assertions are turned on. This is to avoid performance overhead in cases where tracing is not needed.
- *
- * TODO AB This is for debugging and evaluation, to be removed later.
+ * All tracing methods called by the [[TypePropagationTrace]] are marked elidable, meaning that the
+ * compiler will remove them unless assertions are turned on. This is to avoid performance overhead
+ * in cases where tracing is not needed.
  *
  * @author Andreas Bauer
  */

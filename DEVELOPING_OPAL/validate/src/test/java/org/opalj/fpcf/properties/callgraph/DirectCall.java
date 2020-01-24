@@ -22,7 +22,7 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * indirect call targets, e.g., reflective call targets.
  * Furthermore, it is possible to exclude certain target methods.
  *
- * Taken from JCG project.
+ * Taken from JCG project. TODO: We should either depend on JCG or include the core base into OPAL.
  *
  * @author Florian Kuebler
  * @author Michael Reif

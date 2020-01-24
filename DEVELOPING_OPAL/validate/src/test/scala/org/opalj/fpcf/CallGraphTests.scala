@@ -22,8 +22,6 @@ import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 
-import scala.collection.JavaConverters._
-
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.
  *
@@ -41,21 +39,6 @@ class CallGraphTests extends PropertiesTest {
         ).withValue(
                 InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ApplicationInstantiatedTypesFinder")
-            )
-
-        //configuredEntryPoint(baseConfig, "org/opalj/fpcf/fixtures/callgraph/xta/FieldFlows", "main")
-    }
-
-    // for testing
-    // TODO AB debug stuff, remove later
-    def configuredEntryPoint(cfg: Config, declClass: String, name: String): Config = {
-        val ep = ConfigValueFactory.fromMap(Map("declaringClass" -> declClass, "name" -> name).asJava)
-        cfg.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ConfigurationEntryPointsFinder")
-        ).withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"entryPoints",
-                ConfigValueFactory.fromIterable(Seq(ep).asJava)
             )
     }
 
@@ -101,6 +84,7 @@ class CallGraphTests extends PropertiesTest {
         )
     }
 
+    // TODO: also add tests for Callees and callers
     describe("the XTA call graph analysis is executed") {
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(XTASetEntitySelector))
         as.propertyStore.shutdown()

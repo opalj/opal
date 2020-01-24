@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 /**
  * Container of the {@link DirectCall} annotation.
  *
- * Taken from JCG project.
+ * Taken from JCG project. TODO: We should either depend on JCG or include the core base into OPAL.
  *
  * @author Florian Kuebler
  */

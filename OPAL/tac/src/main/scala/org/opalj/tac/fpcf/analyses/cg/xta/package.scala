@@ -7,6 +7,9 @@ package cg
 
 import org.opalj.fpcf.Entity
 
+/**
+ * @author Andreas Bauer
+ */
 package object xta {
     /**
      * Type alias for Entity/AnyRef for better code comprehension.

@@ -43,6 +43,7 @@ import org.opalj.br.ReferenceType
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
  * constructors do not result in additional instantiated types.
+ * The analysis does not just looks for "new" instructions, in order to support reflection.
  *
  * @author Florian Kuebler
  */
@@ -110,6 +111,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             // note, that this is only needed for the continuation
             if !newSeenSuperCallers.contains(caller)
         } {
+            // a constructor is called by a non-constructor method, there will be an initialization.
             if (caller.name != "<init>") {
                 return partialResult(declaredType);
             }
@@ -157,7 +159,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
             // there is exactly the current call as potential super call, it still might no super
             // call if the class has another constructor that calls the super. In that case
-            // there must either be a new of the `declaredType`
+            // there must either be a new of the `declaredType` or it is a super call.
             val newInstr = NEW(declaredType)
             val hasNew = callerMethod.body.get.exists {
                 case (_, i) ⇒ i == newInstr

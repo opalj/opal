@@ -2177,22 +2177,6 @@ class ClassHierarchy private (
     }
 
     /**
-     * For a given set of reference types, returns all types in the set for which no other type in the set is a
-     * supertype.
-     *
-     * For example: If the set contains types A and B where B is a subtype of A, a single-element set of A is returned.
-     *
-     * If the type java.lang.Object is in the input set, a single-element set containing just java.lang.Object is
-     * returned, since Object is a supertype of all other types.
-     */
-    def rootTypes(types: UIDSet[ReferenceType]): UIDSet[ReferenceType] = {
-        if (types.size <= 1)
-            return types;
-
-        types.filter(t1 ⇒ !types.exists(t2 ⇒ t1 != t2 && isSubtypeOf(t1, t2)))
-    }
-
-    /**
      * Calculates the most specific common supertype of the given types.
      * If `reflexive` is `false`, no two types across both sets have to be in
      * an inheritance relation; if in doubt use `true`.
