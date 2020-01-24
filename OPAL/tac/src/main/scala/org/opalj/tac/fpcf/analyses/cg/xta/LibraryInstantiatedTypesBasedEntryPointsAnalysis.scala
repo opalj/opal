@@ -58,16 +58,16 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses](
     // TODO: Use a Scala set
     private val globallySeenTypes = new ConcurrentHashMap[ObjectType, Boolean]()
 
-    def analyze(se: SetEntity): PropertyComputationResult = {
-        val instantiatedTypes: EOptionP[SetEntity, InstantiatedTypes] =
+    def analyze(se: TypeSetEntity): PropertyComputationResult = {
+        val instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes] =
             propertyStore(se, InstantiatedTypes.key)
 
         handleInstantiatedTypes(instantiatedTypes, 0)
     }
 
     private[this] def handleInstantiatedTypes(
-        instantiatedTypes: EOptionP[SetEntity, InstantiatedTypes],
-        numProcessedTypes: Int
+                                                 instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes],
+                                                 numProcessedTypes: Int
     ): PropertyComputationResult = {
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
             case UBPS(initialTypes: InstantiatedTypes, isFinal) ⇒
@@ -99,7 +99,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses](
         eps match {
             case UBP(_: InstantiatedTypes) ⇒
                 handleInstantiatedTypes(
-                    eps.asInstanceOf[EOptionP[SetEntity, InstantiatedTypes]],
+                    eps.asInstanceOf[EOptionP[TypeSetEntity, InstantiatedTypes]],
                     numProcessedTypes
                 )
             case _ ⇒ throw new UnknownError("Unexpected update: "+eps)

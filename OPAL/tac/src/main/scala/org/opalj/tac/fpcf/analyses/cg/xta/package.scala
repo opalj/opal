@@ -21,6 +21,6 @@ package object xta {
      * in XTA, the set entity of a DefinedMethod is the DefinedMethod itself, but
      * in CTA, the set entity is the method's class.
      */
-    type SetEntity = Entity
+    type TypeSetEntity = Entity
 }
 

@@ -44,12 +44,12 @@ import scala.collection.mutable.ListBuffer
  * algorithms.
  *
  * @param project         Project under analysis
- * @param selectSetEntity Function which, for each entity, selects which entity its type set is attached to.
+ * @param selectTypeSetEntity Function which, for each entity, selects which entity its type set is attached to.
  * @author Andreas Bauer
  */
 final class TypePropagationAnalysis private[analyses] (
-        val project:     SomeProject,
-        selectSetEntity: SetEntitySelector
+        val project:         SomeProject,
+        selectTypeSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
     private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
@@ -61,14 +61,14 @@ final class TypePropagationAnalysis private[analyses] (
         tacEP:         EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
 
-        val setEntity = selectSetEntity(definedMethod)
-        val instantiatedTypesEOptP = propertyStore(setEntity, InstantiatedTypes.key)
+        val typeSetEntity = selectTypeSetEntity(definedMethod)
+        val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
         val calleesEOptP = propertyStore(definedMethod, Callees.key)
 
         _trace.traceInit(definedMethod)
 
         implicit val state: TypePropagationState =
-            new TypePropagationState(definedMethod, setEntity, tacEP, instantiatedTypesEOptP, calleesEOptP)
+            new TypePropagationState(definedMethod, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP)
         implicit val partialResults: ListBuffer[SomePartialResult] = new ListBuffer[SomePartialResult]()
 
         if (calleesEOptP.hasUBP)
@@ -136,13 +136,13 @@ final class TypePropagationAnalysis private[analyses] (
             _trace.traceCalleesUpdate(e)
             handleUpdateOfCallees(eps.asInstanceOf[EPS[DefinedMethod, Callees]])(state)
 
-        case EUBP(e: SetEntity, t: InstantiatedTypes) if e == state.setEntity ⇒
+        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity ⇒
             _trace.traceTypeUpdate(state.method, e, t.types)
-            handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[SetEntity, InstantiatedTypes]])(state)
+            handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
-        case EUBP(e: SetEntity, t: InstantiatedTypes) ⇒
+        case EUBP(e: TypeSetEntity, t: InstantiatedTypes) ⇒
             _trace.traceTypeUpdate(state.method, e, t.types)
-            handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[SetEntity, InstantiatedTypes]])(state)
+            handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
         case _ ⇒
             sys.error("received unexpected update")
@@ -161,7 +161,7 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def handleUpdateOfOwnTypeSet(
-        eps: EPS[SetEntity, InstantiatedTypes]
+        eps: EPS[TypeSetEntity, InstantiatedTypes]
     )(
         implicit
         state: State
@@ -184,18 +184,18 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def handleUpdateOfBackwardPropagationTypeSet(
-        eps: EPS[SetEntity, InstantiatedTypes]
+        eps: EPS[TypeSetEntity, InstantiatedTypes]
     )(
         implicit
         state: State
     ): ProperPropertyComputationResult = {
-        val setEntity = eps.e
-        val previouslySeenTypes = state.seenTypes(setEntity)
+        val typeSetEntity = eps.e
+        val previouslySeenTypes = state.seenTypes(typeSetEntity)
         state.updateBackwardPropagationDependee(eps)
         val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
 
-        val filters = state.backwardPropagationFilters(setEntity)
-        val propagationResult = propagateTypes(state.setEntity, unseenTypes, filters.toSet)
+        val filters = state.backwardPropagationFilters(typeSetEntity)
+        val propagationResult = propagateTypes(state.typeSetEntity, unseenTypes, filters.toSet)
 
         returnResults(propagationResult)
     }
@@ -337,14 +337,14 @@ final class TypePropagationAnalysis private[analyses] (
         partialResults: ListBuffer[SomePartialResult]
     ): Unit = {
         // Propagation from and to the same entity can be ignored.
-        val setEntity = selectSetEntity(e)
-        if (setEntity == state.setEntity) {
+        val typeSetEntity = selectTypeSetEntity(e)
+        if (typeSetEntity == state.typeSetEntity) {
             return ;
         }
 
-        val filterSetHasChanged = state.registerForwardPropagationEntity(setEntity, filters)
+        val filterSetHasChanged = state.registerForwardPropagationEntity(typeSetEntity, filters)
         if (filterSetHasChanged) {
-            val propagationResult = propagateTypes(setEntity, state.ownInstantiatedTypes, state.forwardPropagationFilters(setEntity))
+            val propagationResult = propagateTypes(typeSetEntity, state.ownInstantiatedTypes, state.forwardPropagationFilters(typeSetEntity))
             if (propagationResult.isDefined)
                 partialResults += propagationResult.get
         }
@@ -358,35 +358,35 @@ final class TypePropagationAnalysis private[analyses] (
         state:          State,
         partialResults: ListBuffer[SomePartialResult]
     ): Unit = {
-        val setEntity = selectSetEntity(e)
-        if (setEntity == state.setEntity) {
+        val typeSetEntity = selectTypeSetEntity(e)
+        if (typeSetEntity == state.typeSetEntity) {
             return ;
         }
 
         val filter = UIDSet(mostPreciseUpperBound)
 
-        if (!state.backwardPropagationDependeeIsRegistered(setEntity)) {
-            val dependee = propertyStore(setEntity, InstantiatedTypes.key)
+        if (!state.backwardPropagationDependeeIsRegistered(typeSetEntity)) {
+            val dependee = propertyStore(typeSetEntity, InstantiatedTypes.key)
 
             state.updateBackwardPropagationDependee(dependee)
-            state.updateBackwardPropagationFilters(setEntity, filter)
+            state.updateBackwardPropagationFilters(typeSetEntity, filter)
 
             if (dependee.hasNoUBP) {
                 return ;
             }
 
-            val propagation = propagateTypes(state.setEntity, dependee.ub.types, filter)
+            val propagation = propagateTypes(state.typeSetEntity, dependee.ub.types, filter)
             if (propagation.isDefined) {
                 partialResults += propagation.get
             }
         } else {
-            val filterSetHasChanged = state.updateBackwardPropagationFilters(setEntity, filter)
+            val filterSetHasChanged = state.updateBackwardPropagationFilters(typeSetEntity, filter)
             if (filterSetHasChanged) {
                 // Since the filters were updated, it is possible that types which were previously seen but not
                 // propagated are now relevant for back propagation. Therefore, we need to propagate from the
                 // entire dependee type set.
-                val allDependeeTypes = state.backwardPropagationDependeeInstantiatedTypes(setEntity)
-                val propagation = propagateTypes(state.setEntity, allDependeeTypes, filter)
+                val allDependeeTypes = state.backwardPropagationDependeeInstantiatedTypes(typeSetEntity)
+                val propagation = propagateTypes(state.typeSetEntity, allDependeeTypes, filter)
                 if (propagation.isDefined) {
                     partialResults += propagation.get
                 }
@@ -428,7 +428,7 @@ final class TypePropagationAnalysis private[analyses] (
         }
     }
 
-    private def propagateTypes[E >: Null <: SetEntity](
+    private def propagateTypes[E >: Null <: TypeSetEntity](
         targetSetEntity: E,
         newTypes:        UIDSet[ReferenceType],
         filters:         Set[ReferenceType]
@@ -466,7 +466,7 @@ final class TypePropagationAnalysis private[analyses] (
 }
 
 final class TypePropagationAnalysisScheduler(
-        val selectSetEntity: SetEntitySelector
+        val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 

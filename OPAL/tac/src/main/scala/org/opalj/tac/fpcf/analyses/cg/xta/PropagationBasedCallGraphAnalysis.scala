@@ -36,8 +36,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Andreas Bauer
  */
 class PropagationBasedCallGraphAnalysis private[analyses] (
-        final val project:           SomeProject,
-        final val setEntitySelector: SetEntitySelector
+        final val project:               SomeProject,
+        final val typeSetEntitySelector: TypeSetEntitySelector
 ) extends AbstractCallGraphAnalysis {
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
@@ -47,14 +47,14 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     override type State = PropagationBasedCGState
 
     override def c(state: PropagationBasedCGState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBP(setEntity: SetEntity, _: InstantiatedTypes) ⇒
-            val seenTypes = state.instantiatedTypes(setEntity).size
+        case EUBP(typeSetEntity: TypeSetEntity, _: InstantiatedTypes) ⇒
+            val seenTypes = state.instantiatedTypes(typeSetEntity).size
 
             state.updateInstantiatedTypesDependee(
-                eps.asInstanceOf[EPS[SetEntity, InstantiatedTypes]]
+                eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]]
             )
 
-            val newTypes = state.newInstantiatedTypes(setEntity, seenTypes)
+            val newTypes = state.newInstantiatedTypes(typeSetEntity, seenTypes)
 
             // we only want to add the new calls, so we create a fresh object
             val calleesAndCallers = new DirectCalls()
@@ -74,7 +74,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         // exception types are tracked globally (via the set attached to the project). XTA will attach a per-method
         // type set to the DefinedMethod itself. CTA/MTA have merged sets for all methods of a class, attached to the
         // class type. The relevant set entity is retrieved by querying the set entity selector.
-        val perMethodInstantiatedTypes = propertyStore(setEntitySelector(definedMethod), InstantiatedTypes.key)
+        val perMethodInstantiatedTypes = propertyStore(typeSetEntitySelector(definedMethod), InstantiatedTypes.key)
         val perProjectInstantiatedTypes = propertyStore(project, InstantiatedTypes.key)
 
         val typeSources = Iterable(perMethodInstantiatedTypes, perProjectInstantiatedTypes)
@@ -192,7 +192,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
 }
 
 class PropagationBasedCallGraphAnalysisScheduler(
-        final val setEntitySelector: SetEntitySelector
+        final val typeSetEntitySelector: TypeSetEntitySelector
 ) extends CallGraphAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] =
@@ -202,5 +202,5 @@ class PropagationBasedCallGraphAnalysisScheduler(
         super.derivesCollaboratively ++ PropertyBounds.ubs(InstantiatedTypes)
 
     override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis =
-        new PropagationBasedCallGraphAnalysis(p, setEntitySelector)
+        new PropagationBasedCallGraphAnalysis(p, typeSetEntitySelector)
 }

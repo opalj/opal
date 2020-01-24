@@ -57,7 +57,7 @@ import scala.collection.mutable.ListBuffer
  */
 class InstantiatedTypesAnalysis private[analyses] (
         final val project:     SomeProject,
-        val setEntitySelector: SetEntitySelector
+        val setEntitySelector: TypeSetEntitySelector
 ) extends FPCFAnalysis {
     implicit private val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -106,7 +106,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         seenCallers:    Set[DeclaredMethod]
     ): PropertyComputationResult = {
         var newSeenCallers = seenCallers
-        val partialResults = new ListBuffer[PartialResult[SetEntity, InstantiatedTypes]]()
+        val partialResults = new ListBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]]()
         for {
             (caller, _, _) ← callersUB.callers
             // if we already analyzed the caller, we do not need to do it twice
@@ -136,7 +136,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         declaredMethod: DeclaredMethod,
         declaredType:   ObjectType,
         caller:         DeclaredMethod,
-        partialResults: ListBuffer[PartialResult[SetEntity, InstantiatedTypes]]
+        partialResults: ListBuffer[PartialResult[TypeSetEntity, InstantiatedTypes]]
     ): Unit = {
         // a constructor is called by a non-constructor method, there will be an initialization.
         if (caller.name != "<init>") {
@@ -218,7 +218,7 @@ class InstantiatedTypesAnalysis private[analyses] (
     private def partialResult(
         declaredType: ObjectType,
         caller:       DeclaredMethod
-    ): PartialResult[SetEntity, InstantiatedTypes] = {
+    ): PartialResult[TypeSetEntity, InstantiatedTypes] = {
 
         // Subtypes of Throwable are tracked globally.
         val setEntity =
@@ -227,7 +227,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             else
                 setEntitySelector(caller)
 
-        PartialResult[SetEntity, InstantiatedTypes](
+        PartialResult[TypeSetEntity, InstantiatedTypes](
             setEntity,
             InstantiatedTypes.key,
             InstantiatedTypes.update(setEntity, UIDSet(declaredType))
@@ -245,7 +245,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 }
 
 class InstantiatedTypesAnalysisScheduler(
-        val selectSetEntity: SetEntitySelector
+        val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override type InitializationData = Null
@@ -281,7 +281,7 @@ class InstantiatedTypesAnalysisScheduler(
         // ObjectType. Arrays of primitive types can be ignored.
         val seenArrayTypes = mutable.Set[ArrayType]()
 
-        def initialize(setEntity: SetEntity, types: Traversable[ReferenceType]): Unit = {
+        def initialize(setEntity: TypeSetEntity, types: Traversable[ReferenceType]): Unit = {
             ps.preInitialize(setEntity, InstantiatedTypes.key) {
                 case UBP(typeSet) ⇒
                     InterimEUBP(setEntity, typeSet.updated(types))

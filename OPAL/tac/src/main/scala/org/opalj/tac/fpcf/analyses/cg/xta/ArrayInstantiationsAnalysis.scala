@@ -41,7 +41,7 @@ import scala.collection.mutable
  */
 final class ArrayInstantiationsAnalysis(
         val project:     SomeProject,
-        selectSetEntity: SetEntitySelector
+        selectSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
     override def processMethod(
@@ -113,7 +113,7 @@ final class ArrayInstantiationsAnalysis(
 }
 
 class ArrayInstantiationsAnalysisScheduler(
-        selectSetEntity: SetEntitySelector
+        selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {

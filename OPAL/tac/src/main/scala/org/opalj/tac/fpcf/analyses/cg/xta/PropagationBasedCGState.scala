@@ -27,10 +27,10 @@ import scala.collection.mutable
 class PropagationBasedCGState(
         override val method:                       DefinedMethod,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
-        _instantiatedTypesDependees:               Iterable[EOptionP[SetEntity, InstantiatedTypes]]
+        _instantiatedTypesDependees:               Iterable[EOptionP[TypeSetEntity, InstantiatedTypes]]
 ) extends CGState {
 
-    private[this] val _instantiatedTypesDependeeMap: mutable.Map[SetEntity, EOptionP[SetEntity, InstantiatedTypes]] = mutable.Map.empty
+    private[this] val _instantiatedTypesDependeeMap: mutable.Map[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] = mutable.Map.empty
 
     for (dependee ← _instantiatedTypesDependees) {
         _instantiatedTypesDependeeMap.update(dependee.e, dependee)
@@ -45,13 +45,13 @@ class PropagationBasedCGState(
     /////////////////////////////////////////////
 
     def updateInstantiatedTypesDependee(
-        instantiatedTypesDependee: EOptionP[SetEntity, InstantiatedTypes]
+        instantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes]
     ): Unit = {
         _instantiatedTypesDependeeMap.update(instantiatedTypesDependee.e, instantiatedTypesDependee)
     }
 
-    def instantiatedTypes(setEntity: SetEntity): UIDSet[ReferenceType] = {
-        val typeDependee = _instantiatedTypesDependeeMap(setEntity)
+    def instantiatedTypes(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] = {
+        val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
         if (typeDependee.hasUBP)
             typeDependee.ub.types
         else
@@ -62,8 +62,8 @@ class PropagationBasedCGState(
         _instantiatedTypesDependeeMap.keys.exists(instantiatedTypes(_).contains(tpe))
     }
 
-    def newInstantiatedTypes(setEntity: SetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
-        val typeDependee = _instantiatedTypesDependeeMap(setEntity)
+    def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
+        val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
         if (typeDependee.hasUBP) {
             typeDependee.ub.dropOldest(seenTypes)
         } else {

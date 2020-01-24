@@ -37,12 +37,11 @@ import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
  *
  * @author Andreas Bauer
  */
-@elidable(elidable.ASSERTION)
 private[xta] class TypePropagationTrace {
     // Textual trace
     private val _out =
         if (TypePropagationTrace.WriteTextualTrace) {
-            val file = new FileOutputStream(new File(s"C:\\Users\\Andreas\\Dropbox\\Masterarbeit\\traces\\trace${Instant.now.getEpochSecond}.txt"))
+            val file = new FileOutputStream(new File(s"trace${Instant.now.getEpochSecond}.txt"))
             new PrintWriter(file)
         } else {
             null

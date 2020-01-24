@@ -19,15 +19,15 @@ import org.opalj.fpcf.Entity
  *
  * @author Andreas Bauer
  */
-trait SetEntitySelector extends (Entity ⇒ SetEntity)
+trait TypeSetEntitySelector extends (Entity ⇒ TypeSetEntity)
 
 /**
  * XTA type propagation uses a separate set for each method and each field.
  *
  * @author Andreas Bauer
  */
-object XTASetEntitySelector extends SetEntitySelector {
-    override def apply(e: Entity): SetEntity = e match {
+object XTASetEntitySelector extends TypeSetEntitySelector {
+    override def apply(e: Entity): TypeSetEntity = e match {
         case dm: DefinedMethod          ⇒ dm
         case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
         case f: Field                   ⇒ f
@@ -43,8 +43,8 @@ object XTASetEntitySelector extends SetEntitySelector {
  *
  * @author Andreas Bauer
  */
-object MTASetEntitySelector extends SetEntitySelector {
-    override def apply(e: Entity): SetEntity = e match {
+object MTASetEntitySelector extends TypeSetEntitySelector {
+    override def apply(e: Entity): TypeSetEntity = e match {
         case dm: DefinedMethod          ⇒ dm.definedMethod.classFile
         case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
         case f: Field                   ⇒ f
@@ -60,8 +60,8 @@ object MTASetEntitySelector extends SetEntitySelector {
  *
  * @author Andreas Bauer
  */
-object FTASetEntitySelector extends SetEntitySelector {
-    override def apply(e: Entity): SetEntity = e match {
+object FTASetEntitySelector extends TypeSetEntitySelector {
+    override def apply(e: Entity): TypeSetEntity = e match {
         case dm: DefinedMethod          ⇒ dm
         case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
         case f: Field                   ⇒ f.classFile
@@ -77,8 +77,8 @@ object FTASetEntitySelector extends SetEntitySelector {
  *
  * @author Andreas Bauer
  */
-object CTASetEntitySelector extends SetEntitySelector {
-    override def apply(e: Entity): SetEntity = e match {
+object CTASetEntitySelector extends TypeSetEntitySelector {
+    override def apply(e: Entity): TypeSetEntity = e match {
         case dm: DefinedMethod          ⇒ dm.definedMethod.classFile
         case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
         case f: Field                   ⇒ f.classFile
