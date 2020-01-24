@@ -129,7 +129,7 @@ class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth0AndSeqTaskManager
 
 }
 
-class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth1AndParTaskManager
+/*class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth1AndParTaskManager
     extends PKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
@@ -138,4 +138,4 @@ class PKECPropertyStoreTestWithoutDebuggingMaxEvalDepth1AndParTaskManager
         ps
     }
 
-}
+}*/
