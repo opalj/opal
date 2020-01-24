@@ -1,4 +1,4 @@
-name: Build and Execute Tests
+name: Integration Tests
 
 on:
   push:
