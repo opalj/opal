@@ -412,7 +412,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
       cfg: CFG[Stmt[V], TACStmts[V]],
       pcToIndex: Array[Int]
   )(implicit state: State): Boolean = {
-    println("PS: " + propertyStore(declaredMethods(method), Purity.key))
     val write = code(writeIndex).asFieldWriteAccessStmt
 
     if (state.field.fieldType.computationalType != ComputationalTypeInt &&

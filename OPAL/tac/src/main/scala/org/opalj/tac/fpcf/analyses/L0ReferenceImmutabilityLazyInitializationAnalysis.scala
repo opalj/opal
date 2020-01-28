@@ -34,6 +34,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.PCs
+import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeViaReturn
@@ -443,9 +444,9 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
         pcToIndex:    Array[Int],
         pcs:          PCs
     )(implicit state: State): Boolean = {
-        println("PS: "+propertyStore(declaredMethods(method), Purity.key))
+        //xx println("PS: "+propertyStore(declaredMethods(method), Purity.key))
         val write = code(writeIndex).asFieldWriteAccessStmt
-        println("1")
+        //xx println("1")
         if (state.field.fieldType.computationalType != ComputationalTypeInt &&
             state.field.fieldType.computationalType != ComputationalTypeFloat) {
             // Only handle lazy initialization of ints and floats as they are guaranteed to be
@@ -453,12 +454,12 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
             ////return false;
             state.isThreadSafeType = false
         }
-        println("2")
+        //xx println("2")
         val reads = fieldAccessInformation.readAccesses(state.field)
         if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
             return false; // Reads outside the (single) lazy initialization method
         }
-        println("3")
+        //xx println("3")
         // There must be a guarding if-Statement
         // The guardIndex is the index of the if-Statement, the guardedIndex is the index of the
         // first statement that is executed after the if-Statement if the field's value was not the
@@ -468,7 +469,7 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
                 case Some((guard, guarded, read)) ⇒ (guard, guarded, read)
                 case None                         ⇒ return false;
             }
-        println("4")
+        //xx println("4")
         // Detect only simple patterns where the lazily initialized value is returned immediately
         if (!checkImmediateReturn(write, writeIndex, readIndex, code)) //return false;
         // possibly double checked locking
@@ -480,16 +481,16 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
             } else
                 return false;
         }
-        println("5")
+        //xx println("5")
         // The value written must be computed deterministically and the writes guarded correctly
         if (!checkWrites(write, writeIndex, guardIndex, guardedIndex, method, code, cfg))
             return false;
-        println("6")
+        //xx println("6")
         // Field reads (except for the guard) may only be executed if the field's value is not the
         // default value
         if (!checkReads(reads, readIndex, guardedIndex, writeIndex, cfg, pcToIndex))
             return false;
-        println("7")
+        //xx println("7")
         true
     }
 
@@ -531,55 +532,67 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
                     val hm = new mutable.HashMap[Int, Assignment[V]]()
                     //index for tac-code
                     var i: Int = -1
-                    tac.instructions.foreach(instr ⇒ {
-                        i = i + 1
-                        if (instr.isIfStmt) {
-                            val currentFieldsClassType = state.field.fieldType.asObjectType // method.classFile.thisType
-                            val ifLeftType = instr.asIf.left.asVar.value.asReferenceValue.asReferenceType
-                            if ( //is non null check
-                            instr.asIf.condition == NE &&
-                                // has same type as field
-                                ifLeftType.equals(currentFieldsClassType) //guards  field?
-                                ) {
-                                // => guards  the value
-                                guards = (i, instr.asIf.target) :: guards
-                            }
-                        }
-                        if (instr.isAssignment) {
-                            hm += (i -> instr.asAssignment)
-                            if (accessingPcs.contains(instr.pc))
-                                assignments = instr.pc.toInt :: assignments
-                        }
+                    if (tac != null && tac.instructions != null)
+                        tac.instructions.foreach(instr ⇒ {
+                            i = i + 1
+                            if (instr.isIfStmt) {
+                                var currentFieldsClassType: ObjectType = null
+                                if (state.field.fieldType.isObjectType)
+                                    currentFieldsClassType = state.field.fieldType.asObjectType // method.classFile.thisType
+                                var ifLeftType: ReferenceType = null
+                                if (instr.asIf.left.isVar && instr.asIf.left.asVar.value.isReferenceValue) // && instr.asIf.left.asVar.value.asReferenceValue)
+                                    try {
+                                        ifLeftType = instr.asIf.left.asVar.value.asReferenceValue.asReferenceType
+                                    } catch {
+                                        case _: Throwable ⇒
+                                    }
 
-                        if (instr.isPutStatic && accessingPcs.contains(instr.pc)) {
-                            assignments = i :: assignments
-                        }
-
-                        if (instr.isMonitorEnter) {
-                            val defB = instr.asMonitorEnter.objRef.asVar.definedBy.head
-                            var objTypeOfMonitorEnter: Option[ObjectType] = None
-                            try {
-                                objTypeOfMonitorEnter =
-                                    Some(hm(defB).asAssignment.expr.asClassConst.value.asObjectType)
-                            } catch {
-                                case _: Throwable ⇒
+                                if ( //is non null check
+                                instr.asIf.condition == NE &&
+                                    // has same type as field
+                                    currentFieldsClassType != null &&
+                                    ifLeftType != null &&
+                                    ifLeftType.equals(currentFieldsClassType) //guards  field?
+                                    ) {
+                                    // => guards  the value
+                                    guards = (i, instr.asIf.target) :: guards
+                                }
                             }
-                            monitorEnter = Some((i, objTypeOfMonitorEnter))
-                            hm.foreach(x ⇒ println(x))
-                        }
-
-                        if (instr.isMonitorExit) {
-                            val defB = instr.asMonitorExit.objRef.asVar.definedBy.head
-                            var objTypeOfMonitorExit: Option[ObjectType] = None
-                            try {
-                                objTypeOfMonitorExit =
-                                    Some(hm(defB).asAssignment.expr.asClassConst.value.asObjectType)
-                            } catch {
-                                case _: Throwable ⇒
+                            if (instr.isAssignment) {
+                                hm += (i -> instr.asAssignment)
+                                if (accessingPcs.contains(instr.pc))
+                                    assignments = instr.pc.toInt :: assignments
                             }
-                            monitorExit = Some((i, objTypeOfMonitorExit))
-                        }
-                    })
+
+                            if (instr.isPutStatic && accessingPcs.contains(instr.pc)) {
+                                assignments = i :: assignments
+                            }
+
+                            if (instr.isMonitorEnter) {
+                                val defB = instr.asMonitorEnter.objRef.asVar.definedBy.head
+                                var objTypeOfMonitorEnter: Option[ObjectType] = None
+                                try {
+                                    objTypeOfMonitorEnter =
+                                        Some(hm(defB).asAssignment.expr.asClassConst.value.asObjectType)
+                                } catch {
+                                    case _: Throwable ⇒
+                                }
+                                monitorEnter = Some((i, objTypeOfMonitorEnter))
+                                //hm.foreach(x ⇒ println(x))
+                            }
+
+                            if (instr.isMonitorExit) {
+                                val defB = instr.asMonitorExit.objRef.asVar.definedBy.head
+                                var objTypeOfMonitorExit: Option[ObjectType] = None
+                                try {
+                                    objTypeOfMonitorExit =
+                                        Some(hm(defB).asAssignment.expr.asClassConst.value.asObjectType)
+                                } catch {
+                                    case _: Throwable ⇒
+                                }
+                                monitorExit = Some((i, objTypeOfMonitorExit))
+                            }
+                        })
                 }
                 case _ ⇒ result = false
             }
@@ -588,7 +601,8 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
             result = result && monitorEnter != None && monitorExit != None
             monitorEnter match {
                 case Some((n, Some(ot: ObjectType))) ⇒
-                    ot == state.field.fieldType.asObjectType &&
+                    result = result &&
+                        ot == state.field.fieldType.asObjectType &&
                         //outer guard(s)
                         guards.filter(x ⇒ n > x._1).size >= 1 &&
                         //inner guard(s)
@@ -615,28 +629,28 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]]
     )(implicit state: State): Boolean = {
-        println("51")
+        //xx println("51")
         val definitions = write.value.asVar.definedBy
-        println("52")
+        //xx println("52")
         val isDeterministic =
             if (definitions.size == 1) {
                 // The value written must be computed deterministically
-                println("53")
+                //xx println("53")
                 checkWriteIsDeterministic(code(definitions.head).asAssignment, method, code)
             } else {
                 // More than one definition site for the value might lead to differences between
                 // invocations, but not if this method has no parameters and is deterministic
                 // (in this case, the definition reaching the write will always be the same)
-                println("54")
+                //xx println("54")
                 method.descriptor.parametersCount == 0 &&
                     !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
             }
-        println("55")
+        //xx println("55")
         // The field write must be guarded correctly
         val r1 = isDeterministic
         val r2 = checkWriteIsGuarded(writeIndex, guardIndex, guardedIndex, method, code, cfg)
-        println("isDeterministic: "+r1)
-        println("checkWriteIsGuarded: "+r2)
+        //xx println("isDeterministic: "+r1)
+        //xx println("checkWriteIsGuarded: "+r2)
         //r1 && r2 //TODO check
         if (!(r1 && r2) && !state.isThreadSafeType) {
             //state.isThreadSafeType = false
@@ -924,18 +938,18 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
         method: Method,
         code:   Array[Stmt[V]]
     )(implicit state: State): Boolean = {
-        println("begin checkwriteisdeterministic")
+        //xx println("begin checkwriteisdeterministic")
         def isConstant(uvar: Expr[V]): Boolean = {
             val defSites = uvar.asVar.definedBy
 
             def isConstantDef(index: Int) = {
-                println("index: "+index)
+                //xx println("index: "+index)
                 if (index < 0) false
                 else if (code(defSites.head).asAssignment.expr.isConst) true
                 else {
                     val expr = code(index).asAssignment.expr
-                    println("expr: "+expr)
-                    println("resolveField(p): "+expr.asFieldRead.resolveField(p))
+                    //xx println("expr: "+expr)
+                    //println("resolveField(p): " + expr.asFieldRead.resolveField(p))
                     expr.isFieldRead && (expr.asFieldRead.resolveField(p) match {
                         case Some(field) ⇒
                             isImmutableReference(propertyStore(field, ReferenceImmutability.key))
@@ -951,35 +965,35 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
 
         val value = origin.expr
 
-        println("value.astID: "+value.astID)
+        //xx println("value.astID: "+value.astID)
 
         val isNonConstDeterministic = value.astID match {
             case GetStatic.ASTID | GetField.ASTID ⇒
-                println("a")
+                //xx println("a")
                 value.asFieldRead.resolveField(p) match {
                     case Some(field) ⇒
-                        println("b")
+                        //xx println("b")
                         isImmutableReference(propertyStore(field, ReferenceImmutability.key))
                     case _ ⇒ // Unknown field
-                        println("c")
+                        //xx println("c")
                         false
                 }
             case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
-                println("d")
+                //xx println("d")
                 // If the value originates from a call, that call must be deterministic and may not
                 // have any non constant parameters to guarantee that it is the same on every
                 // invocation. The receiver object must be the 'this' self reference for the same
                 // reason.
                 if (value.asFunctionCall.allParams.exists(!isConstant(_))) {
-                    println("e")
+                    //xx println("e")
                     false
                 } else {
-                    println("f")
+                    //xx println("f")
                     state.lazyInitInvocation = Some((declaredMethods(method), origin.pc))
                     true
                 }
             case _ ⇒
-                println("g")
+                //xx println("g")
                 // The value neither is a constant nor originates from a call, but if the
                 // current method does not take parameters and is deterministic, the value is
                 // guaranteed to be the same on every invocation.
@@ -1133,7 +1147,9 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
             val ifStmt = code(result.get._1).asIf
             val expr = if (ifStmt.leftExpr.isConst) ifStmt.rightExpr else ifStmt.leftExpr
             val definitions = expr.asVar.definedBy
-            val fieldReadUses = code(definitions.head).asAssignment.targetVar.usedBy
+            var fieldReadUses: IntTrieSet = IntTrieSet.empty
+            if (definitions.head >= 0 && code(definitions.head).isAssignment)
+                fieldReadUses = code(definitions.head).asAssignment.targetVar.usedBy
             val fieldReadUsedCorrectly = fieldReadUses forall { use ⇒
                 use == result.get._1 || use == result.get._2
             }
@@ -1174,8 +1190,10 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
          * Checks if an expression is an IntConst or FloatConst with the corresponding default value.
          */
         def isDefaultConst(expr: Expr[V]): Boolean = {
-            println("Expression: "+expr)
-            if (expr.isVar) {
+            //xx println("Expression: "+expr)
+            if (expr.isNullExpr)
+                true //--
+            else if (expr.isVar) {
                 val defSites = expr.asVar.definedBy
                 val head = defSites.head
                 defSites.size == 1 && head >= 0 && isDefaultConst(code(head).asAssignment.expr)
@@ -1205,7 +1223,7 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
         {
 
             //TODO if expression = Nullexpr
-            println("----------------------------------------<<<<")
+            //xx println("----------------------------------------<<<<")
             state.isThreadSafeType = false
             true //TODO check
         }

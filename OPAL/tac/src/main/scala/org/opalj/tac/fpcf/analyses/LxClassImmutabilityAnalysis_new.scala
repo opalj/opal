@@ -46,7 +46,6 @@ import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.ShallowImmutableClass
 import org.opalj.br.fpcf.properties.ShallowImmutableField
-import org.opalj.br.fpcf.properties.TypeImmutability_new
 
 /**
  *
@@ -151,9 +150,6 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
 
           })
     })
-    //genericTypeBounds.toList.foreach({ x ⇒
-    //    println("Bound: "+x)
-    //})
     genericTypeBounds
   }
 
@@ -284,7 +280,7 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
       case _                          => DeepImmutableClass // ImmutableObject
     }
 
-    if (!dependentImmutableFields.isEmpty) {
+    if (!dependentImmutableFields.isEmpty && maxLocalImmutability != ShallowImmutableClass) {
       maxLocalImmutability = DependentImmutableClass()
     }
 
@@ -331,7 +327,7 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
         case UBP(ShallowImmutableClass) => //ImmutableContainer) ⇒ // super class is at most immutable container
           if (someEPS.isFinal) dependees -= SuperClassKey
           maxLocalImmutability = ShallowImmutableClass //ImmutableContainer
-          dependees = dependees.filterNot(_._2.pk == TypeImmutability_new.key) //TypeImmutability.key)
+        //dependees = dependees.filterNot(_._2.pk == TypeImmutability_new.key) //TypeImmutability.key)
 
         case LBP(ShallowImmutableClass) => //ImmutableContainer) ⇒ // super class is a least immutable container
           if (minLocalImmutability != ShallowImmutableClass && //ImmutableContainer &&
@@ -365,8 +361,8 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
 
         case ELBP(e, ShallowImmutableField | DeepImmutableField) => //FinalField) =>
           dependees -= e
-          if (minLocalImmutability != ShallowImmutableClass && // ImmutableContainer &&
-              !dependees.valuesIterator.exists(_.pk != TypeImmutability_new.key)) //TypeImmutability.key))
+          if (minLocalImmutability != ShallowImmutableClass) // && // ImmutableContainer &&
+            //!dependees.valuesIterator.exists(_.pk != TypeImmutability_new.key)) //TypeImmutability.key))
             minLocalImmutability = ShallowImmutableClass //ImmutableContainer // Lift lower bound when possible
 
         case UBP(ShallowImmutableField | DeepImmutableField) => //_: FinalField) ⇒ // no information about field mutability
@@ -388,8 +384,8 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
        */
 
       // Lift lower bound once no dependencies other than field type mutabilities are left
-      if (minLocalImmutability != ShallowImmutableClass && //ImmutableContainer &&
-          dependees.valuesIterator.forall(_.pk == TypeImmutability_new.key)) //TypeImmutability.key))
+      if (minLocalImmutability != ShallowImmutableClass) // && //ImmutableContainer &&
+        //dependees.valuesIterator.forall(_.pk == TypeImmutability_new.key)) //TypeImmutability.key))
         minLocalImmutability = ShallowImmutableClass //ImmutableContainer
       if (dependees.isEmpty || minLocalImmutability == maxLocalImmutability) {
         /*[DEBUG]
@@ -441,7 +437,7 @@ trait ClassImmutabilityAnalysisScheduler_new extends FPCFAnalysisScheduler {
   final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability_new)
 
   final override def uses: Set[PropertyBounds] =
-    PropertyBounds.lubs(ClassImmutability_new, TypeImmutability_new, FieldImmutability) //TypeImmutability, FieldImmutability)
+    PropertyBounds.lubs(ClassImmutability_new, FieldImmutability) //TypeImmutability, FieldImmutability)
 
   override type InitializationData = TraversableOnce[ClassFile]
 
