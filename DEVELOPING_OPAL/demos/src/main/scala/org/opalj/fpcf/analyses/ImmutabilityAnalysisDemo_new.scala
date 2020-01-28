@@ -1,37 +1,48 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package analyses
+package org.opalj.fpcf.analyses
 
 import java.net.URL
 
-import org.opalj.util.gc
-import org.opalj.util.Nanoseconds
-import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
-import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.br.fpcf.properties.ClassImmutability
+import org.opalj.br.fpcf.properties.ClassImmutability_new
+import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.FieldPrematurelyRead
+import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.fpcf.properties.ReferenceImmutability
+import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.properties.TypeImmutability_new
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyKind
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.EagerLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.util.Nanoseconds
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.gc
 
 /**
  * Determines the immutability of the classes of a project.
  *
  * @author Michael Eichberg
+ *         @author Tobias Peter Roth
+ *
  */
-object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
-
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
-    //                                                                                            //
-    // THIS CODE CONTAINS THE PERFORMANCE MEASUREMENT CODE AS USED FOR THE "REACTIVE PAPER"!      //
-    //                                                                                            //
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
+object ImmutabilityAnalysisDemo_new extends ProjectAnalysisApplication {
 
     override def title: String = "determines the immutability of objects and types"
 
@@ -53,7 +64,7 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             performanceData = performanceData.filter((t_ts) ⇒ ts.contains(t_ts._1))
         }
 
-        List(1, 2, 4, 8, 16, 32, 64).foreach { parallelismLevel ⇒
+        List(1).foreach { parallelismLevel ⇒
             performanceData = Map.empty
             gc()
 
@@ -77,10 +88,12 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     def analyze(theProject: Project[URL], parallelismLevel: Int): () ⇒ String = {
         var result = "Results:\n"
         val project = Project.recreate(theProject) // We need an empty project(!)
+        project.get(RTACallGraphKey)
 
         // The following measurements (t) are done such that the results are comparable with the
         // reactive async approach developed by P. Haller and Simon Gries.
         PropertyStoreKey.parallelismLevel = parallelismLevel
+        //PropertyStoreKey
         val propertyStore = project.get(PropertyStoreKey)
 
         time {
@@ -88,14 +101,31 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                 Set[PropertyKind](
                     FieldMutability.key,
                     ClassImmutability.key,
-                    TypeImmutability.key
+                    TypeImmutability.key,
+                    FieldPrematurelyRead.key,
+                    Purity.key,
+                    FieldImmutability.key,
+                    ReferenceImmutability.key,
+                    ClassImmutability_new.key,
+                    TypeImmutability_new.key
                 )
             )
-            LazyL0FieldMutabilityAnalysis.register(project, propertyStore, null)
-            EagerClassImmutabilityAnalysis.start(project, propertyStore, null)
-            EagerTypeImmutabilityAnalysis.start(project, propertyStore, null)
+            //LazyL0FieldMutabilityAnalysis.register(project, propertyStore, null) // (project, propertyStore)
+            //EagerClassImmutabilityAnalysis.start(project, propertyStore, project.allClassFiles)
+            //EagerTypeImmutabilityAnalysis.start(project, propertyStore, null) //project.allClassFiles)
 
-            propertyStore.waitOnPhaseCompletion()
+            LazyClassImmutabilityAnalysis.register(project, propertyStore, project.allClassFiles)
+            LazyL2FieldMutabilityAnalysis.register(project, propertyStore, null)
+            LazyTypeImmutabilityAnalysis.register(project, propertyStore, null)
+            LazyUnsoundPrematurelyReadFieldsAnalysis.register(project, propertyStore, null)
+            LazyL2PurityAnalysis.register(project, propertyStore, null)
+
+            EagerL0ReferenceImmutabilityAnalysis.start(project, propertyStore, null)
+            EagerL0FieldImmutabilityAnalysis.start(project, propertyStore, null)
+            EagerLxClassImmutabilityAnalysis_new.start(project, propertyStore, project.allClassFiles)
+            EagerLxTypeImmutabilityAnalysis_new.start(project, propertyStore, null)
+            //propertyStore.suppressError = true
+            //propertyStore.waitOnPhaseCompletion()
         } { r ⇒
             analysisTime = r
         }
@@ -103,9 +133,11 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         result += s"\t- analysis time: ${analysisTime.toSeconds}\n"
 
         () ⇒ {
+            val immutableReferences =
+                propertyStore.entities(ReferenceImmutability.key)
             val immutableClasses =
                 propertyStore
-                    .entities(ClassImmutability.key)
+                    .entities(ClassImmutability_new.key)
                     .filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration)
                     .toBuffer
                     .groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub)
@@ -121,11 +153,15 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                     }
 
             val immutableClassesPerCategory =
-                immutableClasses.map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).toBuffer.sorted.mkString("\n")
+                immutableClasses
+                    .map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size)
+                    .toBuffer
+                    .sorted
+                    .mkString("\n")
 
             val immutableTypes =
                 propertyStore
-                    .entities(TypeImmutability.key)
+                    .entities(TypeImmutability_new.key)
                     .filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration)
                     .toBuffer
                     .groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub)
@@ -141,10 +177,11 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                     .map { eps ⇒
                         eps.e.asInstanceOf[ClassFile].thisType.toJava+
                             " => "+eps.ub+
-                            " => "+propertyStore(eps.e, TypeImmutability.key).ub
+                            " => "+propertyStore(eps.e, TypeImmutability_new.key).ub
                     }
                     .mkString("\t\timmutability:\n\t\t", "\n\t\t", "\n")
 
+            "immutable References: "+immutableReferences.size+"\n"
             "\t- details:\n"+
                 immutableClassesInfo+
                 "\nSummary (w.r.t classes):\n"+
