@@ -51,7 +51,7 @@ import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
  * @author Dominik Helm
  * @author Andreas Bauer
  */
-class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses](
+class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -67,8 +67,8 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses](
     }
 
     private[this] def handleInstantiatedTypes(
-                                                 instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes],
-                                                 numProcessedTypes: Int
+        instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes],
+        numProcessedTypes: Int
     ): PropertyComputationResult = {
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
             case UBPS(initialTypes: InstantiatedTypes, isFinal) ⇒

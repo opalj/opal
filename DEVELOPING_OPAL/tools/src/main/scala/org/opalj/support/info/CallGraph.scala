@@ -137,7 +137,7 @@ object CallGraph extends ProjectAnalysisApplication {
         cgFile:       Option[String],
         outputFile:   Option[String],
         pointsToFile: Option[String],
-        numThreads: Option[Int],
+        numThreads:   Option[Int],
         projectTime:  Seconds
     ): BasicReport = {
         project.getOrCreateProjectInformationKeyInitializationData(

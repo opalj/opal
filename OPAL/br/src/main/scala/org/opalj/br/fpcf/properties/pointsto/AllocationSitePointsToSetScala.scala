@@ -26,12 +26,12 @@ sealed trait AllocationSitePointsToSetScalaPropertyMetaInformation extends Prope
 }
 
 case class AllocationSitePointsToSetScala(
-    override val elements: Set[AllocationSite],
-    override val types:    Set[ReferenceType], // TODO: Use normal Set here
-    val orderedTypes:      List[ReferenceType]
+        override val elements: Set[AllocationSite],
+        override val types:    Set[ReferenceType], // TODO: Use normal Set here
+        val orderedTypes:      List[ReferenceType]
 ) extends PointsToSetLike[AllocationSite, Set[AllocationSite], AllocationSitePointsToSetScala]
-        with OrderedProperty
-        with AllocationSitePointsToSetScalaPropertyMetaInformation {
+    with OrderedProperty
+    with AllocationSitePointsToSetScalaPropertyMetaInformation {
 
     final def key: PropertyKey[AllocationSitePointsToSetScala] = AllocationSitePointsToSetScala.key
 
