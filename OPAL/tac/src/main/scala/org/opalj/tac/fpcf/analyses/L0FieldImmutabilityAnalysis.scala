@@ -43,7 +43,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.tac.fpcf.properties.TACAI
 
 case class State(f: Field) {
   var field: Field = f
@@ -86,14 +85,9 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     var dependencies: Set[EOptionP[Entity, Property]] = Set.empty
 
     def determineGenericFieldImmutability(state: State): Option[Boolean] = {
-      println(
-        "determine generic field imm-------------------------------------------------------------------"
-      )
       var genericFields: Set[ObjectType] = Set.empty
       state.field.fieldTypeSignature match {
         case Some(fts) =>
-          //}
-          //state.field.fieldTypeSignature.head
           fts match {
             case ClassTypeSignature(_, SimpleClassTypeSignature(name, typeArguments), _) => {
               typeArguments.foreach(
@@ -112,7 +106,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         ) => {
                       packageIdentifier1 match {
                         case Some(pid1) => genericFields += ObjectType(pid1 + packageIdentifier2)
-                        case _ => genericFields += ObjectType(packageIdentifier2)
+                        case _          => genericFields += ObjectType(packageIdentifier2)
                       }
 
                     }
@@ -125,9 +119,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
           }
         case _ =>
       }
-      genericFields.foreach(f => println("generic Field: " + f))
-      //state.typeImmutability = Some(true)
-
       genericFields.toList.foreach(objectType => {
         val result = propertyStore(objectType, TypeImmutability_new.key)
         result match {
@@ -147,7 +138,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
       if (objectType.isArrayType) return Some(true); //TODO
       if (objectType.isBaseType) return Some(true);
       val result = propertyStore(objectType, TypeImmutability_new.key)
-      println("Result: " + result)
       result match {
         case FinalEP(e, DeepImmutableType) => {
           return Some(true);
@@ -168,7 +158,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
           return Some(false);
         }
         case x @ _ => {
-          println("x: " + x)
           dependencies += x
           return None; //TODO check!!!!! None;
         }
@@ -176,27 +165,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     }
 
     def hasImmutableType(field: Field)(state: State): Option[Boolean] = {
-      //val  hasFieldImmutableType =
       handleTypeImmutability(field.fieldType.asFieldType)(state)
-
-      /**
-     * hasFieldImmutableType match {
-     * case Some(false) => return Some(false);
-     * case _ => {
-     * state.depencenciesTypes.foreach(
-     * t => {
-     * val isImmutable = handleTypeImmutability(t)(state)
-     * isImmutable match {
-     * case Some(false) => return Some(false);
-     * case _           =>
-     * }
-     * }
-     * )
-     * Some(true)
-     * }
-     * } *
-     */
-
     }
     def hasImmutableReference(field: Field): Option[Boolean] = {
 
@@ -222,8 +191,9 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         case Some(true) => {
           //If the field type is object. It is a generic field
           //Test Dependent... //TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          //var genericString: Option[String] = None
           //if (field.fieldType == ObjectType("java/lang/Object")) {
-          println("field attributes: " + field.asField.attributes)
+          //++ println("field attributes: "+field.asField.attributes)
           val genericString = field.asField.attributes.toList.collectFirst({
             case TypeVariableSignature(t) => t
             case ClassTypeSignature(
@@ -237,7 +207,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     case ProperTypeArgument(variance, signature) => {
                       signature match {
                         case TypeVariableSignature(identifier) => true
-                        case _ => false
+                        case _                                 => false
                       }
                     }
                     case _ => false
@@ -245,28 +215,21 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 })
               if (tA.size > 0)
                 tA.head match {
-                  case ProperTypeArgument(variance, TypeVariableSignature(identifier)) => identifier
+                  case ProperTypeArgument(variance, TypeVariableSignature(identifier)) =>
+                    identifier
                   case _ => ""
                 } else ""
-
             }
           })
           if (!field.attributes.isEmpty && genericString != None && genericString != Some("")) {
-
-            //if(genericString!=None)
-            //    println("Generic String: "+genericString)
-            //    println(
-            //        "test: "+DependentImmutableField(genericString).genericString
-            //   }
             Result(field, DependentImmutableField(genericString))
-
           } else
             state.typeImmutability match {
               case Some(true) => Result(field, DeepImmutableField)
               case Some(false) => {
                 state.dependentTypeImmutability match {
                   case Some(true) => Result(field, DependentImmutableField())
-                  case _ => Result(field, ShallowImmutableField)
+                  case _          => Result(field, ShallowImmutableField)
                 }
               }
               case None if (dependencies.isEmpty) => Result(field, ShallowImmutableField)
@@ -283,11 +246,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         }
         case None if (dependencies.isEmpty) => Result(field, MutableField)
         case None => {
-          println("last step: ")
-          println("field: " + field)
-          println("MutableField: " + MutableField)
-          println("DeepImmutableField: " + DeepImmutableField)
-          println("dependencies: " + dependencies)
           InterimResult(
             field,
             MutableField,
@@ -335,7 +293,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
       createResult(state)
     }
 
-    //--
     state.depencenciesTypes = scala.collection.mutable.Set[ObjectType]()
     state.referenceImmutability = hasImmutableReference(field)
     state.typeImmutability = hasImmutableType(field)(state);
@@ -347,7 +304,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 trait L0FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
   final override def uses: Set[PropertyBounds] = Set(
-    PropertyBounds.ub(TACAI),
     PropertyBounds.lub(ReferenceImmutability),
     PropertyBounds.lub(TypeImmutability_new),
     PropertyBounds.lub(FieldImmutability)
