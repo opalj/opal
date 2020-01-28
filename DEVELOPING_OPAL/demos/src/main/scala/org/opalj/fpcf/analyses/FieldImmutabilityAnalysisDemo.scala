@@ -1,7 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses
 
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
 import java.net.URL
+import java.util.Calendar
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -16,12 +20,15 @@ import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.util.PerformanceEvaluation.time
+import org.opalj.util.Seconds
 
 /**
  * Runs the EagerL0FieldImmutabilityAnalysis including analysis needed for improving the result.
@@ -49,37 +56,68 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
     analysesManager.project.get(RTACallGraphKey)
 
-    val (propertyStore, _) = analysesManager.runAll(
-      LazyLxClassImmutabilityAnalysis_new,
-      LazyTypeImmutabilityAnalysis,
-      LazyUnsoundPrematurelyReadFieldsAnalysis,
-      LazyL2PurityAnalysis,
-      LazyL2FieldMutabilityAnalysis,
-      LazyClassImmutabilityAnalysis,
-      LazyL0ReferenceImmutabilityAnalysis,
-      EagerL0FieldImmutabilityAnalysis,
-      LazyLxTypeImmutabilityAnalysis_new
-    );
+    var propertyStore: PropertyStore = null
+    var analysisTime: Seconds = Seconds.None
+    time {
 
-    "Mutable Fields: " + propertyStore
-      .finalEntities(MutableField)
-      .toList
-      .toString() + "\n" +
-      "Shallow Immutable Fields: " + propertyStore
-      .finalEntities(ShallowImmutableField)
-      .toList
-      .toString() + "\n" +
-      "Dependet Immutable Fields:" + propertyStore
-      .finalEntities(DependentImmutableField(None))
-      .toList
-      .toString() + "\n" +
-      "Deep Immutable Fields: " + propertyStore
-      .finalEntities(DeepImmutableField)
-      .toList
-      .toString() + "\n" +
+      propertyStore = analysesManager
+        .runAll(
+          LazyLxClassImmutabilityAnalysis_new,
+          LazyTypeImmutabilityAnalysis,
+          LazyUnsoundPrematurelyReadFieldsAnalysis,
+          LazyL2PurityAnalysis,
+          LazyL2FieldMutabilityAnalysis,
+          LazyClassImmutabilityAnalysis,
+          LazyL0ReferenceImmutabilityAnalysis,
+          EagerL0FieldImmutabilityAnalysis,
+          LazyLxTypeImmutabilityAnalysis_new
+        )
+        ._1
+      propertyStore.waitOnPhaseCompletion();
+    } { t =>
+      analysisTime = t.toSeconds
+    }
+    val sb: StringBuilder = new StringBuilder
+    sb.append("Mutable Fields: \n")
+    sb.append(
+      propertyStore
+        .finalEntities(MutableField)
+        .toList
+        .map(x => x.toString + "\n")
+        .toString()
+    )
+    sb.append("\nShallow Immutable Fields: \n")
+    sb.append(
+      propertyStore
+        .finalEntities(ShallowImmutableField)
+        .toList
+        .map(x => x.toString + "\n")
+        .toString()
+    )
+    sb.append("\nDependet Immutable Fields: \n")
+    sb.append(
       propertyStore
         .entities(FieldImmutability.key)
         .toList
+        .collect({ case x: DependentImmutableField => x })
+        .map(x => x.toString + "\n")
+        .toString()
+    )
+    sb.append("Deep Immutable Fields: ")
+    sb.append(
+      propertyStore
+        .finalEntities(DeepImmutableField)
+        .toList
+        .map(x => x.toString + "\n")
         .toString
+    )
+
+    val dateString: String = Calendar.getInstance().get(Calendar.MILLISECOND).toString
+    val file = new File("C:/MA/results/refImm" + dateString + ".txt")
+    val bw = new BufferedWriter(new FileWriter(file))
+    bw.write(sb.toString())
+    bw.close()
+
+    " took : " + analysisTime + " seconds"
   }
 }
