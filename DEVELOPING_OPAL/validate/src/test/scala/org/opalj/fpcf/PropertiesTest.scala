@@ -76,7 +76,26 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
-        implicit val config: Config = createConfig()
+        val configForEntryPoints = BaseConfig
+            .withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+            )
+            .withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
+        implicit val config: Config = configForEntryPoints
+            .withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+            )
+            .withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
@@ -85,25 +104,6 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             libraryClassFilesAreInterfacesOnly = false,
             virtualClassFiles = Traversable.empty
         )
-    }
-
-    def createConfig(): Config = {
-        val configForEntryPoints = BaseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
-        ).withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
-
-        configForEntryPoints.withValue(
-            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
-        ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+
-                    "AllInstantiatedTypesFinder.projectClassesOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
     }
 
     final val PropertyValidatorType = ObjectType("org/opalj/fpcf/properties/PropertyValidator")
@@ -123,6 +123,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     )(
         annotation: AnnotationLike
     ): Option[(AnnotationLike, String, Type /* type of the matcher */ )] = {
+        println("inside getPropertyMatcher")
         if (!annotation.annotationType.isObjectType)
             return None;
 
@@ -161,6 +162,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         for {
             (e, entityIdentifier, annotations) ← eas
             augmentedAnnotations = annotations.flatMap(getPropertyMatcher(p, propertyKinds))
+
             (annotation, propertyKind, matcherType) ← augmentedAnnotations
         } {
             val annotationTypeName = annotation.annotationType.asObjectType.simpleName
@@ -275,8 +277,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val fp = formalParameters(dm)(i + 1)
             (
                 fp,
-                (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in "+
-                    s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
+                (a: String) ⇒
+                    s"VirtualFormalParameter: (origin ${fp.origin} in "+
+                        s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
                 annotations
             )
         }
@@ -301,8 +304,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         } yield {
             (
                 as,
-                (a: String) ⇒ s"AllocationSite: (pc ${as.pc} in "+
-                    s"${m.toJava(s"@$a").substring(24)})",
+                (a: String) ⇒
+                    s"AllocationSite: (pc ${as.pc} in "+
+                        s"${m.toJava(s"@$a").substring(24)})",
                 annotations
             )
         }
@@ -336,7 +340,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )
-                */
+           */
                     val ps = PKESequentialPropertyStore(context: _*)
                     ps
                 }
