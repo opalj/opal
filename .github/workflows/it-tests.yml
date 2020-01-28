@@ -16,4 +16,4 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Run Integration Tests
-      run: sbt -J-Xmx20G it:test
+      run: sbt -J-Xmx40G it:test
