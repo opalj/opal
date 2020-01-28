@@ -76,22 +76,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
-        val configForEntryPoints = BaseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
-        ).withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
-
-        implicit val config: Config = configForEntryPoints.withValue(
-            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
-        ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+
-                    "AllInstantiatedTypesFinder.projectClassesOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
+        implicit val config: Config = createConfig()
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
@@ -100,6 +85,25 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             libraryClassFilesAreInterfacesOnly = false,
             virtualClassFiles = Traversable.empty
         )
+    }
+
+    def createConfig(): Config = {
+        val configForEntryPoints = BaseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
+        configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
     }
 
     final val PropertyValidatorType = ObjectType("org/opalj/fpcf/properties/PropertyValidator")
