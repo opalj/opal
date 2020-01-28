@@ -8,7 +8,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait TypeImmutabilityPropertyMetaInformation_new extends PropertyMetaInformation {
 
-    final type Self = TypeImmutability_new
+  final type Self = TypeImmutability_new
 }
 
 /**
@@ -29,19 +29,19 @@ sealed trait TypeImmutability_new
     extends OrderedProperty
     with TypeImmutabilityPropertyMetaInformation_new {
 
-    /**
-     * Returns the key used by all `TypeImmutability_new` properties.
-     */
-    final def key = TypeImmutability_new.key
+  /**
+   * Returns the key used by all `TypeImmutability_new` properties.
+   */
+  final def key = TypeImmutability_new.key
 
-    def isDeepImmutable: Boolean
-    def isShallowImmutable: Boolean
-    def isDependentImmutable: Boolean
+  def isDeepImmutable: Boolean
+  def isShallowImmutable: Boolean
+  def isDependentImmutable: Boolean
 
-    /** `true` if the immutability is unknown or if the type is mutable.*/
-    def isMutable: Boolean
+  /** `true` if the immutability is unknown or if the type is mutable.*/
+  def isMutable: Boolean
 
-    def meet(other: TypeImmutability_new): TypeImmutability_new
+  def meet(other: TypeImmutability_new): TypeImmutability_new
 }
 
 /**
@@ -49,13 +49,13 @@ sealed trait TypeImmutability_new
  */
 object TypeImmutability_new extends TypeImmutabilityPropertyMetaInformation_new {
 
-    /**
-     * The key associated with every [[TypeImmutability_new]] property.
-     */
-    final val key: PropertyKey[TypeImmutability_new] = PropertyKey.create(
-        "org.opalj.TypeImmutability_new",
-        MutableType_new
-    )
+  /**
+   * The key associated with every [[TypeImmutability_new]] property.
+   */
+  final val key: PropertyKey[TypeImmutability_new] = PropertyKey.create(
+    "org.opalj.TypeImmutability_new",
+    MutableType_new
+  )
 }
 
 /**
@@ -64,79 +64,76 @@ object TypeImmutability_new extends TypeImmutabilityPropertyMetaInformation_new 
  */
 case object DeepImmutableType extends TypeImmutability_new {
 
-    override def isDeepImmutable: Boolean = true
-    override def isShallowImmutable: Boolean = false
-    override def isMutable: Boolean = false
-    override def isDependentImmutable: Boolean = false
+  override def isDeepImmutable: Boolean = true
+  override def isShallowImmutable: Boolean = false
+  override def isMutable: Boolean = false
+  override def isDependentImmutable: Boolean = false
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
-    def meet(that: TypeImmutability_new): TypeImmutability_new =
-        if (this == that)
-            this
-        else
-            that
+  def meet(that: TypeImmutability_new): TypeImmutability_new =
+    if (this == that)
+      this
+    else
+      that
+
+}
+
+case object DependentImmutableType extends TypeImmutability_new {
+  override def isDeepImmutable: Boolean = false
+  override def isShallowImmutable: Boolean = false
+  override def isMutable: Boolean = false
+  override def isDependentImmutable: Boolean = true
+
+  def meet(that: TypeImmutability_new): TypeImmutability_new =
+    if (that == MutableType_new || that == ShallowImmutableType)
+      that
+    else
+      this
+
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+
+    if (other == DeepImmutableType) {
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+    }
+  }
 
 }
 
 case object ShallowImmutableType extends TypeImmutability_new {
 
-    override def isDeepImmutable: Boolean = false
-    override def isShallowImmutable: Boolean = true
-    override def isMutable: Boolean = false
-    override def isDependentImmutable: Boolean = false
+  override def isDeepImmutable: Boolean = false
+  override def isShallowImmutable: Boolean = true
+  override def isMutable: Boolean = false
+  override def isDependentImmutable: Boolean = false
 
-    def meet(that: TypeImmutability_new): TypeImmutability_new =
-        if (that == MutableType_new)
-            that
-        else
-            this
+  def meet(that: TypeImmutability_new): TypeImmutability_new =
+    if (that == MutableType_new)
+      that
+    else
+      this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
-    /**
-     * if (other == DeepImmutableType) {
-     * throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
-     * }
-     * }*
-     */
-}
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
 
-case object DependentImmutableType extends TypeImmutability_new {
-    override def isDeepImmutable: Boolean = false
-    override def isShallowImmutable: Boolean = false
-    override def isMutable: Boolean = false
-    override def isDependentImmutable: Boolean = true
-
-    def meet(that: TypeImmutability_new): TypeImmutability_new =
-        if (that == MutableType_new)
-            that
-        else
-            this
-
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
-    /**
-     * if (other == DependentImmutableType || other == ShallowImmutableType) {
-     * throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
-     * }
-     * }*
-     */
-
+    if (other == DeepImmutableType || other == DependentImmutableType) {
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+    }
+  }
 }
 
 case object MutableType_new extends TypeImmutability_new {
 
-    override def isDeepImmutable: Boolean = false
-    override def isShallowImmutable: Boolean = false
-    override def isMutable: Boolean = true
-    override def isDependentImmutable: Boolean = false
+  override def isDeepImmutable: Boolean = false
+  override def isShallowImmutable: Boolean = false
+  override def isMutable: Boolean = true
+  override def isDependentImmutable: Boolean = false
 
-    def meet(other: TypeImmutability_new): this.type = this
+  def meet(other: TypeImmutability_new): this.type = this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
-    /**
-     * if (other != MutableType_new) {
-     * throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
-     * }
-     * }*
-     */
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+
+    if (other != MutableType_new) {
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+    }
+  }
 }
