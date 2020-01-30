@@ -6,7 +6,9 @@ package cg
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.pointsto.TypeBasedPointsToBasedCallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.DoPrivilegedPointsToCGAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
@@ -22,9 +24,9 @@ object TypeBasedPointsToCallGraphKey extends AbstractCallGraphKey {
     ): Traversable[FPCFAnalysisScheduler] = {
         List(
             TypeBasedPointsToBasedCallGraphAnalysisScheduler,
-            TypeBasedPointsToAnalysisScheduler
-        //ConfiguredNativeMethodsPointsToAnalysisScheduler,
-        //DoPrivilegedPointsToCGAnalysisScheduler
+            TypeBasedPointsToAnalysisScheduler,
+            TypeBasedConfiguredMethodsPointsToAnalysisScheduler,
+            DoPrivilegedPointsToCGAnalysisScheduler
         )
     }
 

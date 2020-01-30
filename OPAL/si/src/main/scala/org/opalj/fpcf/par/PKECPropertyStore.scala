@@ -427,7 +427,7 @@ final class PKECPropertyStore(
 
     private[this] def handleFinalResult(
         finalEP:                     SomeFinalEP,
-        potentiallyIdemPotentUpdate: Boolean     = true // TODO: THIS IS A HORRIBLE WORKAROUND
+        potentiallyIdemPotentUpdate: Boolean     = false
     ): Unit = {
         val e = finalEP.e
         val pkId = finalEP.pk.id

@@ -158,13 +158,13 @@ object Purity {
         var analysisTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
 
-        // todo: use variables for the constants
+        // TODO: use variables for the constants
         implicit var config: Config = if (isLibrary)
             ConfigFactory.load("LibraryProject.conf")
         else
             ConfigFactory.load("ApplicationProject.conf")
 
-        // todo in case of application this value is already set
+        // TODO: in case of application this value is already set
         if (closedWorldAssumption) {
             config = config.withValue(
                 "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
@@ -201,6 +201,7 @@ object Purity {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
                     org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = numThreads
+                    // FIXME: this property store is broken
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
             }

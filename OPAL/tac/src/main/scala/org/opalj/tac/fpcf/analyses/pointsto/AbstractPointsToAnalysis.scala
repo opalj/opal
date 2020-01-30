@@ -54,6 +54,8 @@ import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
+ * A context-insensitive points-to analysis, that uses an abstract [[PointsToSetLike]] in order to
+ * manage points-to sets.
  *
  * @author Florian Kuebler
  */
@@ -260,7 +262,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case _ ⇒
         }
 
-        // todo: we have to handle the exceptions that might implicitly be thrown by this method
+        // TODO: we have to handle the exceptions that might implicitly be thrown by this method
 
         Results(createResults(state))
     }

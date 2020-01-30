@@ -20,7 +20,6 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Florian Kuebler
  */
-// TODO: we should definition sites (real points-to sets) instead of just the types
 sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = TypeBasedPointsToSet
@@ -82,7 +81,7 @@ case class TypeBasedPointsToSet private[properties] (
     override def included(
         other: TypeBasedPointsToSet, seenElements: Int
     ): TypeBasedPointsToSet = {
-        included(other) // todo: implement correct version
+        included(other) // TODO: implement correct version
     }
 
     override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {

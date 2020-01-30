@@ -18,7 +18,9 @@ class PropertyComputationResultsTest extends FunSuite {
                 IncrementalResult.id,
                 InterimResult.id,
                 Results.id,
-                PartialResult.id
+                PartialResult.id,
+                PrecomputedPartialResult.id,
+                InterimPartialResult.id
             )
 
         assert(resultTypeIds.toSet.toList.sorted === resultTypeIds.sorted)
@@ -165,5 +167,20 @@ class InterimResultTest extends FunSuite {
         assert(r == rFactory)
     }
 
-    // TOOD test the Debug functionality...
+    // TODO test the Debug functionality...
+}
+
+class PartialResultTest extends FunSuite {
+    // TODO: test
+    ignore("partial results should be tested"){}
+}
+
+class InterimPartialResultTest extends FunSuite {
+    // TODO: test
+    ignore("interim partial results should be tested"){}
+}
+
+class PrecomputedPartialResultTest extends FunSuite {
+    // TODO: test
+    ignore("precomputed partial results should be tested"){}
 }

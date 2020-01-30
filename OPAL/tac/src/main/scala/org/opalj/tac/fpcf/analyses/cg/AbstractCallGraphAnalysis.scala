@@ -243,7 +243,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
      * There can be multiple "call sites", in case the three-address code has computed multiple
      * type bounds for the receiver.
      */
-    /*TODO private[this]*/ def handleVirtualCall(
+    def handleVirtualCall(
         caller:            DefinedMethod,
         call:              Call[V] with VirtualCall[V],
         pc:                Int,

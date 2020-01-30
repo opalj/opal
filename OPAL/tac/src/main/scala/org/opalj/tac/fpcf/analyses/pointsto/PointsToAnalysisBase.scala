@@ -31,6 +31,12 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.tac.common.DefinitionSite
 
+/**
+ * Base class for handling instructions in points-to analysis scenarios.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
     override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]

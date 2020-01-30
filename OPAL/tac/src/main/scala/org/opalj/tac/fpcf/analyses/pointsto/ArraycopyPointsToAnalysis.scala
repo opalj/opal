@@ -34,6 +34,11 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
+/**
+ * Handles the effect of [[java.lang.System.arraycopy*]] to points-to sets.
+ *
+ * @author Dominik Helm
+ */
 abstract class ArraycopyPointsToAnalysis private[pointsto] ( final val project: SomeProject)
     extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 

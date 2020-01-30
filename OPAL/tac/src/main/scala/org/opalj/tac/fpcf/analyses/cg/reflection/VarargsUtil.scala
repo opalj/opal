@@ -60,10 +60,6 @@ object VarargsUtil {
                 None
             } else {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
-                /*if (cfg.bb(uses.head) != cfg.bb(uses.last)) {
-                    // IMPROVE: Here we should also handle the case of non-constant values
-                    None
-                } else { */
                 var params: RefArray[T] = RefArray.withSize(uses.size - 1)
                 if (!uses.forall { useSite ⇒
                     val use = stmts(useSite)
