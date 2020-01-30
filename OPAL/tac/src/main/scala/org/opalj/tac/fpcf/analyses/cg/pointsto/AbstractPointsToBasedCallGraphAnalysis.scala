@@ -15,9 +15,6 @@ import org.opalj.fpcf.EUBPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.IsMObjectValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsSReferenceValue
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
@@ -41,73 +38,21 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
-    extends AbstractCallGraphAnalysis
-    with AbstractPointsToBasedAnalysis {
+        extends AbstractCallGraphAnalysis
+        with AbstractPointsToBasedAnalysis {
 
     override type State = PointsToBasedCGState[PointsToSet]
     override type DependerType = CallSiteT
 
-    override def handleVirtualCall(
+    override protected[this] def handlePreciseCall(
+        calleeType:        ObjectType,
         caller:            DefinedMethod,
+        callerType:        ObjectType,
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: State): Unit = {
-        // TODO: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
-        val rvs = call.receiver.asVar.value.asReferenceValue.allValues
-        for (rv ← rvs) rv match {
-            case mv: IsMObjectValue ⇒
-                val typeBounds = mv.upperTypeBound
-                val remainingTypeBounds = typeBounds.tail
-                val firstTypeBound = typeBounds.head
-                val potentialTypes = ch.allSubtypesForeachIterator(
-                    firstTypeBound, reflexive = true
-                ).filter { subtype ⇒
-                    val cfOption = project.classFile(subtype)
-                    cfOption.isDefined && {
-                        val cf = cfOption.get
-                        !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                            remainingTypeBounds.forall { supertype ⇒
-                                ch.isSubtypeOf(subtype, supertype)
-                            }
-                    }
-                }
-
-                handleImpreciseCall(
-                    caller,
-                    call,
-                    pc,
-                    call.declaringClass,
-                    potentialTypes,
-                    calleesAndCallers
-                )
-
-            case _: IsNullValue ⇒
-            // TODO: do not ignore the implicit calls to NullPointerException.<init>
-
-            case v: IsSReferenceValue[_] ⇒
-                val utb = v.theUpperTypeBound
-                val ot = if (utb.isObjectType) utb.asObjectType else ObjectType.Object
-
-                val potentialTypes = classHierarchy.allSubtypesForeachIterator(
-                    ot, reflexive = true
-                ).filter { subtype ⇒
-                    val cfOption = project.classFile(subtype)
-                    cfOption.isDefined && {
-                        val cf = cfOption.get
-                        !cf.isInterfaceDeclaration && !cf.isAbstract
-                    }
-                }
-
-                handleImpreciseCall(
-                    caller,
-                    call,
-                    pc,
-                    ot,
-                    potentialTypes,
-                    calleesAndCallers
-                )
-        }
+        handleImpreciseCall(calleeType, caller, call, pc, calleesAndCallers)
     }
 
     /**
@@ -116,7 +61,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
      * There can be multiple "call sites", in case the three-address code has computed multiple
      * type bounds for the receiver.
      */
-    override def handleImpreciseCall(
+    override protected[this] def doHandleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,
@@ -241,7 +186,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
 }
 
 class TypeBasedPointsToBasedCallGraphAnalysis private[pointsto] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends AbstractPointsToBasedCallGraphAnalysis[TypeBasedPointsToSet] with TypeBasedAnalysis
 
 object TypeBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
@@ -254,9 +199,9 @@ object TypeBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysi
 }
 
 class AllocationSiteBasedPointsToBasedCallGraphAnalysis private[pointsto] (
-        final val project: SomeProject
+    final val project: SomeProject
 ) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSet]
-    with AllocationSiteBasedAnalysis
+        with AllocationSiteBasedAnalysis
 
 object AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 

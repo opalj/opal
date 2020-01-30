@@ -73,7 +73,7 @@ class RTACallGraphAnalysis private[analyses] (
         new RTAState(definedMethod, tacEP, instantiatedTypesEOptP)
     }
 
-    override def handleImpreciseCall(
+    override def doHandleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,

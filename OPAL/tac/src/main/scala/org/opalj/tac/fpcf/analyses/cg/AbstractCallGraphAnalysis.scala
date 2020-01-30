@@ -72,7 +72,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         processMethod(state, new DirectCalls())
     }
 
-    def handleImpreciseCall(
+    protected[this] def doHandleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,
@@ -243,7 +243,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
      * There can be multiple "call sites", in case the three-address code has computed multiple
      * type bounds for the receiver.
      */
-    def handleVirtualCall(
+    private[this] def handleVirtualCall(
         caller:            DefinedMethod,
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
@@ -255,60 +255,17 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv ← rvs) rv match {
             case _: IsSArrayValue ⇒
-                val tgtR = project.instanceCall(
-                    caller.declaringClassType,
-                    ObjectType.Object,
-                    call.name,
-                    call.descriptor
-                )
-
-                handleCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    pc,
-                    tgtR,
-                    calleesAndCallers
+                handlePreciseCall(
+                    ObjectType.Object, caller, callerType, call, pc, calleesAndCallers
                 )
 
             case ov: IsSObjectValue ⇒
                 if (ov.isPrecise) {
-                    val tgt = project.instanceCall(
-                        callerType,
-                        rv.leastUpperType.get,
-                        call.name,
-                        call.descriptor
-                    )
-
-                    handleCall(
-                        caller,
-                        call.name,
-                        call.descriptor,
-                        call.declaringClass,
-                        pc,
-                        tgt,
-                        calleesAndCallers
+                    handlePreciseCall(
+                        ov.theUpperTypeBound, caller, callerType, call, pc, calleesAndCallers
                     )
                 } else {
-                    val potentialTypes = classHierarchy.allSubtypesForeachIterator(
-                        ov.theUpperTypeBound, reflexive = true
-                    ).filter { subtype ⇒
-                            val cfOption = project.classFile(subtype)
-                            cfOption.isDefined && {
-                                val cf = cfOption.get
-                                !cf.isInterfaceDeclaration && !cf.isAbstract
-                            }
-                        }
-
-                    handleImpreciseCall(
-                        caller,
-                        call,
-                        pc,
-                        ov.theUpperTypeBound,
-                        potentialTypes,
-                        calleesAndCallers
-                    )
+                    handleImpreciseCall(ov.theUpperTypeBound, caller, call, pc, calleesAndCallers)
                 }
 
             case mv: IsMObjectValue ⇒
@@ -328,7 +285,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     }
                 }
 
-                handleImpreciseCall(
+                doHandleImpreciseCall(
                     caller,
                     call,
                     pc,
@@ -336,8 +293,63 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     potentialTypes,
                     calleesAndCallers
                 )
+
             case _: IsNullValue ⇒
             // TODO: do not ignore the implicit calls to NullPointerException.<init>
         }
+    }
+
+    protected[this] def handlePreciseCall(
+        calleeType:        ObjectType,
+        caller:            DefinedMethod,
+        callerType:        ObjectType,
+        call:              Call[V] with VirtualCall[V],
+        pc:                Int,
+        calleesAndCallers: DirectCalls
+    )(implicit state: State): Unit = {
+        assert(state ne null)
+        val tgt = project.instanceCall(
+            callerType,
+            calleeType,
+            call.name,
+            call.descriptor
+        )
+
+        handleCall(
+            caller,
+            call.name,
+            call.descriptor,
+            call.declaringClass,
+            pc,
+            tgt,
+            calleesAndCallers
+        )
+    }
+
+    protected[this] def handleImpreciseCall(
+        calleeType:        ObjectType,
+        caller:            DefinedMethod,
+        call:              Call[V] with VirtualCall[V],
+        pc:                Int,
+        calleesAndCallers: DirectCalls
+    )(implicit state: State): Unit = {
+        val potentialTypes = classHierarchy.allSubtypesForeachIterator(
+            calleeType, reflexive = true
+        ).filter { subtype ⇒
+            val cfOption = project.classFile(subtype)
+            cfOption.isDefined && {
+                val cf = cfOption.get
+                !cf.isInterfaceDeclaration && !cf.isAbstract
+            }
+        }
+
+        doHandleImpreciseCall(
+            caller,
+            call,
+            pc,
+            calleeType,
+            potentialTypes,
+            calleesAndCallers
+        )
     }
 }
