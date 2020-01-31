@@ -170,11 +170,51 @@ class InterimResultTest extends FunSuite {
 }
 
 class PartialResultTest extends FunSuite {
-    // TODO: test
-    ignore("partial results should be tested"){}
+    test("a PartialResult is a proper result") {
+        val r: PropertyComputationResult = PartialResult(new Object, NilProperty.key, null)
+        assert(r.isInstanceOf[ProperPropertyComputationResult])
+        assert(!r.isInstanceOf[FinalPropertyComputationResult])
+    }
+
+    test("a PartialResult is not an InterimResult") {
+        val r: PropertyComputationResult = PartialResult(new Object, NilProperty.key, null)
+        assert(!r.isInterimResult)
+    }
+
+    test("a PartialResult cannot be cast to an InterimResult") {
+        val r: PropertyComputationResult = PartialResult(new Object, NilProperty.key, null)
+        assertThrows[ClassCastException](r.asInterimResult)
+    }
+
+    test("a PartialResult cannot be cast to a Result") {
+        val r: PropertyComputationResult = PartialResult(new Object, NilProperty.key, null)
+        assertThrows[ClassCastException](r.asResult)
+    }
 }
 
 class InterimPartialResultTest extends FunSuite {
-    // TODO: test
-    ignore("interim partial results should be tested"){}
+    test("an InterimPartialResult is a proper result") {
+        val dependees = List(EPK(new Object, NilProperty.key))
+        val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)
+        assert(r.isInstanceOf[ProperPropertyComputationResult])
+        assert(!r.isInstanceOf[FinalPropertyComputationResult])
+    }
+
+    test("an InterimPartialResult is not an InterimResult") {
+        val dependees = List(EPK(new Object, NilProperty.key))
+        val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)
+        assert(!r.isInterimResult)
+    }
+
+    test("an InterimPartialResult cannot be cast to an InterimResult") {
+        val dependees = List(EPK(new Object, NilProperty.key))
+        val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)
+        assertThrows[ClassCastException](r.asInterimResult)
+    }
+
+    test("an InterimPartialResult cannot be cast to a Result") {
+        val dependees = List(EPK(new Object, NilProperty.key))
+        val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)
+        assertThrows[ClassCastException](r.asResult)
+    }
 }
