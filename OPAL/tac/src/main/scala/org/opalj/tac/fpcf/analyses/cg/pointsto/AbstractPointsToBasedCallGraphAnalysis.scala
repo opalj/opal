@@ -33,8 +33,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  * [[org.opalj.tac.common.DefinitionSite]] and[[org.opalj.br.analyses.VirtualFormalParameter]]s
  * in order to determine the targets of virtual method calls.
  *
- * TODO: This analysis is currently copy&paste and should be refactored
- *
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]

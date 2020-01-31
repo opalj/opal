@@ -179,7 +179,7 @@ trait IndirectCallsBase extends Calls {
 
     override protected def indirectCallees: IntMap[IntTrieSet] = _callees
 
-    private[cg] def addCall(
+    def addCall(
         caller:   DefinedMethod,
         callee:   DeclaredMethod,
         pc:       Int,
