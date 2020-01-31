@@ -19,7 +19,6 @@ class PropertyComputationResultsTest extends FunSuite {
                 InterimResult.id,
                 Results.id,
                 PartialResult.id,
-                PrecomputedPartialResult.id,
                 InterimPartialResult.id
             )
 
@@ -178,9 +177,4 @@ class PartialResultTest extends FunSuite {
 class InterimPartialResultTest extends FunSuite {
     // TODO: test
     ignore("interim partial results should be tested"){}
-}
-
-class PrecomputedPartialResultTest extends FunSuite {
-    // TODO: test
-    ignore("precomputed partial results should be tested"){}
 }
