@@ -4,29 +4,28 @@ package tac
 package fpcf
 package analyses
 package cg
-package rta
+package xta
 
 import scala.language.existentials
 
 import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.EPS
+import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * A rapid type call graph analysis (RTA). For a given [[org.opalj.br.Method]] it computes the set
- * of outgoing call edges ([[org.opalj.br.fpcf.properties.cg.Callees]]). Furthermore, it updates the
- * [[org.opalj.br.fpcf.properties.cg.Callers]].
+ * XTA, MTA, FTA and CTA are a propagation-based call graph analyses which were introduced by Tip and Palsberg.
  *
  * This analysis does not handle features such as JVM calls to static initializers or finalize
  * calls.
@@ -34,30 +33,33 @@ import org.opalj.tac.fpcf.properties.TACAI
  * or the [[org.opalj.tac.fpcf.analyses.cg.LoadedClassesAnalysis]]) can be executed within the
  * same batch and the call graph will be generated in collaboration.
  *
- * @author Florian Kuebler
+ * @author Andreas Bauer
  */
-class RTACallGraphAnalysis private[analyses] (
-        final val project: SomeProject
+class PropagationBasedCallGraphAnalysis private[analyses] (
+        final val project:               SomeProject,
+        final val typeSetEntitySelector: TypeSetEntitySelector
 ) extends AbstractCallGraphAnalysis {
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
 
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
-    override type State = RTAState
+    override type State = PropagationBasedCGState
 
-    override def c(state: RTAState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case UBP(_: InstantiatedTypes) ⇒
-            val seenTypes = state.instantiatedTypesUB.size
+    override def c(state: PropagationBasedCGState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
+        case EUBP(typeSetEntity: TypeSetEntity, _: InstantiatedTypes) ⇒
+            val seenTypes = state.instantiatedTypes(typeSetEntity).size
 
             state.updateInstantiatedTypesDependee(
-                eps.asInstanceOf[EPS[SomeProject, InstantiatedTypes]]
+                eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]]
             )
+
+            val newTypes = state.newInstantiatedTypes(typeSetEntity, seenTypes)
 
             // we only want to add the new calls, so we create a fresh object
             val calleesAndCallers = new DirectCalls()
 
-            handleVirtualCallSites(calleesAndCallers, seenTypes)(state)
+            handleVirtualCallSites(calleesAndCallers, newTypes)(state)
 
             returnResult(calleesAndCallers)(state)
 
@@ -66,10 +68,18 @@ class RTACallGraphAnalysis private[analyses] (
 
     override def createInitialState(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
-    ): RTAState = {
-        // the set of types that are definitely initialized at this point in time
-        val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-        new RTAState(definedMethod, tacEP, instantiatedTypesEOptP)
+    ): PropagationBasedCGState = {
+        // The set of types that are definitely initialized at this point in time.
+        // An analysis may add types which are relevant for this method to multiple set entities. For example,
+        // exception types are tracked globally (via the set attached to the project). XTA will attach a per-method
+        // type set to the DefinedMethod itself. CTA/MTA have merged sets for all methods of a class, attached to the
+        // class type. The relevant set entity is retrieved by querying the set entity selector.
+        val perMethodInstantiatedTypes = propertyStore(typeSetEntitySelector(definedMethod), InstantiatedTypes.key)
+        val perProjectInstantiatedTypes = propertyStore(project, InstantiatedTypes.key)
+
+        val typeSources = Iterable(perMethodInstantiatedTypes, perProjectInstantiatedTypes)
+
+        new PropagationBasedCGState(definedMethod, tacEP, typeSources)
     }
 
     override def handleImpreciseCall(
@@ -79,9 +89,9 @@ class RTACallGraphAnalysis private[analyses] (
         specializedDeclaringClassType: ReferenceType,
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
-    )(implicit state: RTAState): Unit = {
+    )(implicit state: PropagationBasedCGState): Unit = {
         for (possibleTgtType ← potentialTargets) {
-            if (state.instantiatedTypesUB.contains(possibleTgtType)) {
+            if (state.instantiatedTypesContains(possibleTgtType)) {
                 val tgtR = project.instanceCall(
                     caller.declaringClassType.asObjectType,
                     possibleTgtType,
@@ -152,9 +162,9 @@ class RTACallGraphAnalysis private[analyses] (
 
     // modifies state and the calleesAndCallers
     private[this] def handleVirtualCallSites(
-        calleesAndCallers: DirectCalls, seenTypes: Int
-    )(implicit state: RTAState): Unit = {
-        state.newInstantiatedTypes(seenTypes).filter(_.isObjectType).foreach { instantiatedType ⇒
+        calleesAndCallers: DirectCalls, newTypes: TraversableOnce[ReferenceType]
+    )(implicit state: PropagationBasedCGState): Unit = {
+        newTypes.filter(_.isObjectType).foreach { instantiatedType ⇒
             val callSites = state.getVirtualCallSites(instantiatedType.asObjectType)
             callSites.foreach { callSite ⇒
                 val (pc, name, descr, declaringClass) = callSite
@@ -179,12 +189,18 @@ class RTACallGraphAnalysis private[analyses] (
             state.removeCallSite(instantiatedType.asObjectType)
         }
     }
-
 }
 
-object RTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
+class PropagationBasedCallGraphAnalysisScheduler(
+        final val typeSetEntitySelector: TypeSetEntitySelector
+) extends CallGraphAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(InstantiatedTypes)
+    override def uses: Set[PropertyBounds] =
+        super.uses ++ PropertyBounds.ubs(InstantiatedTypes, Callees)
 
-    override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis = new RTACallGraphAnalysis(p)
+    override def derivesCollaboratively: Set[PropertyBounds] =
+        super.derivesCollaboratively ++ PropertyBounds.ubs(InstantiatedTypes)
+
+    override def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis =
+        new PropagationBasedCallGraphAnalysis(p, typeSetEntitySelector)
 }

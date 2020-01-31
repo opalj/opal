@@ -1,4 +1,4 @@
-name: Scala CI
+name: Build and Execute Tests
 
 on:
   push:
@@ -12,10 +12,17 @@ on:
 
 jobs:
   build:
-
     runs-on: self-hosted
 
     steps:
     - uses: actions/checkout@v1
-    - name: Run tests
-      run: sbt -J-Xmx20G test
+    - name: Build Opal
+      run: sbt -J-Xmx20G cleanBuild
+
+  test:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Run Tests
+        run: sbt -J-Xmx20G test

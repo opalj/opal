@@ -4,32 +4,38 @@ package tac
 package fpcf
 package analyses
 package cg
-package rta
+package xta
+
+import org.opalj.br.DefinedMethod
+import org.opalj.br.Method
+import org.opalj.br.ObjectType
+import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Property
+import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.collection.mutable
 
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Property
-import org.opalj.br.DefinedMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.Method
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.ReferenceType
-import org.opalj.tac.fpcf.properties.TACAI
-
 /**
- * Manages the state used by the [[RTACallGraphAnalysis]].
+ * Manages the state of each method analyzed by [[PropagationBasedCallGraphAnalysis]].
  *
- * @author Florian Kuebler
+ * @author Andreas Bauer
  */
-class RTAState(
-        override val method:                          DefinedMethod,
-        override protected[this] var _tacDependee:    EOptionP[Method, TACAI],
-        private[this] var _instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
+class PropagationBasedCGState(
+        override val method:                       DefinedMethod,
+        override protected[this] var _tacDependee: EOptionP[Method, TACAI],
+        _instantiatedTypesDependees:               Iterable[EOptionP[TypeSetEntity, InstantiatedTypes]]
 ) extends CGState {
+
+    private[this] val _instantiatedTypesDependeeMap: mutable.Map[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] = mutable.Map.empty
+
+    for (dependee ← _instantiatedTypesDependees) {
+        _instantiatedTypesDependeeMap.update(dependee.e, dependee)
+    }
+
     private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSiteT]] = mutable.LongMap.empty
 
     /////////////////////////////////////////////
@@ -39,28 +45,27 @@ class RTAState(
     /////////////////////////////////////////////
 
     def updateInstantiatedTypesDependee(
-        instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
+        instantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes]
     ): Unit = {
-        _instantiatedTypesDependee = instantiatedTypesDependee
+        _instantiatedTypesDependeeMap.update(instantiatedTypesDependee.e, instantiatedTypesDependee)
     }
 
-    def instantiatedTypesDependee(): Option[EOptionP[SomeProject, InstantiatedTypes]] = {
-        if (_instantiatedTypesDependee.isRefinable)
-            Some(_instantiatedTypesDependee)
-        else
-            None
-    }
-
-    def instantiatedTypesUB: UIDSet[ReferenceType] = {
-        if (_instantiatedTypesDependee.hasUBP)
-            _instantiatedTypesDependee.ub.types
+    def instantiatedTypes(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] = {
+        val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
+        if (typeDependee.hasUBP)
+            typeDependee.ub.types
         else
             UIDSet.empty
     }
 
-    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ReferenceType] = {
-        if (_instantiatedTypesDependee.hasUBP) {
-            _instantiatedTypesDependee.ub.dropOldest(seenTypes)
+    def instantiatedTypesContains(tpe: ReferenceType): Boolean = {
+        _instantiatedTypesDependeeMap.keys.exists(instantiatedTypes(_).contains(tpe))
+    }
+
+    def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
+        val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
+        if (typeDependee.hasUBP) {
+            typeDependee.ub.dropOldest(seenTypes)
         } else {
             UIDSet.empty
         }
@@ -98,13 +103,10 @@ class RTAState(
     /////////////////////////////////////////////
 
     override def hasOpenDependencies: Boolean = {
-        _instantiatedTypesDependee.isRefinable || super.hasOpenDependencies
+        _instantiatedTypesDependeeMap.exists(_._2.isRefinable) || super.hasOpenDependencies
     }
 
     override def dependees: List[EOptionP[Entity, Property]] = {
-        if (instantiatedTypesDependee().isDefined)
-            instantiatedTypesDependee().get :: super.dependees
-        else
-            super.dependees
+        _instantiatedTypesDependeeMap.values ++: super.dependees
     }
 }
