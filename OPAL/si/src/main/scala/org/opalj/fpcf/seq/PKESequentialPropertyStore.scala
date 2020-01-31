@@ -450,22 +450,6 @@ final class PKESequentialPropertyStore protected (
         newEPSOption foreach { newEPS ⇒ update(newEPS, Nil /*<= w.r.t. the "newEPS"!*/ ) }
     }
 
-    private[this] def handlePrecomputedPartialResult(
-        expectedEOptionP: SomeEOptionP,
-        updatedInterimEP: SomeInterimEP,
-        u:                UpdateComputation[_ <: Entity, _ <: Property]
-    ): Unit = {
-        type E = expectedEOptionP.e.type
-        type P = Property
-        val currentEOptionP = apply[E, P](expectedEOptionP.e: E, expectedEOptionP.pk: PropertyKey[P])
-        if (currentEOptionP eq expectedEOptionP) {
-            update(updatedInterimEP, Nil)
-        } else {
-            val newEPSOption = u.asInstanceOf[EOptionP[E, P] ⇒ Option[EPS[E, P]]](currentEOptionP)
-            newEPSOption foreach { newEPS ⇒ update(newEPS, Nil /*<= w.r.t. the "newEPS"!*/ ) }
-        }
-    }
-
     @inline private[this] def handlePartialResults(prs: Traversable[SomePartialResult]): Unit = {
         // It is ok if prs is empty!
         prs foreach { pr ⇒ handlePartialResult(pr.e, pr.pk, pr.u) }
@@ -639,10 +623,6 @@ final class PKESequentialPropertyStore protected (
             case PartialResult.id ⇒
                 val PartialResult(e, pk, u) = r
                 handlePartialResult(e, pk, u)
-
-            case PrecomputedPartialResult.id ⇒
-                val PrecomputedPartialResult(expectedEOptionP, updatedInterimEP, u) = r
-                handlePrecomputedPartialResult(expectedEOptionP, updatedInterimEP, u)
 
             case InterimPartialResult.id ⇒
                 val InterimPartialResult(prs, processedDependees, c) = r
