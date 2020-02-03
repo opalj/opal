@@ -13,6 +13,10 @@ import org.opalj.br.fpcf.analyses.EagerL0CompileTimeConstancyAnalysis
  */
 class CompileTimeConstancyTests extends PropertiesTest {
 
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/compile_time_constancy")
+    }
+
     describe("the org.opalj.fpcf.analyses.L0CompileTimeConstancyAnalysis is executed") {
         val as = executeAnalyses(
             Set(EagerL0CompileTimeConstancyAnalysis)

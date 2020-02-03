@@ -43,6 +43,10 @@ class PurityTests extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/purity")
+    }
+
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
         val as =
             executeAnalyses(

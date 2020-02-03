@@ -24,6 +24,10 @@ class ReturnValueFreshnessTests extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/return_freshness")
+    }
+
     val analysisSchedulers: Set[FPCFAnalysisScheduler] = Set[FPCFAnalysisScheduler](
         LazyInterProceduralEscapeAnalysis,
         LazyFieldLocalityAnalysis,
