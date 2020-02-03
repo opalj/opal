@@ -7,9 +7,9 @@ import java.net.URL
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+import org.opalj.bi.reader.ClassFileReader
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
 import org.opalj.log.LogContext
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.fpcf.properties.PropertyMatcher
@@ -51,18 +51,27 @@ import org.opalj.tac.common.DefinitionSitesKey
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
+    final private[this] val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
+    final private[this] val propertyPaths = List(
+        s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties",
+        s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/br/analyses/properties"
+    )
+
     def withRT = false
 
     /**
      * The representation of the fixture project.
      */
     final val FixtureProject: Project[URL] = {
-        val classFileReader = Project.JavaClassFileReader()
+        implicit val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
-        val sourceFolder = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes"
-        val fixtureFiles = new File(sourceFolder)
-        val fixtureClassFiles = ClassFiles(fixtureFiles)
-        if (fixtureClassFiles.isEmpty) fail(s"no class files at $fixtureFiles")
+
+        //        val sourceFolder = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/${fixtureProjectPackage}"
+        //        val properties = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties"
+        //        val fixtureFiles = new File(sourceFolder)
+        //        val annotationFiles = new File(properties)
+        val fixtureClassFiles = getFixtureClassFiles //AllClassFiles(List(annotationFiles, fixtureFiles))
+        if (fixtureClassFiles.isEmpty) fail(s"no class files at $testFilePath")
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
             val (cf, _) = cfSrc
@@ -86,6 +95,29 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             virtualClassFiles = Traversable.empty
         )
     }
+
+    /**
+     * Override this method to limit the fixture project to certain subpackages only.
+     * To do so specify the list of packages that shall be included. A specified package always
+     * includes all its subpackages.
+     *
+     * All package path must be given in '/' notation.
+     *
+     * Examples:
+     * All files related to the escape tests.
+     * ```
+     *  List("org/opalj/fpcf/fixtures/escape")
+     * ```
+     *
+     * All files related to specific escape tests, i.e., cycles and virtual calls
+     * ```
+     *  List(
+     *      "org/opalj/fpcf/fixtures/escape/cycles",
+     *      "org/opalj/fpcf/fixtures/escape/virtual_calls",
+     *   )
+     * ```
+     */
+    def fixtureProjectPackage: List[String] = List.empty
 
     def createConfig(): Config = {
         val configForEntryPoints = BaseConfig.withValue(
@@ -353,10 +385,31 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 throw t;
         }
     }
+
+    private[this] def getFixtureClassFiles(
+        implicit
+        classFileReader: ClassFileReader
+    ): Traversable[(classFileReader.ClassFile, URL)] = {
+        import classFileReader.AllClassFiles
+
+        var classFilePaths: List[File] = List.empty
+
+        val relevantPackages = fixtureProjectPackage
+        if (fixtureProjectPackage.nonEmpty) {
+            classFilePaths = classFilePaths ++ propertyPaths.map(new File(_))
+            classFilePaths = classFilePaths ++ relevantPackages.map {
+                path ⇒ new File({ s"$testFilePath$path" })
+            }
+        } else {
+            classFilePaths = new File(testFilePath) :: classFilePaths
+        }
+
+        AllClassFiles(classFilePaths)
+    }
 }
 
 case class TestContext(
-        project:       Project[URL],
-        propertyStore: PropertyStore,
-        analyses:      List[FPCFAnalysis]
+    project:       Project[URL],
+    propertyStore: PropertyStore,
+    analyses:      List[FPCFAnalysis]
 )
