@@ -26,12 +26,12 @@ object ClassExtensibilityKey extends ProjectInformationKey[ClassExtensibility, N
     /**
      * The [[ClassExtensibilityKey]] has the [[ClosedPackagesKey]] as prerequisite.
      */
-    def requirements: ProjectInformationKeys = Seq(ClosedPackagesKey)
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(ClosedPackagesKey)
 
     /**
      * Computes the direct type extensibility information for the given project.
      */
-    override protected def compute(project: SomeProject): ClassExtensibility = {
+    override def compute(project: SomeProject): ClassExtensibility = {
         val configKey = ConfigKeyPrefix+"analysis"
         try {
             val configuredAnalysis = project.config.as[Option[String]](configKey)

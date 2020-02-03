@@ -44,7 +44,7 @@ object AIDomainFactoryKey
      *
      * @note The configuration is done using '''ProjectInformationKeyInitializationData'''.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which performs and caches the result of the abstract interpretation of a
@@ -56,7 +56,7 @@ object AIDomainFactoryKey
      * is necessary (e.g., on the ProjectInformationKey) to ensure that each project is
      * instantiated using the desired domain.
      */
-    override protected def compute(project: SomeProject): ProjectSpecificAIExecutor = {
+    override def compute(project: SomeProject): ProjectSpecificAIExecutor = {
         compute(project, DomainRegistry.selectConfigured(project.config, _))
     }
 

@@ -24,26 +24,22 @@ abstract class TasksManager {
 
     def isIdle: Boolean
 
+    /**
+     * Called to enable the task manager to clean up all threads.
+     */
     def shutdown()(implicit ps: PKECPropertyStore): Unit
 
     /**
-     * Called to enable the task manager to initialize its threads. Called after the setup
-     * of a phase has completed. The task manager is allowed to immediately start the
-     * execution of scheduled tasks.
+     * Called after the setup of a phase has completed.
+     * This, e.g., enables the task manager to initialize its threads.
+     * The task manager is allowed to – but doesn't have to – immediately start the execution
+     * of scheduled tasks.
      *
      * In general, the task manager has to assume that all data structures that are
      * initialized during the setup phase – and which will not be mutated while the analyses
      * are run – are not explicitly synchronized.
      */
-    def prepareThreadPool()(implicit store: PKECPropertyStore): Unit
-
-    /**
-     * Called to enable the task manager to clean up all threads.
-     *
-     * Recall that a single phase may have multiple sub phases and that quiescence may be
-     * reached multiple times.
-     */
-    def cleanUpThreadPool()(implicit store: PKECPropertyStore): Unit
+    def phaseSetupCompleted()(implicit store: PKECPropertyStore): Unit
 
     def awaitPoolQuiescence()(implicit store: PKECPropertyStore): Unit
 

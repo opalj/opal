@@ -851,6 +851,10 @@ object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialProp
         "ManyDirectDependersLast",
         "ManyDependeesOfDirectDependersLast",
         "ManyDependeesAndDependersOfDirectDependersLast",
+        "ManyDirectDependenciesFirst",
+        "ManyDirectDependersFirst",
+        "ManyDependeesOfDirectDependersFirst",
+        "ManyDependeesAndDependersOfDirectDependersFirst",
         "FIFO",
         "LIFO" /*,
         "ForwardAllDependeesLast",
@@ -896,6 +900,13 @@ object PKESequentialPropertyStore extends PropertyStoreFactory[PKESequentialProp
                 new ManyDependeesOfDirectDependersLastTasksManager
             case "ManyDependeesAndDependersOfDirectDependersLast" ⇒
                 new ManyDependeesAndDependersOfDirectDependersLastTasksManager
+
+            case "ManyDirectDependenciesFirst" ⇒ new ManyDirectDependenciesFirstTasksManager
+            case "ManyDirectDependersFirst"    ⇒ new ManyDirectDependersFirstTasksManager
+            case "ManyDependeesOfDirectDependersFirst" ⇒
+                new ManyDependeesOfDirectDependersFirstTasksManager
+            case "ManyDependeesAndDependersOfDirectDependersFirst" ⇒
+                new ManyDependeesAndDependersOfDirectDependersFirstTasksManager
 
             case "ForwardAllDependeesLast" | "ForwardAllDependeesFirst" |
                 "BackwardAllDependeesLast" | "BackwardAllDependeesFirst" ⇒

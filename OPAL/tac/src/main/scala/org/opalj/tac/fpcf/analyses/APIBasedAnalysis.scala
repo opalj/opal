@@ -3,7 +3,6 @@ package org.opalj
 package tac
 package fpcf
 package analyses
-package cg
 
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimPartialResult
@@ -19,7 +18,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 
 /**
- * A trait for call graph analyses that model the result of the invocation of a specific
+ * A trait for analyses that model the result of the invocation of a specific
  * `apiMethod`.
  *
  * Each time a new caller of the [[apiMethod*]] is found in the
@@ -28,12 +27,12 @@ import org.opalj.br.fpcf.properties.cg.Callers
  *
  * @note When `handleNewCaller` gets invoked, there is no guarantee that the caller's three-address
  *       code ([[org.opalj.tac.fpcf.properties.TACAI]]) is present in the property store, nor that
- *       it is final. If this is required, use the [[TACAIBasedAPIBasedCallGraphAnalysis]]
+ *       it is final. If this is required, use the [[TACAIBasedAPIBasedAnalysis]]
  *       sub-trait.
  *
  * @author Florian Kuebler
  */
-trait APIBasedCallGraphAnalysis extends FPCFAnalysis {
+trait APIBasedAnalysis extends FPCFAnalysis {
     val apiMethod: DeclaredMethod
 
     implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)

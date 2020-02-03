@@ -323,6 +323,14 @@ abstract class PropertyStore {
     }
 
     /**
+     * `true` if entities with a specific property kind (EP) may have dependers with suppressed
+     * notifications. (I.e., suppressInteriumUpdates("depender")("EP") is `true`.)
+     */
+    protected[this] final val hasSuppressedDependers: Array[Boolean] = {
+        Array.fill(SupportedPropertyKinds) { false }
+    }
+
+    /**
      * The order in which the property kinds will be finalized; the last phase is considered
      * the clean-up phase and will contain all remaining properties that were not explicitly
      * finalized previously.
@@ -604,6 +612,7 @@ abstract class PropertyStore {
             require(dependees.nonEmpty)
             dependees foreach { dependee ⇒
                 this.suppressInterimUpdates(depender.id)(dependee.id) = true
+                hasSuppressedDependers(dependee.id) = true
             }
         }
 

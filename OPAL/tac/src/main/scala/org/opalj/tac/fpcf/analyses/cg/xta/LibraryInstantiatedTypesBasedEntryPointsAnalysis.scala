@@ -8,17 +8,6 @@ package xta
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.opalj.br.DeclaredMethod
-import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.collection.RefIterator
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
@@ -36,6 +25,18 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.fpcf.UBPS
+import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
+import org.opalj.br.DeclaredMethod
+import org.opalj.br.ObjectType
+import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 
 /**
  * In a library analysis scenario, this analysis complements the call graph by marking public
@@ -50,7 +51,7 @@ import org.opalj.fpcf.UBPS
  * @author Dominik Helm
  * @author Andreas Bauer
  */
-class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses](
+class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         final val project: SomeProject
 ) extends FPCFAnalysis {
 
@@ -66,8 +67,8 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses](
     }
 
     private[this] def handleInstantiatedTypes(
-                                                 instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes],
-                                                 numProcessedTypes: Int
+        instantiatedTypes: EOptionP[TypeSetEntity, InstantiatedTypes],
+        numProcessedTypes: Int
     ): PropertyComputationResult = {
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
             case UBPS(initialTypes: InstantiatedTypes, isFinal) ⇒
@@ -148,6 +149,8 @@ object LibraryInstantiatedTypesBasedEntryPointsAnalysis extends BasicFPCFTrigger
         propertyStore.registerTriggeredComputation(InstantiatedTypes.key, analysis.analyze)
         analysis
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(InstantiatedTypes)

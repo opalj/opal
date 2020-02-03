@@ -30,7 +30,7 @@ object EagerDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUs
     /**
      * TACAI code has no special prerequisites.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an factory which computes and caches the 3-address code of a method when required.
@@ -39,7 +39,7 @@ object EagerDetachedTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUs
      * the `domainFactory` needs to be set (using `setProjectInformationKeyInitializationData`)
      * before compute is called/this key is passed to a specific project.
      */
-    override protected def compute(
+    override def compute(
         project: SomeProject
     ): Method ⇒ AITACode[TACMethodParameter, ValueInformation] = {
         val domainFactory = project.
