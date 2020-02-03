@@ -5,7 +5,6 @@ package fpcf
 package analyses
 package cg
 
-import com.typesafe.config.ConfigFactory
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -17,8 +16,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.TestSupport.allBIProjects
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -30,7 +27,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
 class CallGraphIntegrationTest extends FlatSpec with Matchers {
 
-    allBIProjects() foreach { biProject ⇒
+    /*allBIProjects() foreach { biProject ⇒
         val (name, projectFactory) = biProject
         val project = projectFactory()
 
@@ -39,7 +36,7 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
             name,
             Project.recreate(project, ConfigFactory.load("LibraryProject.conf"))
         )
-    }
+    }*/
 
     def checkProject(projectName: String, project: SomeProject): Unit = {
 
