@@ -36,8 +36,8 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Florian Kuebler
  */
 trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _, PointsToSet]]
-        extends AbstractCallGraphAnalysis
-        with AbstractPointsToBasedAnalysis {
+    extends AbstractCallGraphAnalysis
+    with AbstractPointsToBasedAnalysis {
 
     override type State = PointsToBasedCGState[PointsToSet]
     override type DependerType = CallSiteT
@@ -184,7 +184,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
 }
 
 class TypeBasedPointsToBasedCallGraphAnalysis private[pointsto] (
-    final val project: SomeProject
+        final val project: SomeProject
 ) extends AbstractPointsToBasedCallGraphAnalysis[TypeBasedPointsToSet] with TypeBasedAnalysis
 
 object TypeBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
@@ -197,9 +197,9 @@ object TypeBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysi
 }
 
 class AllocationSiteBasedPointsToBasedCallGraphAnalysis private[pointsto] (
-    final val project: SomeProject
+        final val project: SomeProject
 ) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSet]
-        with AllocationSiteBasedAnalysis
+    with AllocationSiteBasedAnalysis
 
 object AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
 
