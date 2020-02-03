@@ -58,13 +58,6 @@ trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
      */
     final val uniqueId: Int = ProjectInformationKey.nextId
 
-    // Only (intended to be) used by ProjectLike.
-    // "Solves" the issue that Scala has no "package protected" visibility;
-    // We wanted to make sure that the method "requirements" is (at least by default)
-    // only visible in the subclasses as it is not intended to be called by objects
-    // other than instances of `ProjectLike`.
-    final private[analyses] def getRequirements: ProjectInformationKeys = requirements
-
     /**
      * Returns the information which other project information need to be available
      * before this analysis can be performed.
@@ -77,14 +70,7 @@ trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
      * @note   Classes/Objects that implement this trait should not make the method `public`
      *         to avoid that this method is called accidentally by regular user code.
      */
-    /*ABSTRACT*/ protected def requirements: ProjectInformationKeys
-
-    // Only (intended to be) used by Project.
-    // "Solves" the issue that Scala has no "package protected" visibility;
-    // We wanted to make sure that the method "compute" is (at least by default)
-    // only visible in the subclasses as it is not intended to be called by objects
-    // other than instances of `Project`.
-    final private[analyses] def doCompute(project: SomeProject): T = compute(project)
+    /*ABSTRACT*/ def requirements(project: SomeProject): ProjectInformationKeys
 
     /**
      * Computes the information for the given project.
@@ -93,7 +79,7 @@ trait ProjectInformationKey[T <: AnyRef, I <: AnyRef] {
      *      make this method public. This method is only expected to be called
      *      by an instance of a `Project`.
      */
-    /*ABSTRACT*/ protected def compute(project: SomeProject): T
+    /*ABSTRACT*/ def compute(project: SomeProject): T
 
 }
 

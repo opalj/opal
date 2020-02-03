@@ -26,7 +26,7 @@ object ComputeTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse] {
     /**
      * TACAI code has no special prerequisites.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an factory which computes the 3-address code of a method anew when called.
@@ -35,7 +35,7 @@ object ComputeTACAIKey extends TACAIKey[Method ⇒ Domain with RecordDefUse] {
      * the `domainFactory` needs to be set (using `setProjectInformationKeyInitializationData`)
      * before compute is called/this key is passed to a specific project.
      */
-    override protected def compute(
+    override def compute(
         project: SomeProject
     ): Method ⇒ AITACode[TACMethodParameter, ValueInformation] = {
         val domainFactory = project.

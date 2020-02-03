@@ -13,6 +13,8 @@ import org.opalj.fpcf.Result
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.DeclaredMethods
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
@@ -92,6 +94,9 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
 
 trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey)
+
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(EscapeProperty),
         PropertyBounds.ub(TACAI)
@@ -107,6 +112,9 @@ trait SimpleEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerSimpleEscapeAnalysis
     extends SimpleEscapeAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ DefinitionSitesKey
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters

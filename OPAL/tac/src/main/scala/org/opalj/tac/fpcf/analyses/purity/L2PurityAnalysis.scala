@@ -34,6 +34,7 @@ import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.cfg.CFG
 import org.opalj.br.fpcf.properties.ClassifiedImpure
@@ -66,6 +67,7 @@ import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -936,6 +938,9 @@ object L2PurityAnalysis {
 trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, ConfiguredPurityKey)
 
     override def uses: Set[PropertyBounds] = {
         Set(

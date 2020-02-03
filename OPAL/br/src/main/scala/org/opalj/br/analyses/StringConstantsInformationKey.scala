@@ -28,7 +28,7 @@ object StringConstantsInformationKey
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Computes the field access information.
@@ -36,7 +36,7 @@ object StringConstantsInformationKey
      * @note  This analysis is internally parallelized. I.e., it is advantageous to run this
      *        analysis in isolation.
      */
-    override protected def compute(project: SomeProject): Map[String, ConstArray[PCInMethod]] = {
+    override def compute(project: SomeProject): Map[String, ConstArray[PCInMethod]] = {
 
         val estimatedSize = project.methodsCount
         val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[PCInMethod]](estimatedSize)

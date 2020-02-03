@@ -5,6 +5,7 @@ package fpcf
 package properties
 package pointsto
 
+import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -19,16 +20,15 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Florian Kuebler
  */
-// TODO: we should definition sites (real points-to sets) instead of just the types
 sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = TypeBasedPointsToSet
 }
 
 case class TypeBasedPointsToSet private[properties] (
-        private val orderedTypes: List[ObjectType],
-        override val types:       UIDSet[ObjectType]
-) extends PointsToSetLike[ObjectType, UIDSet[ObjectType], TypeBasedPointsToSet]
+        private val orderedTypes: Chain[ReferenceType],
+        override val types:       UIDSet[ReferenceType]
+) extends PointsToSetLike[ReferenceType, UIDSet[ReferenceType], TypeBasedPointsToSet]
     with OrderedProperty
     with TypeBasedPointsToSetPropertyMetaInformation {
 
@@ -47,27 +47,12 @@ case class TypeBasedPointsToSet private[properties] (
     override def included(
         other: TypeBasedPointsToSet
     ): TypeBasedPointsToSet = {
-        var newOrderedTypes = orderedTypes
-        var typesUnion = types
-        for (t ← other.types) {
-            if (!types.contains(t)) {
-                newOrderedTypes ::= t
-                typesUnion += t
-            }
-        }
-        new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
-    }
-
-    /**
-     * Will return the types added most recently, dropping the `seenElements` oldest ones.
-     */
-    override def dropOldestTypes(seenTypes: Int): Iterator[ObjectType] = {
-        orderedTypes.iterator.take(types.size - seenTypes)
+        included(other, 0)
     }
 
     override def numTypes: Int = types.size
 
-    override def elements: UIDSet[ObjectType] = types
+    override def elements: UIDSet[ReferenceType] = types
 
     override def equals(obj: Any): Boolean = {
         obj match {
@@ -79,15 +64,98 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def hashCode: Int = types.hashCode() * 31
 
+    override def numElements: Int = types.size
+
+    override def included(
+        other: TypeBasedPointsToSet, seenElements: Int
+    ): TypeBasedPointsToSet = {
+        var newOrderedTypes = orderedTypes
+        var typesUnion = types
+
+        other.orderedTypes.forFirstN(other.numElements - seenElements) { t ⇒
+            if (!types.contains(t)) {
+                newOrderedTypes :&:= t
+                typesUnion += t
+            }
+        }
+
+        if (types eq typesUnion)
+            return this;
+
+        new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
+    }
+
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+        orderedTypes.forFirstN(n)(f)
+    }
+
+    // here, the elements are the types
+    override def forNewestNElements[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+        orderedTypes.forFirstN(n)(f)
+    }
+
+    override def included(
+        other: TypeBasedPointsToSet, typeFilter: ReferenceType ⇒ Boolean
+    ): TypeBasedPointsToSet = {
+        included(other, 0, typeFilter)
+    }
+
+    override def included(
+        other:        TypeBasedPointsToSet,
+        seenElements: Int,
+        typeFilter:   ReferenceType ⇒ Boolean
+    ): TypeBasedPointsToSet = {
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return included(other, seenElements);
+
+        var newOrderedTypes = orderedTypes
+        var typesUnion = types
+
+        other.orderedTypes.forFirstN(other.numElements - seenElements) { t ⇒
+            if (typeFilter(t) && !types.contains(t)) {
+                newOrderedTypes :&:= t
+                typesUnion += t
+            }
+        }
+
+        if (types eq typesUnion)
+            return this;
+
+        new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
+    }
+
+    override def filter(
+        typeFilter: ReferenceType ⇒ Boolean
+    ): TypeBasedPointsToSet = {
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return this;
+
+        var newTypes = UIDSet.empty[ReferenceType]
+        val newOrderedTypes = orderedTypes.foldLeft(Chain.empty[ReferenceType]) { (r, t) ⇒
+            if (typeFilter(t)) {
+                newTypes += t
+                t :&: r
+            } else {
+                r
+            }
+        }
+
+        if (newTypes.size == elements.size)
+            return this;
+
+        TypeBasedPointsToSet(newOrderedTypes, newTypes)
+    }
+
+    override def getNewestElement(): ReferenceType = orderedTypes.head
 }
 
 object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation {
 
     def apply(
-        initialPointsTo: UIDSet[ObjectType]
+        initialPointsTo: UIDSet[ReferenceType]
     ): TypeBasedPointsToSet = {
         new TypeBasedPointsToSet(
-            initialPointsTo.toList,
+            initialPointsTo.foldLeft(Chain.empty[ReferenceType])((l, t) ⇒ t :&: l),
             initialPointsTo
         )
     }
@@ -105,4 +173,4 @@ object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation 
     }
 }
 
-object NoTypes extends TypeBasedPointsToSet(List.empty, UIDSet.empty)
+object NoTypes extends TypeBasedPointsToSet(Chain.empty, UIDSet.empty)

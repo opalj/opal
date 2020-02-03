@@ -60,34 +60,27 @@ object VarargsUtil {
                 None
             } else {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
-                if (cfg.bb(uses.head) != cfg.bb(uses.last)) {
-                    // IMPROVE: Here we should also handle the case of non-constant values
-                    None
-                } else if (stmts(uses.last).astID != Assignment.ASTID &&
-                    stmts(uses.last).astID != ExprStmt.ASTID) {
-                    // todo: should we just check for invocations?
+                var params: RefArray[T] = RefArray.withSize(uses.size - 1)
+                if (!uses.forall { useSite ⇒
+                    val use = stmts(useSite)
+                    if (useSite == uses.last)
+                        // todo: should we just check for invocations?
+                        use.astID == Assignment.ASTID || use.astID == ExprStmt.ASTID
+                    else {
+                        if (use.astID != ArrayStore.ASTID)
+                            false
+                        else {
+                            val update = fillEntry(use.asArrayStore, stmts, params)
+                            if (update.isDefined) params = update.get
+                            update.isDefined
+                        }
+                    }
+                } || params.contains(null)) {
                     None
                 } else {
-                    var params: RefArray[T] = RefArray.withSize(uses.size - 1)
-                    if (!uses.forall { useSite ⇒
-                        if (useSite == uses.last)
-                            true
-                        else {
-                            val use = stmts(useSite)
-                            if (use.astID != ArrayStore.ASTID)
-                                false
-                            else {
-                                val update = fillEntry(use.asArrayStore, stmts, params)
-                                if (update.isDefined) params = update.get
-                                update.isDefined
-                            }
-                        }
-                    } || params.contains(null)) {
-                        None
-                    } else {
-                        Some(params)
-                    }
+                    Some(params)
                 }
+                // }
             }
         }
     }
