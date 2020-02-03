@@ -70,7 +70,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
                 ep.declaringClassFile.thisType.packageName.startsWith(prefix)
             }
         }.filterNot { ep ⇒
-            // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the 
+            // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
             // default package.
             ep.classFile.thisType == ObjectType("WrapperGenerator")
         }
@@ -283,9 +283,9 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
 
     /* Required by Ficus' `ArbitraryTypeReader`*/
     private case class EntryPointContainer(
-        declaringClass: String,
-        name:           String,
-        descriptor:     Option[String]
+            declaringClass: String,
+            name:           String,
+            descriptor:     Option[String]
     )
 }
 

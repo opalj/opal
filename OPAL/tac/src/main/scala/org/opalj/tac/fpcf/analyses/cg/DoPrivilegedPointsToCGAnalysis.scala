@@ -59,14 +59,14 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  *
  * @author Florian Kuebler
  */
-abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg](
+abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
         final val doPrivilegedMethod: DeclaredMethod,
         final val declaredRunMethod:  DeclaredMethod,
         final val project:            SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with AbstractPointsToBasedAnalysis {
 
-    override protected[this]type State = PointsToBasedCGState[PointsToSet]
-    override protected[this]type DependerType = CallSiteT
+    override protected[this] type State = PointsToBasedCGState[PointsToSet]
+    override protected[this] type DependerType = CallSiteT
 
     override def processNewCaller(
         caller:          DefinedMethod,
@@ -128,7 +128,7 @@ abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg](
 
     private[this] def c(
         state: State,
-        call:    StaticFunctionCall[V]
+        call:  StaticFunctionCall[V]
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
             // TODO: shouldn't we just delete the partial results?
@@ -175,14 +175,14 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
         }
     }
 
-    override protected[this]type State = PointsToBasedCGState[PointsToSet]
-    override protected[this]type DependerType = CallSiteT
+    override protected[this] type State = PointsToBasedCGState[PointsToSet]
+    override protected[this] type DependerType = CallSiteT
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
-        override protected[this]type ElementType = self.ElementType
-        override protected[this]type PointsToSet = self.PointsToSet
-        override protected[this]type State = self.State
-        override protected[this]type DependerType = self.DependerType
+        override protected[this] type ElementType = self.ElementType
+        override protected[this] type PointsToSet = self.PointsToSet
+        override protected[this] type State = self.State
+        override protected[this] type DependerType = self.DependerType
 
         override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
             self.pointsToPropertyKey

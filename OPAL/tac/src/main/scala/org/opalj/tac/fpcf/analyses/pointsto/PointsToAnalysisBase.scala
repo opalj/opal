@@ -39,8 +39,8 @@ import org.opalj.tac.common.DefinitionSite
  */
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this]type State = PointsToAnalysisState[ElementType, PointsToSet]
-    override protected[this]type DependerType = Entity
+    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this] type DependerType = Entity
 
     protected[this] def handleCallReceiver(
         receiverDefSites: IntTrieSet,
@@ -502,29 +502,29 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         }
 
         if (!isUpdate || (newPointsToSet ne emptyPointsToSet)) {
-                results +:= PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
-                    e,
-                    pointsToPropertyKey,
-                    (eoptp: EOptionP[Entity, PointsToSetLike[_, _, PointsToSet]]) ⇒ eoptp match {
-                        case UBP(ub: PointsToSet @unchecked) ⇒
-                            val newPointsToSet = updatePointsTo(ub)
-                            if (newPointsToSet ne ub) {
-                                Some(InterimEUBP(e, newPointsToSet))
-                            } else {
-                                None
-                            }
+            results +:= PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+                e,
+                pointsToPropertyKey,
+                (eoptp: EOptionP[Entity, PointsToSetLike[_, _, PointsToSet]]) ⇒ eoptp match {
+                    case UBP(ub: PointsToSet @unchecked) ⇒
+                        val newPointsToSet = updatePointsTo(ub)
+                        if (newPointsToSet ne ub) {
+                            Some(InterimEUBP(e, newPointsToSet))
+                        } else {
+                            None
+                        }
 
-                        case _: EPK[Entity, _] ⇒
-                            val newPointsToSet = updatePointsTo(emptyPointsToSet)
-                            if (isUpdate && (newPointsToSet eq emptyPointsToSet))
-                                None
-                            else
-                                Some(InterimEUBP(e, newPointsToSet))
+                    case _: EPK[Entity, _] ⇒
+                        val newPointsToSet = updatePointsTo(emptyPointsToSet)
+                        if (isUpdate && (newPointsToSet eq emptyPointsToSet))
+                            None
+                        else
+                            Some(InterimEUBP(e, newPointsToSet))
 
-                        case eOptP ⇒
-                            throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
-                    }
-                )
+                    case eOptP ⇒
+                        throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
+                }
+            )
         }
 
         results
