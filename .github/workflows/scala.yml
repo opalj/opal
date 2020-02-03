@@ -15,9 +15,17 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Build Opal
-      run: sbt -J-Xmx20G cleanBuild
+      - uses: actions/checkout@v1
+      - name: Build Opal
+        run: sbt -J-Xmx20G cleanBuild
+  
+  formatting:
+    runs-on: self-hosted
+    needs: build
+    
+    steps:
+      - name: Test Formatting
+        run: git diff --exit-code
 
   test:
     runs-on: self-hosted
