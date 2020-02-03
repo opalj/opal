@@ -22,7 +22,7 @@ private[par] trait PropertyStoreTracer {
 
     /**
      * Called when the property of an entity that is computed using partial results is
-     * preinitialized.
+     * pre-initialized.
      *
      * @param oldEPKState the old state (may be null).
      * @param newEPKState the new state.
@@ -78,7 +78,7 @@ private[par] trait PropertyStoreTracer {
 
     def appliedUpdateComputation(
         newEPKState: EPKState,
-        result:      Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])]
+        result:      Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
     ): Unit
 
     def processingResult(r: PropertyComputationResult): Unit
@@ -149,7 +149,7 @@ case class FinalizedPropertyEvent(
 case class AppliedUpdateComputationEvent(
         eventId:     Int,
         newEPKState: EPKState,
-        result:      Option[(fpcf.SomeEOptionP, fpcf.SomeInterimEP, Set[fpcf.SomeEPK])]
+        result:      Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
 ) extends StoreEvent {
     override def toTxt: String = s"$eventId: AppliedUpdateComputation($newEPKState; result: $result)"
 }
@@ -409,7 +409,7 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
 
     override def appliedUpdateComputation(
         newEPKState: EPKState,
-        result:      Option[(SomeEOptionP, SomeInterimEP, Set[SomeEPK])]
+        result:      Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
     ): Unit = {
         events offer AppliedUpdateComputationEvent(nextEventId(), newEPKState, result)
     }

@@ -22,7 +22,7 @@ object LongTrieSet {
 
     def apply(v1: Long): LongTrieSet = new LongTrieSet1(v1)
 
-    def apply(v1: Long, v2: Long): LongTrieSet = {
+    def apply(v1: Long, v2: Long): LongTrieSetLeaf = {
         if (v1 == v2)
             new LongTrieSet1(v1)
         else if (v1 < v2)
@@ -31,7 +31,7 @@ object LongTrieSet {
             new LongTrieSet2(v2, v1)
     }
 
-    def apply(v1: Long, v2: Long, v3: Long): LongTrieSet = {
+    def apply(v1: Long, v2: Long, v3: Long): LongTrieSetLeaf = {
         if (v1 == v2)
             apply(v1, v3)
         else if (v2 == v3)
@@ -276,12 +276,158 @@ private[immutable] final class LongTrieSet3(
         this.grow(i, level)
     }
     private[this] def grow(i: Long, level: Int): LongTrieSetNode = {
+        // we know that i1, i2, i3 and i are all different values
+        // Now, let's try to create the final tree in a more direct manner:
+
+        val i1_7L = ((i1 >> level) & 7L).toInt
+        val i2_7L = ((i2 >> level) & 7L).toInt
+        val i3_7L = ((i3 >> level) & 7L).toInt
+        val i_7L = ((i >> level) & 7L).toInt
+        if (i1_7L == i2_7L) {
+            if (i1_7L == i3_7L) {
+                if (i1_7L == i_7L) {
+                    // they all have the same 3 bits used for branching purposes...
+                    new LongTrieSetNode1(i1_7L.toInt, grow(i, level + 3))
+                } else {
+                    new LongTrieSetNode2(
+                        1 << (i_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                        new LongTrieSet1(i),
+                        this
+                    )
+                }
+            } else {
+                // i1_7L != i3_7L
+                if (i1_7L == i_7L) {
+                    new LongTrieSetNode2(
+                        1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                        new LongTrieSet1(i3),
+                        LongTrieSet(i1, i2, i)
+                    )
+                } else {
+                    // i1_7L != i3_7L
+                    // i1_7L != i_7L
+                    if (i3_7L == i_7L) {
+                        new LongTrieSetNode2(
+                            1 << (i3_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                            LongTrieSet(i3, i),
+                            new LongTrieSet2(i1, i2)
+                        )
+                    } else {
+                        new LongTrieSetNode3(
+                            1 << (i3_7L * 4) | 2 << (i1_7L * 4) | 3 << (i_7L * 4),
+                            new LongTrieSet1(i3),
+                            new LongTrieSet2(i1, i2),
+                            new LongTrieSet1(i)
+                        )
+                    }
+                }
+            }
+        } else {
+            // i1_7L != i2_7L
+            if (i2_7L == i3_7L) {
+                if (i2_7L == i_7L) {
+                    new LongTrieSetNode2(
+                        1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                        new LongTrieSet1(i1),
+                        LongTrieSet(i2, i3, i)
+                    )
+                } else {
+                    // i1_7L != i2_7L
+                    // i2_7L != i_7L
+                    if (i1_7L == i_7L) {
+                        new LongTrieSetNode2(
+                            1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                            LongTrieSet(i1, i),
+                            new LongTrieSet2(i2, i3)
+                        )
+                    } else {
+                        new LongTrieSetNode3(
+                            1 << (i1_7L * 4) | 2 << (i2_7L * 4) | 3 << (i_7L * 4),
+                            new LongTrieSet1(i1),
+                            new LongTrieSet2(i2, i3),
+                            new LongTrieSet1(i)
+                        )
+                    }
+                }
+            } else {
+                // i1_7L != i2_7L
+                // i2_7L != i3_7L
+                if (i1_7L == i3_7L) {
+                    if (i1_7L == i_7L) {
+                        new LongTrieSetNode2(
+                            1 << (i2_7L * 4) | 2 << (i1_7L * 4) /*lookuptable*/ ,
+                            new LongTrieSet1(i2),
+                            LongTrieSet(i1, i3, i)
+                        )
+                    } else {
+                        // i1_7L != i2_7L
+                        // i2_7L != i3_7L
+                        // i1_7L != i_7L
+                        if (i2_7L == i_7L) {
+                            new LongTrieSetNode2(
+                                1 << (i1_7L * 4) | 2 << (i2_7L * 4) /*lookuptable*/ ,
+                                new LongTrieSet2(i1, i3),
+                                LongTrieSet(i2, i)
+                            )
+                        } else {
+                            // i1_7L != i2_7L
+                            // i2_7L != i3_7L
+                            // i1_7L != i_7L
+                            // i2_7L != i_7L
+                            new LongTrieSetNode3(
+                                1 << (i2_7L * 4) | 2 << (i1_7L * 4) | 3 << (i_7L * 4),
+                                new LongTrieSet1(i2),
+                                new LongTrieSet2(i1, i3),
+                                new LongTrieSet1(i)
+                            )
+                        }
+                    }
+                } else {
+                    // i1_7L != i2_7L
+                    // i2_7L != i3_7L
+                    // i1_7L != i3_7L
+                    if (i1_7L == i_7L) {
+                        new LongTrieSetNode3(
+                            1 << (i1_7L * 4) | 2 << (i2_7L * 4) | 3 << (i3_7L * 4),
+                            LongTrieSet(i1, i),
+                            new LongTrieSet1(i2),
+                            new LongTrieSet1(i3)
+                        )
+                    } else if (i2_7L == i_7L) {
+                        new LongTrieSetNode3(
+                            1 << (i2_7L * 4) | 2 << (i1_7L * 4) | 3 << (i3_7L * 4),
+                            LongTrieSet(i2, i),
+                            new LongTrieSet1(i1),
+                            new LongTrieSet1(i3)
+                        )
+                    } else if (i3_7L == i_7L) {
+                        new LongTrieSetNode3(
+                            1 << (i3_7L * 4) | 2 << (i2_7L * 4) | 3 << (i1_7L * 4),
+                            LongTrieSet(i3, i),
+                            new LongTrieSet1(i2),
+                            new LongTrieSet1(i1)
+                        )
+                    } else {
+                        new LongTrieSetNode4(
+                            1 << (i_7L * 4) | 2 << (i3_7L * 4) | 3 << (i2_7L * 4) | 4 << (i1_7L * 4),
+                            new LongTrieSet1(i),
+                            new LongTrieSet1(i3),
+                            new LongTrieSet1(i2),
+                            new LongTrieSet1(i1)
+                        )
+                    }
+                }
+            }
+        }
+
+        /* OLD
         val l = new LongTrieSet1(i)
         var r: LongTrieSetNode = new LongTrieSetNode1(((i >> level) & 7L).toInt, l)
         r = r + (i1, level)
         r = r + (i2, level)
         r = r + (i3, level)
         r
+         */
     }
 
     override def equals(other: Any): Boolean = {

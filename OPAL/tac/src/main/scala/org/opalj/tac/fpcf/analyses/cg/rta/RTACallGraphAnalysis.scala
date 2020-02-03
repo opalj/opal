@@ -20,6 +20,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -72,7 +73,7 @@ class RTACallGraphAnalysis private[analyses] (
         new RTAState(definedMethod, tacEP, instantiatedTypesEOptP)
     }
 
-    override def handleImpreciseCall(
+    override def doHandleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,
@@ -83,7 +84,7 @@ class RTACallGraphAnalysis private[analyses] (
         for (possibleTgtType ← potentialTargets) {
             if (state.instantiatedTypesUB.contains(possibleTgtType)) {
                 val tgtR = project.instanceCall(
-                    caller.declaringClassType.asObjectType,
+                    caller.declaringClassType,
                     possibleTgtType,
                     call.name,
                     call.descriptor
@@ -154,8 +155,8 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] def handleVirtualCallSites(
         calleesAndCallers: DirectCalls, seenTypes: Int
     )(implicit state: RTAState): Unit = {
-        state.newInstantiatedTypes(seenTypes).foreach { instantiatedType ⇒
-            val callSites = state.getVirtualCallSites(instantiatedType)
+        state.newInstantiatedTypes(seenTypes).filter(_.isObjectType).foreach { instantiatedType ⇒
+            val callSites = state.getVirtualCallSites(instantiatedType.asObjectType)
             callSites.foreach { callSite ⇒
                 val (pc, name, descr, declaringClass) = callSite
                 val tgtR = project.instanceCall(
@@ -176,13 +177,16 @@ class RTACallGraphAnalysis private[analyses] (
                 )
             }
 
-            state.removeCallSite(instantiatedType)
+            state.removeCallSite(instantiatedType.asObjectType)
         }
     }
 
 }
 
 object RTACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ IsOverridableMethodKey
 
     override def uses: Set[PropertyBounds] = super.uses + PropertyBounds.ub(InstantiatedTypes)
 

@@ -17,6 +17,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -50,14 +51,14 @@ class RTAState(
             None
     }
 
-    def instantiatedTypesUB: UIDSet[ObjectType] = {
+    def instantiatedTypesUB: UIDSet[ReferenceType] = {
         if (_instantiatedTypesDependee.hasUBP)
             _instantiatedTypesDependee.ub.types
         else
             UIDSet.empty
     }
 
-    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ObjectType] = {
+    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ReferenceType] = {
         if (_instantiatedTypesDependee.hasUBP) {
             _instantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {

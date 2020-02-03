@@ -827,7 +827,7 @@ final class EPK[+E <: Entity, +P <: Property](
         }
     }
 
-    override def hashCode: Int = e.hashCode() * 511 + pk.id
+    override def hashCode: Int = e.hashCode() * 31 + pk.id
 
     override def toString: String = {
         val pkId = pk.id

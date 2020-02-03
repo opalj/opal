@@ -21,13 +21,14 @@ trait TACAIBasedAnalysisState {
     def method: DefinedMethod
 
     protected[this] var _tacDependee: EOptionP[Method, TACAI]
-    assert(_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined)
+    assert((_tacDependee eq null) || (_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined))
 
     /**
      * Inherited classes that introduce new dependencies must override this method and call add a
      * call to super!
      */
     def hasOpenDependencies: Boolean = _tacDependee.isRefinable
+    final def hasTACDependee: Boolean = _tacDependee.isRefinable
 
     /**
      * Inherited classes that introduce new dependencies must override this method and call add a
@@ -45,4 +46,9 @@ trait TACAIBasedAnalysisState {
     final def tac: TACode[TACMethodParameter, DUVar[ValueInformation]] = {
         _tacDependee.ub.tac.get
     }
+
+    final def tacDependee: EOptionP[Method, TACAI] = {
+        _tacDependee
+    }
+
 }

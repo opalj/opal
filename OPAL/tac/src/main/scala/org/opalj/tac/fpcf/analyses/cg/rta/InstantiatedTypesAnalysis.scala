@@ -34,14 +34,17 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.PCAndInstruction
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.instructions.NEW
+import org.opalj.br.ReferenceType
 
 /**
  * Marks types as instantiated if their constructor is invoked. Constructors invoked by subclass
  * constructors do not result in additional instantiated types.
+ * The analysis does not just looks for "new" instructions, in order to support reflection.
  *
  * @author Florian Kuebler
  */
@@ -76,9 +79,9 @@ class InstantiatedTypesAnalysis private[analyses] (
 
         // the set of types that are definitely initialized at this point in time
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
-        val instantiatedTypesUB: UIDSet[ObjectType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
+        val instantiatedTypesUB: UIDSet[ReferenceType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
 
-        val declaredType = declaredMethod.declaringClassType.asObjectType
+        val declaredType = declaredMethod.declaringClassType
 
         // if the current type is already instantiated, no work is left
         if (instantiatedTypesUB.contains(declaredType))
@@ -109,6 +112,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             // note, that this is only needed for the continuation
             if !newSeenSuperCallers.contains(caller)
         } {
+            // a constructor is called by a non-constructor method, there will be an initialization.
             if (caller.name != "<init>") {
                 return partialResult(declaredType);
             }
@@ -119,7 +123,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                 return partialResult(declaredType);
 
             // actually it must be the direct subtype! -- we did the first check to return early
-            project.classFile(caller.declaringClassType.asObjectType).foreach { cf ⇒
+            project.classFile(caller.declaringClassType).foreach { cf ⇒
                 cf.superclassType.foreach { supertype ⇒
                     if (supertype != declaredType)
                         return partialResult(declaredType);
@@ -156,7 +160,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
             // there is exactly the current call as potential super call, it still might no super
             // call if the class has another constructor that calls the super. In that case
-            // there must either be a new of the `declaredType`
+            // there must either be a new of the `declaredType` or it is a super call.
             val newInstr = NEW(declaredType)
             val hasNew = callerMethod.body.get.exists {
                 case (_, i) ⇒ i == newInstr
@@ -201,7 +205,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 
     def getInstantiatedTypesUB(
         instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes]
-    ): UIDSet[ObjectType] = {
+    ): UIDSet[ReferenceType] = {
         instantiatedTypesEOptP match {
             case eps: EPS[_, _] ⇒ eps.ub.types
             case _              ⇒ UIDSet.empty
@@ -236,6 +240,8 @@ object InstantiatedTypesAnalysisScheduler extends FPCFTriggeredAnalysisScheduler
 
     override type InitializationData = Null
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         InstantiatedTypes,
         Callers
@@ -254,7 +260,7 @@ object InstantiatedTypesAnalysisScheduler extends FPCFTriggeredAnalysisScheduler
     }
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
-        val initialInstantiatedTypes = UIDSet(p.get(InitialInstantiatedTypesKey).toSeq: _*)
+        val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
 
         ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
             case _: EPK[_, _] ⇒ InterimEUBP(p, org.opalj.br.fpcf.properties.cg.InstantiatedTypes(initialInstantiatedTypes))

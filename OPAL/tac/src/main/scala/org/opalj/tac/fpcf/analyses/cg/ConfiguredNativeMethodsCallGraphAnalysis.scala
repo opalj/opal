@@ -19,12 +19,11 @@ import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.VirtualFormalParameters
-import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethods
+import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredMethods
 import org.opalj.tac.fpcf.analyses.pointsto.MethodDescription
 
 /**
@@ -50,11 +49,10 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     val configKey = "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
-    private[this] implicit val virtualFormalParameters: VirtualFormalParameters = p.get(VirtualFormalParametersKey)
 
     // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
-        ConfiguredNativeMethods.reader.read(
+        ConfiguredMethods.reader.read(
             p.config, configKey
         ).nativeMethods.map { v ⇒ (v.method, v.methodInvocations) }.toMap
     }
@@ -90,7 +88,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
         val directCalls = new DirectCalls()
         for (tgt ← tgtsOpt.get) {
-            val tgtMethod = tgt.entity
+            val tgtMethod = tgt.method(declaredMethods)
             directCalls.addCall(dm, tgtMethod, 0)
         }
 
@@ -100,6 +98,9 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
 object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers)
 

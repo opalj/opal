@@ -15,6 +15,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
@@ -93,6 +94,8 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 }
 
 sealed trait L0TACAIAnalysisScheduler extends TACAIInitializer {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(BaseAIResult))
 
