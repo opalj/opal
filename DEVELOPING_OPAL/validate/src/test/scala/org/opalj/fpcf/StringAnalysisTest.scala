@@ -5,11 +5,9 @@ package fpcf
 import java.io.File
 import java.net.URL
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.opalj.collection.immutable.Chain
-import org.opalj.collection.immutable.ConstArray
 import org.opalj.br.analyses.Project
 import org.opalj.br.Annotation
 import org.opalj.br.Method
@@ -22,12 +20,11 @@ import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.Stmt
 import org.opalj.tac.TACStmts
 import org.opalj.tac.VirtualMethodCall
-import org.opalj.tac.fpcf.analyses.string_analysis.IntraproceduralStringAnalysis
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyInterproceduralStringAnalysis
-import org.opalj.tac.fpcf.analyses.string_analysis.V
 import org.opalj.tac.fpcf.analyses.string_analysis.LazyIntraproceduralStringAnalysis
 import org.opalj.tac.EagerDetachedTACAIKey
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.fpcf.analyses.string_analysis.V
 
 /**
  * @param fqTestMethodsClass The fully-qualified name of the class that contains the test methods.
@@ -67,16 +64,12 @@ sealed class StringAnalysisTestRunner(
     def getStringDefinitionsFromCollection(a: Annotations, index: Int): Annotation =
         a.head.elementValuePairs(1).value.asArrayValue.values(index).asAnnotationValue.annotation
 
-    def determineEAS(
-        p:                  Project[URL],
-        ps:                 PropertyStore,
-        allMethodsWithBody: ConstArray[Method]
-    ): Traversable[((V, Method), String ⇒ String, List[Annotation])] = {
-        // We need a "method to entity" matching for the evaluation (see further below)
-        val m2e = mutable.HashMap[Method, Entity]()
-
-        val tacProvider = p.get(EagerDetachedTACAIKey)
-        allMethodsWithBody.filter {
+    def determineEntitiesToAnalyze(
+        project: Project[URL]
+    ): Iterable[(V, Method)] = {
+        val entitiesToAnalyze = ListBuffer[(V, Method)]()
+        val tacProvider = project.get(EagerDetachedTACAIKey)
+        project.allMethodsWithBody.filter {
             _.runtimeInvisibleAnnotations.foldLeft(false)(
                 (exists, a) ⇒ exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
             )
@@ -84,18 +77,21 @@ sealed class StringAnalysisTestRunner(
             StringAnalysisTestRunner.extractUVars(
                 tacProvider(m).cfg, fqTestMethodsClass, nameTestMethod
             ).foreach { uvar ⇒
-                    if (!m2e.contains(m)) {
-                        m2e += m → ListBuffer(uvar)
-                    } else {
-                        m2e(m).asInstanceOf[ListBuffer[V]].append(uvar)
-                    }
-                    //ps.force((uvar, m), StringConstancyProperty.key)
-                }
+                entitiesToAnalyze.append((uvar, m))
+            }
         }
+        entitiesToAnalyze
+    }
 
+    def determineEAS(
+        entities: Iterable[(V, Method)],
+        project:  Project[URL]
+    ): Traversable[((V, Method), String ⇒ String, List[Annotation])] = {
+        val m2e = entities.groupBy(_._2).iterator.map(e ⇒ e._1 → e._2.map(k ⇒ k._1)).toMap
         // As entity, we need not the method but a tuple (DUVar, Method), thus this transformation
-        val eas = methodsWithAnnotations(p).filter(am ⇒ m2e.contains(am._1)).flatMap { am ⇒
-            m2e(am._1).asInstanceOf[ListBuffer[V]].zipWithIndex.map {
+
+        val eas = methodsWithAnnotations(project).filter(am ⇒ m2e.contains(am._1)).flatMap { am ⇒
+            m2e(am._1).zipWithIndex.map {
                 case (duvar, index) ⇒
                     Tuple3(
                         (duvar, am._1),
@@ -107,7 +103,6 @@ sealed class StringAnalysisTestRunner(
 
         eas
     }
-
 }
 
 object StringAnalysisTestRunner {
@@ -165,15 +160,20 @@ class IntraproceduralStringAnalysisTest extends PropertiesTest {
         val p = Project(runner.getRelevantProjectFiles, Array[File]())
 
         val manager = p.get(FPCFAnalysesManagerKey)
-        val (ps, _) = manager.runAll(LazyIntraproceduralStringAnalysis)
-        val testContext = TestContext(p, ps, List(new IntraproceduralStringAnalysis(p)))
+        val ps = p.get(PropertyStoreKey)
+        val entities = runner.determineEntitiesToAnalyze(p)
+        val (_, analyses) = manager.runAll(
+            List(LazyIntraproceduralStringAnalysis),
+            { _: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                entities.foreach(ps.force(_, StringConstancyProperty.key))
+            }
+        )
 
-        LazyIntraproceduralStringAnalysis.init(p, ps)
-        LazyIntraproceduralStringAnalysis.schedule(ps, null)
+        val testContext = TestContext(p, ps, analyses.map(_._2))
 
-        val eas = runner.determineEAS(p, ps, p.allMethodsWithBody)
+        val eas = runner.determineEAS(entities, p)
 
-        testContext.propertyStore.shutdown()
+        ps.shutdown()
         validateProperties(testContext, eas, Set("StringConstancy"))
         ps.waitOnPhaseCompletion()
     }
@@ -200,27 +200,6 @@ object IntraproceduralStringAnalysisTest {
  */
 class InterproceduralStringAnalysisTest extends PropertiesTest {
 
-    private def determineEntitiesToAnalyze(
-        project: Project[URL]
-    ): Iterable[(V, Method)] = {
-        val entitiesToAnalyze = ListBuffer[(V, Method)]()
-        val tacProvider = project.get(EagerDetachedTACAIKey)
-        project.allMethodsWithBody.filter {
-            _.runtimeInvisibleAnnotations.foldLeft(false)(
-                (exists, a) ⇒ exists || StringAnalysisTestRunner.isStringUsageAnnotation(a)
-            )
-        } foreach { m ⇒
-            StringAnalysisTestRunner.extractUVars(
-                tacProvider(m).cfg,
-                InterproceduralStringAnalysisTest.fqTestMethodsClass,
-                InterproceduralStringAnalysisTest.nameTestMethod
-            ).foreach { uvar ⇒
-                    entitiesToAnalyze.append((uvar, m))
-                }
-        }
-        entitiesToAnalyze
-    }
-
     describe("the org.opalj.fpcf.InterproceduralStringAnalysis is started") {
         val runner = new StringAnalysisTestRunner(
             InterproceduralStringAnalysisTest.fqTestMethodsClass,
@@ -229,22 +208,24 @@ class InterproceduralStringAnalysisTest extends PropertiesTest {
         )
         val p = Project(runner.getRelevantProjectFiles, Array[File]())
 
+        val entities = runner.determineEntitiesToAnalyze(p)
+
         p.get(RTACallGraphKey)
+        val ps = p.get(PropertyStoreKey)
         val manager = p.get(FPCFAnalysesManagerKey)
         val analysesToRun = Set(
             LazyInterproceduralStringAnalysis
         )
 
-        val ps = p.get(PropertyStoreKey)
         val (_, analyses) = manager.runAll(
             analysesToRun,
             { _: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
-                determineEntitiesToAnalyze(p).foreach(ps.force(_, StringConstancyProperty.key))
+                entities.foreach(ps.force(_, StringConstancyProperty.key))
             }
         )
 
         val testContext = TestContext(p, ps, analyses.map(_._2))
-        val eas = runner.determineEAS(p, ps, p.allMethodsWithBody)
+        val eas = runner.determineEAS(entities, p)
 
         ps.waitOnPhaseCompletion()
         ps.shutdown()
