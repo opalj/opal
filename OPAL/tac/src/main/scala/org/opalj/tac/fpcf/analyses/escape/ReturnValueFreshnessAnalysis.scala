@@ -39,9 +39,9 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldLocality
@@ -216,12 +216,6 @@ class ReturnValueFreshnessAnalysis private[analyses] (
     def doDetermineFreshness(dm: DefinedMethod): ProperPropertyComputationResult = {
         if (dm.descriptor.returnType.isBaseType || dm.descriptor.returnType.isVoidType)
             return Result(dm, PrimitiveReturnValue);
-
-        if (dm.declaringClassType.isArrayType) {
-            if (dm.name == "clone" && dm.descriptor == MethodDescriptor.JustReturnsObject) {
-                return Result(dm, FreshReturnValue); // array.clone returns fresh value
-            }
-        }
 
         val m = dm.definedMethod
         if (m.body.isEmpty) // Can't analyze a method without body
@@ -518,6 +512,9 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 sealed trait ReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReturnValueFreshness)
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] = {
         Set(

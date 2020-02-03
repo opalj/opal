@@ -6,41 +6,48 @@ package analyses
 package cg
 
 import org.opalj.collection.immutable.RefArray
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EPS
-import org.opalj.fpcf.EUBP
-import org.opalj.fpcf.InterimEUBP
+import org.opalj.fpcf.EUBPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
-import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.VirtualFormalParameter
-import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
+import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.VirtualFormalParametersKey
+import org.opalj.br.DefinedMethod
+import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.tac.common.DefinitionSitesKey
+import org.opalj.tac.fpcf.analyses.cg.pointsto.PointsToBasedCGState
+import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
+import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
- * On each call of the [[sourceMethod*]] it will call the [[declaredTargetMethod*]] upon its first
- * parameter and returns the result of this call.
- * This analysis manages the entries for [[Callees]] and
- * [[Callers]] as well as the
- * [[TypeBasedPointsToSet]] mappings.
+ * Models the behavior for [[java.security.AccessController.doPrivileged*]].
+ *
+ * On each call of the concrete [[doPrivilegedMethod]] method it will call the
+ * [[declaredRunMethod]] upon its first parameter and returns the result of this call.
+ *
+ * For each such call, the analysis will add an indirect call to the call graph, such that
+ * the [[org.opalj.tac.fpcf.analyses.cg.pointsto.AbstractPointsToBasedCallGraphAnalysis]] will
+ * map the points-to sets accordingly.
  *
  * TODO: This analysis is very specific to the points-to analysis. It should also work for the other
  * analyses.
@@ -49,153 +56,164 @@ import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
  * analysis even if the method is a [[org.opalj.br.VirtualDeclaredMethod]], the
  * [[org.opalj.br.analyses.VirtualFormalParameter]]s must also be present for those methods.
  *
+ *
  * @author Florian Kuebler
  */
-class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
-        final val sourceMethod:         DeclaredMethod,
-        final val declaredTargetMethod: DeclaredMethod,
-        final val project:              SomeProject
-) extends FPCFAnalysis {
-    private[this] val formalParameters = p.get(VirtualFormalParametersKey)
-    private[this] val declaredMethods = p.get(DeclaredMethodsKey)
+abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg](
+        final val doPrivilegedMethod: DeclaredMethod,
+        final val declaredRunMethod:  DeclaredMethod,
+        final val project:            SomeProject
+) extends TACAIBasedAPIBasedAnalysis with AbstractPointsToBasedAnalysis {
 
-    def analyze(): ProperPropertyComputationResult = {
-        // take the first parameter
-        val fps = formalParameters(sourceMethod)
-        val fp = fps(1)
-        val pointsToParam = ps(fp, TypeBasedPointsToSet.key)
+    override protected[this]type State = PointsToBasedCGState[PointsToSet]
+    override protected[this]type DependerType = CallSiteT
 
-        Results(methodMapping(pointsToParam, 0))
-    }
-
-    def continuationForParameterValue(
-        seenTypes: Int
-    )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBP(_: VirtualFormalParameter, _: TypeBasedPointsToSet) ⇒
-            methodMapping(
-                eps.asInstanceOf[EPS[VirtualFormalParameter, TypeBasedPointsToSet]],
-                seenTypes
-            )
-        case _ ⇒
-            throw new IllegalStateException(s"unexpected update $eps")
-    }
-
-    def methodMapping(
-        pointsTo: EOptionP[VirtualFormalParameter, TypeBasedPointsToSet], seenTypes: Int
+    override def processNewCaller(
+        caller:          DefinedMethod,
+        pc:              Int,
+        tac:             TACode[TACMethodParameter, V],
+        receiverOption:  Option[Expr[V]],
+        params:          Seq[Option[Expr[V]]],
+        targetVarOption: Option[V],
+        isDirect:        Boolean
     ): ProperPropertyComputationResult = {
+        implicit val calls: IndirectCalls = new IndirectCalls()
+        implicit val state: State = new PointsToBasedCGState[PointsToSet](
+            caller, FinalEP(caller.definedMethod, TheTACAI(tac))
+        )
 
-        val calls = new DirectCalls()
-        var results: List[ProperPropertyComputationResult] = Nil
+        val StaticFunctionCallStatement(call) = tac.stmts(tac.pcToIndex(pc))
 
-        val newSeenTypes = if (pointsTo.hasUBP) {
-            for (t ← pointsTo.ub.dropOldestTypes(seenTypes)) {
-                val callR = p.instanceCall(
-                    sourceMethod.declaringClassType.asObjectType,
-                    t,
-                    declaredTargetMethod.name,
-                    declaredTargetMethod.descriptor
-                )
-                if (callR.hasValue) {
-                    // 1. Add the call to the specified method.
-                    val tgtMethod = declaredMethods(callR.value)
-                    calls.addCall(sourceMethod, tgtMethod, 0)
+        val actualParamDefSites = call.params.head.asVar.definedBy
 
-                    // 2. The points-to set of *this* of the target method should contain all
-                    // information from the points-to set of the first parameter of the source
-                    // method.
-                    val tgtThis = formalParameters(tgtMethod)(0)
-                    results ::= PartialResult[VirtualFormalParameter, TypeBasedPointsToSet](
-                        tgtThis,
-                        TypeBasedPointsToSet.key,
-                        {
-                            case UBP(ub: TypeBasedPointsToSet) ⇒
-                                val newUB = ub.included(TypeBasedPointsToSet(UIDSet(t)))
-                                if (newUB eq ub) {
-                                    None
-                                } else {
-                                    Some(InterimEUBP(tgtThis, newUB))
-                                }
+        val callSite = (pc, call.name, call.descriptor, call.declaringClass)
 
-                            case _: EPK[VirtualFormalParameter, TypeBasedPointsToSet] ⇒
-                                Some(InterimEUBP(tgtThis, TypeBasedPointsToSet(UIDSet(t))))
-                        }
-                    )
+        val pointsToSets = currentPointsToOfDefSites(callSite, actualParamDefSites)
 
-                    // 3. Map the return value back to the source method
-                    val returnPointsTo = ps(tgtMethod, TypeBasedPointsToSet.key)
-                    results ::= returnMapping(returnPointsTo, 0)
+        pointsToSets.foreach(pts ⇒ processNewTypes(call, pts, 0))
 
-                } else {
-                    calls.addIncompleteCallSite(0)
-                }
+        returnResult(call)
+    }
+
+    def returnResult(
+        call: StaticFunctionCall[V]
+    )(implicit calls: IndirectCalls, state: State): ProperPropertyComputationResult = {
+        val partialResults = calls.partialResults(state.method)
+        if (state.hasPointsToDependees)
+            Results(InterimPartialResult(state.dependees, c(state, call)), partialResults)
+        else
+            Results(partialResults)
+    }
+
+    private[this] def processNewTypes(
+        call: StaticFunctionCall[V], pts: PointsToSet, seenTypes: Int
+    )(implicit state: State, calleesAndCallers: IndirectCalls): Unit = {
+        val caller = state.method
+        pts.forNewestNTypes(pts.numTypes - seenTypes) { t ⇒
+            val callR = p.instanceCall(
+                caller.declaringClassType,
+                t,
+                declaredRunMethod.name,
+                declaredRunMethod.descriptor
+            )
+            if (callR.hasValue) {
+                val tgtMethod = declaredMethods(callR.value)
+                val thisActual = persistentUVar(call.params.head.asVar)(state.tac.stmts)
+                calleesAndCallers.addCall(caller, tgtMethod, call.pc, Seq.empty, thisActual)
+            } else {
+                calleesAndCallers.addIncompleteCallSite(call.pc)
             }
-            pointsTo.ub.numTypes
-        } else {
-            0
         }
-
-        if (pointsTo.isRefinable) {
-            results ::= InterimPartialResult(
-                Some(pointsTo), continuationForParameterValue(newSeenTypes)
-            )
-        }
-        results ++= calls.partialResults(sourceMethod)
-
-        Results(results)
     }
 
-    def returnMapping(
-        returnPointsTo: EOptionP[DeclaredMethod, TypeBasedPointsToSet], numSeenTypes: Int
-    ): ProperPropertyComputationResult = {
-        var results: List[ProperPropertyComputationResult] = Nil
-        val newNumSeenTypes = if (returnPointsTo.hasUBP) {
-            results ::= PartialResult[DeclaredMethod, TypeBasedPointsToSet](
-                sourceMethod,
-                TypeBasedPointsToSet.key,
-                {
-                    case UBP(ub: TypeBasedPointsToSet) ⇒
-                        val newUB = ub.included(returnPointsTo.ub)
-                        if (newUB eq ub) {
-                            None
-                        } else {
-                            Some(InterimEUBP(sourceMethod, newUB))
-                        }
-
-                    case _: EPK[_, _] ⇒
-                        Some(InterimEUBP(sourceMethod, returnPointsTo.ub))
-                }
-            )
-            returnPointsTo.ub.numTypes
-        } else {
-            0
-        }
-
-        if (returnPointsTo.isRefinable) {
-            results ::= InterimPartialResult(
-                Some(returnPointsTo), continuationForReturnValue(newNumSeenTypes)
-            )
-        }
-
-        Results(results)
-    }
-
-    def continuationForReturnValue(
-        seenTypes: Int
+    private[this] def c(
+        state: State,
+        call:    StaticFunctionCall[V]
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        // join the return values of all invoked methods
-        case EUBP(_: DeclaredMethod, _: TypeBasedPointsToSet) ⇒
-            returnMapping(eps.asInstanceOf[EPS[DeclaredMethod, TypeBasedPointsToSet]], seenTypes)
-
-        case _ ⇒
-            throw new IllegalStateException(s"unexpected update $eps")
+        case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
+            // TODO: shouldn't we just delete the partial results?
+            val calls = new IndirectCalls()
+            val oldEOptP = state.getPointsToProperty(e)
+            val seenTypes = if (oldEOptP.isEPK) 0 else oldEOptP.ub.numTypes
+            if (isFinal) {
+                state.removePointsToDependee(eps.e)
+            } else {
+                state.updatePointsToDependency(eps.asInstanceOf[EPS[Entity, PointsToSet]])
+            }
+            processNewTypes(call, ub.asInstanceOf[PointsToSet], seenTypes)(state, calls)
+            returnResult(call)(calls, state)
+        case _ ⇒ throw new IllegalArgumentException(s"unexpected update $eps")
     }
+
+    override val apiMethod: DeclaredMethod = doPrivilegedMethod
 }
 
 class DoPrivilegedPointsToCGAnalysis private[cg] (
         final val project: SomeProject
-) extends FPCFAnalysis {
+) extends AllocationSiteBasedAnalysis { self ⇒
+
+    @inline override protected[this] def currentPointsTo(
+        depender:   DependerType,
+        dependee:   Entity,
+        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+    )(implicit state: State): PointsToSet = {
+        if (state.hasPointsToDependee(dependee)) {
+            val p2s = state.getPointsToProperty(dependee)
+
+            // It might be the case that there a dependency for that points-to state in the state
+            // from another depender.
+            if (!state.hasPointsToDependency(depender, dependee)) {
+                state.addPointsToDependency(depender, p2s)
+            }
+            pointsToUB(p2s)
+        } else {
+            val p2s = propertyStore(dependee, pointsToPropertyKey)
+            if (p2s.isRefinable) {
+                state.addPointsToDependency(depender, p2s)
+            }
+            pointsToUB(p2s)
+        }
+    }
+
+    override protected[this]type State = PointsToBasedCGState[PointsToSet]
+    override protected[this]type DependerType = CallSiteT
+
+    trait PointsToBase extends AbstractPointsToBasedAnalysis {
+        override protected[this]type ElementType = self.ElementType
+        override protected[this]type PointsToSet = self.PointsToSet
+        override protected[this]type State = self.State
+        override protected[this]type DependerType = self.DependerType
+
+        override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
+            self.pointsToPropertyKey
+
+        override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
+
+        override protected[this] def createPointsToSet(
+            pc:             Int,
+            declaredMethod: DeclaredMethod,
+            allocatedType:  ReferenceType,
+            isConstant:     Boolean,
+            isEmptyArray:   Boolean
+        ): PointsToSet = {
+            self.createPointsToSet(pc, declaredMethod, allocatedType, isConstant, isEmptyArray)
+        }
+
+        override protected[this] def currentPointsTo(
+            depender:   DependerType,
+            dependee:   Entity,
+            typeFilter: ReferenceType ⇒ Boolean
+        )(implicit state: State): PointsToSet = {
+            self.currentPointsTo(depender, dependee, typeFilter)
+        }
+
+        override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
+            self.getTypeOf(element)
+        }
+    }
+
     def analyze(p: SomeProject): PropertyComputationResult = {
-        var results: List[ProperPropertyComputationResult] = Nil
+        var analyses: List[AbstractDoPrivilegedPointsToCGAnalysis] = Nil
 
         val accessControllerType = ObjectType("java/security/AccessController")
         val privilegedActionType = ObjectType("java/security/PrivilegedAction")
@@ -221,7 +239,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             MethodDescriptor(privilegedActionType, ObjectType.Object)
         )
         if (doPrivileged1.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged1, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged1, runMethod, p) with PointsToBase
 
         val doPrivileged2 = declaredMethods(
             accessControllerType,
@@ -234,7 +252,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivileged2.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged2, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged2, runMethod, p) with PointsToBase
 
         val doPrivileged3 = declaredMethods(
             accessControllerType,
@@ -247,7 +265,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivileged3.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged3, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged3, runMethod, p) with PointsToBase
 
         val doPrivileged4 = declaredMethods(
             accessControllerType,
@@ -257,7 +275,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             MethodDescriptor(privilegedExceptionActionType, ObjectType.Object)
         )
         if (doPrivileged4.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged4, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged4, runMethod, p) with PointsToBase
 
         val doPrivileged5 = declaredMethods(
             accessControllerType,
@@ -270,7 +288,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivileged5.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged5, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged5, runMethod, p) with PointsToBase
 
         val doPrivileged6 = declaredMethods(
             accessControllerType,
@@ -283,7 +301,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivileged6.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged6, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged6, runMethod, p) with PointsToBase
 
         val doPrivilegedWithCombiner1 = declaredMethods(
             accessControllerType,
@@ -293,7 +311,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             MethodDescriptor(privilegedActionType, ObjectType.Object)
         )
         if (doPrivilegedWithCombiner1.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner1, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner1, runMethod, p) with PointsToBase
 
         val doPrivilegedWithCombiner2 = declaredMethods(
             accessControllerType,
@@ -306,7 +324,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner2.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner2, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner2, runMethod, p) with PointsToBase
 
         val doPrivilegedWithCombiner3 = declaredMethods(
             accessControllerType,
@@ -319,7 +337,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner3.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner3, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner3, runMethod, p) with PointsToBase
 
         val doPrivilegedWithCombiner4 = declaredMethods(
             accessControllerType,
@@ -332,18 +350,21 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner4.hasSingleDefinedMethod)
-            results ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner4, runMethod, p).analyze()
+            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner4, runMethod, p) with PointsToBase
 
-        Results(results)
+        Results(analyses.iterator.map(_.registerAPIMethod())) //analyze()))
     }
 }
 
 object DoPrivilegedPointsToCGAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(TypeBasedPointsToSet))
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
+
+    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(AllocationSitePointsToSet))
 
     override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(TypeBasedPointsToSet, Callers, Callees)
+        PropertyBounds.ubs(AllocationSitePointsToSet, Callers, Callees)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 

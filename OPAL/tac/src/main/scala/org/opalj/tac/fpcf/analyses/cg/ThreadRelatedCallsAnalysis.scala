@@ -21,6 +21,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.VoidType
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -28,7 +29,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 class ThreadStartAnalysis private[analyses] (
         final val project: SomeProject, final val threadStartMethod: DeclaredMethod
-) extends TACAIBasedAPIBasedCallGraphAnalysis {
+) extends TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = threadStartMethod
 
@@ -205,7 +206,7 @@ class ThreadStartAnalysis private[analyses] (
         pc:                 Int,
         vmReachableMethods: VMReachableMethods
     ): Unit = {
-        val thisType = definedMethod.declaringClassType.asObjectType
+        val thisType = definedMethod.declaringClassType
         val preciseType = receiver.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
@@ -248,7 +249,7 @@ class ThreadStartAnalysis private[analyses] (
         } else {
             val declTgt = declaredMethods(
                 preciseType,
-                definedMethod.declaringClassType.asObjectType.packageName,
+                definedMethod.declaringClassType.packageName,
                 preciseType,
                 name,
                 descriptor
@@ -265,7 +266,7 @@ class ThreadStartAnalysis private[analyses] (
 
 class UncaughtExceptionHandlerAnalysis private[analyses] (
         final val project: SomeProject, final val setUncaughtExceptionHandlerMethod: DeclaredMethod
-) extends TACAIBasedAPIBasedCallGraphAnalysis {
+) extends TACAIBasedAPIBasedAnalysis {
 
     override val apiMethod: DeclaredMethod = setUncaughtExceptionHandlerMethod
 
@@ -326,7 +327,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         vmReachableMethods: VMReachableMethods
 
     ): Unit = {
-        val thisType = definedMethod.declaringClassType.asObjectType
+        val thisType = definedMethod.declaringClassType
         val preciseType = receiver.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
@@ -340,7 +341,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         } else {
             val declTgt = declaredMethods(
                 preciseType,
-                definedMethod.declaringClassType.asObjectType.packageName,
+                definedMethod.declaringClassType.packageName,
                 preciseType,
                 name,
                 ThreadRelatedCallsAnalysisScheduler.uncaughtExceptionDescriptor
@@ -421,6 +422,8 @@ object ThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisSchedul
             RefArray(ObjectType.Thread, ObjectType.Throwable), VoidType
         )
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callees, Callers, TACAI)

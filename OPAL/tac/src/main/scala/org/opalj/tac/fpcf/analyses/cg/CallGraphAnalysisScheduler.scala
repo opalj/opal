@@ -15,6 +15,7 @@ import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
@@ -27,6 +28,9 @@ trait CallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     override type InitializationData = Null
 
     def initializeAnalysis(p: SomeProject): AbstractCallGraphAnalysis
+
+    override def requiredProjectInformation: ProjectInformationKeys =
+        Seq(DeclaredMethodsKey, InitialEntryPointsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         Callers,

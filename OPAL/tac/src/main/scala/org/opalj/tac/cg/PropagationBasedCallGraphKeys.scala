@@ -6,8 +6,7 @@ package cg
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.fpcf.ComputationSpecification
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
@@ -16,8 +15,8 @@ import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
 import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
 
 /**
@@ -40,15 +39,15 @@ import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
  */
 trait PropagationBasedCallGraphKey extends AbstractCallGraphKey {
 
-    override protected def requirements: ProjectInformationKeys = {
-        super.requirements :+ InitialInstantiatedTypesKey
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
+        super.requirements(project) :+ InitialInstantiatedTypesKey
     }
 
     def typeSetEntitySelector(): TypeSetEntitySelector
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
+    ): Traversable[FPCFAnalysisScheduler] = {
         val theTypeSetEntitySelector = typeSetEntitySelector()
 
         val common = List(

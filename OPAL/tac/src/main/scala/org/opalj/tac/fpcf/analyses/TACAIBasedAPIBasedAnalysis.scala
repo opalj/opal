@@ -3,7 +3,6 @@ package org.opalj
 package tac
 package fpcf
 package analyses
-package cg
 
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -19,9 +18,11 @@ import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
+import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
+import org.opalj.tac.fpcf.analyses.cg.V
 
 /**
- * An [[APIBasedCallGraphAnalysis]] that ensures that whenever `processNewCaller` gets called,
+ * An [[APIBasedAnalysis]] that ensures that whenever `processNewCaller` gets called,
  * some (interim) version of the three-address code is available in the property store.
  * For each update of [[org.opalj.tac.fpcf.properties.TACAI]] that actually contains a three-address
  * code, `processNewCaller` is invoked, i.e., it might be called multiple times for the same caller.
@@ -29,7 +30,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  *
  * @author Florian Kuebler
  */
-trait TACAIBasedAPIBasedCallGraphAnalysis extends APIBasedCallGraphAnalysis {
+trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
     final override def handleNewCaller(
         caller: DefinedMethod, pc: Int, isDirect: Boolean
     ): ProperPropertyComputationResult = {

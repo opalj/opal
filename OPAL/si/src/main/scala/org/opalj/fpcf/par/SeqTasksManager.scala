@@ -14,8 +14,7 @@ import org.opalj.collection.mutable.RefArrayStack
 class SeqTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
 
     // NOTHING TO DO IN THIS SPECIAL CASE
-    def prepareThreadPool()(implicit store: PKECPropertyStore): Unit = {}
-    def cleanUpThreadPool()(implicit store: PKECPropertyStore): Unit = {}
+    def phaseSetupCompleted()(implicit store: PKECPropertyStore): Unit = {}
 
     private[this] var currentEvaluationDepth = 0
 

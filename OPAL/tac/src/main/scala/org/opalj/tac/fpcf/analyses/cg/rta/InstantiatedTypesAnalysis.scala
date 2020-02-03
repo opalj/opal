@@ -34,6 +34,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.PCAndInstruction
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -80,7 +81,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
         val instantiatedTypesUB: UIDSet[ReferenceType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
 
-        val declaredType = declaredMethod.declaringClassType.asObjectType
+        val declaredType = declaredMethod.declaringClassType
 
         // if the current type is already instantiated, no work is left
         if (instantiatedTypesUB.contains(declaredType))
@@ -122,7 +123,7 @@ class InstantiatedTypesAnalysis private[analyses] (
                 return partialResult(declaredType);
 
             // actually it must be the direct subtype! -- we did the first check to return early
-            project.classFile(caller.declaringClassType.asObjectType).foreach { cf ⇒
+            project.classFile(caller.declaringClassType).foreach { cf ⇒
                 cf.superclassType.foreach { supertype ⇒
                     if (supertype != declaredType)
                         return partialResult(declaredType);
@@ -238,6 +239,8 @@ object InstantiatedTypesAnalysis {
 object InstantiatedTypesAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
 
     override type InitializationData = Null
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
         InstantiatedTypes,

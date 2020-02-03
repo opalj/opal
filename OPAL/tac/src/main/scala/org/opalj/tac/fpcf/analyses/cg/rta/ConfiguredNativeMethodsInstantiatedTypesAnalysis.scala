@@ -20,6 +20,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -28,7 +29,7 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteDescription
-import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredNativeMethods
+import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredMethods
 import org.opalj.tac.fpcf.analyses.pointsto.PointsToRelation
 
 /**
@@ -45,7 +46,7 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 
     // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
-        ConfiguredNativeMethods.reader.read(
+        ConfiguredMethods.reader.read(
             p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
         ).nativeMethods.map { v ⇒ (v.method, v.pointsTo) }.toMap
     }
@@ -110,6 +111,9 @@ class ConfiguredNativeMethodsInstantiatedTypesAnalysis private[analyses] (
 }
 
 object ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     override def uses: Set[PropertyBounds] =
         PropertyBounds.ubs(Callers, InstantiatedTypes)
 

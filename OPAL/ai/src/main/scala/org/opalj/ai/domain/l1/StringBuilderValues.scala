@@ -40,8 +40,6 @@ import org.opalj.br.ObjectType
 trait StringBuilderValues extends StringValues {
     domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory ⇒
 
-    import StringBuilderValues.JavaStringBuffer
-
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(
             val origin:      ValueOrigin,
@@ -52,7 +50,7 @@ trait StringBuilderValues extends StringValues {
         this: DomainStringValue ⇒
 
         assert(builder != null)
-        assert((builderType eq JavaStringBuffer) || (builderType eq ObjectType.StringBuilder))
+        assert((builderType eq ObjectType.StringBuffer) || (builderType eq ObjectType.StringBuilder))
 
         final override def isNull: No.type = No
         final override def isPrecise: Boolean = true
@@ -146,10 +144,4 @@ trait StringBuilderValues extends StringValues {
         builderType: ObjectType,
         builder:     JStringBuilder
     ): StringBuilderValue
-}
-
-object StringBuilderValues {
-
-    val JavaStringBuffer = ObjectType("java/lang/StringBuffer")
-
 }

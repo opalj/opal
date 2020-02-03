@@ -31,6 +31,15 @@ sealed trait CalleesPropertyMetaInformation extends PropertyMetaInformation {
 sealed trait Callees extends Property with CalleesPropertyMetaInformation {
 
     /**
+     * Is there a call to method `target` at `pc`?
+     */
+    def containsCall(pc: Int, target: DeclaredMethod): Boolean
+
+    def containsDirectCall(pc: Int, target: DeclaredMethod): Boolean
+
+    def containsIndirectCall(pc: Int, target: DeclaredMethod): Boolean
+
+    /**
      * PCs of call sites that at least one of the analyses could not resolve completely.
      */
     def incompleteCallSites(implicit propertyStore: PropertyStore): IntIterator
@@ -308,6 +317,18 @@ sealed class ConcreteCallees(
             )
         )
     }
+
+    override def containsCall(pc: Int, target: DeclaredMethod): Boolean = {
+        containsDirectCall(pc, target) || containsIndirectCall(pc, target)
+    }
+
+    override def containsDirectCall(pc: Int, target: DeclaredMethod): Boolean = {
+        directCalleesIds.contains(pc) && directCalleesIds(pc).contains(target.id)
+    }
+
+    override def containsIndirectCall(pc: Int, target: DeclaredMethod): Boolean = {
+        indirectCalleesIds.contains(pc) && indirectCalleesIds(pc).contains(target.id)
+    }
 }
 
 object NoCallees extends Callees {
@@ -388,6 +409,12 @@ object NoCallees extends Callees {
             indirectCallParameters
         )
     }
+
+    override def containsCall(pc: Int, target: DeclaredMethod): Boolean = false
+
+    override def containsDirectCall(pc: Int, target: DeclaredMethod): Boolean = false
+
+    override def containsIndirectCall(pc: Int, target: DeclaredMethod): Boolean = false
 }
 
 object NoCalleesDueToNotReachableMethod extends Callees {
@@ -460,6 +487,12 @@ object NoCalleesDueToNotReachableMethod extends Callees {
         indirectCallReceivers:  IntMap[IntMap[Option[(ValueInformation, PCs)]]],
         indirectCallParameters: IntMap[IntMap[Seq[Option[(ValueInformation, PCs)]]]]
     ): Callees = throw new IllegalStateException("Unreachable methods can't be updated!")
+
+    override def containsCall(pc: Int, target: DeclaredMethod): Boolean = false
+
+    override def containsDirectCall(pc: Int, target: DeclaredMethod): Boolean = false
+
+    override def containsIndirectCall(pc: Int, target: DeclaredMethod): Boolean = false
 }
 
 object Callees extends CalleesPropertyMetaInformation {
