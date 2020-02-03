@@ -63,14 +63,10 @@ abstract class PropertiesTest extends FunSpec with Matchers {
      * The representation of the fixture project.
      */
     final val FixtureProject: Project[URL] = {
-        implicit val classFileReader = Project.JavaClassFileReader()
+        val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
 
-        //        val sourceFolder = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/${fixtureProjectPackage}"
-        //        val properties = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties"
-        //        val fixtureFiles = new File(sourceFolder)
-        //        val annotationFiles = new File(properties)
-        val fixtureClassFiles = getFixtureClassFiles //AllClassFiles(List(annotationFiles, fixtureFiles))
+        val fixtureClassFiles = getFixtureClassFiles(classFileReader) //AllClassFiles(List(annotationFiles, fixtureFiles))
         if (fixtureClassFiles.isEmpty) fail(s"no class files at $testFilePath")
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
@@ -387,7 +383,6 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     }
 
     private[this] def getFixtureClassFiles(
-        implicit
         classFileReader: ClassFileReader
     ): Traversable[(classFileReader.ClassFile, URL)] = {
         import classFileReader.AllClassFiles
