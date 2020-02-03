@@ -6,6 +6,7 @@ import scala.annotation.tailrec
 
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
+import java.util.{Arrays ⇒ JArrays}
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
@@ -391,6 +392,14 @@ sealed abstract class ReferenceType extends FieldType {
  * Factory to create instances of `ReferenceType`.
  */
 object ReferenceType {
+
+    /**
+     * Enables the reverse lookup of a ReferenceType given a ReferenceType's id.
+     */
+    def lookup(id: Int): ReferenceType = {
+        if (id >= 0) ObjectType.lookup(id)
+        else ArrayType.lookup(id)
+    }
 
     /**
      * Creates a representation of the described [[ReferenceType]].
@@ -1047,6 +1056,52 @@ final class ObjectType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ObjectType {
 
+    // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
+    @volatile private[this] var objectTypes: Array[ObjectType] = new Array[ObjectType](0)
+
+    private[this] def updateObjectTypes(): Unit = {
+        if (nextId.get >= objectTypes.length) {
+            val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get + 1)
+            cacheRWLock.readLock().lock()
+            try {
+                cache.values.forEach { wot ⇒
+                    val ot = wot.get
+                    if (ot != null && ot.id < newObjectTypes.length) {
+                        newObjectTypes(ot.id) = ot
+                    }
+                }
+            } finally {
+                cacheRWLock.readLock().unlock()
+            }
+            this.objectTypes = newObjectTypes
+        }
+    }
+
+    /**
+     * Enables the reverse lookup of an ObjectType given an ObjectType's id.
+     */
+    def lookup(id: Int): ObjectType = {
+        var objectTypes = this.objectTypes
+        if (id < objectTypes.length) {
+            val ot = objectTypes(id)
+            if (ot == null) throw new IllegalArgumentException(s"$id is unknown")
+            ot
+        } else {
+            // Let's check if the type was created in the meantime!
+            updateObjectTypes()
+            objectTypes = this.objectTypes
+            if (id < objectTypes.length) {
+                val ot = objectTypes(id)
+                if (ot == null) throw new IllegalArgumentException(s"$id is unknown")
+                ot
+            } else {
+                throw new IllegalArgumentException(
+                    s"$id belongs to ObjectType created after the creation of the lookup map"
+                )
+            }
+        }
+    }
+
     private[this] val nextId = new AtomicInteger(0)
     private[this] val cacheRWLock = new ReentrantReadWriteLock();
     private[this] val cache = new WeakHashMap[String, WeakReference[ObjectType]]()
@@ -1204,6 +1259,12 @@ object ObjectType {
     final val Comparable = ObjectType("java/lang/Comparable")
     final val ComparableId = 15
     require(Comparable.id == ComparableId)
+    final val StringBuilder = ObjectType("java/lang/StringBuilder")
+    final val StringBuilderId = 16
+    require(StringBuilder.id == StringBuilderId)
+    final val StringBuffer = ObjectType("java/lang/StringBuffer")
+    final val StringBufferId = 17
+    require(StringBuffer.id == StringBufferId)
 
     final val System = ObjectType("java/lang/System")
 
@@ -1214,8 +1275,6 @@ object ObjectType {
 
     final val Thread = ObjectType("java/lang/Thread")
     final val Runnable = ObjectType("java/lang/Runnable")
-
-    final val StringBuilder = ObjectType("java/lang/StringBuilder")
 
     // Types related to the invokedynamic instruction
     final val VarHandle = ObjectType("java/lang/invoke/VarHandle")
@@ -1452,26 +1511,38 @@ final class ArrayType private ( // DO NOT MAKE THIS A CASE CLASS!
  */
 object ArrayType {
 
-    /**
-     * Returns a function that enables the reverse lookup of an ArrayType given an ArrayType's id.
-     *
-     * @note Creating this function is computationally intensive. Therefore,
-     *       the resulting function should be cached if it is required multiple
-     *       times.
-     *
-     * @note This function will only return those ArrayTypes which were created before
-     *       this function was called.
-     */
-    def lookup: (Int) ⇒ ArrayType = {
-        val arrayTypes = new Array[ArrayType](-nextId.get + 1)
-        cache.values.forEach { wat ⇒
-            val at = wat.get
-            if (at != null && -at.id < arrayTypes.length) {
-                arrayTypes(-at.id) = at
+    // IMPROVE Use a soft reference or something similar to avoid filling up the memory when we create multiple projects in a row!
+    @volatile private[this] var arrayTypes: Array[ArrayType] = new Array[ArrayType](0)
+
+    private[this] def updateArrayTypes(): Unit = {
+        if (-nextId.get > arrayTypes.length) {
+            val newArrayTypes = JArrays.copyOf(this.arrayTypes, -nextId.get)
+            cache.synchronized {
+                cache.values.forEach { wat ⇒
+                    val at = wat.get
+                    if (at != null && -at.id < newArrayTypes.length) {
+                        newArrayTypes(-at.id) = at
+                    }
+                }
             }
+            this.arrayTypes = newArrayTypes
         }
-        (atId: Int) ⇒ {
-            val id = -atId
+    }
+
+    /**
+     * Enables the reverse lookup of an ArrayType given an ArrayType's id.
+     */
+    def lookup(atId: Int): ArrayType = {
+        var arrayTypes = this.arrayTypes
+        val id = -atId
+        if (id < arrayTypes.length) {
+            val at = arrayTypes(id)
+            if (at == null) throw new IllegalArgumentException(s"$atId is unknown")
+            at
+        } else {
+            // Let's check if the type was created in the meantime!
+            updateArrayTypes()
+            arrayTypes = this.arrayTypes
             if (id < arrayTypes.length) {
                 val at = arrayTypes(id)
                 if (at == null) throw new IllegalArgumentException(s"$atId is unknown")

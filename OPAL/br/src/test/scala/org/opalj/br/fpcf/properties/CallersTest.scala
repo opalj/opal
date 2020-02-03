@@ -9,7 +9,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 import org.scalatest.junit.JUnitRunner
 
-import org.opalj.collection.immutable.LongTrieSet
+import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -189,7 +189,8 @@ class CallersTest extends FlatSpec with Matchers {
     }
 
     it should "behave correctly" in {
-        val encodedCallers = LongTrieSet(Callers.toLong(declaredMethod.id, pc = 0, isDirect = true))
+        val encodedCallers =
+            LongLinkedTrieSet(Callers.toLong(declaredMethod.id, pc = 0, isDirect = true))
         val withVM = CallersImplWithOtherCalls(
             encodedCallers, hasVMLevelCallers = true, hasCallersWithUnknownContext = false
         )

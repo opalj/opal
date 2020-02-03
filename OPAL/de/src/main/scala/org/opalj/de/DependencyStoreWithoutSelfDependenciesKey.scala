@@ -17,9 +17,9 @@ import org.opalj.br.analyses.ProjectInformationKey
 object DependencyStoreWithoutSelfDependenciesKey
     extends ProjectInformationKey[DependencyStore, Nothing] {
 
-    override protected def requirements: Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[_ <: AnyRef, Nothing]] = Nil
 
-    override protected def compute(project: SomeProject): DependencyStore = {
+    override def compute(project: SomeProject): DependencyStore = {
         def createDependencyProcessor(dp: DependencyProcessor) = {
             val baseProcessor = new DependencyProcessorDecorator(dp) with FilterSelfDependencies
             new DependencyExtractor(baseProcessor)

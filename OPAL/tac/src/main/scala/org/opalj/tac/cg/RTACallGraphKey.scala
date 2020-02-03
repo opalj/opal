@@ -3,15 +3,14 @@ package org.opalj
 package tac
 package cg
 
-import org.opalj.fpcf.ComputationSpecification
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type
@@ -33,13 +32,13 @@ import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
  */
 object RTACallGraphKey extends AbstractCallGraphKey {
 
-    override protected def requirements: ProjectInformationKeys = {
-        super.requirements :+ InitialInstantiatedTypesKey
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
+        super.requirements(project) :+ InitialInstantiatedTypesKey
     }
 
-    override protected def callGraphSchedulers(
+    override def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[ComputationSpecification[FPCFAnalysis]] = {
+    ): Traversable[FPCFAnalysisScheduler] = {
         // in case the library entrypoints finder is configured, we want to use the
         // EagerLibraryEntryPointsAnalysis
         val isLibrary =

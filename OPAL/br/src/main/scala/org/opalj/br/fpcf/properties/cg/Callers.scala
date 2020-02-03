@@ -5,6 +5,7 @@ package fpcf
 package properties
 package cg
 
+import org.opalj.collection.LongSet
 import org.opalj.collection.immutable.LongTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FallbackReason
@@ -134,7 +135,7 @@ object OnlyVMCallersAndWithUnknownContext
     extends EmptyConcreteCallers with CallersWithVMLevelCall with CallersWithUnknownContext
 
 sealed trait CallersImplementation extends Callers {
-    val encodedCallers: LongTrieSet /* MethodId + PC*/
+    val encodedCallers: LongSet /* MethodId + PC*/
     final override def size: Int = encodedCallers.size
 
     final override def isEmpty: Boolean = encodedCallers.isEmpty
@@ -145,9 +146,7 @@ sealed trait CallersImplementation extends Callers {
         implicit
         declaredMethods: DeclaredMethods
     ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
-        for {
-            encodedPair ← encodedCallers.iterator
-        } yield {
+        encodedCallers.iterator.map { encodedPair ⇒
             val (mId, pc, isDirect) = Callers.toMethodPcAndIsDirect(encodedPair)
             (declaredMethods(mId), pc, isDirect)
         }
@@ -155,7 +154,7 @@ sealed trait CallersImplementation extends Callers {
 }
 
 class CallersOnlyWithConcreteCallers(
-        val encodedCallers: LongTrieSet /*MethodId + PC*/
+        val encodedCallers: LongSet /*MethodId + PC*/
 ) extends CallersImplementation with CallersWithoutVMLevelCall with CallersWithoutUnknownContext {
 
     override def updated(
@@ -187,7 +186,7 @@ class CallersOnlyWithConcreteCallers(
 }
 
 class CallersImplWithOtherCalls(
-        val encodedCallers:                LongTrieSet /*MethodId + PC*/ ,
+        val encodedCallers:                LongSet /*MethodId + PC*/ ,
         private val specialCallSitesFlags: Byte // last bit vm lvl, second last bit unknown context
 ) extends CallersImplementation {
     assert(!encodedCallers.isEmpty)
@@ -225,7 +224,7 @@ class CallersImplWithOtherCalls(
 
 object CallersImplWithOtherCalls {
     def apply(
-        encodedCallers:               LongTrieSet /* MethodId + PC */ ,
+        encodedCallers:               LongSet /* MethodId + PC */ ,
         hasVMLevelCallers:            Boolean,
         hasCallersWithUnknownContext: Boolean
     ): CallersImplWithOtherCalls = {

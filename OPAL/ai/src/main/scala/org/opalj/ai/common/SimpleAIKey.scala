@@ -42,7 +42,7 @@ object SimpleAIKey
     /**
      * The SimpleAIKey has no special prerequisites.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Returns an object which performs and caches the result of the abstract interpretation of a
@@ -54,7 +54,7 @@ object SimpleAIKey
      * is necessary (e.g., on the ProjectInformationKey) to ensure that each project is
      * instantiated using the desired domain.
      */
-    override protected def compute(
+    override def compute(
         project: SomeProject
     ): Method ⇒ AIResult { val domain: Domain with RecordDefUse } = {
         implicit val logContext: LogContext = project.logContext

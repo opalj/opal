@@ -402,7 +402,7 @@ case class InterimPartialResult[SE >: Null <: Property](
 }
 object InterimPartialResult {
 
-    private[fpcf] final val id = 7
+    private[fpcf] final val id = 8
 
     /**
      * Creates a new `InterimPartialResult` for the case where we just want to (re)register
@@ -436,16 +436,3 @@ object InterimPartialResult {
     }
 }
 
-/**************************************************************************************************\
- *
- *                              ONLY USED INTERNALLY BY THE FRAMEWORK!
- *
-\**************************************************************************************************/
-
-private[fpcf] case class IdempotentResult(
-        finalP: SomeFinalEP
-) extends FinalPropertyComputationResult {
-    private[fpcf] final def id = IdempotentResult.id
-
-}
-private[fpcf] object IdempotentResult { private[fpcf] final val id = 8 }

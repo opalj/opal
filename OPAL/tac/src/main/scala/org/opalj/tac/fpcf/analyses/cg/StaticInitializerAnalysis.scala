@@ -26,6 +26,7 @@ import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
@@ -148,6 +149,8 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 }
 
 object StaticInitializerAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(LoadedClasses)
 
