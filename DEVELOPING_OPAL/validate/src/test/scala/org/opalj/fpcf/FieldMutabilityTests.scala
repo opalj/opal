@@ -31,6 +31,10 @@ class FieldMutabilityTests extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/field_mutability")
+    }
+
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
         as.propertyStore.shutdown()

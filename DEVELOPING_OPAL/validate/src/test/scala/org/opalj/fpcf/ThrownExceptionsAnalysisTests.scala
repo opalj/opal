@@ -25,6 +25,10 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         override def key: PropertyKey[DummyProperty] = DummyProperty.Key
     }
 
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/thrown_exceptions")
+    }
+
     describe("L1ThrownExceptionsAnalysis and EagerVirtualMethodAllocationFreenessAnalysis are executed") {
         val as = executeAnalyses(Set(
             EagerVirtualMethodAllocationFreenessAnalysis,
