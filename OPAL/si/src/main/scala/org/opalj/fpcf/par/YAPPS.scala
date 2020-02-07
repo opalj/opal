@@ -284,19 +284,6 @@ class YAPPS(
                 val PartialResult(e, pk, u) = r
                 handlePartialResult(r, u, e, pk)
 
-            case PrecomputedPartialResult.id ⇒
-                val PrecomputedPartialResult(expectedEOptionP, updatedInterimEP, u) = r
-                handlePartialResult(
-                    r,
-                    oldEOptP ⇒ if (oldEOptP eq expectedEOptionP) {
-                        Some(updatedInterimEP)
-                    } else {
-                        u.asInstanceOf[SomeEOptionP ⇒ Option[SomeInterimEP]](oldEOptP)
-                    },
-                    expectedEOptionP.e,
-                    expectedEOptionP.pk
-                )
-
             case InterimPartialResult.id ⇒
                 val InterimPartialResult(prs, dependees, c) = r
 
