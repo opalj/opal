@@ -7,10 +7,10 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.rta.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis
-import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
 
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type
@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
  *
  * If the [[org.opalj.br.analyses.cg.LibraryEntryPointsFinder]] is scheduled
  * the analysis will schedule
- * [[org.opalj.tac.fpcf.analyses.cg.rta.EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis]].
+ * [[org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis]].
  *
  * Note, that initial instantiated types ([[org.opalj.br.analyses.cg.InitialInstantiatedTypesKey]])
  * and entry points ([[org.opalj.br.analyses.cg.InitialEntryPointsKey]]) can be configured before
@@ -46,7 +46,7 @@ object RTACallGraphKey extends AbstractCallGraphKey {
                 "org.opalj.br.analyses.cg.LibraryEntryPointsFinder"
         if (isLibrary)
             List(
-                EagerLibraryInstantiatedTypesBasedEntryPointsAnalysis,
+                LibraryInstantiatedTypesBasedEntryPointsAnalysis,
                 RTACallGraphAnalysisScheduler,
                 InstantiatedTypesAnalysisScheduler,
                 ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler

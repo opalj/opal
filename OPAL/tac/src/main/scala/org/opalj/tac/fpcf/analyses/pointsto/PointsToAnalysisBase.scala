@@ -13,7 +13,7 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimEUBP
 import org.opalj.fpcf.InterimPartialResult
-import org.opalj.fpcf.PrecomputedPartialResult
+import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.Result
@@ -31,6 +31,12 @@ import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.tac.common.DefinitionSite
 
+/**
+ * Base class for handling instructions in points-to analysis scenarios.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
     override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
@@ -496,7 +502,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         }
 
         if (!isUpdate || (newPointsToSet ne emptyPointsToSet)) {
-            PrecomputedPartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
+            results +:= PartialResult[Entity, PointsToSetLike[_, _, PointsToSet]](
                 e,
                 pointsToPropertyKey,
                 (eoptp: EOptionP[Entity, PointsToSetLike[_, _, PointsToSet]]) ⇒ eoptp match {
@@ -518,7 +524,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                     case eOptP ⇒
                         throw new IllegalArgumentException(s"unexpected eOptP: $eOptP")
                 }
-            ).foreach(results +:= _)
+            )
         }
 
         results

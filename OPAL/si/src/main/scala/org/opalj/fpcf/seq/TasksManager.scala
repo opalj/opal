@@ -339,12 +339,7 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         }
 
         val wt = this.tasks.poll()
-        //if (wt ne null) {
         wt.task()
-        //    return ;
-        // }
-
-        // this.delayedTasks.poll().task()
     }
 
     override def isEmpty: Boolean = initialTasks.isEmpty && tasks.isEmpty // && delayedTasks.isEmpty

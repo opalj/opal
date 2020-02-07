@@ -21,7 +21,7 @@ trait TACAIBasedAnalysisState {
     def method: DefinedMethod
 
     protected[this] var _tacDependee: EOptionP[Method, TACAI]
-    assert(_tacDependee == null || (_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined))
+    assert((_tacDependee eq null) || (_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined))
 
     /**
      * Inherited classes that introduce new dependencies must override this method and call add a

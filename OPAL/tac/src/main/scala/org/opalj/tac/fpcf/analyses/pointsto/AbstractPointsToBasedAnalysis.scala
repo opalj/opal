@@ -19,6 +19,12 @@ import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
 
+/**
+ * Provides methods in order to work with points-to sets.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
 
     protected[this] type ElementType

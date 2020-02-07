@@ -7,9 +7,9 @@ import java.net.URL
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+import org.opalj.bi.reader.ClassFileReader
 import org.scalatest.FunSpec
 import org.scalatest.Matchers
-
 import org.opalj.log.LogContext
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.fpcf.properties.PropertyMatcher
@@ -51,6 +51,12 @@ import org.opalj.tac.common.DefinitionSitesKey
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
+    final private[this] val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
+    final private[this] val propertyPaths = List(
+        s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties",
+        s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/br/analyses/properties"
+    )
+
     def withRT = false
 
     /**
@@ -59,10 +65,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     final val FixtureProject: Project[URL] = {
         val classFileReader = Project.JavaClassFileReader()
         import classFileReader.ClassFiles
-        val sourceFolder = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes"
-        val fixtureFiles = new File(sourceFolder)
-        val fixtureClassFiles = ClassFiles(fixtureFiles)
-        if (fixtureClassFiles.isEmpty) fail(s"no class files at $fixtureFiles")
+
+        val fixtureClassFiles = getFixtureClassFiles(classFileReader) //AllClassFiles(List(annotationFiles, fixtureFiles))
+        if (fixtureClassFiles.isEmpty) fail(s"no class files at $testFilePath")
 
         val projectClassFiles = fixtureClassFiles.filter { cfSrc ⇒
             val (cf, _) = cfSrc
@@ -76,22 +81,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
 
         val libraryClassFiles = (if (withRT) ClassFiles(RTJar) else List()) ++ propertiesClassFiles
 
-        val configForEntryPoints = BaseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
-        ).withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
-
-        implicit val config: Config = configForEntryPoints.withValue(
-            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
-        ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+
-                    "AllInstantiatedTypesFinder.projectClassesOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
+        implicit val config: Config = createConfig()
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
         Project(
@@ -100,6 +90,48 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             libraryClassFilesAreInterfacesOnly = false,
             virtualClassFiles = Traversable.empty
         )
+    }
+
+    /**
+     * Override this method to limit the fixture project to certain subpackages only.
+     * To do so specify the list of packages that shall be included. A specified package always
+     * includes all its subpackages.
+     *
+     * All package path must be given in '/' notation.
+     *
+     * Examples:
+     * All files related to the escape tests.
+     * ```
+     *  List("org/opalj/fpcf/fixtures/escape")
+     * ```
+     *
+     * All files related to specific escape tests, i.e., cycles and virtual calls
+     * ```
+     *  List(
+     *      "org/opalj/fpcf/fixtures/escape/cycles",
+     *      "org/opalj/fpcf/fixtures/escape/virtual_calls",
+     *   )
+     * ```
+     */
+    def fixtureProjectPackage: List[String] = List.empty
+
+    def createConfig(): Config = {
+        val configForEntryPoints = BaseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
+        configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
     }
 
     final val PropertyValidatorType = ObjectType("org/opalj/fpcf/properties/PropertyValidator")
@@ -348,6 +380,26 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 t.getSuppressed.foreach(e ⇒ e.printStackTrace())
                 throw t;
         }
+    }
+
+    private[this] def getFixtureClassFiles(
+        classFileReader: ClassFileReader
+    ): Traversable[(classFileReader.ClassFile, URL)] = {
+        import classFileReader.AllClassFiles
+
+        var classFilePaths: List[File] = List.empty
+
+        val relevantPackages = fixtureProjectPackage
+        if (fixtureProjectPackage.nonEmpty) {
+            classFilePaths = classFilePaths ++ propertyPaths.map(new File(_))
+            classFilePaths = classFilePaths ++ relevantPackages.map {
+                path ⇒ new File({ s"$testFilePath$path" })
+            }
+        } else {
+            classFilePaths = new File(testFilePath) :: classFilePaths
+        }
+
+        AllClassFiles(classFilePaths)
     }
 }
 

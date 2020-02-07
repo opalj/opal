@@ -61,7 +61,7 @@ trait ApplicationEntryPointsFinder extends EntryPointFinder {
  */
 trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinder {
     private val packagesToExclude = Set(
-        "com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax"
+        "com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax", "sunw"
     )
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
@@ -69,7 +69,11 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
             packagesToExclude.exists { prefix ⇒
                 ep.declaringClassFile.thisType.packageName.startsWith(prefix)
             }
-        }.filterNot(ep ⇒ ep.classFile.thisType == ObjectType("WrapperGenerator"))
+        }.filterNot { ep ⇒
+            // The WrapperGenerator class file is part of the rt.jar in 1.7., but is in the
+            // default package.
+            ep.classFile.thisType == ObjectType("WrapperGenerator")
+        }
     }
 }
 

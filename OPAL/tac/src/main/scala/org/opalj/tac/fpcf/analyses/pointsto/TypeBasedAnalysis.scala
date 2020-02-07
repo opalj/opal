@@ -12,6 +12,11 @@ import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.DeclaredMethod
 
+/**
+ * Mix-in trait for points-to analyses using typesets ([[TypeBasedPointsToSet]]) as points-to sets.
+ *
+ * @author Dominik Helm
+ */
 trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
 
     override protected[this] type ElementType = ReferenceType
