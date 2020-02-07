@@ -8,6 +8,7 @@ import org.opalj.br.analyses.DeclaredMethods
 
 package object pointsto {
     // we encode allocation sites (method, pc, emptyArray, typeid tuples) as longs
+    // MSB 25 bit TypeID | 1 bit is empty array | 16 bit PC | 22 bit MethodID LSB
     type AllocationSite = Long
 
     @inline def allocationSiteToLong(

@@ -8,6 +8,12 @@ package pointsto
 import org.opalj.br.DeclaredMethod
 import org.opalj.tac.common.DefinitionSite
 
+/**
+ * Special entities, that are only used in the points-to analysis context.
+ *
+ * @author Dominik Helm
+ * @author Florian Kuebler
+ */
 case class ArrayEntity[ElementType](element: ElementType)
 case class MethodExceptions(dm: DeclaredMethod)
 case class CallExceptions(defSite: DefinitionSite)

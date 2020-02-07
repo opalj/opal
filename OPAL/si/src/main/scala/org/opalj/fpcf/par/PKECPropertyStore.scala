@@ -427,7 +427,7 @@ final class PKECPropertyStore(
 
     private[this] def handleFinalResult(
         finalEP:                     SomeFinalEP,
-        potentiallyIdemPotentUpdate: Boolean     = true // TODO: THIS IS A HORRIBLE WORKAROUND
+        potentiallyIdemPotentUpdate: Boolean     = false
     ): Unit = {
         val e = finalEP.e
         val pkId = finalEP.pk.id
@@ -639,20 +639,6 @@ final class PKECPropertyStore(
         handlePartialResultUpdate(epkState, interimEPWithDependersOption)
     }
 
-    // NOTES REGARDING CONCURRENCY
-    // W.r.t. one EPK there may be multiple executions of this method concurrently!
-    private[this] def handlePrecomputedPartialResult(
-        expectedEOptionP: SomeEOptionP,
-        updatedInterimEP: SomeInterimEP,
-        u:                UpdateComputation[_ <: Entity, _ <: Property]
-    ): Unit = {
-        val pkId = expectedEOptionP.pk.id
-        val epkState = properties(pkId).get(expectedEOptionP.e)
-        val interimEPWithDependersOption =
-            epkState.update(expectedEOptionP, updatedInterimEP, u, hasSuppressedDependers, suppressInterimUpdates)
-        handlePartialResultUpdate(epkState, interimEPWithDependersOption)
-    }
-
     private[this] def handlePartialResultUpdate(
         epkState:                     EPKState,
         interimEPWithDependersOption: Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
@@ -717,10 +703,6 @@ final class PKECPropertyStore(
             case PartialResult.id ⇒
                 val PartialResult(e, pk, u) = r
                 handlePartialResult(e, pk, u)
-
-            case PrecomputedPartialResult.id ⇒
-                val PrecomputedPartialResult(expectedEOptionP, updatedInterimEP, u) = r
-                handlePrecomputedPartialResult(expectedEOptionP, updatedInterimEP, u)
 
             case InterimPartialResult.id ⇒
                 val InterimPartialResult(prs, dependees, c) = r

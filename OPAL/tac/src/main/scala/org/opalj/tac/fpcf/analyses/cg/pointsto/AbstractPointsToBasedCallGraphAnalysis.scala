@@ -15,21 +15,16 @@ import org.opalj.fpcf.EUBPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.SomeEPS
-import org.opalj.value.IsMObjectValue
-import org.opalj.value.IsNullValue
-import org.opalj.value.IsSReferenceValue
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSetScala
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedScalaAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -37,8 +32,6 @@ import org.opalj.tac.fpcf.properties.TACAI
  * Uses the [[PointsToSetLike]] of
  * [[org.opalj.tac.common.DefinitionSite]] and[[org.opalj.br.analyses.VirtualFormalParameter]]s
  * in order to determine the targets of virtual method calls.
- *
- * TODO: This analysis is currently copy&paste and should be refactored
  *
  * @author Florian Kuebler
  */
@@ -49,67 +42,15 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     override type State = PointsToBasedCGState[PointsToSet]
     override type DependerType = CallSiteT
 
-    override def handleVirtualCall(
+    override protected[this] def handlePreciseCall(
+        calleeType:        ObjectType,
         caller:            DefinedMethod,
+        callerType:        ObjectType,
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: State): Unit = {
-        // TODO: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
-        val rvs = call.receiver.asVar.value.asReferenceValue.allValues
-        for (rv ← rvs) rv match {
-            case mv: IsMObjectValue ⇒
-                val typeBounds = mv.upperTypeBound
-                val remainingTypeBounds = typeBounds.tail
-                val firstTypeBound = typeBounds.head
-                val potentialTypes = ch.allSubtypesForeachIterator(
-                    firstTypeBound, reflexive = true
-                ).filter { subtype ⇒
-                    val cfOption = project.classFile(subtype)
-                    cfOption.isDefined && {
-                        val cf = cfOption.get
-                        !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                            remainingTypeBounds.forall { supertype ⇒
-                                ch.isSubtypeOf(subtype, supertype)
-                            }
-                    }
-                }
-
-                handleImpreciseCall(
-                    caller,
-                    call,
-                    pc,
-                    call.declaringClass,
-                    potentialTypes,
-                    calleesAndCallers
-                )
-
-            case _: IsNullValue ⇒
-            // TODO: do not ignore the implicit calls to NullPointerException.<init>
-
-            case v: IsSReferenceValue[_] ⇒
-                val utb = v.theUpperTypeBound
-                val ot = if (utb.isObjectType) utb.asObjectType else ObjectType.Object
-
-                val potentialTypes = classHierarchy.allSubtypesForeachIterator(
-                    ot, reflexive = true
-                ).filter { subtype ⇒
-                    val cfOption = project.classFile(subtype)
-                    cfOption.isDefined && {
-                        val cf = cfOption.get
-                        !cf.isInterfaceDeclaration && !cf.isAbstract
-                    }
-                }
-
-                handleImpreciseCall(
-                    caller,
-                    call,
-                    pc,
-                    ot,
-                    potentialTypes,
-                    calleesAndCallers
-                )
-        }
+        handleImpreciseCall(calleeType, caller, call, pc, calleesAndCallers)
     }
 
     /**
@@ -118,7 +59,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
      * There can be multiple "call sites", in case the three-address code has computed multiple
      * type bounds for the receiver.
      */
-    override def handleImpreciseCall(
+    override protected[this] def doHandleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,
@@ -270,23 +211,5 @@ object AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler extends CallGr
         p: SomeProject
     ): AllocationSiteBasedPointsToBasedCallGraphAnalysis = {
         new AllocationSiteBasedPointsToBasedCallGraphAnalysis(p)
-    }
-}
-
-class AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis private[pointsto] (
-        final val project: SomeProject
-) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSetScala]
-    with AllocationSiteBasedScalaAnalysis
-
-object AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis extends CallGraphAnalysisScheduler {
-
-    override def uses: Set[PropertyBounds] = {
-        super.uses + PropertyBounds.ub(AllocationSitePointsToSetScala)
-    }
-
-    override def initializeAnalysis(
-        p: SomeProject
-    ): AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis = {
-        new AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis(p)
     }
 }

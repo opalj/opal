@@ -20,9 +20,13 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.FieldType
 import org.opalj.br.ReferenceType
 
+/**
+ * Container class, to represent a tamiflex log:
+ * https://github.com/secure-software-engineering/tamiflex
+ *
+ * @author Florian Kuebler
+ */
 class TamiFlexLogData(
-        //TODO We shoul really split these according to the source (i.e., the reflection method) to
-        // increase precision and avoid spurious results esp. if line information is not available
         private[this] val _classes: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[ReferenceType]],
         private[this] val _methods: scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[DeclaredMethod]],
         private[this] val _fields:  scala.collection.Map[(String /*Caller*/ , String /*Reflection Method*/ , Int /*Line Number*/ ), scala.collection.Set[Field]]

@@ -37,6 +37,11 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
+/**
+ * Models effects of [[sun.misc.Unsafe]] to points-to sets.
+ *
+ * @author Dominik Helm
+ */
 abstract class UnsafePointsToAnalysis private[pointsto] ( final val project: SomeProject)
     extends PointsToAnalysisBase { self ⇒
 

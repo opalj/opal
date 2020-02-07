@@ -8,7 +8,10 @@ package pointsto
 import org.opalj.fpcf.Property
 
 /**
- * TODO: Document
+ * A base class for points-to sets to be used as a FPCF property within analyses.
+ *
+ * @see [[org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet]] and
+ *     [[org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet]] for concrete subclasses.
  *
  * @author Dominik Helm
  * @author Florian Kuebler
@@ -36,14 +39,6 @@ trait PointsToSetLike[ElementType, PointsToSet, T <: PointsToSetLike[ElementType
     def included(
         other: T, seenElements: Int, typeFilter: ReferenceType ⇒ Boolean
     ): T
-
-    def includeOption(other: T): Option[T] = {
-        val newSet = this.included(other)
-        if (newSet eq this)
-            None
-        else
-            Some(newSet)
-    }
 
     def filter(typeFilter: ReferenceType ⇒ Boolean): T
 

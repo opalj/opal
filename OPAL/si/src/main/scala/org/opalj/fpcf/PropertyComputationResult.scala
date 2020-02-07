@@ -380,34 +380,6 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
 }
 object PartialResult { private[fpcf] final val id = 6 }
 
-case class PrecomputedPartialResult[E >: Null <: Entity, P >: Null <: Property](
-        eOptionP:    EOptionP[E, P],
-        newEOptionP: InterimEP[E, P],
-        u:           UpdateComputation[E, P]
-) extends ProperPropertyComputationResult {
-
-    final def epk: EPK[E, P] = EPK(eOptionP.e, eOptionP.pk)
-
-    private[fpcf] final def id = PrecomputedPartialResult.id
-
-}
-object PrecomputedPartialResult {
-
-    private[fpcf] final val id = 7
-
-    def apply[E >: Null <: Entity, P >: Null <: Property](
-        e:  E,
-        pk: PropertyKey[P],
-        u:  UpdateComputation[E, P]
-    )(
-        implicit
-        ps: PropertyStore
-    ): Option[PrecomputedPartialResult[E, P]] = {
-        val currentEOptionP = ps(e, pk)
-        u(currentEOptionP).map(newEOptionP ⇒ PrecomputedPartialResult(currentEOptionP, newEOptionP, u))
-    }
-}
-
 /**
  * `InterimPartialResult`s are used for properties of entities which are computed
  * collaboratively where the individual contribution to the final result depends on the

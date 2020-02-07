@@ -38,7 +38,6 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
-import org.opalj.tac.cg.AllocationSiteBasedPointsToScalaCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -86,7 +85,6 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-analysisName=name]"+
             "[-schedulingStrategy=name]"+
             "[-writeOutput=file]"+
-            "[-writePointsToSets=file]"+
             "[-j=<number of threads>]"+
             "[-main=package.MainClass]"+
             "[-tamiflex-log=logfile]"+
@@ -99,7 +97,7 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
     }
 
-    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo|PointsToScala)".r
+    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
@@ -112,7 +110,6 @@ object CallGraph extends ProjectAnalysisApplication {
                     !p.startsWith("-schedulingStrategy=") &&
                     !p.startsWith("-writeCG=") &&
                     !p.startsWith("-writeOutput=") &&
-                    !p.startsWith("-writePointsToSets=") && // TODO: implement this
                     !p.startsWith("-main=") &&
                     !p.startsWith("-j=") &&
                     !p.startsWith("-tamiflex-log=") &&
@@ -135,7 +132,6 @@ object CallGraph extends ProjectAnalysisApplication {
         cgAlgorithm:  String,
         cgFile:       Option[String],
         outputFile:   Option[String],
-        pointsToFile: Option[String],
         numThreads:   Option[Int],
         projectTime:  Seconds
     ): BasicReport = {
@@ -148,6 +144,7 @@ object CallGraph extends ProjectAnalysisApplication {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
                     org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = threads
+                    // FIXME: The PKECPropertyStore is broken
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }*/
                 //org.opalj.fpcf.par.YAPPS(context: _*)
@@ -158,7 +155,6 @@ object CallGraph extends ProjectAnalysisApplication {
             }
         )
 
-        // TODO: Implement output files
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         val allMethods = declaredMethods.declaredMethods.filter { dm ⇒
             dm.hasSingleDefinedMethod &&
@@ -178,7 +174,6 @@ object CallGraph extends ProjectAnalysisApplication {
                 case "RTA"               ⇒ project.get(RTACallGraphKey)
                 case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
                 case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
-                case "PointsToScala"     ⇒ project.get(AllocationSiteBasedPointsToScalaCallGraphKey)
             }
         } { t ⇒ callGraphTime = t.toSeconds }
 
@@ -192,16 +187,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
         if (cgAlgorithm == "PointsTo") {
             val ptss = ps.entities(AllocationSitePointsToSet.key).toList
-            /*import scala.collection.JavaConverters._
-            val statistic = ptss.groupBy(p ⇒ p.ub.elements.size).mapValues { spts ⇒
-                (spts.size, {
-                    val unique = new java.util.IdentityHashMap[AllocationSitePointsToSet, AllocationSitePointsToSet]()
-                    unique.putAll(spts.map(x ⇒ x.ub → x.ub).toMap.asJava)
-                    unique.size()
-                })
-            }.map { case (size, (count, uniqueCount)) ⇒ (size, count, uniqueCount) }.toArray.sorted
-            println("size, count, unique count")
-            println(statistic.mkString("\n"))*/
+
 
             println(s"PTSs ${ptss.size}")
             println(s"PTS entries ${ptss.map(p ⇒ p.ub.elements.size).sum}")
@@ -233,51 +219,6 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"Return PTS entries: ${getEntries(classOf[DefinedMethod]) + getEntries(classOf[VirtualDeclaredMethod])}")
             println(s"MethodException PTS entries: ${getEntries(classOf[MethodExceptions])}")
             println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
-
-            /*
-            //Prints sizes of all array PTSs
-            for(pts <- byType(classOf[ArrayEntity[Long]]))
-                println(s"${org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(pts.e.asInstanceOf[ArrayEntity[Long]].element)}\t${pts.ub.numElements}")*/
-
-            /*
-            //Prints all allocation sites in the PTS of the entity underTest in Doop's format
-            val underTest = project.get(DeclaredMethodsKey)(ObjectType("java/io/UnixFileSystem"), "", ObjectType("java/io/UnixFileSystem"), "list", MethodDescriptor.withNoArgs(ArrayType(ObjectType.String)))
-            val underTestPTS = ps(underTest, AllocationSitePointsToSet.key).ub
-            underTestPTS.elements.foreach { as ⇒
-                try {
-                    val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
-                    println(s"<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${ReferenceType.lookup(tId).toJava}")
-                    if(tId < 0) {
-                        val arrPTS = ps(ArrayEntity(as), AllocationSitePointsToSet.key).ub
-                        arrPTS.elements.foreach {as ⇒
-                            try {
-                                val (dm, pc, tId) = org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(as)
-                                println(s"\t<${dm.declaringClassType.toJava}: ${dm.descriptor.toJava(dm.name)}>/new ${ReferenceType.lookup(tId).toJava}")
-                            } catch {
-                                case _: Exception ⇒
-                                    val tId = (as >> 39).toInt
-                                    println(s"new ${ReferenceType.lookup(tId).toJava}")
-                            }
-                        }
-                    }
-                } catch {
-                    case _: Exception ⇒
-                        val tId = (as >> 39).toInt
-                        println(s"new ${ReferenceType.lookup(tId).toJava}")
-                }
-            }*/
-
-            /*val p2 = project.recreate(e ⇒ e != PropertyStoreKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId && e != FPCFAnalysesManagerKey.uniqueId && e != AllocationSiteBasedPointsToCallGraphKey.uniqueId)
-            p2.get({AllocationSiteBasedPointsToCallGraphKey})
-            val ps2 = p2.get(PropertyStoreKey)
-
-            for {
-                FinalEP(e, p) ← ptss2
-                ub2 = ps2(e, AllocationSitePointsToSet.key).ub
-                if p.elements.size != ub2.elements.size
-            } {
-                println(s"$e\n\t${ub2.elements.iterator.map(org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(_)).mkString(",")}\n\t${p.elements.iterator.map(org.opalj.br.fpcf.properties.pointsto.longToAllocationSite(_)).mkString(",")}")
-            }*/
         }
 
         val reachableMethods = cg.reachableMethods().toTraversable
@@ -365,7 +306,6 @@ object CallGraph extends ProjectAnalysisApplication {
         var schedulingStrategy: Option[String] = None
         var cgFile: Option[String] = None
         var outputFile: Option[String] = None
-        var pointsToFile: Option[String] = None
         var mainClass: Option[String] = None
         var tamiflexLog: Option[String] = None
         var numThreads: Option[Int] = None
@@ -378,7 +318,6 @@ object CallGraph extends ProjectAnalysisApplication {
         val writeCGRegex = "-writeCG=(.*)".r
         val writeOutputRegex = "-writeOutput=(.*)".r
         val numThreadsRegex = "-j=(.*)".r
-        val writePointsToSetsRegex = "-writePointsToSets=(.*)".r
         val mainClassRegex = "-main=(.*)".r
         val tamiflexLogRegex = "-tamiflex-log=(.*)".r
 
@@ -432,10 +371,6 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (outputFile.isEmpty)
                     outputFile = Some(fileName)
                 else throw new IllegalArgumentException("-writeOutput was set twice")
-            case writePointsToSetsRegex(fileName) ⇒
-                if (pointsToFile.isEmpty)
-                    pointsToFile = Some(fileName)
-                else throw new IllegalArgumentException("-writePointsToSets was set twice")
             case mainClassRegex(fileName) ⇒
                 if (mainClass.isEmpty)
                     mainClass = Some(fileName)
@@ -523,7 +458,6 @@ object CallGraph extends ProjectAnalysisApplication {
             cgAlgorithm,
             cgFile,
             outputFile,
-            pointsToFile,
             numThreads,
             projectTime
         )

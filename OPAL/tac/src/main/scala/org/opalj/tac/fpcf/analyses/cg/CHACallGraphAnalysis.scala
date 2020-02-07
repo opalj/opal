@@ -35,7 +35,7 @@ class CHACallGraphAnalysis private[analyses] (
 ) extends AbstractCallGraphAnalysis {
     override type State = CHAState
 
-    override def handleImpreciseCall(
+    override def doHandleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,

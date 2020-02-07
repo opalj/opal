@@ -13,6 +13,10 @@ import org.opalj.tac.common.DefinitionSites
 
 package object pointsto {
 
+    /**
+     * Given a definition site (value origin) in a certain method, this returns the
+     * entity to be used to attach/retrieve points-to information from.
+     */
     def toEntity(
         defSite: Int, method: DefinedMethod, stmts: Array[Stmt[DUVar[ValueInformation]]]
     )(

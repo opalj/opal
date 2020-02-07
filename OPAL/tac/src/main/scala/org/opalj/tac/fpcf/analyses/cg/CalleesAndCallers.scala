@@ -39,7 +39,7 @@ import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 sealed trait CalleesAndCallers {
     final def partialResults(
         caller: DeclaredMethod
-    ): TraversableOnce[PartialResult[DeclaredMethod, _ <: Property]] =
+    ): TraversableOnce[PartialResult[DeclaredMethod, _ >: Null <: Property]] =
         Iterator(partialResultForCallees(caller)) ++ partialResultsForCallers
 
     protected def directCallees: IntMap[IntTrieSet] = IntMap.empty
@@ -179,7 +179,7 @@ trait IndirectCallsBase extends Calls {
 
     override protected def indirectCallees: IntMap[IntTrieSet] = _callees
 
-    private[cg] def addCall(
+    def addCall(
         caller:   DefinedMethod,
         callee:   DeclaredMethod,
         pc:       Int,

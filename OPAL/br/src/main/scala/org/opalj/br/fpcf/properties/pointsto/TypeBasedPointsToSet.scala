@@ -20,7 +20,6 @@ import org.opalj.fpcf.PropertyStore
  *
  * @author Florian Kuebler
  */
-// TODO: we should definition sites (real points-to sets) instead of just the types
 sealed trait TypeBasedPointsToSetPropertyMetaInformation extends PropertyMetaInformation {
 
     final type Self = TypeBasedPointsToSet
@@ -48,19 +47,7 @@ case class TypeBasedPointsToSet private[properties] (
     override def included(
         other: TypeBasedPointsToSet
     ): TypeBasedPointsToSet = {
-        var newOrderedTypes = orderedTypes
-        var typesUnion = types
-        for (t ← other.types) {
-            if (!types.contains(t)) {
-                newOrderedTypes :&:= t
-                typesUnion += t
-            }
-        }
-
-        if (types eq typesUnion)
-            return this;
-
-        new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
+        included(other, 0)
     }
 
     override def numTypes: Int = types.size
@@ -82,7 +69,20 @@ case class TypeBasedPointsToSet private[properties] (
     override def included(
         other: TypeBasedPointsToSet, seenElements: Int
     ): TypeBasedPointsToSet = {
-        included(other) // todo: implement correct version
+        var newOrderedTypes = orderedTypes
+        var typesUnion = types
+
+        other.orderedTypes.forFirstN(other.numElements - seenElements) { t ⇒
+            if (!types.contains(t)) {
+                newOrderedTypes :&:= t
+                typesUnion += t
+            }
+        }
+
+        if (types eq typesUnion)
+            return this;
+
+        new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
     }
 
     override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
@@ -96,17 +96,55 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def included(
         other: TypeBasedPointsToSet, typeFilter: ReferenceType ⇒ Boolean
-    ): TypeBasedPointsToSet = ???
+    ): TypeBasedPointsToSet = {
+        included(other, 0, typeFilter)
+    }
 
     override def included(
         other:        TypeBasedPointsToSet,
         seenElements: Int,
         typeFilter:   ReferenceType ⇒ Boolean
-    ): TypeBasedPointsToSet = ???
+    ): TypeBasedPointsToSet = {
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return included(other, seenElements);
+
+        var newOrderedTypes = orderedTypes
+        var typesUnion = types
+
+        other.orderedTypes.forFirstN(other.numElements - seenElements) { t ⇒
+            if (typeFilter(t) && !types.contains(t)) {
+                newOrderedTypes :&:= t
+                typesUnion += t
+            }
+        }
+
+        if (types eq typesUnion)
+            return this;
+
+        new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
+    }
 
     override def filter(
         typeFilter: ReferenceType ⇒ Boolean
-    ): TypeBasedPointsToSet = ???
+    ): TypeBasedPointsToSet = {
+        if (typeFilter eq PointsToSetLike.noFilter)
+            return this;
+
+        var newTypes = UIDSet.empty[ReferenceType]
+        val newOrderedTypes = orderedTypes.foldLeft(Chain.empty[ReferenceType]) { (r, t) ⇒
+            if (typeFilter(t)) {
+                newTypes += t
+                t :&: r
+            } else {
+                r
+            }
+        }
+
+        if (newTypes.size == elements.size)
+            return this;
+
+        TypeBasedPointsToSet(newOrderedTypes, newTypes)
+    }
 
     override def getNewestElement(): ReferenceType = orderedTypes.head
 }
