@@ -188,7 +188,6 @@ object CallGraph extends ProjectAnalysisApplication {
         if (cgAlgorithm == "PointsTo") {
             val ptss = ps.entities(AllocationSitePointsToSet.key).toList
 
-
             println(s"PTSs ${ptss.size}")
             println(s"PTS entries ${ptss.map(p ⇒ p.ub.elements.size).sum}")
 
