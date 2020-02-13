@@ -562,7 +562,7 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     override def equals(other: Any): Boolean = {
         other match {
             case that: InterimELUBP[_, _] ⇒
-                (this.e eq that.e) || (e == that.e && lb == that.lb && ub == that.ub)
+                (this eq that) || (e == that.e && lb == that.lb && ub == that.ub)
             case _ ⇒
                 false
         }
