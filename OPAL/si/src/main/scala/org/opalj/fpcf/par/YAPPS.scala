@@ -805,30 +805,45 @@ class YAPPS(
                 case _ ⇒
                     null
             }
-            val theDependers = dependers
             lock.unlock()
+
             if (theEOptP.isEPK) triggerComputations(theEOptP.e, theEOptP.pk.id)
+
+            dependersLock.lockInterruptibly()
+            val theDependers = dependers
+            dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
+            dependersLock.unlock()
+
             if (newEOptP ne null)
                 notifyDependers(newEOptP, theEOptP, theDependers)
         }
 
-        def notifyDependers(theEOptP: SomeEPS, oldEOptP: SomeEOptionP, theDependers: Set[SomeEPK], unnotifiedPKs: Set[PropertyKind] = Set.empty): Unit = {
+        def notifyDependers(
+            theEOptP:      SomeEPS,
+            oldEOptP:      SomeEOptionP,
+            theDependers:  Set[SomeEPK],
+            unnotifiedPKs: Set[PropertyKind] = Set.empty
+        ): Unit = {
             if (theDependers ne null) {
                 theDependers.foreach { depender ⇒
-                    if (!unnotifiedPKs.contains(depender.pk) && (theEOptP.isFinal || !suppressInterimUpdates(depender.pk.id)(theEOptP.pk.id)))
+                    if (!unnotifiedPKs.contains(depender.pk) &&
+                        (theEOptP.isFinal || !suppressInterimUpdates(depender.pk.id)(theEOptP.pk.id))) {
                         scheduleTask(new YappsContinuationTask(depender, theEOptP, oldEOptP))
+                    }
                 }
             }
         }
 
-        def applyContinuation(dependee: SomeEPS, oldDependee: SomeEOptionP /*TODO remove*/ ): Unit = {
+        def applyContinuation(dependee: SomeEPS, oldDependee: SomeEOptionP): Unit = {
             // IMPROVE: Use tryLock() instead
+            val isSuppressed = suppressInterimUpdates(eOptP.pk.id)(dependee.pk.id)
+            val epk = dependee.toEPK
             lock.lockInterruptibly()
             val theDependees = dependees
             // We are still interessted in that dependee?
             if (theDependees != null && theDependees.exists {
-                // IMPROVE: We should be able to avoid the toEPK.
-                _.toEPK == oldDependee.toEPK
+                // TODO: adjust aplly() method in order to guarantee eq for EPKs
+                d ⇒ (oldDependee.isEPK && epk == d) || (d eq oldDependee) || (isSuppressed && epk == d.toEPK)
             }) {
                 // We always retrieve the most up-to-date state of the dependee.
                 val currentDependee = ps(dependee.pk.id).get(dependee.e).eOptP.asEPS
