@@ -57,7 +57,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  *  -algorithm=PointsTo for a points-to based call graph
  * The default algorithm is RTA.
  *
- * Please also specify whether the target (-cp=) is an application or a library using "-projectConf=".
+ * Please also specify whether the target (-cp=) is an application or a library using "-projectConfig=".
  * Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf` can be used here.
  *
  * Furthermore, it can be used to print the callees or callers of specific methods.
@@ -147,8 +147,8 @@ object CallGraph extends ProjectAnalysisApplication {
                     // FIXME: The PKECPropertyStore is broken
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }*/
-                //org.opalj.fpcf.par.YAPPS(context: _*)
-                org.opalj.fpcf.par.DHTPropertyStore(context: _*)
+                org.opalj.fpcf.par.YAPPS(context: _*)
+                //org.opalj.fpcf.par.DHTPropertyStore(context: _*)
                 //org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 4
                 //org.opalj.fpcf.par.PKECPropertyStore(context: _*)

@@ -306,6 +306,7 @@ class YAPPS(
 
                         ps(AnalysisKeyId).remove(e)
 
+                        //println(s"interim partial result remove dependees (${dependees} from depender: $epk")
                         dependees.foreach { dependee ⇒
                             ps(dependee.pk.id).get(dependee.e).removeDepender(epk)
                         }
@@ -355,7 +356,7 @@ class YAPPS(
         if (isFresh) {
             triggerComputations(e, pk.id)
             updateDependees(ePKState, dependees)
-        } else ePKState.update(interimEP, c, dependees)
+        } else ePKState.interimUpdate(interimEP, c, dependees)
 
         //TODO update depender status
     }
@@ -367,7 +368,7 @@ class YAPPS(
         pk:     PropertyKey[Property]
     ): Unit = {
         val ePKState = ps(pk.id).computeIfAbsent(e, _ ⇒ YappsEPKState(EPK(e, pk), null, null))
-        ePKState.update(update)
+        ePKState.partialUpdate(update)
     }
 
     def updateDependees(depender: YappsEPKState, newDependees: Traversable[SomeEOptionP]): Unit = {
@@ -397,8 +398,10 @@ class YAPPS(
                             pkId
                         )
                     )
+                    epk
+                } else {
+                    previous.eOptP.asInstanceOf[EOptionP[E, P]]
                 }
-                epk
             } else if (propertyKindsComputedInThisPhase(pkId)) {
                 val transformer = transformersByTargetPK(pkId)
                 if (transformer ne null) {
@@ -505,6 +508,7 @@ class YAPPS(
     private[this] val successors: Array[YappsEPKState ⇒ Traversable[YappsEPKState]] =
         Array.fill(THREAD_COUNT)(null)
 
+    // executed on the main thread only
     private[this] def resolveCycles(): Unit = {
         val theInterimStates = new ArrayBuffer[YappsEPKState](interimStates.iterator.map(_.size).sum)
         var tId = 0
@@ -524,6 +528,7 @@ class YAPPS(
                 val dependees = interimEPKState.dependees
                 val epk = interimEPKState.eOptP.toEPK
                 dependees.foreach { dependee ⇒
+                    // during execution, no other thread accesses the dependers of the EPKState
                     ps(dependee.pk.id).get(dependee.e).dependers -= epk
                 }
                 scheduleTask(new YappsSetTask(interimEPKState.eOptP.toFinalEP))
@@ -699,13 +704,13 @@ class YAPPS(
         }
     }
 
-    class YappsContinuationTask(depender: SomeEPK, dependee: SomeEPS, oldDependee: SomeEOptionP) extends YappsTask {
+    class YappsContinuationTask(depender: SomeEPK, oldDependee: SomeEOptionP) extends YappsTask {
         val priority = 0
 
         override def apply(): Unit = {
             val epkState = ps(depender.pk.id).get(depender.e)
             if (epkState ne null)
-                epkState.applyContinuation(dependee, oldDependee)
+                epkState.applyContinuation(oldDependee)
         }
     }
 
@@ -715,8 +720,8 @@ class YAPPS(
             @volatile var dependees: Traversable[SomeEOptionP],
             @volatile var dependers: Set[SomeEPK]              = Set.empty
     ) {
-        val lock: MyRRLock = new MyRRLock()
-        val dependersLock = new MyRRLock()
+        val lock = new ReentrantLock()
+        val dependersLock = new ReentrantLock()
 
         def setFinal(finalEP: FinalEP[Entity, Property], unnotifiedPKs: Set[PropertyKind]): Unit = {
             lock.lockInterruptibly()
@@ -725,37 +730,45 @@ class YAPPS(
                 throw new IllegalStateException(s"${theEOptP.e} already had the property $theEOptP")
             } else {
                 if (debug) eOptP.checkIsValidPropertiesUpdate(finalEP, Nil)
+                dependersLock.lock()
                 eOptP = finalEP
             }
             dependees = null
             lock.unlock()
-            if (theEOptP.isEPK) triggerComputations(theEOptP.e, theEOptP.pk.id)
-            dependersLock.lock()
+
             val theDependers = dependers
             dependers = null
             dependersLock.unlock()
+
             notifyDependers(finalEP, theEOptP, theDependers, unnotifiedPKs)
+
+            if (theEOptP.isEPK) triggerComputations(theEOptP.e, theEOptP.pk.id)
         }
 
-        def update(
+        def interimUpdate(
             interimEP:    InterimEP[Entity, Property],
             newC:         OnUpdateContinuation,
             newDependees: Traversable[SomeEOptionP]
         ): Unit = {
+            var requiresNotification = false
+
             lock.lockInterruptibly()
             val theEOptP = eOptP
             if (theEOptP.isFinal) {
                 throw new IllegalStateException(s"${theEOptP.e} already had the property $theEOptP")
             } else {
-                if (debug) eOptP.checkIsValidPropertiesUpdate(interimEP, newDependees)
-                eOptP = interimEP
+                if (debug) theEOptP.checkIsValidPropertiesUpdate(interimEP, newDependees)
+                if (interimEP.isUpdatedComparedTo(theEOptP)) {
+                    requiresNotification = true
+                    dependersLock.lockInterruptibly()
+                    eOptP = interimEP
+                }
                 c = newC
                 dependees = newDependees
             }
             lock.unlock()
-            if (theEOptP.isEPK) triggerComputations(theEOptP.e, theEOptP.pk.id)
-            if (interimEP.isUpdatedComparedTo(theEOptP)) {
-                dependersLock.lockInterruptibly()
+
+            if (requiresNotification) {
                 val theDependers = dependers
                 // Clear all dependers that will be notified, they will re-register if required
                 dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
@@ -764,6 +777,33 @@ class YAPPS(
             }
 
             updateDependees(this, newDependees)
+
+            if (theEOptP.isEPK) triggerComputations(theEOptP.e, theEOptP.pk.id)
+        }
+
+        def partialUpdate(updateComputation: UpdateComputation[Entity, Property]): Unit = {
+            lock.lockInterruptibly()
+            val theEOptP = eOptP
+            val u = updateComputation(theEOptP)
+            val newEOptP = u match {
+                case Some(interimEP) ⇒
+                    if (debug) assert(eOptP != interimEP)
+                    dependersLock.lockInterruptibly()
+                    eOptP = interimEP
+                    interimEP
+                case _ ⇒
+                    null
+            }
+            lock.unlock()
+
+            if (newEOptP ne null) {
+                val theDependers = dependers
+                dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
+                dependersLock.unlock()
+                notifyDependers(newEOptP, theEOptP, theDependers)
+            }
+
+            if (theEOptP.isEPK) triggerComputations(theEOptP.e, theEOptP.pk.id)
         }
 
         def addDependerOrScheduleContinuation(
@@ -777,10 +817,8 @@ class YAPPS(
                 // If the epk state is already updated (compared to the given dependee)
                 // AND that update must not be suppressed (either final or not a suppressed PK).
                 if ((theEOptP ne dependee) &&
-                    // Note that the dependee might be a different reference of an equivalent EPK.
-                    theEOptP.isEPS &&
                     (theEOptP.isFinal || !suppressedPKs(dependee.pk.id))) {
-                    scheduleTask(new YappsContinuationTask(depender, theEOptP.asEPS, dependee))
+                    scheduleTask(new YappsContinuationTask(depender, dependee))
                     false
                 } else {
                     dependers += depender
@@ -797,29 +835,6 @@ class YAPPS(
             dependersLock.unlock()
         }
 
-        def update(update: UpdateComputation[Entity, Property]): Unit = {
-            lock.lockInterruptibly()
-            val theEOptP = eOptP
-            val newEOptP = update(theEOptP) match {
-                case Some(interimEP) ⇒
-                    eOptP = interimEP
-                    interimEP
-                case _ ⇒
-                    null
-            }
-            lock.unlock()
-
-            if (theEOptP.isEPK) triggerComputations(theEOptP.e, theEOptP.pk.id)
-
-            dependersLock.lockInterruptibly()
-            val theDependers = dependers
-            dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
-            dependersLock.unlock()
-
-            if (newEOptP ne null)
-                notifyDependers(newEOptP, theEOptP, theDependers)
-        }
-
         def notifyDependers(
             theEOptP:      SomeEPS,
             oldEOptP:      SomeEOptionP,
@@ -830,25 +845,24 @@ class YAPPS(
                 theDependers.foreach { depender ⇒
                     if (!unnotifiedPKs.contains(depender.pk) &&
                         (theEOptP.isFinal || !suppressInterimUpdates(depender.pk.id)(theEOptP.pk.id))) {
-                        scheduleTask(new YappsContinuationTask(depender, theEOptP, oldEOptP))
+                        scheduleTask(new YappsContinuationTask(depender, oldEOptP))
                     }
                 }
             }
         }
 
-        def applyContinuation(dependee: SomeEPS, oldDependee: SomeEOptionP): Unit = {
+        def applyContinuation(oldDependee: SomeEOptionP): Unit = {
             // IMPROVE: Use tryLock() instead
-            val isSuppressed = suppressInterimUpdates(eOptP.pk.id)(dependee.pk.id)
-            val epk = dependee.toEPK
+            val isSuppressed = suppressInterimUpdates(eOptP.pk.id)(oldDependee.pk.id)
+            val epk = oldDependee.toEPK
             lock.lockInterruptibly()
             val theDependees = dependees
             // We are still interessted in that dependee?
-            if (theDependees != null && theDependees.exists {
-                // TODO: adjust aplly() method in order to guarantee eq for EPKs
-                d ⇒ (oldDependee.isEPK && epk == d) || (d eq oldDependee) || (isSuppressed && epk == d.toEPK)
+            if (theDependees != null && theDependees.exists { d ⇒
+                (d eq oldDependee) || (isSuppressed && epk == d.toEPK)
             }) {
                 // We always retrieve the most up-to-date state of the dependee.
-                val currentDependee = ps(dependee.pk.id).get(dependee.e).eOptP.asEPS
+                val currentDependee = ps(oldDependee.pk.id).get(oldDependee.e).eOptP.asEPS
                 // IMPROVE: If we would know about ordering, we could only perform the operation
                 // if the given value of the dependee is actually the "newest".
                 handleResult(c(currentDependee))
@@ -878,8 +892,4 @@ object YAPPS extends PropertyStoreFactory[YAPPS] {
         val ps = new YAPPS(contextMap)
         ps
     }
-}
-
-class MyRRLock extends ReentrantLock {
-    override def getOwner: Thread = super.getOwner
 }
