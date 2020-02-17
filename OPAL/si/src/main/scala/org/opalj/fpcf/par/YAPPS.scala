@@ -6,7 +6,6 @@ package par
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.ControlThrowable
@@ -695,10 +694,10 @@ class YAPPS(
 
         override def apply(): Unit = {
             val state = ps(pkId).get(e)
-            state.lock.lock()
-            if (state.eOptP.isEPK)
-                handleResult(pc(e))
-            state.lock.unlock()
+            state.lock.synchronized {
+                if (state.eOptP.isEPK)
+                    handleResult(pc(e))
+            }
         }
     }
 
@@ -718,25 +717,27 @@ class YAPPS(
             @volatile var dependees: Traversable[SomeEOptionP],
             @volatile var dependers: Set[SomeEPK]              = Set.empty
     ) {
-        val lock = new ReentrantLock()
-        val dependersLock = new ReentrantLock()
+        val lock = new Object()
+        val dependersLock = new Object()
 
         def setFinal(finalEP: FinalEP[Entity, Property], unnotifiedPKs: Set[PropertyKind]): Unit = {
-            lock.lockInterruptibly()
-            val theEOptP = eOptP
-            if (theEOptP.isFinal) {
-                throw new IllegalStateException(s"${theEOptP.e} already had the property $theEOptP")
-            } else {
-                if (debug) eOptP.checkIsValidPropertiesUpdate(finalEP, Nil)
-                dependersLock.lock()
-                eOptP = finalEP
-            }
-            dependees = null
-            lock.unlock()
+            var theEOptP: SomeEOptionP = null
+            var theDependers: Set[SomeEPK] = null
+            lock.synchronized {
+                theEOptP = eOptP
+                if (theEOptP.isFinal) {
+                    throw new IllegalStateException(s"${theEOptP.e} already had the property $theEOptP")
+                } else {
+                    if (debug) eOptP.checkIsValidPropertiesUpdate(finalEP, Nil)
+                    dependersLock.synchronized {
+                        eOptP = finalEP
 
-            val theDependers = dependers
-            dependers = null
-            dependersLock.unlock()
+                        theDependers = dependers
+                        dependers = null
+                    }
+                }
+                dependees = null
+            }
 
             notifyDependers(finalEP, theEOptP, theDependers, unnotifiedPKs)
 
@@ -750,27 +751,30 @@ class YAPPS(
         ): Unit = {
             var requiresNotification = false
 
-            lock.lockInterruptibly()
-            val theEOptP = eOptP
-            if (theEOptP.isFinal) {
-                throw new IllegalStateException(s"${theEOptP.e} already had the property $theEOptP")
-            } else {
-                if (debug) theEOptP.checkIsValidPropertiesUpdate(interimEP, newDependees)
-                if (interimEP.isUpdatedComparedTo(theEOptP)) {
-                    requiresNotification = true
-                    dependersLock.lockInterruptibly()
-                    eOptP = interimEP
+            var theEOptP: SomeEOptionP = null
+            var theDependers: Set[SomeEPK] = null
+            lock.synchronized {
+                theEOptP = eOptP
+                if (theEOptP.isFinal) {
+                    throw new IllegalStateException(s"${theEOptP.e} already had the property $theEOptP")
+                } else {
+                    if (debug) theEOptP.checkIsValidPropertiesUpdate(interimEP, newDependees)
+                    if (interimEP.isUpdatedComparedTo(theEOptP)) {
+                        requiresNotification = true
+                        dependersLock.synchronized {
+                            eOptP = interimEP
+
+                            theDependers = dependers
+                            // Clear all dependers that will be notified, they will re-register if required
+                            dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
+                        }
+                    }
+                    c = newC
+                    dependees = newDependees
                 }
-                c = newC
-                dependees = newDependees
             }
-            lock.unlock()
 
             if (requiresNotification) {
-                val theDependers = dependers
-                // Clear all dependers that will be notified, they will re-register if required
-                dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
-                dependersLock.unlock()
                 notifyDependers(interimEP, theEOptP, theDependers)
             }
 
@@ -780,24 +784,29 @@ class YAPPS(
         }
 
         def partialUpdate(updateComputation: UpdateComputation[Entity, Property]): Unit = {
-            lock.lockInterruptibly()
-            val theEOptP = eOptP
-            val u = updateComputation(theEOptP)
-            val newEOptP = u match {
-                case Some(interimEP) ⇒
-                    if (debug) assert(eOptP != interimEP)
-                    dependersLock.lockInterruptibly()
-                    eOptP = interimEP
-                    interimEP
-                case _ ⇒
-                    null
+            var theEOptP: SomeEOptionP = null
+            var newEOptP: SomeEPS = null
+            var theDependers: Set[SomeEPK] = null
+
+            lock.synchronized {
+                theEOptP = eOptP
+                val u = updateComputation(theEOptP)
+                newEOptP = u match {
+                    case Some(interimEP) ⇒
+                        if (debug) assert(eOptP != interimEP)
+                        dependersLock.synchronized {
+                            eOptP = interimEP
+
+                            theDependers = dependers
+                            dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
+                        }
+                        interimEP
+                    case _ ⇒
+                        null
+                }
             }
-            lock.unlock()
 
             if (newEOptP ne null) {
-                val theDependers = dependers
-                dependers = dependers.filter(d ⇒ suppressInterimUpdates(d.pk.id)(theEOptP.pk.id))
-                dependersLock.unlock()
                 notifyDependers(newEOptP, theEOptP, theDependers)
             }
 
@@ -809,8 +818,7 @@ class YAPPS(
             dependee:      SomeEOptionP,
             suppressedPKs: Array[Boolean]
         ): Boolean = {
-            dependersLock.lockInterruptibly()
-            try {
+            dependersLock.synchronized {
                 val theEOptP = eOptP
                 // If the epk state is already updated (compared to the given dependee)
                 // AND that update must not be suppressed (either final or not a suppressed PK).
@@ -822,15 +830,13 @@ class YAPPS(
                     dependers += depender
                     true
                 }
-            } finally {
-                dependersLock.unlock()
             }
         }
 
         def removeDepender(epk: SomeEPK): Unit = {
-            dependersLock.lockInterruptibly()
-            if (dependers != null) dependers -= epk
-            dependersLock.unlock()
+            dependersLock.synchronized {
+                if (dependers != null) dependers -= epk
+            }
         }
 
         def notifyDependers(
@@ -853,19 +859,19 @@ class YAPPS(
             // IMPROVE: Use tryLock() instead
             val isSuppressed = suppressInterimUpdates(eOptP.pk.id)(oldDependee.pk.id)
             val epk = oldDependee.toEPK
-            lock.lockInterruptibly()
-            val theDependees = dependees
-            // We are still interessted in that dependee?
-            if (theDependees != null && theDependees.exists { d ⇒
-                (d eq oldDependee) || (isSuppressed && epk == d.toEPK)
-            }) {
-                // We always retrieve the most up-to-date state of the dependee.
-                val currentDependee = ps(oldDependee.pk.id).get(oldDependee.e).eOptP.asEPS
-                // IMPROVE: If we would know about ordering, we could only perform the operation
-                // if the given value of the dependee is actually the "newest".
-                handleResult(c(currentDependee))
+            lock.synchronized {
+                val theDependees = dependees
+                // We are still interessted in that dependee?
+                if (theDependees != null && theDependees.exists { d ⇒
+                    (d eq oldDependee) || (isSuppressed && epk == d.toEPK)
+                }) {
+                    // We always retrieve the most up-to-date state of the dependee.
+                    val currentDependee = ps(oldDependee.pk.id).get(oldDependee.e).eOptP.asEPS
+                    // IMPROVE: If we would know about ordering, we could only perform the operation
+                    // if the given value of the dependee is actually the "newest".
+                    handleResult(c(currentDependee))
+                }
             }
-            lock.unlock()
         }
 
     }
