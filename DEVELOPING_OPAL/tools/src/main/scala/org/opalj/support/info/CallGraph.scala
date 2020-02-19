@@ -43,6 +43,7 @@ import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
+import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
@@ -98,7 +99,7 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
     }
 
-    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
+    private val algorithmRegex = "-algorithm=(CHA|RTA|XTA|PointsTo)".r
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
@@ -168,6 +169,7 @@ object CallGraph extends ProjectAnalysisApplication {
             cgAlgorithm match {
                 case "CHA"               ⇒ project.get(CHACallGraphKey)
                 case "RTA"               ⇒ project.get(RTACallGraphKey)
+                case "XTA"               ⇒ project.get(XTACallGraphKey)
                 case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
                 case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
             }
