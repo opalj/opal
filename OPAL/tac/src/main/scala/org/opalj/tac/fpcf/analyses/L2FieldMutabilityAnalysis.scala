@@ -54,6 +54,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
@@ -1074,6 +1075,14 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 }
 
 trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        TypeExtensibilityKey,
+        ClosedPackagesKey,
+        FieldAccessInformationKey,
+        DefinitionSitesKey,
+        DeclaredMethodsKey
+    )
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(Purity),

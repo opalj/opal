@@ -49,14 +49,13 @@ final class PKECPropertyStore(
     //
     //
 
-    import tasksManager.prepareThreadPool
+    import tasksManager.phaseSetupCompleted
     import tasksManager.awaitPoolQuiescence
     import tasksManager.parallelize
     import tasksManager.forkResultHandler
     import tasksManager.forkOnUpdateContinuation
     import tasksManager.forkLazyPropertyComputation
     import tasksManager.schedulePropertyComputation
-    import tasksManager.cleanUpThreadPool
 
     // --------------------------------------------------------------------------------------------
     //
@@ -253,6 +252,7 @@ final class PKECPropertyStore(
                 case epkState ⇒
                     pc(epkState.eOptionP.asInstanceOf[EOptionP[E, P]])
             }
+        assert(newInterimEP.isRefinable)
         val newEPKState = EPKState(newInterimEP)
         if (tracer.isDefined) tracer.get.preInitialize(oldEPKState, newEPKState)
         propertiesOfKind.put(e, newEPKState)
@@ -394,13 +394,6 @@ final class PKECPropertyStore(
         dependerEPKState.clearDependees()
     }
 
-    private[this] def removeDependerFromDependeesAndClearDependees(dependerEPK: SomeEPK): Unit = {
-        removeDependerFromDependeesAndClearDependees(
-            dependerEPK,
-            properties(dependerEPK.pk.id).get(dependerEPK.e)
-        )
-    }
-
     private[this] def notifyDepender(
         dependerEPK: SomeEPK,
         oldEOptionP: SomeEOptionP,
@@ -442,7 +435,7 @@ final class PKECPropertyStore(
         var invokeTriggeredComputations = true
         if (oldEPKState != null) {
             if (oldEPKState.isFinal) {
-                if (potentiallyIdemPotentUpdate) {
+                if (oldEPKState.eOptionP == finalEP && potentiallyIdemPotentUpdate) {
                     if (tracer.isDefined)
                         tracer.get.idempotentUpdate(properties(pkId).get(e))
                     return ; // IDEMPOTENT UPDATE
@@ -509,7 +502,10 @@ final class PKECPropertyStore(
         //    concurrently with the second part.
         val eOptionPWithDependersOption: Option[(SomeEOptionP, Traversable[SomeEPK])] =
             if (epkStateUpdateRequired) {
-                epkState.update(interimEP, c, dependees, suppressInterimUpdates, debug)
+                epkState.update(
+                    interimEP, c, dependees,
+                    hasSuppressedDependers, suppressInterimUpdates, debug
+                )
             } else {
                 None
             }
@@ -638,15 +634,23 @@ final class PKECPropertyStore(
         if (epkState == null) epkState = newEPKState
 
         // 1. Update the property if necessary.
-        val eOptionPWithDependersOption = epkState.update(u, suppressInterimUpdates)
+        val interimEPWithDependersOption =
+            epkState.update(u, hasSuppressedDependers, suppressInterimUpdates)
+        handlePartialResultUpdate(epkState, interimEPWithDependersOption)
+    }
+
+    private[this] def handlePartialResultUpdate(
+        epkState:                     EPKState,
+        interimEPWithDependersOption: Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
+    ): Unit = {
         if (tracer.isDefined)
-            tracer.get.appliedUpdateComputation(epkState, eOptionPWithDependersOption)
+            tracer.get.appliedUpdateComputation(epkState, interimEPWithDependersOption)
 
         // 2. Notify relevant dependers
-        if (eOptionPWithDependersOption.isDefined) {
-            val (oldEOptionP, newEOptionP, dependers) = eOptionPWithDependersOption.get
-            if (oldEOptionP.isEPK) triggerComputations(e, pkId)
-            dependers.foreach(epk ⇒ notifyDepender(epk, oldEOptionP, newEOptionP))
+        if (interimEPWithDependersOption.isDefined) {
+            val (oldEOptionP, newInterimEP, dependers) = interimEPWithDependersOption.get
+            if (oldEOptionP.isEPK) triggerComputations(oldEOptionP.e, oldEOptionP.pk.id)
+            dependers.foreach(epk ⇒ notifyDepender(epk, oldEOptionP, newInterimEP))
         }
     }
 
@@ -769,7 +773,7 @@ final class PKECPropertyStore(
     }
 
     override def waitOnPhaseCompletion(): Unit = {
-        prepareThreadPool()
+        phaseSetupCompleted()
 
         handleExceptions {
             val maxPKIndex = PropertyKey.maxId
@@ -861,7 +865,12 @@ final class PKECPropertyStore(
                         pkId += 1
                     }
                     val successors = (interimEPKState: EPKState) ⇒ {
-                        interimEPKState.dependees.map(eOptionP ⇒ properties(eOptionP.pk.id).get(eOptionP.e))
+                        val dependees = interimEPKState.dependees
+                        if (dependees != null) {
+                            interimEPKState.dependees.map(eOptionP ⇒ properties(eOptionP.pk.id).get(eOptionP.e))
+                        } else {
+                            Traversable.empty
+                        }
                     }
                     val cSCCs = graphs.closedSCCs(interimEPKStates, successors)
                     if (tracer.isDefined) {
@@ -918,16 +927,30 @@ final class PKECPropertyStore(
                     }
                     // The following will also kill dependers related to anonymous computations using
                     // the generic property key: "AnalysisKey"; i.e., those without explicit properties!
+                    properties.foreach { psPerKind ⇒
+                        val eps = psPerKind.values()
+                        if (!eps.isEmpty) {
+                            parallelize {
+                                eps.forEach { _.cleanUp(pksToFinalize) }
+                            }
+                        }
+                    }
+                    /*
                     pksToFinalize foreach { pk ⇒
                         val propertyKey = PropertyKey.key(pk.id)
                         parallelize {
                             val dependeesIt = properties(pk.id).elements().asScala.filter(_.hasDependees)
                             if (dependeesIt.hasNext) continueComputation.set(true)
                             dependeesIt foreach { epkState ⇒
-                                removeDependerFromDependeesAndClearDependees(EPK(epkState.e, propertyKey))
+                                val dependerEPK = EPK(epkState.e, propertyKey)
+                                     removeDependerFromDependeesAndClearDependees(
+            dependerEPK,
+            properties(dependerEPK.pk.id).get(dependerEPK.e)
+        )
                             }
                         }
                     }
+                   */
                     awaitPoolQuiescence()
 
                     pksToFinalize foreach { pk ⇒
@@ -965,9 +988,6 @@ final class PKECPropertyStore(
 
             // TODO assert that we don't have any more InterimEPKStates
         }
-
-        cleanUpThreadPool()
-
         if (exception != null) throw exception;
     }
 
@@ -989,7 +1009,8 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.par.PKECPropertyStore.MaxEvaluationDepth"
 
     final val Strategies = List(
-        "Seq"
+        "Seq",
+        "Par"
     )
 
     def apply(
@@ -1026,7 +1047,7 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
         OPALLogger.info(
             "property store",
-            s"using with $taskManagerId task manager and evaluation depth $maxEvaluationDepth"
+            s"using $taskManagerId task manager; evaluation depth $maxEvaluationDepth"
         )
 
         val ps =

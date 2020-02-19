@@ -49,11 +49,11 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
         var escapeState: EscapeProperty = NoEscape
         var dependees: Set[EOptionP[VirtualFormalParameter, EscapeProperty]] = Set.empty
 
-        val maybeFile = project.classFile(dm.declaringClassType.asObjectType)
+        val maybeFile = project.classFile(dm.declaringClassType)
 
         val methods =
             if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration)
-                project.interfaceCall(dm.declaringClassType.asObjectType, dm.name, dm.descriptor)
+                project.interfaceCall(dm.declaringClassType, dm.name, dm.descriptor)
             else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
                 project.virtualCall(
                     dm.definedMethod.classFile.thisType.packageName,

@@ -12,6 +12,10 @@ import scala.collection.mutable.Buffer
 
 import org.opalj.log.OPALLogger
 
+object ParTasksManagerConfig {
+    @volatile var MaxThreads = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+}
+
 /**
  * A task manager which performs all tasks in parallel using a standard fixed thread pool.
  * This store is intended to be used for debugging and evaluation purposes only, because it
@@ -21,7 +25,7 @@ import org.opalj.log.OPALLogger
  */
 class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
 
-    private val MaxThreads = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+    val MaxThreads = ParTasksManagerConfig.MaxThreads
 
     // The idea is to start the execution of analyses when the store's "waitOnPhaseCompletion"
     // method is called.
@@ -35,25 +39,27 @@ class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
 
     @volatile private[this] var latch: CountDownLatch = new CountDownLatch(1)
 
-    def prepareThreadPool()(implicit ps: PKECPropertyStore): Unit = {
-        // Initialize the thread pool and all helper data structures.
-        nextThreadId = new AtomicInteger(1)
-        es = Executors.newFixedThreadPool(
-            MaxThreads,
-            (r: Runnable) ⇒ {
-                val threadId = nextThreadId.getAndIncrement()
-                new Thread(r, s"PKECPropertyStore-Thread #$threadId")
-            }: Thread
-        )
-        tasks = new AtomicInteger(0)
-        currentEvaluationDepth = 0
+    def phaseSetupCompleted()(implicit ps: PKECPropertyStore): Unit = {
+        if (es == null) {
+            // Initialize the thread pool and all helper data structures.
+            nextThreadId = new AtomicInteger(1)
+            es = Executors.newFixedThreadPool(
+                MaxThreads,
+                (r: Runnable) ⇒ {
+                    val threadId = nextThreadId.getAndIncrement()
+                    new Thread(r, s"PKECPropertyStore-Thread #$threadId")
+                }: Thread
+            )
+            tasks = new AtomicInteger(0)
+            currentEvaluationDepth = 0
+        }
 
         // Submit the scheduled tasks.
         queuedTasks.foreach { t ⇒ es.submit(t); tasks.incrementAndGet() }
         queuedTasks.clear()
     }
 
-    def cleanUpThreadPool()(implicit ps: PKECPropertyStore): Unit = {
+    def shutdown()(implicit ps: PKECPropertyStore): Unit = {
         assert(
             ps.doTerminate || tasks == null || tasks.get == 0,
             "some tasks are still running/are still scheduled"
@@ -68,10 +74,6 @@ class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         es = null
         nextThreadId = null
         tasks = null
-    }
-
-    def shutdown()(implicit ps: PKECPropertyStore): Unit = {
-        cleanUpThreadPool()
 
         // We have to ensure that "the every/the last latch" is count down!
         latch.countDown()
@@ -125,7 +127,9 @@ class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
         } finally {
             decrementTasks()
         }
-        if (es != null) {
+        val es = this.es
+        val tasks = this.tasks
+        if (es != null && tasks != null) {
             es.submit(r)
             tasks.incrementAndGet()
         } else {
@@ -233,7 +237,13 @@ class ParTasksManager( final val MaxEvaluationDepth: Int) extends TasksManager {
     ): Unit = {
         es.submit((() ⇒
             try {
-                val r = try { c(finalEP) } catch { case t: Throwable ⇒ ps.collectAndThrowException(t) }
+                val r = try {
+                    c(finalEP)
+                } catch {
+                    case t: Throwable ⇒
+                        val ex = new Error(s"unknown error after applying $c to $finalEP", t)
+                        ps.collectAndThrowException(ex)
+                }
                 ps.processResult(r)
             } finally {
                 decrementTasks()

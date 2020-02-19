@@ -27,8 +27,8 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.EagerL1PurityAnalysis
 
 /**
- * Simple test to ensure that the [[org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis]] does not cause
- * any exceptions.
+ * Simple test to ensure that the [[org.opalj.tac.fpcf.analyses.purity.L1PurityAnalysis]] does not
+ * cause any exceptions.
  *
  * @author Dominik Helm
  * @author Michael Eichberg

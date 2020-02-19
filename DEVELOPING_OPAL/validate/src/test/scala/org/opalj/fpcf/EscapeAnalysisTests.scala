@@ -19,6 +19,10 @@ import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
  */
 class EscapeAnalysisTests extends PropertiesTest {
 
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/escape")
+    }
+
     override def init(p: Project[URL]): Unit = {
         val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 

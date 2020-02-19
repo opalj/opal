@@ -533,11 +533,11 @@ class Project[Source] private (
             else if (className.endsWith("Key$"))
                 className = className.substring(0, className.length - 4)
 
-            for (requiredProjectInformationKey ← pik.getRequirements) {
+            for (requiredProjectInformationKey ← pik.requirements(this)) {
                 get(requiredProjectInformationKey)
             }
             val pi = time {
-                val pi = pik.doCompute(this)
+                val pi = pik.compute(this)
                 // we don't need the initialization data anymore
                 projectInformationKeyInitializationData.remove(pik)
                 pi

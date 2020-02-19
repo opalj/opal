@@ -53,13 +53,12 @@ object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation 
 
     def isPrematurelyReadFallback(p: SomeProject, field: Field): Boolean = {
         val classType = field.classFile.thisType
-        val classes = p.classHierarchy.allSubclassTypes(classType, reflexive = true)
         var prematurelyRead = false
         var superclassType = field.classFile.superclassType
         while (!prematurelyRead && superclassType.isDefined) {
             val classFile = p.classFile(superclassType.get)
-            prematurelyRead = classFile.forall(_.methods exists { m ⇒
-                m.isConstructor && m.body.get.instructions.exists { inst ⇒
+            prematurelyRead = classFile.isEmpty || classFile.get.methods.exists { m ⇒
+                m.isConstructor && (m.body.isEmpty || m.body.get.instructions.exists { inst ⇒
                     inst != null && (inst.opcode match {
                         case INVOKEDYNAMIC.opcode | INVOKEINTERFACE.opcode | INVOKESTATIC.opcode |
                             INVOKEVIRTUAL.opcode ⇒
@@ -67,18 +66,19 @@ object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation 
                         case _ ⇒
                             false
                     })
-                }
-            })
+                })
+            }
             superclassType = classFile.flatMap(_.superclassType)
         }
         if (!prematurelyRead) {
-            prematurelyRead = classes exists { classType ⇒
+            val subClasses = p.classHierarchy.allSubclassTypes(classType, reflexive = true)
+            prematurelyRead = subClasses exists { classType ⇒
                 val classFile = p.classFile(classType)
-                classFile.forall(_.methods exists { m ⇒
-                    m.isConstructor && m.body.get.instructions.exists { inst ⇒
+                classFile.isEmpty || classFile.get.methods.exists { m ⇒
+                    m.isConstructor && (m.body.isEmpty || m.body.get.instructions.exists { inst ⇒
                         inst != null && (inst.opcode match {
                             case GETFIELD.opcode ⇒
-                                val GETFIELD(declClass, name, fieldType) = inst
+                                val GETFIELD(declClass, name, _) = inst
                                 declClass == classType && name == field.name
                             case INVOKEDYNAMIC.opcode | INVOKEINTERFACE.opcode |
                                 INVOKESTATIC.opcode | INVOKEVIRTUAL.opcode ⇒
@@ -88,8 +88,8 @@ object FieldPrematurelyRead extends FieldPrematurelyReadPropertyMetaInformation 
                             case _ ⇒
                                 false
                         })
-                    }
-                })
+                    })
+                }
             }
         }
         prematurelyRead

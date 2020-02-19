@@ -46,9 +46,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
     /**
      * The key uses the `VirtualForwardingMethodsKey`.
      */
-    override protected def requirements: ProjectInformationKeys = {
-        List(DeclaredMethodsKey)
-    }
+    override def requirements(project: SomeProject): ProjectInformationKeys = List(DeclaredMethodsKey)
 
     /**
      * Collects all virtual formal parameters.
@@ -56,7 +54,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
      * @note This analysis is internally parallelized. I.e., it is advantageous to run this
      *       analysis in isolation.
      */
-    override protected def compute(p: SomeProject): VirtualFormalParameters = {
+    override def compute(p: SomeProject): VirtualFormalParameters = {
 
         val sites = new OpenHashMap[DeclaredMethod, ConstArray[VirtualFormalParameter]]
 

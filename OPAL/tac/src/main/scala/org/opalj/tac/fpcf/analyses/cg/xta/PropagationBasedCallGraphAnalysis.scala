@@ -82,7 +82,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         new PropagationBasedCGState(definedMethod, tacEP, typeSources)
     }
 
-    override def handleImpreciseCall(
+    override def doHandleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,

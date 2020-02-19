@@ -37,12 +37,12 @@ object PropertyStoreKey
      *
      * @return `Nil`.
      */
-    override protected def requirements: Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
+    override def requirements(project: SomeProject): Seq[ProjectInformationKey[Nothing, Nothing]] = Nil
 
     /**
      * Creates a new empty property store using the current [[parallelismLevel]].
      */
-    override protected def compute(project: SomeProject): PropertyStore = {
+    override def compute(project: SomeProject): PropertyStore = {
         implicit val logContext: LogContext = project.logContext
 
         val context: List[PropertyStoreContext[AnyRef]] = List(
@@ -53,7 +53,7 @@ object PropertyStoreKey
             case Some(psFactory) ⇒
                 OPALLogger.info(
                     "analysis configuration",
-                    "the PropertyStore is created using project information key initialization data"
+                    s"the PropertyStore is initialized using: $psFactory"
                 )
                 psFactory(context)
             case None ⇒
