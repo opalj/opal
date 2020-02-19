@@ -8,7 +8,6 @@ package rta
 
 import scala.language.existentials
 
-import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -17,7 +16,6 @@ import org.opalj.fpcf.UBP
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.ProjectInformationKeys
@@ -42,8 +40,6 @@ class RTACallGraphAnalysis private[analyses] (
 ) extends AbstractCallGraphAnalysis {
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
-
-    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     override type State = RTAState
 
@@ -73,70 +69,18 @@ class RTACallGraphAnalysis private[analyses] (
         new RTAState(definedMethod, tacEP, instantiatedTypesEOptP)
     }
 
-    override def doHandleImpreciseCall(
-        caller:                        DefinedMethod,
-        call:                          Call[V] with VirtualCall[V],
-        pc:                            Int,
-        specializedDeclaringClassType: ReferenceType,
-        potentialTargets:              ForeachRefIterator[ObjectType],
-        calleesAndCallers:             DirectCalls
+    override def impreciseCallHandlingCondition(implicit state: RTAState): ObjectType ⇒ Boolean = {
+        state.instantiatedTypesUB.contains(_)
+    }
+
+    override def modifyCGStateAfterHandlingOfImpreciseCall(
+        possibleTgtType: ObjectType,
+        call:            Call[V] with VirtualCall[V],
+        pc:              Int
     )(implicit state: RTAState): Unit = {
-        for (possibleTgtType ← potentialTargets) {
-            if (state.instantiatedTypesUB.contains(possibleTgtType)) {
-                val tgtR = project.instanceCall(
-                    caller.declaringClassType,
-                    possibleTgtType,
-                    call.name,
-                    call.descriptor
-                )
-
-                handleCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    pc,
-                    tgtR,
-                    calleesAndCallers
-                )
-            } else {
-                state.addVirtualCallSite(
-                    possibleTgtType, (pc, call.name, call.descriptor, call.declaringClass)
-                )
-            }
-        }
-
-        // TODO: Document what happens here
-        if (specializedDeclaringClassType.isObjectType) {
-            val declType = specializedDeclaringClassType.asObjectType
-
-            val mResult = if (classHierarchy.isInterface(declType).isYes)
-                org.opalj.Result(project.resolveInterfaceMethodReference(
-                    declType, call.name, call.descriptor
-                ))
-            else
-                org.opalj.Result(project.resolveMethodReference(
-                    declType,
-                    call.name,
-                    call.descriptor,
-                    forceLookupInSuperinterfacesOnFailure = true
-                ))
-
-            if (mResult.isEmpty) {
-                unknownLibraryCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    declType,
-                    caller.definedMethod.classFile.thisType.packageName,
-                    pc,
-                    calleesAndCallers
-                )
-            } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
-                calleesAndCallers.addIncompleteCallSite(pc)
-            }
-        }
+        state.addVirtualCallSite(
+            possibleTgtType, (pc, call.name, call.descriptor, call.declaringClass)
+        )
     }
 
     /**
