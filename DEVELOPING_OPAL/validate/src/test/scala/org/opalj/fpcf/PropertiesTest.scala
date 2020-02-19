@@ -51,8 +51,7 @@ import org.opalj.tac.common.DefinitionSitesKey
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
-    final private[this] val testFilePath =
-        s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
+    final private[this] val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
     final private[this] val propertyPaths = List(
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties",
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/br/analyses/properties"
@@ -399,8 +398,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         val relevantPackages = fixtureProjectPackage
         if (fixtureProjectPackage.nonEmpty) {
             classFilePaths = classFilePaths ++ propertyPaths.map(new File(_))
-            classFilePaths = classFilePaths ++ relevantPackages.map { path ⇒
-                new File({ s"$testFilePath$path" })
+            classFilePaths = classFilePaths ++ relevantPackages.map {
+                path ⇒ new File({ s"$testFilePath$path" })
             }
         } else {
             classFilePaths = new File(testFilePath) :: classFilePaths
