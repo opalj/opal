@@ -4,6 +4,7 @@ package br
 package fpcf
 package analyses
 
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.fpcf.ELBP
 import org.opalj.fpcf.ELUBP
@@ -213,6 +214,8 @@ class L0SelfReferenceLeakageAnalysis(
 }
 
 object L0SelfReferenceLeakageAnalysis extends BasicFPCFEagerAnalysisScheduler {
+
+    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def uses: Set[PropertyBounds] = Set.empty
 

@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -21,6 +20,7 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.AllocationFreeMethod
 import org.opalj.br.fpcf.properties.AllocationFreeness
@@ -272,11 +272,15 @@ object EagerL0AllocationFreenessAnalysis
         ps.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineAllocationFreeness)
         analysis
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 }
 
 object LazyL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

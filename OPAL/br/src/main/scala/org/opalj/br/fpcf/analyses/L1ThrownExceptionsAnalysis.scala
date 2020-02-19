@@ -10,6 +10,7 @@ import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.br.ObjectType
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.instructions.ATHROW
@@ -410,6 +411,8 @@ object EagerL1ThrownExceptionsAnalysis
     extends ThrownExceptionsAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
+    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
@@ -435,6 +438,8 @@ object EagerL1ThrownExceptionsAnalysis
 object LazyL1ThrownExceptionsAnalysis
     extends ThrownExceptionsAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

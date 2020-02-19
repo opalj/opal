@@ -4,6 +4,7 @@ package br
 package fpcf
 package analyses
 
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.ELBP
@@ -491,6 +492,8 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 

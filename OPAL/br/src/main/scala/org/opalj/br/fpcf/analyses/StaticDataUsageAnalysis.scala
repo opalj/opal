@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.annotation.switch
-
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
@@ -23,6 +22,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
 import org.opalj.br.fpcf.properties.CompileTimeConstantField
@@ -244,6 +244,8 @@ object EagerStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
@@ -261,6 +263,8 @@ object EagerStaticDataUsageAnalysis
 object LazyStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

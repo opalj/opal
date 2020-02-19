@@ -4,6 +4,7 @@ package br
 package fpcf
 package analyses
 
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
@@ -40,6 +41,8 @@ object EagerUnsoundPrematurelyReadFieldsAnalysis
     extends UnsoundPrematurelyReadFieldsAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
+    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     def start(project: SomeProject, propertyStore: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new UnsoundPrematurelyReadFieldsAnalysis(project)
 
@@ -57,6 +60,8 @@ object EagerUnsoundPrematurelyReadFieldsAnalysis
 object LazyUnsoundPrematurelyReadFieldsAnalysis
     extends UnsoundPrematurelyReadFieldsAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     def register(
         project:       SomeProject,

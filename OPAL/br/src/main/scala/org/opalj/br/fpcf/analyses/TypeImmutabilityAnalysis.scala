@@ -24,6 +24,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.ImmutableContainer
 import org.opalj.br.fpcf.properties.ImmutableContainerType
@@ -241,6 +242,8 @@ object EagerTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
+    def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
+
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
@@ -263,6 +266,8 @@ object EagerTypeImmutabilityAnalysis
 object LazyTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
     /**

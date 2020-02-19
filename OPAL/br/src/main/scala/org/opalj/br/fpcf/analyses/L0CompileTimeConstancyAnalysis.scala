@@ -4,6 +4,7 @@ package br
 package fpcf
 package analyses
 
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
@@ -100,6 +101,8 @@ object EagerL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
@@ -114,6 +117,8 @@ object EagerL0CompileTimeConstancyAnalysis
 object LazyL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

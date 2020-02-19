@@ -10,6 +10,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DeclaredFinalField
 import org.opalj.br.fpcf.properties.EffectivelyFinalField
@@ -112,6 +113,8 @@ object EagerL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
+    def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
+
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
@@ -135,6 +138,8 @@ object LazyL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 
+    def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
+
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
@@ -145,5 +150,4 @@ object LazyL0FieldMutabilityAnalysis
         )
         analysis
     }
-
 }
