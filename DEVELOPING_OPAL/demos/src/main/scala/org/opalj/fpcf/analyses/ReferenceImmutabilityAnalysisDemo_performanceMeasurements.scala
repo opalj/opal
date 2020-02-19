@@ -46,7 +46,7 @@ object ReferenceImmutabilityAnalysisDemo_performanceMeasurements
 
   def analyze(theProject: Project[URL]): String = {
     var times: List[Seconds] = Nil: List[Seconds]
-    for (i <- 0 until 19) {
+    for (i <- 0 until 10) {
       val project = Project.recreate(theProject)
       val analysesManager = project.get(FPCFAnalysesManagerKey)
       analysesManager.project.get(RTACallGraphKey)

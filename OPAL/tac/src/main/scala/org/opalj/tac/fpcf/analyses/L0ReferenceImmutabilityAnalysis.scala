@@ -143,7 +143,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
 
     val thisType = field.classFile.thisType
 
-    if (field.isPublic)
+    if (field.isPublic || field.isPackagePrivate || field.isProtected)
       return Result(field, MutableReference); //Result(field, NonFinalFieldByLackOfInformation)
 
     // Collect all classes that have access to the field, i.e. the declaring class and possibly
@@ -433,7 +433,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     val (guardIndex, guardedIndex, readIndex) =
       findGuard(writeIndex, defaultValue, code, cfg) match {
         case Some((guard, guarded, read)) => (guard, guarded, read)
-        case None                         => return false;
+        case None => return false;
       }
 
     // Detect only simple patterns where the lazily initialized value is returned immediately
@@ -564,13 +564,11 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                   // outside an initializer, so we can ignore synchronization
                   if (state.referenceImmutability == LazyInitializedReference) //LazyInitializedField)
                     return true;
-
                   // A lazily initialized instance field must be initialized only
                   // by its owning instance
                   if (!field.isStatic &&
                       stmt.asPutField.objRef.asVar.definedBy != SelfReferenceParameter)
                     return true;
-
                   val defaultValue = getDefaultValue()
                   if (defaultValue.isEmpty)
                     return true;
@@ -990,7 +988,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         if (objRefDefinition != SelfReferenceParameter) None
         else expr.asGetField.resolveField(project)
       case GetStatic.ASTID => expr.asGetStatic.resolveField(project)
-      case _               => None
+      case _ => None
     }
     field.contains(state.field)
   }
@@ -1062,7 +1060,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
   def isNonDeterministic(
       eop: EOptionP[DeclaredMethod, Purity]
   )(implicit state: State): Boolean = eop match {
-    case LBP(p: Purity) if p.isDeterministic  => false
+    case LBP(p: Purity) if p.isDeterministic => false
     case UBP(p: Purity) if !p.isDeterministic => true
     case _ =>
       state.purityDependees += eop
@@ -1077,10 +1075,10 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
       eop: EOptionP[Field, ReferenceImmutability]
   )(implicit state: State): Boolean = eop match {
     case FinalEP(e, ImmutableReference) => true
-    case FinalEP(e, MutableReference)   => false
+    case FinalEP(e, MutableReference) => false
     //
     case LBP(ImmutableReference) => true
-    case UBP(MutableReference)   => false
+    case UBP(MutableReference) => false
 
     /**
      * case LBP(_: ImmutableReference) ⇒ //FinalField) ⇒

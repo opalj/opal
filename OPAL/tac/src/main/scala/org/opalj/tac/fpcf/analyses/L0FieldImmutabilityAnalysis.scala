@@ -1,12 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.br.fpcf.analyses
 
+import org.opalj.br.ClassSignature
 import org.opalj.br.ClassTypeSignature
 import org.opalj.br.Field
-import org.opalj.br.FieldType
+import org.opalj.br.FormalTypeParameter
 import org.opalj.br.ObjectType
 import org.opalj.br.ProperTypeArgument
+import org.opalj.br.RuntimeInvisibleAnnotationTable
 import org.opalj.br.SimpleClassTypeSignature
+import org.opalj.br.SourceFile
 import org.opalj.br.TypeVariableSignature
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
@@ -16,6 +19,7 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.analyses.DependentImmutabilityKind.DependentImmutabilityKind
 import org.opalj.br.fpcf.properties.DeepImmutableField
 import org.opalj.br.fpcf.properties.DeepImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableField
@@ -46,11 +50,14 @@ import org.opalj.fpcf.SomeEPS
 
 case class State(f: Field) {
   var field: Field = f
-  var typeImmutability: Option[Boolean] = Some(true)
+  var typeImmutability: Option[Boolean] = None
   var referenceImmutability: Option[Boolean] = None
-  var depencenciesTypes: scala.collection.mutable.Set[ObjectType] =
-    scala.collection.mutable.Set[ObjectType]()
-  var dependentTypeImmutability: Option[Boolean] = None
+  var dependentImmutability: Option[DependentImmutabilityKind] = None
+}
+
+object DependentImmutabilityKind extends Enumeration {
+  type DependentImmutabilityKind = Value
+  val dependent, nowShallowOrMutable, onlyDeepImmutable = Value
 }
 
 /**
@@ -71,7 +78,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
   def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = {
     entity match {
-      case field: Field => determineFieldImmutability(field)
+      case field: Field =>
+        determineFieldImmutability(field)
       case _ =>
         val m = entity.getClass.getName + "is not an org.opalj.br.Field"
         throw new IllegalArgumentException(m)
@@ -81,181 +89,173 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
   private[analyses] def determineFieldImmutability(
       field: Field
   ): ProperPropertyComputationResult = {
-
     var dependencies: Set[EOptionP[Entity, Property]] = Set.empty
-
-    def determineGenericFieldImmutability(state: State): Option[Boolean] = {
-      var genericFields: Set[ObjectType] = Set.empty
-      state.field.fieldTypeSignature match {
-        case Some(fts) =>
-          fts match {
-            case ClassTypeSignature(_, SimpleClassTypeSignature(name, typeArguments), _) => {
-              typeArguments.foreach(
-                ta => {
-                  ta match {
-                    case ProperTypeArgument(
-                        varianceIndicator,
-                        ClassTypeSignature(
-                          packageIdentifier1,
-                          SimpleClassTypeSignature(
-                            packageIdentifier2,
-                            typeArguments2
-                          ),
-                          _
-                        )
-                        ) => {
-                      packageIdentifier1 match {
-                        case Some(pid1) => genericFields += ObjectType(pid1 + packageIdentifier2)
-                        case _          => genericFields += ObjectType(packageIdentifier2)
-                      }
-
-                    }
+    var classFormalTypeParameters: Option[Set[String]] = None
+    def loadFormalTypeparameters() = {
+      var result: Set[String] = Set.empty
+      field.classFile.attributes.foreach(
+        x =>
+          x match {
+            case SourceFile(_) =>
+            case ClassSignature(typeParameters, _, _) =>
+              typeParameters.foreach(
+                y =>
+                  y match {
+                    case FormalTypeParameter(identifier, _, _) => result += identifier
                     case _ =>
                   }
-                }
               )
-            }
             case _ =>
           }
-        case _ =>
-      }
-      genericFields.toList.foreach(objectType => {
+      )
+      if (result.size > 0)
+        classFormalTypeParameters = Some(result)
+    }
+    def isInClassesGenericTypeParameters(string: String): Boolean = {
+      if (classFormalTypeParameters == None)
+        false
+      else
+        classFormalTypeParameters.head.contains(string)
+    }
+
+    def handleTypeImmutability(state: State) = {
+      val objectType = field.fieldType.asFieldType
+      if (objectType.isArrayType) {
+        state.typeImmutability = Some(true)
+      } else if (objectType.isBaseType) {
+        state.typeImmutability = Some(true);
+      } else {
         val result = propertyStore(objectType, TypeImmutability_new.key)
+        dependencies = dependencies.filter(_.e ne result.e)
+        result match {
+          case FinalEP(e, DeepImmutableType) => {
+            state.typeImmutability = Some(true);
+          }
+          case FinalEP(f, DependentImmutableType) => {
+            if (dependencies.size > 0)
+              state.typeImmutability = None
+            else
+              state.typeImmutability = Some(false)
+          }
+          case FinalEP(e, ShallowImmutableType | MutableType_new) => {
+            state.typeImmutability = Some(false)
+          }
+          case ep: InterimEP[e, p] => dependencies += ep
+          case epk @ _ => dependencies += epk
+        }
+      }
+    }
+
+    def hasGenericType(state: State): Unit = {
+      var flag_noShallow = true
+      var flag_onlyDeep = true
+      var genericFields: List[ObjectType] = List()
+      state.field.asField.attributes.foreach(
+        _ match {
+          case RuntimeInvisibleAnnotationTable(_) =>
+          case TypeVariableSignature(t) =>
+            flag_onlyDeep = false
+            if (!isInClassesGenericTypeParameters(t)) {
+              flag_noShallow = false
+            }
+
+          case ClassTypeSignature(
+              packageIdentifier,
+              SimpleClassTypeSignature(simpleName, typeArguments),
+              _
+              ) =>
+            typeArguments
+              .foreach({
+                _ match {
+                  case ProperTypeArgument(
+                      variance,
+                      TypeVariableSignature(identifier: String)
+                      ) =>
+                    flag_onlyDeep = false
+                    if (!isInClassesGenericTypeParameters(identifier)) {
+                      flag_noShallow = false
+                    }
+                  case ProperTypeArgument(
+                      varianceIndicator,
+                      ClassTypeSignature(
+                        packageIdentifier1,
+                        SimpleClassTypeSignature(
+                          packageIdentifier2,
+                          typeArguments2
+                        ),
+                        _
+                      )
+                      ) => {
+                    val oPath =
+                      packageIdentifier1 match {
+                        case Some(pid1) => pid1 + packageIdentifier2
+                        case _ => packageIdentifier2
+                      }
+                    genericFields = ObjectType(oPath) :: genericFields
+                  }
+                  case _ =>
+                    flag_noShallow = false
+                    flag_onlyDeep = false
+                }
+              })
+
+          case _ =>
+            flag_noShallow = false
+            flag_onlyDeep = false
+        }
+      )
+      genericFields.foreach(objectType => {
+
+        val result = propertyStore(objectType, TypeImmutability_new.key)
+        dependencies = dependencies.filter(_.e ne result.e)
         result match {
           case FinalP(DeepImmutableType) =>
           case FinalP(ShallowImmutableType | MutableType_new) => {
-            return Some(false); //state.typeImmutability = Some(false)
+            flag_noShallow = false
+            flag_onlyDeep = false
           }
-          case ep @ _ => {
+          case ep: InterimEP[e, p] => dependencies += ep
+          case ep @ _ =>
             dependencies += ep
-          }
         }
+
       })
-      if (dependencies.size > 0) None;
-      else Some(true);
-    }
-    def handleTypeImmutability(objectType: FieldType)(state: State): Option[Boolean] = {
-      if (objectType.isArrayType) return Some(true); //TODO
-      if (objectType.isBaseType) return Some(true);
-      val result = propertyStore(objectType, TypeImmutability_new.key)
-      result match {
-        case FinalEP(e, DeepImmutableType) => {
-          return Some(true);
-        }
-        case FinalEP(f, DependentImmutableType) => {
-          //TODO under construction
-          //---------------------------------------------------------------------------------------
-          state.typeImmutability = determineGenericFieldImmutability(state)
-          //---------------------------------------------------------------------------------------
-          //statfielde.dependentTypeImmutability = Some(true)
-          return state.typeImmutability;
-        }
 
-        case FinalEP(e, ShallowImmutableType) => {
-          return Some(false); //TODO mindstorm if this approch is appropriate
-        }
-        case FinalEP(e, t) if (t == MutableType_new) => { //MutableType) ⇒ {
-          return Some(false);
-        }
-        case x @ _ => {
-          dependencies += x
-          return None; //TODO check!!!!! None;
-        }
+      if (state.field.asField.attributes.size == state.field.asField.attributes
+            .collect({ case x @ RuntimeInvisibleAnnotationTable(_) => x })
+            .size) {
+        flag_noShallow = false
+        flag_onlyDeep = false
       }
-    }
 
-    def hasImmutableType(field: Field)(state: State): Option[Boolean] = {
-      handleTypeImmutability(field.fieldType.asFieldType)(state)
+      if (flag_onlyDeep)
+        state.dependentImmutability = Some(DependentImmutabilityKind.onlyDeepImmutable)
+      else if (flag_noShallow)
+        state.dependentImmutability = Some(DependentImmutabilityKind.nowShallowOrMutable)
     }
-    def hasImmutableReference(field: Field): Option[Boolean] = {
-
-      propertyStore(field, ReferenceImmutability.key) match {
-        case FinalEP(_, MutableReference) => {
-          Some(false)
-        }
-        case FinalEP(_, ImmutableReference | LazyInitializedReference) => { //TODO
-          Some(true)
-        }
-        case x @ _ => {
-          dependencies += x
-          None
-        }
-      }
-    }
-
-    val state: State = new State(field)
 
     def createResult(state: State): ProperPropertyComputationResult = {
       state.referenceImmutability match {
-        case Some(false) => Result(field, MutableField)
+        case Some(false) | None =>
+          Result(field, MutableField)
         case Some(true) => {
-          //If the field type is object. It is a generic field
-          //Test Dependent... //TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          //var genericString: Option[String] = None
-          //if (field.fieldType == ObjectType("java/lang/Object")) {
-          //++ println("field attributes: "+field.asField.attributes)
-          val genericString = field.asField.attributes.toList.collectFirst({
-            case TypeVariableSignature(t) => t
-            case ClassTypeSignature(
-                packageIdentifier,
-                SimpleClassTypeSignature(simpleName, typeArguments),
-                classTypeSignatureSuffix
-                ) => {
-              val tA = typeArguments
-                .find(typeArgument => {
-                  typeArgument match {
-                    case ProperTypeArgument(variance, signature) => {
-                      signature match {
-                        case TypeVariableSignature(identifier) => true
-                        case _                                 => false
-                      }
-                    }
-                    case _ => false
-                  }
-                })
-              if (tA.size > 0)
-                tA.head match {
-                  case ProperTypeArgument(variance, TypeVariableSignature(identifier)) =>
-                    identifier
-                  case _ => ""
-                } else ""
-            }
-          })
-          if (!field.attributes.isEmpty && genericString != None && genericString != Some("")) {
-            Result(field, DependentImmutableField(genericString))
-          } else
-            state.typeImmutability match {
-              case Some(true) => Result(field, DeepImmutableField)
-              case Some(false) => {
-                state.dependentTypeImmutability match {
-                  case Some(true) => Result(field, DependentImmutableField())
-                  case _          => Result(field, ShallowImmutableField)
-                }
-              }
-              case None if (dependencies.isEmpty) => Result(field, ShallowImmutableField)
-              case None => {
-                InterimResult(
-                  field,
-                  MutableField,
-                  DeepImmutableField,
-                  dependencies,
-                  c(state)
-                )
+          state.typeImmutability match {
+            case Some(true) =>
+              Result(field, DeepImmutableField)
+            case Some(false) | None => {
+              state.dependentImmutability match {
+                case Some(DependentImmutabilityKind.nowShallowOrMutable) =>
+                  Result(field, DependentImmutableField)
+                case Some(DependentImmutabilityKind.onlyDeepImmutable) =>
+                  Result(field, DeepImmutableField)
+                case _ => Result(field, ShallowImmutableField)
               }
             }
-        }
-        case None if (dependencies.isEmpty) => Result(field, MutableField)
-        case None => {
-          InterimResult(
-            field,
-            MutableField,
-            DeepImmutableField,
-            dependencies,
-            c(state)
-          )
+          }
         }
       }
     }
+
     def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = {
       dependencies = dependencies.filter(_.e ne eps.e)
       (eps: @unchecked) match {
@@ -263,40 +263,59 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
           dependencies += eps
           InterimResult(field, MutableField, DeepImmutableField, dependencies, c(state))
         }
-
-        case x @ FinalEP(_, t)
-            if (t == DeepImmutableType) => { // || t == ShallowImmutableType) ⇒ { // ImmutableContainerType || t == ImmutableType) ⇒ {
-          state.typeImmutability = Some(true)
-        }
-
-        case x @ FinalEP(_, MutableType_new | ShallowImmutableType) => { //MutableType) ⇒ {
+        case FinalEP(_, DeepImmutableType) => state.typeImmutability = Some(true)
+        case FinalEP(_, MutableType_new | ShallowImmutableType) =>
           state.typeImmutability = Some(false)
+        case FinalEP(f, DependentImmutableType) => {
+          state.typeImmutability = Some(false)
+          if (state.dependentImmutability == None)
+            state.dependentImmutability = Some(DependentImmutabilityKind.dependent)
         }
-        case x @ FinalEP(f, DependentImmutableType) => {
-          //-------------------------------------------------------------------------------------
-          state.typeImmutability = determineGenericFieldImmutability(state)
-          //-------------------------------------------------------------------------------------
-          //state.typeImmutability = Some(false)
-          //state.dependentTypeImmutability = Some(true)
-        }
-
         case x @ FinalEP(_, MutableReference) => {
           state.referenceImmutability = Some(false)
         }
-
         case x @ FinalEP(_, ImmutableReference | LazyInitializedReference) => { //TODO
           state.referenceImmutability = Some(true)
         }
-
-        case x @ _ => dependencies = dependencies + x
+        case x @ _ =>
+          dependencies = dependencies + x
       }
-      createResult(state)
+      if (dependencies.isEmpty) createResult(state)
+      else
+        InterimResult(
+          field,
+          MutableField,
+          DeepImmutableField,
+          dependencies,
+          c(state)
+        )
+    }
+    val state: State = new State(field)
+
+    val result = propertyStore(state.field, ReferenceImmutability.key)
+    result match {
+      case FinalEP(_, ImmutableReference | LazyInitializedReference) =>
+        state.referenceImmutability = Some(true)
+      case FinalP(MutableReference) => return Result(field, MutableField)
+      case x @ _ => {
+        dependencies += x
+      }
     }
 
-    state.depencenciesTypes = scala.collection.mutable.Set[ObjectType]()
-    state.referenceImmutability = hasImmutableReference(field)
-    state.typeImmutability = hasImmutableType(field)(state);
-    createResult(state)
+    loadFormalTypeparameters()
+    hasGenericType(state)
+    handleTypeImmutability(state)
+    if (dependencies.isEmpty)
+      createResult(state)
+    else
+      InterimResult(
+        field,
+        MutableField,
+        DeepImmutableField,
+        dependencies,
+        c(state)
+      )
+
   }
 
 }

@@ -99,7 +99,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
       propertyStore
         .entities(ClassImmutability_new.key)
         .toList
-        .collect({ case x @ FinalEP(_, DependentImmutableClass(_)) => x })
+        .collect({ case x @ FinalEP(_, DependentImmutableClass) => x })
         .map(x => x.toString + "\n")
     )
     sb.append("\nShallow Immutable Class: \n")

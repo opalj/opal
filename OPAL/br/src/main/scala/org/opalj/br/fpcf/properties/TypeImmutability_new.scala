@@ -94,7 +94,7 @@ case object DependentImmutableType extends TypeImmutability_new {
   override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
 
     if (other == DeepImmutableType) {
-      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
   }
 
@@ -116,7 +116,7 @@ case object ShallowImmutableType extends TypeImmutability_new {
   override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
 
     if (other == DeepImmutableType || other == DependentImmutableType) {
-      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
   }
 }
@@ -133,7 +133,7 @@ case object MutableType_new extends TypeImmutability_new {
   override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
 
     if (other != MutableType_new) {
-      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
     }
   }
 }

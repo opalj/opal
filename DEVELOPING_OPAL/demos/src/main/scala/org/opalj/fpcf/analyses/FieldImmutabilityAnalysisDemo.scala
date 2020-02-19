@@ -2,8 +2,8 @@
 package org.opalj.fpcf.analyses
 
 import java.io.BufferedWriter
-import java.io.File
 import java.io.FileWriter
+import java.io.File
 import java.net.URL
 import java.util.Calendar
 
@@ -17,7 +17,6 @@ import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.DeepImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableField
-import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.ShallowImmutableField
 import org.opalj.fpcf.PropertyStore
@@ -77,6 +76,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     } { t =>
       analysisTime = t.toSeconds
     }
+
     val sb: StringBuilder = new StringBuilder
     sb.append("Mutable Fields: \n")
     sb.append(
@@ -97,9 +97,8 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     sb.append("\nDependet Immutable Fields: \n")
     sb.append(
       propertyStore
-        .entities(FieldImmutability.key)
+        .finalEntities(DependentImmutableField)
         .toList
-        .collect({ case x: DependentImmutableField => x })
         .map(x => x.toString + "\n")
         .toString()
     )
@@ -113,7 +112,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     )
 
     val dateString: String = Calendar.getInstance().get(Calendar.MILLISECOND).toString
-    val file = new File("C:/MA/results/refImm" + dateString + ".txt")
+    val file = new File("C:/MA/results/fieldImm" + dateString + ".txt")
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(sb.toString())
     bw.close()

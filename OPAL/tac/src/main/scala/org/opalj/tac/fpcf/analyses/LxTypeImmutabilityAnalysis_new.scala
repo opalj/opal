@@ -123,7 +123,7 @@ class LxTypeImmutabilityAnalysis_new(final val project: SomeProject) extends FPC
         case FinalP(ShallowImmutableClass) => //ImmutableContainer) =>
           joinedImmutability = ShallowImmutableType // ImmutableContainerType
           maxImmutability = ShallowImmutableType //ImmutableContainerType
-        case FinalP(DependentImmutableClass(_)) =>
+        case FinalP(DependentImmutableClass) =>
           joinedImmutability = DependentImmutableType
           maxImmutability = DependentImmutableType
 
@@ -226,7 +226,7 @@ class LxTypeImmutabilityAnalysis_new(final val project: SomeProject) extends FPC
               maxImmutability = ShallowImmutableType //ImmutableContainerType
               dependencies = dependencies - e
               nextResult()
-            case FinalEP(e, DependentImmutableClass(_) | DependentImmutableType) => {
+            case FinalEP(e, DependentImmutableClass | DependentImmutableType) => {
               //if (x == DependentImmutableClass() || x == DependentImmutableType) => {
               maxImmutability = DependentImmutableType
               dependencies = dependencies - e

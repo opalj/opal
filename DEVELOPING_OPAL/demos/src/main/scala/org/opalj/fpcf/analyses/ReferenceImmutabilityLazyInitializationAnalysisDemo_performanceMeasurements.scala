@@ -31,87 +31,87 @@ import org.opalj.util.Seconds
 object ReferenceImmutabilityLazyInitializationAnalysisDemo_performanceMeasurements
     extends ProjectAnalysisApplication {
 
-    override def title: String = "runs the EagerL0ReferenceImmutabilityAnalysis"
+  override def title: String = "runs the EagerL0ReferenceImmutabilityAnalysis"
 
-    override def description: String =
-        "runs the EagerL0ReferenceImmutabilityAnalysis"
+  override def description: String =
+    "runs the EagerL0ReferenceImmutabilityAnalysis"
 
-    override def doAnalyze(
-        project:       Project[URL],
-        parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
-    ): BasicReport = {
-        val result = analyze(project)
-        BasicReport(result)
+  override def doAnalyze(
+      project: Project[URL],
+      parameters: Seq[String],
+      isInterrupted: () => Boolean
+  ): BasicReport = {
+    val result = analyze(project)
+    BasicReport(result)
+  }
+
+  def analyze(theProject: Project[URL]): String = {
+    var times: List[Seconds] = Nil: List[Seconds]
+    for (i <- 0 until 10) {
+      val project = Project.recreate(theProject)
+      val analysesManager = project.get(FPCFAnalysesManagerKey)
+      analysesManager.project.get(RTACallGraphKey)
+      var propertyStore: PropertyStore = null
+      var analysisTime: Seconds = Seconds.None
+      time {
+        propertyStore = analysesManager
+          .runAll(
+            EagerL0ReferenceImmutabilityLazyInitializationAnalysis,
+            LazyL0ReferenceImmutabilityAnalysis,
+            LazyL2FieldMutabilityAnalysis,
+            LazyUnsoundPrematurelyReadFieldsAnalysis,
+            LazyL2PurityAnalysis,
+            LazyInterProceduralEscapeAnalysis,
+            LazyStaticDataUsageAnalysis,
+            LazyTypeImmutabilityAnalysis,
+            LazyClassImmutabilityAnalysis,
+            LazyFieldLocalityAnalysis,
+            LazyReturnValueFreshnessAnalysis
+          )
+          ._1
+        propertyStore.waitOnPhaseCompletion();
+      } { t =>
+        analysisTime = t.toSeconds
+      }
+      times = analysisTime :: times
     }
-
-    def analyze(theProject: Project[URL]): String = {
-        var times: List[Seconds] = Nil: List[Seconds]
-        for (i ← 0 until 19) {
-            val project = Project.recreate(theProject)
-            val analysesManager = project.get(FPCFAnalysesManagerKey)
-            analysesManager.project.get(RTACallGraphKey)
-            var propertyStore: PropertyStore = null
-            var analysisTime: Seconds = Seconds.None
-            time {
-                propertyStore = analysesManager
-                    .runAll(
-                        EagerL0ReferenceImmutabilityLazyInitializationAnalysis,
-                        LazyL0ReferenceImmutabilityAnalysis,
-                        LazyL2FieldMutabilityAnalysis,
-                        LazyUnsoundPrematurelyReadFieldsAnalysis,
-                        LazyL2PurityAnalysis,
-                        LazyInterProceduralEscapeAnalysis,
-                        LazyStaticDataUsageAnalysis,
-                        LazyTypeImmutabilityAnalysis,
-                        LazyClassImmutabilityAnalysis,
-                        LazyFieldLocalityAnalysis,
-                        LazyReturnValueFreshnessAnalysis
-                    )
-                    ._1
-                propertyStore.waitOnPhaseCompletion();
-            } { t ⇒
-                analysisTime = t.toSeconds
-            }
-            times = analysisTime :: times
-        }
-        /*def printResult(string: String, property: Property)(
+    /*def printResult(string: String, property: Property)(
             implicit
             propertyStore: PropertyStore
         ): Unit = {} **/
-        /**
-         * val notInitializedReferencesString = propertyStore
-         * .finalEntities(NoLazyInitialization)
-         * .toList
-         * .toString()
-         * val notThreadSafeLazyInitializationString = propertyStore
-         * .finalEntities(NotThreadSafeLazyInitialization)
-         * .toList
-         * .toString()
-         * val lazyInitializationString = propertyStore
-         * .finalEntities(LazyInitialization)
-         * .toList
-         * .toString()
-         * println(s"Not initialized References $notInitializedReferencesString")
-         * println(s"Not threadsafe Lazy Initialization: $notThreadSafeLazyInitializationString")
-         * println(s"Lazy Initialization String: $lazyInitializationString")
-         */
-        /**
-         * "Not lazy initialized References: " + propertyStore
-         * .finalEntities(NoLazyInitialization)
-         * .toList
-         * .toString() + "\n" +
-         * "Not thread safe lazy initialization: " + propertyStore
-         * .finalEntities(NotThreadSafeLazyInitialization)
-         * .toList
-         * .toString() + "\n" +
-         * "Lazy Initialization: " + propertyStore
-         * .finalEntities(LazyInitialization)
-         * .toList
-         * .toString()*
-         */
-        times.foreach(s ⇒ println(s+" seconds"))
-        val aver = times.fold(new Seconds(0))((x: Seconds, y: Seconds) ⇒ x + y).timeSpan / times.size
-        f"took: $aver seconds on average"
-    }
+    /**
+     * val notInitializedReferencesString = propertyStore
+     * .finalEntities(NoLazyInitialization)
+     * .toList
+     * .toString()
+     * val notThreadSafeLazyInitializationString = propertyStore
+     * .finalEntities(NotThreadSafeLazyInitialization)
+     * .toList
+     * .toString()
+     * val lazyInitializationString = propertyStore
+     * .finalEntities(LazyInitialization)
+     * .toList
+     * .toString()
+     * println(s"Not initialized References $notInitializedReferencesString")
+     * println(s"Not threadsafe Lazy Initialization: $notThreadSafeLazyInitializationString")
+     * println(s"Lazy Initialization String: $lazyInitializationString")
+     */
+    /**
+     * "Not lazy initialized References: " + propertyStore
+     * .finalEntities(NoLazyInitialization)
+     * .toList
+     * .toString() + "\n" +
+     * "Not thread safe lazy initialization: " + propertyStore
+     * .finalEntities(NotThreadSafeLazyInitialization)
+     * .toList
+     * .toString() + "\n" +
+     * "Lazy Initialization: " + propertyStore
+     * .finalEntities(LazyInitialization)
+     * .toList
+     * .toString()*
+     */
+    times.foreach(s => println(s + " seconds"))
+    val aver = times.fold(new Seconds(0))((x: Seconds, y: Seconds) => x + y).timeSpan / times.size
+    f"took: $aver seconds on average"
+  }
 }
