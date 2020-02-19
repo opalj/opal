@@ -141,7 +141,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  */
 final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
-        val dependees: Traversable[SomeEOptionP],//IMPROVE: require sets or EOptionPSets
+        val dependees: Traversable[SomeEOptionP], //IMPROVE: require sets or EOptionPSets
         val c:         ProperOnUpdateContinuation
 ) extends ProperPropertyComputationResult { result ⇒
 
