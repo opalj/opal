@@ -522,6 +522,8 @@ object LazyClassImmutabilityAnalysis
     extends ClassImmutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(
