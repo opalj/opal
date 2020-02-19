@@ -226,7 +226,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 "\nexpectation: " + error
               )
               fail(m)
-            case None => /* OK */
+            case None   => /* OK */
             case result => fail("matcher returned unexpected result: " + result)
           }
         }
@@ -334,7 +334,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
       annotations = code.runtimeInvisibleTypeAnnotations filter { ta =>
         ta.target match {
           case TAOfNew(`pc`) => true
-          case _ => false
+          case _             => false
         }
       }
       if annotations.nonEmpty
