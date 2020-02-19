@@ -20,6 +20,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.AnAIResult
 import org.opalj.ai.fpcf.properties.BaseAIResult
 import org.opalj.ai.fpcf.properties.ProjectSpecificAIExecutor
+import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
  * Performs an abstract interpretation of a method using a project's AIDomainFactoryKey.
@@ -81,6 +82,8 @@ object EagerL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
+    def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
+
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -96,6 +99,8 @@ object EagerL0BaseAIAnalysis
 object LazyL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

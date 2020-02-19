@@ -9,6 +9,7 @@ package xta
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -122,6 +123,7 @@ class ArrayInstantiationsAnalysisScheduler(
         analysis
     }
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)

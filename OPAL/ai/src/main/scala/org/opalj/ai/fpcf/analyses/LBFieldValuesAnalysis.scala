@@ -5,7 +5,6 @@ package fpcf
 package analyses
 
 import scala.collection.mutable
-
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -37,6 +36,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.analyses.FieldValuesAnalysis.ignoredFields
 import org.opalj.ai.fpcf.domain.RefinedTypeLevelFieldAccessInstructions
+import org.opalj.br.analyses.ProjectInformationKeys
 //import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.FieldValue
@@ -436,6 +436,8 @@ object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
         )
         null
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
 
     override def uses: Set[PropertyBounds] = Set()
 

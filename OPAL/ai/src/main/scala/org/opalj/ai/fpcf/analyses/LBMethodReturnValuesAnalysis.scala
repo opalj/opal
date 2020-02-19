@@ -29,6 +29,7 @@ import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 import org.opalj.ai.fpcf.properties.TheMethodReturnValue
+import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
  * Computes for each method that returns object typed values general information about the
@@ -187,6 +188,8 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         )
         null
     }
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def uses: Set[PropertyBounds] = Set.empty
 

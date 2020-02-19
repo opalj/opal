@@ -54,6 +54,7 @@ import org.opalj.br.cfg.ExitNode
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.PCs
 import org.opalj.ai.ValueOrigin
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
@@ -647,6 +648,14 @@ object EagerFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        FieldAccessInformationKey,
+        DeclaredMethodsKey,
+        DefinitionSitesKey,
+        TypeExtensibilityKey,
+        ClosedPackagesKey
+    )
+
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val allFields = p.allFields
         val analysis = new FieldLocalityAnalysis(p)
@@ -662,6 +671,14 @@ object EagerFieldLocalityAnalysis
 object LazyFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        FieldAccessInformationKey,
+        DeclaredMethodsKey,
+        DefinitionSitesKey,
+        TypeExtensibilityKey,
+        ClosedPackagesKey
+    )
 
     final override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new FieldLocalityAnalysis(p)
