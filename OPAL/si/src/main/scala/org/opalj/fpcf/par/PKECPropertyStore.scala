@@ -736,9 +736,9 @@ class PKECPropertyStore(
 }
 
 case class EPKState(
-        @volatile var eOptP:     SomeEOptionP,
-        @volatile var c:         OnUpdateContinuation,
-        @volatile var dependees: Traversable[SomeEOptionP],
+        var eOptP:     SomeEOptionP,
+        var c:         OnUpdateContinuation,
+        var dependees: Traversable[SomeEOptionP],
         dependers:               java.util.HashSet[SomeEPK] = new java.util.HashSet(),
         suppressedDependers:     java.util.HashSet[SomeEPK] = new java.util.HashSet()
 ) {
