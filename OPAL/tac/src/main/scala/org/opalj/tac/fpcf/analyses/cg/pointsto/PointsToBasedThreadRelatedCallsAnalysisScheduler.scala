@@ -40,8 +40,10 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
+ * On calls to Thread.start(), it adds calls to the corresponding run method.
+ * The run method is determined using points-to information.
  *
- * @author Florian Kübler
+ * @author Florian Kuebler
  * @author Dominik Helm
  */
 trait PointsToBasedThreadStartAnalysis
