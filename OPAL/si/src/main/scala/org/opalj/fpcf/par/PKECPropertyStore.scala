@@ -305,9 +305,9 @@ class PKECPropertyStore(
                     { dependee: SomeEPS ⇒
                         val result = c(dependee)
 
-                        ps(AnalysisKeyId).remove(e)
+                        val state = ps(AnalysisKeyId).remove(e)
+                        state.dependees = null
 
-                        //println(s"interim partial result remove dependees (${dependees} from depender: $epk")
                         dependees.foreach { dependee ⇒
                             ps(dependee.pk.id).get(dependee.e).removeDepender(epk)
                         }
@@ -736,11 +736,11 @@ class PKECPropertyStore(
 }
 
 case class EPKState(
-        var eOptP:     SomeEOptionP,
-        var c:         OnUpdateContinuation,
-        var dependees: Traversable[SomeEOptionP],
-        dependers:               java.util.HashSet[SomeEPK] = new java.util.HashSet(),
-        suppressedDependers:     java.util.HashSet[SomeEPK] = new java.util.HashSet()
+        var eOptP:           SomeEOptionP,
+        var c:               OnUpdateContinuation,
+        var dependees:       Traversable[SomeEOptionP],
+        dependers:           java.util.HashSet[SomeEPK] = new java.util.HashSet(),
+        suppressedDependers: java.util.HashSet[SomeEPK] = new java.util.HashSet()
 ) {
 
     def setFinal(finalEP: FinalEP[Entity, Property], unnotifiedPKs: Set[PropertyKind])(implicit ps: PKECPropertyStore): Unit = {
