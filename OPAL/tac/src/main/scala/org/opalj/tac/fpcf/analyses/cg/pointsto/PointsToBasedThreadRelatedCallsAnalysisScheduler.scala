@@ -39,6 +39,11 @@ import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
+/**
+ *
+ * @author Florian Kübler
+ * @author Dominik Helm
+ */
 trait PointsToBasedThreadStartAnalysis
     extends APIBasedAnalysis
     with AbstractPointsToBasedAnalysis {
@@ -58,7 +63,7 @@ trait PointsToBasedThreadStartAnalysis
         implicit val state: State = new PointsToBasedCGState[PointsToSet](caller, tacEPS)
 
         if (isDirect) {
-            val receiver = state.tac.stmts(state.tac.pcToIndex(pc)).asVirtualMethodCall.receiver
+            val receiver = state.tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
             handleStart(caller, receiver, pc, indirectCalls)
         } else
             indirectCalls.addIncompleteCallSite(pc)
@@ -95,7 +100,7 @@ trait PointsToBasedThreadStartAnalysis
                 for (cs ← relevantCallSites) {
                     val pc = cs._1
                     val receiver =
-                        state.tac.stmts(state.tac.pcToIndex(pc)).asVirtualMethodCall.receiver
+                        state.tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
                     ub.forNewestNTypes(ub.numTypes - seenTypes) { newType ⇒
                         val theType = newType.asObjectType
                         handleType(
