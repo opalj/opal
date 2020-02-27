@@ -10,9 +10,7 @@ import java.net.URL
 import java.util.Calendar
 
 import scala.collection.JavaConverters._
-
 import com.typesafe.config.ConfigValueFactory
-
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -38,6 +36,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
+import org.opalj.tac.cg.AllocationSiteBasedPointsToScalaCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -77,7 +76,7 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-algorithm=CHA|RTA|PointsTo]"+
+        "[-algorithm=CHA|RTA|PointsTo|PointsToScala]"+
             "[-domain=domain]"+
             "[-callers=method]"+
             "[-callees=method]"+
@@ -97,7 +96,7 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
     }
 
-    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
+    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo|PointsToScala)".r
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
@@ -139,15 +138,14 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                /*val threads = numThreads.getOrElse(0) // We chose the sequential store as default
+                val threads = numThreads.getOrElse(0) // We chose the sequential store as default
                 if (threads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = threads
-                    // FIXME: The PKECPropertyStore is broken
+                    org.opalj.fpcf.par.PKECPropertyStore.THREAD_COUNT = threads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                }*/
-                org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                }
+                //org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 //org.opalj.fpcf.par.DHTPropertyStore(context: _*)
                 //org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 4
@@ -174,6 +172,7 @@ object CallGraph extends ProjectAnalysisApplication {
                 case "RTA"               ⇒ project.get(RTACallGraphKey)
                 case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
                 case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
+                case "PointsToScala"     ⇒ project.get(AllocationSiteBasedPointsToScalaCallGraphKey)
             }
         } { t ⇒ callGraphTime = t.toSeconds }
 

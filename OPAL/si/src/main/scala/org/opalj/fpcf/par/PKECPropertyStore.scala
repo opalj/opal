@@ -27,8 +27,6 @@ class PKECPropertyStore(
 
     implicit val propertyStore: PKECPropertyStore = this
 
-    val THREAD_COUNT = 4
-
     val taskManager: PKECTaskManager = PKECFIFOTaskManager
 
     override def MaxEvaluationDepth: Int = 0
@@ -450,11 +448,11 @@ class PKECPropertyStore(
     }
 
     private[this] val activeTasks = new AtomicInteger(0)
-    private[this] val threads: Array[PKECThread] = Array.fill(THREAD_COUNT) { null }
+    private[this] val threads: Array[PKECThread] = Array.fill(PKECPropertyStore.THREAD_COUNT) { null }
 
     private[this] def startThreads(thread: (Int) ⇒ PKECThread): Unit = {
         var tId = 0
-        while (tId < THREAD_COUNT) {
+        while (tId < PKECPropertyStore.THREAD_COUNT) {
             val t = thread(tId)
             threads(tId) = t
             tId += 1
@@ -505,15 +503,15 @@ class PKECPropertyStore(
     }
 
     private[this] val interimStates: Array[ArrayBuffer[EPKState]] =
-        Array.fill(THREAD_COUNT)(null)
+        Array.fill(PKECPropertyStore.THREAD_COUNT)(null)
     private[this] val successors: Array[EPKState ⇒ Traversable[EPKState]] =
-        Array.fill(THREAD_COUNT)(null)
+        Array.fill(PKECPropertyStore.THREAD_COUNT)(null)
 
     // executed on the main thread only
     private[this] def resolveCycles(): Unit = {
         val theInterimStates = new ArrayBuffer[EPKState](interimStates.iterator.map(_.size).sum)
         var tId = 0
-        while (tId < THREAD_COUNT) {
+        while (tId < PKECPropertyStore.THREAD_COUNT) {
             theInterimStates ++= interimStates(tId)
             tId += 1
         }
@@ -731,16 +729,16 @@ class PKECPropertyStore(
     }
 
     private[this] def getResponsibleTId(e: Entity): Int = {
-        Math.abs(e.hashCode() >> 5) % THREAD_COUNT
+        Math.abs(e.hashCode() >> 5) % PKECPropertyStore.THREAD_COUNT
     }
 }
 
 case class EPKState(
-        var eOptP:     SomeEOptionP,
-        var c:         OnUpdateContinuation,
-        var dependees: Traversable[SomeEOptionP],
-        dependers:               java.util.HashSet[SomeEPK] = new java.util.HashSet(),
-        suppressedDependers:     java.util.HashSet[SomeEPK] = new java.util.HashSet()
+        var eOptP:           SomeEOptionP,
+        var c:               OnUpdateContinuation,
+        var dependees:       Traversable[SomeEOptionP],
+        dependers:           java.util.HashSet[SomeEPK] = new java.util.HashSet(),
+        suppressedDependers: java.util.HashSet[SomeEPK] = new java.util.HashSet()
 ) {
 
     def setFinal(finalEP: FinalEP[Entity, Property], unnotifiedPKs: Set[PropertyKind])(implicit ps: PKECPropertyStore): Unit = {
@@ -1000,6 +998,8 @@ private class FakeEntity {
 object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.par.PKECPropertyStore.MaxEvaluationDepth"
+
+    var THREAD_COUNT = 4
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*

@@ -42,7 +42,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-abstract class TamiFlexPointsToAnalysis private[analyses] (
+abstract class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
         final val project: SomeProject
 ) extends PointsToAnalysisBase { self ⇒
 
@@ -193,7 +193,7 @@ object AllocationSiteBasedTamiFlexPointsToAnalysisScheduler extends BasicFPCFEag
     )
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new TamiFlexPointsToAnalysis(p) with AllocationSiteBasedAnalysis
+        val analysis = new AllocationSiteBasedTamiFlexPointsToAnalysis(p) with AllocationSiteBasedAnalysis
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }
