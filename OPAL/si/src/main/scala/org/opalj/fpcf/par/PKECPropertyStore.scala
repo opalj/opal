@@ -38,7 +38,7 @@ class PKECPropertyStore(
         new Array(PropertyKind.SupportedPropertyKinds)
 
     private[this] val queues: Array[PriorityBlockingQueue[QualifiedTask]] =
-        Array.fill(THREAD_COUNT) { new PriorityBlockingQueue() }
+        Array.fill(PKECPropertyStore.THREAD_COUNT) { new PriorityBlockingQueue() }
 
     private[this] var setAndPreinitializedValues: List[SomeEPK] = List.empty
 
