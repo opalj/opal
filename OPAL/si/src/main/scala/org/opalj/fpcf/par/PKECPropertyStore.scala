@@ -34,10 +34,11 @@ class PKECPropertyStore(
     val ps: Array[ConcurrentHashMap[Entity, EPKState]] =
         Array.fill(PropertyKind.SupportedPropertyKinds) { new ConcurrentHashMap() }
 
-    val tasks: PriorityBlockingQueue[QualifiedTask] = new PriorityBlockingQueue()
-
     private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] =
         new Array(PropertyKind.SupportedPropertyKinds)
+
+    private[this] val queues: Array[PriorityBlockingQueue[QualifiedTask]] =
+        Array.fill(THREAD_COUNT) { new PriorityBlockingQueue() }
 
     private[this] var setAndPreinitializedValues: List[SomeEPK] = List.empty
 
@@ -220,7 +221,7 @@ class PKECPropertyStore(
     private[par] def scheduleTask(task: QualifiedTask): Unit = {
         activeTasks.incrementAndGet()
         scheduledTasks.incrementAndGet()
-        tasks.offer(task)
+        queues(getResponsibleTId(task)).offer(task)
     }
 
     private[this] def schedulePropertyComputation[E <: Entity](
@@ -484,14 +485,14 @@ class PKECPropertyStore(
 
                     startThreads(new FallbackThread(_))
 
-                    continueFallbacks = !tasks.isEmpty
+                    continueFallbacks = !queues.forall(_.isEmpty)
                 } while (continueFallbacks)
 
                 startThreads(new CycleResolutionThread(_))
 
                 resolveCycles()
 
-                continueCycles = !tasks.isEmpty
+                continueCycles = !queues.forall(_.isEmpty)
             } while (continueCycles)
 
             startThreads(new PartialPropertiesFinalizerThread(_))
@@ -540,6 +541,8 @@ class PKECPropertyStore(
     class PKECThread(name: String) extends Thread(name)
 
     class WorkerThread(ownTId: Int) extends PKECThread(s"PropertyStoreThread-#$ownTId") {
+
+        val tasks = queues(ownTId)
 
         override def run(): Unit = {
             try {
