@@ -248,7 +248,8 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
                         else
                             return createResultForAllSubtypes(t, MutableClass);
                     }
-                    case FinalP(ShallowImmutableField) ⇒ hasShallowImmutableFields = true
+                    case FinalP(ShallowImmutableField) ⇒
+                        hasShallowImmutableFields = true
                     case FinalEP(fi, DependentImmutableField) ⇒ {
                         hasDependentImmutableFields = true
                     }
@@ -271,21 +272,25 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
         )
         //println("B")
         //println(superClassMutabilityIsFinal)
-        ///_var minLocalImmutability: ClassImmutability_new =
-        ///_    if (!superClassMutabilityIsFinal) {
-        ///_        MutableClass //MutableObjectByAnalysis
-
-        ///_    } else {
-        ///_        ShallowImmutableClass //ImmutableContainer
-        ///_    }
+        /**
+         * var minLocalImmutability: ClassImmutability_new =
+         * if (!superClassMutabilityIsFinal) {
+         * MutableClass //MutableObjectByAnalysis
+         *
+         * } else {
+         * ShallowImmutableClass //ImmutableContainer
+         * } *
+         */
         var minLocalImmutability: ClassImmutability_new = MutableClass
 
         //println("C")
         //println(superClassInformation)
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ClassImmutability_new = superClassInformation match {
-            case UBP(ShallowImmutableClass) ⇒ ShallowImmutableClass //ImmutableContainer
-            case _                          ⇒ DeepImmutableClass // ImmutableObject
+            case UBP(MutableClass)            ⇒ MutableClass
+            case UBP(ShallowImmutableClass)   ⇒ ShallowImmutableClass //ImmutableContainer
+            case UBP(DependentImmutableClass) ⇒ DependentImmutableClass
+            case _                            ⇒ DeepImmutableClass // ImmutableObject
         }
         //println("D")
         //println(hasShallowImmutableFields)
@@ -352,11 +357,20 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
                 case LUBP(MutableClass, DeepImmutableClass) ⇒ //_: MutableObject, ImmutableObject) ⇒ // No information about superclass
 
                 case FinalEP(f, DependentImmutableField) ⇒ {
-                    if (hasShallowImmutableFields && maxLocalImmutability != MutableClass) {
+                    if (hasShallowImmutableFields) {
                         maxLocalImmutability = ShallowImmutableClass
-                    } else if (maxLocalImmutability != ShallowImmutableClass && maxLocalImmutability != MutableClass) {
+                    } else if (maxLocalImmutability != MutableClass && maxLocalImmutability != ShallowImmutableClass) {
                         maxLocalImmutability = DependentImmutableClass
                     }
+                    /**
+                     * if (hasShallowImmutableFields && maxLocalImmutability != MutableClass) {
+                     * maxLocalImmutability = ShallowImmutableClass
+                     * } else if (maxLocalImmutability != ShallowImmutableClass && maxLocalImmutability != MutableClass) {
+                     * maxLocalImmutability = DependentImmutableClass
+                     * } else
+                     * maxLocalImmutability = ShallowImmutableClass
+                     * }*
+                     */
 
                     //} else
                     //    maxLocalImmutability = DependentImmutableClass // DependentImmutableClass //TODO possibly here?
@@ -379,9 +393,12 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
                         //!dependees.valuesIterator.exists(_.pk != TypeImmutability_new.key)) //TypeImmutability.key))
                         minLocalImmutability = ShallowImmutableClass //ImmutableContainer // Lift lower bound when possible
 
-                case UBP(ShallowImmutableField | DeepImmutableField) ⇒ //_: FinalField) ⇒ // no information about field mutability
+                case UBP(DeepImmutableField)    ⇒ //_: FinalField) ⇒ // no information about field mutability
+                case UBP(ShallowImmutableField) ⇒ maxLocalImmutability = ShallowImmutableClass
+                case UBP(DependentImmutableField) if (maxLocalImmutability != ShallowImmutableClass) ⇒
+                    maxLocalImmutability = DependentImmutableClass
 
-                case _                                               ⇒ Result(t, MutableClass) //TODO check
+                case _ ⇒ Result(t, MutableClass) //TODO check
 
             }
 
@@ -428,11 +445,10 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
                 //println("min: "+minLocalImmutability)
                 //println("max: "+maxLocalImmutability)
                 //println(dependees.values)
-                /**
-                 * if (oldDependees == dependees) {
-                 * Result(t, minLocalImmutability)
-                 * } else*
-                 */
+
+                // if (oldDependees == dependees) {
+                //     Result(t, minLocalImmutability)
+                //} else
                 InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values, c)
             }
         }
