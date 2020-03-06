@@ -14,7 +14,6 @@ import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
@@ -23,9 +22,11 @@ import java.io._
 import java.util.Calendar
 
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 
 /**
@@ -35,73 +36,88 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
  */
 object ReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-  override def title: String = "runs the EagerL0ReferenceImmutabilityAnalysis"
+    override def title: String = "runs the EagerL0ReferenceImmutabilityAnalysis"
 
-  override def description: String =
-    "runs the EagerL0ReferenceImmutabilityAnalysis"
+    override def description: String =
+        "runs the EagerL0ReferenceImmutabilityAnalysis"
 
-  override def doAnalyze(
-      project: Project[URL],
-      parameters: Seq[String],
-      isInterrupted: () => Boolean
-  ): BasicReport = {
-    val result = analyze(project)
-    BasicReport(result)
-  }
-
-  def analyze(project: Project[URL]): String = {
-    val analysesManager = project.get(FPCFAnalysesManagerKey)
-    analysesManager.project.get(RTACallGraphKey)
-    var propertyStore: PropertyStore = null
-    var analysisTime: Seconds = Seconds.None
-    time {
-      propertyStore = analysesManager
-        .runAll(
-          EagerL0ReferenceImmutabilityAnalysis,
-          LazyL2FieldMutabilityAnalysis,
-          LazyUnsoundPrematurelyReadFieldsAnalysis,
-          LazyL2PurityAnalysis,
-          LazyInterProceduralEscapeAnalysis,
-          LazyReturnValueFreshnessAnalysis,
-          LazyStaticDataUsageAnalysis,
-          LazyTypeImmutabilityAnalysis,
-          LazyClassImmutabilityAnalysis,
-          LazyFieldLocalityAnalysis
-        )
-        ._1
-      propertyStore.waitOnPhaseCompletion();
-    } { t =>
-      analysisTime = t.toSeconds
+    override def doAnalyze(
+        project:       Project[URL],
+        parameters:    Seq[String],
+        isInterrupted: () ⇒ Boolean
+    ): BasicReport = {
+        val result = analyze(project)
+        BasicReport(result)
     }
-    var sb: StringBuilder = new StringBuilder()
-    sb = sb.append("Mutable References: \n")
-    sb = sb.append(
-      propertyStore.finalEntities(MutableReference).toList.map(x => x.toString + "\n").toString()
-    )
 
-    sb = sb.append("\n Lazy Initialized Reference: \n")
-    sb = sb.append(
-      propertyStore
-        .finalEntities(LazyInitializedReference)
-        .toList
-        .map(x => x.toString + "\n")
-        .toString()
-    )
+    def analyze(project: Project[URL]): String = {
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
+        analysesManager.project.get(RTACallGraphKey)
+        var propertyStore: PropertyStore = null
+        var analysisTime: Seconds = Seconds.None
+        time {
+            propertyStore = analysesManager
+                .runAll(
+                    EagerL0ReferenceImmutabilityAnalysis,
+                    LazyUnsoundPrematurelyReadFieldsAnalysis,
+                    LazyL2PurityAnalysis,
+                    LazyInterProceduralEscapeAnalysis,
+                    LazyReturnValueFreshnessAnalysis,
+                    LazyStaticDataUsageAnalysis,
+                    LazyFieldLocalityAnalysis,
+                    LazyL0CompileTimeConstancyAnalysis,
+                    LazyReturnValueFreshnessAnalysis,
+                    LazyL1FieldMutabilityAnalysis,
+                    LazyClassImmutabilityAnalysis,
+                    LazyTypeImmutabilityAnalysis
+                )
+                ._1
+            propertyStore.waitOnPhaseCompletion();
+        } { t ⇒
+            analysisTime = t.toSeconds
+        }
+        var sb: StringBuilder = new StringBuilder()
+        sb = sb.append("Mutable References: \n")
+        val mutableReferences = propertyStore.finalEntities(MutableReference).toList
+        sb = sb.append(
+            mutableReferences.map(x ⇒ x.toString+"\n").toString()
+        )
 
-    /**
-     * .toList
-     * .toString() + "\n" +*
-     */
-    sb = sb.append("\nImmutable References: \n")
-    sb = sb.append(
-      propertyStore.finalEntities(ImmutableReference).toList.map(x => x.toString + "\n").toString()
-    )
-    val dateString: String = Calendar.getInstance().get(Calendar.MILLISECOND).toString
-    val file = new File("C:/MA/results/refLazyImm" + dateString + ".txt")
-    val bw = new BufferedWriter(new FileWriter(file))
-    bw.write(sb.toString())
-    bw.close()
+        sb = sb.append("\n Lazy Initialized Reference: \n")
+        val lazyInitializedReferences = propertyStore
+            .finalEntities(LazyInitializedReference)
+            .toList
+        sb = sb.append(
+            lazyInitializedReferences
+                .map(x ⇒ x.toString+"\n")
+                .toString()
+        )
 
-    " took : " + analysisTime + " seconds"
-  }
+        /**
+         * .toList
+         * .toString() + "\n" +*
+         */
+        sb = sb.append("\nImmutable References: \n")
+        val immutableReferences = propertyStore.finalEntities(ImmutableReference).toList
+        sb = sb.append(
+            immutableReferences.map(x ⇒ x.toString+"\n").toString()
+        )
+        sb.append("\n\n")
+        sb.append(" took : "+analysisTime+" seconds\n")
+        sb.append(
+            s""" mutable References: ${mutableReferences.size}
+            | lazy initialized References: ${lazyInitializedReferences.size}
+            | immutable References: ${immutableReferences.size}
+            |""".stripMargin
+
+        )
+
+        val dateString: String = Calendar.getInstance().get(Calendar.MILLISECOND).toString
+        val file = new File("C:/MA/results/refImm"+dateString+".txt")
+        val bw = new BufferedWriter(new FileWriter(file))
+        bw.write(sb.toString())
+        bw.close()
+
+        " took : "+analysisTime+" seconds"
+    }
 }

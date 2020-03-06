@@ -7,7 +7,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait ClassImmutabilityPropertyMetaInformation_new extends PropertyMetaInformation {
-  final type Self = ClassImmutability_new
+    final type Self = ClassImmutability_new
 }
 
 /**
@@ -28,75 +28,76 @@ sealed trait ClassImmutabilityPropertyMetaInformation_new extends PropertyMetaIn
 sealed trait ClassImmutability_new
     extends OrderedProperty
     with ClassImmutabilityPropertyMetaInformation_new {
-  final def key: PropertyKey[ClassImmutability_new] = ClassImmutability_new.key
-  def correspondingTypeImmutability: TypeImmutability_new
+    final def key: PropertyKey[ClassImmutability_new] = ClassImmutability_new.key
+    def correspondingTypeImmutability: TypeImmutability_new
 }
 
 object ClassImmutability_new extends ClassImmutabilityPropertyMetaInformation_new {
 
-  /**
-   * The key associated with every [[ClassImmutability_new]] property.
-   */
-  final val key: PropertyKey[ClassImmutability_new] = PropertyKey.create(
-    "opalj.ClassImmutability_new",
-    MutableClass
-  )
+    /**
+     * The key associated with every [[ClassImmutability_new]] property.
+     */
+    final val key: PropertyKey[ClassImmutability_new] = PropertyKey.create(
+        "opalj.ClassImmutability_new",
+        MutableClass
+    )
 }
 
 case object DeepImmutableClass extends ClassImmutability_new {
-  override def correspondingTypeImmutability: TypeImmutability_new = DeepImmutableType
-  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
+    override def correspondingTypeImmutability: TypeImmutability_new = DeepImmutableType
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
-  def meet(that: ClassImmutability_new): ClassImmutability_new =
-    if (this == that)
-      this
-    else
-      that
+    def meet(that: ClassImmutability_new): ClassImmutability_new =
+        if (this == that)
+            this
+        else
+            that
 }
 
 case object DependentImmutableClass extends ClassImmutability_new {
-  override def correspondingTypeImmutability: TypeImmutability_new =
-    DependentImmutableType //TODO check
 
-  def meet(that: ClassImmutability_new): ClassImmutability_new =
-    if (that == MutableClass || that == ShallowImmutableClass)
-      that
-    else
-      this
-  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+    override def correspondingTypeImmutability: TypeImmutability_new =
+        DependentImmutableType //TODO check
 
-    if (other == DeepImmutableClass) {
-      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+    def meet(that: ClassImmutability_new): ClassImmutability_new =
+        if (that == MutableClass || that == ShallowImmutableClass)
+            that
+        else
+            this
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+
+        if (other == DeepImmutableClass) {
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+        }
     }
-  }
 
 }
 
 case object ShallowImmutableClass extends ClassImmutability_new {
-  override def correspondingTypeImmutability: TypeImmutability_new = ShallowImmutableType
-  def meet(that: ClassImmutability_new): ClassImmutability_new =
-    if (that == MutableClass)
-      that
-    else
-      this
+    override def correspondingTypeImmutability: TypeImmutability_new = ShallowImmutableType
+    def meet(that: ClassImmutability_new): ClassImmutability_new =
+        if (that == MutableClass)
+            that
+        else
+            this
 
-  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
 
-    if (other == DeepImmutableClass || other == DependentImmutableClass) {
-      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+        if (other == DeepImmutableClass || other == DependentImmutableClass) {
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+        }
     }
-  }
 
 }
 
 case object MutableClass extends ClassImmutability_new {
-  def correspondingTypeImmutability = MutableType_new
-  def meet(other: ClassImmutability_new): ClassImmutability_new = this
+    def correspondingTypeImmutability = MutableType_new
+    def meet(other: ClassImmutability_new): ClassImmutability_new = this
 
-  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-    if (other != MutableClass) {
-      throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+        if (other != MutableClass) {
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+        }
     }
-  }
 
 }

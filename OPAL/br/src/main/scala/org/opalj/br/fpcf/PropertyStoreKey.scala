@@ -11,6 +11,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
+import org.opalj.fpcf.seq.PKESequentialPropertyStore
 
 /**
  * The ''key'' object to get the project's [[org.opalj.fpcf.PropertyStore]].
@@ -57,7 +58,7 @@ object PropertyStoreKey
                 )
                 psFactory(context)
             case None ⇒
-                val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                val ps = PKESequentialPropertyStore(context: _*)
                 //val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 ps
         }
