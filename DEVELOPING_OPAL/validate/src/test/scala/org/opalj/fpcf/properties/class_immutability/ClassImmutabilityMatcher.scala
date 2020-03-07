@@ -45,10 +45,15 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new)
         properties: Traversable[Property]
     ): Option[String] = {
         if (!properties.exists(p ⇒ {
-            p match {
-                /// case DependentImmutableClass(_) => property == DependentImmutableClass()
-                case _ ⇒ p == property
-            }
+            val tmpProperty =
+                p match {
+                    case DeepImmutableClass ⇒
+                        DeepImmutableClass
+                    case _ ⇒
+                        p
+                }
+
+            property == tmpProperty
         })) { //p == property)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)

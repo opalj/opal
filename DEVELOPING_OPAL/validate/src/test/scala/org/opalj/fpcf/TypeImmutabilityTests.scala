@@ -7,14 +7,19 @@ import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
@@ -24,42 +29,61 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
  */
 class TypeImmutabilityTests extends PropertiesTest {
 
-  override def init(p: Project[URL]): Unit = {
-    p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-      Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/immutability")
     }
-    p.get(RTACallGraphKey)
-  }
 
-  describe("no analysis is scheduled") {
-    val as = executeAnalyses(Set.empty)
-    as.propertyStore.shutdown()
-    validateProperties(as, fieldsWithAnnotations(as.project), Set("TypeImmutability_new"))
-  }
+    override def init(p: Project[URL]): Unit = {
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+            Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+        }
+        p.get(RTACallGraphKey)
+    }
+    /**
+     * describe("no analysis is scheduled") {
+     * val as = executeAnalyses(Set.empty)
+     * as.propertyStore.shutdown()
+     * validateProperties(as, fieldsWithAnnotations(as.project), Set("TypeImmutability_new"))
+     * }
+     */
 
-  describe("the org.opalj.fpcf.analyses.LxTypeImmutabilityAnalysis_new is executed") {
-    println(1)
-    val as = executeAnalyses(
-      Set(
-        LazyTypeImmutabilityAnalysis,
-        LazyUnsoundPrematurelyReadFieldsAnalysis,
-        LazyL2PurityAnalysis,
-        LazyL2FieldMutabilityAnalysis,
-        LazyClassImmutabilityAnalysis,
-        LazyL0ReferenceImmutabilityAnalysis,
-        LazyL0FieldImmutabilityAnalysis,
-        LazyLxClassImmutabilityAnalysis_new,
-        EagerLxTypeImmutabilityAnalysis_new
-      )
-    )
-    as.propertyStore.shutdown()
-    val tmp = classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3))
-    print("===========================>>>>>>>>>>>>>>>>>>>>>>" + tmp)
-    validateProperties(
-      as,
-      tmp,
-      // fieldsWithAnnotations(as.project),
-      Set("TypeImmutability_new")
-    ) //TODO class files ... with annotation
-  }
+    describe("the org.opalj.fpcf.analyses.LxTypeImmutabilityAnalysis_new is executed") {
+        println(1)
+        val as = executeAnalyses(
+            Set(
+                /**
+                 * LazyTypeImmutabilityAnalysis,
+                 * LazyClassImmutabilityAnalysis,
+                 * LazyL2FieldMutabilityAnalysis,
+                 * LazyUnsoundPrematurelyReadFieldsAnalysis,
+                 * LazyL2PurityAnalysis,
+                 * LazyL0ReferenceImmutabilityAnalysis,
+                 * LazyL0FieldImmutabilityAnalysis,
+                 * EagerLxClassImmutabilityAnalysis_new,
+                 * EagerLxTypeImmutabilityAnalysis_new*
+                 */
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyL2PurityAnalysis,
+                LazyL0ReferenceImmutabilityAnalysis,
+                LazyL0FieldImmutabilityAnalysis,
+                EagerLxTypeImmutabilityAnalysis_new,
+                LazyLxClassImmutabilityAnalysis_new,
+                LazyStaticDataUsageAnalysis,
+                LazyL0CompileTimeConstancyAnalysis,
+                LazyInterProceduralEscapeAnalysis,
+                LazyReturnValueFreshnessAnalysis,
+                LazyFieldLocalityAnalysis,
+                LazyClassImmutabilityAnalysis,
+                LazyTypeImmutabilityAnalysis,
+                LazyL2FieldMutabilityAnalysis
+            )
+        )
+        as.propertyStore.shutdown()
+        validateProperties(
+            as,
+            // fieldsWithAnnotations(as.project),
+            classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
+            Set("TypeImmutability_new")
+        ) //TODO class files ... with annotation
+    }
 }
