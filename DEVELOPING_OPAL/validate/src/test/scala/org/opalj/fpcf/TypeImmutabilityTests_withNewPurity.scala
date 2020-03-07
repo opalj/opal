@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 class TypeImmutabilityTests_withNewPurity extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures")
+        List("org/opalj/fpcf/fixtures/immutability")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -36,6 +36,7 @@ class TypeImmutabilityTests_withNewPurity extends PropertiesTest {
         }
         p.get(RTACallGraphKey)
     }
+
     /**
      * describe("no analysis is scheduled") {
      * val as = executeAnalyses(Set.empty)
@@ -43,7 +44,6 @@ class TypeImmutabilityTests_withNewPurity extends PropertiesTest {
      * validateProperties(as, fieldsWithAnnotations(as.project), Set("TypeImmutability_new"))
      * }
      */
-
     describe("the org.opalj.fpcf.analyses.LxTypeImmutabilityAnalysis_new is executed") {
         println(1)
         val as = executeAnalyses(

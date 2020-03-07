@@ -25,7 +25,7 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 class FieldImmutabilityTests_withNewPurity extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures")
+        List("org/opalj/fpcf/fixtures/immutability")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -55,7 +55,6 @@ class FieldImmutabilityTests_withNewPurity extends PropertiesTest {
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis
-
             )
         )
         as.propertyStore.shutdown()
