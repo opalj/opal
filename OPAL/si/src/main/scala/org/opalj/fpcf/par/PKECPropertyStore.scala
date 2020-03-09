@@ -620,8 +620,7 @@ class PKECPropertyStore(
                 if (propertyKindsComputedInThisPhase(pkId)) {
                     ps(pkId).forEachValue(Long.MaxValue, { epkState: EPKState ⇒
                         val eOptP = epkState.eOptP
-                        if (getResponsibleTId(eOptP.e) == ownTId &&
-                            epkState.eOptP.isRefinable) {
+                        if (eOptP.isRefinable && getResponsibleTId(eOptP.e) == ownTId) {
                             localInterimStates.append(epkState)
                         }
                     })
