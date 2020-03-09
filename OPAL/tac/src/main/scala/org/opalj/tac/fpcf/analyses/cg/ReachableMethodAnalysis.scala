@@ -68,7 +68,7 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
             processMethod(declaredMethod.asDefinedMethod, tacEP.asEPS)
         } else {
-            InterimPartialResult(Seq(tacEP), continuationForTAC(declaredMethod.asDefinedMethod))
+            InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod.asDefinedMethod))
         }
     }
 

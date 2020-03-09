@@ -219,7 +219,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 return InterimResult.forUB(
                     entity,
                     createPropertyValue(Map.empty),
-                    Seq(epk),
+                    Set(epk),
                     _ ⇒ performAnalysis(entity)
                 );
 
@@ -340,11 +340,11 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             collectResult(state.cfg.abnormalReturnNode)
         ))
 
-        var dependees: Traversable[SomeEOptionP] = state.pendingIfdsDependees.values
+        var dependees: Set[SomeEOptionP] = state.pendingIfdsDependees.valuesIterator.toSet
         // In the follwing, we really want to avoid useless copying of dependees:
         if (state.cgDependency.isDefined) {
             if (dependees.isEmpty) {
-                dependees = Seq(state.cgDependency.get)
+                dependees = Set(state.cgDependency.get)
             } else {
                 // We only implement what is required by the propery store/interface
                 new Iterable[SomeEOptionP] {
@@ -863,10 +863,10 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
             case FinalP(p) ⇒ Result(source, p)
 
             case ep @ InterimUBP(ub: Property) ⇒
-                InterimResult.forUB(source, ub, Seq(ep), c)
+                InterimResult.forUB(source, ub, Set(ep), c)
 
             case epk ⇒
-                InterimResult.forUB(source, createPropertyValue(Map.empty), Seq(epk), c)
+                InterimResult.forUB(source, createPropertyValue(Map.empty), Set(epk), c)
         }
         c(propertyStore((declaredMethods(source._1.definedMethod), source._2), propertyKey.key))
     }

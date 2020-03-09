@@ -91,7 +91,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
                 project,
                 SystemProperties.key,
                 update,
-                Some(tacaiEP),
+                Set(tacaiEP),
                 continuationForTAC(declaredMethod)
             )
         }

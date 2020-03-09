@@ -6,18 +6,17 @@ package analyses
 package cg
 package xta
 
+import scala.collection.mutable
+
+import org.opalj.collection.immutable.UIDSet
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
 import org.opalj.tac.fpcf.properties.TACAI
-
-import scala.collection.mutable
 
 /**
  * Manages the state of each method analyzed by [[PropagationBasedCallGraphAnalysis]].
@@ -106,7 +105,7 @@ class PropagationBasedCGState(
         _instantiatedTypesDependeeMap.exists(_._2.isRefinable) || super.hasOpenDependencies
     }
 
-    override def dependees: List[EOptionP[Entity, Property]] = {
-        _instantiatedTypesDependeeMap.values ++: super.dependees
+    override def dependees: Set[SomeEOptionP] = {
+         super.dependees ++ _instantiatedTypesDependeeMap.valuesIterator
     }
 }

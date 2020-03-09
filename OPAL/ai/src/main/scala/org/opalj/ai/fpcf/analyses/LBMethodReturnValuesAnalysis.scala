@@ -158,7 +158,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
             } else {
                 // We have potentially relevant dependencies (please, recall that we are currently
                 // not flow-sensitive).
-                InterimResult.forLB(method, MethodReturnValue(vi), dependees, c)
+                InterimResult.forLB(method, MethodReturnValue(vi), dependees.toSet, c)
             }
         } else {
             //... in this run (!) no refinement was possible and therefore we had an early
@@ -169,7 +169,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
             if (dependees.isEmpty) {
                 Result(FinalEP(method, mrv))
             } else {
-                InterimResult.forLB(method, mrv, dependees, c)
+                InterimResult.forLB(method, mrv, dependees.toSet, c)
             }
         }
     }

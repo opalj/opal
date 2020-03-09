@@ -83,7 +83,7 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         val c = if (!isFinal)
             Some(InterimPartialResult(
                 Nil,
-                Some(instantiatedTypes),
+                Set(instantiatedTypes),
                 continuation(size)
             ))
         else
