@@ -4,8 +4,9 @@ package fpcf
 package par
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.PriorityQueue
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.ControlThrowable
@@ -39,8 +40,8 @@ class PKECPropertyStore(
     private[this] val triggeredComputations: Array[Array[SomePropertyComputation]] =
         new Array(PropertyKind.SupportedPropertyKinds)
 
-    private[this] val queues: Array[PriorityBlockingQueue[QualifiedTask]] =
-        Array.fill(THREAD_COUNT) { new PriorityBlockingQueue() }
+    private[this] val queues: Array[LinkedBlockingQueue[QualifiedTask]] =
+        Array.fill(THREAD_COUNT) { new LinkedBlockingQueue[QualifiedTask]() }
 
     private[this] var setAndPreinitializedValues: List[SomeEPK] = List.empty
 
@@ -349,7 +350,7 @@ class PKECPropertyStore(
     private[this] def handleInterimResult(
         interimEP: InterimEP[Entity, _ >: Null <: Property],
         c:         ProperOnUpdateContinuation,
-        dependees: Traversable[SomeEOptionP]
+        dependees: Set[SomeEOptionP]
     ): Unit = {
         val SomeEPS(e, pk) = interimEP
         var isFresh = false
@@ -418,7 +419,7 @@ class PKECPropertyStore(
                             previous.eOptP.asInstanceOf[EOptionP[E, P]]
                         }
                     } else {
-                        val newState = EPKState(epk, d ⇒ new Result(transformer._2(e, d.asFinal.p)), Some(dependee))
+                        val newState = EPKState(epk, d ⇒ new Result(transformer._2(e, d.asFinal.p)), Set(dependee))
                         val previous = ps(pkId).putIfAbsent(e, newState)
                         if (previous eq null) {
                             updateDependees(newState, Some(dependee))
@@ -544,13 +545,14 @@ class PKECPropertyStore(
 
     class WorkerThread(ownTId: Int) extends PKECThread(s"PropertyStoreThread-#$ownTId") {
 
-        val tasks = queues(ownTId)
+        val tasksQueue = queues(ownTId)
 
         override def run(): Unit = {
             try {
                 while (!doTerminate) {
-                    val curTask = tasks.poll()
-                    if (curTask eq null) {
+                    val tasks = new PriorityQueue[QualifiedTask]()
+                    tasksQueue.drainTo(tasks)
+                    if (tasks.isEmpty) {
                         val active = activeTasks.get()
                         if (active == 0) {
                             threads.foreach { t ⇒
@@ -559,14 +561,15 @@ class PKECPropertyStore(
                             }
                             return ;
                         } else {
-                            val nextTask = tasks.take()
+                            val nextTask = tasksQueue.take()
                             if (!doTerminate) {
                                 nextTask.apply()
                                 activeTasks.decrementAndGet()
                             }
                         }
                     } else {
-                        if (!doTerminate) {
+                        var curTask: QualifiedTask = null
+                        while ({ curTask = tasks.poll(); curTask != null } && !doTerminate) {
                             curTask.apply()
                             activeTasks.decrementAndGet()
                         }
@@ -740,7 +743,7 @@ class PKECPropertyStore(
 case class EPKState(
         var eOptP:           SomeEOptionP,
         var c:               OnUpdateContinuation,
-        var dependees:       Traversable[SomeEOptionP],
+        var dependees:       Set[SomeEOptionP],
         dependers:           java.util.HashSet[SomeEPK] = new java.util.HashSet(),
         suppressedDependers: java.util.HashSet[SomeEPK] = new java.util.HashSet()
 ) {
@@ -776,7 +779,7 @@ case class EPKState(
     def interimUpdate(
         interimEP:    InterimEP[Entity, Property],
         newC:         OnUpdateContinuation,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Set[SomeEOptionP]
     )(implicit ps: PKECPropertyStore): Unit = {
 
         var theEOptP: SomeEOptionP = null
@@ -873,13 +876,10 @@ case class EPKState(
     }
 
     def applyContinuation(oldDependee: SomeEOptionP, isSuppressed: Boolean)(implicit ps: PKECPropertyStore): Unit = {
-        val epk = oldDependee.toEPK
         this.synchronized {
             val theDependees = dependees
             // We are still interessted in that dependee?
-            if (theDependees != null && theDependees.exists { d ⇒
-                (d eq oldDependee) || (isSuppressed && epk == d.toEPK)
-            }) {
+            if (theDependees != null && theDependees.contains(oldDependee)) {
                 // We always retrieve the most up-to-date state of the dependee.
                 val currentDependee = ps.ps(oldDependee.pk.id).get(oldDependee.e).eOptP.asEPS
                 // IMPROVE: If we would know about ordering, we could only perform the operation
