@@ -746,6 +746,13 @@ case class EPKState(
         suppressedDependers: java.util.HashSet[SomeEPK] = new java.util.HashSet()
 ) {
 
+    override def hashCode(): Int = eOptP.hashCode()
+
+    override def equals(obj: Any): Boolean = obj match {
+        case other: EPKState ⇒ eOptP == other.eOptP
+        case _               ⇒ false
+    }
+
     def setFinal(finalEP: FinalEP[Entity, Property], unnotifiedPKs: Set[PropertyKind])(implicit ps: PKECPropertyStore): Unit = {
         var theEOptP: SomeEOptionP = null
         this.synchronized {
