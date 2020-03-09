@@ -545,12 +545,11 @@ class PKECPropertyStore(
 
     class WorkerThread(ownTId: Int) extends PKECThread(s"PropertyStoreThread-#$ownTId") {
 
-        val tasksQueue = queues(ownTId)
-
         override def run(): Unit = {
             try {
+                val tasksQueue = queues(ownTId)
+                val tasks = new PriorityQueue[QualifiedTask]()
                 while (!doTerminate) {
-                    val tasks = new PriorityQueue[QualifiedTask]()
                     tasksQueue.drainTo(tasks)
                     if (tasks.isEmpty) {
                         val active = activeTasks.get()
