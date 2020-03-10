@@ -130,7 +130,7 @@ trait AnalysisApplication {
             } else if (arg == "-completelyLoadLibraries") {
                 completelyLoadLibraries = true
             } else if (arg.startsWith("-projectConfig=")) {
-                projectConfig = Some(arg.substring(13))
+                projectConfig = Some(arg.substring(arg.indexOf('=') + 1))
             } else if (arg == "-renderConfig") {
                 renderConfig = true
             } else {
