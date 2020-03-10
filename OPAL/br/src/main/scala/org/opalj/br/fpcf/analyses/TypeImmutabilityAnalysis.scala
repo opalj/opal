@@ -80,7 +80,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             if (eps.isFinal)
                                 Result(t, thisUB)
                             else
-                                InterimResult(t, thisLB, thisUB, Seq(eps), c)
+                                InterimResult(t, thisLB, thisUB, Set(eps), c)
                     }
                 }
             }
@@ -91,9 +91,9 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 case eps @ InterimLUBP(lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
-                    InterimResult(t, thisLB, thisUB, Seq(eps), c)
+                    InterimResult(t, thisLB, thisUB, Set(eps), c)
                 case epk ⇒
-                    InterimResult(t, MutableType, ImmutableType, Seq(epk), c)
+                    InterimResult(t, MutableType, ImmutableType, Set(epk), c)
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]
@@ -186,7 +186,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                             } else {
                                 InterimResult(
                                     t, joinedImmutability, maxImmutability,
-                                    dependencies.values, c
+                                    dependencies.valuesIterator.toSet, c
                                 )
                             }
                         }
@@ -218,7 +218,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                     }
                 }
 
-                InterimResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
+                InterimResult(t, joinedImmutability, maxImmutability, dependencies.valuesIterator.toSet, c)
             }
         }
     }

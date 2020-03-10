@@ -117,8 +117,8 @@ trait AnalysisApplication {
         //
         // 1. Process args
         //
-        def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
-        def splitLibCPath(path: String) = path.substring(7).split(File.pathSeparator)
+        def splitCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
+        def splitLibCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
         args.foreach { arg ⇒
             if (arg == "-help") {
                 printUsage

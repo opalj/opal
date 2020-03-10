@@ -34,10 +34,10 @@ trait TACAIBasedAnalysisState {
      * Inherited classes that introduce new dependencies must override this method and call add a
      * call to super!
      */
-    def dependees: List[SomeEOptionP] = if (_tacDependee.isRefinable)
-        List(_tacDependee)
+    def dependees: Set[SomeEOptionP] = if (_tacDependee.isRefinable)
+        Set(_tacDependee)
     else
-        Nil
+        Set.empty
 
     final def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
         _tacDependee = tacDependee

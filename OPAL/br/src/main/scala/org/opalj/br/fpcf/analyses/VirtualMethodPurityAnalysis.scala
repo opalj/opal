@@ -11,6 +11,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethods
@@ -37,7 +38,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
             return Result(dm, VImpureByLackOfInformation);
 
         var maxPurity: Purity = CompileTimePure
-        var dependees: Set[EOptionP[DeclaredMethod, Purity]] = Set.empty
+        var dependees: Set[SomeEOptionP] = Set.empty
 
         val cfo = project.classFile(dm.declaringClassType)
         val methods =

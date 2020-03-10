@@ -9,9 +9,8 @@ package rta
 import scala.collection.mutable
 
 import org.opalj.collection.immutable.UIDSet
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.Property
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
@@ -101,9 +100,9 @@ class RTAState(
         _instantiatedTypesDependee.isRefinable || super.hasOpenDependencies
     }
 
-    override def dependees: List[EOptionP[Entity, Property]] = {
+    override def dependees: Set[SomeEOptionP] = {
         if (instantiatedTypesDependee().isDefined)
-            instantiatedTypesDependee().get :: super.dependees
+            super.dependees + instantiatedTypesDependee().get
         else
             super.dependees
     }

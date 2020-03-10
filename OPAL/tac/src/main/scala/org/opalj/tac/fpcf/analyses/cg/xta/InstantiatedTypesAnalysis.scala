@@ -125,7 +125,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         } else {
             val reRegistration =
                 InterimPartialResult(
-                    Some(callersEOptP),
+                    Set(callersEOptP),
                     continuation(declaredMethod, declaredType, newSeenCallers)
                 )
 
