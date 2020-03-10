@@ -69,7 +69,7 @@ class RTACallGraphAnalysis private[analyses] (
         new RTAState(definedMethod, tacEP, instantiatedTypesEOptP)
     }
 
-    override def impreciseCallHandlingCondition(implicit state: RTAState): ObjectType ⇒ Boolean = {
+    @inline override def impreciseCallHandlingCondition(implicit state: RTAState): ObjectType ⇒ Boolean = {
         state.instantiatedTypesUB.contains(_)
     }
 

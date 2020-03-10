@@ -23,7 +23,9 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.cg.CallBySignatureKey
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.collection.immutable.RefArray
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait CGState extends TACAIBasedAnalysisState {
@@ -47,6 +49,9 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     type State <: CGState
 
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    private[this] lazy val getCBSTargets = project.get(CallBySignatureKey)
+    private[this] val resovleCallBySignature =
+        project.config.getBoolean("org.opalj.br.analyses.cg.callBySignatureResolution")
 
     def createInitialState(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): State
 
@@ -83,7 +88,16 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit = {
-        for (possibleTgtType ← potentialTargets) {
+        val cbsTargets = if(resovleCallBySignature && call.isInterface & call.declaringClass.isObjectType) {
+            val cf = project.classFile(call.declaringClass.asObjectType)
+            cf.flatMap {_.findMethod(call.name, call.descriptor)}.map {
+                    getCBSTargets(_)
+                }.getOrElse(RefArray.empty)
+        } else RefArray.empty
+
+        val targetTypes = potentialTargets ++ cbsTargets.foreachIterator
+
+        for (possibleTgtType ← targetTypes) {
             if (impreciseCallHandlingCondition(state)(possibleTgtType)) {
                 val tgtR = project.instanceCall(
                     caller.declaringClassType,
@@ -412,7 +426,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     }
 
     //TODO document
-    protected[this] def impreciseCallHandlingCondition(
+    @inline protected[this] def impreciseCallHandlingCondition(
         implicit
         state: State
     ): ObjectType ⇒ Boolean = {
@@ -421,7 +435,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     }
 
     //TODO Document
-    protected[this] def modifyCGStateAfterHandlingOfImpreciseCall(
+    @inline protected[this] def modifyCGStateAfterHandlingOfImpreciseCall(
         possibleTgtType: ObjectType,
         call:            Call[V] with VirtualCall[V],
         pc:              Int

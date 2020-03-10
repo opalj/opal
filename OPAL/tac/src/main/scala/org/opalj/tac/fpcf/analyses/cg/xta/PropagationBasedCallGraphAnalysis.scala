@@ -77,7 +77,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         new PropagationBasedCGState(definedMethod, tacEP, typeSources)
     }
 
-    override def impreciseCallHandlingCondition(implicit state: PropagationBasedCGState): ObjectType ⇒ Boolean = {
+    @inline override def impreciseCallHandlingCondition(implicit state: PropagationBasedCGState): ObjectType ⇒ Boolean = {
         state.instantiatedTypesContains(_)
     }
 

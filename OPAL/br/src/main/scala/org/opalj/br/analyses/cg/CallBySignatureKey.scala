@@ -6,8 +6,10 @@ import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
+import org.opalj.br.ObjectType
+import org.opalj.collection.immutable.RefArray
 
+import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.OpenHashMap
 
 /**
@@ -32,12 +34,9 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
     )
 
     override def compute(p: SomeProject): CallBySignatureTargets = {
-        val cbsTargets = new OpenHashMap[Method, List[Method]]
+        val cbsTargets = new OpenHashMap[Method, RefArray[ObjectType]]
         val index = p.get(ProjectIndexKey)
         val isOverridableMethod = p.get(IsOverridableMethodKey)
-//        val toDeclaredMethod = p.get(DeclaredMethodsKey)
-
-        val cache = new OpenHashMap[MethodDescriptor, OpenHashMap[String, List[Method]]].empty
 
         for {
             classFile ← p.allClassFiles if classFile.isInterfaceDeclaration
@@ -48,29 +47,28 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
         } {
             val descriptor = method.descriptor
             val methodName = method.name
+            val declType = classFile.thisType
 
-            val results = cache.get(descriptor).map(_.get(methodName)).getOrElse(None)
+            import p.classHierarchy
+            val potentialMethods = index.findMethods(methodName, descriptor)
 
-            val targets = if(results.nonEmpty) {
-              results.get
-            } else {
-                val ts = index.findMethods(methodName, descriptor).filter { m ⇒
-                    m.classFile.isClassDeclaration && isOverridableMethod(m).isYesOrUnknown
-                }//.map(toDeclaredMethod(_))
+            var i = 0
+            val targets = ListBuffer.empty[ObjectType]
+            while( i < potentialMethods.size) {
+              val m = potentialMethods(i)
+              val cf = m.classFile
+              val targetType = cf.thisType
+              val qualified = cf.isClassDeclaration &&
+                  isOverridableMethod(m).isYesOrUnknown &&
+                  classHierarchy.isASubtypeOf(targetType, declType).isNoOrUnknown
 
-                if(cache.contains(descriptor)){
-                  cache.get(descriptor).get.put(methodName, ts)
-                } else {
-                    val newMap = new OpenHashMap[String, List[Method]]
-                    newMap.put(methodName, ts)
-                  cache.put(descriptor, newMap)
-                }
-
-              ts
+              if(qualified) {
+                targets += m.declaringClassFile.thisType
+              }
+              i = i + 1
             }
 
-            //val dm = toDeclaredMethod(method)
-            cbsTargets.put(method, targets)
+            cbsTargets.put(method, RefArray.empty ++ targets)
         }
 
         new CallBySignatureTargets(cbsTargets)
@@ -78,12 +76,12 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
 }
 
 class CallBySignatureTargets private[analyses] (
-        val data: scala.collection.Map[Method, List[Method]]
+        val data: scala.collection.Map[Method, RefArray[ObjectType]]
 ) {
     /**
      * Returns all call-by-signature targets of the given method. If the method is not known,
      * `null` is returned. If the method is known a non-null (but potentially empty)
-     * [[org.opalj.collection.immutable.ConstArray]] is returned.
+     * [[org.opalj.collection.immutable.RefArray]] is returned.
      */
-    def apply(m: Method): List[Method] = data.getOrElse(m, List.empty)
+    def apply(m: Method): RefArray[ObjectType] = data.getOrElse(m, RefArray.empty)
 }
