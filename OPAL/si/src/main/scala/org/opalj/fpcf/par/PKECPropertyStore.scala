@@ -683,8 +683,7 @@ class PKECPropertyStore(
     trait QualifiedTask extends (() ⇒ Unit) with Comparable[QualifiedTask] {
         val priority: Int
 
-        override def compareTo(other: QualifiedTask): Int =
-            Integer.compare(this.priority, other.priority)
+        override def compareTo(other: QualifiedTask): Int = priority - other.priority
     }
 
     class ExecuteTask(f: ⇒ Unit) extends QualifiedTask {
