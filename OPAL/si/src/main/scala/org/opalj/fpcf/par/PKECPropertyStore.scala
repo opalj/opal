@@ -654,7 +654,7 @@ class PKECPropertyStore(
             successors(ownTId) = (interimEPKState: EPKState) ⇒ {
                 val dependees = interimEPKState.dependees
                 if (dependees != null) {
-                    interimEPKState.dependees.map { eOptionP ⇒
+                    dependees.map { eOptionP ⇒
                         ps(eOptionP.pk.id).get(eOptionP.e)
                     }
                 } else {
