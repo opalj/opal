@@ -382,12 +382,13 @@ class PKECPropertyStore(
         ePKState.partialUpdate(update)
     }
 
-    def updateDependees(depender: EPKState, newDependees: Traversable[SomeEOptionP]): Unit = {
+    def updateDependees(depender: EPKState, newDependees: Set[SomeEOptionP]): Unit = {
         val dependerEpk = depender.eOptP.toEPK
         val suppressedPKs = suppressInterimUpdates(dependerEpk.pk.id)
         newDependees.forall { dependee ⇒
-            val dependeeState = ps(dependee.pk.id).get(dependee.e)
-            dependeeState.addDependerOrScheduleContinuation(dependerEpk, dependee, suppressedPKs)
+            val dependeePK = dependee.pk.id
+            val dependeeState = ps(dependeePK).get(dependee.e)
+            dependeeState.addDependerOrScheduleContinuation(dependerEpk, dependee, dependeePK, suppressedPKs)
         }
     }
 
@@ -430,7 +431,7 @@ class PKECPropertyStore(
                         val newState = EPKState(epk, d ⇒ new Result(transformer._2(e, d.asFinal.p)), Set(dependee))
                         val previous = ps(pkId).putIfAbsent(e, newState)
                         if (previous eq null) {
-                            updateDependees(newState, Some(dependee))
+                            updateDependees(newState, Set(dependee))
                             epk
                         } else {
                             previous.eOptP.asInstanceOf[EOptionP[E, P]]
@@ -850,6 +851,7 @@ case class EPKState(
     def addDependerOrScheduleContinuation(
         depender:      SomeEPK,
         dependee:      SomeEOptionP,
+        dependeePK:    Int,
         suppressedPKs: Array[Boolean]
     )(implicit ps: PKECPropertyStore): Boolean = {
         dependers.synchronized {
@@ -857,11 +859,11 @@ case class EPKState(
             // If the epk state is already updated (compared to the given dependee)
             // AND that update must not be suppressed (either final or not a suppressed PK).
             if ((theEOptP ne dependee) &&
-                (theEOptP.isFinal || !suppressedPKs(dependee.pk.id))) {
-                ps.scheduleTask(new ps.ContinuationTask(depender, dependee))
+                (theEOptP.isFinal || !suppressedPKs(dependeePK))) {
+                ps.scheduleTask(new ps.ContinuationTask(depender, dependee, this))
                 false
             } else {
-                if (suppressedPKs(theEOptP.pk.id)) {
+                if (suppressedPKs(dependeePK)) {
                     suppressedDependers.add(depender)
                 } else {
                     dependers.add(depender)
@@ -886,7 +888,7 @@ case class EPKState(
     )(implicit ps: PKECPropertyStore): Unit = {
         theDependers.forEach { depender ⇒
             if (!unnotifiedPKs.contains(depender.pk)) {
-                ps.scheduleTask(new ps.ContinuationTask(depender, oldEOptP))
+                ps.scheduleTask(new ps.ContinuationTask(depender, oldEOptP, this))
             }
         }
 
