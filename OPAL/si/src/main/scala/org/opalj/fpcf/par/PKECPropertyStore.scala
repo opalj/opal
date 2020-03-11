@@ -310,22 +310,15 @@ class PKECPropertyStore(
                 val e = new FakeEntity()
                 val epk = EPK(e, AnalysisKey)
 
-                val epkState = EPKState(
-                    epk,
-                    { dependee: SomeEPS ⇒
-                        val result = c(dependee)
+                val epkState = EPKState(epk, null, dependees)
+                epkState.c = { dependee: SomeEPS ⇒
+                    val result = c(dependee)
 
-                        val state = ps(AnalysisKeyId).remove(e)
-                        state.dependees = null
+                    val state = ps(AnalysisKeyId).remove(e)
+                    state.dependees = null
 
-                        dependees.foreach { dependee ⇒
-                            ps(dependee.pk.id).get(dependee.e).removeDepender(epk)
-                        }
-
-                        result
-                    },
-                    dependees
-                )
+                    result
+                }
 
                 ps(AnalysisKeyId).put(e, epkState)
 
@@ -388,7 +381,7 @@ class PKECPropertyStore(
         newDependees.forall { dependee ⇒
             val dependeePK = dependee.pk.id
             val dependeeState = ps(dependeePK).get(dependee.e)
-            dependeeState.addDependerOrScheduleContinuation(dependerEpk, dependee, dependeePK, suppressedPKs)
+            dependeeState.addDependerOrScheduleContinuation(depender, dependee, dependeePK, suppressedPKs)
         }
     }
 
@@ -537,14 +530,14 @@ class PKECPropertyStore(
 
         for (cSCC ← cSCCs) {
             for (interimEPKState ← cSCC) {
-                val dependees = interimEPKState.dependees
-                val epk = interimEPKState.eOptP.toEPK
+                interimEPKState.dependees = null
+                /*val dependees = interimEPKState.dependees
                 dependees.foreach { dependee ⇒
                     // during execution, no other thread accesses the dependers of the EPKState
                     val dependeeState = ps(dependee.pk.id).get(dependee.e)
-                    dependeeState.dependers.remove(epk)
-                    dependeeState.suppressedDependers.remove(epk)
-                }
+                    dependeeState.dependers.remove(interimEPKState)
+                    dependeeState.suppressedDependers.remove(interimEPKState)
+                }*/
                 scheduleTask(new SetTask(interimEPKState.eOptP.toFinalEP))
             }
         }
@@ -733,7 +726,7 @@ class PKECPropertyStore(
     }
 
     class ContinuationTask(
-            depender: SomeEPK, oldDependee: SomeEOptionP, dependeeState: EPKState
+            depender: EPKState, oldDependee: SomeEOptionP, dependeeState: EPKState
     ) extends QualifiedTask {
         scheduledOnUpdateComputations.incrementAndGet()
 
@@ -747,10 +740,9 @@ class PKECPropertyStore(
         }*/
 
         override def apply(): Unit = {
-            val epkState = ps(depender.pk.id).get(depender.e)
-            if (epkState ne null) {
-                val isSuppressed = suppressInterimUpdates(depender.pk.id)(oldDependee.pk.id)
-                epkState.applyContinuation(oldDependee, isSuppressed)
+            if (depender ne null) {
+                val isSuppressed = suppressInterimUpdates(depender.eOptP.pk.id)(oldDependee.pk.id)
+                depender.applyContinuation(oldDependee, isSuppressed)
             }
         }
     }
@@ -764,11 +756,11 @@ case class EPKState(
         var eOptP:           SomeEOptionP,
         var c:               OnUpdateContinuation,
         var dependees:       Set[SomeEOptionP],
-        dependers:           java.util.HashSet[SomeEPK] = new java.util.HashSet(),
-        suppressedDependers: java.util.HashSet[SomeEPK] = new java.util.HashSet()
+        dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
+        suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
 ) {
 
-    override def hashCode(): Int = eOptP.hashCode()
+    override lazy val hashCode: Int = eOptP.hashCode()
 
     override def equals(obj: Any): Boolean = obj match {
         case other: EPKState ⇒ eOptP == other.eOptP
@@ -849,7 +841,7 @@ case class EPKState(
     }
 
     def addDependerOrScheduleContinuation(
-        depender:      SomeEPK,
+        depender:      EPKState,
         dependee:      SomeEOptionP,
         dependeePK:    Int,
         suppressedPKs: Array[Boolean]
@@ -873,22 +865,22 @@ case class EPKState(
         }
     }
 
-    def removeDepender(epk: SomeEPK): Unit = {
+    def removeDepender(dependerState: EPKState): Unit = {
         dependers.synchronized {
-            dependers.remove(epk)
-            suppressedDependers.remove(epk)
+            dependers.remove(dependerState)
+            suppressedDependers.remove(dependerState)
         }
     }
 
     def notifyAndClearDependers(
         theEOptP:      SomeEPS,
         oldEOptP:      SomeEOptionP,
-        theDependers:  java.util.HashSet[SomeEPK],
-        unnotifiedPKs: Set[PropertyKind]          = Set.empty
+        theDependers:  java.util.HashSet[EPKState],
+        unnotifiedPKs: Set[PropertyKind]           = Set.empty
     )(implicit ps: PKECPropertyStore): Unit = {
-        theDependers.forEach { depender ⇒
-            if (!unnotifiedPKs.contains(depender.pk)) {
-                ps.scheduleTask(new ps.ContinuationTask(depender, oldEOptP, this))
+        theDependers.forEach { dependerState ⇒
+            if (!unnotifiedPKs.contains(dependerState.eOptP.pk) && dependerState.dependees != null) {
+                ps.scheduleTask(new ps.ContinuationTask(dependerState, oldEOptP, this))
             }
         }
 
