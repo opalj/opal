@@ -6,7 +6,7 @@ package par
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.PriorityQueue
+import java.util.ArrayDeque
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.ControlThrowable
@@ -42,6 +42,9 @@ class PKECPropertyStore(
 
     private[this] val queues: Array[LinkedBlockingQueue[QualifiedTask]] =
         Array.fill(THREAD_COUNT) { new LinkedBlockingQueue[QualifiedTask]() }
+
+    private[this] val initialQueues: Array[ArrayDeque[QualifiedTask]] =
+        Array.fill(THREAD_COUNT) { new ArrayDeque[QualifiedTask](50000 / THREAD_COUNT) }
 
     private[this] var setAndPreinitializedValues: List[SomeEPK] = List.empty
 
@@ -222,9 +225,14 @@ class PKECPropertyStore(
     // --------------------------------------------------------------------------------------------
 
     private[par] def scheduleTask(task: QualifiedTask): Unit = {
-        activeTasks.incrementAndGet()
-        scheduledTasks.incrementAndGet()
-        queues(getResponsibleTId(task)).offer(task)
+        val numTasks = scheduledTasks.incrementAndGet()
+        if (idle) {
+            initialQueues(numTasks % THREAD_COUNT).offer(task)
+        } else {
+            activeTasks.incrementAndGet()
+            //queues.minBy(_.size()).offer(task)
+            queues(numTasks % THREAD_COUNT).offer(task)
+        }
     }
 
     private[this] def schedulePropertyComputation[E <: Entity](
@@ -547,8 +555,13 @@ class PKECPropertyStore(
 
         override def run(): Unit = {
             try {
+                val initialTasks = initialQueues(ownTId)
+                var curInitialTask: QualifiedTask = null
+                while ({ curInitialTask = initialTasks.poll(); curInitialTask != null }) {
+                    curInitialTask.apply()
+                }
                 val tasksQueue = queues(ownTId)
-                val tasks = new PriorityQueue[QualifiedTask]()
+                val tasks = new ArrayDeque[QualifiedTask](50000 / THREAD_COUNT)
                 while (!doTerminate) {
                     tasksQueue.drainTo(tasks)
                     if (tasks.isEmpty) {
@@ -560,10 +573,17 @@ class PKECPropertyStore(
                             }
                             return ;
                         } else {
-                            val nextTask = tasksQueue.take()
-                            if (!doTerminate) {
-                                nextTask.apply()
-                                activeTasks.decrementAndGet()
+                            // try workstealing:
+                            val largestQueue = queues.maxBy(_.size())
+                            val largestQueueSize = largestQueue.size()
+                            if (largestQueueSize > 100) {
+                                largestQueue.drainTo(tasks, largestQueueSize / (THREAD_COUNT + 1))
+                            } else {
+                                val nextTask = tasksQueue.take()
+                                if (!doTerminate) {
+                                    nextTask.apply()
+                                    activeTasks.decrementAndGet()
+                                }
                             }
                         }
                     } else {
@@ -712,18 +732,19 @@ class PKECPropertyStore(
         }
     }
 
-    class ContinuationTask(depender: SomeEPK, oldDependee: SomeEOptionP) extends QualifiedTask {
+    class ContinuationTask(
+            depender: SomeEPK, oldDependee: SomeEOptionP, dependeeState: EPKState
+    ) extends QualifiedTask {
         scheduledOnUpdateComputations.incrementAndGet()
 
-        val priority = {
+        val priority = 0 /*{
             val dependerState = ps(depender.pk.id).get(depender.e)
             val dependerDependees = if (dependerState == null) null else dependerState.dependees
             val dependerDependeesSize = if (dependerDependees == null) 0 else dependerDependees.size
 
-            val dependeeState = ps(oldDependee.pk.id).get(oldDependee.e)
             val dependeeDependersSize = dependeeState.dependers.size() + dependeeState.suppressedDependers.size()
             taskManager.weight(depender, oldDependee, dependerDependeesSize, dependeeDependersSize)
-        }
+        }*/
 
         override def apply(): Unit = {
             val epkState = ps(depender.pk.id).get(depender.e)
