@@ -196,7 +196,7 @@ final class TypePropagationAnalysis private[analyses] (
         val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
 
         val filters = state.backwardPropagationFilters(typeSetEntity)
-        val propagationResult = propagateTypes(state.typeSetEntity, unseenTypes, filters.toSet)
+        val propagationResult = propagateTypes(state.typeSetEntity, unseenTypes, filters)
 
         returnResults(propagationResult)
     }
