@@ -6,8 +6,6 @@ package analyses
 package cg
 package xta
 
-import scala.collection.mutable
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
@@ -17,6 +15,8 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.collection.JavaConverters._
 
 /**
  * Manages the state of each method analyzed by [[PropagationBasedCallGraphAnalysis]].
@@ -29,13 +29,14 @@ class PropagationBasedCGState(
         _instantiatedTypesDependees:               Iterable[EOptionP[TypeSetEntity, InstantiatedTypes]]
 ) extends CGState {
 
-    private[this] val _instantiatedTypesDependeeMap: mutable.Map[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] = mutable.Map.empty
+    private[this] val _instantiatedTypesDependeeMap
+        = new java.util.HashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]]()
 
     for (dependee ← _instantiatedTypesDependees) {
-        _instantiatedTypesDependeeMap.update(dependee.e, dependee)
+        _instantiatedTypesDependeeMap.put(dependee.e, dependee)
     }
 
-    private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSiteT]] = mutable.LongMap.empty
+    private[this] val _virtualCallSites = new java.util.HashMap[Long, java.util.HashSet[CallSiteT]]
 
     /////////////////////////////////////////////
     //                                         //
@@ -46,11 +47,11 @@ class PropagationBasedCGState(
     def updateInstantiatedTypesDependee(
         instantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes]
     ): Unit = {
-        _instantiatedTypesDependeeMap.update(instantiatedTypesDependee.e, instantiatedTypesDependee)
+        _instantiatedTypesDependeeMap.put(instantiatedTypesDependee.e, instantiatedTypesDependee)
     }
 
     def instantiatedTypes(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] = {
-        val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
+        val typeDependee = _instantiatedTypesDependeeMap.get(typeSetEntity)
         if (typeDependee.hasUBP)
             typeDependee.ub.types
         else
@@ -58,11 +59,19 @@ class PropagationBasedCGState(
     }
 
     def instantiatedTypesContains(tpe: ReferenceType): Boolean = {
-        _instantiatedTypesDependeeMap.keys.exists(instantiatedTypes(_).contains(tpe))
+        val values = _instantiatedTypesDependeeMap.values().iterator()
+        var exists = false
+        while(!exists && values.hasNext) {
+          val its = instantiatedTypes(values.next().e)
+          exists |= its.contains(tpe)
+        }
+
+        return exists
+//        _instantiatedTypesDependeeMap.keySet().iterator().exists(instantiatedTypes(_).contains(tpe))
     }
 
     def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
-        val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
+        val typeDependee = _instantiatedTypesDependeeMap.get(typeSetEntity)
         if (typeDependee.hasUBP) {
             typeDependee.ub.dropOldest(seenTypes)
         } else {
@@ -76,23 +85,26 @@ class PropagationBasedCGState(
     //                                         //
     /////////////////////////////////////////////
 
-    override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty
+    override def hasNonFinalCallSite: Boolean = !_virtualCallSites.isEmpty
 
     def addVirtualCallSite(objectType: ObjectType, callSite: CallSiteT): Unit = {
-        val oldValOpt = _virtualCallSites.get(objectType.id.toLong)
-        if (oldValOpt.isDefined)
-            oldValOpt.get += callSite
+        val id = objectType.id.toLong
+        val oldValOpt = _virtualCallSites.get(id)
+        if (oldValOpt ne null)
+            oldValOpt.add(callSite)
         else {
-            _virtualCallSites += (objectType.id.toLong → mutable.Set(callSite))
+            val hs = new java.util.HashSet[CallSiteT]()
+            hs.add(callSite)
+            _virtualCallSites.put(objectType.id.toLong, hs)
         }
     }
 
-    def getVirtualCallSites(objectType: ObjectType): scala.collection.Set[CallSiteT] = {
-        _virtualCallSites.getOrElse(objectType.id.toLong, scala.collection.Set.empty)
+    def getVirtualCallSites(objectType: ObjectType): java.util.HashSet[CallSiteT] = {
+        _virtualCallSites.getOrDefault(objectType.id.toLong, new java.util.HashSet[CallSiteT])
     }
 
     def removeCallSite(instantiatedType: ObjectType): Unit = {
-        _virtualCallSites -= instantiatedType.id.toLong
+        _virtualCallSites.remove(instantiatedType.id.toLong)
     }
 
     /////////////////////////////////////////////
@@ -102,10 +114,18 @@ class PropagationBasedCGState(
     /////////////////////////////////////////////
 
     override def hasOpenDependencies: Boolean = {
-        _instantiatedTypesDependeeMap.exists(_._2.isRefinable) || super.hasOpenDependencies
+        super.hasOpenDependencies || {
+            var exists = false
+            val itr = _instantiatedTypesDependeeMap.values().iterator()
+            while(!exists && itr.hasNext) {
+              val elem = itr.next()
+                exists |= elem.isRefinable
+            }
+            exists
+        }
     }
 
     override def dependees: Set[SomeEOptionP] = {
-        super.dependees ++ _instantiatedTypesDependeeMap.valuesIterator
+        super.dependees ++ _instantiatedTypesDependeeMap.values().asScala.toSet
     }
 }
