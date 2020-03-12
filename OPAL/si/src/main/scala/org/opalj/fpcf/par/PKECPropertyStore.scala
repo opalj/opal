@@ -28,8 +28,7 @@ class PKECPropertyStore(
 
     implicit val propertyStore: PKECPropertyStore = this
 
-    val THREAD_COUNT = 4
-
+    val THREAD_COUNT = PKECPropertyStore.MaxThreads
     val taskManager: PKECTaskManager = PKECFIFOTaskManager
 
     override def MaxEvaluationDepth: Int = 0
@@ -1008,6 +1007,7 @@ private class FakeEntity {
 object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.par.PKECPropertyStore.MaxEvaluationDepth"
+    var MaxThreads = 4
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*

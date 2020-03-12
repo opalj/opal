@@ -88,11 +88,11 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit = {
-        val cbsTargets = if(resovleCallBySignature && call.isInterface & call.declaringClass.isObjectType) {
+        val cbsTargets = if (resovleCallBySignature && call.isInterface & call.declaringClass.isObjectType) {
             val cf = project.classFile(call.declaringClass.asObjectType)
-            cf.flatMap {_.findMethod(call.name, call.descriptor)}.map {
-                    getCBSTargets(_)
-                }.getOrElse(RefArray.empty)
+            cf.flatMap { _.findMethod(call.name, call.descriptor) }.map {
+                getCBSTargets(_)
+            }.getOrElse(RefArray.empty)
         } else RefArray.empty
 
         val targetTypes = potentialTargets ++ cbsTargets.foreachIterator

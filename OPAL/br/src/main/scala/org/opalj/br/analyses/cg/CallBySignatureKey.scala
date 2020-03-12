@@ -54,18 +54,18 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
 
             var i = 0
             val targets = ListBuffer.empty[ObjectType]
-            while( i < potentialMethods.size) {
-              val m = potentialMethods(i)
-              val cf = m.classFile
-              val targetType = cf.thisType
-              val qualified = cf.isClassDeclaration &&
-                  isOverridableMethod(m).isYesOrUnknown &&
-                  classHierarchy.isASubtypeOf(targetType, declType).isNoOrUnknown
+            while (i < potentialMethods.size) {
+                val m = potentialMethods(i)
+                val cf = m.classFile
+                val targetType = cf.thisType
+                val qualified = cf.isClassDeclaration &&
+                    isOverridableMethod(m).isYesOrUnknown &&
+                    classHierarchy.isASubtypeOf(targetType, declType).isNoOrUnknown
 
-              if(qualified) {
-                targets += m.declaringClassFile.thisType
-              }
-              i = i + 1
+                if (qualified) {
+                    targets += m.declaringClassFile.thisType
+                }
+                i = i + 1
             }
 
             cbsTargets.put(method, RefArray.empty ++ targets)

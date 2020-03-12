@@ -172,7 +172,9 @@ final class TypePropagationAnalysis private[analyses] (
         val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
 
         implicit val partialResults: ListBuffer[SomePartialResult] = new ListBuffer[SomePartialResult]()
-        for (fpe ← state.forwardPropagationEntities) {
+        val itr = state.forwardPropagationEntities.iterator()
+        while (itr.hasNext) {
+            val fpe = itr.next()
             val filters = state.forwardPropagationFilters(fpe)
             val propagation = propagateTypes(fpe, unseenTypes, filters)
             if (propagation.isDefined)
@@ -268,7 +270,8 @@ final class TypePropagationAnalysis private[analyses] (
     ): Unit = {
         val params = UIDSet.newBuilder[ReferenceType]
 
-        for (param ← callee.descriptor.parameterTypes) {
+        val paramTypes = callee.descriptor.parameterTypes.foreachIterator
+        for (param ← paramTypes) {
             if (param.isReferenceType) {
                 params += param.asReferenceType
             }
@@ -439,7 +442,7 @@ final class TypePropagationAnalysis private[analyses] (
             return None;
         }
 
-        val filteredTypes = newTypes.filter(nt ⇒ filters.exists(f ⇒ candidateMatchesTypeFilter(nt, f)))
+        val filteredTypes = newTypes.filter(nt ⇒ filters.iterator.exists(f ⇒ candidateMatchesTypeFilter(nt, f)))
 
         if (filteredTypes.nonEmpty) {
             _trace.traceTypePropagation(targetSetEntity, filteredTypes)
