@@ -6,7 +6,6 @@ package analyses
 package cg
 package xta
 
-import org.opalj.br.ArrayType
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -24,6 +23,7 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.Entity
@@ -38,8 +38,6 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.fpcf.properties.TACAI
 
-import scala.collection.mutable.ListBuffer
-
 /**
  * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
  * algorithms.
@@ -53,7 +51,7 @@ final class TypePropagationAnalysis private[analyses] (
         selectTypeSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
-    private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
+//    private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
 
     private type State = TypePropagationState
 
@@ -66,24 +64,24 @@ final class TypePropagationAnalysis private[analyses] (
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
         val calleesEOptP = propertyStore(definedMethod, Callees.key)
 
-        _trace.traceInit(definedMethod)
+//        _trace.traceInit(definedMethod)
 
         implicit val state: TypePropagationState =
             new TypePropagationState(definedMethod, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP)
-        implicit val partialResults: ListBuffer[SomePartialResult] = new ListBuffer[SomePartialResult]()
+        implicit val partialResults: RefArrayBuffer[SomePartialResult] = RefArrayBuffer.empty[SomePartialResult]
 
         if (calleesEOptP.hasUBP)
             processCallees(calleesEOptP.ub)
         processTACStatements
         processArrayTypes(state.ownInstantiatedTypes)
 
-        returnResults(partialResults)
+        returnResults(partialResults.iterator())
     }
 
     /**
      * Processes the method upon initialization. Finds field/array accesses and wires up dependencies accordingly.
      */
-    private def processTACStatements(implicit state: State, partialResults: ListBuffer[SomePartialResult]): Unit = {
+    private def processTACStatements(implicit state: State, partialResults: RefArrayBuffer[SomePartialResult]): Unit = {
         val bytecode = state.method.definedMethod.body.get
         val tac = state.tac
         tac.stmts.foreach {
@@ -133,16 +131,16 @@ final class TypePropagationAnalysis private[analyses] (
     private def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
 
         case EUBP(e: DefinedMethod, _: Callees) ⇒
-            assert(e == state.method)
-            _trace.traceCalleesUpdate(e)
+//            assert(e == state.method)
+//            _trace.traceCalleesUpdate(e)
             handleUpdateOfCallees(eps.asInstanceOf[EPS[DefinedMethod, Callees]])(state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity ⇒
-            _trace.traceTypeUpdate(state.method, e, t.types)
+//            _trace.traceTypeUpdate(state.method, e, t.types)
             handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) ⇒
-            _trace.traceTypeUpdate(state.method, e, t.types)
+//            _trace.traceTypeUpdate(state.method, e, t.types)
             handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
         case _ ⇒
@@ -156,9 +154,9 @@ final class TypePropagationAnalysis private[analyses] (
         state: State
     ): ProperPropertyComputationResult = {
         state.updateCalleeDependee(eps)
-        implicit val partialResults: ListBuffer[SomePartialResult] = new ListBuffer[SomePartialResult]()
+        implicit val partialResults: RefArrayBuffer[SomePartialResult] = RefArrayBuffer.empty[SomePartialResult]
         processCallees(eps.ub)
-        returnResults(partialResults)
+        returnResults(partialResults.iterator())
     }
 
     private def handleUpdateOfOwnTypeSet(
@@ -171,7 +169,7 @@ final class TypePropagationAnalysis private[analyses] (
         state.updateOwnInstantiatedTypesDependee(eps)
         val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
 
-        implicit val partialResults: ListBuffer[SomePartialResult] = new ListBuffer[SomePartialResult]()
+        implicit val partialResults: RefArrayBuffer[SomePartialResult] = RefArrayBuffer.empty[SomePartialResult]
         val itr = state.forwardPropagationEntities.iterator()
         while (itr.hasNext) {
             val fpe = itr.next()
@@ -183,7 +181,7 @@ final class TypePropagationAnalysis private[analyses] (
 
         processArrayTypes(unseenTypes)
 
-        returnResults(partialResults)
+        returnResults(partialResults.iterator())
     }
 
     private def handleUpdateOfBackwardPropagationTypeSet(
@@ -208,7 +206,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: ListBuffer[SomePartialResult]
+        partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
         for (t ← unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
             if (state.methodWritesArrays) {
@@ -234,7 +232,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: ListBuffer[SomePartialResult]
+        partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
         val bytecode = state.method.definedMethod.body.get
         for {
@@ -266,7 +264,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: ListBuffer[SomePartialResult]
+        partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
         val params = UIDSet.newBuilder[ReferenceType]
 
@@ -303,7 +301,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: ListBuffer[SomePartialResult]
+        partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
         val returnValueIsUsed = {
             val tacIndex = state.tac.pcToIndex(pc)
@@ -338,7 +336,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: ListBuffer[SomePartialResult]
+        partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
         // Propagation from and to the same entity can be ignored.
         val typeSetEntity = selectTypeSetEntity(e)
@@ -360,7 +358,7 @@ final class TypePropagationAnalysis private[analyses] (
     )(
         implicit
         state:          State,
-        partialResults: ListBuffer[SomePartialResult]
+        partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
         val typeSetEntity = selectTypeSetEntity(e)
         if (typeSetEntity == state.typeSetEntity) {
@@ -423,9 +421,12 @@ final class TypePropagationAnalysis private[analyses] (
             // The other option is that the candidate is also a project type, in which case we should have gotten a
             // definitive Yes/No answer before. Since we didn't get one, the candidate type probably has a supertype
             // which is not a project type. In that case, the above argument applies similarly.
-            val filterTypeIsProjectType = filterType match {
-                case ot: ObjectType ⇒ project.isProjectType(ot)
-                case at: ArrayType  ⇒ project.isProjectType(at.elementType.asObjectType)
+
+            val filterTypeIsProjectType = if(filterType.isObjectType){
+              project.isProjectType(filterType.asObjectType)
+            } else {
+              val at = filterType.asArrayType
+                project.isProjectType(at.elementType.asObjectType)
             }
 
             !filterTypeIsProjectType
@@ -442,10 +443,28 @@ final class TypePropagationAnalysis private[analyses] (
             return None;
         }
 
-        val filteredTypes = newTypes.filter(nt ⇒ filters.iterator.exists(f ⇒ candidateMatchesTypeFilter(nt, f)))
+        val filteredTypesBuilder = UIDSet.newBuilder[ReferenceType]
+        val ntfitr = newTypes.iterator
+        while(ntfitr.hasNext) {
+          val nt = ntfitr.next
+
+          val fitr = filters.iterator
+          var canditateMatches = false
+          while(!canditateMatches && fitr.hasNext) {
+            val tf = fitr.next
+            if(candidateMatchesTypeFilter(nt, tf)) {
+              canditateMatches = true
+                filteredTypesBuilder += nt
+            }
+          }
+        }
+
+
+        //val filteredTypes = newTypes.filter(nt ⇒ filters.iterator.exists(f ⇒ candidateMatchesTypeFilter(nt, f)))
+        val filteredTypes = filteredTypesBuilder.result()
 
         if (filteredTypes.nonEmpty) {
-            _trace.traceTypePropagation(targetSetEntity, filteredTypes)
+//            _trace.traceTypePropagation(targetSetEntity, filteredTypes)
             val partialResult = PartialResult[E, InstantiatedTypes](
                 targetSetEntity,
                 InstantiatedTypes.key,

@@ -375,7 +375,7 @@ case class PartialResult[E >: Null <: Entity, P >: Null <: Property](
 
     final def epk: EPK[E, P] = EPK(e, pk)
 
-    private[fpcf] final def id = PartialResult.id
+    final def id = PartialResult.id
 
 }
 object PartialResult { private[fpcf] final val id = 6 }
