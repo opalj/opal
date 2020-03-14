@@ -34,9 +34,10 @@ import org.opalj.fpcf.properties.reference_immutability.LazyInitializedReference
 import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 
 /**
- * Test classes for simple lazy initialization patterns and anti-patterns.
+ * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
  *
  * @author Dominik Helm
+ * @author Tobias Peter Roth
  */
 
 class Simple {

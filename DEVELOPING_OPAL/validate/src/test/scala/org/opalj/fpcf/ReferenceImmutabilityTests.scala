@@ -13,8 +13,6 @@ import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerLxClassImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.EagerLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
@@ -47,8 +45,6 @@ class ReferenceImmutabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL0ReferenceImmutabilityAnalysis,
-                EagerLxClassImmutabilityAnalysis_new,
-                EagerLxTypeImmutabilityAnalysis_new,
                 LazyL2FieldMutabilityAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,

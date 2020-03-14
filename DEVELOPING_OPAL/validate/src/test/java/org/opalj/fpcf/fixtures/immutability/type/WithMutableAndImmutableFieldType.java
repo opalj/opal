@@ -7,16 +7,16 @@ import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotat
 import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
 import org.opalj.fpcf.properties.type_immutability.ShallowImmutableTypeAnnotation;
 
-@ShallowImmutableTypeAnnotation("has shallow mutable fields")
-@ShallowImmutableClassAnnotation("has shallow imm fields")
+@ShallowImmutableTypeAnnotation("has shallow and mutable fields")
+@ShallowImmutableClassAnnotation("has shallow and immutable fields")
 public final class WithMutableAndImmutableFieldType {
 
-    @DeepImmutableFieldAnnotation("imm reference and deep immutable type")
-    @ImmutableReferenceAnnotation("private")
+    @DeepImmutableFieldAnnotation("immutable reference and deep immutable type")
+    @ImmutableReferenceAnnotation("private field")
     private FinalEmptyClass fec = new FinalEmptyClass();
 
     @ShallowImmutableFieldAnnotation("imm reference and mutable type")
-    @ImmutableReferenceAnnotation("private")
+    @ImmutableReferenceAnnotation("private field")
     private TrivialMutableClass tmc = new TrivialMutableClass();
 
 }

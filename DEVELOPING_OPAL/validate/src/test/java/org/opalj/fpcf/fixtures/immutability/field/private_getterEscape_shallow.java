@@ -5,8 +5,8 @@ import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotat
 import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
 import org.opalj.fpcf.properties.type_immutability.MutableTypeAnnotation;
 
-@MutableTypeAnnotation("")
-@ShallowImmutableClassAnnotation("Becaus it has only Shallow Immutable Fields")
+@MutableTypeAnnotation("Because of not final class")
+@ShallowImmutableClassAnnotation("Because it has only Shallow Immutable Fields")
 public class private_getterEscape_shallow {
     public TrivialMutableClass getTmc() {
         return tmc;

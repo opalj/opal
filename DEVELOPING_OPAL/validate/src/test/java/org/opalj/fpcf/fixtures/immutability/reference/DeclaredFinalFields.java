@@ -46,10 +46,11 @@ abstract class Super{
 }
 
 /**
- * Tests for fields that are declared final. Some of them are not strictly final because they can
+ * Tests for references that are declared final. Some of them are not strictly final because they can
  * be observed uninitialized.
  *
  * @author  Dominik Helm
+ * @author Tobias Peter Roth
  */
 public class DeclaredFinalFields extends Super {
 
