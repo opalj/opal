@@ -30,9 +30,10 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.util.PerformanceEvaluation.memory
 
 /**
  * Runs the EagerLxClassImmutabilityAnalysis_new as well as analysis needed for improving the result
@@ -55,32 +56,38 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
-        analysesManager.project.get(RTACallGraphKey)
+        var memoryConsumption: Long = 0
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
-        time {
-            propertyStore = analysesManager
-                .runAll(
-                    LazyUnsoundPrematurelyReadFieldsAnalysis,
-                    LazyL2PurityAnalysis,
-                    LazyL0ReferenceImmutabilityAnalysis,
-                    LazyL0FieldImmutabilityAnalysis,
-                    EagerLxTypeImmutabilityAnalysis_new,
-                    LazyLxClassImmutabilityAnalysis_new,
-                    LazyFieldLocalityAnalysis,
-                    LazyReturnValueFreshnessAnalysis,
-                    LazyStaticDataUsageAnalysis,
-                    LazyL0CompileTimeConstancyAnalysis,
-                    LazyInterProceduralEscapeAnalysis,
-                    LazyL1FieldMutabilityAnalysis,
-                    LazyClassImmutabilityAnalysis,
-                    LazyTypeImmutabilityAnalysis
-                )
-                ._1
-            propertyStore.waitOnPhaseCompletion();
-        } { t ⇒
-            analysisTime = t.toSeconds
+        memory {
+            val analysesManager = project.get(FPCFAnalysesManagerKey)
+            analysesManager.project.get(RTACallGraphKey)
+
+            time {
+                propertyStore = analysesManager
+                    .runAll(
+                        LazyUnsoundPrematurelyReadFieldsAnalysis,
+                        LazyL2PurityAnalysis,
+                        LazyL0ReferenceImmutabilityAnalysis,
+                        LazyL0FieldImmutabilityAnalysis,
+                        EagerLxTypeImmutabilityAnalysis_new,
+                        LazyLxClassImmutabilityAnalysis_new,
+                        LazyFieldLocalityAnalysis,
+                        LazyReturnValueFreshnessAnalysis,
+                        LazyStaticDataUsageAnalysis,
+                        LazyL0CompileTimeConstancyAnalysis,
+                        LazyInterProceduralEscapeAnalysis,
+                        LazyL2FieldMutabilityAnalysis,
+                        LazyClassImmutabilityAnalysis,
+                        LazyTypeImmutabilityAnalysis
+                    )
+                    ._1
+                propertyStore.waitOnPhaseCompletion();
+            } { t ⇒
+                analysisTime = t.toSeconds
+            }
+        } { mu ⇒
+            memoryConsumption = mu
         }
         val sb: StringBuilder = new StringBuilder
         sb.append("\nMutableTypes: \n")
@@ -112,15 +119,26 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
           | shallow immutable types: ${shallowImmutableTypes.size}
           | dependent immutable types: ${dependentImmutableTypes.size}
           | deep immutable types: ${deepImmutableTypes.size}
+          | 
+          | took : $analysisTime seconds
+          | needs : ${memoryConsumption / 1024 / 1024} MBytes
           |""".stripMargin
         )
 
-        val dateString: String = Calendar.getInstance().get(Calendar.MILLISECOND).toString
-        val file = new File("C:/MA/results/typeImm"+dateString+".txt")
+        val calendar = Calendar.getInstance()
+        val file = new File(
+            s"C:/MA/results/typeImm_${calendar.get(Calendar.YEAR)}_"+
+                s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
+                s"${calendar.get(Calendar.HOUR_OF_DAY)}_${calendar.get(Calendar.MINUTE)}_"+
+                s"${calendar.get(Calendar.MILLISECOND)}.txt"
+        )
         val bw = new BufferedWriter(new FileWriter(file))
         bw.write(sb.toString())
         bw.close()
 
-        " took : "+analysisTime+" seconds"
+        s"""
+       | took : $analysisTime seconds
+       | needs : ${memoryConsumption / 1024 / 1024} MBytes
+       |""".stripMargin
     }
 }

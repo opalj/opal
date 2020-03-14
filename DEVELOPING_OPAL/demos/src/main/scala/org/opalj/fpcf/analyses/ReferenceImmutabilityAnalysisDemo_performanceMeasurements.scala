@@ -1,25 +1,28 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses
 
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
 import java.net.URL
+import java.util.Calendar
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 
@@ -58,15 +61,14 @@ object ReferenceImmutabilityAnalysisDemo_performanceMeasurements
                     .runAll(
                         EagerL0ReferenceImmutabilityAnalysis,
                         LazyUnsoundPrematurelyReadFieldsAnalysis,
-                        LazyL2PurityAnalysis,
-                        LazyStaticDataUsageAnalysis,
-                        LazyL0CompileTimeConstancyAnalysis,
+                        LazyL2PurityAnalysis_new,
                         LazyInterProceduralEscapeAnalysis,
                         LazyReturnValueFreshnessAnalysis,
+                        LazyStaticDataUsageAnalysis,
                         LazyFieldLocalityAnalysis,
-                        LazyL1FieldMutabilityAnalysis,
-                        LazyClassImmutabilityAnalysis,
-                        LazyTypeImmutabilityAnalysis
+                        LazyL0CompileTimeConstancyAnalysis,
+                        LazyLxTypeImmutabilityAnalysis_new,
+                        LazyLxClassImmutabilityAnalysis_new
                     )
                     ._1
                 propertyStore.waitOnPhaseCompletion();
@@ -75,25 +77,34 @@ object ReferenceImmutabilityAnalysisDemo_performanceMeasurements
             }
             times = analysisTime :: times
         }
+        val sortedList = times.sortWith(_.timeSpan < _.timeSpan)
+        val median = sortedList((times.size - 1) / 2)
 
-        /**
-         * "Mutable References: "+
-         * propertyStore
-         * .finalEntities(MutableReference)
-         * .toList
-         * .toString()+"\n"+
-         * "Lazy Initialized Reference: "+propertyStore
-         * .finalEntities(LazyInitializedReference)
-         * .toList
-         * .toString()+"\n"+
-         * "Immutable References: "+propertyStore
-         * .finalEntities(ImmutableReference)
-         * .toList
-         * .toString()+"\n"+*
-         */
-        times.foreach(s ⇒ println(s+" seconds"))
-        val aver = times.fold(new Seconds(0))((x: Seconds, y: Seconds) ⇒ x + y).timeSpan / times.size
-        f"took: $aver seconds on average"
+        val output =
+            s"""
+         |
+         |${sortedList.mkString("\n")}
+         |   
+         |Median: $median
+         |lowest: ${sortedList(0)}
+         |highest: ${sortedList(sortedList.size - 1)}
+         |""".stripMargin
+
+        val calendar = Calendar.getInstance()
+        val file = new File(
+            s"C:/MA/results_time/refImm_${calendar.get(Calendar.YEAR)}_"+
+                s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
+                s"${calendar.get(Calendar.HOUR_OF_DAY)}_${calendar.get(Calendar.MINUTE)}_"+
+                s"${calendar.get(Calendar.MILLISECOND)}.txt"
+        )
+        val bw = new BufferedWriter(new FileWriter(file))
+        bw.write(output)
+        bw.close()
+
+        s"""
+       |$output
+       |took: $median seconds as median
+       |""".stripMargin
     }
 
 }
