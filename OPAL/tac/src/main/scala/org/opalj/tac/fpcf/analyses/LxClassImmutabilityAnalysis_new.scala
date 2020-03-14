@@ -389,9 +389,9 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
 
                 case ELBP(e, ShallowImmutableField | DeepImmutableField) ⇒ //FinalField) =>
                     dependees -= e
-                    if (minLocalImmutability != ShallowImmutableClass) // && // ImmutableContainer &&
-                        //!dependees.valuesIterator.exists(_.pk != TypeImmutability_new.key)) //TypeImmutability.key))
-                        minLocalImmutability = ShallowImmutableClass //ImmutableContainer // Lift lower bound when possible
+                //xx if (minLocalImmutability != ShallowImmutableClass) // && // ImmutableContainer &&
+                //!dependees.valuesIterator.exists(_.pk != TypeImmutability_new.key)) //TypeImmutability.key))
+                //xx minLocalImmutability = ShallowImmutableClass //ImmutableContainer // Lift lower bound when possible
 
                 case UBP(DeepImmutableField)    ⇒ //_: FinalField) ⇒ // no information about field mutability
                 case UBP(ShallowImmutableField) ⇒ maxLocalImmutability = ShallowImmutableClass
@@ -415,9 +415,9 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
        */
 
             // Lift lower bound once no dependencies other than field type mutabilities are left
-            if (minLocalImmutability != ShallowImmutableClass) // && //ImmutableContainer &&
-                //dependees.valuesIterator.forall(_.pk == TypeImmutability_new.key)) //TypeImmutability.key))
-                minLocalImmutability = ShallowImmutableClass //ImmutableContainer
+            //xxx if (minLocalImmutability != ShallowImmutableClass) // && //ImmutableContainer &&
+            //dependees.valuesIterator.forall(_.pk == TypeImmutability_new.key)) //TypeImmutability.key))
+            //xxx   minLocalImmutability = ShallowImmutableClass //ImmutableContainer
             if (dependees.isEmpty || minLocalImmutability == maxLocalImmutability) {
                 /*[DEBUG]
                     assert(
