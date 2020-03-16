@@ -107,7 +107,7 @@ trait PointsToBasedThreadStartAnalysis
                 val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
                 for (cs ← relevantCallSites) {
-                    val pc = cs._1
+                    val pc = cs.pc
                     val receiver =
                         state.tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
                     ub.forNewestNTypes(ub.numTypes - seenTypes) { newType ⇒
@@ -168,7 +168,7 @@ trait PointsToBasedThreadStartAnalysis
             indirectCalls
         )
 
-        val callSite = (
+        val callSite = CallSiteT(
             pc,
             "start",
             MethodDescriptor.NoArgsAndReturnVoid,

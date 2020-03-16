@@ -68,7 +68,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit = {
         val callerType = caller.definedMethod.classFile.thisType
-        val callSite = (pc, call.name, call.descriptor, call.declaringClass)
+        val callSite = CallSiteT(pc, call.name, call.descriptor, call.declaringClass)
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
         val currentPointsToSets = currentPointsToOfDefSites(callSite, call.receiver.asVar.definedBy)
@@ -122,7 +122,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                             if (newType.isObjectType) newType.asObjectType else ObjectType.Object
                         if (typesLeft.contains(theType.id)) {
                             state.removeTypeForCallSite(callSite, theType)
-                            val (pc, name, descriptor, declaredType) = callSite
+                            val CallSiteT(pc, name, descriptor, declaredType) = callSite
                             val tgtR = project.instanceCall(
                                 state.method.declaringClassType,
                                 theType,

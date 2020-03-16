@@ -29,8 +29,7 @@ class PropagationBasedCGState(
         _instantiatedTypesDependees:               Iterable[EOptionP[TypeSetEntity, InstantiatedTypes]]
 ) extends CGState {
 
-    private[this] val _instantiatedTypesDependeeMap
-        = new java.util.HashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]]()
+    private[this] val _instantiatedTypesDependeeMap = new java.util.HashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]]()
 
     for (dependee ← _instantiatedTypesDependees) {
         _instantiatedTypesDependeeMap.put(dependee.e, dependee)
@@ -61,13 +60,13 @@ class PropagationBasedCGState(
     def instantiatedTypesContains(tpe: ReferenceType): Boolean = {
         val values = _instantiatedTypesDependeeMap.values().iterator()
         var exists = false
-        while(!exists && values.hasNext) {
-          val its = instantiatedTypes(values.next().e)
-          exists |= its.contains(tpe)
+        while (!exists && values.hasNext) {
+            val its = instantiatedTypes(values.next().e)
+            exists |= its.contains(tpe)
         }
 
         return exists
-//        _instantiatedTypesDependeeMap.keySet().iterator().exists(instantiatedTypes(_).contains(tpe))
+        //        _instantiatedTypesDependeeMap.keySet().iterator().exists(instantiatedTypes(_).contains(tpe))
     }
 
     def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
@@ -117,8 +116,8 @@ class PropagationBasedCGState(
         super.hasOpenDependencies || {
             var exists = false
             val itr = _instantiatedTypesDependeeMap.values().iterator()
-            while(!exists && itr.hasNext) {
-              val elem = itr.next()
+            while (!exists && itr.hasNext) {
+                val elem = itr.next()
                 exists |= elem.isRefinable
             }
             exists

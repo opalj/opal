@@ -86,7 +86,7 @@ abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
 
         val actualParamDefSites = call.params.head.asVar.definedBy
 
-        val callSite = (pc, call.name, call.descriptor, call.declaringClass)
+        val callSite = CallSiteT(pc, call.name, call.descriptor, call.declaringClass)
 
         val pointsToSets = currentPointsToOfDefSites(callSite, actualParamDefSites)
 

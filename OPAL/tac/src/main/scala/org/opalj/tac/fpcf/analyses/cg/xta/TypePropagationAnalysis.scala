@@ -51,7 +51,7 @@ final class TypePropagationAnalysis private[analyses] (
         selectTypeSetEntity: TypeSetEntitySelector
 ) extends ReachableMethodAnalysis {
 
-//    private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
+    //    private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
 
     private type State = TypePropagationState
 
@@ -64,7 +64,7 @@ final class TypePropagationAnalysis private[analyses] (
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
         val calleesEOptP = propertyStore(definedMethod, Callees.key)
 
-//        _trace.traceInit(definedMethod)
+        //        _trace.traceInit(definedMethod)
 
         implicit val state: TypePropagationState =
             new TypePropagationState(definedMethod, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP)
@@ -131,16 +131,16 @@ final class TypePropagationAnalysis private[analyses] (
     private def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
 
         case EUBP(e: DefinedMethod, _: Callees) ⇒
-//            assert(e == state.method)
-//            _trace.traceCalleesUpdate(e)
+            //            assert(e == state.method)
+            //            _trace.traceCalleesUpdate(e)
             handleUpdateOfCallees(eps.asInstanceOf[EPS[DefinedMethod, Callees]])(state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity ⇒
-//            _trace.traceTypeUpdate(state.method, e, t.types)
+            //            _trace.traceTypeUpdate(state.method, e, t.types)
             handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) ⇒
-//            _trace.traceTypeUpdate(state.method, e, t.types)
+            //            _trace.traceTypeUpdate(state.method, e, t.types)
             handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
         case _ ⇒
@@ -422,10 +422,10 @@ final class TypePropagationAnalysis private[analyses] (
             // definitive Yes/No answer before. Since we didn't get one, the candidate type probably has a supertype
             // which is not a project type. In that case, the above argument applies similarly.
 
-            val filterTypeIsProjectType = if(filterType.isObjectType){
-              project.isProjectType(filterType.asObjectType)
+            val filterTypeIsProjectType = if (filterType.isObjectType) {
+                project.isProjectType(filterType.asObjectType)
             } else {
-              val at = filterType.asArrayType
+                val at = filterType.asArrayType
                 project.isProjectType(at.elementType.asObjectType)
             }
 
@@ -445,26 +445,25 @@ final class TypePropagationAnalysis private[analyses] (
 
         val filteredTypesBuilder = UIDSet.newBuilder[ReferenceType]
         val ntfitr = newTypes.iterator
-        while(ntfitr.hasNext) {
-          val nt = ntfitr.next
+        while (ntfitr.hasNext) {
+            val nt = ntfitr.next
 
-          val fitr = filters.iterator
-          var canditateMatches = false
-          while(!canditateMatches && fitr.hasNext) {
-            val tf = fitr.next
-            if(candidateMatchesTypeFilter(nt, tf)) {
-              canditateMatches = true
-                filteredTypesBuilder += nt
+            val fitr = filters.iterator
+            var canditateMatches = false
+            while (!canditateMatches && fitr.hasNext) {
+                val tf = fitr.next
+                if (candidateMatchesTypeFilter(nt, tf)) {
+                    canditateMatches = true
+                    filteredTypesBuilder += nt
+                }
             }
-          }
         }
-
 
         //val filteredTypes = newTypes.filter(nt ⇒ filters.iterator.exists(f ⇒ candidateMatchesTypeFilter(nt, f)))
         val filteredTypes = filteredTypesBuilder.result()
 
         if (filteredTypes.nonEmpty) {
-//            _trace.traceTypePropagation(targetSetEntity, filteredTypes)
+            //            _trace.traceTypePropagation(targetSetEntity, filteredTypes)
             val partialResult = PartialResult[E, InstantiatedTypes](
                 targetSetEntity,
                 InstantiatedTypes.key,

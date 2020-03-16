@@ -383,11 +383,11 @@ class InstantiatedTypesAnalysisScheduler(
                             val ot = fieldType.asObjectType
                             val assignments = UIDSet.newBuilder[ReferenceType]
                             val itr = initialInstantiatedTypes.iterator
-                            while(itr.hasNext) {
-                              val iit = itr.next
-                              if(classHierarchy.isSubtypeOf(iit, ot)){
-                                assignments += iit
-                              }
+                            while (itr.hasNext) {
+                                val iit = itr.next
+                                if (classHierarchy.isSubtypeOf(iit, ot)) {
+                                    assignments += iit
+                                }
                             }
                             assignments.result()
                         } else {
@@ -398,9 +398,9 @@ class InstantiatedTypesAnalysisScheduler(
                             val allSubtypes = p.classHierarchy.allSubtypes(et, true)
                             val assignments = UIDSet.newBuilder[ReferenceType]
                             val itr = initialInstantiatedTypes.iterator
-                            while(itr.hasNext) {
+                            while (itr.hasNext) {
                                 val iit = itr.next.asObjectType
-                                if(allSubtypes.contains(iit)){
+                                if (allSubtypes.contains(iit)) {
                                     assignments += ArrayType(dim, iit)
                                 }
                             }
@@ -435,9 +435,9 @@ class InstantiatedTypesAnalysisScheduler(
             val allSubtypes = p.classHierarchy.allSubtypes(et, true)
             val subtypeBuilder = UIDSet.newBuilder[ReferenceType]
             val itr = initialInstantiatedTypes.iterator
-            while(itr.hasNext) {
+            while (itr.hasNext) {
                 val iit = itr.next.asObjectType
-                if(allSubtypes.contains(iit)){
+                if (allSubtypes.contains(iit)) {
                     subtypeBuilder += iit
                 }
             }
@@ -449,7 +449,7 @@ class InstantiatedTypesAnalysisScheduler(
                 // Initialize multidimensional ArrayType. E.g., if at == A[][] and A is a supertype of A1,
                 // we need to assign A[] and A1[] to the type set of A[][].
                 val newDim = dim - 1
-                val assignedArrayTypes : UIDSet[ArrayType] = subtypes.map(ArrayType(newDim, _))
+                val assignedArrayTypes: UIDSet[ArrayType] = subtypes.map(ArrayType(newDim, _))
                 initialize(at, assignedArrayTypes.asInstanceOf[UIDSet[ReferenceType]])
 
                 // After that, we also need to initialize the ArrayTypes which were just assigned. It is possible
