@@ -52,7 +52,9 @@ case class State(f: Field) {
     var field: Field = f
     var typeImmutability: Option[Boolean] = Some(true)
     var referenceImmutability: Option[Boolean] = None
-    var dependentImmutability: Option[DependentImmutabilityKind] = Some(DependentImmutabilityKind.dependent)
+    var dependentImmutability: Option[DependentImmutabilityKind] = Some(
+        DependentImmutabilityKind.dependent
+    )
     var genericTypeSetNotDeepImmutable = false
 }
 
@@ -121,14 +123,23 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
         def handleTypeImmutability(state: State) = {
             val objectType = field.fieldType.asFieldType
-            if (objectType.isArrayType) {
+            if (!objectType.isArrayType && objectType.isBaseType) {
                 //state.typeImmutability = Some(true) // true is default
-            } else if (objectType.isBaseType) {
+            } else if (!objectType.isArrayType && objectType == ObjectType("java/lang/String")) {
                 //state.typeImmutability = Some(true) // true is default
-            } else if (objectType.asObjectType == ObjectType.Object)
+            } else if (!objectType.isArrayType && objectType.asObjectType == ObjectType.Object)
                 state.typeImmutability = Some(false)
-            else {
-                val result = propertyStore(objectType, TypeImmutability_new.key)
+            else if (objectType.isArrayType && (objectType.asArrayType.componentType.isBaseType || objectType.asArrayType.componentType == ObjectType(
+                "java/lang/String"
+            ))) {
+                //state.typeImmutability = Some(true) // true is default
+            } else {
+                val result =
+                    if (objectType.isArrayType) {
+                        propertyStore(objectType.asArrayType.componentType, TypeImmutability_new.key)
+                    } else {
+                        propertyStore(objectType, TypeImmutability_new.key)
+                    }
                 dependencies = dependencies.filter(_.e ne result.e)
                 result match {
                     case FinalEP(e, DeepImmutableType) ⇒
@@ -347,7 +358,7 @@ object EagerL0FieldImmutabilityAnalysis
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldImmutabilityAnalysis(p)
-        val fields = p.allFields
+        val fields = p.allProjectClassFiles.toIterator.flatMap { _.fields }
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }
