@@ -7,6 +7,7 @@ import java.io.File
 import java.net.URL
 import java.util.Calendar
 
+import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -86,9 +87,11 @@ object FieldImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplic
 
         val sb: StringBuilder = new StringBuilder
         sb.append("Mutable Fields: \n")
+        val allfieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
         val mutableFields = propertyStore
             .finalEntities(MutableField)
             .toList
+            .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
         sb.append(
             mutableFields
                 .map(x ⇒ x.toString+" |Mutable Field\n")

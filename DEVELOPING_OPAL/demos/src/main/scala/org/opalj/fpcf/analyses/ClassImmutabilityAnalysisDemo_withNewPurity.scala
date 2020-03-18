@@ -114,21 +114,19 @@ object ClassImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplic
 
         sb.append("\nDeep Immutable Class Classes:\n")
         val allInterfaces = project.allClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
-        val deepImmutableClasses = propertyStore
+        val deepImmutables = propertyStore
             .finalEntities(DeepImmutableClass)
             .toList
-            .filter(
-                x ⇒ !x.isInstanceOf[ObjectType] || !allInterfaces.contains(x.asInstanceOf[ObjectType])
-            )
+        val deepImmutableClassesInterfaces = deepImmutables
+            .filter(x ⇒ x.isInstanceOf[ObjectType] && allInterfaces.contains(x.asInstanceOf[ObjectType]))
+        val deepImmutableClasses =
+            deepImmutables.filter(!deepImmutableClassesInterfaces.toSet.contains(_))
         sb.append(
             deepImmutableClasses.toList
                 .map(x ⇒ x.toString+"  |Deep Immutable Class\n")
         )
         sb.append("\nDeep Immutable Class Classes: Interface\n")
-        val deepImmutableClassesInterfaces = propertyStore
-            .finalEntities(DeepImmutableClass)
-            .toList
-            .filter(x ⇒ x.isInstanceOf[ObjectType] && allInterfaces.contains(x.asInstanceOf[ObjectType]))
+
         sb.append(
             deepImmutableClassesInterfaces
                 .map(x ⇒ x.toString+"  |Deep Immutable Class Interface\n")
@@ -139,6 +137,7 @@ object ClassImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplic
                      | dependent immutable classes: ${dependentImmutableClasses.size}
                      | deep immutable classes: ${deepImmutableClasses.size}
                      | deep immutable classes interfaces: ${deepImmutableClassesInterfaces.size}
+                     | deep immutables: ${deepImmutables.size}
                      | 
                      | took : $analysisTime seconds
                      | needs : ${memoryConsumption / 1024 / 1024} MBytes
