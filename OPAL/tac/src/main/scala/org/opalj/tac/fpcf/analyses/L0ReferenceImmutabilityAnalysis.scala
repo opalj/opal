@@ -1114,7 +1114,7 @@ object EagerL0ReferenceImmutabilityAnalysis
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0ReferenceImmutabilityAnalysis(p)
-        val fields = p.allFields
+        val fields = p.allProjectClassFiles.toIterator.flatMap { _.fields }
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineReferenceImmutability)
         analysis
     }
