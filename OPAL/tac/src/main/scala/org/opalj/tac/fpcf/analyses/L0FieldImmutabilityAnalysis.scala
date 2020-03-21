@@ -123,16 +123,23 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
         def handleTypeImmutability(state: State) = {
             val objectType = field.fieldType.asFieldType
-            if (!objectType.isArrayType && objectType.isBaseType) {
-                //state.typeImmutability = Some(true) // true is default
+            if (objectType == ObjectType.Object) {
+                state.typeImmutability = Some(false)
+            } //else //if (objectType.isArrayType || objectType.isBaseType) {} ///
+            else if (!objectType.isArrayType && objectType.isBaseType) {
+                ///    //state.typeImmutability = Some(true) // true is default
             } else if (!objectType.isArrayType && objectType == ObjectType("java/lang/String")) {
                 //state.typeImmutability = Some(true) // true is default
-            } else if (!objectType.isArrayType && objectType.asObjectType == ObjectType.Object)
+            } /**else if (!objectType.isArrayType && objectType.asObjectType == ObjectType.Object) {
                 state.typeImmutability = Some(false)
-            else if (objectType.isArrayType && (objectType.asArrayType.componentType.isBaseType || objectType.asArrayType.componentType == ObjectType(
-                "java/lang/String"
-            ))) {
+            }**/ else if (objectType.isArrayType &&
+                (objectType.asArrayType.componentType.isBaseType ||
+                    objectType.asArrayType.componentType == ObjectType(
+                        "java/lang/String"
+                    ))) {
                 //state.typeImmutability = Some(true) // true is default
+            } else if (objectType.isArrayType && objectType.asArrayType.componentType.isArrayType) {
+                state.typeImmutability = Some(false)
             } else {
                 val result =
                     if (objectType.isArrayType) {
