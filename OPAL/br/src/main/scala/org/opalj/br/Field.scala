@@ -61,7 +61,10 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     private[br] def prepareClassFileAttachement(): Field = {
         new Field(
             null /*will be set by class file*/ ,
-            accessFlags, name, fieldType, attributes
+            accessFlags,
+            name,
+            fieldType,
+            attributes
         )
     }
 
@@ -96,6 +99,8 @@ sealed abstract class JVMField extends ClassMember with Ordered[JVMField] {
     }
 
     def isTransient: Boolean = (ACC_TRANSIENT.mask & accessFlags) != 0
+
+    def isSyn: Boolean = super.isSynthetic
 
     def isVolatile: Boolean = (ACC_VOLATILE.mask & accessFlags) != 0
 
@@ -219,7 +224,9 @@ object Field {
         fieldAttributeBuilder: FieldAttributeBuilder
     ): FieldTemplate = {
         this(
-            accessFlags, name, fieldType,
+            accessFlags,
+            name,
+            fieldType,
             RefArray(fieldAttributeBuilder(accessFlags, name, fieldType))
         )
     }
