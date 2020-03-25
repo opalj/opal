@@ -100,7 +100,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
 
             if (isClosedPackage(ot.packageName)) {
                 if (method.isPublic) {
-                    classHierarchy.allSubtypes(ot, reflexive = true).exists { st ⇒
+                    classHierarchy.allSubtypes(ot, reflexive = true).iterator.exists { st ⇒
                         val subtypeCFOption = project.classFile(st)
                         // Class file must be public to access it
                         subtypeCFOption.forall(_.isPublic) &&
@@ -111,7 +111,10 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
                                 // but it soundly overapproximates
                                 subtypeCFOption.forall(_.constructors.exists { c ⇒
                                     c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
-                                }))
+                                }) || classFile.methods.iterator.exists {
+                                        m=>m.isStatic && m.isPublic && m.returnType == ot
+                                    }
+                            )
                     }
                 } else if (method.isProtected) {
                     isExtensible(ot).isYesOrUnknown &&
