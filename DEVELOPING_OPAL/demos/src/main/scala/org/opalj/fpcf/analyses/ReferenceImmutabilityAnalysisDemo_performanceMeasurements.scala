@@ -50,7 +50,7 @@ object ReferenceImmutabilityAnalysisDemo_performanceMeasurements
 
     def analyze(theProject: Project[URL]): String = {
         var times: List[Seconds] = Nil: List[Seconds]
-        for (i ← 0 until 10) {
+        for (i ← 0 to 10) {
             val project = Project.recreate(theProject)
             val analysesManager = project.get(FPCFAnalysesManagerKey)
             analysesManager.project.get(RTACallGraphKey)
@@ -78,7 +78,7 @@ object ReferenceImmutabilityAnalysisDemo_performanceMeasurements
             times = analysisTime :: times
         }
         val sortedList = times.sortWith(_.timeSpan < _.timeSpan)
-        val median = sortedList((times.size - 1) / 2)
+        val median = sortedList(5)
 
         val output =
             s"""

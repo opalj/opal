@@ -52,16 +52,12 @@ object FieldImmutabilityAnalysisDemo_performanceMeasurements extends ProjectAnal
         var tmpProject = theProject
         var times: List[Seconds] = Nil: List[Seconds]
         println("before")
-        for (i ← 0 until 10) {
-            println(
-                "--------------------------------------------------------------------------------------------<<<<"
-            )
+        for (i ← 0 to 10) {
             val project = tmpProject.recreate()
             val analysesManager = project.get(FPCFAnalysesManagerKey)
             analysesManager.project.get(RTACallGraphKey)
             var propertyStore: PropertyStore = null
             var analysisTime: Seconds = Seconds.None
-            println(s"i: $i")
             time {
                 propertyStore = analysesManager
                     .runAll(
@@ -83,12 +79,11 @@ object FieldImmutabilityAnalysisDemo_performanceMeasurements extends ProjectAnal
                 analysisTime = t.toSeconds
             }
             times = analysisTime :: times
-            println("after")
             tmpProject = project
         }
 
         val sortedList = times.sortWith(_.timeSpan < _.timeSpan)
-        val median = sortedList((times.size - 1) / 2)
+        val median = sortedList(5)
 
         val output =
             s"""

@@ -7,6 +7,7 @@ import java.io.FileWriter
 import java.net.URL
 import java.util.Calendar
 
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -91,25 +92,34 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         }
         val sb: StringBuilder = new StringBuilder
         sb.append("\nMutableTypes: \n")
+        val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
         val mutableTypes = propertyStore
             .finalEntities(MutableType_new)
             .toList
+            .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
         sb.append(
             mutableTypes
                 .map(x ⇒ x.toString+"  |Mutable Type\n")
                 .toString
         )
         sb.append("\nShallow Immutable Types:\n")
-        val shallowImmutableTypes = propertyStore.finalEntities(ShallowImmutableType).toList
+        val shallowImmutableTypes = propertyStore
+            .finalEntities(ShallowImmutableType)
+            .toList
+            .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
         sb.append(shallowImmutableTypes.map(x ⇒ x.toString+" |Shallow Immutable Type\n"))
         sb.append("\nDependent Immutable Types: \n")
-        val dependentImmutableTypes = propertyStore.finalEntities(DependentImmutableType).toList
+        val dependentImmutableTypes = propertyStore
+            .finalEntities(DependentImmutableType)
+            .toList
+            .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
         sb.append(
             dependentImmutableTypes.map(x ⇒ x.toString+" |Dependent Immutable Type\n")
         )
         sb.append("\nDeep Immutable Types:\n")
         val deepImmutableTypes = propertyStore.finalEntities(DeepImmutableType).toList
         sb.append(deepImmutableTypes.map(x ⇒ x.toString+"  |Deep Immutable Type\n"))
+
         sb.append(s"\nType immutability analysis took: $analysisTime on average")
 
         sb.append("\n\n")

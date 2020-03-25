@@ -80,7 +80,7 @@ object TypeImmutabilityAnalysisDemo_performanceMeasurements extends ProjectAnaly
         }
 
         val sortedList = times.sortWith(_.timeSpan < _.timeSpan)
-        val median = sortedList((times.size - 1) / 2)
+        val median = sortedList(5)
 
         val output =
             s"""

@@ -9,9 +9,7 @@ import java.util.Calendar
 
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
-import org.opalj.util.PerformanceEvaluation.memory
 
-//import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.EagerLxClassImmutabilityAnalysis_new
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
@@ -56,49 +54,49 @@ object ClassImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplic
     }
 
     def analyze(project: Project[URL]): String = {
-        var memoryConsumption: Long = 0
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
-        memory {
-            val analysesManager = project.get(FPCFAnalysesManagerKey)
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-            analysesManager.project.get(RTACallGraphKey)
+        analysesManager.project.get(RTACallGraphKey)
 
-            time {
-                propertyStore = analysesManager
-                    .runAll(
-                        LazyUnsoundPrematurelyReadFieldsAnalysis,
-                        LazyL2PurityAnalysis_new,
-                        LazyL0ReferenceImmutabilityAnalysis,
-                        LazyL0FieldImmutabilityAnalysis,
-                        LazyLxTypeImmutabilityAnalysis_new,
-                        EagerLxClassImmutabilityAnalysis_new,
-                        LazyStaticDataUsageAnalysis,
-                        LazyL0CompileTimeConstancyAnalysis,
-                        LazyInterProceduralEscapeAnalysis,
-                        LazyReturnValueFreshnessAnalysis,
-                        LazyFieldLocalityAnalysis
-                    )
-                    ._1
-                propertyStore.waitOnPhaseCompletion();
-            } { t ⇒
-                analysisTime = t.toSeconds
-            }
-        } { mu ⇒
-            memoryConsumption = mu
+        time {
+            propertyStore = analysesManager
+                .runAll(
+                    LazyUnsoundPrematurelyReadFieldsAnalysis,
+                    LazyL2PurityAnalysis_new,
+                    LazyL0ReferenceImmutabilityAnalysis,
+                    LazyL0FieldImmutabilityAnalysis,
+                    LazyLxTypeImmutabilityAnalysis_new,
+                    EagerLxClassImmutabilityAnalysis_new,
+                    LazyStaticDataUsageAnalysis,
+                    LazyL0CompileTimeConstancyAnalysis,
+                    LazyInterProceduralEscapeAnalysis,
+                    LazyReturnValueFreshnessAnalysis,
+                    LazyFieldLocalityAnalysis
+                )
+                ._1
+            propertyStore.waitOnPhaseCompletion();
+        } { t ⇒
+            analysisTime = t.toSeconds
         }
+        val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
         val sb = new StringBuilder
         sb.append("Mutable Class: \n")
         val mutableClasses = propertyStore
             .finalEntities(MutableClass)
+            .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
             .toList
         sb.append(
             mutableClasses
                 .map(x ⇒ x.toString+" |Mutable Class\n")
         )
         sb.append("\nShallow Immutable Class:\n")
-        val shallowImmutableClasses = propertyStore.finalEntities(ShallowImmutableClass).toList
+        val shallowImmutableClasses = propertyStore
+            .finalEntities(ShallowImmutableClass)
+            .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
+            .toList
         sb.append(
             shallowImmutableClasses
                 .map(x ⇒ x.toString+" |Shallow Immutable Class\n")
@@ -106,6 +104,7 @@ object ClassImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplic
         sb.append("\nDependent Immutable Class: \n")
         val dependentImmutableClasses = propertyStore
             .finalEntities(DependentImmutableClass)
+            .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
             .toList
         sb.append(
             dependentImmutableClasses
@@ -113,14 +112,20 @@ object ClassImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplic
         )
 
         sb.append("\nDeep Immutable Class Classes:\n")
-        val allInterfaces = project.allClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
+        val allInterfaces =
+            project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
+
         val deepImmutables = propertyStore
             .finalEntities(DeepImmutableClass)
+            .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
             .toList
         val deepImmutableClassesInterfaces = deepImmutables
             .filter(x ⇒ x.isInstanceOf[ObjectType] && allInterfaces.contains(x.asInstanceOf[ObjectType]))
+            .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
         val deepImmutableClasses =
-            deepImmutables.filter(!deepImmutableClassesInterfaces.toSet.contains(_))
+            deepImmutables
+                .filter(!deepImmutableClassesInterfaces.toSet.contains(_))
+                .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
         sb.append(
             deepImmutableClasses.toList
                 .map(x ⇒ x.toString+"  |Deep Immutable Class\n")
@@ -140,7 +145,6 @@ object ClassImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplic
                      | deep immutables: ${deepImmutables.size}
                      | 
                      | took : $analysisTime seconds
-                     | needs : ${memoryConsumption / 1024 / 1024} MBytes
                      |"""".stripMargin)
 
         val calendar = Calendar.getInstance()
@@ -156,7 +160,6 @@ object ClassImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplic
 
         s"""
            | took : $analysisTime seconds
-           | needs : ${memoryConsumption / 1024 / 1024} MBytes
            |""".stripMargin
     }
 }

@@ -7,6 +7,7 @@ import java.io.FileWriter
 import java.net.URL
 import java.util.Calendar
 
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
@@ -24,13 +25,12 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.util.PerformanceEvaluation.memory
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 
 /**
  * Runs the EagerLxClassImmutabilityAnalysis_new as well as analysis needed for improving the result
@@ -53,40 +53,41 @@ object TypeImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplica
     }
 
     def analyze(project: Project[URL]): String = {
-        var memoryConsumption: Long = 0
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
-        memory {
-            val analysesManager = project.get(FPCFAnalysesManagerKey)
-            analysesManager.project.get(RTACallGraphKey)
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
+        analysesManager.project.get(RTACallGraphKey)
 
-            time {
-                propertyStore = analysesManager
-                    .runAll(
-                        LazyUnsoundPrematurelyReadFieldsAnalysis,
-                        LazyL2PurityAnalysis,
-                        LazyL0ReferenceImmutabilityAnalysis,
-                        LazyL0FieldImmutabilityAnalysis,
-                        EagerLxTypeImmutabilityAnalysis_new,
-                        LazyLxClassImmutabilityAnalysis_new,
-                        LazyFieldLocalityAnalysis,
-                        LazyReturnValueFreshnessAnalysis,
-                        LazyStaticDataUsageAnalysis,
-                        LazyL0CompileTimeConstancyAnalysis,
-                        LazyInterProceduralEscapeAnalysis
-                    )
-                    ._1
-                propertyStore.waitOnPhaseCompletion();
-            } { t ⇒
-                analysisTime = t.toSeconds
-            }
-        } { mu ⇒
-            memoryConsumption = mu
+        time {
+            propertyStore = analysesManager
+                .runAll(
+                    LazyUnsoundPrematurelyReadFieldsAnalysis,
+                    LazyL2PurityAnalysis_new,
+                    LazyL0ReferenceImmutabilityAnalysis,
+                    LazyL0FieldImmutabilityAnalysis,
+                    LazyLxClassImmutabilityAnalysis_new,
+                    EagerLxTypeImmutabilityAnalysis_new,
+                    LazyStaticDataUsageAnalysis,
+                    LazyL0CompileTimeConstancyAnalysis,
+                    LazyInterProceduralEscapeAnalysis,
+                    LazyReturnValueFreshnessAnalysis,
+                    LazyFieldLocalityAnalysis
+                )
+                ._1
+            propertyStore.waitOnPhaseCompletion();
+        } { t ⇒
+            analysisTime = t.toSeconds
         }
         val sb: StringBuilder = new StringBuilder
+        val allProjectClassFilesIterator = project.allProjectClassFiles
+        val types =
+            allProjectClassFilesIterator.filter(_.thisType ne ObjectType.Object).map(_.thisType).toSet
         sb.append("\nMutableTypes: \n")
         val mutableTypes = propertyStore
             .finalEntities(MutableType_new)
+            .filter({ x ⇒
+                types.contains(x.asInstanceOf[ObjectType])
+            })
             .toList
         sb.append(
             mutableTypes
@@ -94,15 +95,30 @@ object TypeImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplica
                 .toString
         )
         sb.append("\nShallow Immutable Types:\n")
-        val shallowImmutableTypes = propertyStore.finalEntities(ShallowImmutableType).toList
+        val shallowImmutableTypes = propertyStore
+            .finalEntities(ShallowImmutableType)
+            .filter({ x ⇒
+                types.contains(x.asInstanceOf[ObjectType])
+            })
+            .toList
         sb.append(shallowImmutableTypes.map(x ⇒ x.toString+" |Shallow Immutable Type\n"))
         sb.append("\nDependent Immutable Types: \n")
-        val dependentImmutableTypes = propertyStore.finalEntities(DependentImmutableType).toList
+        val dependentImmutableTypes = propertyStore
+            .finalEntities(DependentImmutableType)
+            .filter({ x ⇒
+                types.contains(x.asInstanceOf[ObjectType])
+            })
+            .toList
         sb.append(
             dependentImmutableTypes.map(x ⇒ x.toString+" |Dependent Immutable Type\n")
         )
         sb.append("\nDeep Immutable Types:\n")
-        val deepImmutableTypes = propertyStore.finalEntities(DeepImmutableType).toList
+        val deepImmutableTypes = propertyStore
+            .finalEntities(DeepImmutableType)
+            .filter({ x ⇒
+                types.contains(x.asInstanceOf[ObjectType])
+            })
+            .toList
         sb.append(deepImmutableTypes.map(x ⇒ x.toString+"  |Deep Immutable Type\n"))
         sb.append(s"\nType immutability analysis took: $analysisTime on average")
 
@@ -114,8 +130,8 @@ object TypeImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplica
          | dependent immutable types: ${dependentImmutableTypes.size}
          | deep immutable types: ${deepImmutableTypes.size}
          | 
+         | sum: ${mutableTypes.size + shallowImmutableTypes.size + dependentImmutableTypes.size + deepImmutableTypes.size}
          | took : $analysisTime seconds
-         | needs : ${memoryConsumption / 1024 / 1024} MBytes
          |""".stripMargin
         )
 
@@ -132,7 +148,6 @@ object TypeImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisApplica
 
         s"""
        | took : $analysisTime seconds
-       | needs : ${memoryConsumption / 1024 / 1024} MBytes
        |""".stripMargin
     }
 }
