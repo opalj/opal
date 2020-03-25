@@ -111,8 +111,10 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         case _ ⇒
                     }
             )
-            if (result.size > 0)
+            if (result.size > 0) {
                 classFormalTypeParameters = Some(result)
+            }
+
         }
         def isInClassesGenericTypeParameters(string: String): Boolean = {
             if (classFormalTypeParameters == None)
@@ -124,19 +126,13 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         def handleTypeImmutability(state: State) = {
             val objectType = field.fieldType.asFieldType
             if (objectType == ObjectType.Object) {
-                state.typeImmutability = Some(false)
-            } //else //if (objectType.isArrayType || objectType.isBaseType) {} ///
-            else if (!objectType.isArrayType && objectType.isBaseType) {
-                ///    //state.typeImmutability = Some(true) // true is default
-            } else if (!objectType.isArrayType && objectType == ObjectType("java/lang/String")) {
+                state.typeImmutability = Some(false) //handling generic fields
+            } else if (objectType.isBaseType || objectType == ObjectType("java/lang/String")) {
                 //state.typeImmutability = Some(true) // true is default
-            } /**else if (!objectType.isArrayType && objectType.asObjectType == ObjectType.Object) {
-                state.typeImmutability = Some(false)
-            }**/ else if (objectType.isArrayType &&
-                (objectType.asArrayType.componentType.isBaseType ||
-                    objectType.asArrayType.componentType == ObjectType(
-                        "java/lang/String"
-                    ))) {
+            } else if (objectType.isArrayType && (objectType.asArrayType.componentType.isBaseType ||
+                objectType.asArrayType.componentType == ObjectType(
+                    "java/lang/String"
+                ))) {
                 //state.typeImmutability = Some(true) // true is default
             } else if (objectType.isArrayType && objectType.asArrayType.componentType.isArrayType) {
                 state.typeImmutability = Some(false)
@@ -174,8 +170,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             state.field.asField.attributes.foreach(
                 _ match {
                     case RuntimeInvisibleAnnotationTable(_) ⇒
+                    case SourceFile(_)                      ⇒
                     case TypeVariableSignature(t) ⇒
-                        //state.typeImmutability = Some(false) // respects the cas
                         flag_onlyDeep = false
                         if (!isInClassesGenericTypeParameters(t)) {
                             flag_notShallow = false
@@ -317,6 +313,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     c(state)
                 )
         }
+
         val state: State = new State(field)
         val result = propertyStore(state.field, ReferenceImmutability.key)
         result match {
@@ -327,10 +324,10 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 dependencies += x
             }
         }
+
         loadFormalTypeparameters()
         handleTypeImmutability(state)
         hasGenericType(state)
-
         if (dependencies.isEmpty)
             createResult(state)
         else

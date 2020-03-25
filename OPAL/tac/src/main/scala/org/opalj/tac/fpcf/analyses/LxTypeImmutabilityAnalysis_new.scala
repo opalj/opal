@@ -272,8 +272,8 @@ object EagerLxTypeImmutabilityAnalysis_new
     override def start(project: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new LxTypeImmutabilityAnalysis_new(project)
-        val allClassFilesIterator = project.allProjectClassFiles //project.allClassFiles.iterator
-        val types = allClassFilesIterator.filter(_.thisType ne ObjectType.Object).map(_.thisType)
+        val allProjectClassFilesIterator = project.allProjectClassFiles
+        val types = allProjectClassFilesIterator.filter(_.thisType ne ObjectType.Object).map(_.thisType)
 
         ps.scheduleEagerComputationsForEntities(types) {
             analysis.step1(typeExtensibility)
