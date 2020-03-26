@@ -6,9 +6,9 @@ import org.opalj.fpcf.properties.field_immutability.DependentImmutableFieldAnnot
 import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
 
 public class ArrayAndString<T> {
-    @DeepImmutableFieldAnnotation("")
+    @ShallowImmutableFieldAnnotation("")
     private String[] stringArray;
-    @DeepImmutableFieldAnnotation("")
+    @ShallowImmutableFieldAnnotation("")
     private int[] intArray;
     @DeepImmutableFieldAnnotation("")
     private String string;

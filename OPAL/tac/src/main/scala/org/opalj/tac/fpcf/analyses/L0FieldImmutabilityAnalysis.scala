@@ -129,20 +129,10 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 state.typeImmutability = Some(false) //handling generic fields
             } else if (objectType.isBaseType || objectType == ObjectType("java/lang/String")) {
                 //state.typeImmutability = Some(true) // true is default
-            } else if (objectType.isArrayType && (objectType.asArrayType.componentType.isBaseType ||
-                objectType.asArrayType.componentType == ObjectType(
-                    "java/lang/String"
-                ))) {
-                //state.typeImmutability = Some(true) // true is default
-            } else if (objectType.isArrayType && objectType.asArrayType.componentType.isArrayType) {
+            } else if (objectType.isArrayType) {
                 state.typeImmutability = Some(false)
             } else {
-                val result =
-                    if (objectType.isArrayType) {
-                        propertyStore(objectType.asArrayType.componentType, TypeImmutability_new.key)
-                    } else {
-                        propertyStore(objectType, TypeImmutability_new.key)
-                    }
+                val result = propertyStore(objectType, TypeImmutability_new.key)
                 dependencies = dependencies.filter(_.e ne result.e)
                 result match {
                     case FinalEP(e, DeepImmutableType) ⇒
