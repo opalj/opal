@@ -22,8 +22,8 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  * @author Dominik Helm
  */
 class PKECPropertyStore(
-        final val ctx: Map[Class[_], AnyRef],
-        val THREAD_COUNT: Int,
+        final val ctx:                   Map[Class[_], AnyRef],
+        val THREAD_COUNT:                Int,
         override val MaxEvaluationDepth: Int
 )(
         implicit
@@ -32,7 +32,7 @@ class PKECPropertyStore(
 
     implicit val propertyStore: PKECPropertyStore = this
 
-    val taskManager: PKECTaskManager = PKECFIFOTaskManager
+    val taskManager: PKECTaskManager = PKECNoPriorityTaskManager
 
     var evaluationDepth: Int = 0
 
@@ -464,7 +464,7 @@ class PKECPropertyStore(
     private[this] val activeTasks = new AtomicInteger(0)
     private[this] val threads: Array[PKECThread] = Array.fill(THREAD_COUNT) { null }
 
-    private[this] def startThreads(thread: (Int) ⇒ PKECThread): Unit = {
+    private[this] def startThreads(thread: Int ⇒ PKECThread): Unit = {
         var tId = 0
         while (tId < THREAD_COUNT) {
             val t = thread(tId)
@@ -734,18 +734,11 @@ class PKECPropertyStore(
     }
 
     class ContinuationTask(
-            depender: EPKState, oldDependee: SomeEOptionP, dependeeState: EPKState
+            depender: EPKState, oldDependee: SomeEOptionP, dependee: EPKState
     ) extends QualifiedTask {
         scheduledOnUpdateComputations.incrementAndGet()
 
-        val priority = 0 /*{
-            val dependerState = ps(depender.pk.id).get(depender.e)
-            val dependerDependees = if (dependerState == null) null else dependerState.dependees
-            val dependerDependeesSize = if (dependerDependees == null) 0 else dependerDependees.size
-
-            val dependeeDependersSize = dependeeState.dependers.size() + dependeeState.suppressedDependers.size()
-            taskManager.weight(depender, oldDependee, dependerDependeesSize, dependeeDependersSize)
-        }*/
+        val priority = taskManager.weight(depender, dependee)
 
         override def apply(): Unit = {
             if (depender ne null) {
@@ -786,8 +779,8 @@ case class EPKState(
                 dependers.synchronized {
                     eOptP = finalEP
 
-                    notifyAndClearDependers(finalEP, theEOptP, dependers, unnotifiedPKs)
-                    notifyAndClearDependers(finalEP, theEOptP, suppressedDependers, unnotifiedPKs)
+                    notifyAndClearDependers(theEOptP, dependers, unnotifiedPKs)
+                    notifyAndClearDependers(theEOptP, suppressedDependers, unnotifiedPKs)
                 }
             }
             dependees = null
@@ -813,7 +806,7 @@ case class EPKState(
                     dependers.synchronized {
                         eOptP = interimEP
 
-                        notifyAndClearDependers(interimEP, theEOptP, dependers)
+                        notifyAndClearDependers(theEOptP, dependers)
                     }
                 }
                 c = newC
@@ -837,7 +830,7 @@ case class EPKState(
                     dependers.synchronized {
                         eOptP = interimEP
 
-                        notifyAndClearDependers(interimEP, theEOptP, dependers)
+                        notifyAndClearDependers(theEOptP, dependers)
                     }
                     interimEP
                 case _ ⇒
@@ -881,7 +874,6 @@ case class EPKState(
     }
 
     def notifyAndClearDependers(
-        theEOptP:      SomeEPS,
         oldEOptP:      SomeEOptionP,
         theDependers:  java.util.HashSet[EPKState],
         unnotifiedPKs: Set[PropertyKind]           = Set.empty
@@ -913,20 +905,39 @@ case class EPKState(
 
 trait PKECTaskManager {
     def weight(
-        taskEPK:                           SomeEPK,
-        updatedEOptionP:                   SomeEOptionP, // the current eOptionP to which the task is related
-        updatedEOptionPDependees:          Int, // the dependees of the eOptionP
-        currentDependersOfUpdatedEOptionP: Int
+        depender: EPKState, // The state to be updated
+        dependee: EPKState // The dependee that triggered this update
     ): Int
 }
+
+object PKECTaskManager {
+    def dependeesCount(depender: EPKState): Int = {
+        val dependerDependees = if (depender == null) null else depender.dependees
+        if (dependerDependees == null) 0 else dependerDependees.size
+    }
+
+    def dependersCount(dependee: EPKState): Int = {
+        dependee.dependers.size() + dependee.suppressedDependers.size()
+    }
+}
+
+case object PKECNoPriorityTaskManager extends PKECTaskManager {
+    val counter = new AtomicInteger(0)
+
+    override def weight(
+        depender: EPKState,
+        dependee: EPKState
+    ): Int = {
+        0
+    }
+}
+
 case object PKECFIFOTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(0)
 
     override def weight(
-        taskEPK:                           SomeEPK,
-        updatedEOptionP:                   SomeEOptionP,
-        updatedEOptionPDependees:          Int,
-        currentDependersOfUpdatedEOptionP: Int
+        depender: EPKState,
+        dependee: EPKState
     ): Int = {
         counter.getAndIncrement()
     }
@@ -936,10 +947,8 @@ case object PKECLIFOTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(Int.MaxValue)
 
     override def weight(
-        taskEPK:                           SomeEPK,
-        updatedEOptionP:                   SomeEOptionP,
-        updatedEOptionPDependees:          Int,
-        currentDependersOfUpdatedEOptionP: Int
+        depender: EPKState,
+        dependee: EPKState
     ): Int = {
         counter.getAndDecrement()
     }
@@ -949,12 +958,10 @@ case object PKECManyDependeesFirstTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(Int.MaxValue)
 
     override def weight(
-        taskEPK:         SomeEPK,
-        updatedEOptionP: SomeEOptionP,
-        dependeesCount:  Int,
-        deoendersCount:  Int
+        depender: EPKState,
+        dependee: EPKState
     ): Int = {
-        -dependeesCount
+        -PKECTaskManager.dependeesCount(depender)
     }
 }
 
@@ -962,12 +969,10 @@ case object PKECManyDependeesLastTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(Int.MaxValue)
 
     override def weight(
-        taskEPK:         SomeEPK,
-        updatedEOptionP: SomeEOptionP,
-        dependeesCount:  Int,
-        deoendersCount:  Int
+        depender: EPKState,
+        dependee: EPKState
     ): Int = {
-        dependeesCount
+        PKECTaskManager.dependeesCount(depender)
     }
 }
 
@@ -975,12 +980,10 @@ case object PKECManyDependersFirstTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(Int.MaxValue)
 
     override def weight(
-        taskEPK:         SomeEPK,
-        updatedEOptionP: SomeEOptionP,
-        dependeesCount:  Int,
-        deoendersCount:  Int
+        depender: EPKState,
+        dependee: EPKState
     ): Int = {
-        -deoendersCount
+        -PKECTaskManager.dependersCount(dependee)
     }
 }
 
@@ -988,12 +991,10 @@ case object PKECManyDependersLastTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(Int.MaxValue)
 
     override def weight(
-        taskEPK:         SomeEPK,
-        updatedEOptionP: SomeEOptionP,
-        dependeesCount:  Int,
-        deoendersCount:  Int
+        depender: EPKState,
+        dependee: EPKState
     ): Int = {
-        deoendersCount
+        PKECTaskManager.dependersCount(dependee)
     }
 }
 
@@ -1001,12 +1002,12 @@ case object PKECManyDependenciesFirstTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(Int.MaxValue)
 
     override def weight(
-        taskEPK:         SomeEPK,
-        updatedEOptionP: SomeEOptionP,
-        dependeesCount:  Int,
-        deoendersCount:  Int
+        depender: EPKState,
+        dependee: EPKState
     ): Int = {
-        -(Math.max(1, deoendersCount) * Math.max(dependeesCount, 1))
+
+        -(Math.max(1, PKECTaskManager.dependersCount(dependee)) *
+            Math.max(PKECTaskManager.dependeesCount(depender), 1))
     }
 }
 
@@ -1014,12 +1015,11 @@ case object PKECManyDependenciesLastTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(Int.MaxValue)
 
     override def weight(
-        taskEPK:         SomeEPK,
-        updatedEOptionP: SomeEOptionP,
-        dependeesCount:  Int,
-        deoendersCount:  Int
+        depender: EPKState,
+        dependee: EPKState
     ): Int = {
-        Math.max(1, deoendersCount) * Math.max(dependeesCount, 1)
+        Math.max(1, PKECTaskManager.dependersCount(dependee)) *
+            Math.max(PKECTaskManager.dependeesCount(depender), 1)
     }
 }
 
