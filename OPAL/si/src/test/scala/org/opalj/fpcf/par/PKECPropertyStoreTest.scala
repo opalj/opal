@@ -15,7 +15,7 @@ class PKECPropertyStoreTestWithDebugging
     extends AbstractPKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty)
+        val ps = PKECPropertyStore()
         ps.suppressError = true
         ps
     }
@@ -33,7 +33,7 @@ class PKECPropertyStoreTestWithoutDebugging
     extends AbstractPKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty)
+        val ps = PKECPropertyStore()
         ps.suppressError = true
         ps
     }
