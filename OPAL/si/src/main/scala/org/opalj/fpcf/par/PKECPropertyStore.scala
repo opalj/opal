@@ -23,6 +23,7 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  */
 class PKECPropertyStore(
         final val ctx: Map[Class[_], AnyRef],
+        val THREAD_COUNT: Int,
         override val MaxEvaluationDepth: Int
 )(
         implicit
@@ -30,8 +31,6 @@ class PKECPropertyStore(
 ) extends ParallelPropertyStore {
 
     implicit val propertyStore: PKECPropertyStore = this
-
-    val THREAD_COUNT = 4
 
     val taskManager: PKECTaskManager = PKECFIFOTaskManager
 
@@ -1032,6 +1031,8 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.par.PKECPropertyStore.MaxEvaluationDepth"
 
+    @volatile var MaxThreads = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
     )(
@@ -1048,7 +1049,7 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
         val maxEvaluationDepth = config.getInt(MaxEvaluationDepthKey)
 
-        val ps = new PKECPropertyStore(contextMap, maxEvaluationDepth)
+        val ps = new PKECPropertyStore(contextMap, MaxThreads, maxEvaluationDepth)
         ps
     }
 }

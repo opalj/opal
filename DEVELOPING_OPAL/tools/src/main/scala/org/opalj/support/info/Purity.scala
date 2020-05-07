@@ -194,18 +194,12 @@ object Purity {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                /*if (numThreads == 0) {
+                if (numThreads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = numThreads
-                    // FIXME: this property store is broken
+                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                }*/
-                org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                //org.opalj.fpcf.par.DHTPropertyStore(context: _*)
-                //org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 4
-                //org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                }
             }
         )
 

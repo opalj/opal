@@ -139,19 +139,13 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                /*val threads = numThreads.getOrElse(0) // We chose the sequential store as default
+                val threads = numThreads.getOrElse(0) // We chose the sequential store as default
                 if (threads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = threads
-                    // FIXME: The PKECPropertyStore is broken
+                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = threads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                }*/
-                org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                //org.opalj.fpcf.par.DHTPropertyStore(context: _*)
-                //org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 4
-                //org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                }
             }
         )
 
