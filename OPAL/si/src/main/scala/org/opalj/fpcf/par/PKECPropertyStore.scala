@@ -295,14 +295,13 @@ class PKECPropertyStore(
 
             case PartialResult.id ⇒
                 val PartialResult(e, pk, u) = r
-                handlePartialResult(r, u, e, pk)
+                handlePartialResult(u, e, pk)
 
             case InterimPartialResult.id ⇒
                 val InterimPartialResult(prs, dependees, c) = r
 
                 prs foreach { pr ⇒
                     handlePartialResult(
-                        pr,
                         pr.u.asInstanceOf[SomeEOptionP ⇒ Option[SomeInterimEP]],
                         pr.e,
                         pr.pk
@@ -368,7 +367,6 @@ class PKECPropertyStore(
     }
 
     private[this] def handlePartialResult(
-        pr:     PropertyComputationResult,
         update: UpdateComputation[Entity, Property],
         e:      Entity,
         pk:     PropertyKey[Property]
@@ -738,12 +736,11 @@ class PKECPropertyStore(
     ) extends QualifiedTask {
         scheduledOnUpdateComputations.incrementAndGet()
 
-        val priority = taskManager.weight(depender, dependee)
+        val priority: Int = taskManager.weight(depender, dependee)
 
         override def apply(): Unit = {
             if (depender ne null) {
-                val isSuppressed = suppressInterimUpdates(depender.eOptP.pk.id)(oldDependee.pk.id)
-                depender.applyContinuation(oldDependee, isSuppressed)
+                depender.applyContinuation(oldDependee)
             }
         }
     }
@@ -888,7 +885,7 @@ case class EPKState(
         theDependers.clear()
     }
 
-    def applyContinuation(oldDependee: SomeEOptionP, isSuppressed: Boolean)(implicit ps: PKECPropertyStore): Unit = {
+    def applyContinuation(oldDependee: SomeEOptionP)(implicit ps: PKECPropertyStore): Unit = {
         this.synchronized {
             val theDependees = dependees
             // We are still interessted in that dependee?
@@ -1031,7 +1028,7 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
 
     final val MaxEvaluationDepthKey = "org.opalj.fpcf.par.PKECPropertyStore.MaxEvaluationDepth"
 
-    @volatile var MaxThreads = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
+    @volatile var MaxThreads: Int = org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks
 
     def apply(
         context: PropertyStoreContext[_ <: AnyRef]*
