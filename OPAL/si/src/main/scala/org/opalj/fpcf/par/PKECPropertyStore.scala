@@ -11,6 +11,8 @@ import java.util.ArrayDeque
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.ControlThrowable
 
+import com.typesafe.config.Config
+
 import org.opalj.log.LogContext
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
 
@@ -20,7 +22,8 @@ import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
  * @author Dominik Helm
  */
 class PKECPropertyStore(
-        final val ctx: Map[Class[_], AnyRef]
+        final val ctx: Map[Class[_], AnyRef],
+        override val MaxEvaluationDepth: Int
 )(
         implicit
         val logContext: LogContext
@@ -32,7 +35,7 @@ class PKECPropertyStore(
 
     val taskManager: PKECTaskManager = PKECFIFOTaskManager
 
-    override def MaxEvaluationDepth: Int = 0
+    var evaluationDepth: Int = 0
 
     val ps: Array[ConcurrentHashMap[Entity, EPKState]] =
         Array.fill(PropertyKind.SupportedPropertyKinds) { new ConcurrentHashMap() }
@@ -376,8 +379,7 @@ class PKECPropertyStore(
     }
 
     def updateDependees(depender: EPKState, newDependees: Set[SomeEOptionP]): Unit = {
-        val dependerEpk = depender.eOptP.toEPK
-        val suppressedPKs = suppressInterimUpdates(dependerEpk.pk.id)
+        val suppressedPKs = suppressInterimUpdates(depender.eOptP.pk.id)
         newDependees.forall { dependee ⇒
             val dependeePK = dependee.pk.id
             val dependeeState = ps(dependeePK).get(dependee.e)
@@ -392,18 +394,25 @@ class PKECPropertyStore(
     ): EOptionP[E, P] = {
         val current = ps(pkId).get(e)
         if (current eq null) {
-            val lazyComputation = lazyComputations(pkId)
+            val lazyComputation = lazyComputations(pkId).asInstanceOf[E ⇒ PropertyComputationResult]
             if (lazyComputation ne null) {
                 val previous = ps(pkId).putIfAbsent(e, EPKState(epk, null, null))
                 if (previous eq null) {
-                    scheduleTask(
-                        new LazyComputationTask(
-                            e,
-                            lazyComputation.asInstanceOf[E ⇒ PropertyComputationResult],
-                            pkId
+                    if (evaluationDepth < MaxEvaluationDepth) {
+                        evaluationDepth += 1
+                        handleResult(lazyComputation(e))
+                        evaluationDepth -= 1
+                        ps(pkId).get(e).eOptP.asInstanceOf[EOptionP[E, P]]
+                    } else {
+                        scheduleTask(
+                            new LazyComputationTask(
+                                e,
+                                lazyComputation,
+                                pkId
+                            )
                         )
-                    )
-                    epk
+                        epk
+                    }
                 } else {
                     previous.eOptP.asInstanceOf[EOptionP[E, P]]
                 }
@@ -1031,7 +1040,15 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
     ): PKECPropertyStore = {
         val contextMap: Map[Class[_], AnyRef] = context.map(_.asTuple).toMap
 
-        val ps = new PKECPropertyStore(contextMap)
+        val config =
+            contextMap.get(classOf[Config]) match {
+                case Some(config: Config) ⇒ config
+                case _                    ⇒ org.opalj.BaseConfig
+            }
+
+        val maxEvaluationDepth = config.getInt(MaxEvaluationDepthKey)
+
+        val ps = new PKECPropertyStore(contextMap, maxEvaluationDepth)
         ps
     }
 }
