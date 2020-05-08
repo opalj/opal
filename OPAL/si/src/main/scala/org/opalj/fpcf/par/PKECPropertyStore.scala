@@ -739,9 +739,7 @@ class PKECPropertyStore(
         val priority: Int = taskManager.weight(depender, dependee)
 
         override def apply(): Unit = {
-            if (depender ne null) {
-                depender.applyContinuation(oldDependee)
-            }
+            depender.applyContinuation(oldDependee)
         }
     }
 
@@ -777,7 +775,7 @@ case class EPKState(
                     eOptP = finalEP
 
                     notifyAndClearDependers(theEOptP, dependers, unnotifiedPKs)
-                    notifyAndClearDependers(theEOptP, suppressedDependers, unnotifiedPKs)
+                    notifyAndClearDependers(finalEP, suppressedDependers, unnotifiedPKs)
                 }
             }
             dependees = null
@@ -850,7 +848,10 @@ case class EPKState(
             // AND that update must not be suppressed (either final or not a suppressed PK).
             if ((theEOptP ne dependee) &&
                 (theEOptP.isFinal || !suppressedPKs(dependeePK))) {
-                ps.scheduleTask(new ps.ContinuationTask(depender, dependee, this))
+                if (theEOptP.isFinal)
+                    ps.scheduleTask(new ps.ContinuationTask(depender, theEOptP, this))
+                else
+                    ps.scheduleTask(new ps.ContinuationTask(depender, dependee, this))
                 false
             } else {
                 if (suppressedPKs(dependeePK)) {
@@ -889,7 +890,8 @@ case class EPKState(
         this.synchronized {
             val theDependees = dependees
             // We are still interessted in that dependee?
-            if (theDependees != null && theDependees.contains(oldDependee)) {
+            if (theDependees != null &&
+                (oldDependee.isFinal || theDependees.contains(oldDependee))) {
                 // We always retrieve the most up-to-date state of the dependee.
                 val currentDependee = ps.ps(oldDependee.pk.id).get(oldDependee.e).eOptP.asEPS
                 // IMPROVE: If we would know about ordering, we could only perform the operation
