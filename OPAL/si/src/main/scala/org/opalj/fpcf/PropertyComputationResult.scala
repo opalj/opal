@@ -141,7 +141,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  */
 final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
-        val dependees: Set[SomeEOptionP], //IMPROVE: require sets or EOptionPSets
+        val dependees: Set[SomeEOptionP], //IMPROVE: require EOptionPSets?
         val c:         ProperOnUpdateContinuation
 ) extends ProperPropertyComputationResult { result ⇒
 
@@ -388,7 +388,7 @@ object PartialResult { private[fpcf] final val id = 6 }
  */
 case class InterimPartialResult[SE >: Null <: Property](
         us:        Traversable[SomePartialResult], // can be empty!
-        dependees: Set[SomeEOptionP], //IMPROVE: require sets or EOptionPSets
+        dependees: Set[SomeEOptionP], //IMPROVE: require EOptionPSets?
         c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
 
