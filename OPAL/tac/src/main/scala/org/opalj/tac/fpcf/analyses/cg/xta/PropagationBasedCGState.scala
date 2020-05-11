@@ -106,6 +106,6 @@ class PropagationBasedCGState(
     }
 
     override def dependees: Set[SomeEOptionP] = {
-         super.dependees ++ _instantiatedTypesDependeeMap.valuesIterator
+        super.dependees ++ _instantiatedTypesDependeeMap.valuesIterator
     }
 }

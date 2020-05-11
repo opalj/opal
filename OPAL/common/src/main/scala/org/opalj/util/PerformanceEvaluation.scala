@@ -203,8 +203,8 @@ object PerformanceEvaluation {
      * import org.opalj.util.PerformanceEvaluation._
      * import org.opalj.util._
      * time[String](2,4,3,{Thread.sleep(300).toString}){ (t, ts) =>
-     *     val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
-     *     println(f"Avg: ${avg(ts).timeSpan}%1.4f; T: ${t.toSeconds.timeSpan}%1.4f; Ts: $sTs")
+     *     val sTs = ts.map(t => f"\${t.toSeconds.timeSpan}%1.4f").mkString(", ")
+     *     println(f"Avg: \${avg(ts).timeSpan}%1.4f; T: \${t.toSeconds.timeSpan}%1.4f; Ts: \$sTs")
      * }
      * }}}
      * {{{
@@ -219,8 +219,8 @@ object PerformanceEvaluation {
      *            {store = Array.fill(1000000){val l : Object = List(i); l}},
      *            runGC=true
      *       ){ (t, ts) =>
-     *          val sTs = ts.map(t => f"${t.toSeconds.timeSpan}%1.4f").mkString(", ")
-     *          println(f"Avg: ${avg(ts).timeSpan}%1.4f; T:${t.toSeconds.timeSpan}%1.4f; Ts:$sTs")
+     *          val sTs = ts.map(t => f"\${t.toSeconds.timeSpan}%1.4f").mkString(", ")
+     *          println(f"Avg: \${avg(ts).timeSpan}%1.4f; T:\${t.toSeconds.timeSpan}%1.4f; Ts:\$sTs")
      *        }
      *     }(l => println("non-empty:"+l))
      *   }
