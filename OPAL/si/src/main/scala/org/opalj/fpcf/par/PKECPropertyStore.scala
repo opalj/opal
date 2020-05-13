@@ -485,6 +485,8 @@ class PKECPropertyStore(
         setAndPreinitializedValues.foreach { epk ⇒ triggerComputations(epk.e, epk.pk.id) }
         setAndPreinitializedValues = List.empty
 
+        activeTasks.addAndGet(initialQueues.map(_.size()).sum)
+
         while (subPhaseId < subPhaseFinalizationOrder.length) {
             var continueCycles = false
             do {
@@ -496,14 +498,14 @@ class PKECPropertyStore(
 
                     startThreads(new FallbackThread(_))
 
-                    continueFallbacks = !queues.forall(_.isEmpty)
+                    continueFallbacks = activeTasks.get() != 0 //!queues.forall(_.isEmpty)
                 } while (continueFallbacks)
 
                 startThreads(new CycleResolutionThread(_))
 
                 resolveCycles()
 
-                continueCycles = !queues.forall(_.isEmpty)
+                continueCycles = activeTasks.get() != 0 //!queues.forall(_.isEmpty)
             } while (continueCycles)
 
             startThreads(new PartialPropertiesFinalizerThread(_))
@@ -537,13 +539,6 @@ class PKECPropertyStore(
         for (cSCC ← cSCCs) {
             for (interimEPKState ← cSCC) {
                 interimEPKState.dependees = null
-                /*val dependees = interimEPKState.dependees
-                dependees.foreach { dependee ⇒
-                    // during execution, no other thread accesses the dependers of the EPKState
-                    val dependeeState = ps(dependee.pk.id).get(dependee.e)
-                    dependeeState.dependers.remove(interimEPKState)
-                    dependeeState.suppressedDependers.remove(interimEPKState)
-                }*/
                 scheduleTask(new SetTask(interimEPKState.eOptP.toFinalEP))
             }
         }
@@ -556,10 +551,12 @@ class PKECPropertyStore(
         override def run(): Unit = {
             try {
                 val initialTasks = initialQueues(ownTId)
+                val initialTaskSize = initialTasks.size()
                 var curInitialTask: QualifiedTask = null
                 while ({ curInitialTask = initialTasks.poll(); curInitialTask != null }) {
                     curInitialTask.apply()
                 }
+                activeTasks.addAndGet(-initialTaskSize)
                 val tasksQueue = queues(ownTId)
                 val tasks = new ArrayDeque[QualifiedTask](50000 / THREAD_COUNT)
                 while (!doTerminate) {
@@ -567,10 +564,6 @@ class PKECPropertyStore(
                     if (tasks.isEmpty) {
                         val active = activeTasks.get()
                         if (active == 0) {
-                            threads.foreach { t ⇒
-                                if (t ne this)
-                                    t.interrupt()
-                            }
                             return ;
                         } else {
                             // try workstealing:
