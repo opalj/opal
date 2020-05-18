@@ -58,8 +58,9 @@ To get a good, first idea what the abstract interpretation framework can do, you
 
 ## OPAL based Tools
 
-### BugPicker
-Find bugs in your Java project using [BugPicker](tools/bugpicker/index.php).
+[comment]: # "### BugPicker"
+
+[comment]: # "Find bugs in your Java project using [BugPicker](tools/bugpicker/index.php)."
 
 ### OPAL Java Bytecode Disassembler
 [Disassembles](DeveloperTools.html) your Java bytecode.
