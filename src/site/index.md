@@ -51,10 +51,9 @@ The abstract interpretation framework is a highly-customizable framework for the
 
     libraryDependencies += "de.opal-project" % "abstract-interpretation-framework_2.12" % "3.0.0"
 
-Exploring the Abstract Interpretation Framework
+[comment]: # "Exploring the Abstract Interpretation Framework"
 
-
-To get a good, first idea what the abstract interpretation framework can do, you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries.
+[comment]: # "To get a good, first idea what the abstract interpretation framework can do, you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries."
 
 ## OPAL based Tools
 
