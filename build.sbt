@@ -22,15 +22,15 @@ version in ThisBuild := "3.0.0-SNAPSHOT"
 // RELEASED version in ThisBuild := "0.8.9"
 
 organization in ThisBuild := "de.opal-project"
-homepage in ThisBuild := Some(url("http://www.opal-project.de"))
-licenses in ThisBuild := Seq("BSD-2-Clause" -> url("http://opensource.org/licenses/BSD-2-Clause"))
+homepage in ThisBuild := Some(url("https://www.opal-project.de"))
+licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licenses/BSD-2-Clause"))
 
 scalaVersion in ThisBuild := "2.12.9"
 
 ScalacConfiguration.globalScalacOptions
 
 resolvers in ThisBuild += Resolver.jcenterRepo
-resolvers in ThisBuild += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
+resolvers in ThisBuild += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
 
 // OPAL already parallelizes most tests/analyses internally!
 parallelExecution in ThisBuild := false
