@@ -22,6 +22,7 @@ import java.util.Calendar
 
 import org.opalj.br.Field
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
@@ -60,6 +61,7 @@ object ReferenceImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisAp
             propertyStore = analysesManager
                 .runAll(
                     EagerL0ReferenceImmutabilityAnalysis,
+                    LazyL0FieldImmutabilityAnalysis,
                     LazyLxClassImmutabilityAnalysis_new,
                     LazyLxTypeImmutabilityAnalysis_new,
                     LazyUnsoundPrematurelyReadFieldsAnalysis,

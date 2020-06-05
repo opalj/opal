@@ -7,6 +7,7 @@ import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
@@ -44,6 +45,7 @@ class ReferenceImmutabilityTests_withNewPurity extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL0ReferenceImmutabilityAnalysis,
+                LazyL0FieldImmutabilityAnalysis,
                 LazyLxClassImmutabilityAnalysis_new,
                 LazyLxTypeImmutabilityAnalysis_new,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
