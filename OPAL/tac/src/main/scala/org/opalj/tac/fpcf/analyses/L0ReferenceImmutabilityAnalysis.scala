@@ -45,8 +45,6 @@ import org.opalj.br.fpcf.properties.LazyInitializedReference
 import org.opalj.br.fpcf.properties.LazyInitializedField
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.NotPrematurelyReadField
-import org.opalj.br.fpcf.properties.PrematurelyReadField
 import org.opalj.br.fpcf.properties.ReferenceImmutability
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
@@ -1041,17 +1039,22 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
      */
     def isPrematurelyRead(
         eop: EOptionP[Field, FieldPrematurelyRead]
-    )(implicit state: State): Boolean =
-        eop match {
-            case LBP(NotPrematurelyReadField) ⇒
-                state.prematurelyReadDependee = None
-                false
-            case UBP(PrematurelyReadField) ⇒ true
-            case eps ⇒
-                state.prematurelyReadDependee = Some(eps)
-                false
-        }
+    )(implicit state: State): Boolean = {
+        val s = state.referenceImmutability
+        s != s //TODO revert
+    }
 
+    /**
+     * eop match {
+     * case LBP(NotPrematurelyReadField) ⇒
+     * state.prematurelyReadDependee = None
+     * false
+     * case UBP(PrematurelyReadField) ⇒ true
+     * case eps ⇒
+     * state.prematurelyReadDependee = Some(eps)
+     * false
+     * } *
+     */
     /**
      * Checkes if the method that defines the value assigned to a (potentially) lazily initialized
      * field is deterministic, ensuring that the same value is written even for concurrent
