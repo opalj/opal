@@ -8,15 +8,18 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
  * @author Tobias Peter Roth
  */
 class ReferenceImmutabilityTests extends PropertiesTest {
+
+    override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
         List("org/opalj/fpcf/fixtures/immutability")
@@ -42,7 +45,8 @@ class ReferenceImmutabilityTests extends PropertiesTest {
                 LazyL2FieldMutabilityAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
-                LazyInterProceduralEscapeAnalysis
+                LazyInterProceduralEscapeAnalysis,
+                LazyLxTypeImmutabilityAnalysis_new
             )
         )
         as.propertyStore.shutdown()

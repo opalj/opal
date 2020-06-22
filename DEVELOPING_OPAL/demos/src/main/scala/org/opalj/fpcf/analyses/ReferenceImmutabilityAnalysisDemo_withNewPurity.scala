@@ -8,12 +8,10 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedReference
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.EagerL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -22,12 +20,13 @@ import java.util.Calendar
 
 import org.opalj.br.Field
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 
 /**
@@ -70,7 +69,8 @@ object ReferenceImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisAp
                     LazyStaticDataUsageAnalysis,
                     LazyL0CompileTimeConstancyAnalysis,
                     LazyReturnValueFreshnessAnalysis,
-                    LazyFieldLocalityAnalysis
+                    LazyFieldLocalityAnalysis,
+                    LazyLxTypeImmutabilityAnalysis_new
                 )
                 ._1
             propertyStore.waitOnPhaseCompletion()
@@ -103,18 +103,20 @@ object ReferenceImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisAp
         )
 
         sb = sb.append("\nImmutable References: \n")
-        val immutableReferences = propertyStore
-            .finalEntities(ImmutableReference)
-            .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
-            .toList
-        sb = sb.append(
-            immutableReferences.map(x ⇒ x.toString+"\n").toString()
-        )
+
+        /**
+         * val immutableReferences = propertyStore
+         * .filter(x => allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
+         * .toList
+         * sb = sb.append(
+         * immutableReferences.map(x => x.toString + "\n").toString()
+         * )*
+         */
         sb.append(
             s""" 
          | mutable References: ${mutableReferences.size}
          | lazy initialized References: ${lazyInitializedReferences.size}
-         | immutable References: ${immutableReferences.size}
+         | immutable References: ${}
          | 
          | took : $analysisTime seconds   
          |     

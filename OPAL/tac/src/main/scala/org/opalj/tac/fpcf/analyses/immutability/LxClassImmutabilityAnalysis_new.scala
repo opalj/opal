@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses
+package org.opalj.tac.fpcf.analyses.immutability
 
 import org.opalj.br.ClassFile
 import org.opalj.br.ClassSignature
@@ -7,30 +7,6 @@ import org.opalj.br.ClassTypeSignature
 import org.opalj.br.FormalTypeParameter
 import org.opalj.br.ObjectType
 import org.opalj.br.SimpleClassTypeSignature
-import org.opalj.log.LogContext
-import org.opalj.log.OPALLogger
-import org.opalj.fpcf.ELBP
-import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.EPK
-import org.opalj.fpcf.EPS
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.Results
-import org.opalj.fpcf.IncrementalResult
-import org.opalj.fpcf.InterimE
-import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.LBP
-import org.opalj.fpcf.LUBP
-import org.opalj.fpcf.MultiResult
-import org.opalj.fpcf.ProperPropertyComputationResult
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.PropertyComputation
-import org.opalj.fpcf.PropertyStore
-import org.opalj.fpcf.SomeEPS
-import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
@@ -46,6 +22,30 @@ import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.ShallowImmutableClass
 import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.fpcf.ELBP
+import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.IncrementalResult
+import org.opalj.fpcf.InterimE
+import org.opalj.fpcf.InterimResult
+import org.opalj.fpcf.LBP
+import org.opalj.fpcf.LUBP
+import org.opalj.fpcf.MultiResult
+import org.opalj.fpcf.ProperPropertyComputationResult
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.PropertyComputation
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf.UBP
+import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 
 /**
  *

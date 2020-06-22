@@ -9,7 +9,7 @@ import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait ReferenceImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
 
-    type Self = ReferenceImmutability
+  type Self = ReferenceImmutability
 
 }
 
@@ -30,53 +30,57 @@ sealed trait ReferenceImmutabilityPropertyMetaInformation extends PropertyMetaIn
 sealed trait ReferenceImmutability
     extends OrderedProperty
     with ReferenceImmutabilityPropertyMetaInformation {
-    final def key: PropertyKey[ReferenceImmutability] = ReferenceImmutability.key
+  final def key: PropertyKey[ReferenceImmutability] = ReferenceImmutability.key
 }
 
 object ReferenceImmutability extends ReferenceImmutabilityPropertyMetaInformation {
 
-    final val PropertyKeyName = "opalj.ReferenceImmutability"
+  var notEscapes: Boolean = false
 
-    final val key: PropertyKey[ReferenceImmutability] = {
-        PropertyKey.create(
-            PropertyKeyName,
-            MutableReference
-        )
-    }
+  final val PropertyKeyName = "opalj.ReferenceImmutability"
+
+  final val key: PropertyKey[ReferenceImmutability] = {
+    PropertyKey.create(
+      PropertyKeyName,
+      MutableReference
+    )
+  }
 }
 
-case object ImmutableReference extends ReferenceImmutability {
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
-    def meet(that: ReferenceImmutability): ReferenceImmutability =
-        if (this == that)
-            this
-        else
-            that
+case class ImmutableReference(notEscapes: Boolean) extends ReferenceImmutability {
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
+  def meet(that: ReferenceImmutability): ReferenceImmutability =
+    if (this == that)
+      this
+    else
+      that
 }
 
 case object LazyInitializedReference extends ReferenceImmutability {
-    def meet(other: ReferenceImmutability): properties.ReferenceImmutability = {
-        if (other == MutableReference) {
-            other
-        } else {
-            this
-        }
+  def meet(other: ReferenceImmutability): properties.ReferenceImmutability = {
+    if (other == MutableReference) {
+      other
+    } else {
+      this
     }
+  }
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: ReferenceImmutability): Unit = {
-        if (other == ImmutableReference) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
-        }
+  override def checkIsEqualOrBetterThan(e: Entity, other: ReferenceImmutability): Unit = {
+    other match {
+      case ImmutableReference(_) =>
+        throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+      case _ =>
     }
+  }
 
 }
 
 case object MutableReference extends ReferenceImmutability {
-    def meet(other: ReferenceImmutability): this.type = this
+  def meet(other: ReferenceImmutability): this.type = this
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: ReferenceImmutability): Unit = {
-        if (other != MutableReference) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
-        }
+  override def checkIsEqualOrBetterThan(e: Entity, other: ReferenceImmutability): Unit = {
+    if (other != MutableReference) {
+      throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
+  }
 }

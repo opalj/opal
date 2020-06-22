@@ -88,6 +88,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def isMonitorEnter: Boolean = false
     def isMonitorExit: Boolean = false
     def isPutStatic: Boolean = false
+    def isPutField: Boolean = false
 }
 
 /**
@@ -711,7 +712,7 @@ case class PutField[+V <: Var[V]](
         objRef:            Expr[V],
         value:             Expr[V]
 ) extends FieldWriteAccessStmt[V] {
-
+    final override def isPutField: Boolean = true
     final override def asPutField: this.type = this
     final override def astID: Int = PutField.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {

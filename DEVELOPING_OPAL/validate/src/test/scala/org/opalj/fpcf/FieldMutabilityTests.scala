@@ -9,15 +9,15 @@ import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.reference.LazyL0ReferenceImmutabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -29,8 +29,8 @@ import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
 class FieldMutabilityTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            _ ⇒ Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+            Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
         }
         p.get(RTACallGraphKey)
     }

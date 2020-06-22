@@ -3,8 +3,6 @@ package org.opalj.fpcf.properties.reference_immutability_lazy_initialization;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceMatcher;
-import org.opalj.tac.fpcf.analyses.L0ReferenceImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L0ReferenceImmutabilityLazyInitializationAnalysis;
 
 import java.lang.annotation.Documented;

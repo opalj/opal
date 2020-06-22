@@ -307,17 +307,14 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
         /*
         var constantVal: Option[Any] = None
         var allInitializeConstant = true
-
         val field = state.field
         var constructors: Set[Method] =
             if(field.isStatic) Set.empty else field.classFile.constructors.toSet
-
         val writesIterator = fieldAccessInformation.writeAccesses(field).iterator
         while (writesIterator.hasNext && allInitializeConstant) {
             val (method, pc) = writesIterator.next()
             constructors -= method
             val code = tacai(method).stmts
-
             val index = pcToIndex(pc)
             val stmt = code(index)
             if (stmt.astID == PutStatic.ASTID ||
@@ -347,7 +344,6 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
                 }
             }
         }
-
         for (constructor ← constructors) {
             // TODO iterate all statements
             val NonVirtualMethodCall(_, declClass, _, name, _, rcvr, _) = stmt
@@ -360,7 +356,6 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
                 else constantVal = Some(if (state.field.fieldType eq FloatType) 0.0f else 0)
             }
         }
-
         constantVal */
     }
 
@@ -1269,11 +1264,11 @@ class L0ReferenceImmutabilityLazyInitializationAnalysis private[analyses] (val p
     def isImmutableReference(
         eop: EOptionP[Field, ReferenceImmutability]
     )(implicit state: State): Boolean = eop match {
-        case FinalEP(e, ImmutableReference) ⇒ true
-        case FinalEP(e, MutableReference)   ⇒ false
+        case FinalEP(e, ImmutableReference(_)) ⇒ true
+        case FinalEP(e, MutableReference)      ⇒ false
         //
-        case LBP(ImmutableReference)        ⇒ true
-        case UBP(MutableReference)          ⇒ false
+        case LBP(ImmutableReference(_))        ⇒ true
+        case UBP(MutableReference)             ⇒ false
 
         /**
          * case LBP(_: ImmutableReference) ⇒ //FinalField) ⇒

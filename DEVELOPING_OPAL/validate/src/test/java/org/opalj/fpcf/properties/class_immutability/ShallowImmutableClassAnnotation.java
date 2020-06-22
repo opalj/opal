@@ -3,8 +3,7 @@ package org.opalj.fpcf.properties.class_immutability;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.class_mutability.MutableObjectMatcher;
-import org.opalj.tac.fpcf.analyses.LxClassImmutabilityAnalysis_new;
+import org.opalj.tac.fpcf.analyses.immutability.LxClassImmutabilityAnalysis_new;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

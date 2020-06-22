@@ -14,7 +14,7 @@ public class Two<A,B> {
     private Generic_class1<Generic_class1<A, A, A, A, A>, B, B, B, TrivialMutableClass> gc1;
 
     public Two(A a, B b, TrivialMutableClass tmc, Generic_class1 gc1) {
-         gc1 = new Generic_class1<Generic_class1<A, A, A, A, A>, B, B, B, TrivialMutableClass>(gc1,b,b,b,tmc);
+         this.gc1 = new Generic_class1<Generic_class1<A, A, A, A, A>, B, B, B, TrivialMutableClass>(gc1,b,b,b,tmc);
 
     }
 

@@ -30,7 +30,12 @@ public class One<A,B,C,D> {
     @ImmutableReferenceAnnotation("")
     private Generic_class1<A,B,C, D, TrivialMutableClass> gc1;
     public One(A a, B b, C c, D  d, TrivialMutableClass tmc){
-        gc1 = new Generic_class1<A,B,C, D, TrivialMutableClass>(a,b,c,d, tmc);
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.d = d;
+        this.tmc = tmc;
+        this.gc1 = new Generic_class1<A,B,C, D, TrivialMutableClass>(this.a,this.b,this.c,this.d, this.tmc);
     }
 
 

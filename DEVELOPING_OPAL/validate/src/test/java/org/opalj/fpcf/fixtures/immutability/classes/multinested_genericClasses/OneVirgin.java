@@ -27,9 +27,14 @@ public class OneVirgin<A,B,C,D, E> {
     @MutableReferenceAnnotation("")
     TrivialMutableClass tmc;
 
-    Generic_class1<A,B,C, D, E> gc1;
-    public OneVirgin(A a, B b, C c, D  d, E e){
-        gc1 = new Generic_class1<A,B,C, D, E>(a, b, c, d, e);
+    Generic_class1<A,B,C, D, TrivialMutableClass> gc1;
+    public OneVirgin(A a, B b, C c, D  d, TrivialMutableClass e){
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.d = d;
+        this.tmc = tmc;
+        this.gc1 = new Generic_class1<A,B,C, D, TrivialMutableClass>(this.a, this.b, this.c, this.d, this.tmc);
     }
 
 

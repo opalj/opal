@@ -41,7 +41,15 @@ class ReferenceImmutabilityMatcher(val property: ReferenceImmutability)
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(p ⇒ p == property)) {
+        if (!properties.exists(p ⇒ {
+            val tmpP = {
+                p match {
+                    case ImmutableReference(_) ⇒ ImmutableReference(true)
+                    case _                     ⇒ p
+                }
+            }
+            tmpP == property
+        })) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
@@ -52,4 +60,4 @@ class ReferenceImmutabilityMatcher(val property: ReferenceImmutability)
 
 class LazyInitializedReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedReference)
 
-class ImmutableReferenceMatcher extends ReferenceImmutabilityMatcher(ImmutableReference)
+class ImmutableReferenceMatcher extends ReferenceImmutabilityMatcher(ImmutableReference(true))

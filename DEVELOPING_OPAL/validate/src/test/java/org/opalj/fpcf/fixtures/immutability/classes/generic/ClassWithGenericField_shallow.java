@@ -1,14 +1,14 @@
 package org.opalj.fpcf.fixtures.immutability.classes.generic;
 
-import org.opalj.fpcf.properties.class_immutability.ShallowImmutableClassAnnotation;
-import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
+import org.opalj.fpcf.properties.class_immutability.DeepImmutableClassAnnotation;
+import org.opalj.fpcf.properties.field_immutability.DeepImmutableFieldAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
-import org.opalj.fpcf.properties.type_immutability.ShallowImmutableTypeAnnotation;
+import org.opalj.fpcf.properties.type_immutability.DeepImmutableTypeAnnotation;
 
-@ShallowImmutableTypeAnnotation("")
-@ShallowImmutableClassAnnotation("")
+@DeepImmutableTypeAnnotation("")
+@DeepImmutableClassAnnotation("")
 public final class ClassWithGenericField_shallow {
-    @ShallowImmutableFieldAnnotation("")
+    @DeepImmutableFieldAnnotation("")
     @ImmutableReferenceAnnotation("")
     private Generic_class1<TrivialMutableClass,FinalEmptyClass,FinalEmptyClass,FinalEmptyClass,FinalEmptyClass> gc =
             new Generic_class1<TrivialMutableClass,FinalEmptyClass,FinalEmptyClass,FinalEmptyClass,FinalEmptyClass>

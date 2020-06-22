@@ -3,7 +3,7 @@ package org.opalj.fpcf.properties.reference_immutability;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.L0ReferenceImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.reference.L0ReferenceImmutabilityAnalysis;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

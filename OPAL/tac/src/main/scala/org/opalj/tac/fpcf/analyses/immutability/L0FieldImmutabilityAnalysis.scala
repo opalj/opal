@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.analyses
+package org.opalj.tac.fpcf.analyses.immutability
 
 import org.opalj.br.ClassSignature
 import org.opalj.br.ClassTypeSignature
@@ -19,7 +19,6 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.analyses.DependentImmutabilityKind.DependentImmutabilityKind
 import org.opalj.br.fpcf.properties.DeepImmutableField
 import org.opalj.br.fpcf.properties.DeepImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableField
@@ -47,11 +46,13 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
+import org.opalj.tac.fpcf.analyses.immutability.DependentImmutabilityKind.DependentImmutabilityKind
 
 case class State(f: Field) {
     var field: Field = f
     var typeImmutability: Option[Boolean] = Some(true)
     var referenceImmutability: Option[Boolean] = None
+    var referenceNotEscapes: Boolean = true
     var dependentImmutability: Option[DependentImmutabilityKind] = Some(
         DependentImmutabilityKind.dependent
     )
@@ -252,13 +253,16 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         case Some(true) ⇒
                             Result(field, DeepImmutableField)
                         case Some(false) | None ⇒ {
-                            state.dependentImmutability match {
-                                case Some(DependentImmutabilityKind.notShallowOrMutable) ⇒
-                                    Result(field, DependentImmutableField)
-                                case Some(DependentImmutabilityKind.onlyDeepImmutable) ⇒
-                                    Result(field, DeepImmutableField)
-                                case _ ⇒ Result(field, ShallowImmutableField)
-                            }
+                            if (state.referenceNotEscapes)
+                                Result(field, DeepImmutableField)
+                            else
+                                state.dependentImmutability match {
+                                    case Some(DependentImmutabilityKind.notShallowOrMutable) ⇒
+                                        Result(field, DependentImmutableField)
+                                    case Some(DependentImmutabilityKind.onlyDeepImmutable) ⇒
+                                        Result(field, DeepImmutableField)
+                                    case _ ⇒ Result(field, ShallowImmutableField)
+                                }
                         }
                     }
                 }
@@ -287,7 +291,11 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     state.typeImmutability = Some(false)
                     return Result(field, MutableField);
                 }
-                case x @ FinalP(ImmutableReference | LazyInitializedReference) ⇒ { //TODO
+                case x @ FinalP(ImmutableReference(notEscapes)) ⇒ {
+                    state.referenceImmutability = Some(true)
+                    state.referenceNotEscapes = notEscapes
+                }
+                case x @ FinalP(LazyInitializedReference) ⇒ { //TODO
                     state.referenceImmutability = Some(true)
                 }
                 case x @ _ ⇒
@@ -307,7 +315,11 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         val state: State = new State(field)
         val result = propertyStore(state.field, ReferenceImmutability.key)
         result match {
-            case FinalEP(_, ImmutableReference | LazyInitializedReference) ⇒
+            case FinalP(ImmutableReference(notEscapes)) ⇒ {
+                state.referenceImmutability = Some(true)
+                state.referenceNotEscapes = notEscapes
+            }
+            case FinalEP(_, LazyInitializedReference) ⇒
                 state.referenceImmutability = Some(true)
             case FinalP(MutableReference) ⇒ return Result(field, MutableField);
             case x @ _ ⇒ {
