@@ -9,17 +9,19 @@ import java.util.Calendar
 
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.reference.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.memory
 
 //import org.opalj.br.ObjectType
-import org.opalj.tac.fpcf.analyses.EagerLxClassImmutabilityAnalysis_new
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
@@ -30,8 +32,6 @@ import org.opalj.br.fpcf.properties.ShallowImmutableClass
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis

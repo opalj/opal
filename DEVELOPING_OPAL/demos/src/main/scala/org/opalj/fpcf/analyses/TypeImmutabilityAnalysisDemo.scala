@@ -14,7 +14,6 @@ import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
@@ -24,16 +23,17 @@ import org.opalj.br.fpcf.properties.MutableType_new
 import org.opalj.br.fpcf.properties.ShallowImmutableType
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.EagerLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.opalj.tac.fpcf.analyses.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.reference.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.memory
 
 /**
