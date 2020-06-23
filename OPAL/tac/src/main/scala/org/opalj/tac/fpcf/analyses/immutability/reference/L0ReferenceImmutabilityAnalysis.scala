@@ -521,7 +521,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]
                 state.purityDependees = state.purityDependees.filter(_.e ne newEP.e)
                 val r = isNonDeterministic(newEP)
-                //if (!r) state.referenceImmutability = LazyInitializedReference
+                if (!r) state.referenceImmutability = LazyInitializedReference
                 println("continuation purity result: "+r)
                 isNotFinal = r
                 println("cont. is not final: "+isNotFinal)
