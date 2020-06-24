@@ -478,6 +478,8 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                 // More than one definition site for the value might lead to differences between
                 // invocations, but not if this method has no parameters and is deterministic
                 // (in this case, the definition reaching the write will always be the same)
+                val result = propertyStore(declaredMethods(method), Purity.key)
+                println("purity result: "+result)
                 method.descriptor.parametersCount == 0 &&
                     !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
             }
