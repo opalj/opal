@@ -917,6 +917,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
         println("determine purity of method: "+method+", with class: "+declClass)
+
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if (declClass ne definedMethod.declaringClassType)
