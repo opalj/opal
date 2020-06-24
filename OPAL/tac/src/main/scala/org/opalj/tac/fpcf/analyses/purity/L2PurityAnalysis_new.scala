@@ -736,7 +736,9 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      *     - classes files for class types returned (for their mutability)
      */
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
+        println("enter continuation")
         val oldPurity = state.ubPurity
+        println("eps: "+eps)
         eps.ub.key match {
             case Purity.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
@@ -810,6 +812,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
 
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
+            println("dependees empty lb=ub; result : "+state.ubPurity)
             Result(state.definedMethod, state.ubPurity)
         } else {
             InterimResult(
@@ -913,7 +916,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
-
+        println("determine purity of method: "+method+", with class: "+declClass)
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
         if (declClass ne definedMethod.declaringClassType)
