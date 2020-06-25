@@ -1,9 +1,9 @@
 package org.opalj.fpcf.fixtures.immutability.reference_immutability_lazy_initialization;
 
-import org.opalj.fpcf.properties.reference_immutability_lazy_initialization.NotThreadSafeLazyInitializationAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 
 public class SimpleLazyObjectsInstantiation{
-    @NotThreadSafeLazyInitializationAnnotation("")
+    @MutableReferenceAnnotation("")
     private static SimpleLazyObjectsInstantiation instance;
     public static SimpleLazyObjectsInstantiation getInstance() {
         if(instance==null)

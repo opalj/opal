@@ -5,6 +5,7 @@ import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.PCs
@@ -181,7 +182,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                     stmt match {
                         case PutField(_, _, _, _, _, value) ⇒
                             value match {
-                                case v @ UVar(defSites, value2) ⇒ // SObjectValue(t,_,_,_)) =>
+                                case v @ UVar(defSites, value2) ⇒ //SObjectValue(t,_,_,_) =>
                                     //if (!v.defSites.filter(_ < 1).isEmpty)
                                     //escape var
                                     {
@@ -395,7 +396,15 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
      * values.
      */
     def getDefaultValue()(implicit state: State): Option[Any] = {
-        Some(if (state.field.fieldType eq FloatType) 0.0f else 0)
+        Some(
+            state.field.fieldType match {
+                case FloatType     ⇒ 0.0f
+                case IntegerType   ⇒ 0
+                case ObjectType(_) ⇒ null
+            }
+        )
+
+        //TODO ?? Some(if (state.field.fieldType eq FloatType) 0.0f else 0)
 
         /* TODO Some lazy initialized fields use a different value to mark an uninitialized field
      * The code below can be used to identify such value, but is not yet adapted to using the
@@ -606,8 +615,16 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                                      */
                                     // A field written outside an initializer must be lazily
                                     // initialized or it is non-final
-
-                                    if (!isLazyInitialization(
+                                    val b = isDoubleCheckedLocking(
+                                        index,
+                                        defaultValue.get,
+                                        method,
+                                        taCode.stmts,
+                                        taCode.cfg,
+                                        taCode.pcToIndex,
+                                        taCode
+                                    )
+                                    if (!b && !isLazyInitialization(
                                         index,
                                         defaultValue.get,
                                         method,
