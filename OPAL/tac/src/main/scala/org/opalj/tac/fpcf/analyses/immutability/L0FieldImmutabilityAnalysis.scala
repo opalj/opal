@@ -245,6 +245,15 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         def createResult(state: State): ProperPropertyComputationResult = {
+          println(
+              s"""reaching create result
+                 |field: ${state.field}
+                 | class: ${state.field.classFile.thisType}
+                 | ref imm: ${state.referenceImmutability}
+                 | type imm: ${state.typeImmutability}
+                 | ref not esc: ${state.referenceNotEscapes}
+                 | depend imm: ${state.dependentImmutability}
+                 |""".stripMargin)
             state.referenceImmutability match {
                 case Some(false) | None ⇒
                     Result(field, MutableField)
@@ -261,7 +270,14 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                         Result(field, DependentImmutableField)
                                     case Some(DependentImmutabilityKind.onlyDeepImmutable) ⇒
                                         Result(field, DeepImmutableField)
-                                    case _ ⇒ Result(field, ShallowImmutableField)
+                                    case _ ⇒ {
+                                      println(
+                                          s"""default case in field immutability
+                                             | state.dependentimmutability: ${state.dependentImmutability}
+                                             |
+                                             |""".stripMargin)
+                                        Result(field, ShallowImmutableField)
+                                    }
                                 }
                         }
                     }
