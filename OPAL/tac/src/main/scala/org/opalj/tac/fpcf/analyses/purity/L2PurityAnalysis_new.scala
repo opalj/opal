@@ -59,7 +59,6 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.ai.isImmediateVMException
 import org.opalj.br.fpcf.properties.ClassImmutability_new
 import org.opalj.br.fpcf.properties.FieldImmutability
@@ -71,8 +70,8 @@ import org.opalj.tac.fpcf.properties.TACAI
 
 import scala.annotation.switch
 import scala.collection.immutable.IntMap
-
 import net.ceedubs.ficus.Ficus._
+import org.opalj.br.fpcf.properties.cg.NoCallers
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -263,7 +262,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     )
 
     val rater: DomainSpecificRater =
-        L2PurityAnalysis.rater.getOrElse(resolveDomainSpecificRater(raterFqn))
+        L2PurityAnalysis_new.rater.getOrElse(resolveDomainSpecificRater(raterFqn))
 
     /**
      * Examines whether the given expression denotes an object/array that is local to the current
@@ -997,20 +996,15 @@ trait L2PurityAnalysisScheduler_new extends FPCFAnalysisScheduler {
 
 }
 
-object EagerL2PurityAnalysis_new
-    extends L2PurityAnalysisScheduler_new
-    with FPCFEagerAnalysisScheduler {
+object EagerL2PurityAnalysis_new extends L2PurityAnalysisScheduler_new with FPCFEagerAnalysisScheduler {
 
     override def start(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
+        p: SomeProject, ps: PropertyStore, analysis: InitializationData
     ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
             // todo querying ps is quiet expensive
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity
-                .wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
                 dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(methods)(
@@ -1026,14 +1020,10 @@ object EagerL2PurityAnalysis_new
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 }
 
-object LazyL2PurityAnalysis_new
-    extends L2PurityAnalysisScheduler_new
-    with FPCFLazyAnalysisScheduler {
+object LazyL2PurityAnalysis_new extends L2PurityAnalysisScheduler_new with FPCFLazyAnalysisScheduler {
 
     override def register(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: InitializationData
+        p: SomeProject, ps: PropertyStore, analysis: InitializationData
     ): FPCFAnalysis = {
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
