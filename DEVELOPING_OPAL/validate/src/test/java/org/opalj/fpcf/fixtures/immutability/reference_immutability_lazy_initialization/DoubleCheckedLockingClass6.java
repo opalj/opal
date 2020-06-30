@@ -9,7 +9,7 @@ public class DoubleCheckedLockingClass6 {
     private DoubleCheckedLockingClass6 instance;
     public DoubleCheckedLockingClass6 getInstance() {
         if(instance==null){
-            synchronized(instance) {
+            synchronized(this) {
                 if(instance==null){
                     instance = new DoubleCheckedLockingClass6();
                 }

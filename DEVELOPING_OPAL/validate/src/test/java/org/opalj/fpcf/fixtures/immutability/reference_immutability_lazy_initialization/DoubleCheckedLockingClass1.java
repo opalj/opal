@@ -10,7 +10,7 @@ public class DoubleCheckedLockingClass1{
     private DoubleCheckedLockingClass1 instance;
     public DoubleCheckedLockingClass1 getInstance() {
         if(instance==null){
-            synchronized(instance) {
+            synchronized(this) {
                 if(instance==null){
                     instance = new DoubleCheckedLockingClass1();
                 }

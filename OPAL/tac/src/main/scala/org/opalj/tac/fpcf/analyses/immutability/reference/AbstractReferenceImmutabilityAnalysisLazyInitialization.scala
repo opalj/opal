@@ -20,7 +20,6 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.SelfReferenceParameter
 import org.opalj.tac.Assignment
 import org.opalj.tac.CaughtException
-import org.opalj.tac.DVar
 import org.opalj.tac.Expr
 import org.opalj.tac.FieldWriteAccessStmt
 import org.opalj.tac.GetField
@@ -83,9 +82,9 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         // default value
         val (guardIndex, guardedIndex, readIndex) = {
             val findGuardResult = findGuard(writeIndex, defaultValue, code, cfg, 1)
-            println("find guard result: "+findGuardResult.mkString(", "))
-            if (findGuardResult.size > 0)
-                findGuardResult.head
+            println("find guard result: "+findGuardResult._1.mkString(", "))
+            if (findGuardResult._1.size > 0)
+                findGuardResult._1.head
             else return false;
             /**
              * findGuardResult match {
@@ -130,14 +129,14 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         // The guardIndex is the index of the if-Statement, the guardedIndex is the index of the
         // first statement that is executed after the if-Statement if the field's value was not the
         // default value
-        val guardResults: List[(Int, Int, Int)] = findGuard(writeIndex, defaultValue, code, cfg, 2)
-        println("find guard result 2: "+guardResults.mkString(", "))
+        val guardResults: (List[(Int, Int, Int)], (Option[(CFGNode, CFGNode)])) = findGuard(writeIndex, defaultValue, code, cfg, 2)
+        println("find guard result 2: "+guardResults._1.mkString(", "))
 
         //if(!checkReads(reads, readIndex, guardedIndex, writeIndex, cfg, pcToIndex))
         //    return false;
         println("--------------------------------------------------------------------------------------------dcl")
 
-        val monitorResult: (Option[Int], Option[Int]) = findMonitor(writeIndex, defaultValue, code, cfg, tacCai)
+        val monitorResult = findMonitor(writeIndex, defaultValue, code, cfg, tacCai)
         println("monitorResult: "+monitorResult)
         /**
          * guardResults.foreach(x ⇒ {
@@ -153,18 +152,49 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
          * };
          * }) *
          */
-        monitorResult match {
-            case (Some(enter), Some(exit)) ⇒ {
+        val domTree = cfg.dominatorTree
 
-                //val outer =
-                guardResults.exists(x ⇒ x._1 < enter && exit < x._2) &&
-                    guardResults.exists(x ⇒ enter < x._1 && x._2 < exit)
-/*** val inner =
-                 * return outer && inner;*
-                 */
-            }
-            case _ ⇒ return false;
+        (guardResults._2, monitorResult._2) match {
+            case (Some((guard1: CFGNode, guard2: CFGNode)), Some(monitor: CFGNode)) ⇒
+                println(
+                    s"""domtree: $domTree
+                       | g1 dom m:  ${domTree.strictlyDominates(guard1.nodeId, monitor.nodeId)}
+                       | m dom g2: ${domTree.strictlyDominates(monitor.nodeId, guard2.nodeId)}
+                       | g1 dom g2: ${domTree.strictlyDominates(guard1.nodeId, guard2.nodeId)}
+                       | g2 dom g1: ${domTree.strictlyDominates(guard2.nodeId, guard1.nodeId)}
+                       | g2 dom m: ${domTree.strictlyDominates(guard2.nodeId, monitor.nodeId)}
+                       | m dom g1: ${domTree.strictlyDominates(monitor.nodeId, guard1.nodeId)}
+                       |
+                       | m: $monitor
+                       | g2: $guard2
+                       | m==g2: ${monitor == guard2}
+                       |
+                       |""".stripMargin
+                )
+
+                if ((guard1 == monitor || domTree.strictlyDominates(guard1.nodeId, monitor.nodeId)) &&
+                    (monitor == guard2 || domTree.strictlyDominates(monitor.nodeId, guard2.nodeId)))
+                    println("dominates!!!")
+                else {
+                    println("not dominates!!!!")
+                    return false;
+                }
+            case _ ⇒ println("not dominates!!!"); return false;
         }
+        /**
+         * monitorResult._1 match {
+         * case (Some(enter), Some(exit)) ⇒ {
+         *
+         * //val outer =
+         * guardResults._1.exists(x ⇒ x._1 < enter && exit < x._2) &&
+         * guardResults._1.exists(x ⇒ enter < x._1 && x._2 < exit)
+         * /*** val inner =
+         * return outer && inner;*
+         * */
+         * }
+         * case _ ⇒ return false;
+         * }*
+         */
         true
 
     }
@@ -175,12 +205,42 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]],
         tacCode:      TACode[TACMethodParameter, V]
-    )(implicit state: State): (Option[Int], Option[Int]) = {
+    ): ((Option[Int], Option[Int]), Option[CFGNode]) = { //(implicit state: State)
 
         var result: (Option[Int], Option[Int]) = (None, None)
+        var dclBBs: List[CFGNode] = List.empty
         val startBB = cfg.bb(fieldWrite)
         var MonitorExitqueuedBBs: Set[CFGNode] = startBB.successors
         var worklistMonitorExit = getSuccessors(startBB, Set.empty)
+
+        /**
+         * def checkMonitor(pc: PC, v: UVar[ValueInformation], curBB: CFGNode): Boolean = {
+         * println("check monitor")
+         * v.defSites.filter(i ⇒ {
+         * if (i > 0)
+         * tacCode.stmts(i) match {
+         * case Assignment(pc1, DVar(value1, defSites1), GetField(pc2, t, name, classType, UVar(value2, defSites2))) ⇒
+         * println("classType: "+classType)
+         * println("classFile.thisType: "+state.field.classFile.thisType)
+         * println(
+         * s"""
+         * |classFile comparison result: ${classType == state.field.classFile.thisType}
+         *
+         * |""".
+         * stripMargin
+         * )
+         * classType ==
+         * state.field.
+         * classFile.thisType
+         * //&& name == state.field.name
+         * case _ ⇒ false
+         * }
+         * else // (i == -1)
+         * true
+         *
+         * }).size == v.defSites.size
+         * } *
+         */
 
         //find monitorexit
         while (!worklistMonitorExit.isEmpty) {
@@ -192,17 +252,13 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             cfStmt match {
                 case MonitorExit(pc, v @ UVar(defSites, value)) //if(v.value.computationalType == state.field.fieldType)
                 ⇒
-                    if (v.defSites.filter(i ⇒ {
-                        tacCode.stmts(i) match {
-                            case Assignment(pc1, DVar(value1, defSites1), GetField(pc2, t, name, classType, UVar(value2, defSites2))) ⇒
-                                classType == state.field.fieldType && name == state.field.name
-                            case _ ⇒ false
-                        }
-                    }).size == v.defSites.size) {
-                        result = ((result._1), Some(tacCode.pcToIndex(pc)))
-                    }
+                    //if(checkMonitor(pc, v, curBB)) {
+
+                    result = ((result._1), Some(tacCode.pcToIndex(pc)))
+                //}
                 case _ ⇒
                     val successors = getSuccessors(curBB, MonitorExitqueuedBBs)
+                    println("successors: "+successors.mkString(", "))
                     worklistMonitorExit ++= successors
                     MonitorExitqueuedBBs ++= successors
             }
@@ -210,33 +266,53 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
 
         var monitorEnterqueuedBBs: Set[CFGNode] = startBB.predecessors
         var worklistMonitorEnter = getPredecessors(startBB, Set.empty)
+        println("worklist monitorenter: "+worklistMonitorEnter.toList.mkString(", "))
         //find monitorenter
         while (!worklistMonitorEnter.isEmpty) {
             val curBB = worklistMonitorEnter.head
+            println("curBB: "+curBB)
             worklistMonitorEnter = worklistMonitorEnter.tail
             //val startPC = curBB.startPC
-            val endPC = curBB.endPC
-            val cfStmt = code(endPC)
+            //val endPC = curBB.endPC
+            val startPC = curBB.startPC
+            val cfStmt = code(startPC) //(endPC)
+            println("cfg should be monitor enter: "+cfStmt)
             cfStmt match {
-                case MonitorEnter(pc, v @ UVar(defSites, value)) //if(v.value.computationalType == state.field.fieldType)
+                case me @ MonitorEnter(pc, v @ UVar(defSites, value)) //if(v.value.computationalType == state.field.fieldType)
                 ⇒
-                    if (v.defSites.filter(i ⇒ {
-                        tacCode.stmts(i) match {
-                            case Assignment(pc1, DVar(value1, defSites1), GetField(pc2, t, name, classType, UVar(value2, defSites2))) ⇒
-                                classType == state.field.fieldType
-                            case _ ⇒ false
-                        }
-                    }).size == v.defSites.size) {
-                        result = (Some(tacCode.pcToIndex(pc)), result._2)
-                    }
+
+                    /**
+                     * if (v.defSites.filter(i ⇒ {
+                     * tacCode.stmts(i) match {
+                     * case Assignment(pc1, DVar(value1, defSites1), GetField(pc2, t, name, classType, UVar(value2, defSites2))) ⇒
+                     * classType == state.field.fieldType
+                     * case _ ⇒ false
+                     * }
+                     * }).size == v.defSites.size) {
+                     * result = (Some(tacCode.pcToIndex(pc)), result._2)
+                     * } *
+                     */
+
+                    //if(checkMonitor(pc, v, curBB)) {
+                    println("Monitor Enter:-----------------------------------------------------------------------------")
+                    println("me")
+                    result = (Some(tacCode.pcToIndex(pc)), (result._2))
+                    dclBBs = curBB :: dclBBs
+                //}
 
                 case _ ⇒
                     val predecessor = getPredecessors(curBB, monitorEnterqueuedBBs)
+                    println("predecessor: "+predecessor.mkString(", "))
                     worklistMonitorEnter ++= predecessor
                     monitorEnterqueuedBBs ++= predecessor
             }
         }
-        result
+        val bbs = {
+            if (dclBBs.size == 1)
+                Some(dclBBs.head)
+            else None
+        }
+        (result, bbs)
     }
 
     /**
@@ -250,9 +326,12 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]],
         amount:       Int
-    )(implicit state: State): List[(Int, Int, Int)] = {
+    )(implicit state: State): (List[(Int, Int, Int)], (Option[(CFGNode, CFGNode)])) = {
         println("start find guard")
         val startBB = cfg.bb(fieldWrite).asBasicBlock
+
+        var dclBBs: List[CFGNode] = List.empty
+
         println("start bb: "+startBB)
         var enqueuedBBs: Set[CFGNode] = startBB.predecessors
         var worklist: List[BasicBlock] = getPredecessors(startBB, Set.empty)
@@ -290,8 +369,9 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                             if (result.size >= amount) {
                                 println("result: "+result.mkString(", "))
                                 if (result.head._1 != endPC || result.last._2 != endPC + 1)
-                                    return List.empty;
+                                    return (List.empty, None);
                             } else {
+                                dclBBs = curBB :: dclBBs
                                 result = { (endPC, endPC + 1) } :: result
                             }
 
@@ -308,10 +388,11 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                                          |ifstmt target stmt : ${ifStmt.targetStmt}
                                          |""".stripMargin
                                     )
-                                    return List.empty;
+                                    return (List.empty, None);
                                 }
                             } else {
                                 println("else")
+                                dclBBs = curBB :: dclBBs
                                 result = (endPC, ifStmt.targetStmt) :: result
                             }
 
@@ -320,7 +401,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                             println("_")
                             if (startPC == 0) {
                                 println("reached the end")
-                                return List.empty;
+                                return (List.empty, None);
                             }
 
                             val predecessors = getPredecessors(curBB, enqueuedBBs)
@@ -331,7 +412,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
 
                 // Otherwise, we have to ensure that a guard is present for all predecessors
                 case _ ⇒
-                    if (startPC == 0) return List.empty;
+                    if (startPC == 0) return (List.empty, None);
 
                     val predecessors = getPredecessors(curBB, enqueuedBBs)
                     worklist ++= predecessors
@@ -357,12 +438,17 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                 use == result.head._1 || use == result.last._2
             }
             if (definitions.size == 1 && fieldReadUsedCorrectly) {
-                return result.map(x ⇒ (x._1, x._2, definitions.head));
+                val BBs =
+                    if (dclBBs.size == 2)
+                        Some((dclBBs.head, dclBBs.last))
+                    else None
+
+                return (result.map(x ⇒ (x._1, x._2, definitions.head)), BBs);
                 //return (result.head._1, result.last._2, definitions.head) :: Nil
             }; // Found proper guard
         }
 
-        List.empty
+        (List.empty, None)
     }
 
     /**
