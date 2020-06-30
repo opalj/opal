@@ -529,6 +529,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                 isNotFinal = isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
             case Purity.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]
+                println("purity continuation result: "+newEP)
                 state.purityDependees = state.purityDependees.filter(_.e ne newEP.e)
                 val r = isNonDeterministic(newEP)
                 //if (!r) state.referenceImmutability = LazyInitializedReference

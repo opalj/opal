@@ -389,17 +389,20 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def checkFieldMutability(
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
-    )(implicit state: StateType): Unit = ep match {
-        case LBP(_: FinalField) ⇒ // Final fields don't impede purity
-        case _: FinalEP[Field, FieldMutability] ⇒ // Mutable field
-            if (objRef.isDefined) {
+    )(implicit state: StateType): Unit = {
+        println("pa2 ep of checkFieldMutability: "+ep)
+        ep match {
+            case LBP(_: FinalField) ⇒ // Final fields don't impede purity
+            case _: FinalEP[Field, FieldMutability] ⇒ // Mutable field
+                if (objRef.isDefined) {
+                    if (state.ubPurity.isDeterministic)
+                        isLocal(objRef.get, SideEffectFree)
+                } else atMost(SideEffectFree)
+            case _ ⇒
+                reducePurityLB(SideEffectFree)
                 if (state.ubPurity.isDeterministic)
-                    isLocal(objRef.get, SideEffectFree)
-            } else atMost(SideEffectFree)
-        case _ ⇒
-            reducePurityLB(SideEffectFree)
-            if (state.ubPurity.isDeterministic)
-                handleUnknownFieldMutability(ep, objRef)
+                    handleUnknownFieldMutability(ep, objRef)
+        }
     }
 
     /**

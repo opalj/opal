@@ -735,9 +735,9 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      *     - classes files for class types returned (for their mutability)
      */
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
-        println("enter continuation")
+        println("pa2 enter continuation")
         val oldPurity = state.ubPurity
-        println("eps: "+eps)
+        println("pa2 eps: "+eps)
         eps.ub.key match {
             case Purity.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
@@ -802,8 +802,10 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
                 return determineMethodPurity(eps.ub.asInstanceOf[TACAI].tac.get.cfg);
         }
 
-        if (state.ubPurity eq ImpureByAnalysis)
-            return Result(state.definedMethod, ImpureByAnalysis);
+        if (state.ubPurity eq ImpureByAnalysis) {
+            println("pa2 upPurity eq ImpureByAnalysis")
+            return Result(state.definedMethod, ImpureByAnalysis)
+        };
 
         if (state.ubPurity ne oldPurity)
             cleanupDependees() // Remove dependees that we don't need anymore.
@@ -811,9 +813,19 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
 
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
-            println("dependees empty lb=ub; result : "+state.ubPurity)
+            println("pa2 dependees empty lb=ub; result : "+state.ubPurity)
             Result(state.definedMethod, state.ubPurity)
         } else {
+            println(
+                s"""
+                 |pa2
+                 | interim result
+                 | lbPurity: ${state.lbPurity}
+                 | ubPurity. ${state.ubPurity}
+                 | dependees: ${dependees.mkString(", ")}
+                 |
+                 |""".stripMargin
+            )
             InterimResult(
                 state.definedMethod,
                 state.lbPurity,
@@ -895,8 +907,26 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
 
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
+            println(
+                s"""
+                 |pa2
+                 |return result:
+                 |defined method: ${state.definedMethod}
+                 | ubPurity: ${state.ubPurity}
+                 |""".stripMargin
+            )
             Result(state.definedMethod, state.ubPurity)
         } else {
+            println(
+                s"""
+                   |pa2
+                   | interim result
+                   | lbPurity: ${state.lbPurity}
+                   | ubPurity. ${state.ubPurity}
+                   | dependees: ${dependees.mkString(", ")}
+                   |
+                   |""".stripMargin
+            )
             org.opalj.fpcf.InterimResult(
                 state.definedMethod,
                 state.lbPurity,
@@ -915,7 +945,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
-        println("determine purity of method: "+method+", with class: "+declClass)
+        println("pa2  determine purity of method: "+method+", with class: "+declClass)
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
@@ -927,7 +957,15 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
 
         val tacaiO = getTACAI(method)
 
-        if (tacaiO.isEmpty)
+        if (tacaiO.isEmpty) {
+            println(
+                s"""
+                 |pa2
+                 |interim result
+                 |tacai0 is empty
+                 |
+                 |""".stripMargin
+            )
             return InterimResult(
                 definedMethod,
                 ImpureByAnalysis,
@@ -935,6 +973,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
                 state.dependees,
                 c
             );
+        }
 
         determineMethodPurity(tacaiO.get.cfg)
     }

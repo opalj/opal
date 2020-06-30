@@ -6,11 +6,14 @@ import java.net.URL
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
@@ -52,11 +55,14 @@ class ReferenceImmutabilityTests_withNewPurity extends PropertiesTest {
                 LazyLxTypeImmutabilityAnalysis_new,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyStaticDataUsageAnalysis,
+                LazyL2PurityAnalysis_new,
                 LazyL0CompileTimeConstancyAnalysis,
+                LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis,
-                LazyL2PurityAnalysis_new,
-                LazyInterProceduralEscapeAnalysis
+                LazyL1FieldMutabilityAnalysis,
+                LazyClassImmutabilityAnalysis,
+                LazyTypeImmutabilityAnalysis
             )
         )
         as.propertyStore.shutdown()

@@ -443,23 +443,26 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
     def checkFieldMutability(
         ep:     EOptionP[Field, ReferenceImmutability], // FieldMutability],
         objRef: Option[Expr[V]]
-    )(implicit state: StateType): Unit = ep match {
+    )(implicit state: StateType): Unit = {
+        println("pa2 ep of checkFieldMutability: "+ep)
+        ep match {
 
-        //case LBP(ImmutableReference(_))    ⇒
-        //case LBP(LazyInitializedReference) ⇒
-        case LBP(ImmutableReference(_) | LazyInitializedReference) ⇒
-            println("====>>>> EP: "+ep) //_: FinalField) ⇒ // Final fields don't impede purity
-        case FinalP(MutableReference) ⇒
-            println("====>>>> EP: "+ep) //_: FinalEP[Field, ReferenceImmutability] ⇒ //FieldMutability] ⇒ // Mutable field
-            if (objRef.isDefined) {
+            //case LBP(ImmutableReference(_))    ⇒
+            //case LBP(LazyInitializedReference) ⇒
+            case LBP(ImmutableReference(_) | LazyInitializedReference) ⇒
+                println("pa2 ====>>>> EP: "+ep) //_: FinalField) ⇒ // Final fields don't impede purity
+            case FinalP(MutableReference) ⇒
+                println("pa2 ====>>>> EP: "+ep) //_: FinalEP[Field, ReferenceImmutability] ⇒ //FieldMutability] ⇒ // Mutable field
+                if (objRef.isDefined) {
+                    if (state.ubPurity.isDeterministic)
+                        isLocal(objRef.get, SideEffectFree)
+                } else atMost(SideEffectFree)
+            case _ ⇒
+                reducePurityLB(SideEffectFree)
                 if (state.ubPurity.isDeterministic)
-                    isLocal(objRef.get, SideEffectFree)
-            } else atMost(SideEffectFree)
-        case _ ⇒
-            reducePurityLB(SideEffectFree)
-            if (state.ubPurity.isDeterministic)
-                handleUnknownFieldMutability(ep, objRef)
+                    handleUnknownFieldMutability(ep, objRef)
 
+        }
     }
 
     /**
