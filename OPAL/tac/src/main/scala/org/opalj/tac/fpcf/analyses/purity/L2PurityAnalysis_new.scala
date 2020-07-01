@@ -497,7 +497,8 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      * Examines a statement for its influence on the method's purity.
      * This method will return false for impure statements, so evaluation can be terminated early.
      */
-    override def checkPurityOfStmt(stmt: Stmt[V])(implicit state: State): Boolean =
+    override def checkPurityOfStmt(stmt: Stmt[V])(implicit state: State): Boolean = {
+        println("check purity of statemt")
         (stmt.astID: @switch) match {
             // Synchronization on non-escaping local objects/arrays is pure (and useless...)
             case MonitorEnter.ASTID | MonitorExit.ASTID ⇒
@@ -529,6 +530,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
 
             case _ ⇒ super.checkPurityOfStmt(stmt)
         }
+    }
 
     /**
      * Examines the influence of the purity property of a method on the examined method's purity.
@@ -538,32 +540,36 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     def checkMethodPurity(
         ep:     EOptionP[DeclaredMethod, Purity],
         params: Seq[Expr[V]]
-    )(implicit state: State): Boolean = ep match {
-        case UBP(_: ClassifiedImpure) ⇒
-            atMost(ImpureByAnalysis)
-            false
-        case eps @ LUBP(lb, ub) ⇒
-            if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
-                // On conditional, keep dependence
-                state.addPurityDependee(ep.e, ep, params)
-                reducePurityLB(lb)
-            }
-            // Contextual/external purity is handled below
-            atMost(ub.withoutContextual)
-            ub.modifiedParams.forall(
-                param ⇒
-                    isLocalInternal(
-                        params(param),
-                        ImpureByAnalysis,
-                        param ⇒ ContextuallyPure(IntTrieSet(param)),
-                        treatParamsAsFresh = true
+    )(implicit state: State): Boolean =
+        {
+            println("pa2 check metho purity. ep: "+ep)
+            ep match {
+                case UBP(_: ClassifiedImpure) ⇒
+                    atMost(ImpureByAnalysis)
+                    false
+                case eps @ LUBP(lb, ub) ⇒
+                    if (eps.isRefinable && ((lb meet state.ubPurity) ne state.ubPurity)) {
+                        // On conditional, keep dependence
+                        state.addPurityDependee(ep.e, ep, params)
+                        reducePurityLB(lb)
+                    }
+                    // Contextual/external purity is handled below
+                    atMost(ub.withoutContextual)
+                    ub.modifiedParams.forall(
+                        param ⇒
+                            isLocalInternal(
+                                params(param),
+                                ImpureByAnalysis,
+                                param ⇒ ContextuallyPure(IntTrieSet(param)),
+                                treatParamsAsFresh = true
+                            )
                     )
-            )
-        case _: SomeEOptionP ⇒
-            reducePurityLB(ImpureByAnalysis)
-            state.addPurityDependee(ep.e, ep, params)
-            true
-    }
+                case _: SomeEOptionP ⇒
+                    reducePurityLB(ImpureByAnalysis)
+                    state.addPurityDependee(ep.e, ep, params)
+                    true
+            }
+        }
 
     /**
      * Handles the effect of static data usage on the purity level.
@@ -573,6 +579,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     def checkStaticDataUsage(
         ep: EOptionP[DeclaredMethod, StaticDataUsage]
     )(implicit state: State): Unit = {
+        println("checkstatic data usage")
         ep match {
             case LBP(UsesNoStaticData | UsesConstantDataOnly) ⇒
                 state.updateStaticDataUsage(None)
@@ -592,6 +599,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         ep:     EOptionP[Field, ReferenceImmutability], // FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
+        println("ep2 handle unknown field mutability")
         state.addFieldMutabilityDependee(ep.e, ep, objRef)
     }
 
@@ -602,6 +610,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
+        println("ep2 handle unknown type mutability")
         if (ep.pk == ClassImmutability_new.key) //ClassImmutability.key)
             state.addClassImmutabilityDependee(
                 ep.e,
@@ -622,6 +631,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     override def handleCalleesUpdate(
         callees: EOptionP[DeclaredMethod, Callees]
     )(implicit state: State): Unit = {
+        println("handle callees update")
         state.updateCalleesDependee(callees)
         if (callees.isRefinable)
             reducePurityLB(ImpureByAnalysis)
@@ -631,6 +641,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
    * Adds the dependee necessary if the TACAI is not yet final.
    */
     override def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: State): Unit = {
+        println("handle tacai")
         state.updateTacai(ep)
     }
 
@@ -639,6 +650,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      * purity level further.
      */
     def cleanupDependees()(implicit state: State): Unit = {
+        println("ep2 cleanup dependees")
         if (state.ubPurity ne CompileTimePure)
             state.updateStaticDataUsage(None)
 
@@ -681,6 +693,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      * Raises the lower bound on the purity whenever possible.
      */
     def adjustLowerBound()(implicit state: State): Unit = {
+        println("adjust lower bound")
         if (state.calleesDependee.isDefined)
             return ; // Nothing to be done, lower bound is still LBImpure
 
@@ -842,6 +855,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     def determineMethodPurity(
         cfg: CFG[Stmt[V], TACStmts[V]]
     )(implicit state: State): ProperPropertyComputationResult = {
+        println("pa2 determine method purity of method: "+state.method)
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
@@ -858,13 +872,17 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
                     }
                 }
             }
-
+        println("pa2_1")
         // Synchronized methods have a visible side effect on the receiver
         // Static synchronized methods lock the class which is potentially globally visible
-        if (state.method.isSynchronized)
-            if (state.method.isStatic) return Result(state.definedMethod, ImpureByAnalysis);
-            else atMost(ContextuallyPure(IntTrieSet(0)))
-
+        if (state.method.isSynchronized) {
+            println("pa2 methods is synchronized")
+            if (state.method.isStatic) {
+                println("pa2 method is additionally static and thus impure")
+                return Result(state.definedMethod, ImpureByAnalysis);
+            } else atMost(ContextuallyPure(IntTrieSet(0)))
+        }
+        println("pa2_2")
         val stmtCount = state.code.length
         var s = 0
         while (s < stmtCount) {
@@ -874,17 +892,17 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
             }
             s += 1
         }
-
+        println("pa2_3")
         val callees = propertyStore(state.definedMethod, Callees.key)
         if (!checkPurityOfCallees(callees))
             return Result(state.definedMethod, state.ubPurity)
-
+        println("pa2_4")
         if (callees.hasUBP)
             state.rvfCallSites.foreach {
                 case (pc, data) ⇒
                     checkFreshnessOfReturn(pc, data, callees.ub)
             }
-
+        println("pa2_5")
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
@@ -899,12 +917,12 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
                 else atMost(SideEffectFree)
             }
         }
-
+        println("pa2_6")
         if (state.ubPurity eq CompileTimePure) // Check static data usage only if necessary
             checkStaticDataUsage(propertyStore(state.definedMethod, StaticDataUsage.key))
         else
             cleanupDependees() // Remove dependees we already know we won't need
-
+        println("pa2_7")
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
             println(
