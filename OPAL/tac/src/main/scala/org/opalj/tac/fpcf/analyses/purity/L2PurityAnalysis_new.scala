@@ -498,7 +498,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      * This method will return false for impure statements, so evaluation can be terminated early.
      */
     override def checkPurityOfStmt(stmt: Stmt[V])(implicit state: State): Boolean = {
-        println("check purity of statemt")
+        println("check purity of statemt" + stmt)
         (stmt.astID: @switch) match {
             // Synchronization on non-escaping local objects/arrays is pure (and useless...)
             case MonitorEnter.ASTID | MonitorExit.ASTID ⇒
