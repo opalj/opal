@@ -573,7 +573,9 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
         implicit
         state: StateType
     ): Boolean = {
+        println("check purity of callees")
         handleCalleesUpdate(calleesEOptP)
+        println("callees eopt: " + calleesEOptP)
         calleesEOptP match {
             case UBPS(p: Callees, isFinal) ⇒
                 if (!isFinal) reducePurityLB(ImpureByAnalysis)
@@ -588,7 +590,7 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                             !isDomainSpecificCall(call, call.receiverOption)
                         }
                     }
-
+                println("has icomplete callsite: "+ hasIncompleteCallSites)
                 if (hasIncompleteCallSites) {
                     atMost(ImpureByAnalysis)
                     return false;
@@ -610,9 +612,10 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                                 }
                         }
                 }
-
-                if (!noDirectCalleeIsImpure)
-                    return false;
+                println("no direct calleeisImpure: "+ noDirectCalleeIsImpure)
+                if (!noDirectCalleeIsImpure) {
+                    return false
+                };
 
                 val noIndirectCalleeIsImpure = p.indirectCallSites().forall {
                     case (pc, callees) ⇒
@@ -635,10 +638,11 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                                 }
                         }
                 }
-
+                println("noIndirectCalleeIsImpure: " + noIndirectCalleeIsImpure)
                 noIndirectCalleeIsImpure
 
             case _ ⇒
+                println("else case 5")
                 reducePurityLB(ImpureByAnalysis)
                 true
         }

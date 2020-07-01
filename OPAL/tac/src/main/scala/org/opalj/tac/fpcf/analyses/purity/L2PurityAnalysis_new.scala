@@ -498,7 +498,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      * This method will return false for impure statements, so evaluation can be terminated early.
      */
     override def checkPurityOfStmt(stmt: Stmt[V])(implicit state: State): Boolean = {
-        println("check purity of statemt" + stmt)
+        println("check purity of statemt"+stmt)
         (stmt.astID: @switch) match {
             // Synchronization on non-escaping local objects/arrays is pure (and useless...)
             case MonitorEnter.ASTID | MonitorExit.ASTID ⇒
@@ -632,9 +632,12 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         callees: EOptionP[DeclaredMethod, Callees]
     )(implicit state: State): Unit = {
         println("handle callees update")
+        println("callees: " + callees)
         state.updateCalleesDependee(callees)
-        if (callees.isRefinable)
+        if (callees.isRefinable) {
+            println("callee is refinable")
             reducePurityLB(ImpureByAnalysis)
+        }
     }
 
     /*
@@ -894,6 +897,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         }
         println("pa2_3")
         val callees = propertyStore(state.definedMethod, Callees.key)
+        println("callees: " + callees)
         if (!checkPurityOfCallees(callees))
             return Result(state.definedMethod, state.ubPurity)
         println("pa2_4")
