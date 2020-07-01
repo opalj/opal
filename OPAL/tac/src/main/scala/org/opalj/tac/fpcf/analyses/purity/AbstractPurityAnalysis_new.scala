@@ -575,7 +575,7 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
     ): Boolean = {
         println("check purity of callees")
         handleCalleesUpdate(calleesEOptP)
-        println("callees eopt: " + calleesEOptP)
+        println("callees eopt: "+calleesEOptP)
         calleesEOptP match {
             case UBPS(p: Callees, isFinal) ⇒
                 if (!isFinal) reducePurityLB(ImpureByAnalysis)
@@ -583,14 +583,17 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                 val hasIncompleteCallSites =
                     p.incompleteCallSites.exists { pc ⇒
                         val index = state.pcToIndex(pc)
+                        println("index: " + index)
                         if (index < 0)
                             false // call will not be executed
                         else {
                             val call = getCall(state.code(state.pcToIndex(pc)))
+                            println("getCall: "+ call)
+                            println("isDomainspecificCall: " + isDomainSpecificCall(call, call.receiverOption))
                             !isDomainSpecificCall(call, call.receiverOption)
                         }
                     }
-                println("has icomplete callsite: "+ hasIncompleteCallSites)
+                println("has icomplete callsite: "+hasIncompleteCallSites)
                 if (hasIncompleteCallSites) {
                     atMost(ImpureByAnalysis)
                     return false;
@@ -612,7 +615,7 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                                 }
                         }
                 }
-                println("no direct calleeisImpure: "+ noDirectCalleeIsImpure)
+                println("no direct calleeisImpure: "+noDirectCalleeIsImpure)
                 if (!noDirectCalleeIsImpure) {
                     return false
                 };
@@ -638,7 +641,7 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                                 }
                         }
                 }
-                println("noIndirectCalleeIsImpure: " + noIndirectCalleeIsImpure)
+                println("noIndirectCalleeIsImpure: "+noIndirectCalleeIsImpure)
                 noIndirectCalleeIsImpure
 
             case _ ⇒
