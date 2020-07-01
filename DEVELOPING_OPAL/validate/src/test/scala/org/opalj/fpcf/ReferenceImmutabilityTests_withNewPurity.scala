@@ -20,7 +20,6 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis_new
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
