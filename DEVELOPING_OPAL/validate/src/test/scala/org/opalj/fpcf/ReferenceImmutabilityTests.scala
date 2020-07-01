@@ -18,7 +18,9 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
  * @author Tobias Peter Roth
@@ -43,6 +45,8 @@ class ReferenceImmutabilityTests extends PropertiesTest {
         as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("ReferenceImmutability"))
     }
+
+    L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
     describe("the org.opalj.fpcf.analyses.L0ReferenceImmutability is executed") {
         val as = executeAnalyses(

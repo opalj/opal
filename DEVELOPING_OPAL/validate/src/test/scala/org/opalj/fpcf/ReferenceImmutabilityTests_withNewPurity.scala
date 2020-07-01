@@ -20,7 +20,10 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis_new
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
  * @author Tobias Peter Roth
@@ -30,7 +33,7 @@ class ReferenceImmutabilityTests_withNewPurity extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability")
+        List("org/opalj/fpcf/fixtures/immutability/reference_immutability_lazy_initialization") ///reference_immutability_lazy_initialization/sandbox")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -45,6 +48,8 @@ class ReferenceImmutabilityTests_withNewPurity extends PropertiesTest {
         as.propertyStore.shutdown()
         validateProperties(as, fieldsWithAnnotations(as.project), Set("ReferenceImmutability"))
     }
+
+    L2PurityAnalysis_new.setRater(Some(SystemOutLoggingAllExceptionRater))
 
     describe("the org.opalj.fpcf.analyses.L0ReferenceImmutability is executed") {
         val as = executeAnalyses(
