@@ -123,6 +123,9 @@ class RTACallGraphAnalysis private[analyses] (
                 ))
 
             if (mResult.isEmpty) {
+                if(caller.name=="init" && caller.declaringClassType.toString.contains("DeterministicCall")){
+                  println("rta error is empty")
+                }
                 unknownLibraryCall(
                     caller,
                     call.name,
@@ -134,6 +137,9 @@ class RTACallGraphAnalysis private[analyses] (
                     calleesAndCallers
                 )
             } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
+                if(caller.name=="init" && caller.declaringClassType.toString.contains("DeterministicCall")){
+                    println("rta error is not empty")
+                }
                 calleesAndCallers.addIncompleteCallSite(pc)
             }
         }
