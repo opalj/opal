@@ -241,6 +241,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         }
 
         if(callDeclaringClass.toString.toLowerCase.contains("deterministiccall"))
+            println("caller: " + caller)
             println(s"unknown library call")
         calleesAndCallers.addIncompleteCallSite(pc)
     }
