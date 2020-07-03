@@ -79,7 +79,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         specializedDeclaringClassType: ReferenceType,
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
-    )(implicit state: State): Unit
+    ): Unit
 
     protected final def processMethod(
         implicit state: State, calls: DirectCalls
@@ -191,7 +191,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         pc:                 Int,
         target:             org.opalj.Result[Method],
         calleesAndCallers:  DirectCalls
-    )(implicit state:State) : Unit = {
+    ): Unit = {
         if (target.hasValue) {
             val tgtDM = declaredMethods(target.value)
             calleesAndCallers.addCall(caller, tgtDM, pc)
@@ -219,7 +219,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         packageName:         String,
         pc:                  Int,
         calleesAndCallers:   DirectCalls
-    )(implicit state: State): Unit = {
+    ): Unit = {
         val declaringClassType = callDeclaringClass.mostPreciseObjectType
         val runtimeType = runtimeReceiverType.mostPreciseObjectType
 
@@ -240,7 +240,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
             }
         }
 
-        if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
+        if(callDeclaringClass.toString.toLowerCase.contains("deterministiccall"))
             println(s"unknown library call")
         calleesAndCallers.addIncompleteCallSite(pc)
     }
