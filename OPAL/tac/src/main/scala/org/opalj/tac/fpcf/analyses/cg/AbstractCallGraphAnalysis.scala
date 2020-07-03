@@ -138,18 +138,24 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                 handleVirtualCall(state.method, call, call.pc, calls)(state)
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
+                if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
+                  println(s"unresolved invokedynamics in call graph construction: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
             case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
+                if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
+                    println("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
             case idc: InvokedynamicMethodCall[_] ⇒
+                if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
+                    println("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
@@ -213,7 +219,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         packageName:         String,
         pc:                  Int,
         calleesAndCallers:   DirectCalls
-    ): Unit = {
+    )(implicit state: State): Unit = {
         val declaringClassType = callDeclaringClass.mostPreciseObjectType
         val runtimeType = runtimeReceiverType.mostPreciseObjectType
 
@@ -234,6 +240,8 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
             }
         }
 
+        if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
+            println(s"unknown library call")
         calleesAndCallers.addIncompleteCallSite(pc)
     }
 
