@@ -79,10 +79,10 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         specializedDeclaringClassType: ReferenceType,
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
-    ): Unit
+    )(implicit state: State): Unit
 
     protected final def processMethod(
-        implicit state: State, calls: DirectCalls
+        state: State, calls: DirectCalls
     ): ProperPropertyComputationResult = {
         val tac = state.tac
 
@@ -158,7 +158,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     println(s"analysis - call graph construction unresolved invokedynamic: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
-                    Warn(s"analysis - call graph construction unresolved invokedynamic: $idc")
+                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
             case _ ⇒ //nothing to do
