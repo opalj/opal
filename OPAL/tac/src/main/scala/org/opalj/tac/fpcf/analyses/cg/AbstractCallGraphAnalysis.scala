@@ -138,15 +138,15 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                 handleVirtualCall(state.method, call, call.pc, calls)(state)
 
             case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
-                if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
-                  println(s"unresolved invokedynamics in call graph construction: $idc")
+                if (state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
+                    println(s"unresolved invokedynamics in call graph construction: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
             case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
-                if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
+                if (state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
                     println(s"analysis - call graph construction unresolved invokedynamic: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
@@ -154,7 +154,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                 )
 
             case idc: InvokedynamicMethodCall[_] ⇒
-                if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
+                if (state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
                     println(s"analysis - call graph construction unresolved invokedynamic: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
@@ -240,10 +240,11 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
             }
         }
 
-        if(callDeclaringClass.toString.toLowerCase.contains("deterministiccall"))
-            new Exception().printStackTrace()
-            println("caller: " + caller)
+        if (callDeclaringClass.toString.toLowerCase.contains(".deterministiccall")) {
+            new Exception().printStackTrace(System.out)
+            println("caller: "+caller)
             println(s"unknown library call")
+        }
         calleesAndCallers.addIncompleteCallSite(pc)
     }
 
