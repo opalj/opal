@@ -89,7 +89,10 @@ class RTACallGraphAnalysis private[analyses] (
                     call.name,
                     call.descriptor
                 )
-
+                if (caller.name.toLowerCase.contains("init") && caller.declaringClassType.toString.toLowerCase().contains("deterministiccall")) {
+                    println("caller:"+caller)
+                    println("target: "+tgtR)
+                }
                 handleCall(
                     caller,
                     call.name,
@@ -123,9 +126,9 @@ class RTACallGraphAnalysis private[analyses] (
                 ))
 
             if (mResult.isEmpty) {
-                if(caller.declaringClassType.toString.toLowerCase().contains("deterministiccall")){
-                  println("rta error is empty")
-                    println("caller: " +caller)
+                if (caller.declaringClassType.toString.toLowerCase().contains("deterministiccall")) {
+                    println("rta error is empty")
+                    println("caller: "+caller)
                 }
                 unknownLibraryCall(
                     caller,
@@ -138,10 +141,10 @@ class RTACallGraphAnalysis private[analyses] (
                     calleesAndCallers
                 )
             } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
-                if(caller.declaringClassType.toString.toLowerCase().contains("deterministiccall")){
+                if (caller.declaringClassType.toString.toLowerCase().contains("deterministiccall")) {
 
                     println("rta error is not empty")
-                  println("caller: " +caller)
+                    println("caller: "+caller)
                 }
                 calleesAndCallers.addIncompleteCallSite(pc)
             }
