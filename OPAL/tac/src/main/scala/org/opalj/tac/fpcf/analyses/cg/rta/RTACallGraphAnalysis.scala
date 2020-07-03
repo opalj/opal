@@ -92,6 +92,7 @@ class RTACallGraphAnalysis private[analyses] (
                 if (caller.name.toLowerCase.contains("init") && caller.declaringClassType.toString.toLowerCase().contains("deterministiccall")) {
                     println("caller:"+caller)
                     println("target: "+tgtR)
+                    println(project.classFile(caller.declaringClassType).get.methods.mkString(", "))
                 }
                 handleCall(
                     caller,
