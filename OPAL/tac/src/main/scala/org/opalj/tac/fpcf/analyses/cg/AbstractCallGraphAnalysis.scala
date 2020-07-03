@@ -82,7 +82,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     )(implicit state: State): Unit
 
     protected final def processMethod(
-        state: State, calls: DirectCalls
+        implicit state: State, calls: DirectCalls
     ): ProperPropertyComputationResult = {
         val tac = state.tac
 
@@ -147,7 +147,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
 
             case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
                 if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
-                    println("analysis - call graph construction", s"unresolved invokedynamic: $idc")
+                    println(s"analysis - call graph construction unresolved invokedynamic: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
@@ -155,10 +155,10 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
 
             case idc: InvokedynamicMethodCall[_] ⇒
                 if(state.method.declaringClassType.toString.toLowerCase().contains("deterministiccall"))
-                    println("analysis - call graph construction", s"unresolved invokedynamic: $idc")
+                    println(s"analysis - call graph construction unresolved invokedynamic: $idc")
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
-                    Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
+                    Warn(s"analysis - call graph construction unresolved invokedynamic: $idc")
                 )
 
             case _ ⇒ //nothing to do
@@ -191,7 +191,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         pc:                 Int,
         target:             org.opalj.Result[Method],
         calleesAndCallers:  DirectCalls
-    ): Unit = {
+    )(implicit state:State) : Unit = {
         if (target.hasValue) {
             val tgtDM = declaredMethods(target.value)
             calleesAndCallers.addCall(caller, tgtDM, pc)
