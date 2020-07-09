@@ -40,9 +40,6 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
-/***
- *
- */
 trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
 
     type V = DUVar[ValueInformation]
@@ -107,11 +104,10 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
         eop: EOptionP[DeclaredMethod, Purity]
     )(implicit state: State): Boolean = eop match {
         case LBP(p: Purity) if p.isDeterministic ⇒
-            println("XXX: false is non deterministic"); false
+            false
         case EUBP(e, p: Purity) if !p.isDeterministic ⇒
-            println("e: "+e+",XXX: true is non deterministic"); true
+            true
         case _ ⇒
-            println("XXX: else");
             state.purityDependees += eop
             false
     }
@@ -122,7 +118,6 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
     )(implicit state: State): Boolean = {
 
         val propertyStoreResult = propertyStore(declaredMethods(method), Purity.key)
-        println("property store purity  result: "+propertyStoreResult)
         val result = (method.descriptor.parametersCount == 0 && !isNonDeterministic(
             propertyStoreResult
         ))
@@ -138,15 +133,8 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
     )(implicit state: State): Boolean = eop match {
         case FinalEP(e, ImmutableReference(_)) ⇒ true
         case FinalEP(e, MutableReference)      ⇒ false
-        //
         case LBP(ImmutableReference(_))        ⇒ true
         case UBP(MutableReference)             ⇒ false
-
-        /**
-         * case LBP(_: ImmutableReference) ⇒ //FinalField) ⇒
-         * true
-         * case UBP(_: MutableReference) ⇒ false // NonFinalField) ⇒ false *
-         */
         case _ ⇒
             state.referenceImmutabilityDependees += eop
             true

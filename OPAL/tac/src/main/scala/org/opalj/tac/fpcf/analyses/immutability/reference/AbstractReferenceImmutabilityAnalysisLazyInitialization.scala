@@ -9,17 +9,23 @@ import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.Method
+import org.opalj.br.PC
 import org.opalj.br.PCs
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
+import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.ReferenceImmutability
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.tac.SelfReferenceParameter
 import org.opalj.tac.Assignment
 import org.opalj.tac.CaughtException
+import org.opalj.tac.ClassConst
+import org.opalj.tac.DVar
 import org.opalj.tac.Expr
 import org.opalj.tac.FieldWriteAccessStmt
 import org.opalj.tac.GetField
@@ -36,6 +42,7 @@ import org.opalj.tac.TACStmts
 import org.opalj.tac.TACode
 import org.opalj.tac.UVar
 import org.opalj.tac.VirtualFunctionCall
+import org.opalj.value.ValueInformation
 
 import scala.annotation.switch
 
@@ -63,28 +70,35 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         pcToIndex:    Array[Int]
     )(implicit state: State): Boolean = {
         val write = code(writeIndex).asFieldWriteAccessStmt
-        println("0001")
+        //println("0001")
         if (state.field.fieldType.computationalType != ComputationalTypeInt &&
             state.field.fieldType.computationalType != ComputationalTypeFloat) {
             // Only handle lazy initialization of ints and floats as they are guaranteed to be
             // written atomically
             return false;
         }
-        println("0002")
+        //println("0002")
+        //--------------------------------------------------------
+        //TODO reasoning if there is another way to do this
+        val writes = fieldAccessInformation.writeAccesses(state.field)
+        //println("writes: "+writes)
+        if (writes.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) //filter(mAndPCs ⇒ (mAndPCs._1 eq method))
+            return false; // more than one write in the method
+        //----------------------------------------------------------------
         val reads = fieldAccessInformation.readAccesses(state.field)
         if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
             return false; // Reads outside the (single) lazy initialization method
         }
-        println("0003")
+        //println("0003")
         // There must be a guarding if-Statement
         // The guardIndex is the index of the if-Statement, the guardedIndex is the index of the
         // first statement that is executed after the if-Statement if the field's value was not the
         // default value
         val (guardIndex, guardedIndex, readIndex) = {
-            val findGuardResult = findGuard(writeIndex, defaultValue, code, cfg, 1)
-            println("find guard result: "+findGuardResult._1.mkString(", "))
-            if (findGuardResult._1.size > 0)
-                findGuardResult._1.head
+            val findGuardResult = findGuard(writeIndex, defaultValue, code, cfg)
+            //println("find guard result: "+findGuardResult)
+            if (findGuardResult.isDefined)
+                (findGuardResult.get._1, findGuardResult.get._2, findGuardResult.get._3)
             else return false;
             /**
              * findGuardResult match {
@@ -94,24 +108,24 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
              */
         }
 
-        println("0004")
+        //println("0004")
         // Detect only simple patterns where the lazily initialized value is returned immediately
         if (!checkImmediateReturn(write, writeIndex, readIndex, code))
             return false;
-        println("0005")
+        //println("0005")
         // The value written must be computed deterministically and the writes guarded correctly
         if (!checkWrites(write, writeIndex, guardIndex, guardedIndex, method, code, cfg))
             return false;
-        println("0006")
+        //println("0006")
         // Field reads (except for the guard) may only be executed if the field's value is not the
         // default value
         if (!checkReads(reads, readIndex, guardedIndex, writeIndex, cfg, pcToIndex))
             return false;
-        println("0007")
+        //println("0007")
         true
     }
 
-    def isDoubleCheckedLocking(
+    def isThreadSafeLazyInitialisation(
         writeIndex:   Int,
         defaultValue: Any,
         method:       Method,
@@ -119,83 +133,79 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         cfg:          CFG[Stmt[V], TACStmts[V]],
         pcToIndex:    Array[Int],
         tacCai:       TACode[TACMethodParameter, V]
-    )(implicit state: State): Boolean = {
-        //val write = code(writeIndex).asFieldWriteAccessStmt
-        val reads = fieldAccessInformation.readAccesses(state.field)
-        if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer))
-            return false; // Reads outside the (single) lazy initialization method
-
-        // There must be a guarding if-Statement
-        // The guardIndex is the index of the if-Statement, the guardedIndex is the index of the
-        // first statement that is executed after the if-Statement if the field's value was not the
-        // default value
-        val guardResults: (List[(Int, Int, Int)], (Option[(CFGNode, CFGNode)])) = findGuard(writeIndex, defaultValue, code, cfg, 2)
-        println("find guard result 2: "+guardResults._1.mkString(", "))
-
-        //if(!checkReads(reads, readIndex, guardedIndex, writeIndex, cfg, pcToIndex))
-        //    return false;
-        println("--------------------------------------------------------------------------------------------dcl")
-
-        val monitorResult = findMonitor(writeIndex, defaultValue, code, cfg, tacCai)
-        println("monitorResult: "+monitorResult)
-        /**
-         * guardResults.foreach(x ⇒ {
-         * if (!checkWrites(write, writeIndex, x._1, x._2, method, code, cfg)) {
-         * println("check writes false")
-         * return false
-         * };
-         * // Field reads (except for the guard) may only be executed if the field's value is not the
-         * // default value
-         * if (!checkReads(reads, x._3, x._2, writeIndex, cfg, pcToIndex)) {
-         * println("check reads false")
-         * return false
-         * };
-         * }) *
-         */
+    )(implicit state: State): ReferenceImmutability = {
+        var result: ReferenceImmutability = LazyInitializedThreadSafeReference
+        val write = code(writeIndex).asFieldWriteAccessStmt
+        val writeBB = cfg.bb(writeIndex).asBasicBlock
         val domTree = cfg.dominatorTree
 
-        (guardResults._2, monitorResult._2) match {
-            case (Some((guard1: CFGNode, guard2: CFGNode)), Some(monitor: CFGNode)) ⇒
-                println(
-                    s"""domtree: $domTree
-                       | g1 dom m:  ${domTree.strictlyDominates(guard1.nodeId, monitor.nodeId)}
-                       | m dom g2: ${domTree.strictlyDominates(monitor.nodeId, guard2.nodeId)}
-                       | g1 dom g2: ${domTree.strictlyDominates(guard1.nodeId, guard2.nodeId)}
-                       | g2 dom g1: ${domTree.strictlyDominates(guard2.nodeId, guard1.nodeId)}
-                       | g2 dom m: ${domTree.strictlyDominates(guard2.nodeId, monitor.nodeId)}
-                       | m dom g1: ${domTree.strictlyDominates(monitor.nodeId, guard1.nodeId)}
-                       |
-                       | m: $monitor
-                       | g2: $guard2
-                       | m==g2: ${monitor == guard2}
-                       |
-                       |""".stripMargin
-                )
-
-                if ((guard1 == monitor || domTree.strictlyDominates(guard1.nodeId, monitor.nodeId)) &&
-                    (monitor == guard2 || domTree.strictlyDominates(monitor.nodeId, guard2.nodeId)))
-                    println("dominates!!!")
-                else {
-                    println("not dominates!!!!")
-                    return false;
-                }
-            case _ ⇒ println("not dominates!!!"); return false;
+        val (guardIndex, guardedIndex, readIndex, afterGuardRecognizedTheDefaultValueIndex) = {
+            val findGuardResult: (Option[(Int, Int, Int, CFGNode, Int)]) = findGuard(writeIndex, defaultValue, code, cfg)
+            if (findGuardResult.isDefined)
+                (findGuardResult.get._1, findGuardResult.get._2, findGuardResult.get._3, findGuardResult.get._5)
+            else return MutableReference;
         }
-        /**
-         * monitorResult._1 match {
-         * case (Some(enter), Some(exit)) ⇒ {
-         *
-         * //val outer =
-         * guardResults._1.exists(x ⇒ x._1 < enter && exit < x._2) &&
-         * guardResults._1.exists(x ⇒ enter < x._1 && x._2 < exit)
-         * /*** val inner =
-         * return outer && inner;*
-         * */
-         * }
-         * case _ ⇒ return false;
-         * }*
-         */
-        true
+        val guardedBB = cfg.bb(afterGuardRecognizedTheDefaultValueIndex)
+
+        val monitorResult: ((Option[Int], Option[Int]), (Option[CFGNode], Option[CFGNode])) =
+            findMonitor(writeIndex, defaultValue, code, cfg, tacCai)
+
+        val reads = fieldAccessInformation.readAccesses(state.field)
+        if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
+            return MutableReference
+        }
+        val writes = fieldAccessInformation.writeAccesses(state.field)
+        if (writes.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) {
+            return MutableReference
+        };
+        if (method.returnType == state.field.fieldType &&
+            !checkThatTheValueOfTheFieldIsReturned(write, writeIndex, readIndex, code)) {
+            return MutableReference;
+        }
+
+        result = checkWriteIsGuarded2(writeIndex, guardIndex, guardedIndex, method, code, cfg)
+        /*
+        println(
+            s""" method is synchronized: ${method.isSynchronized}
+               | (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) : ${(domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))}
+               | (guardedBB == writeBB: ${guardedBB == writeBB}
+               |  writeIndex: $writeIndex
+               |""".stripMargin
+        ) */
+
+        if ((monitorResult._1._1.isDefined && monitorResult._1._2.isDefined && monitorResult._2._1.isDefined)
+            &&
+            (
+                (domTree.strictlyDominates(monitorResult._2._1.get.nodeId, guardedBB.nodeId) ||
+                    (monitorResult._2._1.get == guardedBB && monitorResult._1._1.get < afterGuardRecognizedTheDefaultValueIndex)) && //writeIndex)) && //monitor enter dominates guard1
+                    ((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))
+                        || guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex) //&& //true case dominates Write
+            )) {
+
+            return LazyInitializedThreadSafeReference // result //DCL
+        } /*else if ((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))
+            || guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex) {
+            LazyInitializedNotThreadSafeOrNotDeterministicReference
+        }*/ else if (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) || (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) {
+            if (method.isSynchronized) {
+                return LazyInitializedThreadSafeReference
+                // result
+            } else {
+                LazyInitializedNotThreadSafeOrNotDeterministicReference
+            }
+            //TODO !! reasoning
+            /*if (writes.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) {
+                return MutableReference
+            } else {
+                return LazyInitializedNotThreadSafeOrNotDeterministicReference
+            }*/
+        } else if (((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))
+            || guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) {
+            return LazyInitializedNotThreadSafeOrNotDeterministicReference
+        } //only guard{
+        else {
+            return MutableReference
+        }
 
     }
 
@@ -205,42 +215,72 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]],
         tacCode:      TACode[TACMethodParameter, V]
-    ): ((Option[Int], Option[Int]), Option[CFGNode]) = { //(implicit state: State)
+    )(implicit state: State): ((Option[Int], Option[Int]), (Option[CFGNode], Option[CFGNode])) = { //(implicit state: State)
 
         var result: (Option[Int], Option[Int]) = (None, None)
-        var dclBBs: List[CFGNode] = List.empty
+        var dclEnterBBs: List[CFGNode] = List.empty
+        var dclExitBBs: List[CFGNode] = List.empty
         val startBB = cfg.bb(fieldWrite)
         var MonitorExitqueuedBBs: Set[CFGNode] = startBB.successors
         var worklistMonitorExit = getSuccessors(startBB, Set.empty)
 
-        /**
-         * def checkMonitor(pc: PC, v: UVar[ValueInformation], curBB: CFGNode): Boolean = {
-         * println("check monitor")
-         * v.defSites.filter(i ⇒ {
-         * if (i > 0)
-         * tacCode.stmts(i) match {
-         * case Assignment(pc1, DVar(value1, defSites1), GetField(pc2, t, name, classType, UVar(value2, defSites2))) ⇒
-         * println("classType: "+classType)
-         * println("classFile.thisType: "+state.field.classFile.thisType)
-         * println(
-         * s"""
-         * |classFile comparison result: ${classType == state.field.classFile.thisType}
-         *
-         * |""".
-         * stripMargin
-         * )
-         * classType ==
-         * state.field.
-         * classFile.thisType
-         * //&& name == state.field.name
-         * case _ ⇒ false
-         * }
-         * else // (i == -1)
-         * true
-         *
-         * }).size == v.defSites.size
-         * } *
-         */
+        def checkMonitor(pc: PC, v: UVar[ValueInformation], curBB: CFGNode)(implicit state: State): Boolean = {
+            v.defSites.filter(i ⇒ {
+                //   println("current i: "+i)
+                if (i > 0) {
+                    val stmt = tacCode.stmts(i)
+                    //     println("stmt: "+stmt)
+                    stmt match {
+                        case Assignment(pc1, DVar(useSites, value), cc @ ClassConst(_, constant)) ⇒ {
+                            state.field.classFile.thisType == cc.value || state.field.fieldType == cc.value
+                        }
+                        case Assignment(pc1, DVar(value1, defSites1), GetField(pc2, t, name, classType, UVar(value2, defSites2))) ⇒
+                            classType ==
+                                state.field.
+                                classFile.thisType
+                        //&& name == state.field.name
+                        case _ ⇒ false
+                    }
+                } else // (i == -1)
+                    true
+
+            }).size == v.defSites.size
+        }
+
+        var monitorEnterqueuedBBs: Set[CFGNode] = startBB.predecessors
+        var worklistMonitorEnter = getPredecessors(startBB, Set.empty)
+        //find monitorenter
+        while (!worklistMonitorEnter.isEmpty) {
+            val curBB = worklistMonitorEnter.head
+            //  println("curBB: "+curBB)
+            worklistMonitorEnter = worklistMonitorEnter.tail
+            //val startPC = curBB.startPC
+            //val endPC = curBB.endPC
+            val startPC = curBB.startPC
+            val endPC = curBB.endPC
+            //val cfStmt = code(startPC) //(endPC)
+            //   println("cfg should be monitor enter: "+cfStmt)
+
+            var flag = true
+            for (i ← startPC to endPC) {
+                code(i) match {
+                    case me @ MonitorEnter(pc, v @ UVar(defSites, value)) //if(v.value.computationalType == state.field.fieldType)
+                    ⇒ {
+                        if (checkMonitor(pc, v, curBB)) {
+                            result = (Some(tacCode.pcToIndex(pc)), (result._2))
+                            dclEnterBBs = curBB :: dclEnterBBs
+                            flag = false
+                        }
+                    }
+                    case _ ⇒
+                }
+            }
+            if (flag) {
+                val predecessor = getPredecessors(curBB, monitorEnterqueuedBBs)
+                worklistMonitorEnter ++= predecessor
+                monitorEnterqueuedBBs ++= predecessor
+            }
+        }
 
         //find monitorexit
         while (!worklistMonitorExit.isEmpty) {
@@ -252,67 +292,29 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             cfStmt match {
                 case MonitorExit(pc, v @ UVar(defSites, value)) //if(v.value.computationalType == state.field.fieldType)
                 ⇒
-                    //if(checkMonitor(pc, v, curBB)) {
-
-                    result = ((result._1), Some(tacCode.pcToIndex(pc)))
-                //}
+                    if (checkMonitor(pc, v, curBB)) {
+                        result = ((result._1), Some(tacCode.pcToIndex(pc)))
+                        dclExitBBs = curBB :: dclExitBBs
+                    }
                 case _ ⇒
                     val successors = getSuccessors(curBB, MonitorExitqueuedBBs)
-                    println("successors: "+successors.mkString(", "))
                     worklistMonitorExit ++= successors
                     MonitorExitqueuedBBs ++= successors
             }
         }
 
-        var monitorEnterqueuedBBs: Set[CFGNode] = startBB.predecessors
-        var worklistMonitorEnter = getPredecessors(startBB, Set.empty)
-        println("worklist monitorenter: "+worklistMonitorEnter.toList.mkString(", "))
-        //find monitorenter
-        while (!worklistMonitorEnter.isEmpty) {
-            val curBB = worklistMonitorEnter.head
-            println("curBB: "+curBB)
-            worklistMonitorEnter = worklistMonitorEnter.tail
-            //val startPC = curBB.startPC
-            //val endPC = curBB.endPC
-            val startPC = curBB.startPC
-            val cfStmt = code(startPC) //(endPC)
-            println("cfg should be monitor enter: "+cfStmt)
-            cfStmt match {
-                case me @ MonitorEnter(pc, v @ UVar(defSites, value)) //if(v.value.computationalType == state.field.fieldType)
-                ⇒
-
-                    /**
-                     * if (v.defSites.filter(i ⇒ {
-                     * tacCode.stmts(i) match {
-                     * case Assignment(pc1, DVar(value1, defSites1), GetField(pc2, t, name, classType, UVar(value2, defSites2))) ⇒
-                     * classType == state.field.fieldType
-                     * case _ ⇒ false
-                     * }
-                     * }).size == v.defSites.size) {
-                     * result = (Some(tacCode.pcToIndex(pc)), result._2)
-                     * } *
-                     */
-
-                    //if(checkMonitor(pc, v, curBB)) {
-                    println("Monitor Enter:-----------------------------------------------------------------------------")
-                    println("me")
-                    result = (Some(tacCode.pcToIndex(pc)), (result._2))
-                    dclBBs = curBB :: dclBBs
-                //}
-
-                case _ ⇒
-                    val predecessor = getPredecessors(curBB, monitorEnterqueuedBBs)
-                    println("predecessor: "+predecessor.mkString(", "))
-                    worklistMonitorEnter ++= predecessor
-                    monitorEnterqueuedBBs ++= predecessor
-            }
-        }
-        val bbs = {
-            if (dclBBs.size == 1)
-                Some(dclBBs.head)
+        val bbsEnter = {
+            if (dclEnterBBs.size >= 1)
+                Some(dclEnterBBs.head)
             else None
         }
-        (result, bbs)
+        val bbsExit = {
+            if (dclExitBBs.size >= 1)
+                Some(dclExitBBs.head)
+            else None
+        }
+        (result, (bbsEnter, bbsExit))
+
     }
 
     /**
@@ -324,131 +326,77 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         fieldWrite:   Int,
         defaultValue: Any,
         code:         Array[Stmt[V]],
-        cfg:          CFG[Stmt[V], TACStmts[V]],
-        amount:       Int
-    )(implicit state: State): (List[(Int, Int, Int)], (Option[(CFGNode, CFGNode)])) = {
-        println("start find guard")
+        cfg:          CFG[Stmt[V], TACStmts[V]]
+    )(implicit state: State): (Option[(Int, Int, Int, CFGNode, Int)]) = {
         val startBB = cfg.bb(fieldWrite).asBasicBlock
 
-        var dclBBs: List[CFGNode] = List.empty
-
-        println("start bb: "+startBB)
         var enqueuedBBs: Set[CFGNode] = startBB.predecessors
         var worklist: List[BasicBlock] = getPredecessors(startBB, Set.empty)
 
-        var result: List[(Int, Int)] = List.empty
-        var i: Int = 0
+        var result: Option[(Int, Int, CFGNode, Int)] = None
+
         while (worklist.nonEmpty) {
             val curBB = worklist.head
             worklist = worklist.tail
-            i = i + 1
-            println(i.toString()+" curBB: "+curBB)
-            println("worklist: "+worklist.mkString(", "))
+
             val startPC = curBB.startPC
             val endPC = curBB.endPC
-            println(
-                s"""
-                   |startPc: $startPC
-                   |endPC: $endPC
-                   |""".stripMargin
-            )
+
             val cfStmt = code(endPC)
-            println("cfStmt: "+cfStmt)
             (cfStmt.astID: @switch) match {
-                /**
-                 * case MonitorEnter.ASTID ⇒
-                 * val monitorEnter = cfStmt.asMonitorEnter
-                 * println("monitor-enter: "+monitorEnter)
-                 */
                 case If.ASTID ⇒
                     val ifStmt = cfStmt.asIf
-                    println("if stmt condition: "+ifStmt.condition)
                     ifStmt.condition match {
                         case EQ if curBB != startBB && isGuard(ifStmt, defaultValue, code) ⇒
-                            println("EQ")
-                            if (result.size >= amount) {
-                                println("result: "+result.mkString(", "))
-                                if (result.head._1 != endPC || result.last._2 != endPC + 1)
-                                    return (List.empty, None);
+                            if (result.isDefined) {
+                                if (result.get._1 != endPC || result.get._2 != endPC + 1)
+                                    return None;
                             } else {
-                                dclBBs = curBB :: dclBBs
-                                result = { (endPC, endPC + 1) } :: result
+                                result = Some((endPC, endPC + 1, curBB, ifStmt.targetStmt))
                             }
 
                         case NE if curBB != startBB && isGuard(ifStmt, defaultValue, code) ⇒
-                            println("NE")
-                            println(result.mkString(", "))
-                            if (result.size >= amount) {
-                                println("result: "+result.mkString(", "))
-                                if (result.head._1 != endPC || result.last._2 != ifStmt.targetStmt) {
-                                    println(
-                                        s"""head 1 : ${result.head._1}
-                                         |endPc: $endPC
-                                         |last 2 : ${result.last._2}
-                                         |ifstmt target stmt : ${ifStmt.targetStmt}
-                                         |""".stripMargin
-                                    )
-                                    return (List.empty, None);
-                                }
+                            if (result.isDefined) {
+                                if (result.get._1 != endPC || result.get._2 != ifStmt.targetStmt)
+                                    return None
                             } else {
-                                println("else")
-                                dclBBs = curBB :: dclBBs
-                                result = (endPC, ifStmt.targetStmt) :: result
+                                result = Some((endPC, ifStmt.targetStmt, curBB, endPC + 1))
                             }
 
                         // Otherwise, we have to ensure that a guard is present for all predecessors
                         case _ ⇒
-                            println("_")
-                            if (startPC == 0) {
-                                println("reached the end")
-                                return (List.empty, None);
-                            }
+                            if (startPC == 0) return None;
 
                             val predecessors = getPredecessors(curBB, enqueuedBBs)
                             worklist ++= predecessors
                             enqueuedBBs ++= predecessors
-
                     }
 
                 // Otherwise, we have to ensure that a guard is present for all predecessors
                 case _ ⇒
-                    if (startPC == 0) return (List.empty, None);
+                    if (startPC == 0) return None;
 
                     val predecessors = getPredecessors(curBB, enqueuedBBs)
                     worklist ++= predecessors
                     enqueuedBBs ++= predecessors
             }
-            if (result.size < amount) {
-                val predecessors = getPredecessors(curBB, enqueuedBBs)
-                worklist ++= predecessors
-                enqueuedBBs ++= predecessors
-                println("worklist end: "+worklist.mkString(", "))
-            }
-
         }
-        println("result: "+result.mkString(", "))
-        if (result.size >= amount) {
+
+        if (result.isDefined) {
             // The field read that defines the value checked by the guard must be used only for the
             // guard or directly if the field's value was not the default value
-            val ifStmt = code(result.head._1).asIf
+            val ifStmt = code(result.get._1).asIf
             val expr = if (ifStmt.leftExpr.isConst) ifStmt.rightExpr else ifStmt.leftExpr
             val definitions = expr.asVar.definedBy
             val fieldReadUses = code(definitions.head).asAssignment.targetVar.usedBy
             val fieldReadUsedCorrectly = fieldReadUses forall { use ⇒
-                use == result.head._1 || use == result.last._2
+                use == result.get._1 || use == result.get._2
             }
-            if (definitions.size == 1 && fieldReadUsedCorrectly) {
-                val BBs =
-                    if (dclBBs.size == 2)
-                        Some((dclBBs.head, dclBBs.last))
-                    else None
-
-                return (result.map(x ⇒ (x._1, x._2, definitions.head)), BBs);
-                //return (result.head._1, result.last._2, definitions.head) :: Nil
-            }; // Found proper guard
+            if (definitions.size == 1 && fieldReadUsedCorrectly)
+                return Some((result.get._1, result.get._2, definitions.head, result.get._3, result.get._4)); // Found proper guard
         }
 
-        (List.empty, None)
+        None
     }
 
     /**
@@ -464,74 +412,109 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]]
     )(implicit state: State): Boolean = {
-        println("check write is guarded")
-        println("-a")
         val startBB = cfg.bb(writeIndex).asBasicBlock
-        println("-b")
         var enqueuedBBs: Set[CFGNode] = Set(startBB)
-        println("-c")
         var worklist: List[BasicBlock] = List(startBB.asBasicBlock)
-        println("-d")
+
         val abnormalReturnNode = cfg.abnormalReturnNode
-        println("-e")
+
         val caughtExceptions = code filter { stmt ⇒
-            println("-f")
             stmt.astID == CaughtException.ASTID
 
         } flatMap { exception ⇒
             exception.asCaughtException.origins.map { origin: Int ⇒
                 if (isImmediateVMException(origin)) {
-                    println("-i")
                     pcOfImmediateVMException(origin)
                 } else {
-                    println("-j")
                     pcOfMethodExternalException(origin)
                 }
             }.iterator
         }
-        println("-k")
         while (worklist.nonEmpty) {
-            println("-l")
             val curBB = worklist.head
             worklist = worklist.tail
 
             val startPC = curBB.startPC
             val endPC = curBB.endPC
-            println("-m")
             if (startPC == 0 || startPC == guardedIndex)
                 return false; // Reached method start or wrong branch of guarding if-Statement
-            println("-n")
             // Exception thrown between guard and write, which is ok for deterministic methods,
             // but may be a problem otherwise as the initialization is not guaranteed to happen
             // (or never happen).
             if ((curBB ne startBB) && abnormalReturnNode.predecessors.contains(curBB)) {
-                println("nn")
                 if (!lazyInitializerIsDeterministic(method, code)) {
-                    println("oo")
-                    return false
+                    return false;
                 }
             };
-            println("ooo")
             // Exception thrown between guard and write (caught somewhere, but we don't care)
             if ((curBB ne startBB) & caughtExceptions.contains(endPC)) {
-                println("ooo")
                 if (!lazyInitializerIsDeterministic(method, code)) {
-                    println("ooooo")
-                    return false
+                    return false;
                 }
 
             };
-            println("-p")
             // Check all predecessors except for the one that contains the guarding if-Statement
-            println("-q")
             val predecessors = getPredecessors(curBB, enqueuedBBs).filterNot(_.endPC == guardIndex)
-            println("-r")
             worklist ++= predecessors
-            println("-s")
             enqueuedBBs ++= predecessors
         }
-        println("--true")
         true
+    }
+
+    def checkWriteIsGuarded2(
+        writeIndex:   Int,
+        guardIndex:   Int,
+        guardedIndex: Int,
+        method:       Method,
+        code:         Array[Stmt[V]],
+        cfg:          CFG[Stmt[V], TACStmts[V]]
+    )(implicit state: State): ReferenceImmutability = {
+        //   println("check write is guarded 2")
+        val startBB = cfg.bb(writeIndex).asBasicBlock
+        var enqueuedBBs: Set[CFGNode] = Set(startBB)
+        var worklist: List[BasicBlock] = List(startBB.asBasicBlock)
+        val abnormalReturnNode = cfg.abnormalReturnNode
+        val caughtExceptions = code filter { stmt ⇒
+            stmt.astID == CaughtException.ASTID
+
+        } flatMap { exception ⇒
+            exception.asCaughtException.origins.map { origin: Int ⇒
+                if (isImmediateVMException(origin)) {
+                    pcOfImmediateVMException(origin)
+                } else {
+                    pcOfMethodExternalException(origin)
+                }
+            }.iterator
+        }
+        while (worklist.nonEmpty) {
+            val curBB = worklist.head
+            worklist = worklist.tail
+
+            val startPC = curBB.startPC
+            val endPC = curBB.endPC
+            if (startPC == 0 || startPC == guardedIndex)
+                return LazyInitializedNotThreadSafeOrNotDeterministicReference; // Reached method start or wrong branch of guarding if-Statement
+            // Exception thrown between guard and write, which is ok for deterministic methods,
+            // but may be a problem otherwise as the initialization is not guaranteed to happen
+            // (or never happen).
+            if ((curBB ne startBB) && abnormalReturnNode.predecessors.contains(curBB)) {
+                if (!lazyInitializerIsDeterministic(method, code)) {
+                    return LazyInitializedNotThreadSafeOrNotDeterministicReference
+                }
+            };
+            // Exception thrown between guard and write (caught somewhere, but we don't care)
+            if ((curBB ne startBB) & caughtExceptions.contains(endPC)) {
+                if (!lazyInitializerIsDeterministic(method, code)) {
+                    return LazyInitializedNotThreadSafeOrNotDeterministicReference
+                }
+
+            };
+            // Check all predecessors except for the one that contains the guarding if-Statement
+            val predecessors = getPredecessors(curBB, enqueuedBBs).filterNot(_.endPC == guardIndex)
+            worklist ++= predecessors
+            enqueuedBBs ++= predecessors
+        }
+        LazyInitializedThreadSafeReference
     }
 
     /**
@@ -749,30 +732,20 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]]
     )(implicit state: State): Boolean = {
-        println("check Writes on field: "+state.field.name)
         val definitions = write.value.asVar.definedBy
-        println("a")
         val isDeterministic =
             if (definitions.size == 1) {
-                println("b")
                 // The value written must be computed deterministically
                 checkWriteIsDeterministic(code(definitions.head).asAssignment, method, code)
             } else {
-                println("c")
                 // More than one definition site for the value might lead to differences between
                 // invocations, but not if this method has no parameters and is deterministic
                 // (in this case, the definition reaching the write will always be the same)
-                val result = propertyStore(declaredMethods(method), Purity.key)
-                println("purity result: "+result)
                 method.descriptor.parametersCount == 0 &&
                     !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
             }
-        println("d")
         val checkWriteIsGuardedResult =
             checkWriteIsGuarded(writeIndex, guardIndex, guardedIndex, method, code, cfg)
-        println(s""" isDeterministic: $isDeterministic
-               | checkWriteIsGuarded: ${checkWriteIsGuardedResult}
-               |""".stripMargin)
         // The field write must be guarded correctly
         isDeterministic && checkWriteIsGuardedResult
 
@@ -812,6 +785,45 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                     else
                         return false; // return of different value
                 case _ ⇒ return false; // neither a field read nor a return
+            }
+            index += 1
+        }
+        false
+    }
+
+    def checkThatTheValueOfTheFieldIsReturned(
+        write:      FieldWriteAccessStmt[V],
+        writeIndex: Int,
+        readIndex:  Int,
+        code:       Array[Stmt[V]]
+    )(implicit state: State): Boolean = {
+        var index = writeIndex + 1
+
+        var load = -1
+
+        while (index < code.length) {
+            val stmt = code(index)
+            stmt.astID match {
+                case a @ Assignment.ASTID ⇒
+                    if (isReadOfCurrentField(stmt.asAssignment.expr)) {
+                        load = index
+                    }
+                // No field read or a field read of a different field
+                case ReturnValue.ASTID ⇒
+                    val returnValueDefs = stmt.asReturnValue.expr.asVar.definedBy
+                    if (returnValueDefs.size == 2 &&
+                        returnValueDefs.contains(write.value.asVar.definedBy.head) &&
+                        returnValueDefs.contains(readIndex)) {
+                        return true
+                    }; // direct return of the written value
+                    else if (load >= 0 && (returnValueDefs == IntTrieSet(load) ||
+                        returnValueDefs == IntTrieSet(readIndex, load))) {
+                        return true
+                    }; // return of field value loaded by field read
+                    else {
+                        return false
+                    }; // return of different value
+                case _ ⇒ ;
             }
             index += 1
         }
