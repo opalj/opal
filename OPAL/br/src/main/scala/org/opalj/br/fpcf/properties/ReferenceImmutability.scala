@@ -56,7 +56,37 @@ case class ImmutableReference(notEscapes: Boolean) extends ReferenceImmutability
             that
 }
 
-case object LazyInitializedReference extends ReferenceImmutability {
+case object LazyInitializedThreadSafeReference extends ReferenceImmutability {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
+        case ImmutableReference(_) ⇒
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+        case _ ⇒
+    }
+    def meet(other: ReferenceImmutability): ReferenceImmutability =
+        if (other == MutableReference || other == LazyInitializedNotThreadSafeOrNotDeterministicReference ||
+            other == LazyInitializedNotThreadSafeButDeterministicReference) {
+            other
+        } else {
+            this
+        }
+}
+
+case object LazyInitializedNotThreadSafeButDeterministicReference extends ReferenceImmutability {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
+        case ImmutableReference(_) | LazyInitializedThreadSafeReference ⇒
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+        case _ ⇒
+    }
+
+    def meet(other: ReferenceImmutability): ReferenceImmutability = {
+        if (other == MutableReference || other == LazyInitializedNotThreadSafeOrNotDeterministicReference) {
+            other
+        } else {
+            this
+        }
+    }
+}
+case object LazyInitializedNotThreadSafeOrNotDeterministicReference extends ReferenceImmutability {
     def meet(other: ReferenceImmutability): properties.ReferenceImmutability = {
         if (other == MutableReference) {
             other
@@ -64,15 +94,14 @@ case object LazyInitializedReference extends ReferenceImmutability {
             this
         }
     }
-
     override def checkIsEqualOrBetterThan(e: Entity, other: ReferenceImmutability): Unit = {
         other match {
-            case ImmutableReference(_) ⇒
+            case ImmutableReference(_) | LazyInitializedNotThreadSafeButDeterministicReference |
+                LazyInitializedThreadSafeReference ⇒
                 throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
             case _ ⇒
         }
     }
-
 }
 
 case object MutableReference extends ReferenceImmutability {
