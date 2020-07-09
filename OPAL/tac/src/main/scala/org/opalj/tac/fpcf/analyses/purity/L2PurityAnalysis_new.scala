@@ -498,7 +498,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      * This method will return false for impure statements, so evaluation can be terminated early.
      */
     override def checkPurityOfStmt(stmt: Stmt[V])(implicit state: State): Boolean = {
-        println("check purity of statemt"+stmt)
         (stmt.astID: @switch) match {
             // Synchronization on non-escaping local objects/arrays is pure (and useless...)
             case MonitorEnter.ASTID | MonitorExit.ASTID ⇒
@@ -542,7 +541,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         params: Seq[Expr[V]]
     )(implicit state: State): Boolean =
         {
-            println("pa2 check metho purity. ep: "+ep)
             ep match {
                 case UBP(_: ClassifiedImpure) ⇒
                     atMost(ImpureByAnalysis)
@@ -579,7 +577,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     def checkStaticDataUsage(
         ep: EOptionP[DeclaredMethod, StaticDataUsage]
     )(implicit state: State): Unit = {
-        println("checkstatic data usage")
         ep match {
             case LBP(UsesNoStaticData | UsesConstantDataOnly) ⇒
                 state.updateStaticDataUsage(None)
@@ -599,7 +596,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         ep:     EOptionP[Field, ReferenceImmutability], // FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
-        println("ep2 handle unknown field mutability")
         state.addFieldMutabilityDependee(ep.e, ep, objRef)
     }
 
@@ -610,7 +606,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         ep:   EOptionP[ObjectType, Property],
         expr: Expr[V]
     )(implicit state: State): Unit = {
-        println("ep2 handle unknown type mutability")
         if (ep.pk == ClassImmutability_new.key) //ClassImmutability.key)
             state.addClassImmutabilityDependee(
                 ep.e,
@@ -631,11 +626,8 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     override def handleCalleesUpdate(
         callees: EOptionP[DeclaredMethod, Callees]
     )(implicit state: State): Unit = {
-        println("handle callees update")
-        println("callees: " + callees)
         state.updateCalleesDependee(callees)
         if (callees.isRefinable) {
-            println("callee is refinable")
             reducePurityLB(ImpureByAnalysis)
         }
     }
@@ -644,7 +636,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
    * Adds the dependee necessary if the TACAI is not yet final.
    */
     override def handleTACAI(ep: EOptionP[Method, TACAI])(implicit state: State): Unit = {
-        println("handle tacai")
         state.updateTacai(ep)
     }
 
@@ -653,7 +644,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      * purity level further.
      */
     def cleanupDependees()(implicit state: State): Unit = {
-        println("ep2 cleanup dependees")
         if (state.ubPurity ne CompileTimePure)
             state.updateStaticDataUsage(None)
 
@@ -696,7 +686,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      * Raises the lower bound on the purity whenever possible.
      */
     def adjustLowerBound()(implicit state: State): Unit = {
-        println("adjust lower bound")
         if (state.calleesDependee.isDefined)
             return ; // Nothing to be done, lower bound is still LBImpure
 
@@ -751,9 +740,7 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
      *     - classes files for class types returned (for their mutability)
      */
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
-        println("pa2 enter continuation")
         val oldPurity = state.ubPurity
-        println("pa2 eps: "+eps)
         eps.ub.key match {
             case Purity.key ⇒
                 val e = eps.e.asInstanceOf[DeclaredMethod]
@@ -819,7 +806,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         }
 
         if (state.ubPurity eq ImpureByAnalysis) {
-            println("pa2 upPurity eq ImpureByAnalysis")
             return Result(state.definedMethod, ImpureByAnalysis)
         };
 
@@ -829,19 +815,8 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
 
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
-            println("pa2 dependees empty lb=ub; result : "+state.ubPurity)
             Result(state.definedMethod, state.ubPurity)
         } else {
-            println(
-                s"""
-                 |pa2
-                 | interim result
-                 | lbPurity: ${state.lbPurity}
-                 | ubPurity. ${state.ubPurity}
-                 | dependees: ${dependees.mkString(", ")}
-                 |
-                 |""".stripMargin
-            )
             InterimResult(
                 state.definedMethod,
                 state.lbPurity,
@@ -858,7 +833,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     def determineMethodPurity(
         cfg: CFG[Stmt[V], TACStmts[V]]
     )(implicit state: State): ProperPropertyComputationResult = {
-        println("pa2 determine method purity of method: "+state.method)
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
@@ -875,17 +849,14 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
                     }
                 }
             }
-        println("pa2_1")
         // Synchronized methods have a visible side effect on the receiver
         // Static synchronized methods lock the class which is potentially globally visible
         if (state.method.isSynchronized) {
-            println("pa2 methods is synchronized")
             if (state.method.isStatic) {
-                println("pa2 method is additionally static and thus impure")
+                //("pa2 method is additionally static and thus impure")
                 return Result(state.definedMethod, ImpureByAnalysis);
             } else atMost(ContextuallyPure(IntTrieSet(0)))
         }
-        println("pa2_2")
         val stmtCount = state.code.length
         var s = 0
         while (s < stmtCount) {
@@ -895,18 +866,14 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
             }
             s += 1
         }
-        println("pa2_3")
         val callees = propertyStore(state.definedMethod, Callees.key)
-        println("callees: " + callees)
         if (!checkPurityOfCallees(callees))
             return Result(state.definedMethod, state.ubPurity)
-        println("pa2_4")
         if (callees.hasUBP)
             state.rvfCallSites.foreach {
                 case (pc, data) ⇒
                     checkFreshnessOfReturn(pc, data, callees.ub)
             }
-        println("pa2_5")
         // Creating implicit exceptions is side-effect free (because of fillInStackTrace)
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
@@ -921,34 +888,14 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
                 else atMost(SideEffectFree)
             }
         }
-        println("pa2_6")
         if (state.ubPurity eq CompileTimePure) // Check static data usage only if necessary
             checkStaticDataUsage(propertyStore(state.definedMethod, StaticDataUsage.key))
         else
             cleanupDependees() // Remove dependees we already know we won't need
-        println("pa2_7")
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
-            println(
-                s"""
-                 |pa2
-                 |return result:
-                 |defined method: ${state.definedMethod}
-                 | ubPurity: ${state.ubPurity}
-                 |""".stripMargin
-            )
             Result(state.definedMethod, state.ubPurity)
         } else {
-            println(
-                s"""
-                   |pa2
-                   | interim result
-                   | lbPurity: ${state.lbPurity}
-                   | ubPurity. ${state.ubPurity}
-                   | dependees: ${dependees.mkString(", ")}
-                   |
-                   |""".stripMargin
-            )
             org.opalj.fpcf.InterimResult(
                 state.definedMethod,
                 state.lbPurity,
@@ -967,7 +914,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
     def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
         val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
-        println("pa2  determine purity of method: "+method+", with class: "+declClass)
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
@@ -980,14 +926,6 @@ class L2PurityAnalysis_new private[analyses] (val project: SomeProject)
         val tacaiO = getTACAI(method)
 
         if (tacaiO.isEmpty) {
-            println(
-                s"""
-                 |pa2
-                 |interim result
-                 |tacai0 is empty
-                 |
-                 |""".stripMargin
-            )
             return InterimResult(
                 definedMethod,
                 ImpureByAnalysis,

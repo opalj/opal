@@ -22,7 +22,9 @@ import org.opalj.br.fpcf.properties.DeepImmutableType
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.br.fpcf.properties.LazyInitializedReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
@@ -444,15 +446,14 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
         ep:     EOptionP[Field, ReferenceImmutability], // FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = {
-        println("pa2 ep of checkFieldMutability: "+ep)
         ep match {
 
             //case LBP(ImmutableReference(_))    ⇒
             //case LBP(LazyInitializedReference) ⇒
-            case LBP(ImmutableReference(_) | LazyInitializedReference) ⇒
-                println("pa2 ====>>>> EP: "+ep) //_: FinalField) ⇒ // Final fields don't impede purity
-            case FinalP(MutableReference) ⇒
-                println("pa2 ====>>>> EP: "+ep) //_: FinalEP[Field, ReferenceImmutability] ⇒ //FieldMutability] ⇒ // Mutable field
+            case LBP(ImmutableReference(_) | LazyInitializedThreadSafeReference | LazyInitializedNotThreadSafeButDeterministicReference) ⇒
+            //_: FinalField) ⇒ // Final fields don't impede purity
+            case FinalP(MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference) ⇒
+                //_: FinalEP[Field, ReferenceImmutability] ⇒ //FieldMutability] ⇒ // Mutable field
                 if (objRef.isDefined) {
                     if (state.ubPurity.isDeterministic)
                         isLocal(objRef.get, SideEffectFree)
@@ -573,9 +574,7 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
         implicit
         state: StateType
     ): Boolean = {
-        println("check purity of callees")
         handleCalleesUpdate(calleesEOptP)
-        println("callees eopt: "+calleesEOptP)
         calleesEOptP match {
             case UBPS(p: Callees, isFinal) ⇒
                 if (!isFinal) reducePurityLB(ImpureByAnalysis)
@@ -583,17 +582,13 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                 val hasIncompleteCallSites =
                     p.incompleteCallSites.exists { pc ⇒
                         val index = state.pcToIndex(pc)
-                        println("index: " + index)
                         if (index < 0)
                             false // call will not be executed
                         else {
                             val call = getCall(state.code(state.pcToIndex(pc)))
-                            println("getCall: "+ call)
-                            println("isDomainspecificCall: " + isDomainSpecificCall(call, call.receiverOption))
                             !isDomainSpecificCall(call, call.receiverOption)
                         }
                     }
-                println("has icomplete callsite: "+hasIncompleteCallSites)
                 if (hasIncompleteCallSites) {
                     atMost(ImpureByAnalysis)
                     return false;
@@ -615,7 +610,6 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                                 }
                         }
                 }
-                println("no direct calleeisImpure: "+noDirectCalleeIsImpure)
                 if (!noDirectCalleeIsImpure) {
                     return false
                 };
@@ -641,11 +635,9 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
                                 }
                         }
                 }
-                println("noIndirectCalleeIsImpure: "+noIndirectCalleeIsImpure)
                 noIndirectCalleeIsImpure
 
             case _ ⇒
-                println("else case 5")
                 reducePurityLB(ImpureByAnalysis)
                 true
         }
