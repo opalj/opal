@@ -390,7 +390,6 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         ep:     EOptionP[Field, FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = {
-        println("pa1 ep of checkFieldMutability: "+ep)
         ep match {
             case LBP(_: FinalField) ⇒ // Final fields don't impede purity
             case _: FinalEP[Field, FieldMutability] ⇒ // Mutable field
