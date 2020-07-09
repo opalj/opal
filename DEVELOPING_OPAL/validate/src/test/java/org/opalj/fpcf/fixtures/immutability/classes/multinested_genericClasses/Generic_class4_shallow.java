@@ -2,14 +2,14 @@ package org.opalj.fpcf.fixtures.immutability.classes.multinested_genericClasses;
 
 import org.opalj.fpcf.properties.class_immutability.ShallowImmutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceEscapesAnnotation;
 import org.opalj.fpcf.properties.type_immutability.ShallowImmutableTypeAnnotation;
 
 @ShallowImmutableTypeAnnotation("")
 @ShallowImmutableClassAnnotation("")
 public final class Generic_class4_shallow {
 
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     @ShallowImmutableFieldAnnotation("")
     private Generic_class3<TrivialMutableClass> gc;
 

@@ -29,9 +29,7 @@
 package org.opalj.fpcf.fixtures.immutability.reference;
 
 import org.opalj.fpcf.properties.field_mutability.LazyInitialized;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.*;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
@@ -42,7 +40,7 @@ import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotati
 
 class Simple {
 
-    @LazyInitializedReferenceAnnotation("Simple lazy initialization")
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Simple lazy initialization")
     private int x;
 
     public int init() {
@@ -55,7 +53,7 @@ class Simple {
 
 class Local {
 
-    @LazyInitializedReferenceAnnotation("Lazy initialization with local")
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Lazy initialization with local")
     private int x;
 
     public int init() {
@@ -83,7 +81,7 @@ class LocalWrong {
 
 class LocalReversed {
 
-    @LazyInitializedReferenceAnnotation("Lazy initialization with local (reversed)")
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Lazy initialization with local (reversed)")
     private int x;
 
     public int init() {
@@ -97,7 +95,7 @@ class LocalReversed {
 
 class LocalReload {
 
-    @LazyInitializedReferenceAnnotation("Lazy initialization with local (reloading the field's value after the write)")
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Lazy initialization with local (reloading the field's value after the write)")
     private int x;
 
     public int init() {
@@ -112,7 +110,7 @@ class LocalReload {
 
 class SimpleReversed {
 
-    @LazyInitializedReferenceAnnotation("Simple lazy initialization (reversed)")
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Simple lazy initialization (reversed)")
     private int x;
 
     public int init() {
@@ -170,7 +168,7 @@ class WrongDefault {
 
 class DeterministicCall {
 
-    @LazyInitializedReferenceAnnotation("Lazy initialization with call to deterministic method")
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Lazy initialization with call to deterministic method")
     private int x;
 
     public int init() {
@@ -187,7 +185,7 @@ class DeterministicCall {
 
 class DeterministicCallWithParam {
 
-    @MutableReferenceAnnotation("Lazy initialization is not the same for different invocations")
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("Lazy initialization is not the same for different invocations")
     private int x;
 
     public int init(int z) {
@@ -204,10 +202,10 @@ class DeterministicCallWithParam {
 
 class DeterministicCallOnFinalField {
 
-    @LazyInitializedReferenceAnnotation("Lazy initialization with call to deterministic method on final field")
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Lazy initialization with call to deterministic method on final field")
     private int x;
 
-    @ImmutableReferenceAnnotation("Declared final field")
+    @ImmutableReferenceEscapesAnnotation("Declared final field")
     private final Inner inner;
 
     public DeterministicCallOnFinalField(int v) {
@@ -270,7 +268,7 @@ class DeterministicCallOnNonFinalField {
 
 class NondeterministicCall {
 
-    @MutableReferenceAnnotation("Wrong lazy initialization with call to non-deterministic method")
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("Wrong lazy initialization with call to non-deterministic method")
     private int x;
 
     private final Object object = new Object();
@@ -285,7 +283,7 @@ class NondeterministicCall {
 
 class DoubleLocalAssignment {
 
-    @LazyInitializedReferenceAnnotation("Lazy initialization with a local that is updated twice")
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Lazy initialization with a local that is updated twice")
     private int x;
 
     public int init() {
@@ -337,7 +335,7 @@ class ExceptionInInitialization {
      * @note As the field write is dead, this field is really 'effectively final' as it will never
      * be different from the default value.
      */
-    @ImmutableReferenceAnnotation(value = "Field is never initialized, so it stays on its default value")
+    @ImmutableReferenceEscapesAnnotation(value = "Field is never initialized, so it stays on its default value")
     private int x;
 
     private int getZero() {
@@ -356,7 +354,7 @@ class ExceptionInInitialization {
 
 class PossibleExceptionInInitialization {
 
-    @MutableReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
     private int x;
 
     public int init(int i) {
@@ -370,8 +368,8 @@ class PossibleExceptionInInitialization {
 }
 
 class CaughtExceptionInInitialization {
-
-    @MutableReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
+    //TODO reasoning
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
     private int x;
 
     public int init(int i) {

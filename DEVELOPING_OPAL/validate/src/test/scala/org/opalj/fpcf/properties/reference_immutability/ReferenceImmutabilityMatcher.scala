@@ -5,7 +5,9 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ImmutableReference
-import org.opalj.br.fpcf.properties.LazyInitializedReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.ReferenceImmutability
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
@@ -44,8 +46,8 @@ class ReferenceImmutabilityMatcher(val property: ReferenceImmutability)
         if (!properties.exists(p ⇒ {
             val tmpP = {
                 p match {
-                    case ImmutableReference(_) ⇒ ImmutableReference(true)
-                    case _                     ⇒ p
+                    //case ImmutableReference(_) ⇒ ImmutableReference(true)
+                    case _ ⇒ p
                 }
             }
             tmpP == property
@@ -58,6 +60,12 @@ class ReferenceImmutabilityMatcher(val property: ReferenceImmutability)
     }
 }
 
-class LazyInitializedReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedReference)
+class LazyInitializedThreadSafeReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedThreadSafeReference)
 
-class ImmutableReferenceMatcher extends ReferenceImmutabilityMatcher(ImmutableReference(true))
+class LazyInitializedNotThreadSafeButDeterministicReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedNotThreadSafeButDeterministicReference)
+
+class LazyInitializedNotThreadSafeOrNotDeterministicReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedNotThreadSafeOrNotDeterministicReference)
+
+class ImmutableReferenceNotEscapesMatcher extends ReferenceImmutabilityMatcher(ImmutableReference(true))
+
+class ImmutableReferenceEscapesMatcher extends ReferenceImmutabilityMatcher(ImmutableReference(false))

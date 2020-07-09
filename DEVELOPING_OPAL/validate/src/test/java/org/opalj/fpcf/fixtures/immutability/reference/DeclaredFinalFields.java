@@ -28,7 +28,7 @@
  */
 package org.opalj.fpcf.fixtures.immutability.reference;
 
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceNotEscapesAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 
 /**
@@ -54,13 +54,13 @@ abstract class Super{
  */
 public class DeclaredFinalFields extends Super {
 
-    @ImmutableReferenceAnnotation("Initialized directly")
+    @ImmutableReferenceNotEscapesAnnotation("Initialized directly")
     private final int a = 1;
 
-    @ImmutableReferenceAnnotation("Initialized through instance initializer")
+    @ImmutableReferenceNotEscapesAnnotation("Initialized through instance initializer")
     private final int b;
 
-    @ImmutableReferenceAnnotation("Initialized through constructor")
+    @ImmutableReferenceNotEscapesAnnotation("Initialized through constructor")
     private final int c;
 
     @MutableReferenceAnnotation(value = "Prematurely read through super constructor", prematurelyRead = true)

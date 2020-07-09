@@ -8,7 +8,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.properties.LazyInitializedReference
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
@@ -21,6 +20,11 @@ import java.util.Calendar
 import org.opalj.br.Field
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.br.fpcf.properties.ImmutableReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
+import org.opalj.fpcf
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
@@ -86,37 +90,47 @@ object ReferenceImmutabilityAnalysisDemo_withNewPurity extends ProjectAnalysisAp
         val mutableReferences = propertyStore
             .finalEntities(MutableReference)
             .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
-            .toList
+            .toList.sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
         sb = sb.append(
             mutableReferences.map(x ⇒ x.toString+"\n").toString()
         )
 
-        sb = sb.append("\n Lazy Initialized Reference: \n")
-        val lazyInitializedReferences = propertyStore
-            .finalEntities(LazyInitializedReference)
-            .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
-            .toList
-        sb = sb.append(
-            lazyInitializedReferences
-                .map(x ⇒ x.toString+"\n")
-                .toString()
+        val lazyInitializedReferencesThreadSafe = propertyStore
+            .finalEntities(LazyInitializedThreadSafeReference).toList.sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
+
+        val lazyInitializedReferencesNotThreadSafeButDeterministic = propertyStore.
+            finalEntities(LazyInitializedNotThreadSafeButDeterministicReference).toList.sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
+
+        val notThreadSafeOrNotDeterministicLazyInitialization = propertyStore.
+            finalEntities(LazyInitializedNotThreadSafeOrNotDeterministicReference).toList.sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
+
+        sb.append(
+            s"""
+               | lazy initialized thread safe references: ${lazyInitializedReferencesThreadSafe.mkString(",\n")}
+               |
+               | lazy initialized not thread safe but deterministic references: ${lazyInitializedReferencesNotThreadSafeButDeterministic.mkString(", \n")}
+               |
+               | lazy initialized not thread safe or not deterministic references: ${notThreadSafeOrNotDeterministicLazyInitialization.mkString(", \n")}
+               |
+               |""".stripMargin
         )
 
-        sb = sb.append("\nImmutable References: \n")
+        val immutableReferences = propertyStore.entities(eps ⇒ //allfieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]) &&
+            eps.isFinal && (eps.asFinal.p match {
+                case ImmutableReference(_) ⇒ true
+                case _                     ⇒ false
+            })).toList.sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
+        sb = sb.append(
+            immutableReferences.map(x ⇒ x.toString+"\n").mkString(", ")
+        )
 
-        /**
-         * val immutableReferences = propertyStore
-         * .filter(x => allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
-         * .toList
-         * sb = sb.append(
-         * immutableReferences.map(x => x.toString + "\n").toString()
-         * )*
-         */
         sb.append(
             s""" 
          | mutable References: ${mutableReferences.size}
-         | lazy initialized References: ${lazyInitializedReferences.size}
-         | immutable References: ${}
+         | lazy initialized references not thread safe or deterministic: ${notThreadSafeOrNotDeterministicLazyInitialization.size}
+         | lazy initialized references not thread safe but deterministic: ${lazyInitializedReferencesNotThreadSafeButDeterministic.size}
+         | lazy initialized thread safe references: ${lazyInitializedReferencesThreadSafe.size}
+         | immutable References: ${immutableReferences.size}
          | 
          | took : $analysisTime seconds   
          |     

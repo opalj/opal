@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.immutability.classes.multinested_genericClasses;
 import org.opalj.fpcf.properties.class_immutability.MutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.DependentImmutableFieldAnnotation;
 import org.opalj.fpcf.properties.field_immutability.MutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceEscapesAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 import org.opalj.fpcf.properties.type_immutability.MutableTypeAnnotation;
 
@@ -11,16 +11,16 @@ import org.opalj.fpcf.properties.type_immutability.MutableTypeAnnotation;
 @MutableClassAnnotation("")
 public class OneVirgin<A,B,C,D, E> {
     @DependentImmutableFieldAnnotation(value="",genericString = "A")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private A a;
     @DependentImmutableFieldAnnotation(value="",genericString = "B")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private B b;
     @DependentImmutableFieldAnnotation(value="",genericString = "C")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private C c;
     @DependentImmutableFieldAnnotation(value="",genericString = "D")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private D d;
 
     @MutableFieldAnnotation("")

@@ -2,7 +2,7 @@ package org.opalj.fpcf.fixtures.immutability.classes.generic;
 
 import org.opalj.fpcf.properties.class_immutability.DependentImmutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.DependentImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceEscapesAnnotation;
 import org.opalj.fpcf.properties.type_immutability.DependentImmutableTypeAnnotation;
 
 
@@ -11,7 +11,7 @@ import org.opalj.fpcf.properties.type_immutability.DependentImmutableTypeAnnotat
 public final class DependentClassWithGenericField_deep2<T1> {
 
     @DependentImmutableFieldAnnotation(value = "dep imm field", genericString = "T1")
-    @ImmutableReferenceAnnotation("eff imm ref")
+    @ImmutableReferenceEscapesAnnotation("eff imm ref")
     private Generic_class1<T1,FinalEmptyClass,FinalEmptyClass,FinalEmptyClass,FinalEmptyClass> gc;
 
     public DependentClassWithGenericField_deep2(T1 t1) {

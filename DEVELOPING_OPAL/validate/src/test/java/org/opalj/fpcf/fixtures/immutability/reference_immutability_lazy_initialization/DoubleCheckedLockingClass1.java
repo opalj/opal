@@ -1,12 +1,11 @@
 package org.opalj.fpcf.fixtures.immutability.reference_immutability_lazy_initialization;//source: https://javarevisited.blogspot.com/2014/05/double-checked-locking-on-singleton-in-java.html
 
 
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability_lazy_initialization.LazyInitializationAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.LazyInitializedThreadSafeReferenceAnnotation;
 
 public class DoubleCheckedLockingClass1{
 
-    @LazyInitializedReferenceAnnotation("")
+    @LazyInitializedThreadSafeReferenceAnnotation("")
     private DoubleCheckedLockingClass1 instance;
     public DoubleCheckedLockingClass1 getInstance() {
         if(instance==null){

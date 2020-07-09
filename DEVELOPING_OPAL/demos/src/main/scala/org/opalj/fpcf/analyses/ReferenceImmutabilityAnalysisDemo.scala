@@ -8,7 +8,6 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.properties.LazyInitializedReference
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
@@ -22,11 +21,12 @@ import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.ImmutableReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-
 import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
 
 /**
@@ -91,7 +91,7 @@ object ReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         sb = sb.append("\n Lazy Initialized Reference: \n")
         val lazyInitializedReferences = propertyStore
-            .finalEntities(LazyInitializedReference)
+            .finalEntities(LazyInitializedThreadSafeReference).toList ++ (propertyStore.finalEntities(LazyInitializedNotThreadSafeButDeterministicReference))
             .toList
         sb = sb.append(
             lazyInitializedReferences.mkString(", \n")

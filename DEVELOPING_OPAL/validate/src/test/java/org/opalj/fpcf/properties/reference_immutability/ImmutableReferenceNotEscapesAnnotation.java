@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.reference_immutability_lazy_initialization;
+package org.opalj.fpcf.properties.reference_immutability;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.L0ReferenceImmutabilityLazyInitializationAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.reference.L0ReferenceImmutabilityAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -14,16 +14,16 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "ReferenceImmutabilityLazyInitialization",validator = NoLazyInitializationMatcher.class)
+@PropertyValidator(key = "ReferenceImmutability",validator = ImmutableReferenceNotEscapesMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface NoLazyInitializationAnnotation {
+public @interface ImmutableReferenceNotEscapesAnnotation {
 
     /**
      * A short reasoning of this property.
      */
     String value();// default = "N/A";
 
-    Class<? extends FPCFAnalysis>[] analyses() default {L0ReferenceImmutabilityLazyInitializationAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {L0ReferenceImmutabilityAnalysis.class};
 
 }

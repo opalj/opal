@@ -32,11 +32,11 @@ class ReferenceImmutabilityTests_withNewPurity extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability") ///reference_immutability_lazy_initialization/sandbox2")
+        List("org/opalj/fpcf/fixtures/immutability") ///reference_immutability_lazy_initialization/sandbox3")
     }
 
     override def init(p: Project[URL]): Unit = {
-        println("Java version: "+System.getProperty("java.version"))
+        //println("Java version: "+System.getProperty("java.version"))
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
             Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
         }

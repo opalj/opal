@@ -4,7 +4,7 @@ import org.opalj.fpcf.properties.class_immutability.MutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.DependentImmutableFieldAnnotation;
 import org.opalj.fpcf.properties.field_immutability.MutableFieldAnnotation;
 import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceEscapesAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 import org.opalj.fpcf.properties.type_immutability.MutableTypeAnnotation;
 
@@ -12,22 +12,22 @@ import org.opalj.fpcf.properties.type_immutability.MutableTypeAnnotation;
 @MutableClassAnnotation("")
 public class One<A,B,C,D> {
     @DependentImmutableFieldAnnotation(value="",genericString = "A")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private A a;
     @DependentImmutableFieldAnnotation(value="",genericString = "B")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private B b;
     @DependentImmutableFieldAnnotation(value="",genericString = "C")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private C c;
     @DependentImmutableFieldAnnotation(value="",genericString = "D")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private D d;
     @MutableFieldAnnotation("")
     @MutableReferenceAnnotation("")
     TrivialMutableClass tmc;
     @ShallowImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     private Generic_class1<A,B,C, D, TrivialMutableClass> gc1;
     public One(A a, B b, C c, D  d, TrivialMutableClass tmc){
         this.a = a;

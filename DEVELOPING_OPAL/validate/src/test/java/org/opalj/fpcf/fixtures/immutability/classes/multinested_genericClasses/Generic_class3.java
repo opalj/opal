@@ -2,18 +2,18 @@ package org.opalj.fpcf.fixtures.immutability.classes.multinested_genericClasses;
 
 import org.opalj.fpcf.properties.class_immutability.DependentImmutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.DependentImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceEscapesAnnotation;
 import org.opalj.fpcf.properties.type_immutability.DependentImmutableTypeAnnotation;
 
 @DependentImmutableTypeAnnotation("")
 @DependentImmutableClassAnnotation("")
 public final class Generic_class3<T1> {
 
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     @DependentImmutableFieldAnnotation(value = "T1", genericString = "T1")
     private T1 t1;
 
-    @ImmutableReferenceAnnotation("")
+    @ImmutableReferenceEscapesAnnotation("")
     @DependentImmutableFieldAnnotation(value = "", genericString = "")
     private Generic_class2<T1, FinalEmptyClass, FinalEmptyClass> gc;
 
