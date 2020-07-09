@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.tac.fpcf.analyses.immutability
 
+import org.opalj.br.Attribute
 import org.opalj.br.ClassSignature
 import org.opalj.br.ClassTypeSignature
 import org.opalj.br.Field
@@ -25,7 +26,9 @@ import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableType
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.ImmutableReference
-import org.opalj.br.fpcf.properties.LazyInitializedReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.MutableType_new
@@ -97,7 +100,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         var classFormalTypeParameters: Option[Set[String]] = None
         def loadFormalTypeparameters() = {
             var result: Set[String] = Set.empty
-            field.classFile.attributes.foreach(
+            //TODO
+            def CheckAttributeWithRegardToFormalTypeParameter: Attribute ⇒ Unit = {
                 x ⇒
                     x match {
                         case SourceFile(_) ⇒
@@ -111,7 +115,20 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             )
                         case _ ⇒
                     }
+            }
+            if (field.classFile.outerType.isDefined) {
+                val cf = project.classFile(field.classFile.outerType.get._1)
+                if (cf.isDefined) {
+                    cf.get.attributes.foreach(
+                        CheckAttributeWithRegardToFormalTypeParameter
+                    )
+                }
+            }
+
+            field.classFile.attributes.foreach(
+                CheckAttributeWithRegardToFormalTypeParameter
             )
+
             if (result.size > 0) {
                 classFormalTypeParameters = Some(result)
             }
@@ -121,7 +138,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             if (classFormalTypeParameters == None)
                 false
             else
-                classFormalTypeParameters.head.contains(string)
+                classFormalTypeParameters.get.contains(string)
         }
 
         def handleTypeImmutability(state: State) = {
@@ -195,6 +212,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                             _
                                             )
                                         ) ⇒ {
+
                                         val oPath =
                                             packageIdentifier1 match {
                                                 case Some(pid1) ⇒ pid1 + packageIdentifier2
@@ -202,7 +220,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                             }
                                         genericFields = ObjectType(oPath) :: genericFields
                                     }
-                                    case _ ⇒
+                                    case dc @ _ ⇒
                                         flag_notShallow = false
                                         flag_onlyDeep = false
                                         state.typeImmutability = Some(false)
@@ -236,6 +254,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 flag_notShallow = false
                 flag_onlyDeep = false
             }
+
             if (state.dependentImmutability != None) {
                 if (flag_onlyDeep)
                     state.dependentImmutability = Some(DependentImmutabilityKind.onlyDeepImmutable)
@@ -245,15 +264,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         }
 
         def createResult(state: State): ProperPropertyComputationResult = {
-          println(
-              s"""reaching create result
-                 |field: ${state.field}
-                 | class: ${state.field.classFile.thisType}
-                 | ref imm: ${state.referenceImmutability}
-                 | type imm: ${state.typeImmutability}
-                 | ref not esc: ${state.referenceNotEscapes}
-                 | depend imm: ${state.dependentImmutability}
-                 |""".stripMargin)
             state.referenceImmutability match {
                 case Some(false) | None ⇒
                     Result(field, MutableField)
@@ -271,11 +281,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                     case Some(DependentImmutabilityKind.onlyDeepImmutable) ⇒
                                         Result(field, DeepImmutableField)
                                     case _ ⇒ {
-                                      println(
-                                          s"""default case in field immutability
-                                             | state.dependentimmutability: ${state.dependentImmutability}
-                                             |
-                                             |""".stripMargin)
                                         Result(field, ShallowImmutableField)
                                     }
                                 }
@@ -303,7 +308,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     if (state.dependentImmutability == None)
                         state.dependentImmutability = Some(DependentImmutabilityKind.dependent)
                 }
-                case x @ FinalP(MutableReference) ⇒ {
+                case x @ FinalP(MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference) ⇒ {
                     state.typeImmutability = Some(false)
                     return Result(field, MutableField);
                 }
@@ -311,7 +316,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     state.referenceImmutability = Some(true)
                     state.referenceNotEscapes = notEscapes
                 }
-                case x @ FinalP(LazyInitializedReference) ⇒ { //TODO
+                case x @ FinalP(LazyInitializedThreadSafeReference | LazyInitializedNotThreadSafeButDeterministicReference) ⇒ { //TODO
                     state.referenceImmutability = Some(true)
                 }
                 case x @ _ ⇒
@@ -335,9 +340,9 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 state.referenceImmutability = Some(true)
                 state.referenceNotEscapes = notEscapes
             }
-            case FinalEP(_, LazyInitializedReference) ⇒
+            case FinalEP(_, LazyInitializedThreadSafeReference | LazyInitializedNotThreadSafeButDeterministicReference) ⇒
                 state.referenceImmutability = Some(true)
-            case FinalP(MutableReference) ⇒ return Result(field, MutableField);
+            case FinalP(MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference) ⇒ return Result(field, MutableField);
             case x @ _ ⇒ {
                 dependencies += x
             }
