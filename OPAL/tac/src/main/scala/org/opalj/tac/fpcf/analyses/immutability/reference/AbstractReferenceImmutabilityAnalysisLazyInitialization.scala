@@ -15,6 +15,8 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.properties.ImmutableReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.MutableReference
@@ -49,6 +51,51 @@ import scala.annotation.switch
 trait AbstractReferenceImmutabilityAnalysisLazyInitialization
     extends AbstractReferenceImmutabilityAnalysis
     with FPCFAnalysis {
+
+    def handleLazyInitialization(
+        writeIndex:   Int,
+        defaultValue: Any,
+        method:       Method,
+        code:         Array[Stmt[V]],
+        cfg:          CFG[Stmt[V], TACStmts[V]],
+        pcToIndex:    Array[Int],
+        tacCai:       TACode[TACMethodParameter, V]
+    )(implicit state: State): Option[Boolean] = {
+        var result: Option[Boolean] = None
+
+        val dcl: ReferenceImmutability = isThreadSafeLazyInitialisation(
+            writeIndex,
+            defaultValue,
+            method,
+            code,
+            cfg,
+            pcToIndex,
+            tacCai
+        )
+        dcl match {
+            case ir @ ImmutableReference(_)                ⇒ state.referenceImmutability = ir
+            case lits @ LazyInitializedThreadSafeReference ⇒ state.referenceImmutability = lits
+            case lintbd @ LazyInitializedNotThreadSafeButDeterministicReference ⇒
+                state.referenceImmutability = lintbd
+            case MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference ⇒
+                val li = isLazyInitialization(
+                    writeIndex,
+                    defaultValue,
+                    method,
+                    code,
+                    cfg,
+                    pcToIndex
+                )
+                if (dcl == MutableReference) {
+                    if (!li) result = Some(true)
+                    else state.referenceImmutability = LazyInitializedNotThreadSafeButDeterministicReference
+                } else if (dcl == LazyInitializedNotThreadSafeOrNotDeterministicReference) {
+                    if (li) state.referenceImmutability = LazyInitializedNotThreadSafeButDeterministicReference
+                    else state.referenceImmutability = LazyInitializedNotThreadSafeOrNotDeterministicReference
+                }
+        }
+        result
+    }
 
     /**
      * Checks whether a field write may be a lazy initialization.
@@ -147,9 +194,6 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         }
         val guardedBB = cfg.bb(afterGuardRecognizedTheDefaultValueIndex)
 
-        val monitorResult: ((Option[Int], Option[Int]), (Option[CFGNode], Option[CFGNode])) =
-            findMonitor(writeIndex, defaultValue, code, cfg, tacCai)
-
         val reads = fieldAccessInformation.readAccesses(state.field)
         if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
             return MutableReference
@@ -164,49 +208,30 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         }
 
         result = checkWriteIsGuarded2(writeIndex, guardIndex, guardedIndex, method, code, cfg)
-        /*
-        println(
-            s""" method is synchronized: ${method.isSynchronized}
-               | (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) : ${(domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))}
-               | (guardedBB == writeBB: ${guardedBB == writeBB}
-               |  writeIndex: $writeIndex
-               |""".stripMargin
-        ) */
 
-        if ((monitorResult._1._1.isDefined && monitorResult._1._2.isDefined && monitorResult._2._1.isDefined)
-            &&
-            (
-                (domTree.strictlyDominates(monitorResult._2._1.get.nodeId, guardedBB.nodeId) ||
-                    (monitorResult._2._1.get == guardedBB && monitorResult._1._1.get < afterGuardRecognizedTheDefaultValueIndex)) && //writeIndex)) && //monitor enter dominates guard1
-                    ((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))
-                        || guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex) //&& //true case dominates Write
-            )) {
-
-            return LazyInitializedThreadSafeReference // result //DCL
-        } /*else if ((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))
-            || guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex) {
-            LazyInitializedNotThreadSafeOrNotDeterministicReference
-        }*/ else if (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) || (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) {
-            if (method.isSynchronized) {
-                return LazyInitializedThreadSafeReference
-                // result
-            } else {
-                LazyInitializedNotThreadSafeOrNotDeterministicReference
-            }
-            //TODO !! reasoning
-            /*if (writes.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) {
-                return MutableReference
-            } else {
+        //when the method is synchronized the monitor has not to be searched
+        if (method.isSynchronized) {
+            if (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) || (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) {
+                return LazyInitializedThreadSafeReference;
+            } else return MutableReference;
+        } else {
+            val monitorResult: ((Option[Int], Option[Int]), (Option[CFGNode], Option[CFGNode])) =
+                findMonitor(writeIndex, defaultValue, code, cfg, tacCai)
+            if ((monitorResult._1._1.isDefined && monitorResult._1._2.isDefined && monitorResult._2._1.isDefined)
+                &&
+                (
+                    (domTree.strictlyDominates(monitorResult._2._1.get.nodeId, guardedBB.nodeId) ||
+                        (monitorResult._2._1.get == guardedBB && monitorResult._1._1.get < afterGuardRecognizedTheDefaultValueIndex)) && //writeIndex)) && //monitor enter dominates guard1
+                        ((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))
+                            || guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex) //&& //true case dominates Write
+                ))
+                return LazyInitializedThreadSafeReference // result //DCL
+            else if (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) || (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex))
                 return LazyInitializedNotThreadSafeOrNotDeterministicReference
-            }*/
-        } else if (((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))
-            || guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) {
-            return LazyInitializedNotThreadSafeOrNotDeterministicReference
-        } //only guard{
-        else {
-            return MutableReference
+            //only guard{
+            else
+                return MutableReference
         }
-
     }
 
     def findMonitor(
@@ -669,7 +694,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
      * For instance fields, the read must be on the `this` reference.
      */
     def isReadOfCurrentField(expr: Expr[V])(implicit state: State): Boolean = {
-        val field = expr.astID match {
+        val field = (expr.astID: @switch) match {
             case GetField.ASTID ⇒
                 val objRefDefinition = expr.asGetField.objRef.asVar.definedBy
                 if (objRefDefinition != SelfReferenceParameter) None
