@@ -16,11 +16,11 @@ import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
+import org.opalj.tac.fpcf.analyses.purity.{L2PurityAnalysis_new, LazyL2PurityAnalysis_new, SystemOutLoggingAllExceptionRater}
 
 /**
  * @author Tobias Peter Roth
@@ -46,24 +46,25 @@ class ReferenceImmutabilityTests extends PropertiesTest {
         validateProperties(as, fieldsWithAnnotations(as.project), Set("ReferenceImmutability"))
     }
 
-    L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
+    L2PurityAnalysis_new.setRater(Some(SystemOutLoggingAllExceptionRater))
 
     describe("the org.opalj.fpcf.analyses.L0ReferenceImmutability is executed") {
         val as = executeAnalyses(
             Set(
                 EagerL0ReferenceImmutabilityAnalysis,
-                LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyL2PurityAnalysis,
+                LazyL0FieldImmutabilityAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyLxTypeImmutabilityAnalysis_new,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis,
                 LazyL2FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis
+                LazyTypeImmutabilityAnalysis,
+                LazyLxClassImmutabilityAnalysis_new,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyL2PurityAnalysis_new,
             )
         )
         as.propertyStore.shutdown()
