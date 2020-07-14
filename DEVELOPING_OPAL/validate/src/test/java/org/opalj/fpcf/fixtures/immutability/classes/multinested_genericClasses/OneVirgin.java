@@ -25,7 +25,7 @@ public class OneVirgin<A,B,C,D, E> {
 
     @MutableFieldAnnotation("")
     @MutableReferenceAnnotation("")
-    TrivialMutableClass tmc;
+    public TrivialMutableClass tmc;
 
     Generic_class1<A,B,C, D, TrivialMutableClass> gc1;
     public OneVirgin(A a, B b, C c, D  d, TrivialMutableClass e){

@@ -25,7 +25,7 @@ public class One<A,B,C,D> {
     private D d;
     @MutableFieldAnnotation("")
     @MutableReferenceAnnotation("")
-    TrivialMutableClass tmc;
+    public TrivialMutableClass tmc;
     @ShallowImmutableFieldAnnotation("")
     @ImmutableReferenceEscapesAnnotation("")
     private Generic_class1<A,B,C, D, TrivialMutableClass> gc1;
