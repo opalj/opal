@@ -20,12 +20,14 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.{L2PurityAnalysis_new, LazyL2PurityAnalysis_new, SystemOutLoggingAllExceptionRater}
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis_new
 
 /**
  * @author Tobias Peter Roth
  */
 class ReferenceImmutabilityTests extends PropertiesTest {
+
+    import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
     override def withRT = true
 
@@ -49,6 +51,7 @@ class ReferenceImmutabilityTests extends PropertiesTest {
     L2PurityAnalysis_new.setRater(Some(SystemOutLoggingAllExceptionRater))
 
     describe("the org.opalj.fpcf.analyses.L0ReferenceImmutability is executed") {
+        import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
         val as = executeAnalyses(
             Set(
                 EagerL0ReferenceImmutabilityAnalysis,
@@ -64,7 +67,7 @@ class ReferenceImmutabilityTests extends PropertiesTest {
                 LazyTypeImmutabilityAnalysis,
                 LazyLxClassImmutabilityAnalysis_new,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyL2PurityAnalysis_new,
+                LazyL2PurityAnalysis_new
             )
         )
         as.propertyStore.shutdown()
