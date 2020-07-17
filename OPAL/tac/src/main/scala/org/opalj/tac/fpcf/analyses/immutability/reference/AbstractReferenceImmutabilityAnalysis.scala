@@ -42,6 +42,8 @@ import org.opalj.value.ValueInformation
 
 trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
 
+    import scala.collection.mutable
+
     type V = DUVar[ValueInformation]
 
     final val typeExtensibility = project.get(TypeExtensibilityKey)
@@ -76,6 +78,10 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
         }
     }
 
+    var stillCalculatedMethods: mutable.HashMap[Method, TACode[TACMethodParameter, V]] =
+        new mutable.HashMap[Method, TACode[TACMethodParameter, V]]()
+    //var stillCalculatedMethods: mutable.HashSet[Method] = new mutable.HashSet[Method]
+
     /**
      * Returns the TACode for a method if available, registering dependencies as necessary.
      */
@@ -83,16 +89,20 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
         method: Method,
         pcs:    PCs
     )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
-        propertyStore(method, TACAI.key) match {
-            case finalEP: FinalEP[Method, TACAI] ⇒
-                finalEP.ub.tac
-            case eps: InterimEP[Method, TACAI] ⇒
-                state.tacDependees += method -> ((eps, pcs))
-                eps.ub.tac
-            case epk ⇒
-                state.tacDependees += method -> ((epk, pcs))
-                None
-        }
+        if (stillCalculatedMethods.contains(method))
+            stillCalculatedMethods.get(method)
+        else
+            propertyStore(method, TACAI.key) match {
+                case finalEP: FinalEP[Method, TACAI] ⇒
+                    stillCalculatedMethods.put(method, finalEP.ub.tac.get)
+                    finalEP.ub.tac
+                case eps: InterimEP[Method, TACAI] ⇒
+                    state.tacDependees += method -> ((eps, pcs))
+                    eps.ub.tac
+                case epk ⇒
+                    state.tacDependees += method -> ((epk, pcs))
+                    None
+            }
     }
 
     /**

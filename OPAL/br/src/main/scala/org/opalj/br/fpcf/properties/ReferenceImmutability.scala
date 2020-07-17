@@ -31,6 +31,8 @@ sealed trait ReferenceImmutability
     extends OrderedProperty
     with ReferenceImmutabilityPropertyMetaInformation {
     final def key: PropertyKey[ReferenceImmutability] = ReferenceImmutability.key
+    def isImmutableReference = false
+    def doesNotEscapes = false
 }
 
 object ReferenceImmutability extends ReferenceImmutabilityPropertyMetaInformation {
@@ -48,6 +50,8 @@ object ReferenceImmutability extends ReferenceImmutabilityPropertyMetaInformatio
 }
 
 case class ImmutableReference(notEscapes: Boolean) extends ReferenceImmutability {
+    override def isImmutableReference = true
+    override def doesNotEscapes: Boolean = notEscapes
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
     def meet(that: ReferenceImmutability): ReferenceImmutability =
         if (this == that)
