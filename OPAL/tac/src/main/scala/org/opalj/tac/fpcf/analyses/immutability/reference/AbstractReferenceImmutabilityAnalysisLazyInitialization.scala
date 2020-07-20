@@ -65,7 +65,6 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         tacCai:       TACode[TACMethodParameter, V]
     )(implicit state: State): Option[Boolean] = {
         var result: Option[Boolean] = None
-        //println("III")
         val dcl: ReferenceImmutability = isThreadSafeLazyInitialisation(
             writeIndex,
             defaultValue,
@@ -75,7 +74,6 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             pcToIndex,
             tacCai
         )
-        //println("dcl: "+dcl)
         dcl match {
             case ir @ ImmutableReference(_)                ⇒ state.referenceImmutability = ir
             case lits @ LazyInitializedThreadSafeReference ⇒ state.referenceImmutability = lits
@@ -135,11 +133,11 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         //TODO reasoning if there is another way to do this
         val writes = fieldAccessInformation.writeAccesses(state.field)
 
-        if (writes.iterator.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) //filter(mAndPCs ⇒ (mAndPCs._1 eq method))
+        if (writes.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) //filter(mAndPCs ⇒ (mAndPCs._1 eq method))
             return false; // more than one write in the method
         //----------------------------------------------------------------
         val reads = fieldAccessInformation.readAccesses(state.field)
-        if (reads.iterator.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
+        if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
             return false; // Reads outside the (single) lazy initialization method
         }
 
@@ -158,6 +156,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
              * case None                         ⇒ return false;
              * } *
              */
+
         }
 
         // Detect only simple patterns where the lazily initialized value is returned immediately
@@ -545,7 +544,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
 
         val abnormalReturnNode = cfg.abnormalReturnNode
 
-        val caughtExceptions = code.iterator.filter { stmt ⇒
+        val caughtExceptions = code filter { stmt ⇒
             stmt.astID == CaughtException.ASTID
 
         } flatMap { exception ⇒
@@ -588,89 +587,87 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         }
         true
     }
+    /*
+  def checkWriteIsGuarded2(
+      writeIndex: Int,
+      guardIndex: Int,
+      guardedIndex: Int,
+      method: Method,
+      code: Array[Stmt[V]],
+      cfg: CFG[Stmt[V], TACStmts[V]]
+  )(implicit state: State): ReferenceImmutability = {
 
-    def checkWriteIsGuarded2(
-        writeIndex:   Int,
-        guardIndex:   Int,
-        guardedIndex: Int,
-        method:       Method,
-        code:         Array[Stmt[V]],
-        cfg:          CFG[Stmt[V], TACStmts[V]]
-    )(implicit state: State): ReferenceImmutability = {
+    val startBB = cfg.bb(writeIndex).asBasicBlock
+    var enqueuedBBs: Set[CFGNode] = Set(startBB)
+    var worklist: List[BasicBlock] = List(startBB.asBasicBlock)
+    val abnormalReturnNode = cfg.abnormalReturnNode
+    val caughtExceptions = code.filter { stmt =>
+      stmt.astID == CaughtException.ASTID
 
-        val startBB = cfg.bb(writeIndex).asBasicBlock
-        var enqueuedBBs: Set[CFGNode] = Set(startBB)
-        var worklist: List[BasicBlock] = List(startBB.asBasicBlock)
-        val abnormalReturnNode = cfg.abnormalReturnNode
-        val caughtExceptions = code.iterator.filter { stmt ⇒
-            stmt.astID == CaughtException.ASTID
-
-        } flatMap { exception ⇒
-            exception.asCaughtException.origins.map { origin: Int ⇒
-                if (isImmediateVMException(origin)) {
-                    pcOfImmediateVMException(origin)
-                } else {
-                    pcOfMethodExternalException(origin)
-                }
-            }.iterator
+    }.toList flatMap {
+        import org.opalj.tac.fpcf.analyses.Statement
+        exception=>
+      exception.asCaughtException.origins.map { origin: Int =>
+        if (isImmediateVMException(origin)) {
+          pcOfImmediateVMException(origin)
+        } else {
+          pcOfMethodExternalException(origin)
         }
-        while (worklist.nonEmpty) {
-            val curBB = worklist.head
-            worklist = worklist.tail
-
-            val startPC = curBB.startPC
-            val endPC = curBB.endPC
-            if (startPC == 0 || startPC == guardedIndex)
-                return LazyInitializedNotThreadSafeOrNotDeterministicReference; // Reached method start or wrong branch of guarding if-Statement
-            // Exception thrown between guard and write, which is ok for deterministic methods,
-            // but may be a problem otherwise as the initialization is not guaranteed to happen
-            // (or never happen).
-            if ((curBB ne startBB) && abnormalReturnNode.predecessors.contains(curBB)) {
-                if (!lazyInitializerIsDeterministic(method, code)) {
-                    return LazyInitializedNotThreadSafeOrNotDeterministicReference
-                }
-            };
-            // Exception thrown between guard and write (caught somewhere, but we don't care)
-            if ((curBB ne startBB) & caughtExceptions.contains(endPC)) {
-                if (!lazyInitializerIsDeterministic(method, code)) {
-                    return LazyInitializedNotThreadSafeOrNotDeterministicReference
-                }
-
-            };
-            // Check all predecessors except for the one that contains the guarding if-Statement
-            val predecessors =
-                getPredecessors(curBB, enqueuedBBs).filterNot(_.endPC == guardIndex)
-            worklist ++= predecessors
-            enqueuedBBs ++= predecessors
-        }
-        LazyInitializedThreadSafeReference
+      }
     }
+    while (worklist.nonEmpty) {
+      val curBB = worklist.head
+      worklist = worklist.tail
 
+      val startPC = curBB.startPC
+      val endPC = curBB.endPC
+      if (startPC == 0 || startPC == guardedIndex)
+        return LazyInitializedNotThreadSafeOrNotDeterministicReference; // Reached method start or wrong branch of guarding if-Statement
+      // Exception thrown between guard and write, which is ok for deterministic methods,
+      // but may be a problem otherwise as the initialization is not guaranteed to happen
+      // (or never happen).
+      if ((curBB ne startBB) && abnormalReturnNode.predecessors.contains(curBB)) {
+        if (!lazyInitializerIsDeterministic(method, code)) {
+          return LazyInitializedNotThreadSafeOrNotDeterministicReference
+        }
+      };
+      // Exception thrown between guard and write (caught somewhere, but we don't care)
+      if ((curBB ne startBB) & caughtExceptions.toSet.contains(endPC)) {
+        if (!lazyInitializerIsDeterministic(method, code)) {
+          return LazyInitializedNotThreadSafeOrNotDeterministicReference
+        }
+
+      };
+      // Check all predecessors except for the one that contains the guarding if-Statement
+      val predecessors =
+        getPredecessors(curBB, enqueuedBBs).filterNot(_.endPC == guardIndex)
+      worklist ++= predecessors
+      enqueuedBBs ++= predecessors
+    }
+    LazyInitializedThreadSafeReference
+  }
+   */
     /**
      * Gets all predecessor BasicBlocks of a CFGNode.
      */
     def getPredecessors(node: CFGNode, visited: Set[CFGNode]): List[BasicBlock] = {
-        def getPredecessors_(node: CFGNode, visited: Set[CFGNode]): Iterator[BasicBlock] = {
-            node.predecessors.iterator flatMap { curNode ⇒
-                if (curNode.isBasicBlock)
-                    if (visited.contains(curNode)) None
-                    else Some(curNode.asBasicBlock)
-                else getPredecessors_(curNode, visited)
-            }
+        val result = node.predecessors.iterator flatMap { curNode ⇒
+            if (curNode.isBasicBlock)
+                if (visited.contains(curNode)) None
+                else Some(curNode.asBasicBlock)
+            else getPredecessors(curNode, visited)
         }
-        getPredecessors_(node, visited).toList
+        result.toList
     }
 
     def getSuccessors(node: CFGNode, visited: Set[CFGNode]): List[BasicBlock] = {
-        def getSuccessors_(node: CFGNode, visited: Set[CFGNode]): Iterator[BasicBlock] = {
-            node.successors.iterator flatMap ({ currentNode ⇒
-                if (currentNode.isBasicBlock)
-                    if (visited.contains(currentNode)) None
-                    else Some(currentNode.asBasicBlock)
-                else getSuccessors(currentNode, visited)
-            })
-        }
-        getSuccessors_(node, visited).toList
+        val result = node.successors.iterator flatMap ({ currentNode ⇒
+            if (currentNode.isBasicBlock)
+                if (visited.contains(currentNode)) None
+                else Some(currentNode.asBasicBlock)
+            else getSuccessors(currentNode, visited)
+        })
+        result.toList
     }
 
     /**
