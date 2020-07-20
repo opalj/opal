@@ -133,11 +133,11 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         //TODO reasoning if there is another way to do this
         val writes = fieldAccessInformation.writeAccesses(state.field)
 
-        if (writes.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) //filter(mAndPCs ⇒ (mAndPCs._1 eq method))
+        if (writes.iterator.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) //filter(mAndPCs ⇒ (mAndPCs._1 eq method))
             return false; // more than one write in the method
         //----------------------------------------------------------------
         val reads = fieldAccessInformation.readAccesses(state.field)
-        if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
+        if (reads.iterator.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
             return false; // Reads outside the (single) lazy initialization method
         }
 
@@ -544,18 +544,21 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
 
         val abnormalReturnNode = cfg.abnormalReturnNode
 
-        val caughtExceptions = code filter { stmt ⇒
-            stmt.astID == CaughtException.ASTID
+        val caughtExceptions = code.iterator
+            .filter { stmt ⇒
+                stmt.astID == CaughtException.ASTID
 
-        } flatMap { exception ⇒
-            exception.asCaughtException.origins.map { origin: Int ⇒
-                if (isImmediateVMException(origin)) {
-                    pcOfImmediateVMException(origin)
-                } else {
-                    pcOfMethodExternalException(origin)
+            }
+            .flatMap { exception ⇒
+                exception.asCaughtException.origins.iterator.map { origin: Int ⇒
+                    if (isImmediateVMException(origin)) {
+                        pcOfImmediateVMException(origin)
+                    } else {
+                        pcOfMethodExternalException(origin)
+                    }
                 }
-            }.iterator
-        }
+            }
+            .toSet
         while (worklist.nonEmpty) {
             val curBB = worklist.head
             worklist = worklist.tail
@@ -581,7 +584,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             };
             // Check all predecessors except for the one that contains the guarding if-Statement
             val predecessors =
-                getPredecessors(curBB, enqueuedBBs).filterNot(_.endPC == guardIndex)
+                getPredecessors(curBB, enqueuedBBs).iterator.filterNot(_.endPC == guardIndex).toList
             worklist ++= predecessors
             enqueuedBBs ++= predecessors
         }
@@ -748,7 +751,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
     ): Boolean = {
         // There is only a single method with reads aside from initializers (checked by
         // isLazilyInitialized), so we have to check only reads from that one method.
-        reads.filter(!_._1.isInitializer).head._2 forall { readPC ⇒
+        reads.iterator.filter(!_._1.isInitializer).toList.head._2.iterator forall { readPC: Int ⇒
             val index = pcToIndex(readPC)
             index != -1 || index == readIndex || checkRead(index, guardedIndex, writeIndex, cfg)
         }
