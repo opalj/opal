@@ -222,9 +222,9 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
         // Collect all fields for which we need to determine the effective mutability!
         var hasFieldsWithUnknownMutability = false
 
-        val instanceFields = cf.fields.filter { f ⇒
+        val instanceFields = cf.fields.iterator.filter { f ⇒
             !f.isStatic
-        }
+        }.toList
         var hasShallowImmutableFields = false
         var hasDependentImmutableFields = false
 
@@ -316,7 +316,7 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
         def c(someEPS: SomeEPS): ProperPropertyComputationResult = {
             //[DEBUG]
             //val oldDependees = dependees
-            dependees = dependees.filter(_._1 ne someEPS.e)
+            dependees = dependees.iterator.filter(_._1 ne someEPS.e).toMap
             someEPS match {
                 // Superclass related dependencies:
                 //
