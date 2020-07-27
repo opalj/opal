@@ -75,7 +75,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             tacCai
         )
         dcl match {
-            case ir @ ImmutableReference(_)                ⇒ state.referenceImmutability = ir
+            case ir @ ImmutableReference                   ⇒ state.referenceImmutability = ir
             case lits @ LazyInitializedThreadSafeReference ⇒ state.referenceImmutability = lits
             case lintbd @ LazyInitializedNotThreadSafeButDeterministicReference ⇒
                 state.referenceImmutability = lintbd

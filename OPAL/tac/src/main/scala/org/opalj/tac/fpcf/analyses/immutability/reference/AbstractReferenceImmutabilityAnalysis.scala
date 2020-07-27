@@ -27,7 +27,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.LBP
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.UBP
@@ -54,7 +53,7 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
 
     case class State(
             field:                                  Field,
-            var referenceImmutability:              ReferenceImmutability                           = ImmutableReference(true),
+            var referenceImmutability:              ReferenceImmutability                           = ImmutableReference,
             var prematurelyReadDependee:            Option[EOptionP[Field, FieldPrematurelyRead]]   = None,
             var purityDependees:                    Set[EOptionP[DeclaredMethod, Purity]]           = Set.empty,
             var lazyInitInvocation:                 Option[(DeclaredMethod, PC)]                    = None,
@@ -62,7 +61,6 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
             var referenceImmutabilityDependees:     Set[EOptionP[Field, ReferenceImmutability]]     = Set.empty,
             var escapeDependees:                    Set[EOptionP[DefinitionSite, EscapeProperty]]   = Set.empty,
             var tacDependees:                       Map[Method, (EOptionP[Method, TACAI], PCs)]     = Map.empty,
-            var notEscapes:                         Boolean                                         = true,
             var typeDependees:                      Set[EOptionP[ObjectType, TypeImmutability_new]] = Set.empty,
             var lazyInitializerIsDeterministicFlag: Boolean                                         = false
     ) {
@@ -96,11 +94,8 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
                 case finalEP: FinalEP[Method, TACAI] ⇒
                     stillCalculatedMethods.put(method, finalEP.ub.tac.get)
                     finalEP.ub.tac
-                case eps: InterimEP[Method, TACAI] ⇒
-                    state.tacDependees += method -> ((eps, pcs))
-                    eps.ub.tac
                 case epk ⇒
-                    state.tacDependees += method -> ((epk, pcs))
+                    state.tacDependees += method -> ((epk, pcs)) // + alle pcs die schon existieren
                     None
             }
     }
@@ -141,10 +136,10 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
     def isImmutableReference(
         eop: EOptionP[Field, ReferenceImmutability]
     )(implicit state: State): Boolean = eop match {
-        case FinalEP(e, ImmutableReference(_)) ⇒ true
-        case FinalEP(e, MutableReference)      ⇒ false
-        case LBP(ImmutableReference(_))        ⇒ true
-        case UBP(MutableReference)             ⇒ false
+        case FinalEP(e, ImmutableReference) ⇒ true
+        case FinalEP(e, MutableReference)   ⇒ false
+        case LBP(ImmutableReference)        ⇒ true
+        case UBP(MutableReference)          ⇒ false
         case _ ⇒
             state.referenceImmutabilityDependees += eop
             true
