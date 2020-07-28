@@ -12,22 +12,26 @@ import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
-import org.opalj.util.PerformanceEvaluation.memory
-import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import java.io._
+import java.util.Calendar
+
+import org.opalj.br.Field
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
-import org.opalj.fpcf.SomeEPS
+import org.opalj.fpcf
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 
 /**
  * Runs the EagerL0ReferenceImmutabilityAnalysis including all analysis needed for improving the result.
@@ -51,102 +55,126 @@ object ReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
-        var memoryConsumption: Long = 0
+
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
-        memory {
-            val analysesManager = project.get(FPCFAnalysesManagerKey)
-            analysesManager.project.get(RTACallGraphKey)
 
-            time {
-                propertyStore = analysesManager
-                    .runAll(
-                        EagerL0ReferenceImmutabilityAnalysis,
-                        LazyUnsoundPrematurelyReadFieldsAnalysis,
-                        LazyL2PurityAnalysis,
-                        LazyInterProceduralEscapeAnalysis,
-                        LazyReturnValueFreshnessAnalysis,
-                        LazyStaticDataUsageAnalysis,
-                        LazyFieldLocalityAnalysis,
-                        LazyL0CompileTimeConstancyAnalysis,
-                        LazyL2FieldMutabilityAnalysis,
-                        LazyClassImmutabilityAnalysis,
-                        LazyTypeImmutabilityAnalysis
-                    )
-                    ._1
-                propertyStore.waitOnPhaseCompletion()
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
+        analysesManager.project.get(RTACallGraphKey)
+        time {
+            propertyStore = analysesManager
+                .runAll(
+                    EagerL0ReferenceImmutabilityAnalysis,
+                    LazyL0FieldImmutabilityAnalysis,
+                    LazyLxClassImmutabilityAnalysis_new,
+                    LazyLxTypeImmutabilityAnalysis_new,
+                    LazyUnsoundPrematurelyReadFieldsAnalysis,
+                    LazyL2PurityAnalysis_new,
+                    LazyInterProceduralEscapeAnalysis,
+                    LazyStaticDataUsageAnalysis,
+                    LazyL0CompileTimeConstancyAnalysis,
+                    LazyReturnValueFreshnessAnalysis,
+                    LazyFieldLocalityAnalysis
+                )
+                ._1
 
-            } { t ⇒
-                analysisTime = t.toSeconds
-            }
-        } { mu ⇒
-            memoryConsumption = mu
+            propertyStore.waitOnPhaseCompletion()
+
+        } { t ⇒
+            analysisTime = t.toSeconds
         }
         var sb: StringBuilder = new StringBuilder()
+        val allfieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
+            //.filter(f ⇒ (!f.isTransient && !f.isSyn)) // for ReImComparison
+            .toSet
         sb = sb.append("Mutable References: \n")
-        val mutableReferences = propertyStore.finalEntities(MutableReference).toList
-        sb = sb.append(
-            mutableReferences.mkString(", \n")
-        )
-
-        sb = sb.append("\n Lazy Initialized Reference: \n")
-        val lazyInitializedReferences = propertyStore
-            .finalEntities(LazyInitializedThreadSafeReference).toList ++ (propertyStore.finalEntities(LazyInitializedNotThreadSafeButDeterministicReference))
+        val mutableReferences = propertyStore
+            .finalEntities(MutableReference)
+            .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
             .toList
+            .sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
         sb = sb.append(
-            lazyInitializedReferences.mkString(", \n")
+            mutableReferences.map(x ⇒ x.toString+"\n").toString()
         )
 
-        val immutableReferencesTrue = propertyStore.entities({ eps: SomeEPS ⇒
-            eps.ub match {
-                case ImmutableReference(true) ⇒ true
-                case _                        ⇒ false
-            }
-        })
-        val immutableReferencesFalse = propertyStore.entities({ eps: SomeEPS ⇒
-            eps.ub match {
-                case ImmutableReference(false) ⇒ true
-                case _                         ⇒ false
-            }
-        })
+        val lazyInitializedReferencesThreadSafe = propertyStore
+            .finalEntities(LazyInitializedThreadSafeReference)
+            .toList
+            .sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
 
-        sb = sb.append(
+        val lazyInitializedReferencesNotThreadSafeButDeterministic = propertyStore
+            .finalEntities(LazyInitializedNotThreadSafeButDeterministicReference)
+            .toList
+            .sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
+
+        val notThreadSafeOrNotDeterministicLazyInitialization = propertyStore
+            .finalEntities(LazyInitializedNotThreadSafeOrNotDeterministicReference)
+            .toList
+            .sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
+
+        sb.append(
             s"""
-           | imm ref true: 
-           |${immutableReferencesTrue.mkString(", \n")}
-           | 
-           |
-           | imm ref false:
-           | ${immutableReferencesFalse.mkString(", \n")}
-           |""".stripMargin
+               | lazy initialized thread safe references: ${
+                lazyInitializedReferencesThreadSafe
+                    .mkString(",\n")
+            }
+               |
+               | lazy initialized not thread safe but deterministic references: ${
+                lazyInitializedReferencesNotThreadSafeButDeterministic
+                    .mkString(", \n")
+            }
+               |
+               | lazy initialized not thread safe or not deterministic references: ${
+                notThreadSafeOrNotDeterministicLazyInitialization
+                    .mkString(", \n")
+            }
+               |
+               |""".stripMargin
+        )
+
+        val immutableReferences = propertyStore
+            .entities(
+                eps ⇒ //allfieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]) &&
+                    eps.isFinal && (eps.asFinal.p match {
+                        case ImmutableReference(_) ⇒ true
+                        case _                     ⇒ false
+                    })
+            )
+            .toList
+            .sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
+        sb = sb.append(
+            immutableReferences.map(x ⇒ x.toString+"\n").mkString(", ")
         )
 
         sb.append(
             s""" 
-            | mutable References: ${mutableReferences.size}
-            | lazy initialized References: ${lazyInitializedReferences.size}
-            | immutable References: ${}
-            | 
-            | took : $analysisTime seconds
-            | needed: ${memoryConsumption / 1024 / 1024} MBytes        
-            |     
-            |""".stripMargin
+         | mutable References: ${mutableReferences.size}
+         | lazy initialized references not thread safe or deterministic: ${notThreadSafeOrNotDeterministicLazyInitialization.size}
+         | lazy initialized references not thread safe but deterministic: ${lazyInitializedReferencesNotThreadSafeButDeterministic.size}
+         | lazy initialized thread safe references: ${lazyInitializedReferencesThreadSafe.size}
+         | immutable References: ${immutableReferences.size}
+         | 
+         | took : $analysisTime seconds   
+         |     
+         |""".stripMargin
         )
 
-        /* val calendar = Calendar.getInstance()
-    val file = new File(
-      s"C:/MA/results/refImm_${calendar.get(Calendar.YEAR)}_" +
-        s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_" +
-        s"${calendar.get(Calendar.HOUR_OF_DAY)}_${calendar.get(Calendar.MINUTE)}_" +
-        s"${calendar.get(Calendar.MILLISECOND)}.txt"
-    )
-    val bw = new BufferedWriter(new FileWriter(file))
-    bw.write(sb.toString())
-    bw.close() **/
-        //s"""
-        //    | took : $analysisTime seconds
-        //    | needs : ${memoryConsumption / 1024 / 1024} MBytes
-        //    |""".stripMargin
-        sb.toString()
+        val calendar = Calendar.getInstance()
+        val file = new File(
+            s"/home/tobias/results/immutability/reference/refImm_withNewPurity_${calendar.get(Calendar.YEAR)}_"+
+                s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
+                s"${calendar.get(Calendar.HOUR_OF_DAY)}_${calendar.get(Calendar.MINUTE)}_"+
+                s"${calendar.get(Calendar.MILLISECOND)}.txt"
+        )
+        if (!file.exists())
+            file.createNewFile()
+        val bw = new BufferedWriter(new FileWriter(file))
+        bw.write(sb.toString())
+        bw.close()
+        s"""
+       |   ps: ${propertyStore.getClass}
+       | took : $analysisTime seconds
+       |""".stripMargin
+
     }
 }
