@@ -32,7 +32,5 @@ jobs:
     needs: build
 
     steps:
-      - name: compile Tests
-        run: sbt -J-Xmx20G test:compile
       - name: Run Tests
         run: sbt -J-Xmx20G test
