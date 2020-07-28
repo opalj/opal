@@ -101,6 +101,7 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
             ps(t, ClassImmutability.key) match {
                 case FinalP(ImmutableObject) ⇒
+
                 case FinalP(_: MutableObject) ⇒
                     return Result(t, MutableType);
 
@@ -111,16 +112,17 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                 case eps @ InterimLUBP(lb, ub) ⇒
                     joinedImmutability = lb.correspondingTypeImmutability
                     maxImmutability = ub.correspondingTypeImmutability
-                    dependencies += (t -> eps)
+                    dependencies += (t → eps)
 
                 case eOptP ⇒
                     joinedImmutability = MutableType
-                    dependencies += (t -> eOptP)
+                    dependencies += (t → eOptP)
             }
 
             directSubtypes foreach { subtype ⇒
                 ps(subtype, TypeImmutability.key) match {
                     case FinalP(ImmutableType) ⇒
+
                     case UBP(MutableType) ⇒
                         return Result(t, MutableType);
 
@@ -169,7 +171,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                         case lb: TypeImmutability ⇒
                                             joinedImmutability = joinedImmutability.meet(lb)
                                         case lb: ClassImmutability ⇒
-                                            joinedImmutability = joinedImmutability.meet(lb.correspondingTypeImmutability)
+                                            joinedImmutability =
+                                                joinedImmutability.meet(lb.correspondingTypeImmutability)
                                     }
                                 else {
                                     joinedImmutability = MutableType
@@ -181,11 +184,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 Result(t, maxImmutability)
                             } else {
                                 InterimResult(
-                                    t,
-                                    joinedImmutability,
-                                    maxImmutability,
-                                    dependencies.values,
-                                    c
+                                    t, joinedImmutability, maxImmutability,
+                                    dependencies.values, c
                                 )
                             }
                         }
@@ -210,7 +210,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
                                 case subtypeP: TypeImmutability ⇒
                                     maxImmutability = maxImmutability.meet(subtypeP)
                                 case subtypeP: ClassImmutability ⇒
-                                    maxImmutability = maxImmutability.meet(subtypeP.correspondingTypeImmutability)
+                                    maxImmutability =
+                                        maxImmutability.meet(subtypeP.correspondingTypeImmutability)
                             }
                             nextResult()
                     }
@@ -264,7 +265,6 @@ object LazyTypeImmutabilityAnalysis
     with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
-
     /**
      * Registers the analysis as a lazy computation, that is, the method
      * will call `ProperytStore.scheduleLazyComputation`.
