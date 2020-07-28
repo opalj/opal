@@ -14,13 +14,20 @@ import org.opalj.br.fpcf.properties.AtMost
 import org.opalj.br.fpcf.properties.DeclaredFinalField
 import org.opalj.br.fpcf.properties.EffectivelyFinalField
 import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.FieldPrematurelyRead
+import org.opalj.br.fpcf.properties.FinalField
 import org.opalj.br.fpcf.properties.LazyInitializedField
 import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis
 import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
 import org.opalj.br.fpcf.properties.NotPrematurelyReadField
 import org.opalj.br.fpcf.properties.PrematurelyReadField
+import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
@@ -28,6 +35,8 @@ import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Property
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
@@ -170,9 +179,10 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                     return Result(field, NonFinalFieldByLackOfInformation);
                 }
                 val subclassesIterator: Iterator[ClassFile] =
-                    classHierarchy.allSubclassTypes(thisType, reflexive = false).flatMap { ot ⇒
-                        project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
-                    }
+                    classHierarchy.allSubclassTypes(thisType, reflexive = false).
+                        flatMap { ot ⇒
+                            project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
+                        }
                 initialClasses.iterator ++ subclassesIterator
             } else {
                 initialClasses.iterator
@@ -201,25 +211,6 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         //         o = new Object(); // o is mutated...
         //     }
         // }
-
-        /**
-         * Returns the TACode for a method if available, registering dependencies as necessary.
-         */
-        def getTACAI(
-            method: Method,
-            pcs:    PCs
-        )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
-            propertyStore(method, TACAI.key) match {
-                case finalEP: FinalEP[Method, TACAI] ⇒
-                    finalEP.ub.tac
-                case eps: InterimEP[Method, TACAI] ⇒
-                    state.tacDependees += method -> ((eps, pcs))
-                    eps.ub.tac
-                case epk ⇒
-                    state.tacDependees += method -> ((epk, pcs))
-                    None
-            }
-        }
 
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
@@ -278,8 +269,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         Some(if (state.field.fieldType eq FloatType) 0.0f else 0)
 
         /* TODO Some lazy initialized fields use a different value to mark an uninitialized field
-     * The code below can be used to identify such value, but is not yet adapted to using the
-     * TACAI property */
+         * The code below can be used to identify such value, but is not yet adapted to using the
+         * TACAI property */
         /*
         var constantVal: Option[Any] = None
         var allInitializeConstant = true
@@ -323,7 +314,6 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 }
             }
         }
-
 
         for (constructor ← constructors) {
             // TODO iterate all statements
@@ -374,7 +364,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 val pcs = state.tacDependees(method)._2
                 state.tacDependees -= method
                 if (eps.isRefinable)
-                    state.tacDependees += method -> ((newEP, pcs))
+                    state.tacDependees += method → ((newEP, pcs))
                 methodUpdatesField(method, newEP.ub.tac.get, pcs)
             case Callees.key ⇒
                 handleCalls(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]])
@@ -386,7 +376,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 isNonDeterministic(newEP)
             case FieldMutability.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Field, FieldMutability]]
-                state.fieldMutabilityDependees = state.fieldMutabilityDependees.filter(_.e ne newEP.e)
+                state.fieldMutabilityDependees =
+                    state.fieldMutabilityDependees.filter(_.e ne newEP.e)
                 !isFinalField(newEP)
         }
 
@@ -624,10 +615,10 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             case finalEP: FinalEP[Method, TACAI] ⇒
                 finalEP.ub.tac
             case eps: InterimEP[Method, TACAI] ⇒
-                state.tacDependees += method -> ((eps, pcs))
+                state.tacDependees += method → ((eps, pcs))
                 eps.ub.tac
             case epk ⇒
-                state.tacDependees += method -> ((epk, pcs))
+                state.tacDependees += method → ((epk, pcs))
                 None
         }
     }
@@ -791,7 +782,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                     case _ ⇒ // Unknown field
                         false
                 }
-            case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
+            case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID |
+                VirtualFunctionCall.ASTID ⇒
                 // If the value originates from a call, that call must be deterministic and may not
                 // have any non constant parameters to guarantee that it is the same on every
                 // invocation. The receiver object must be the 'this' self reference for the same
@@ -1129,8 +1121,7 @@ object LazyL2FieldMutabilityAnalysis
     ): FPCFAnalysis = {
         val analysis = new L2FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
-            FieldMutability.key,
-            analysis.determineFieldMutability
+            FieldMutability.key, analysis.determineFieldMutability
         )
         analysis
     }
