@@ -61,12 +61,10 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             r = time[() ⇒ String](10, 50, 15, analyze(project, parallelismLevel))(handleResults)
             println(
                 s"Results with $parallelismLevel threads:\n"+
-                    performanceData.values
-                    .map(v ⇒ v.map(_.toSeconds.toString(false)))
-                    .map(
-                        v ⇒ List("setup\t", "analysis\t").zip(v).map(e ⇒ e._1 + e._2).mkString("", "\n", "\n")
-                    )
-                    .mkString("\n")
+                    performanceData.values.
+                    map(v ⇒ v.map(_.toSeconds.toString(false))).
+                    map(v ⇒ List("setup\t", "analysis\t").zip(v).map(e ⇒ e._1 + e._2).mkString("", "\n", "\n")).
+                    mkString("\n")
             )
 
             gc()
@@ -84,32 +82,24 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val propertyStore = project.get(PropertyStoreKey)
 
         time {
-            propertyStore.setupPhase(
-                Set[PropertyKind](
-                    FieldMutability.key,
-                    ClassImmutability.key,
-                    TypeImmutability.key
-                )
-            )
+            propertyStore.setupPhase(Set[PropertyKind](
+                FieldMutability.key, ClassImmutability.key, TypeImmutability.key
+            ))
             LazyL0FieldMutabilityAnalysis.register(project, propertyStore, null)
             EagerClassImmutabilityAnalysis.start(project, propertyStore, null)
             EagerTypeImmutabilityAnalysis.start(project, propertyStore, null)
 
             propertyStore.waitOnPhaseCompletion()
-        } { r ⇒
-            analysisTime = r
-        }
+        } { r ⇒ analysisTime = r }
 
         result += s"\t- analysis time: ${analysisTime.toSeconds}\n"
 
         () ⇒ {
             val immutableClasses =
-                propertyStore
-                    .entities(ClassImmutability.key)
-                    .filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration)
-                    .toBuffer
-                    .groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub)
-                    .map { kv ⇒
+                propertyStore.entities(ClassImmutability.key).
+                    filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
+                    groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub).
+                    map { kv ⇒
                         (
                             kv._1,
                             kv._2.toList.sortWith { (a, b) ⇒
@@ -121,29 +111,27 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                     }
 
             val immutableClassesPerCategory =
-                immutableClasses.map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).toBuffer.sorted.mkString("\n")
+                immutableClasses.
+                    map(kv ⇒ "\t\t"+kv._1+": "+kv._2.size).
+                    toBuffer.sorted.
+                    mkString("\n")
 
             val immutableTypes =
-                propertyStore
-                    .entities(TypeImmutability.key)
-                    .filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration)
-                    .toBuffer
-                    .groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub)
-                    .map(kv ⇒ (kv._1, kv._2.size))
+                propertyStore.entities(TypeImmutability.key).
+                    filter(eps ⇒ !eps.e.asInstanceOf[ClassFile].isInterfaceDeclaration).toBuffer.
+                    groupBy((eps: EPS[_ <: Entity, _ <: Property]) ⇒ eps.ub).
+                    map(kv ⇒ (kv._1, kv._2.size))
             val immutableTypesPerCategory =
                 immutableTypes.map(kv ⇒ "\t\t"+kv._1+": "+kv._2).toBuffer.sorted.mkString("\n")
 
             val immutableClassesInfo =
-                immutableClasses.values.flatten
-                    .filter { ep ⇒
-                        !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration
-                    }
-                    .map { eps ⇒
-                        eps.e.asInstanceOf[ClassFile].thisType.toJava+
-                            " => "+eps.ub+
-                            " => "+propertyStore(eps.e, TypeImmutability.key).ub
-                    }
-                    .mkString("\t\timmutability:\n\t\t", "\n\t\t", "\n")
+                immutableClasses.values.flatten.filter { ep ⇒
+                    !ep.e.asInstanceOf[ClassFile].isInterfaceDeclaration
+                }.map { eps ⇒
+                    eps.e.asInstanceOf[ClassFile].thisType.toJava+
+                        " => "+eps.ub+
+                        " => "+propertyStore(eps.e, TypeImmutability.key).ub
+                }.mkString("\t\timmutability:\n\t\t", "\n\t\t", "\n")
 
             "\t- details:\n"+
                 immutableClassesInfo+
