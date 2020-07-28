@@ -44,7 +44,6 @@ import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.TypeImmutability
 
 /**
- *
  * Determines the mutability of instances of a specific class. In case the class
  * is abstract the (implicit) assumption is made that all abstract methods (if any) are/can
  * be implemented without necessarily/always requiring additional state; i.e., only the currently
@@ -68,13 +67,13 @@ import org.opalj.br.fpcf.properties.TypeImmutability
  */
 class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     /*
-   * The analysis is implemented as an incremental analysis which starts with the analysis
-   * of those types which directly inherit from java.lang.Object and then propagates the
-   * mutability information down the class hierarchy.
-   *
-   * This propagation needs to be done eagerly to ensure that all types are associated with
-   * some property when the initial computation finishes and fallback properties are associated.
-   */
+     * The analysis is implemented as an incremental analysis which starts with the analysis
+     * of those types which directly inherit from java.lang.Object and then propagates the
+     * mutability information down the class hierarchy.
+     *
+     * This propagation needs to be done eagerly to ensure that all types are associated with
+     * some property when the initial computation finishes and fallback properties are associated.
+     */
 
     /**
      * Creates a result object that sets this type and all subclasses of if to the given
@@ -85,9 +84,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         immutability: MutableObject
     ): MultiResult = {
         val allSubtypes = classHierarchy.allSubclassTypes(t, reflexive = true)
-        val r = allSubtypes.map { st ⇒
-            new FinalEP(st, immutability)
-        }.toSeq
+        val r = allSubtypes.map { st ⇒ new FinalEP(st, immutability) }.toSeq
         MultiResult(r)
     }
 
@@ -104,10 +101,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             project.classFile(t) match {
                 case Some(scf) ⇒
                     nextComputations ::= (
-                        (
-                            determineClassImmutability(t, cfMutability, cfMutabilityIsFinal, false) _,
-                            scf
-                        )
+                        (determineClassImmutability(t, cfMutability, cfMutabilityIsFinal, false) _, scf)
                     )
                 case None ⇒
                     OPALLogger.warn(
@@ -183,15 +177,13 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
 
         if (!superClassMutabilityIsFinal) {
-            dependees += (SuperClassKey -> superClassInformation)
+            dependees += (SuperClassKey → superClassInformation)
         }
 
         // Collect all fields for which we need to determine the effective mutability!
         var hasFieldsWithUnknownMutability = false
 
-        val instanceFields = cf.fields.filter { f ⇒
-            !f.isStatic
-        }
+        val instanceFields = cf.fields.filter { f ⇒ !f.isStatic }
         dependees ++= (propertyStore(instanceFields, FieldMutability) collect {
             case FinalP(_: NonFinalField) ⇒
                 // <=> The class is definitively mutable and therefore also all subclasses.
@@ -231,7 +223,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         var fieldTypes: Set[ObjectType] = Set.empty
         if (maxLocalImmutability == ImmutableObject) {
-            fieldTypes = // IMPROVE Use the precise type of the field (if available)!
+            fieldTypes =
+                // IMPROVE Use the precise type of the field (if available)!
                 cf.fields.collect {
                     case f if !f.isStatic && f.fieldType.isObjectType ⇒ f.fieldType.asObjectType
                 }.toSet
@@ -281,7 +274,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     eOptP.hasUBP && eOptP.ub == ImmutableType && eOptP.isFinal
                 }
             fieldTypesWithUndecidedMutability.foreach { eOptP ⇒
-                dependees += (eOptP.e -> eOptP)
+                dependees += (eOptP.e → eOptP)
             }
         }
 
@@ -351,7 +344,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
             if (someEPS.isRefinable) {
                 val entity = if (someEPS.pk == ClassImmutability.key) SuperClassKey else someEPS.e
-                dependees += (entity -> someEPS)
+                dependees += (entity → someEPS)
             }
 
             /*[DEBUG]
@@ -359,7 +352,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                     oldDependees != dependees,
                     s"dependees are not correctly updated $e($p)\n:old=$oldDependees\nnew=$dependees"
                 )
-       */
+                */
 
             // Lift lower bound once no dependencies other than field type mutabilities are left
             if (minLocalImmutability != ImmutableContainer &&
@@ -384,7 +377,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
                             s"maxLocalImmutability=$maxLocalImmutability - "+
                             s"(old dependees: ${oldDependees.mkString(",")}"
                     )
-         */
+                     */
 
                 Result(t, maxLocalImmutability)
 
@@ -401,10 +394,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         else {
             val isFinal = dependees.isEmpty
             createIncrementalResult(
-                t,
-                EPS(t, minLocalImmutability, maxLocalImmutability),
-                isFinal,
-                result
+                t, EPS(t, minLocalImmutability, maxLocalImmutability), isFinal, result
             )
         }
     }
@@ -457,11 +447,9 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         // 3.
         // Compute the initial set of classes for which we want to determine the mutability.
         var cfs: List[ClassFile] = Nil
-        classHierarchy
-            .directSubclassesOf(ObjectType.Object)
-            .toIterator
-            .map(ot ⇒ (ot, project.classFile(ot)))
-            .foreach {
+        classHierarchy.directSubclassesOf(ObjectType.Object).toIterator.
+            map(ot ⇒ (ot, project.classFile(ot))).
+            foreach {
                 case (_, Some(cf)) ⇒ cfs ::= cf
                 case (t, None) ⇒
                     // This handles the case where the class hierarchy is at least partially
@@ -540,8 +528,7 @@ object LazyClassImmutabilityAnalysis
     ): FPCFAnalysis = {
         val analysis = new ClassImmutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
-            ClassImmutability.key,
-            analysis.doDetermineClassImmutability
+            ClassImmutability.key, analysis.doDetermineClassImmutability
         )
         analysis
     }
