@@ -116,22 +116,18 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def fixtureProjectPackage: List[String] = List.empty
 
     def createConfig(): Config = {
-        val configForEntryPoints = BaseConfig
-            .withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
-            )
-            .withValue(
+        val configForEntryPoints = BaseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
                 InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
                 ConfigValueFactory.fromAnyRef(true)
             )
 
-        configForEntryPoints
-            .withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
-            )
-            .withValue(
+        configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
                 InitialInstantiatedTypesKey.ConfigKeyPrefix+
                     "AllInstantiatedTypesFinder.projectClassesOnly",
                 ConfigValueFactory.fromAnyRef(true)
@@ -307,9 +303,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val fp = formalParameters(dm)(i + 1)
             (
                 fp,
-                (a: String) ⇒
-                    s"VirtualFormalParameter: (origin ${fp.origin} in "+
-                        s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
+                (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in "+
+                    s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
                 annotations
             )
         }
@@ -334,9 +329,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         } yield {
             (
                 as,
-                (a: String) ⇒
-                    s"AllocationSite: (pc ${as.pc} in "+
-                        s"${m.toJava(s"@$a").substring(24)})",
+                (a: String) ⇒ s"AllocationSite: (pc ${as.pc} in "+
+                    s"${m.toJava(s"@$a").substring(24)})",
                 annotations
             )
         }
@@ -366,11 +360,11 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                 PropertyStoreKey,
                 (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                     /*
-      val ps = PKEParallelTasksPropertyStore.create(
-          new RecordAllPropertyStoreTracer,
-          context.iterator.map(_.asTuple).toMap
-      )
-           */
+                val ps = PKEParallelTasksPropertyStore.create(
+                    new RecordAllPropertyStoreTracer,
+                    context.iterator.map(_.asTuple).toMap
+                )
+                */
                     val ps = PKESequentialPropertyStore(context: _*)
                     ps
                 }
