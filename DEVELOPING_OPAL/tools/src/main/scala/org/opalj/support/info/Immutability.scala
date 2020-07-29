@@ -3,7 +3,6 @@ package org.opalj.support.info
 
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project.JavaClassFileReader
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
@@ -37,13 +36,10 @@ import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableType_new
 import org.opalj.br.fpcf.properties.ShallowImmutableClass
 import org.opalj.br.fpcf.properties.ShallowImmutableType
-import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.log.LogContext
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.bytecode.JRELibraryFolder
-
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerLxClassImmutabilityAnalysis_new
@@ -54,91 +50,90 @@ import org.opalj.br.analyses.Project
 import org.opalj.log.DevNullLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
-
+import java.io.File
+import java.io.BufferedWriter
+import java.io.FileWriter
+import java.util.Calendar
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.fpcf.PropertyStoreContext
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import org.opalj.support.info.RunningAnalyses.RunningAnalysis
+import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis_new
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
+import java.nio.file.FileSystems
 /**
- * Determines the immutability of ref, fields, classes and types of a project
+ * Determines the immutability of references, fields, classes and types of a project
  *
  * @author Tobias Peter Roth
  */
+object RunningAnalyses extends Enumeration {
+    type RunningAnalysis = Value
+    val References, Fields, Classes, Types, All = Value
+}
+
 object Immutability {
-
-    import java.io.File
-
-    import org.opalj.support.info.Immutability.RunningAnalysis.RunningAnalysis
-
-    //override def title: String = "Immutability Analysis"
-
-    //override def description: String = "determines the immutability of references, fields, classes and types"
-
-    object RunningAnalysis extends Enumeration {
-        type RunningAnalysis = Value
-        val References, Fields, Classes, Types, All = Value
-    }
-    import java.io.BufferedWriter
-    import java.io.FileWriter
-    import java.util.Calendar
-
-    import RunningAnalysis._
     def evaluate(
-        analysis:       RunningAnalysis,
-        numThreads:     Int,
-        cp:             File,
-        resultsFolder:  Path,
-        timeEvaluation: Boolean
-
+        cp:                    File,
+        analysis:              RunningAnalysis,
+        numThreads:            Int,
+        projectDir:            Option[String],
+        libDir:                Option[String],
+        resultsFolder:         Path,
+        timeEvaluation:        Boolean,
+        threadEvaluation:      Boolean,
+        withoutJDK:            Boolean,
+        isLibrary:             Boolean,
+        closedWorldAssumption: Boolean
     ): BasicReport = {
-        import scala.collection.mutable
 
         OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
-        val classFiles = JavaClassFileReader().ClassFiles(cp)
-        /*
-     val classFiles = projectDir match {
-       case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
-       case None      ⇒ JavaClassFileReader().ClassFiles(cp)
-     }
 
-     val libFiles = libDir match {
-       case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
-       case None      ⇒ Traversable.empty
-     }*/
+        val classFiles = projectDir match {
+            case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
+            case None      ⇒ JavaClassFileReader().ClassFiles(cp)
+        }
 
-        val JDKFiles = /*if (withoutJDK) Traversable.empty
-     else */ JavaClassFileReader().ClassFiles(JRELibraryFolder)
+        val libFiles = libDir match {
+            case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
+            case None      ⇒ Traversable.empty
+        }
 
-        //println("JDKFiles: "+JDKFiles.size)
+        val JDKFiles = if (withoutJDK) Traversable.empty
+        else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
-        val project = //time {
+        // TODO: use variables for the constants
+        implicit var config: Config = if (isLibrary)
+            ConfigFactory.load("LibraryProject.conf")
+        else
+            ConfigFactory.load("ApplicationProject.conf")
+
+        // TODO: in case of application this value is already set
+        if (closedWorldAssumption) {
+            import com.typesafe.config.ConfigValueFactory
+            config = config.withValue(
+                "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
+            )
+        }
+
+        val project =
             Project(
-                classFiles, // JDKFiles,
-                JDKFiles, //libFiles ++
+                classFiles,
+                libFiles ++ JDKFiles,
                 libraryClassFilesAreInterfacesOnly = false,
                 Traversable.empty
             )
-        //} { t ⇒ projectTime = t.toSeconds }
-
-        // The following measurements (t) are done such that the results are comparable with the
-        // reactive async approach developed by P. Haller and Simon Gries.
-        //var t = Seconds.None
-        //val ps = time {
-
-        var propertyStore: PropertyStore = null
-        var analysisTime: Seconds = Seconds.None
-
-        val ra: RunningAnalysis = All
 
         val referenceDependencies: List[FPCFAnalysisScheduler] = List(
             EagerL0ReferenceImmutabilityAnalysis,
-            LazyL0FieldImmutabilityAnalysis,
-            LazyLxClassImmutabilityAnalysis_new,
-            LazyLxTypeImmutabilityAnalysis_new,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL2PurityAnalysis_new,
             LazyInterProceduralEscapeAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
             LazyReturnValueFreshnessAnalysis,
-            LazyFieldLocalityAnalysis,
-            LazyLxTypeImmutabilityAnalysis_new
+            LazyFieldLocalityAnalysis
         )
         val fieldDependencies: List[FPCFAnalysisScheduler] = List(
             LazyL0ReferenceImmutabilityAnalysis,
@@ -179,7 +174,7 @@ object Immutability {
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis
         )
-        val allImmAnalysisDepencies: List[FPCFAnalysisScheduler] =
+        val allImmAnalysisDependencies: List[FPCFAnalysisScheduler] =
             List(
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis_new,
@@ -194,66 +189,49 @@ object Immutability {
                 LazyFieldLocalityAnalysis
             )
         var dependencies: List[FPCFAnalysisScheduler] = List.empty
-        if (ra == References)
+        if (analysis == RunningAnalyses.References)
             dependencies = referenceDependencies
-        if (ra == Fields)
+        if (analysis == RunningAnalyses.Fields)
             dependencies = fieldDependencies
-        if (ra == Classes)
+        if (analysis == RunningAnalyses.Classes)
             dependencies = classDepencencies
-        if (ra == Types)
+        if (analysis == RunningAnalyses.Types)
             dependencies = typeDependencies
-        if (ra == All)
-            dependencies = allImmAnalysisDepencies
+        if (analysis == RunningAnalyses.All)
+            dependencies = allImmAnalysisDependencies
 
-        //var timeResults: List[Seconds]  = List.empty
-        val threadTimeResults: mutable.HashMap[Int, List[Seconds]] = mutable.HashMap.empty
-        var threads: List[Int] = List.empty
-        if (timeEvaluation)
-            threads = List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24)
-        else
-            threads = List(0)
+        L2PurityAnalysis_new.setRater(Some(SystemOutLoggingAllExceptionRater))
 
-        for (thread ← threads) {
-            var timeResults: List[Seconds] = List.empty
-            for (i ← 1 to (if (timeEvaluation) 10 else 1)) {
-                import java.net.URL
-                val newProject: Project[URL] = project.recreate()
-                val analysesManager = newProject.get(FPCFAnalysesManagerKey)
-                analysesManager.project.get(RTACallGraphKey)
+        var propertyStore: PropertyStore = null
+        var analysisTime: Seconds = Seconds.None
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
+        analysesManager.project.get(RTACallGraphKey)
 
-                analysesManager.project.recreate()
-                time {
-                    propertyStore = analysesManager
-                        .runAll(
-                            dependencies
-                        )
-                        ._1
-                    //val numThreads = 18
-                    newProject.getOrCreateProjectInformationKeyInitializationData(
-                        PropertyStoreKey,
-                        (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-                            implicit val lg: LogContext = project.logContext
-                            if (numThreads == 0) {
-                                org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                            } else {
-                                org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = thread
-                                // FIXME: this property store is broken
-                                org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                            }
-                        }
-                    )
-                    //new PKECPropertyStore(context, project.logContext)
-                    //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 8
-                    //var context: Map[Class[_], AnyRef] = Map.empty
-
-                    propertyStore.waitOnPhaseCompletion()
-
-                } { t ⇒
-                    analysisTime = t.toSeconds
+        project.getOrCreateProjectInformationKeyInitializationData(
+            PropertyStoreKey,
+            (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
+                import org.opalj.log.LogContext
+                implicit val lg: LogContext = project.logContext
+                if (numThreads == 0) {
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                } else {
+                    org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = numThreads
+                    // FIXME: this property store is broken
+                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
-                timeResults = analysisTime :: timeResults
             }
-            threadTimeResults.put(thread, timeResults)
+        )
+
+        time {
+            propertyStore = analysesManager
+                .runAll(
+                    dependencies
+                )
+                ._1
+            propertyStore.waitOnPhaseCompletion()
+
+        } { t ⇒
+            analysisTime = t.toSeconds
         }
 
         val stringBuilderResults: StringBuilder = new StringBuilder()
@@ -261,9 +239,8 @@ object Immutability {
         val allfieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
-        println("all fields in project class files: "+allfieldsInProjectClassFiles.size)
         //References
-        val mutableReferences = propertyStore
+        var mutableReferences = propertyStore
             .finalEntities(MutableReference)
             .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
             .toList
@@ -287,38 +264,41 @@ object Immutability {
             .entities(
                 eps ⇒ //allfieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]) &&
                     eps.isFinal && (eps.asFinal.p match {
-                        case ImmutableReference(_) ⇒ true
-                        case _                     ⇒ false
+                        case ImmutableReference ⇒ true
+                        case _                  ⇒ false
                     })
             )
             .toList
             .sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString)
 
-        stringBuilderResults.append(
-            s"""
-             | mutable References:
-             | ${mutableReferences.mkString("|| mutable Reference \n")}
-             |
-             | lazy initalized not thread safe and not deterministic references:
-             | ${notThreadSafeOrNotDeterministicLazyInitialization.mkString("|| no ts & n dt ref\n")}
-             |
-             | lazy initialized not thread safe but deterministic references:
-             | ${lazyInitializedReferencesNotThreadSafeButDeterministic.mkString("|| li no ts b dt\n")}
-             |
-             | lazy initialized thread safe reference:
-             | ${lazyInitializedReferencesThreadSafe.mkString("|| li thread safe\n")}
-             |
-             | immutable Reference:
-             | ${immutableReferences.mkString("|| immutable References \n")}
-             |
-             |""".stripMargin
-        )
+        //Test....
+        mutableReferences = mutableReferences ++ notThreadSafeOrNotDeterministicLazyInitialization
+        // for comparison reasons
+        if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.References) {
+            stringBuilderResults.append(s"""
+| mutable References:
+| ${mutableReferences.mkString("|| mutable Reference \n")}
+|
+| lazy initalized not thread safe and not deterministic references:
+| ${notThreadSafeOrNotDeterministicLazyInitialization.sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString).mkString("|| no ts & n dt ref\n")}
+|
+| lazy initialized not thread safe but deterministic references:
+| ${lazyInitializedReferencesNotThreadSafeButDeterministic.mkString("|| li no ts b dt\n")}
+|
+| lazy initialized thread safe reference:
+| ${lazyInitializedReferencesThreadSafe.mkString("|| li thread safe\n")}
+|
+| immutable Reference:
+| ${immutableReferences.mkString("|| immutable References \n")}
+|
+|""".stripMargin)
+        }
 
         //Fields
         val mutableFields = propertyStore
             .finalEntities(MutableField)
             .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
-            .toList
+            .toList.sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString)
         val shallowImmutableFields = propertyStore
             .finalEntities(ShallowImmutableField)
             .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
@@ -333,24 +313,27 @@ object Immutability {
             .finalEntities(DeepImmutableField)
             .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
             .toList
-        stringBuilderResults.append(
-            s"""
+        if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.Fields) {
+            stringBuilderResults.append(
+                s"""
                | mutable fields:
-               |
+               | ${mutableFields.mkString(" || mutable Field \n")}
                |
                | shallow immutable fields:
-               |
+               | ${shallowImmutableFields.mkString(" || shallow immutable field \n")}
                |
                | dependent immutable fields:
-               |
+               | ${dependentImmutableFields.mkString(" || dependent immutable field \n")}
                |
                | deep immutable fields:
+               | ${deepImmutableFields.mkString(" || deep immutable field \n")}
                |
                |""".stripMargin
-        )
+            )
+
+        }
 
         //Classes
-
         val mutableClasses = propertyStore
             .finalEntities(MutableClass)
             .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
@@ -379,8 +362,26 @@ object Immutability {
                 .filter(!deepImmutableClassesInterfaces.toSet.contains(_))
                 .filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType]))
 
-        //Types
+        if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.Classes) {
+            stringBuilderResults.append(
+                s"""
+               | mutable classes:
+               | ${mutableClasses.mkString(" || mutable class \n")}
+               |
+               | shallow immutable classes:
+               | ${shallowImmutableClasses.mkString(" || shallow immutable classes \n")}
+               |
+               | dependent immutable classes:
+               | ${dependentImmutableClasses.mkString(" || dependent immutable classes \n")}
+               |
+               | deep immutable classes:
+               | ${deepImmutableClasses.mkString(" || deep immutable classes \n")}
+               |
+               |""".stripMargin
+            )
+        }
 
+        //Types
         val allProjectClassFilesIterator = project.allProjectClassFiles
         val types =
             allProjectClassFilesIterator.filter(_.thisType ne ObjectType.Object).map(_.thisType).toSet
@@ -409,86 +410,132 @@ object Immutability {
                 types.contains(x.asInstanceOf[ObjectType])
             })
             .toList
+        if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.Types) {
+            stringBuilderResults.append(
+                s"""
+               | mutable types:
+               | ${mutableTypes.mkString(" || mutable types \n")}
+               |
+               | shallow immutable types:
+               | ${shallowImmutableTypes.mkString(" || shallow immutable types \n")}
+               |
+               | dependent immutable types:
+               | ${dependentImmutableTypes.mkString(" || dependent immutable types \n")}
+               |
+               | deep immutable types:
+               | ${deepImmutableTypes.mkString(" || deep immutable types\n")}
+               |""".stripMargin
+            )
+        }
+
         val stringBuilderAmounts: StringBuilder = new StringBuilder
 
-        if (ra == References || ra == All) {
+        if (analysis == RunningAnalyses.References || analysis == RunningAnalyses.All) {
             stringBuilderAmounts.append(
                 s"""
-                   | mutable References: ${mutableReferences.size}
-                   | lazy initialized not thread safe or not deterministic ref.: ${notThreadSafeOrNotDeterministicLazyInitialization.size}
-                   | lazy initialization not thread safe but deterministic: ${lazyInitializedReferencesNotThreadSafeButDeterministic.size}
-                   | lazy initialization thread safe: ${lazyInitializedReferencesThreadSafe.size}
-                   | immutable references: ${immutableReferences.size}
-                   |""".stripMargin
+   | mutable References: ${mutableReferences.size}
+   | lazy initialized not thread safe or not deterministic ref.: ${notThreadSafeOrNotDeterministicLazyInitialization.size}
+   | lazy initialization not thread safe but deterministic: ${lazyInitializedReferencesNotThreadSafeButDeterministic.size}
+   | lazy initialization thread safe: ${lazyInitializedReferencesThreadSafe.size}
+   | immutable references: ${immutableReferences.size}
+   | references: ${allfieldsInProjectClassFiles.size}
+   |""".stripMargin
             )
         }
-        if (ra == Fields || ra == All) {
+        if (analysis == RunningAnalyses.Fields || analysis == RunningAnalyses.All) {
             stringBuilderAmounts.append(
                 s"""
-                   | mutable fields: ${mutableFields.size}
-                   | shallow immutable fields: ${shallowImmutableFields.size}
-                   | depenent immutable fields: ${dependentImmutableFields.size}
-                   | deep immutable fields: ${deepImmutableFields.size}
-                   |""".stripMargin
+   | mutable fields: ${mutableFields.size}
+   | shallow immutable fields: ${shallowImmutableFields.size}
+   | dependent immutable fields: ${dependentImmutableFields.size}
+   | deep immutable fields: ${deepImmutableFields.size}
+   | fields: ${allfieldsInProjectClassFiles.size}
+   |""".stripMargin
             )
         }
-        if (ra == Classes || ra == All) {
+        if (analysis == RunningAnalyses.Classes || analysis == RunningAnalyses.All) {
             stringBuilderAmounts.append(
                 s"""
-                   | mutable classes: ${mutableClasses.size}
-                   | shallow immutable classes: ${shallowImmutableClasses.size}
-                   | depenent immutable classes: ${dependentImmutableClasses.size}
-                   | deep immutable classes: ${deepImmutableClasses.size}
-                   |""".stripMargin
+   | mutable classes: ${mutableClasses.size}
+   | shallow immutable classes: ${shallowImmutableClasses.size}
+   | dependent immutable classes: ${dependentImmutableClasses.size}
+   | deep immutable classes: ${deepImmutableClasses.size}
+   | classes: ${allProjectClassFilesIterator.size}
+   |
+   |""".stripMargin
             )
         }
-        if (ra == Types || ra == All)
+        if (analysis == RunningAnalyses.Types || analysis == RunningAnalyses.All)
             stringBuilderAmounts.append(
                 s"""
-       | mutable types: ${mutableTypes.size}
-       | shallow immutable types: ${shallowImmutableTypes.size}
-       | dependent immutable types: ${dependentImmutableTypes.size}
-       | deep immutable types: ${deepImmutableTypes.size}
-       |
-       |""".stripMargin
+    | mutable types: ${mutableTypes.size}
+    | shallow immutable types: ${shallowImmutableTypes.size}
+    | dependent immutable types: ${dependentImmutableTypes.size}
+    | deep immutable types: ${deepImmutableTypes.size}
+    |
+    |""".stripMargin
             )
 
         stringBuilderAmounts.append(
             s"""
-               |took $analysisTime seconds
-               |""".stripMargin
+    | running ${analysis.toString} analysis
+    |took $analysisTime seconds
+    | with $numThreads threads
+    |""".stripMargin
         )
-
-        /*(o._1, o._2.iterator.fold(0.0,
-            {(x:Double,y:Seconds)⇒x+y.timeSpan})))*/
-
-        threadTimeResults.map(x ⇒ (x._1, x._2.fold(Seconds.None)((x, y) ⇒ x + y).timeSpan / threadTimeResults.size))
-
+        // ${stringBuilderResults.toString()}
         println(
-            s""" ${stringBuilderResults.toString()}
-               |
-               | ${stringBuilderAmounts.toString()}
-               |
-               | Time Results:
-               | ${threadTimeResults.map(x ⇒ s"""${x._1} Thread :: as average ${x._2} seconds""")}
-               |
-               |"""".stripMargin
+            s"""
+|
+| ${stringBuilderAmounts.toString()}
+|
+| Time Results:
+|
+| $numThreads Threads :: took $analysisTime
+|
+|""".stripMargin
         )
+        println("resultsfolder: "+resultsFolder)
+        //
+        /*val l = mutableReferences.filter(x ⇒ !mutableFields.toSet.contains(x))
+        println(
+            s"""
+             | mut reference not contained in mutable fields:
+             | ${l.head}
+             |
+             |
+             |  field imm:
+             |  ${
+                import org.opalj.br.fpcf.properties.FieldImmutability
+                import org.opalj.br.fpcf.properties.ReferenceImmutability
+                propertyStore(l.head, ReferenceImmutability.key).toString+"/n"+
+                    propertyStore(l.head, FieldImmutability.key).toString
+            }
+             |""".stripMargin
+
+        )*/
 
         val calendar = Calendar.getInstance()
-        val file = new File(
-            s"${resultsFolder.toAbsolutePath.toString}/wholeImmResult_${calendar.get(Calendar.YEAR)}_"+
-                s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
-                s"${calendar.get(Calendar.HOUR_OF_DAY)}_${calendar.get(Calendar.MINUTE)}_"+
-                s"${calendar.get(Calendar.MILLISECOND)}.txt"
-        )
-        file.createNewFile()
-        val bw = new BufferedWriter(new FileWriter(file))
-        bw.write(s""" ${stringBuilderResults.toString()}
-                  |
-                  | ${stringBuilderAmounts.toString()}
-                  |"""".stripMargin)
-        bw.close()
+        if (resultsFolder != null) {
+            val file = new File(
+                s"${if (resultsFolder != null) resultsFolder.toAbsolutePath.toString else "."}"+
+                    s""+
+                    s"/${analysis.toString}_${calendar.get(Calendar.YEAR)}_"+
+                    s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
+                    s"${calendar.get(Calendar.HOUR_OF_DAY)}_${calendar.get(Calendar.MINUTE)}_"+
+                    s"${calendar.get(Calendar.MILLISECOND)}_${numThreads}Threads.txt"
+            )
+            file.createNewFile()
+            val bw = new BufferedWriter(new FileWriter(file))
+            bw.write(s""" ${stringBuilderResults.toString()}
+                      |
+                      | ${stringBuilderAmounts.toString()}
+                      |"""".stripMargin)
+            bw.close()
+        }
+        println(s"propertyStore: ${propertyStore.getClass.toString()}")
+        println(s"jdk folder: $JRELibraryFolder")
+
         BasicReport(
             stringBuilderAmounts.toString()
         )
@@ -496,40 +543,30 @@ object Immutability {
 
     def main(args: Array[String]): Unit = {
         def usage: String = {
-            "Usage: java …ImmutabilityAnalysisEvaluation \n"+
-                "-cp <JAR file/Folder containing class files> OR -JDK\n"+
-                "[-analysis <imm analysis that should be executed: References, Fields, Classes, Types, All>]\n"+
-                "[-threads <threads that should be max used>]\n"+
-                "[-resultFolder <folder for the result files>]\n" /*+
-                "[-projectDir <directory with project class files relative to cp>]\n"+
-                "[-libDir <directory with library class files relative to cp>]\n"+
-                "[-analysis <L0|L1|L2> (Default: L2, the most precise analysis configuration)]\n"+
-                "[-fieldMutability <none|L0|L1|L2> (Default: Depends on analysis level)]\n"+
-                "[-escape <none|L0|L1> (Default: L1, the most precise configuration)]\n"+
-                "[-domain <class name of the abstract interpretation domain>]\n"+
-                "[-rater <class name of the rater for domain-specific actions>]\n"+
-                "[-callGraph <CHA|RTA|PointsTo> (Default: RTA)]\n"+
-                "[-eager] (supporting analyses are executed eagerly)\n"+
-                "[-noJDK] (do not analyze any JDK methods)\n"+
-                "[-individual] (reports the purity result for each method)\n"+
-                "[-closedWorld] (uses closed world assumption, i.e. no class can be extended)\n"+
-                "[-library] (assumes that the target is a library)\n"+
-                "[-debug] (enable debug output from PropertyStore)\n"+
-                "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
-                "[-eval <path to evaluation directory>]\n"+
-                "[-j <number of threads to be used> (0 for the sequential implementation)]\n"+
-                "[-analysisName <analysisName which defines the analysis within the results file>]\n"+
-                "[-schedulingStrategy <schedulingStrategy which defines the analysis within the results file>]\n"+
-                "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"*/
+            s"""
+               | Usage: java …ImmutabilityAnalysisEvaluation
+               | -cp <JAR file/Folder containing class files> OR -JDK
+               | [-analysis <imm analysis that should be executed: References, Fields, Classes, Types, All>]
+               | [-threads <threads that should be max used>]
+               | [-resultFolder <folder for the result files>]
+               | [-closedWorld] (uses closed world assumption, i.e. no class can be extended)
+               | [-noJDK] (running without the JDK)
+               |""".stripMargin
         }
         var i = 0
         var cp: File = null
         var resultFolder: Path = null
         var numThreads = 0
         var timeEvaluation: Boolean = false
+        var threadEvaluation: Boolean = false
+        var projectDir: Option[String] = None
+        var libDir: Option[String] = None
+        var withoutJDK: Boolean = false
+        var closedWorldAssumption = false
+        var isLibrary = false
 
         def readNextArg(): String = {
-            i += 1
+            i = i + 1
             if (i < args.length) {
                 args(i)
             } else {
@@ -538,62 +575,44 @@ object Immutability {
             }
         }
 
-        var analysis: RunningAnalysis = RunningAnalysis.All
-        //val numberOfThreads:Option[String] = None
+        var analysis: RunningAnalysis = RunningAnalyses.All
 
         while (i < args.length) {
             args(i) match {
                 case "-analysis" ⇒ {
                     val result = readNextArg()
                     if (result == "All")
-                        analysis = RunningAnalysis.All
+                        analysis = RunningAnalyses.All
                     else if (result == "References")
-                        analysis = RunningAnalysis.References
+                        analysis = RunningAnalyses.References
                     else if (result == "Fields")
-                        analysis = RunningAnalysis.Fields
+                        analysis = RunningAnalyses.Fields
                     else if (result == "Classes")
-                        analysis = RunningAnalysis.Classes
+                        analysis = RunningAnalyses.Classes
                     else if (result == "Types")
-                        analysis = RunningAnalysis.Fields
+                        analysis = RunningAnalyses.Fields
+                    else throw new IllegalArgumentException(s"unknown parameter: $result")
                 }
                 case "-threads" ⇒ numThreads = readNextArg().toInt
                 case "-cp"      ⇒ cp = new File(readNextArg())
                 case "-resultFolder" ⇒
-                    import java.nio.file.FileSystems
-
                     resultFolder = FileSystems.getDefault().getPath(readNextArg())
-                case "-timeEvaluation" ⇒ timeEvaluation = true
-                /*
-        case "-projectDir"         ⇒ projectDir = Some(readNextArg())
-        case "-libDir"             ⇒ libDir = Some(readNextArg())
-        case "-analysis"           ⇒ analysisName = Some(readNextArg())
-        case "-fieldMutability"    ⇒ fieldMutabilityAnalysisName = Some(readNextArg())
-        case "-escape"             ⇒ escapeAnalysisName = Some(readNextArg())
-        case "-domain"             ⇒ domainName = Some(readNextArg())
-        case "-rater"              ⇒ raterName = Some(readNextArg())
-        case "-callGraph"          ⇒ callGraphName = Some(readNextArg())
-        case "-analysisName"       ⇒ configurationName = Some(readNextArg())
-        case "-schedulingStrategy" ⇒ schedulingStrategy = Some(readNextArg())
-        case "-eager"              ⇒ eager = true
-        case "-individual"         ⇒ individual = true
-        case "-closedWorld"        ⇒ cwa = true
-        case "-library"            ⇒ isLibrary = true
-        case "-debug"              ⇒ debug = true
-        case "-multi"              ⇒ multiProjects = true
-        case "-eval"               ⇒ evaluationDir = Some(new File(readNextArg()))
-        case "-j"                  ⇒ numThreads = readNextArg().toInt
-        case "-noJDK"              ⇒ withoutJDK = true */
+                case "-timeEvaluation"   ⇒ timeEvaluation = true
+                case "-threadEvaluation" ⇒ threadEvaluation = true
+                case "-projectDir"       ⇒ projectDir = Some(readNextArg())
+                case "-libDir"           ⇒ libDir = Some(readNextArg())
+                case "-closedWorld"      ⇒ closedWorldAssumption = true
+                case "-isLibrary"        ⇒ isLibrary = true
+                case "-noJDK"            ⇒ withoutJDK = true
                 case "-JDK" ⇒
-                    cp = JRELibraryFolder; //withoutJDK = true
-
+                    cp = new File(JRELibraryFolder.getAbsolutePath+"/rt.jar"); withoutJDK = true
                 case unknown ⇒
                     Console.println(usage)
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
             }
             i += 1
         }
-
-        evaluate(analysis, numThreads, cp, resultFolder, timeEvaluation)
+        evaluate(cp, analysis, numThreads, projectDir, libDir, resultFolder, timeEvaluation, threadEvaluation, isLibrary, withoutJDK, closedWorldAssumption)
     }
 }
 
