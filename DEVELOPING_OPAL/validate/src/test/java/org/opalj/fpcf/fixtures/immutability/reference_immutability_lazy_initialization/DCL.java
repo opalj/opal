@@ -1,5 +1,7 @@
 package org.opalj.fpcf.fixtures.immutability.reference_immutability_lazy_initialization;
 
+import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.LazyInitializedThreadSafeReferenceAnnotation;
 
 import java.util.Random;
@@ -123,3 +125,265 @@ class DCLwithEarlyReturns {
             return __typeCode;
         }
     }
+
+class DCL5 {
+
+    @LazyInitializedThreadSafeReferenceAnnotation("")
+    DCL5 instance;
+
+    public DCL5 DCL5(){
+        if(instance==null){
+            synchronized(this){
+                if(instance==null){
+                    try{
+                        instance = new DCL5();
+                    }
+                    catch (Exception e)
+                    {
+                        throw e;
+                    }
+                }
+            }
+        }
+        return instance;
+    }
+}
+
+class DCL6 {
+
+    @LazyInitializedThreadSafeReferenceAnnotation("")
+    private DCL6 instance;
+
+    public DCL6 getInstance() throws Exception{
+        if(instance==null){
+            synchronized(this){
+                if(instance==null){
+                    instance = new DCL6();
+                }
+            }
+        }
+        return instance;
+    }
+}
+
+class SimpleLockingSynchronizedBlock {
+    @LazyInitializedThreadSafeReferenceAnnotation("")
+    private SimpleLockingSynchronizedBlock instance;
+    private SimpleLockingSynchronizedBlock() {}
+    public SimpleLockingSynchronizedBlock getInstance(){
+        synchronized(this){
+            if(instance==null)
+                instance = new SimpleLockingSynchronizedBlock();
+        }
+        return instance;
+    }
+}
+
+class SimpleLockingSynchronizedFunction1 {
+    @LazyInitializedThreadSafeReferenceAnnotation("")
+    private SimpleLockingSynchronizedFunction1 instance;
+    private SimpleLockingSynchronizedFunction1() {}
+    public synchronized SimpleLockingSynchronizedFunction1 getInstance() {
+        if(instance ==null)
+            instance = new SimpleLockingSynchronizedFunction1();
+        return instance;
+    }
+}
+
+
+
+
+class NoDCL1 {
+
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    NoDCL1 instance;
+
+    public NoDCL1 NoDCL1(){
+        if(instance==null){
+            synchronized(this){
+                if(instance==null){
+                    try{
+                        instance = new NoDCL1();
+                    }
+                    catch(Exception e){}
+                }}}
+        return instance;
+    }
+
+}
+
+class NoDCL2 {
+
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    NoDCL2 instance;
+
+    public NoDCL2 NoDCL1(){
+        try{
+            if(instance==null){
+                synchronized(this){
+                    if(instance==null){
+
+                        instance = new NoDCL2();
+                    }
+
+                }}}catch(Exception e){}
+        return instance;
+    }
+
+}
+
+class NoDCL3 {
+
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    NoDCL3 instance;
+
+    public NoDCL3 NoDCL1(){
+
+        if(instance==null){
+            try{
+                synchronized(this){
+                    if(instance==null){
+
+                        instance = new NoDCL3();
+                    }
+                }}catch(Exception e){}}
+        return instance;
+    }
+
+}
+
+class NoDCL4 {
+
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    NoDCL4 instance;
+
+    public NoDCL4 NoDCL1(){
+
+        if(instance==null){
+            try{
+                synchronized(this){
+                    if(instance==null){
+                        try{
+                            instance = new NoDCL4();
+                        }
+                        catch (Exception e)
+                        {
+                            throw e;
+                        }
+                    }
+                }}catch(Exception e){}}
+        return instance;
+    }
+
+}
+
+
+class NoDCL6 {
+
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    NoDCL6 instance;
+
+    public NoDCL6 NoDCL6() throws IndexOutOfBoundsException{
+        if(instance==null){
+            synchronized(this){
+                if(instance==null){
+                    try{
+                        instance = new NoDCL6();
+                    }
+                    catch (Exception e)
+                    {
+                        throw new IndexOutOfBoundsException();
+                    }
+                }
+            }
+        }
+        return instance;
+    }
+}
+
+class NoDCLIntRandom {
+
+    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Random function is not deterministic")
+    private int r;
+
+    public int getR(){
+                if(r==0){
+                    r = new Random().nextInt();
+                }
+
+        return r;
+    }
+}
+
+class DoubleCheckedLockingClassWithStaticFields {
+
+    @LazyInitializedThreadSafeReferenceAnnotation("")
+    private static DoubleCheckedLockingClassWithStaticFields instance;
+    public static DoubleCheckedLockingClassWithStaticFields getInstance() {
+        if(instance==null){
+            synchronized(DoubleCheckedLockingClassWithStaticFields.class) {
+                if(instance==null){
+                    instance = new DoubleCheckedLockingClassWithStaticFields();
+                }
+            }
+        }
+        return instance;
+    }
+}
+
+class DoubleCheckedLockingClassArray1 {
+
+    @LazyInitializedThreadSafeReferenceAnnotation("")
+    private Object[] instance;
+    public Object[] getInstance() {
+        if(instance==null){
+            synchronized(this) {
+                if(instance==null){
+                    instance = new Object[10];
+                }
+            }
+        }
+        return instance;
+    }
+}
+
+class DoubleCheckedLockingClass19 {
+
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    private DoubleCheckedLockingClass19 instance;
+
+    public DoubleCheckedLockingClass19 getInstance() {
+        if (instance == null) {
+            synchronized (this) {
+                if (instance == null) {
+                }
+            }
+            instance = new DoubleCheckedLockingClass19();
+        }
+        return instance;
+    }
+}
+
+class ArrayLazyInitializationNotThreadSafe {
+    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("While the initialization phase there is no lock")
+    int[] values;
+
+    public int[] getValues(){
+        if(values==null){
+            values = new int[] {1,2,3,4,5,6,7,8,9,10};
+        }
+        return values;
+    }
+}
+
+class ArrayLazyInitializationThreadSafe {
+    @LazyInitializedThreadSafeReferenceAnnotation("it is a lock via the synchronized method")
+    int[] values;
+
+    public synchronized  int[] getValues(){
+        if(values==null){
+            values = new int[] {1,2,3,4,5,6,7,8,9,10};
+        }
+        return values;
+    }
+}
