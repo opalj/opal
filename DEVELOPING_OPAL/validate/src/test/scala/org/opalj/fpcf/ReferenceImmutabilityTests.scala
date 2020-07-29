@@ -13,7 +13,7 @@ import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
@@ -21,21 +21,22 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.EagerL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis_new
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
+import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 
 /**
  * @author Tobias Peter Roth
  */
 class ReferenceImmutabilityTests extends PropertiesTest {
 
-    import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability")
+        List("org/opalj/fpcf/fixtures/immutability/sandbox_dcoff") ///sandbox/reference_immutability_lazy_initialization/sandbox")
     }
 
     override def init(p: Project[URL]): Unit = {
+        //println("Java version: "+System.getProperty("java.version"))
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
             Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
         }
@@ -51,23 +52,22 @@ class ReferenceImmutabilityTests extends PropertiesTest {
     L2PurityAnalysis_new.setRater(Some(SystemOutLoggingAllExceptionRater))
 
     describe("the org.opalj.fpcf.analyses.L0ReferenceImmutability is executed") {
-        import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
         val as = executeAnalyses(
             Set(
                 EagerL0ReferenceImmutabilityAnalysis,
                 LazyL0FieldImmutabilityAnalysis,
-                LazyInterProceduralEscapeAnalysis,
+                LazyLxClassImmutabilityAnalysis_new,
                 LazyLxTypeImmutabilityAnalysis_new,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyStaticDataUsageAnalysis,
+                LazyL2PurityAnalysis_new,
                 LazyL0CompileTimeConstancyAnalysis,
+                LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis,
-                LazyL2FieldMutabilityAnalysis,
+                LazyL1FieldMutabilityAnalysis,
                 LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                LazyLxClassImmutabilityAnalysis_new,
-                LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyL2PurityAnalysis_new
+                LazyTypeImmutabilityAnalysis
             )
         )
         as.propertyStore.shutdown()

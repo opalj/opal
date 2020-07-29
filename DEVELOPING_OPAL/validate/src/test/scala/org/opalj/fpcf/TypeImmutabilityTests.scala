@@ -6,21 +6,18 @@ import java.net.URL
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL2FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.LazyL0ReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 
 /**
  * Tests the Type Immutability Analysis with the new lattice
@@ -30,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 class TypeImmutabilityTests extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability")
+        List("org/opalj/fpcf/fixtures/immutability/sandbox")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -51,31 +48,17 @@ class TypeImmutabilityTests extends PropertiesTest {
         println(1)
         val as = executeAnalyses(
             Set(
-                /**
-                 * LazyTypeImmutabilityAnalysis,
-                 * LazyClassImmutabilityAnalysis,
-                 * LazyL2FieldMutabilityAnalysis,
-                 * LazyUnsoundPrematurelyReadFieldsAnalysis,
-                 * LazyL2PurityAnalysis,
-                 * LazyL0ReferenceImmutabilityAnalysis,
-                 * LazyL0FieldImmutabilityAnalysis,
-                 * EagerLxClassImmutabilityAnalysis_new,
-                 * EagerLxTypeImmutabilityAnalysis_new*
-                 */
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyL2PurityAnalysis,
+                LazyL2PurityAnalysis_new,
                 LazyL0ReferenceImmutabilityAnalysis,
                 LazyL0FieldImmutabilityAnalysis,
-                EagerLxTypeImmutabilityAnalysis_new,
                 LazyLxClassImmutabilityAnalysis_new,
+                EagerLxTypeImmutabilityAnalysis_new,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis,
-                LazyClassImmutabilityAnalysis,
-                LazyTypeImmutabilityAnalysis,
-                LazyL2FieldMutabilityAnalysis
+                LazyFieldLocalityAnalysis
             )
         )
         as.propertyStore.shutdown()
