@@ -9,7 +9,6 @@ import org.opalj.br.Field
 import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
 import org.opalj.br.Method
-import org.opalj.br.ObjectType
 import org.opalj.br.PCs
 import org.opalj.br.ShortType
 import org.opalj.br.analyses.SomeProject
@@ -53,6 +52,7 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.SelfReferenceParameter
 import scala.annotation.switch
+import org.opalj.br.ReferenceType
 
 /**
  *
@@ -211,19 +211,15 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
      * values.
      */
     def getDefaultValue()(implicit state: State): Option[Any] = {
-        import org.opalj.br.ArrayType
 
-        state.field.fieldType.isReferenceType
         state.field.fieldType match {
-            case FloatType     ⇒ Some(0.0f)
-            case IntegerType   ⇒ Some(0)
-            case ObjectType(_) ⇒ Some(null) //TODO ReferenceType
-            //case ReferenceType(_) ⇒ Some(null) //TODO
-            case BooleanType   ⇒ Some(false)
-            case ByteType      ⇒ Some(0)
-            case ShortType     ⇒ Some(0)
-            case ArrayType(_)  ⇒ Some(null)
-            case _             ⇒ None //TODO test mit Array
+            case FloatType        ⇒ Some(0.0f)
+            case IntegerType      ⇒ Some(0)
+            case _: ReferenceType ⇒ Some(null)
+            case BooleanType      ⇒ Some(false)
+            case ByteType         ⇒ Some(0)
+            case ShortType        ⇒ Some(0)
+            case _                ⇒ None
         }
     }
 
@@ -294,18 +290,22 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                     case ep                             ⇒ state.typeDependees += ep
                 } */
         }
+        if (isNotFinal)
+            state.referenceImmutability = MutableReference
 
+        /*println("is not final: " + isNotFinal)
         if (!state.field.isFinal && {
             state.referenceImmutability match {
-                case LazyInitializedThreadSafeReference |
-                    LazyInitializedNotThreadSafeOrNotDeterministicReference ⇒
-                    false
+                case ImmutableReference |
+                     LazyInitializedThreadSafeReference |
+                     LazyInitializedNotThreadSafeButDeterministicReference => //OrNotDeterministicReference ⇒
+                     false
                 case _ ⇒ true
             }
         }) {
             Result(state.field, MutableReference) //Result(state.field, NonFinalFieldByAnalysis)
-        } else
-            createResult()
+        } else */
+        createResult()
     }
 
     /**
@@ -470,8 +470,8 @@ trait L0ReferenceImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(Purity),
         PropertyBounds.lub(FieldPrematurelyRead),
         PropertyBounds.finalP(TACAI),
-        PropertyBounds.lub(ReferenceImmutability),
         PropertyBounds.ub(EscapeProperty),
+        PropertyBounds.ub(ReferenceImmutability)
     )
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReferenceImmutability)
