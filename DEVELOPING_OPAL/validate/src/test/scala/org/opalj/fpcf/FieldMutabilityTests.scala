@@ -14,10 +14,6 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL2FieldMutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.immutability.reference.LazyL0ReferenceImmutabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -29,8 +25,8 @@ import org.opalj.tac.fpcf.analyses.immutability.reference.LazyL0ReferenceImmutab
 class FieldMutabilityTests extends PropertiesTest {
 
     override def init(p: Project[URL]): Unit = {
-        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
-            Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+            _ ⇒ Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
         }
         p.get(RTACallGraphKey)
     }
@@ -49,11 +45,7 @@ class FieldMutabilityTests extends PropertiesTest {
         val as = executeAnalyses(
             Set(
                 EagerL0FieldMutabilityAnalysis,
-                LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyL0ReferenceImmutabilityAnalysis,
-                LazyL0FieldImmutabilityAnalysis,
-                LazyLxClassImmutabilityAnalysis_new,
-                LazyLxTypeImmutabilityAnalysis_new
+                LazyUnsoundPrematurelyReadFieldsAnalysis
             )
         )
         as.propertyStore.shutdown()
@@ -65,11 +57,7 @@ class FieldMutabilityTests extends PropertiesTest {
             Set(
                 EagerL1FieldMutabilityAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyL0ReferenceImmutabilityAnalysis,
-                LazyL0FieldImmutabilityAnalysis,
-                LazyLxClassImmutabilityAnalysis_new,
-                LazyLxTypeImmutabilityAnalysis_new
+                LazyInterProceduralEscapeAnalysis
             )
         )
         as.propertyStore.shutdown()
@@ -82,11 +70,7 @@ class FieldMutabilityTests extends PropertiesTest {
                 EagerL2FieldMutabilityAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyL0ReferenceImmutabilityAnalysis,
-                LazyL0FieldImmutabilityAnalysis,
-                LazyLxClassImmutabilityAnalysis_new,
-                LazyLxTypeImmutabilityAnalysis_new
+                LazyInterProceduralEscapeAnalysis
             )
         )
         as.propertyStore.shutdown()
