@@ -450,7 +450,7 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
 
             //case LBP(ImmutableReference(_))    ⇒
             //case LBP(LazyInitializedReference) ⇒
-            case LBP(ImmutableReference(_) | LazyInitializedThreadSafeReference | LazyInitializedNotThreadSafeButDeterministicReference) ⇒
+            case LBP(ImmutableReference | LazyInitializedThreadSafeReference | LazyInitializedNotThreadSafeButDeterministicReference) ⇒
             //_: FinalField) ⇒ // Final fields don't impede purity
             case FinalP(MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference) ⇒
                 //_: FinalEP[Field, ReferenceImmutability] ⇒ //FieldMutability] ⇒ // Mutable field
