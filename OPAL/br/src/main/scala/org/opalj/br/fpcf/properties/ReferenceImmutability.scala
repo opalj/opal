@@ -32,7 +32,6 @@ sealed trait ReferenceImmutability
     with ReferenceImmutabilityPropertyMetaInformation {
     final def key: PropertyKey[ReferenceImmutability] = ReferenceImmutability.key
     def isImmutableReference = false
-    def doesNotEscapes = false
 }
 
 object ReferenceImmutability extends ReferenceImmutabilityPropertyMetaInformation {
@@ -49,9 +48,8 @@ object ReferenceImmutability extends ReferenceImmutabilityPropertyMetaInformatio
     }
 }
 
-case class ImmutableReference(notEscapes: Boolean) extends ReferenceImmutability {
+case object ImmutableReference extends ReferenceImmutability {
     override def isImmutableReference = true
-    override def doesNotEscapes: Boolean = notEscapes
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
     def meet(that: ReferenceImmutability): ReferenceImmutability =
         if (this == that)
@@ -62,7 +60,7 @@ case class ImmutableReference(notEscapes: Boolean) extends ReferenceImmutability
 
 case object LazyInitializedThreadSafeReference extends ReferenceImmutability {
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
-        case ImmutableReference(_) ⇒
+        case ImmutableReference ⇒
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         case _ ⇒
     }
@@ -77,7 +75,7 @@ case object LazyInitializedThreadSafeReference extends ReferenceImmutability {
 
 case object LazyInitializedNotThreadSafeButDeterministicReference extends ReferenceImmutability {
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
-        case ImmutableReference(_) | LazyInitializedThreadSafeReference ⇒
+        case ImmutableReference | LazyInitializedThreadSafeReference ⇒
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         case _ ⇒
     }
@@ -100,7 +98,7 @@ case object LazyInitializedNotThreadSafeOrNotDeterministicReference extends Refe
     }
     override def checkIsEqualOrBetterThan(e: Entity, other: ReferenceImmutability): Unit = {
         other match {
-            case ImmutableReference(_) | LazyInitializedNotThreadSafeButDeterministicReference |
+            case ImmutableReference | LazyInitializedNotThreadSafeButDeterministicReference |
                 LazyInitializedThreadSafeReference ⇒
                 throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
             case _ ⇒
