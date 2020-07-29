@@ -89,6 +89,7 @@ class RTACallGraphAnalysis private[analyses] (
                     call.name,
                     call.descriptor
                 )
+
                 handleCall(
                     caller,
                     call.name,
