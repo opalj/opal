@@ -18,14 +18,21 @@ class Simple<T>{
 class Complex<T>{
     class Inner {
      @DependentImmutableFieldAnnotation(value="", genericString = "T")
-        private Generic_class1<T,T,T,T,T> gc1;
-     public Inner(Generic_class1<T,T, T, T, T> gc1){
-         this.gc1 = gc1;
+        private GenericClass<T> gc;
+     public Inner(GenericClass<T> gc){
+         this.gc = gc;
      }
-
-
     }
 }
+
+class GenericClass<T> {
+    @DependentImmutableFieldAnnotation(value = "", genericString = "T")
+    private T t;
+    public GenericClass(T t){
+        this.t = t;
+    }
+}
+
 
 
 
