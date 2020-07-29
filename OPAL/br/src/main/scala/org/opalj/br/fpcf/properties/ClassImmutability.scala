@@ -93,7 +93,6 @@ sealed trait ClassImmutability
     /** `true` if instances of the class are mutable. */
     def isMutable: Boolean
 }
-
 /**
  * Common constants use by all [[ClassImmutability]] properties associated with methods.
  */
