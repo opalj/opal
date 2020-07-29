@@ -44,7 +44,7 @@ class PurityTests extends PropertiesTest {
     }
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability/reference/sandbox")
+        List("org/opalj/fpcf/fixtures/purity")
     }
 
     describe("the org.opalj.fpcf.analyses.L0PurityAnalysis is executed") {
