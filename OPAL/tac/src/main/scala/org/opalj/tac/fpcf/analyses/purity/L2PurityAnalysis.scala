@@ -791,9 +791,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 return determineMethodPurity(eps.ub.asInstanceOf[TACAI].tac.get.cfg);
         }
 
-        if (state.ubPurity eq ImpureByAnalysis) {
-            return Result(state.definedMethod, ImpureByAnalysis)
-        };
+        if (state.ubPurity eq ImpureByAnalysis)
+            return Result(state.definedMethod, ImpureByAnalysis);
 
         if (state.ubPurity ne oldPurity)
             cleanupDependees() // Remove dependees that we don't need anymore.
@@ -909,15 +908,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         val tacaiO = getTACAI(method)
 
-        if (tacaiO.isEmpty) {
+        if (tacaiO.isEmpty)
             return InterimResult(
                 definedMethod,
                 ImpureByAnalysis,
                 CompileTimePure,
                 state.dependees,
                 c
-            )
-        };
+            );
 
         determineMethodPurity(tacaiO.get.cfg)
     }

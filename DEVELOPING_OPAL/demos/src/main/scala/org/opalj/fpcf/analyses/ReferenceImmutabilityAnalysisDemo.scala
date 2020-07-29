@@ -136,8 +136,8 @@ object ReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             .entities(
                 eps ⇒ //allfieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]) &&
                     eps.isFinal && (eps.asFinal.p match {
-                        case ImmutableReference(_) ⇒ true
-                        case _                     ⇒ false
+                        case ImmutableReference ⇒ true
+                        case _                  ⇒ false
                     })
             )
             .toList
