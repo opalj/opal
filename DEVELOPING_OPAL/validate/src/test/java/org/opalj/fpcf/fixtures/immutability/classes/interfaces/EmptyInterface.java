@@ -7,3 +7,14 @@ import org.opalj.fpcf.properties.type_immutability.MutableTypeAnnotation;
 @DeepImmutableClassAnnotation("Empty Interface")
 public interface EmptyInterface {
 }
+
+@MutableTypeAnnotation("Not final Interface")
+@DeepImmutableClassAnnotation("Interface")
+interface TrivialInterfaceWithMethods {
+
+    String getName();
+    String getAge();
+    void setName();
+    void setAge();
+
+}
