@@ -39,9 +39,7 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
         if (!analyses.exists(as.contains))
             return false;
 
-        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead")
-            .asInstanceOf[BooleanValue]
-            .value
+        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead").asInstanceOf[BooleanValue].value
 
         if (prematurelyRead) {
             val propertyStore = p.get(PropertyStoreKey)
@@ -67,4 +65,5 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
             Some(a.elementValuePairs.head.value.toString)
         }
     }
+
 }
