@@ -13,10 +13,10 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "ReferenceImmutability",validator = ImmutableReferenceEscapesMatcher.class)
+@PropertyValidator(key = "ReferenceImmutability",validator = ImmutableReferenceMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface ImmutableReferenceEscapesAnnotation {
+public @interface ImmutableReferenceAnnotation {
 
     /**
      * A short reasoning of this property.
