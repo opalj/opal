@@ -84,7 +84,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def isNonVirtualMethodCall: Boolean = false
     def isVirtualMethodCall: Boolean = false
     def isStaticMethodCall: Boolean = false
-    def isIfStmt: Boolean = false
+    def isIf: Boolean = false
     def isMonitorEnter: Boolean = false
     def isMonitorExit: Boolean = false
     def isPutStatic: Boolean = false
@@ -115,7 +115,7 @@ case class If[+V <: Var[V]](
 
     final override def asIf: this.type = this
 
-    final override def isIfStmt: Boolean = true
+    final override def isIf: Boolean = true
     final override def astID: Int = If.ASTID
     final def leftExpr: Expr[V] = left
     final def rightExpr: Expr[V] = right
