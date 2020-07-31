@@ -1,7 +1,5 @@
 package org.opalj.fpcf.fixtures.immutability.reference_immutability_lazy_initialization;
 
-//import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation;
-
 public class S {
     private final char value[];
 

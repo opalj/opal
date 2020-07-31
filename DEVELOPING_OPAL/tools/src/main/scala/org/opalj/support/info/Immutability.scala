@@ -21,7 +21,7 @@ import org.opalj.br.fpcf.properties.DeepImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.MutableReference
@@ -117,13 +117,18 @@ object Immutability {
             )
         }
 
-        val project =
+        var projectTime: Seconds = Seconds.None
+        var analysisTime: Seconds = Seconds.None
+        var callGraphTime: Seconds = Seconds.None
+
+        val project = time {
             Project(
                 classFiles,
                 libFiles ++ JDKFiles,
                 libraryClassFilesAreInterfacesOnly = false,
                 Traversable.empty
             )
+        } { t ⇒ projectTime = t.toSeconds }
 
         val referenceDependencies: List[FPCFAnalysisScheduler] = List(
             EagerL0ReferenceImmutabilityAnalysis,
@@ -203,9 +208,14 @@ object Immutability {
         L2PurityAnalysis_new.setRater(Some(SystemOutLoggingAllExceptionRater))
 
         var propertyStore: PropertyStore = null
-        var analysisTime: Seconds = Seconds.None
+
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-        analysesManager.project.get(RTACallGraphKey)
+
+        time {
+            analysesManager.project.get(RTACallGraphKey)
+        } { t ⇒ callGraphTime = t.toSeconds }
+
+        //val propertyStore = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
 
         project.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
@@ -257,7 +267,7 @@ object Immutability {
             .sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString)
 
         val notThreadSafeOrNotDeterministicLazyInitialization = propertyStore
-            .finalEntities(LazyInitializedNotThreadSafeOrNotDeterministicReference)
+            .finalEntities(LazyInitializedNotThreadSafeReference)
             .toList
             .sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString)
         val immutableReferences = propertyStore
@@ -476,12 +486,18 @@ object Immutability {
     |""".stripMargin
             )
 
+        val totalTime = projectTime + callGraphTime + analysisTime // + propertyStoreTime
+        //   $propertyStoreTime seconds propertyStoreTime
         stringBuilderAmounts.append(
             s"""
-    | running ${analysis.toString} analysis
-    |took $analysisTime seconds
-    | with $numThreads threads
-    |""".stripMargin
+            | running ${analysis.toString} analysis
+            | took  $totalTime total time
+            |   $projectTime seconds projectTime
+            |   $callGraphTime seconds callGraphTime
+            |   $analysisTime seconds analysisTime
+            | $analysisTime seconds
+            | with $numThreads threads
+            |""".stripMargin
         )
         // ${stringBuilderResults.toString()}
         println(
@@ -605,7 +621,7 @@ object Immutability {
                 case "-isLibrary"        ⇒ isLibrary = true
                 case "-noJDK"            ⇒ withoutJDK = true
                 case "-JDK" ⇒
-                    cp = new File(JRELibraryFolder.getAbsolutePath+"/rt.jar"); withoutJDK = true
+                    cp = JRELibraryFolder; withoutJDK = true
                 case unknown ⇒
                     Console.println(usage)
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")

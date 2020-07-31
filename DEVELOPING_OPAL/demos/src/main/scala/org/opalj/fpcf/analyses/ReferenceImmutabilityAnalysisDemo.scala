@@ -22,7 +22,7 @@ import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.fpcf
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -108,7 +108,7 @@ object ReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             .sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
 
         val notThreadSafeOrNotDeterministicLazyInitialization = propertyStore
-            .finalEntities(LazyInitializedNotThreadSafeOrNotDeterministicReference)
+            .finalEntities(LazyInitializedNotThreadSafeReference)
             .toList
             .sortWith((e1: fpcf.Entity, e2: fpcf.Entity) ⇒ e1.toString < e2.toString)
 

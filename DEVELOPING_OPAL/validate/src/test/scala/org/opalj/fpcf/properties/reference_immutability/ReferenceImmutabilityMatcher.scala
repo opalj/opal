@@ -6,7 +6,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.ReferenceImmutability
 import org.opalj.fpcf.Entity
@@ -64,6 +64,6 @@ class LazyInitializedThreadSafeReferenceMatcher extends ReferenceImmutabilityMat
 
 class LazyInitializedNotThreadSafeButDeterministicReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedNotThreadSafeButDeterministicReference)
 
-class LazyInitializedNotThreadSafeOrNotDeterministicReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedNotThreadSafeOrNotDeterministicReference)
+class LazyInitializedNotThreadSafeReferenceMatcher extends ReferenceImmutabilityMatcher(LazyInitializedNotThreadSafeReference)
 
 class ImmutableReferenceMatcher extends ReferenceImmutabilityMatcher(ImmutableReference)

@@ -1,10 +1,10 @@
 package org.opalj.fpcf.fixtures.immutability.reference_immutability_lazy_initialization;
 
 import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeReferenceAnnotation;
 
 public class SimpleLazyInstantiation{
-	@LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+	@LazyInitializedNotThreadSafeReferenceAnnotation("")
 	private static SimpleLazyInstantiation instance;
 	
 	public static SimpleLazyInstantiation init() {
@@ -25,7 +25,7 @@ class SimpleLazyIntInstantiation{
 }
 
 class SimpleLazyObjectsInstantiation{
-	@LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+	@LazyInitializedNotThreadSafeReferenceAnnotation("")
 	private static SimpleLazyObjectsInstantiation instance;
 	public static SimpleLazyObjectsInstantiation getInstance() {
 		if(instance==null)

@@ -17,7 +17,7 @@ import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.Purity
@@ -71,22 +71,25 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
     )(implicit state: State): Option[Boolean] = {
         var result: Option[Boolean] = None
         val dcl: ReferenceImmutability =
-            isThreadSafeLazyInitialisation(writeIndex, defaultValue, method, code, cfg, pcToIndex, tacCai)
+            isThreadSafeLazyInitialization(writeIndex, defaultValue, method, code, cfg, pcToIndex, tacCai)
+        println("dcl results: "+dcl)
         dcl match {
             case ImmutableReference |
                 LazyInitializedThreadSafeReference |
                 LazyInitializedNotThreadSafeButDeterministicReference ⇒
                 state.referenceImmutability = dcl
-            case MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference ⇒
+            case MutableReference | LazyInitializedNotThreadSafeReference ⇒
                 val lazyInitialization = isLazyInitialization(writeIndex, defaultValue, method, code, cfg, pcToIndex)
+                println("result lazyInitialization: "+lazyInitialization)
                 if (lazyInitialization)
                     state.referenceImmutability = LazyInitializedNotThreadSafeButDeterministicReference
                 else if (dcl == MutableReference) {
-                    if (!lazyInitialization) {
+                    /*if (!lazyInitialization) {
                         result = Some(true)
                     } else
-                        state.referenceImmutability = LazyInitializedNotThreadSafeOrNotDeterministicReference
-                } else state.referenceImmutability = LazyInitializedNotThreadSafeOrNotDeterministicReference
+                        state.referenceImmutability = LazyInitializedNotThreadSafeReference*/
+                    result = Some(true)
+                } else state.referenceImmutability = LazyInitializedNotThreadSafeReference
         }
         result
     }
@@ -122,10 +125,13 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         //TODO reasoning if there is another way to do this
         val writes = fieldAccessInformation.writeAccesses(state.field)
 
-        if (writes.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) //filter(mAndPCs ⇒ (mAndPCs._1 eq method))
+        if (writes.exists(x ⇒ ((x._1 eq method) && x._2.size > 1))) { //filter(mAndPCs ⇒ (mAndPCs._1 eq method))
+            println("false1")
             return false; // more than one write in the method
+        }
         val reads = fieldAccessInformation.readAccesses(state.field)
         if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
+            println("false2")
             return false; // Reads outside the (single) lazy initialization method
         }
 
@@ -137,21 +143,27 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             val findGuardResult = findGuard(method, writeIndex, defaultValue, code, cfg)
             if (findGuardResult.isDefined)
                 (findGuardResult.get._1, findGuardResult.get._2, findGuardResult.get._3)
-            else return false;
+            else { println("false3"); return false; }
         }
 
         // Detect only simple patterns where the lazily initialized value is returned immediately
-        if (!checkImmediateReturn(write, writeIndex, readIndex, code))
-            return false;
+        if (!checkImmediateReturn(write, writeIndex, readIndex, code)) {
+            println("false4")
+            return false
+        };
 
         // The value written must be computed deterministically and the writes guarded correctly
-        if (!checkWrites(write, writeIndex, guardIndex, guardedIndex, method, code, cfg))
-            return false;
+        if (!checkWrites(write, writeIndex, guardIndex, guardedIndex, method, code, cfg)) {
+            println("false5")
+            return false
+        };
 
         // Field reads (except for the guard) may only be executed if the field's value is not the
         // default value
-        if (!checkReads(reads, readIndex, guardedIndex, writeIndex, cfg, pcToIndex))
-            return false;
+        if (!checkReads(reads, readIndex, guardedIndex, writeIndex, cfg, pcToIndex)) {
+            println("false6")
+            return false
+        };
 
         true
     }
@@ -161,19 +173,28 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
      * E.g. in a synchronized method with a nonnull-check.
      */
 
-    def isThreadSafeLazyInitialisation(
+    def isThreadSafeLazyInitialization(
         writeIndex:   Int,
         defaultValue: Any,
         method:       Method,
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]],
         pcToIndex:    Array[Int],
-        tacCai:       TACode[TACMethodParameter, V]
+        tacCode:      TACode[TACMethodParameter, V]
     )(implicit state: State): ReferenceImmutability = {
         //var result: ReferenceImmutability = LazyInitializedThreadSafeReference
         val write = code(writeIndex).asFieldWriteAccessStmt
         val writeBB = cfg.bb(writeIndex).asBasicBlock
         val domTree = cfg.dominatorTree
+        val resultCaughtsAndThrows = findCaughtsThrowsAndResults(tacCode, cfg)
+        def noInterferingExceptions: Boolean = {
+            //resultCaughtsAndThrows._1.size == resultCaughtsAndThrows._2.size &&
+            resultCaughtsAndThrows._1.forall(bbCatch ⇒
+                resultCaughtsAndThrows._2.exists(bbThrow ⇒
+                    ((domTree.strictlyDominates(bbCatch._4.nodeId, bbThrow._3.nodeId) || //domination
+                        (bbCatch._4 == bbThrow._3 && bbCatch._1 < bbThrow._1)) && // or equal and successor
+                        bbThrow._2 == bbCatch._3)))
+        }
 
         val (guardIndex, guardedIndex, readIndex, afterGuardRecognizedTheDefaultValueIndex) = {
             val findGuardResult: (Option[(Int, Int, Int, CFGNode, Int)]) =
@@ -204,27 +225,15 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         //when the method is synchronized the monitor has not to be searched
         if (method.isSynchronized) {
             if (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) ||
-              (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) {
-                val resultCaughtsAndThrows = findCaughtsThrowsAndResults(tacCai, cfg)
-                if (resultCaughtsAndThrows._1.size == resultCaughtsAndThrows._2.size &&
-                    resultCaughtsAndThrows._1.forall(
-                        bbCatch ⇒
-                            resultCaughtsAndThrows._2.exists(
-                                bbThrow ⇒
-                                    (
-                                        (domTree
-                                            .strictlyDominates(bbCatch._4.nodeId, bbThrow._3.nodeId) || //domination
-                                            (bbCatch._4 == bbThrow._3 && bbCatch._1 < bbThrow._1)) && // or equal and successor
-                                            bbThrow._2 == bbCatch._3
-                                    )
-                            )
-                    )) {
+                (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) {
+
+                if (noInterferingExceptions) {
                     LazyInitializedThreadSafeReference // result //DCL
-                } else LazyInitializedNotThreadSafeOrNotDeterministicReference
-            } else MutableReference;
+                } else MutableReference
+            } else MutableReference
         } else {
             val monitorResult: ((Option[Int], Option[Int]), (Option[CFGNode], Option[CFGNode])) =
-                findMonitorCaughtsAndThrowsAndResult(writeIndex, defaultValue, code, cfg, tacCai)
+                findMonitorCaughtsAndThrowsAndResult(writeIndex, defaultValue, code, cfg, tacCode)
 
             if ((monitorResult._1._1.isDefined && monitorResult._1._2.isDefined && monitorResult._2._1.isDefined)
                 &&
@@ -234,8 +243,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                         ((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))
                             || guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex) //&& //true case dominates Write
                 )) {
-                val resultCaughtsAndThrows = findCaughtsThrowsAndResults(tacCai, cfg)
-                if (resultCaughtsAndThrows._1.size == resultCaughtsAndThrows._2.size &&
+                if (noInterferingExceptions /*resultCaughtsAndThrows._1.size == resultCaughtsAndThrows._2.size &&
                     resultCaughtsAndThrows._1.forall(
                         bbCatch ⇒
                             resultCaughtsAndThrows._2.exists(
@@ -247,14 +255,36 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                                             bbThrow._2 == bbCatch._3
                                     )
                             )
-                    ))
+                    )*/ )
                     LazyInitializedThreadSafeReference // result //DCL
                 else
-                    LazyInitializedNotThreadSafeOrNotDeterministicReference
-            } else if (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) || (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex))
-                LazyInitializedNotThreadSafeOrNotDeterministicReference
-            else
-                MutableReference
+                    MutableReference
+            } else {
+                /*
+                println(
+                    s"""
+                       | fieldtype is objecttype: ${state.field.fieldType.isObjectType}
+                       | > -1 : ${write.value.asVar.definedBy.head > -1}
+                       | checkWriteIsDeterministic: ${checkWriteIsDeterministic(code(write.value.asVar.definedBy.head).asAssignment, method, code)}
+                       |
+                       |""".stripMargin
+                ) */
+
+                if ((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) ||
+                    (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) && write.value.asVar.definedBy.size > 0 &&
+                    (state.field.fieldType.isObjectType || write.value.asVar.definedBy.head > -1
+                        && checkWriteIsDeterministic(code(write.value.asVar.definedBy.head).asAssignment, method, code))) {
+                    println("aaaa")
+                    //LazyInitializedNotThreadSafeReference
+                    if (noInterferingExceptions)
+                        LazyInitializedNotThreadSafeReference
+                    else
+                        MutableReference
+                    //checkWriteIsGuarded2(writeIndex, guardIndex, guardedIndex, method, code, cfg) //, tacCode.stmts)
+
+                } else
+                    MutableReference
+            }
         }
     }
 
@@ -573,6 +603,74 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         true
     }
 
+    def checkWriteIsGuarded2(
+        writeIndex:   Int,
+        guardIndex:   Int,
+        guardedIndex: Int,
+        method:       Method,
+        code:         Array[Stmt[V]],
+        cfg:          CFG[Stmt[V], TACStmts[V]]
+    )(implicit state: State): ReferenceImmutability = {
+        val startBB = cfg.bb(writeIndex).asBasicBlock
+        var enqueuedBBs: Set[CFGNode] = Set(startBB)
+        var worklist: List[BasicBlock] = List(startBB.asBasicBlock)
+        val abnormalReturnNode = cfg.abnormalReturnNode
+
+        val caughtExceptions = code.iterator
+            .filter { stmt ⇒ stmt.astID == CaughtException.ASTID }
+            .flatMap { exception ⇒
+                exception.asCaughtException.origins.iterator.map { origin: Int ⇒
+                    if (isImmediateVMException(origin)) {
+                        pcOfImmediateVMException(origin)
+                    } else {
+                        pcOfMethodExternalException(origin)
+                    }
+                }
+            }
+            .toSet
+
+        /*val caughtExceptions = code.filter { stmt =>
+            stmt.astID == CaughtException.ASTID
+        }.toList flatMap {
+            exception=>
+                exception.asCaughtException.origins.flatMap { origin =>
+                    if (isImmediateVMException(origin)) {
+                        pcOfImmediateVMException(origin)
+                    } else {
+                        pcOfMethodExternalException(origin)
+                    }
+                }
+        } */
+        while (worklist.nonEmpty) {
+            val curBB = worklist.head
+            worklist = worklist.tail
+            val startPC = curBB.startPC
+            val endPC = curBB.endPC
+            if (startPC == 0 || startPC == guardedIndex)
+                return MutableReference; // Reached method start or wrong branch of guarding if-Statement
+            // Exception thrown between guard and write, which is ok for deterministic methods,
+            // but may be a problem otherwise as the initialization is not guaranteed to happen
+            // (or never happen).
+            if ((curBB ne startBB) && abnormalReturnNode.predecessors.contains(curBB)) {
+                if (!lazyInitializerIsDeterministic(method, code)) {
+                    return MutableReference
+                }
+            };
+            // Exception thrown between guard and write (caught somewhere, but we don't care)
+            if ((curBB ne startBB) & caughtExceptions.toSet.contains(endPC)) {
+                if (!lazyInitializerIsDeterministic(method, code)) {
+                    return MutableReference
+                }
+            };
+            // Check all predecessors except for the one that contains the guarding if-Statement
+            val predecessors =
+                getPredecessors(curBB, enqueuedBBs).filterNot(_.endPC == guardIndex)
+            worklist ++= predecessors
+            enqueuedBBs ++= predecessors
+        }
+        LazyInitializedNotThreadSafeReference
+    }
+
     /**
      * Gets all predecessor BasicBlocks of a CFGNode.
      */
@@ -610,6 +708,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         method: Method,
         code:   Array[Stmt[V]]
     )(implicit state: State): Boolean = {
+        import org.opalj.tac.NewArray
         def isConstant(uvar: Expr[V]): Boolean = {
             val defSites = uvar.asVar.definedBy
 
@@ -618,6 +717,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                 else if (code(defSites.head).asAssignment.expr.isConst) true
                 else {
                     val expr = code(index).asAssignment.expr
+                    println("expr is field read: "+expr.isFieldRead)
                     expr.isFieldRead && (expr.asFieldRead.resolveField(p) match {
                         case Some(field) ⇒
                             isImmutableReference(propertyStore(field, ReferenceImmutability.key))
@@ -626,12 +726,25 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                     })
                 }
             }
+            println(
+                s"""
+                 | defSites==SelfReferenceParameter: ${defSites == SelfReferenceParameter}
+                 | defSites.size: ${defSites.size}
+                 | isConstantDef: ${isConstantDef(defSites.head)}
+                 |
+                 |""".stripMargin
+            )
 
-            defSites == SelfReferenceParameter ||
+            val result = defSites == SelfReferenceParameter ||
                 defSites.size == 1 && isConstantDef(defSites.head)
+
+            println("result: "+result)
+            result
         }
 
         val value = origin.expr
+
+        println("value: "+value)
 
         val isNonConstDeterministic = value.astID match {
             case GetStatic.ASTID | GetField.ASTID ⇒
@@ -652,6 +765,9 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                     state.lazyInitInvocation = Some((declaredMethods(method), origin.pc))
                     true
                 }
+            case NewArray.ASTID ⇒
+                value.asNewArray.counts.forall(isConstant(_))
+
             case _ ⇒
                 // The value neither is a constant nor originates from a call, but if the
                 // current method does not take parameters and is deterministic, the value is
@@ -887,5 +1003,4 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         }
         false
     }
-
 }

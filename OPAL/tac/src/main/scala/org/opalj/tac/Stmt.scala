@@ -80,6 +80,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asCheckcast: Checkcast[V] = throw new ClassCastException();
 
     def isAssignment: Boolean = false
+    def isArrayStore: Boolean = false
     def isExprStmt: Boolean = false
     def isNonVirtualMethodCall: Boolean = false
     def isVirtualMethodCall: Boolean = false
@@ -578,6 +579,7 @@ case class ArrayStore[+V <: Var[V]](
 ) extends Stmt[V] {
 
     final override def asArrayStore: this.type = this
+    final override def isArrayStore: Boolean = true
     final override def astID: Int = ArrayStore.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         p(arrayRef) && p(index) && p(value)

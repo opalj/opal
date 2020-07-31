@@ -29,7 +29,10 @@
 package org.opalj.fpcf.fixtures.immutability.reference;
 
 import org.opalj.fpcf.properties.field_mutability.LazyInitialized;
-import org.opalj.fpcf.properties.reference_immutability.*;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
@@ -185,7 +188,7 @@ class DeterministicCall {
 
 class DeterministicCallWithParam {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("Lazy initialization is not the same for different invocations")
+    @MutableReferenceAnnotation("Lazy initialization is not the same for different invocations")
     private int x;
 
     public int init(int z) {
@@ -205,7 +208,7 @@ class DeterministicCallOnFinalField {
     @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Lazy initialization with call to deterministic method on final field")
     private int x;
 
-    @ImmutableReferenceEscapesAnnotation("Declared final field")
+    @ImmutableReferenceAnnotation("Declared final field")
     private final Inner inner;
 
     public DeterministicCallOnFinalField(int v) {
@@ -266,9 +269,9 @@ class DeterministicCallOnNonFinalField {
     }
 }
 
-class NondeterministicCall {
+class NodeterministicCall {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("Wrong lazy initialization with call to non-deterministic method")
+    @MutableReferenceAnnotation("Wrong lazy initialization with call to non-deterministic method")
     private int x;
 
     private final Object object = new Object();
@@ -335,7 +338,7 @@ class ExceptionInInitialization {
      * @note As the field write is dead, this field is really 'effectively final' as it will never
      * be different from the default value.
      */
-    @ImmutableReferenceEscapesAnnotation(value = "Field is never initialized, so it stays on its default value")
+    @ImmutableReferenceAnnotation(value = "Field is never initialized, so it stays on its default value")
     private int x;
 
     private int getZero() {
@@ -352,24 +355,11 @@ class ExceptionInInitialization {
     }
 }
 
-class PossibleExceptionInInitialization {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
-    private int x;
-
-    public int init(int i) {
-        int y = this.x;
-        if (y == 0) {
-            int z = 10 / i;
-            y = x = 5;
-        }
-        return y;
-    }
-}
 
 class CaughtExceptionInInitialization {
     //TODO reasoning
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
+    @MutableReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
     private int x;
 
     public int init(int i) {

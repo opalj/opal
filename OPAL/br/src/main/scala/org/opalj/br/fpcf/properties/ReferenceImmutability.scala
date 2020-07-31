@@ -65,7 +65,7 @@ case object LazyInitializedThreadSafeReference extends ReferenceImmutability {
         case _ ⇒
     }
     def meet(other: ReferenceImmutability): ReferenceImmutability =
-        if (other == MutableReference || other == LazyInitializedNotThreadSafeOrNotDeterministicReference ||
+        if (other == MutableReference || other == LazyInitializedNotThreadSafeReference ||
             other == LazyInitializedNotThreadSafeButDeterministicReference) {
             other
         } else {
@@ -81,14 +81,14 @@ case object LazyInitializedNotThreadSafeButDeterministicReference extends Refere
     }
 
     def meet(other: ReferenceImmutability): ReferenceImmutability = {
-        if (other == MutableReference || other == LazyInitializedNotThreadSafeOrNotDeterministicReference) {
+        if (other == MutableReference || other == LazyInitializedNotThreadSafeReference) {
             other
         } else {
             this
         }
     }
 }
-case object LazyInitializedNotThreadSafeOrNotDeterministicReference extends ReferenceImmutability {
+case object LazyInitializedNotThreadSafeReference extends ReferenceImmutability {
     def meet(other: ReferenceImmutability): properties.ReferenceImmutability = {
         if (other == MutableReference) {
             other

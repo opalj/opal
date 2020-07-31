@@ -1,22 +1,22 @@
 package org.opalj.fpcf.fixtures.immutability.reference;
 
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceEscapesAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
 
 public class PrivateFinalArrayEscapesViaConstructor {
 
-    @ImmutableReferenceEscapesAnnotation("")
+    @ImmutableReferenceAnnotation("")
     private final char[] charArray;
 
-    @ImmutableReferenceEscapesAnnotation("")
+    @ImmutableReferenceAnnotation("")
     private final byte[] byteArray;
 
-    @ImmutableReferenceEscapesAnnotation("")
+    @ImmutableReferenceAnnotation("")
     private final int[] intArray;
 
-    @ImmutableReferenceEscapesAnnotation("")
+    @ImmutableReferenceAnnotation("")
     private final long[] longArray;
 
-    @ImmutableReferenceEscapesAnnotation("")
+    @ImmutableReferenceAnnotation("")
     private final Object[] objectArray;
 
     public PrivateFinalArrayEscapesViaConstructor(char[] charArray, byte[] byteArray, int[] intArray,

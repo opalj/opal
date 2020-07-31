@@ -112,9 +112,11 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
     )(implicit state: State): Boolean = {
 
         val propertyStoreResult = propertyStore(declaredMethods(method), Purity.key)
-        val result = (method.descriptor.parametersCount == 0 && !isNonDeterministic(
+        val resultIsNonDeterministic = !isNonDeterministic(
             propertyStoreResult
-        ))
+        )
+        println("result is non Deterministic: "+resultIsNonDeterministic)
+        val result = (method.descriptor.parametersCount == 0 && resultIsNonDeterministic)
         result
     }
 

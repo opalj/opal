@@ -27,7 +27,7 @@ import org.opalj.br.fpcf.properties.DependentImmutableType
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.MutableReference
@@ -577,7 +577,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         state.dependentImmutability = Some(DependentImmutabilityKind.notShallowOrMutable)
                 }
                 case FinalP(
-                    MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference
+                    MutableReference | LazyInitializedNotThreadSafeReference
                     ) ⇒ {
                     state.typeIsImmutable = Some(false)
                     return Result(field, MutableField);
@@ -624,7 +624,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             case FinalP(ImmutableReference) ⇒ state.referenceIsImmutable = Some(true)
             case FinalP(LazyInitializedThreadSafeReference | LazyInitializedNotThreadSafeButDeterministicReference) ⇒
                 state.referenceIsImmutable = Some(true)
-            case FinalP(MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference) ⇒
+            case FinalP(MutableReference | LazyInitializedNotThreadSafeReference) ⇒
                 return Result(field, MutableField);
             case ep @ _ ⇒ {
                 state.dependencies += ep

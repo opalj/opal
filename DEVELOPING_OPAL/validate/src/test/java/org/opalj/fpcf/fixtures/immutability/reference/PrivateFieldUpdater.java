@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.reference;
 
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceEscapesAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 
 /**
@@ -9,7 +9,7 @@ import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotati
  */
 public class PrivateFieldUpdater {
 
-    @ImmutableReferenceEscapesAnnotation("only initialized by the constructor")
+    @ImmutableReferenceAnnotation("only initialized by the constructor")
     private String name;
 
     @MutableReferenceAnnotation("incremented whenever `this` object is passed to another `NonFinal` object")

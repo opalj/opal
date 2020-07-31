@@ -23,7 +23,7 @@ import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.NoEscape
@@ -188,12 +188,12 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         val pc = state.lazyInitInvocation.get._2
         if (callees.isIncompleteCallSite(pc)) {
 
-            state.referenceImmutability = LazyInitializedNotThreadSafeOrNotDeterministicReference //TODO //MutableReference //NonFinalFieldByAnalysis
+            state.referenceImmutability = MutableReference //LazyInitializedNotThreadSafeReference //TODO //MutableReference //NonFinalFieldByAnalysis
             true
         } else {
             val targets = callees.callees(pc)
             if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
-                state.referenceImmutability = LazyInitializedNotThreadSafeOrNotDeterministicReference //MutableReference //NonFinalFieldByAnalysis
+                state.referenceImmutability = MutableReference //LazyInitializedNotThreadSafeReference //MutableReference //NonFinalFieldByAnalysis
                 true
             } else false
         }
@@ -266,7 +266,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                 state.purityDependees = state.purityDependees.filter(_.e ne newEP.e)
                 val nonDeterministicResult = isNonDeterministic(newEP)
                 //if (!r) state.referenceImmutability = LazyInitializedReference
-                if (state.referenceImmutability != LazyInitializedNotThreadSafeOrNotDeterministicReference &&
+                if (state.referenceImmutability != LazyInitializedNotThreadSafeReference &&
                     state.referenceImmutability != LazyInitializedThreadSafeReference) { // both dont need determinism
                     isNotFinal = nonDeterministicResult
                 }

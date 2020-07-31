@@ -1,10 +1,9 @@
 package org.opalj.fpcf.fixtures.immutability.reference;
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.SyntaxTreeNode;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeReferenceAnnotation;
 
 public class Template {
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    @LazyInitializedNotThreadSafeReferenceAnnotation("")
     private Template _template;
     private Template _parent;
 

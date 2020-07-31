@@ -6,7 +6,6 @@ import org.opalj.fpcf.properties.field_immutability.DeepImmutableFieldAnnotation
 import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
 import org.opalj.fpcf.properties.type_immutability.DeepImmutableTypeAnnotation;
 import org.opalj.fpcf.properties.type_immutability.MutableTypeAnnotation;
-import org.opalj.fpcf.properties.type_mutability.MutableType;
 
 @DeepImmutableTypeAnnotation("has shallow and mutable fields")
 @DeepImmutableClassAnnotation("has shallow and immutable fields")
@@ -21,7 +20,7 @@ public final class WithMutableAndImmutableFieldType {
     private SimpleMutableClass tmc = new SimpleMutableClass();
 }
 
-@MutableType("Class has no fields but is not final")
+@MutableTypeAnnotation("Class has no fields but is not final")
 @DeepImmutableClassAnnotation("Class has no fields")
 class EmptyClass {
 }

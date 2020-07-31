@@ -1,8 +1,8 @@
 package org.opalj.fpcf.fixtures.immutability.reference_immutability_lazy_initialization;
 
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeReferenceAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.LazyInitializedThreadSafeReferenceAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
 
 import java.util.Random;
 
@@ -37,6 +37,18 @@ class DCLIntRandom {
                     r = new Random().nextInt();
                 }
             }
+        }
+        return r;
+    }
+}
+class NoDCLIntRandom {
+
+    @MutableReferenceAnnotation("")
+    private int r;
+
+    public int getR(){
+        if(r==0){
+        r = new Random().nextInt();
         }
         return r;
     }
@@ -195,7 +207,7 @@ class SimpleLockingSynchronizedFunction1 {
 
 class NoDCL1 {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    @MutableReferenceAnnotation("")
     NoDCL1 instance;
 
     public NoDCL1 NoDCL1(){
@@ -214,7 +226,7 @@ class NoDCL1 {
 
 class NoDCL2 {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    @MutableReferenceAnnotation("")
     NoDCL2 instance;
 
     public NoDCL2 NoDCL1(){
@@ -234,7 +246,7 @@ class NoDCL2 {
 
 class NoDCL3 {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    @MutableReferenceAnnotation("")
     NoDCL3 instance;
 
     public NoDCL3 NoDCL1(){
@@ -254,7 +266,7 @@ class NoDCL3 {
 
 class NoDCL4 {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    @MutableReferenceAnnotation("")
     NoDCL4 instance;
 
     public NoDCL4 NoDCL1(){
@@ -280,7 +292,7 @@ class NoDCL4 {
 
 class NoDCL6 {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    @MutableReferenceAnnotation("")
     NoDCL6 instance;
 
     public NoDCL6 NoDCL6() throws IndexOutOfBoundsException{
@@ -298,20 +310,6 @@ class NoDCL6 {
             }
         }
         return instance;
-    }
-}
-
-class NoDCLIntRandom {
-
-    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Random function is not deterministic")
-    private int r;
-
-    public int getR(){
-                if(r==0){
-                    r = new Random().nextInt();
-                }
-
-        return r;
     }
 }
 
@@ -349,7 +347,7 @@ class DoubleCheckedLockingClassArray1 {
 
 class DoubleCheckedLockingClass19 {
 
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("")
+    @LazyInitializedNotThreadSafeReferenceAnnotation("")
     private DoubleCheckedLockingClass19 instance;
 
     public DoubleCheckedLockingClass19 getInstance() {
@@ -365,7 +363,7 @@ class DoubleCheckedLockingClass19 {
 }
 
 class ArrayLazyInitializationNotThreadSafe {
-    @LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation("While the initialization phase there is no lock")
+    @LazyInitializedNotThreadSafeReferenceAnnotation("During the initialization phase there is no lock")
     int[] values;
 
     public int[] getValues(){

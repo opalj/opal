@@ -14,10 +14,10 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "ReferenceImmutability",validator = LazyInitializedNotThreadSafeOrNotDeterministicReferenceMatcher.class)
+@PropertyValidator(key = "ReferenceImmutability",validator = LazyInitializedNotThreadSafeReferenceMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface LazyInitializedNotThreadSafeOrNotDeterministicReferenceAnnotation {
+public @interface LazyInitializedNotThreadSafeReferenceAnnotation {
 
     /**
      * A short reasoning of this property.

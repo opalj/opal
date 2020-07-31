@@ -2,7 +2,7 @@ package org.opalj.fpcf.fixtures.immutability.field;
 
 import org.opalj.fpcf.properties.class_immutability.ShallowImmutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceEscapesAnnotation;
+import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
 import org.opalj.fpcf.properties.type_immutability.MutableTypeAnnotation;
 
 @MutableTypeAnnotation("Because of not final class")
@@ -13,7 +13,7 @@ public class private_getterEscape_shallow {
     }
 
     @ShallowImmutableFieldAnnotation("Because of Immutable Reference and Mutable Field Type")
-    @ImmutableReferenceEscapesAnnotation("effectively immutable")
+    @ImmutableReferenceAnnotation("effectively immutable")
     private TrivialMutableClass tmc = new TrivialMutableClass();
 
 }

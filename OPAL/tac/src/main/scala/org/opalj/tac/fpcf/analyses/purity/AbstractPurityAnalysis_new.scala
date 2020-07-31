@@ -23,7 +23,7 @@ import org.opalj.br.fpcf.properties.ImmutableReference
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeOrNotDeterministicReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
 import org.opalj.br.fpcf.properties.MutableReference
 import org.opalj.br.fpcf.properties.Pure
@@ -452,7 +452,7 @@ trait AbstractPurityAnalysis_new extends FPCFAnalysis {
             //case LBP(LazyInitializedReference) ⇒
             case LBP(ImmutableReference | LazyInitializedThreadSafeReference | LazyInitializedNotThreadSafeButDeterministicReference) ⇒
             //_: FinalField) ⇒ // Final fields don't impede purity
-            case FinalP(MutableReference | LazyInitializedNotThreadSafeOrNotDeterministicReference) ⇒
+            case FinalP(MutableReference | LazyInitializedNotThreadSafeReference) ⇒
                 //_: FinalEP[Field, ReferenceImmutability] ⇒ //FieldMutability] ⇒ // Mutable field
                 if (objRef.isDefined) {
                     if (state.ubPurity.isDeterministic)

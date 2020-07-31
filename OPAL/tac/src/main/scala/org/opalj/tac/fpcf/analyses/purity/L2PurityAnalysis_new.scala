@@ -1024,6 +1024,7 @@ object LazyL2PurityAnalysis_new extends L2PurityAnalysisScheduler_new with FPCFL
     override def register(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
     ): FPCFAnalysis = {
+        val analysis = new L2PurityAnalysis_new(p)
         ps.registerLazyPropertyComputation(Purity.key, analysis.doDeterminePurity)
         analysis
     }
