@@ -104,23 +104,19 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         field: Field
     ): ProperPropertyComputationResult = {
 
-        implicit val state: State = State(field)
-        // Fields are not final if they are read prematurely!
-        if (!field.isFinal && isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key))) {
-            return Result(field, MutableReference)
-        };
-        state.referenceImmutability = ImmutableReference
-
-        // It still has to be determined of the referred object could escape
         if (field.isFinal)
-            return Result(field, ImmutableReference)
-        //return createResult();
+            return Result(field, ImmutableReference);
+        if (field.isPublic)
+            return Result(field, MutableReference);
 
+        implicit val state: State = State(field)
+        state.referenceImmutability = ImmutableReference
         val thisType = field.classFile.thisType
 
-        if (field.isPublic && !field.isFinal)
+        // Fields are not final if they are read prematurely!
+        if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key))) {
             return Result(field, MutableReference)
-        //in cases of a public, package private or protected reference, the referenced object could escape
+        };
 
         // Collect all classes that have access to the field, i.e. the declaring class and possibly
         // classes in the same package as well as subclasses
@@ -134,11 +130,9 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             } else {
                 Set(field.classFile)
             }
-
         val classesHavingAccess: Iterator[ClassFile] =
             if (field.isProtected) {
                 if (typeExtensibility(thisType).isYesOrUnknown) {
-                    //state.notEscapes = false
                     return Result(field, MutableReference);
                 }
                 val subclassesIterator: Iterator[ClassFile] =
@@ -149,7 +143,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             } else {
                 initialClasses.iterator
             }
-
         // If there are native methods, we give up
         if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
             //state.notEscapes = false
@@ -261,7 +254,9 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                 if (eps.isRefinable)
                     state.tacDependees += method -> ((newEP, pcs))
                 //TODO tacai funktionen alle ausführen
-                isNotFinal = methodUpdatesField(method, newEP.ub.tac.get, pcs)
+                val tmp = method
+                if (tmp != method)
+                    isNotFinal = methodUpdatesField(method, newEP.ub.tac.get, pcs)
             case Callees.key ⇒
                 isNotFinal = handleCalls(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]])
             case FieldPrematurelyRead.key ⇒

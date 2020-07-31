@@ -88,7 +88,7 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
      */
     @inline private[this] def createResultForAllSubtypes(
         t:            ObjectType,
-        immutability: ClassImmutability_new //MutableObject
+        immutability: ClassImmutability_new
     ): MultiResult = {
         val allSubtypes = classHierarchy.allSubclassTypes(t, reflexive = true)
         val r = allSubtypes.map { st ⇒
@@ -320,27 +320,26 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
             someEPS match {
                 // Superclass related dependencies:
                 //
-                case UBP(MutableClass) ⇒ // MutableObject) ⇒
-                    return Result(t, MutableClass); //MutableObjectByAnalysis);
+                case UBP(MutableClass) ⇒
+                    return Result(t, MutableClass);
 
-                case LBP(DeepImmutableClass) ⇒ //_:ImmutableObject) ⇒ // the super class
+                case LBP(DeepImmutableClass) ⇒ // the super class
                     dependees -= SuperClassKey
 
-                case UBP(ShallowImmutableClass) ⇒ //ImmutableContainer) ⇒ // super class is at most immutable container
+                case UBP(ShallowImmutableClass) ⇒ // super class is at most immutable container
                     if (someEPS.isFinal) dependees -= SuperClassKey
-                    maxLocalImmutability = ShallowImmutableClass //ImmutableContainer
-                //dependees = dependees.filterNot(_._2.pk == TypeImmutability_new.key) //TypeImmutability.key)
+                    maxLocalImmutability = ShallowImmutableClass
 
                 case UBP(DependentImmutableClass) ⇒
                     if (someEPS.isFinal) dependees -= SuperClassKey
                     maxLocalImmutability = DependentImmutableClass
 
-                case LBP(ShallowImmutableClass) ⇒ //ImmutableContainer) ⇒ // super class is a least immutable container
-                    if (minLocalImmutability != ShallowImmutableClass && //ImmutableContainer &&
+                case LBP(ShallowImmutableClass) ⇒ // super class is a least shallow immutable
+                    if (minLocalImmutability != ShallowImmutableClass &&
                         !dependees.valuesIterator.exists(_.pk == FieldImmutability.key))
-                        minLocalImmutability = ShallowImmutableClass //ImmutableContainer // Lift lower bound when possible
+                        minLocalImmutability = ShallowImmutableClass // Lift lower bound when possible
 
-                case LUBP(MutableClass, DeepImmutableClass) ⇒ //_: MutableObject, ImmutableObject) ⇒ // No information about superclass
+                case LUBP(MutableClass, DeepImmutableClass) ⇒ // No information about superclass
 
                 case FinalEP(f, DependentImmutableField) ⇒ {
                     if (hasShallowImmutableFields) {
@@ -427,10 +426,6 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
                 Result(t, maxLocalImmutability)
 
             } else {
-                /*
-         * if (oldDependees == dependees) {
-         * Result(t, minLocalImmutability)
-         * } else**/ //For debugging purposes
                 InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values, c)
             }
         }

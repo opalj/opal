@@ -107,7 +107,6 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                 case epk ⇒ {
                     InterimResult(t, MutableType_new, DeepImmutableType, Seq(epk), c)
                 }
-                //InterimResult(t, MutableType, ImmutableType, Seq(epk), c)
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]
@@ -116,12 +115,12 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
 
             val resultToMatch2 = ps(t, ClassImmutability_new.key)
             resultToMatch2 match {
-                case FinalP(DeepImmutableClass) ⇒ //ImmutableObject) =>
-                case FinalP(MutableClass) ⇒ //(_: MutableObject) =>
-                    return Result(t, MutableType_new); //MutableType);
-                case FinalP(ShallowImmutableClass) ⇒ //ImmutableContainer) =>
-                    joinedImmutability = ShallowImmutableType // ImmutableContainerType
-                    maxImmutability = ShallowImmutableType //ImmutableContainerType
+                case FinalP(DeepImmutableClass) ⇒
+                case FinalP(MutableClass) ⇒
+                    return Result(t, MutableType_new);
+                case FinalP(ShallowImmutableClass) ⇒
+                    joinedImmutability = ShallowImmutableType
+                    maxImmutability = ShallowImmutableType
                 case FinalP(DependentImmutableClass) ⇒
                     joinedImmutability = DependentImmutableType
                     maxImmutability = DependentImmutableType
@@ -138,13 +137,13 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
 
             directSubtypes foreach { subtype ⇒
                 ps(subtype, TypeImmutability_new.key) match {
-                    case FinalP(DeepImmutableType) ⇒ //ImmutableType) =>
-                    case UBP(MutableType_new) ⇒ //MutableType) =>
-                        return Result(t, MutableType_new); //MutableType);
+                    case FinalP(DeepImmutableType) ⇒
+                    case UBP(MutableType_new) ⇒
+                        return Result(t, MutableType_new);
 
-                    case FinalP(ShallowImmutableType) ⇒ //ImmutableContainerType) =>
-                        joinedImmutability = joinedImmutability.meet(ShallowImmutableType) //ImmutableContainerType)
-                        maxImmutability = ShallowImmutableType //ImmutableContainerType
+                    case FinalP(ShallowImmutableType) ⇒
+                        joinedImmutability = joinedImmutability.meet(ShallowImmutableType)
+                        maxImmutability = ShallowImmutableType
 
                     case FinalP(DependentImmutableType) ⇒
                         joinedImmutability = joinedImmutability.meet(DependentImmutableType)
@@ -156,7 +155,7 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                         dependencies += ((subtype, eps))
 
                     case epk ⇒
-                        joinedImmutability = MutableType_new //MutableType
+                        joinedImmutability = MutableType_new
                         dependencies += ((subtype, epk))
                 }
             }
@@ -164,8 +163,8 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
             if (dependencies.isEmpty) {
                 Result(t, maxImmutability)
             } else if (joinedImmutability == maxImmutability) {
-                // E.g., as soon as one subtype is an ImmutableContainer, we are at most
-                // ImmutableContainer, even if all other subtype may even be immutable!
+                // E.g., as soon as one subtype is shallow immutable, we are at most
+                // shallow immutable, even if all other subtype may even be deep immutable!
                 Result(t, joinedImmutability)
             } else {
                 // when we reach this point, we have dependencies to types for which
@@ -193,12 +192,12 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                                             joinedImmutability = joinedImmutability.meet(lb.correspondingTypeImmutability)
                                     }
                                 else {
-                                    joinedImmutability = MutableType_new //MutableType
+                                    joinedImmutability = MutableType_new
                                     continue = false
                                 }
                             }
                             if (joinedImmutability == maxImmutability) {
-                                assert(maxImmutability == ShallowImmutableType) //ImmutableContainerType)
+                                assert(maxImmutability == ShallowImmutableType)
                                 Result(t, maxImmutability)
                             } else {
                                 InterimResult(
@@ -213,19 +212,18 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                     }
 
                     (eps: @unchecked) match {
-                        case FinalEP(e, DeepImmutableType | DeepImmutableClass) ⇒ //ImmutableType | ImmutableObject) =>
+                        case FinalEP(e, DeepImmutableType | DeepImmutableClass) ⇒
                             dependencies = dependencies - e
                             nextResult()
 
-                        case UBP(x) if (x == MutableType_new || x == MutableClass) ⇒ //MutableType | _: MutableObject) =>
+                        case UBP(x) if (x == MutableType_new || x == MutableClass) ⇒
                             Result(t, MutableType_new) //MutableType)
 
-                        case FinalEP(e, x) if (x == ShallowImmutableType || x == ShallowImmutableClass) ⇒ //ImmutableContainerType | ImmutableContainer) =>
-                            maxImmutability = ShallowImmutableType //ImmutableContainerType
+                        case FinalEP(e, x) if (x == ShallowImmutableType || x == ShallowImmutableClass) ⇒
+                            maxImmutability = ShallowImmutableType
                             dependencies = dependencies - e
                             nextResult()
                         case FinalEP(e, DependentImmutableClass | DependentImmutableType) ⇒ {
-                            //if (x == DependentImmutableClass() || x == DependentImmutableType) => {
                             maxImmutability = DependentImmutableType
                             dependencies = dependencies - e
                             nextResult()
