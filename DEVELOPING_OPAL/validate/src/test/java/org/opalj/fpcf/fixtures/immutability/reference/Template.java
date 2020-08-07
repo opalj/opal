@@ -1,9 +1,9 @@
 package org.opalj.fpcf.fixtures.immutability.reference;
 
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeReferenceAnnotation;
+//import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeReferenceAnnotation;
 
 public class Template {
-    @LazyInitializedNotThreadSafeReferenceAnnotation("")
+    //@LazyInitializedNotThreadSafeReferenceAnnotation("")
     private Template _template;
     private Template _parent;
 

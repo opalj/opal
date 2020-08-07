@@ -39,6 +39,9 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
+/**
+ * Encompasses the base function used in the [[L0ReferenceImmutabilityAnalysis]]
+ */
 trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
 
     type V = DUVar[ValueInformation]
@@ -49,17 +52,16 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     case class State(
-            field:                                  Field,
-            var referenceImmutability:              ReferenceImmutability                           = ImmutableReference,
-            var prematurelyReadDependee:            Option[EOptionP[Field, FieldPrematurelyRead]]   = None,
-            var purityDependees:                    Set[EOptionP[DeclaredMethod, Purity]]           = Set.empty,
-            var lazyInitInvocation:                 Option[(DeclaredMethod, PC)]                    = None,
-            var calleesDependee:                    Option[EOptionP[DeclaredMethod, Callees]]       = None,
-            var referenceImmutabilityDependees:     Set[EOptionP[Field, ReferenceImmutability]]     = Set.empty,
-            var escapeDependees:                    Set[EOptionP[DefinitionSite, EscapeProperty]]   = Set.empty,
-            var tacDependees:                       Map[Method, (EOptionP[Method, TACAI], PCs)]     = Map.empty,
-            var typeDependees:                      Set[EOptionP[ObjectType, TypeImmutability_new]] = Set.empty,
-            var lazyInitializerIsDeterministicFlag: Boolean                                         = false
+            field:                              Field,
+            var referenceImmutability:          ReferenceImmutability                           = ImmutableReference,
+            var prematurelyReadDependee:        Option[EOptionP[Field, FieldPrematurelyRead]]   = None,
+            var purityDependees:                Set[EOptionP[DeclaredMethod, Purity]]           = Set.empty,
+            var lazyInitInvocation:             Option[(DeclaredMethod, PC)]                    = None,
+            var calleesDependee:                Option[EOptionP[DeclaredMethod, Callees]]       = None,
+            var referenceImmutabilityDependees: Set[EOptionP[Field, ReferenceImmutability]]     = Set.empty,
+            var escapeDependees:                Set[EOptionP[DefinitionSite, EscapeProperty]]   = Set.empty,
+            var tacDependees:                   Map[Method, (EOptionP[Method, TACAI], PCs)]     = Map.empty,
+            var typeDependees:                  Set[EOptionP[ObjectType, TypeImmutability_new]] = Set.empty
     ) {
         def hasDependees: Boolean = {
             prematurelyReadDependee.isDefined || purityDependees.nonEmpty ||
@@ -84,7 +86,7 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
             case finalEP: FinalEP[Method, TACAI] ⇒
                 finalEP.ub.tac
             case epk ⇒
-                state.tacDependees += method -> ((epk, pcs)) // + alle pcs die schon existieren
+                state.tacDependees += method -> ((epk, pcs))
                 None
         }
     }
@@ -115,7 +117,6 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
         val resultIsNonDeterministic = !isNonDeterministic(
             propertyStoreResult
         )
-        println("result is non Deterministic: "+resultIsNonDeterministic)
         val result = (method.descriptor.parametersCount == 0 && resultIsNonDeterministic)
         result
     }

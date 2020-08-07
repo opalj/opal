@@ -1,6 +1,5 @@
-package org.opalj.fpcf.fixtures.immutability.field;
+package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.class_immutability.DeepImmutableClassAnnotation;
 import org.opalj.fpcf.properties.class_immutability.MutableClassAnnotation;
 import org.opalj.fpcf.properties.field_immutability.DeepImmutableFieldAnnotation;
 import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;

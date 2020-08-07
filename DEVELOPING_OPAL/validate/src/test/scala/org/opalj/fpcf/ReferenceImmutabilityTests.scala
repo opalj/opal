@@ -32,7 +32,7 @@ class ReferenceImmutabilityTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability") ///sandbox5")
+        List("org/opalj/fpcf/fixtures/immutability")
     }
 
     override def init(p: Project[URL]): Unit = {

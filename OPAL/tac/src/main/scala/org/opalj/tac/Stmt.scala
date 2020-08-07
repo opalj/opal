@@ -90,6 +90,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def isMonitorExit: Boolean = false
     def isPutStatic: Boolean = false
     def isPutField: Boolean = false
+    def isNop: Boolean = false
 }
 
 /**
@@ -486,6 +487,7 @@ object Return {
 case class Nop(pc: Int) extends SimpleStmt {
 
     final override def asNop: this.type = this
+    final override def isNop: Boolean = true
     final override def astID: Int = Nop.ASTID
     final override def forallSubExpressions[W >: Nothing <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean =
         true

@@ -250,7 +250,7 @@ object Immutability {
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
         //References
-        var mutableReferences = propertyStore
+        val mutableReferences = propertyStore
             .finalEntities(MutableReference)
             .filter(x ⇒ allfieldsInProjectClassFiles.contains(x.asInstanceOf[Field]))
             .toList
@@ -266,7 +266,7 @@ object Immutability {
             .toList
             .sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString)
 
-        val notThreadSafeOrNotDeterministicLazyInitialization = propertyStore
+        val notThreadSafeLazyInitialization = propertyStore
             .finalEntities(LazyInitializedNotThreadSafeReference)
             .toList
             .sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString)
@@ -282,7 +282,7 @@ object Immutability {
             .sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString)
 
         //Test....
-        mutableReferences = mutableReferences ++ notThreadSafeOrNotDeterministicLazyInitialization
+        //mutableReferences = mutableReferences ++ notThreadSafeLazyInitialization
         // for comparison reasons
         if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.References) {
             stringBuilderResults.append(s"""
@@ -290,7 +290,7 @@ object Immutability {
 | ${mutableReferences.mkString("|| mutable Reference \n")}
 |
 | lazy initalized not thread safe and not deterministic references:
-| ${notThreadSafeOrNotDeterministicLazyInitialization.sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString).mkString("|| no ts & n dt ref\n")}
+| ${notThreadSafeLazyInitialization.sortWith((e1: Entity, e2: Entity) ⇒ e1.toString < e2.toString).mkString("|| no ts & n dt ref\n")}
 |
 | lazy initialized not thread safe but deterministic references:
 | ${lazyInitializedReferencesNotThreadSafeButDeterministic.mkString("|| li no ts b dt\n")}
@@ -444,7 +444,7 @@ object Immutability {
             stringBuilderAmounts.append(
                 s"""
    | mutable References: ${mutableReferences.size}
-   | lazy initialized not thread safe or not deterministic ref.: ${notThreadSafeOrNotDeterministicLazyInitialization.size}
+   | lazy initialized not thread safe ref.: ${notThreadSafeLazyInitialization.size}
    | lazy initialization not thread safe but deterministic: ${lazyInitializedReferencesNotThreadSafeButDeterministic.size}
    | lazy initialization thread safe: ${lazyInitializedReferencesThreadSafe.size}
    | immutable references: ${immutableReferences.size}
@@ -537,9 +537,9 @@ object Immutability {
                 s"${if (resultsFolder != null) resultsFolder.toAbsolutePath.toString else "."}"+
                     s""+
                     s"/${analysis.toString}_${calendar.get(Calendar.YEAR)}_"+
-                    s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
+                    s"${(calendar.get(Calendar.MONTH) + 1)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
                     s"${calendar.get(Calendar.HOUR_OF_DAY)}_${calendar.get(Calendar.MINUTE)}_"+
-                    s"${calendar.get(Calendar.MILLISECOND)}_${numThreads}Threads.txt"
+                    s"${calendar.get(Calendar.SECOND)}_${numThreads}Threads.txt"
             )
             file.createNewFile()
             val bw = new BufferedWriter(new FileWriter(file))
@@ -606,7 +606,7 @@ object Immutability {
                     else if (result == "Classes")
                         analysis = RunningAnalyses.Classes
                     else if (result == "Types")
-                        analysis = RunningAnalyses.Fields
+                        analysis = RunningAnalyses.Types
                     else throw new IllegalArgumentException(s"unknown parameter: $result")
                 }
                 case "-threads" ⇒ numThreads = readNextArg().toInt

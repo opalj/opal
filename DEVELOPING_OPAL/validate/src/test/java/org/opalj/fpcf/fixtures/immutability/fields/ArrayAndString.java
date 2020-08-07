@@ -1,8 +1,6 @@
-package org.opalj.fpcf.fixtures.immutability.field;
+package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.br.fpcf.properties.DependentImmutableField;
 import org.opalj.fpcf.properties.field_immutability.DeepImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.field_immutability.DependentImmutableFieldAnnotation;
 import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
 
 public class ArrayAndString<T> {

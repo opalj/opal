@@ -24,8 +24,10 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
  */
 class FieldImmutabilityTests extends PropertiesTest {
 
+    override def withRT = true
+
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability") ///sandbox")
+        List("org/opalj/fpcf/fixtures/immutability")
     }
 
     override def init(p: Project[URL]): Unit = {
