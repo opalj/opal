@@ -116,6 +116,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asNew: New = throw new ClassCastException();
     def isNewArray: Boolean = false
     def asNewArray: NewArray[V] = throw new ClassCastException();
+    def isArrayLoad: Boolean = false
     def asArrayLoad: ArrayLoad[V] = throw new ClassCastException();
     def asArrayLength: ArrayLength[V] = throw new ClassCastException();
     def isFieldRead: Boolean = false
@@ -544,6 +545,7 @@ object NewArray { final val ASTID = -18 }
 case class ArrayLoad[+V <: Var[V]](pc: PC, index: Expr[V], arrayRef: Expr[V]) extends ArrayExpr[V] {
 
     final override def asArrayLoad: this.type = this
+    final override def isArrayLoad: Boolean = true
     final override def astID: Int = ArrayLoad.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeReference
     final override def isSideEffectFree: Boolean = false

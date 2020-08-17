@@ -288,15 +288,32 @@ println("propertystore result: "+propertyStoreResultFieldImmutability) */
     } */
                 /*if(write.value.asVar.definedBy.head>0) {
    val f = write.value.asVar.definedBy.head
-}*/
+}*/ /**/
+                /*println(
+                    s"""
+                     | (domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) : ${(domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId))}
+                     | (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex): ${(guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)}
+                     | write.value.asVar.definedBy.size > 0: ${write.value.asVar.definedBy.size > 0}
+                     | checkWriteIsDeterministic(code(write.value.asVar.definedBy.iterator.filter(n ⇒ n >= 0).toList.head).asAssignment, method, code): ${checkWriteIsDeterministic(code(write.value.asVar.definedBy.iterator.filter(n ⇒ n >= 0).toList.head).asAssignment, method, code)}
+                     | write.value.asVar.definedBy: ${write.value.asVar.definedBy.map(code(_)).mkString(", \n")}
+                     |""".stripMargin
+                ) */
 
                 if ((domTree.strictlyDominates(guardedBB.nodeId, writeBB.nodeId) ||
-                    (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) && write.value.asVar.definedBy.size > 0 &&
+                    (guardedBB == writeBB && afterGuardRecognizedTheDefaultValueIndex < writeIndex)) &&
+                    write.value.asVar.definedBy.size >= 0 &&
                     (( //IsDeepImmutable //state.field.isFinal ||write.value.asVar.definedBy.head > -1
                         !write.value.asVar.definedBy.iterator.filter(n ⇒ n >= 0).toList.isEmpty &&
                         checkWriteIsDeterministic(code(write.value.asVar.definedBy.iterator.filter(n ⇒ n >= 0).toList.head).asAssignment, method, code)
                     ))) {
                     //LazyInitializedNotThreadSafeReference
+                    println("-----------------------------------------------------------------------------Aui")
+                    println(
+                        s"""
+                           | noInterferingExceptions: $noInterferingExceptions
+                           | comp type: ${state.field.fieldType.computationalType}
+                           |""".stripMargin
+                    )
                     if (noInterferingExceptions) {
                         if (state.field.fieldType.computationalType != ComputationalTypeInt &&
                             state.field.fieldType.computationalType != ComputationalTypeFloat) {
@@ -762,53 +779,84 @@ exception.asCaughtException.origins.flatMap { origin =>
         }
 
         val value = origin.expr
-        val isNonConstDeterministic = value.astID match {
-            case GetStatic.ASTID | GetField.ASTID ⇒
-                value.asFieldRead.resolveField(p) match {
-                    case Some(field) ⇒
-                        state.field == field || isImmutableReference(propertyStore(field, ReferenceImmutability.key))
-                    case _ ⇒ // Unknown field
+        println("value.astID: "+value.astID)
+        def isNonConstDeterministic(value: Expr[V]): Boolean = { //val isNonConstDeterministic =
+            println("value: "+value)
+            value.astID match {
+                //case ⇒
+                case GetStatic.ASTID | GetField.ASTID ⇒
+                    value.asFieldRead.resolveField(p) match {
+                        case Some(field) ⇒
+                            state.field == field || isImmutableReference(propertyStore(field, ReferenceImmutability.key))
+                        case _ ⇒ // Unknown field
+                            false
+                    }
+                case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
+                    // If the value originates from a call, that call must be deterministic and may not
+                    // have any non constant parameters to guarantee that it is the same on every
+                    // invocation. The receiver object must be the 'this' self reference for the same
+                    // reason.
+                    if (value.asFunctionCall.allParams.exists(!isConstant(_))) {
                         false
-                }
-            case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
-                // If the value originates from a call, that call must be deterministic and may not
-                // have any non constant parameters to guarantee that it is the same on every
-                // invocation. The receiver object must be the 'this' self reference for the same
-                // reason.
-                if (value.asFunctionCall.allParams.exists(!isConstant(_))) {
-                    false
-                } else {
-                    state.lazyInitInvocation = Some((declaredMethods(method), origin.pc))
-                    true
-                }
-            case NewArray.ASTID ⇒
-                //TODO after holiday origin.targetVar.usedBy.iterator.filter(i ⇒ code(i).isArrayStore).map(i ⇒ code(i).asArrayStore).
-                //TODO    foreach(arrayStore ⇒ println("arraystore: "+arrayStore))
-                origin.targetVar.usedBy.iterator.filter(i ⇒ code(i).isArrayStore).map(i ⇒ code(i).asArrayStore).
-                    forall(arrayStore ⇒ isConstant(arrayStore.value))
+                    } else {
+                        state.lazyInitInvocation = Some((declaredMethods(method), origin.pc))
+                        true
+                    }
+                case NewArray.ASTID ⇒
+                    //TODO after holiday origin.targetVar.usedBy.iterator.filter(i ⇒ code(i).isArrayStore).map(i ⇒ code(i).asArrayStore).
+                    //TODO    foreach(arrayStore ⇒ println("arraystore: "+arrayStore))
+                    /*println("used bys: ")
+                    println("target var: "+origin.targetVar)
+                    println("ub: "+origin.targetVar.usedBy)
+                    origin.targetVar.usedBy.foreach(i ⇒ println(code(i)))
+                    origin.targetVar.usedBy.iterator.filter(i ⇒ code(i).isArrayStore).map(i ⇒ code(i).asArrayStore).
+                        foreach(arrayStore ⇒ println(
+                            s"""
+                         | arraystorevalue: ${arrayStore.value}
+                         | isConst: ${isConstant(arrayStore.value)}
+                         | isNonConstDeterministic: ${isNonConstDeterministic(arrayStore.value): Boolean}
+                         |""".stripMargin
+                        ))
 
-            case _ if value.isNew ⇒ {
+                    origin.targetVar.usedBy.iterator.filter(i ⇒ code(i).isArrayStore).map(i ⇒ code(i).asArrayStore).
+                        forall(arrayStore ⇒ isNonConstDeterministic(arrayStore.value)) */
+                    true //
+                case _ if value.isVar ⇒ {
+                    val varValue = value.asVar
+                    println("value.asVar: def by")
+                    varValue.definedBy.forall(i ⇒
 
-                val nonVirtualFunctionCallIndex =
-                    origin.asAssignment.targetVar.usedBy.iterator.filter(i ⇒ code(i).isNonVirtualMethodCall).toList.head
-                origin.asAssignment.targetVar.usedBy.size == 2 &&
-                    code(nonVirtualFunctionCallIndex).asNonVirtualMethodCall.params.forall(isConstant(_))
+                        i >= 0 && code(i).isAssignment && isNonConstDeterministic(code(i).asAssignment.expr))
+                    // println(code(i)))
+                    //varValue.definedBy.forall(i ⇒isNonConstDeterministic(code(i)))
+                    //false
+                }
+                /* case Assignment.ASTID ⇒ {
+
+                }*/
+                case _ if value.isNew ⇒ {
+                    println(origin.asAssignment.targetVar.usedBy.map(code(_)).mkString(", \n"))
+                    val nonVirtualFunctionCallIndex =
+                        origin.asAssignment.targetVar.usedBy.iterator.filter(i ⇒ code(i).isNonVirtualMethodCall).toList.head
+                    origin.asAssignment.targetVar.usedBy.size == 2 &&
+                        code(nonVirtualFunctionCallIndex).asNonVirtualMethodCall.params.forall(isConstant(_))
+                }
+                case _ ⇒
+                    // The value neither is a constant nor originates from a call, but if the
+                    // current method does not take parameters and is deterministic, the value is
+                    // guaranteed to be the same on every invocation.
+                    lazyInitializerIsDeterministic(method, code)
             }
-            case _ ⇒
-                // The value neither is a constant nor originates from a call, but if the
-                // current method does not take parameters and is deterministic, the value is
-                // guaranteed to be the same on every invocation.
-                lazyInitializerIsDeterministic(method, code)
         }
         println(
             s"""
        | value.isConst : ${value.isConst}
-       | isNonConstDeterminstic: $isNonConstDeterministic
+       | isNonConstDeterminstic: ${isNonConstDeterministic(value)}
        |
        |""".stripMargin
         )
 
-        val result = value.isConst || isNonConstDeterministic
+        val result = value.isConst || isNonConstDeterministic(value)
         println("check write is deterministic result: "+result)
         result
     }

@@ -369,17 +369,44 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             val propStoreResult = propertyStore(definitionSites(method, assignment.pc), EscapeProperty.key)
                             val handleEscapePropertyResult = handleEscapeProperty(propStoreResult)
                             if (handleEscapePropertyResult) {
-
+                                println("escapes1")
                                 state.noEscapePossibilityViaReference = false
                             }
                             for {
                                 index ← useSites
                             } {
                                 val fieldsUseSiteStmt = taCode.stmts(index)
+                                println("useSiteStmt: "+fieldsUseSiteStmt)
+                                if (fieldsUseSiteStmt.isAssignment) {
+                                    val assignment = fieldsUseSiteStmt.asAssignment
+                                    if (assignment.expr.isArrayLoad) {
+                                        import org.opalj.value.ASArrayValue
+                                        val arrayLoad = assignment.expr.asArrayLoad
 
-                                if (!fieldsUseSiteStmt.isMonitorEnter &&
+                                        //arrayLoad.arrayRef.asVar.value.isArrayValue.
+                                        if (arrayLoad.arrayRef.asVar.value.toCanonicalForm.isInstanceOf[ASArrayValue]) {
+                                            val innerArrayType = arrayLoad.arrayRef.asVar.value.toCanonicalForm.asInstanceOf[ASArrayValue].theUpperTypeBound.componentType
+                                            if (innerArrayType.isObjectType) {
+                                                val propertyStoreResultInnerArrayType = propertyStore(innerArrayType, TypeImmutability_new.key)
+                                                println("propertyStoreResult: "+propertyStoreResultInnerArrayType)
+                                                propertyStoreResultInnerArrayType match {
+                                                    case FinalP(DeepImmutableType) ⇒ //nothing to to
+                                                    case FinalP(_)                 ⇒ state.noEscapePossibilityViaReference = false
+                                                    case ep                        ⇒ state.dependencies += ep
+                                                }
+                                            } else if (innerArrayType.isArrayType) {
+                                                state.noEscapePossibilityViaReference = false // to be sound
+                                            } else {} // primitive type -> nothing to do
+
+                                            //println("array ref: "+)
+                                            // ASArrayValue(typ, isNull = , isPrecise = )
+                                            //println("array value: "+arrayLoad.arrayRef.asVar.value.asArrayValue)
+                                        } else state.noEscapePossibilityViaReference = false
+                                    } else state.noEscapePossibilityViaReference = false
+                                } else if (!fieldsUseSiteStmt.isMonitorEnter &&
                                     !fieldsUseSiteStmt.isMonitorExit &&
                                     !fieldsUseSiteStmt.isIf) {
+                                    println("escapes2")
 
                                     state.noEscapePossibilityViaReference = false
                                 }
@@ -388,11 +415,11 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             //is ignored
                             // The value is only read but not assigned to another one
                         } else {
-
+                            println("escapes3")
                             state.noEscapePossibilityViaReference = false
                         }
                     } else {
-
+                        println("escapes4")
                         state.noEscapePossibilityViaReference = false
                     }
                 }
@@ -411,7 +438,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             p.asVar.definedBy.size != 1 ||
                                 p.asVar.definedBy.head < 0 ||
                                 !tacCode.stmts(p.asVar.definedBy.head).asAssignment.expr.isConst)) {
-
+                        println("escapes5")
                         state.noEscapePossibilityViaReference = false
                     }
                 }
@@ -426,7 +453,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             param.asVar.definedBy.foreach(
                                 index ⇒
                                     if (index < 0) {
-
+                                        println("escapes6")
                                         state.noEscapePossibilityViaReference = false
                                     } else {
                                         val paramDefinitionStmt = tacCode.stmts(index)
@@ -438,8 +465,9 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                 val propertyStoreResult = propertyStore(field.get, FieldImmutability.key)
                                                 propertyStoreResult match {
                                                     case FinalP(DeepImmutableField) ⇒ //nothing to do  here
-                                                    case FinalP(_)                  ⇒ state.noEscapePossibilityViaReference = false
-                                                    case ep                         ⇒ state.dependencies += ep
+                                                    case FinalP(_) ⇒
+                                                        println("escapes7"); state.noEscapePossibilityViaReference = false
+                                                    case ep ⇒ state.dependencies += ep
                                                 }
 
                                             } else if (assignmentExpression.isNew) {
@@ -453,13 +481,16 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                             handleNonVirtualMethodCall(method, stmt.asNonVirtualMethodCall, tacCode)
                                                         }
                                                     } else {
-
+                                                        println("escapes8")
                                                         state.noEscapePossibilityViaReference = false
                                                     }
                                                 }
                                                 //}
+                                            } else if (assignmentExpression.isConst) {
+                                                //nothing to do
                                             } else {
-
+                                                println("Assignmentexpr: "+assignmentExpression)
+                                                println("escapes9")
                                                 state.noEscapePossibilityViaReference = false
                                             }
 
@@ -479,14 +510,14 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                                             } else if (stmt.isArrayStore) {
                                                 //val arrayStore = stmt.asArrayStore
-
+                                                println("escapes10")
                                                 state.noEscapePossibilityViaReference = false //TODO handling that case more precise
                                             } //else if // other cases that the purity analysis can not handle
                                             else {
                                                 val propertyStoreResult =
                                                     propertyStore(definitionSitesOfParam, EscapeProperty.key)
                                                 if (handleEscapeProperty(propertyStoreResult)) {
-
+                                                    println("escapes11")
                                                     state.noEscapePossibilityViaReference = false
                                                 }
                                             }
@@ -511,52 +542,57 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         putDefinitionSites = putStatic.value.asVar.definedBy
                         value = putStatic.value
                     } else {
-
+                        println("escapes12")
                         state.noEscapePossibilityViaReference = false
                     }
                     val index = value.asVar.definedBy.head
                     if (value.asVar.value.isArrayValue == Yes) {
-                        tacCode.stmts(index).asAssignment.targetVar.usedBy.foreach(x ⇒ {
-                            val arrayStmt = tacCode.stmts(x)
-                            if (arrayStmt != putStmt)
-                                if (arrayStmt.isArrayStore) {
-                                    val arrayStore = arrayStmt.asArrayStore
-                                    val arrayStoreIndex = arrayStore.index
-                                    val isArrayIndexConst =
-                                        tacCode.stmts(arrayStoreIndex.asVar.definedBy.head).asAssignment.expr.isConst
-                                    val assignedValue = arrayStore.value
-                                    val valueAssignment = tacCode.stmts(assignedValue.asVar.definedBy.head).asAssignment
-                                    val assignedExpr = valueAssignment.expr
-                                    if (!isArrayIndexConst) {
-                                        state.noEscapePossibilityViaReference = false
-                                    } else if (assignedExpr.isStaticFunctionCall) {
-                                        handleStaticFunctionCall(assignedExpr.asStaticFunctionCall, tacCode)
-                                    } else if (assignedExpr.isNew) {
-                                        //val newExpression = assignedExpr.asNew
-                                        valueAssignment.targetVar.asVar.usedBy.foreach(index ⇒ {
-                                            val tmpStmt = tacCode.stmts(index)
-                                            if (tmpStmt.isArrayStore) {
-                                                // can be ingored
-                                            } else if (tmpStmt.isNonVirtualMethodCall) {
-                                                val nonVirtualMethodcall = tmpStmt.asNonVirtualMethodCall
-                                                if (!seen.contains(tmpStmt)) {
-                                                    seen += tmpStmt
-                                                    handleNonVirtualMethodCall(method, nonVirtualMethodcall, tacCode)
-                                                } //nothing to do in the else case. Stmt was still handled
+                        if (index >= 0) {
+                            tacCode.stmts(index).asAssignment.targetVar.usedBy.foreach(x ⇒ {
+                                val arrayStmt = tacCode.stmts(x)
+                                if (arrayStmt != putStmt)
+                                    if (arrayStmt.isArrayStore) {
+                                        val arrayStore = arrayStmt.asArrayStore
+                                        val arrayStoreIndex = arrayStore.index
+                                        val isArrayIndexConst =
+                                            tacCode.stmts(arrayStoreIndex.asVar.definedBy.head).asAssignment.expr.isConst
+                                        val assignedValue = arrayStore.value
+                                        if (assignedValue.asVar.definedBy.head >= 0) {
+                                            val valueAssignment = tacCode.stmts(assignedValue.asVar.definedBy.head).asAssignment
+                                            val assignedExpr = valueAssignment.expr
+                                            if (!isArrayIndexConst) {
+                                                println("escapes13")
+                                                state.noEscapePossibilityViaReference = false
+                                            } else if (assignedExpr.isStaticFunctionCall) {
+                                                handleStaticFunctionCall(assignedExpr.asStaticFunctionCall, tacCode)
+                                            } else if (assignedExpr.isNew) {
+                                                //val newExpression = assignedExpr.asNew
+                                                valueAssignment.targetVar.asVar.usedBy.foreach(index ⇒ {
+                                                    val tmpStmt = tacCode.stmts(index)
+                                                    if (tmpStmt.isArrayStore) {
+                                                        // can be ingored
+                                                    } else if (tmpStmt.isNonVirtualMethodCall) {
+                                                        val nonVirtualMethodcall = tmpStmt.asNonVirtualMethodCall
+                                                        if (!seen.contains(tmpStmt)) {
+                                                            seen += tmpStmt
+                                                            handleNonVirtualMethodCall(method, nonVirtualMethodcall, tacCode)
+                                                        } //nothing to do in the else case. Stmt was still handled
+                                                    } else {
+                                                        println("escapes14")
+                                                        state.noEscapePossibilityViaReference = false
+                                                    }
+                                                })
                                             } else {
-
+                                                println("escapes15")
                                                 state.noEscapePossibilityViaReference = false
                                             }
-                                        })
+                                        }
                                     } else {
-
+                                        println("escapes16")
                                         state.noEscapePossibilityViaReference = false
                                     }
-                                } else {
-
-                                    state.noEscapePossibilityViaReference = false
-                                }
-                        })
+                            })
+                        } else state.noEscapePossibilityViaReference = false
                     } else
                         for {
                             i ← putDefinitionSites
@@ -574,7 +610,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                             val nonVirtualMethodCall = definitionSiteVarUseSiteStmt.asNonVirtualMethodCall
                                             handleNonVirtualMethodCall(method, nonVirtualMethodCall, tacCode)
                                         } else {
-
+                                            println("escapes17")
                                             state.noEscapePossibilityViaReference = false
                                         }
                                         //TODO andere Fälle bedenken
@@ -589,7 +625,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                 if (!seen.contains(tmpStmt))
                                                     handleNonVirtualMethodCall(method, tmpStmt.asNonVirtualMethodCall, tacCode)
                                             } else {
-
+                                                println("escapes18")
                                                 state.noEscapePossibilityViaReference = false
                                             }
                                         })
@@ -617,11 +653,11 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                     checkPuts(useSiteStmt, method, tacCode)
                                                 }
                                             } else if (useSiteStmt.isAssignment) {
-
+                                                println("escapes19")
                                                 state.noEscapePossibilityViaReference = false //TODO
                                                 //val assignment = stmt.asAssignment
                                             } else {
-
+                                                println("escapes20")
                                                 state.noEscapePossibilityViaReference = false
                                             }
                                         }
@@ -630,16 +666,17 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                     //TODO escape analyse für Object
                                     // else ; aktuelles putfield bedenken
                                 } else if (!definitionSiteAssignment.expr.isConst) {
-
+                                    println("escapes21")
                                     state.noEscapePossibilityViaReference = false
                                 }
                             } else {
-
+                                println("escapes22")
                                 state.noEscapePossibilityViaReference = false
                             }
                         }
                 }
                 // start of method check field writes
+                println("escapes23")
                 state.noEscapePossibilityViaReference = field.isPrivate
                 for {
                     (method, pcs) ← fieldAccessInformation.writeAccesses(field)
@@ -656,7 +693,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         }
 
                     } else {
-
+                        println("escapes24")
                         state.noEscapePossibilityViaReference = false
                     }
                 }
