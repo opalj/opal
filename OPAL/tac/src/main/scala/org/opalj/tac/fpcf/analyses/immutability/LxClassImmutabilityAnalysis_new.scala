@@ -110,7 +110,7 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
                 case Some(scf) ⇒
                     nextComputations ::= (
                         (
-                            determineClassImmutability_new(t, cfMutability, cfMutabilityIsFinal, false) _,
+                            determineClassImmutability_new(t, cfMutability, cfMutabilityIsFinal, lazyComputation = false) _,
                             scf
                         )
                     )

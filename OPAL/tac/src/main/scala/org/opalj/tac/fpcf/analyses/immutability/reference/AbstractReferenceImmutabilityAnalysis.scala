@@ -40,7 +40,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
 
 /**
- * Encompasses the base function used in the [[L0ReferenceImmutabilityAnalysis]]
+ * Encompasses the base functions used in the [[L0ReferenceImmutabilityAnalysis]]
  */
 trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
 
@@ -112,17 +112,15 @@ trait AbstractReferenceImmutabilityAnalysis extends FPCFAnalysis {
         method: Method,
         code:   Array[Stmt[V]]
     )(implicit state: State): Boolean = {
-
         val propertyStoreResult = propertyStore(declaredMethods(method), Purity.key)
         val resultIsNonDeterministic = !isNonDeterministic(
             propertyStoreResult
         )
-        val result = (method.descriptor.parametersCount == 0 && resultIsNonDeterministic)
-        result
+        method.descriptor.parametersCount == 0 && resultIsNonDeterministic
     }
 
     /**
-     * Checkes if the field the value assigned to a (potentially) lazily initialized field is final,
+     * Checks if the field the value assigned to a (potentially) lazily initialized field is final,
      * ensuring that the same value is written even for concurrent executions.
      */
     def isImmutableReference(

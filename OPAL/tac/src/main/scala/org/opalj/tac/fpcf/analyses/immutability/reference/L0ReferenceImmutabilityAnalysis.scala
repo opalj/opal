@@ -84,13 +84,18 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     with AbstractReferenceImmutabilityAnalysis
     with FPCFAnalysis {
 
-    def doDetermineReferenceImmutability(entity: Entity): PropertyComputationResult =
+    def doDetermineReferenceImmutability(entity: Entity): PropertyComputationResult = {
         entity match {
-            case field: Field ⇒ determineReferenceImmutability(field)
+            case field: Field ⇒ {
+                //if (!field.isPublic || !field.isProtected)
+                //    return Result(field, MutableReference)
+                determineReferenceImmutability(field)
+            }
             case _ ⇒
                 val m = entity.getClass.getSimpleName+" is not an org.opalj.br.Field"
                 throw new IllegalArgumentException(m)
         }
+    }
 
     /**
      * Analyzes the immutability fields references.
@@ -105,10 +110,14 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
 
         if (field.isFinal)
             return Result(field, ImmutableReference);
+
         if (field.isPublic)
             return Result(field, MutableReference);
 
         implicit val state: State = State(field)
+
+        // if (field.isPublic && field.isPackagePrivate) {
+
         state.referenceImmutability = ImmutableReference
         val thisType = field.classFile.thisType
 
@@ -148,11 +157,13 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             if (!field.isFinal)
                 return Result(field, MutableReference)
         }
+
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             taCode ← getTACAI(method, pcs)
         } {
-            if (methodUpdatesField(method, taCode, pcs)) {
+            /*val tmp = method*/
+            if ( /*tmp == method ||*/ methodUpdatesField(method, taCode, pcs)) {
                 return Result(field, MutableReference);
             }
         }
@@ -160,6 +171,9 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             val calleesEOP = propertyStore(state.lazyInitInvocation.get._1, Callees.key)
             handleCalls(calleesEOP)
         }
+
+        // }
+
         createResult()
     }
 
@@ -256,7 +270,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         eps.pk match {
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
-                state.escapeDependees = state.escapeDependees.filter(_.e ne newEP.e)
+                state.escapeDependees = state.escapeDependees.iterator.filter(_.e ne newEP.e).toSet
                 isNotFinal = handleEscapeProperty(newEP)
             case TACAI.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
@@ -275,7 +289,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                 isNotFinal = isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
             case Purity.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]
-                state.purityDependees = state.purityDependees.filter(_.e ne newEP.e)
+                state.purityDependees = state.purityDependees.iterator.filter(_.e ne newEP.e).toSet
                 val nonDeterministicResult = isNonDeterministic(newEP)
                 //if (!r) state.referenceImmutability = LazyInitializedReference
                 //if (state.referenceImmutability != LazyInitializedNotThreadSafeReference &&
@@ -286,7 +300,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             case ReferenceImmutability.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Field, ReferenceImmutability]]
                 state.referenceImmutabilityDependees =
-                    state.referenceImmutabilityDependees.filter(_.e ne newEP.e)
+                    state.referenceImmutabilityDependees.iterator.filter(_.e ne newEP.e).toSet
                 isNotFinal = !isImmutableReference(newEP)
         }
         if (isNotFinal)
@@ -475,7 +489,7 @@ object EagerL0ReferenceImmutabilityAnalysis
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0ReferenceImmutabilityAnalysis(p)
-        val fields = p.allFields // p.allProjectClassFiles.flatMap(_.fields) //TODO allFields
+        val fields = p.allFields // p.allProjectClassFiles.flatMap(_.fields) //TODO p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineReferenceImmutability)
         analysis
     }
