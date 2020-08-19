@@ -91,6 +91,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def isPutStatic: Boolean = false
     def isPutField: Boolean = false
     def isNop: Boolean = false
+    def isReturnValue: Boolean = false
 }
 
 /**
@@ -402,6 +403,7 @@ object Assignment {
 case class ReturnValue[+V <: Var[V]](pc: Int, expr: Expr[V]) extends Stmt[V] {
 
     final override def asReturnValue: this.type = this
+    final override def isReturnValue: Boolean = true
     final override def astID: Int = ReturnValue.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         p(expr)
