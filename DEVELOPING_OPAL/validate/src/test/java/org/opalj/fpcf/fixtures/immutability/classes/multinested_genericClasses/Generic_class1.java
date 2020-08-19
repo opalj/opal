@@ -276,6 +276,6 @@ final class TestTest<T1,T2 extends FinalEmptyClass,T3,T4,T5> {
 
 }
 
-class SimpleMutableClass { public int n = 0;}
-final class FinalEmptyClass {}
+//class SimpleMutableClass { public int n = 0;}
+//final class FinalEmptyClass {}
 
