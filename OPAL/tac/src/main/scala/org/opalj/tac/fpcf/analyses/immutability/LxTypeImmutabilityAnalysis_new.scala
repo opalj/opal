@@ -66,13 +66,15 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
         typeExtensibility: ObjectType ⇒ Answer
     )(
         t: ObjectType
-    ): ProperPropertyComputationResult = {
-        typeExtensibility(t) match {
-            case Yes | Unknown ⇒
-                Result(t, MutableType_new) // MutableType)
-            case No ⇒ step2(t)
+    ): ProperPropertyComputationResult =
+        {
+            val te = typeExtensibility(t)
+            te match {
+                case Yes | Unknown ⇒
+                    Result(t, MutableType_new) // MutableType)
+                case No ⇒ step2(t)
+            }
         }
-    }
 
     def step2(t: ObjectType): ProperPropertyComputationResult = {
         val directSubtypes = classHierarchy.directSubtypesOf(t)
@@ -270,9 +272,10 @@ object EagerLxTypeImmutabilityAnalysis_new
     override def start(project: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val typeExtensibility = project.get(TypeExtensibilityKey)
         val analysis = new LxTypeImmutabilityAnalysis_new(project)
-        val allProjectClassFilesIterator = project.allProjectClassFiles
-        val types = allProjectClassFilesIterator.filter(_.thisType ne ObjectType.Object).map(_.thisType)
-
+        //val allProjectClassFilesIterator = project.allProjectClassFiles
+        //val types = allProjectClassFilesIterator.filter(_.thisType ne ObjectType.Object).map(_.thisType)
+        //
+        val types = project.allClassFiles.iterator.filter(_.thisType ne ObjectType.Object).map(_.thisType)
         ps.scheduleEagerComputationsForEntities(types) {
             analysis.step1(typeExtensibility)
         }

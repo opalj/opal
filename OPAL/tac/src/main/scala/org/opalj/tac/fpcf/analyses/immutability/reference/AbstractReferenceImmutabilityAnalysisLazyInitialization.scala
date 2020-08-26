@@ -3,14 +3,10 @@ package org.opalj.tac.fpcf.analyses.immutability.reference
 
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
-import org.opalj.ai.isImmediateVMException
-import org.opalj.ai.pcOfImmediateVMException
-import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.Method
 import org.opalj.br.PC
-import org.opalj.br.PCs
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
@@ -118,7 +114,6 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             }
         }
         val guardedBB = cfg.bb(afterGuardRecognizedTheDefaultValueIndex)
-
         val reads = fieldAccessInformation.readAccesses(state.field)
         if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
             return MutableReference;
@@ -145,7 +140,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             }
         } else {
             val monitorResult: ((Option[Int], Option[Int]), (Option[CFGNode], Option[CFGNode])) =
-                findMonitorCaughtsAndThrowsAndResult(writeIndex, defaultValue, code, cfg, tacCode)
+                findMonitors(writeIndex, defaultValue, code, cfg, tacCode)
             if ((monitorResult._1._1.isDefined && monitorResult._1._2.isDefined && monitorResult._2._1.isDefined)
                 &&
                 (
@@ -223,7 +218,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         (exceptions, throwStatements, returnNode)
     }
 
-    def findMonitorCaughtsAndThrowsAndResult(
+    def findMonitors(
         fieldWrite:   Int,
         defaultValue: Any,
         code:         Array[Stmt[V]],
@@ -244,7 +239,7 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         ): Boolean = {
             v.definedBy.iterator
                 .filter(i ⇒ {
-                    if (i > 0) {
+                    if (i >= 0) {
                         val stmt = tacCode.stmts(i)
                         stmt match {
                             case Assignment(pc1, DVar(useSites, value), cc @ ClassConst(_, constant)) ⇒ {
@@ -433,70 +428,6 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
     }
 
     /**
-     * Checks if the field write is only executed if the field's value was still the default value.
-     * Also, no exceptions may be thrown between the guarding if-Statement of a lazy initialization
-     * and the field write.
-     */
-    def checkWriteIsGuarded(
-        writeIndex:   Int,
-        guardIndex:   Int,
-        guardedIndex: Int,
-        method:       Method,
-        code:         Array[Stmt[V]],
-        cfg:          CFG[Stmt[V], TACStmts[V]]
-    )(implicit state: State): Boolean = {
-        val startBB = cfg.bb(writeIndex).asBasicBlock
-        var enqueuedBBs: Set[CFGNode] = Set(startBB)
-        var worklist: List[BasicBlock] = List(startBB.asBasicBlock)
-
-        val abnormalReturnNode = cfg.abnormalReturnNode
-
-        val caughtExceptions = code.iterator
-            .filter { stmt ⇒
-                stmt.astID == CaughtException.ASTID
-            }
-            .flatMap { exception ⇒
-                exception.asCaughtException.origins.iterator.map { origin: Int ⇒
-                    if (isImmediateVMException(origin)) {
-                        pcOfImmediateVMException(origin)
-                    } else {
-                        pcOfMethodExternalException(origin)
-                    }
-                }
-            }
-            .toSet
-        while (worklist.nonEmpty) {
-            val curBB = worklist.head
-            worklist = worklist.tail
-            val startPC = curBB.startPC
-            val endPC = curBB.endPC
-            if (startPC == 0 || startPC == guardedIndex)
-                return false; // Reached method start or wrong branch of guarding if-Statement
-            // Exception thrown between guard and write, which is ok for deterministic methods,
-            // but may be a problem otherwise as the initialization is not guaranteed to happen
-            // (or never happen).
-            if ((curBB ne startBB) && abnormalReturnNode.predecessors.contains(curBB)) {
-                if (!lazyInitializerIsDeterministic(method, code)) {
-                    return false;
-                }
-            }
-            // Exception thrown between guard and write (caught somewhere, but we don't care)
-            if ((curBB ne startBB) & caughtExceptions.contains(endPC)) {
-                if (!lazyInitializerIsDeterministic(method, code)) {
-                    return false;
-                }
-
-            }
-            // Check all predecessors except for the one that contains the guarding if-Statement
-            val predecessors =
-                getPredecessors(curBB, enqueuedBBs).iterator.filterNot(_.endPC == guardIndex).toList
-            worklist ++= predecessors
-            enqueuedBBs ++= predecessors
-        }
-        true
-    }
-
-    /**
      * Gets all predecessor BasicBlocks of a CFGNode.
      */
     def getPredecessors(node: CFGNode, visited: Set[CFGNode]): List[BasicBlock] = {
@@ -606,70 +537,9 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
     }
 
     /**
-     * Checks that all non-dead field reads that are not used for the guarding if-Statement of a
-     * lazy initialization are only executed if the field did not have its default value or after
-     * the (single) field write.
-     */
-    def checkReads(
-        reads:        Seq[(Method, PCs)],
-        readIndex:    Int,
-        guardedIndex: Int,
-        writeIndex:   Int,
-        cfg:          CFG[Stmt[V], TACStmts[V]],
-        pcToIndex:    Array[Int]
-    ): Boolean = {
-        // There is only a single method with reads aside from initializers (checked by
-        // isLazilyInitialized), so we have to check only reads from that one method.
-        reads.iterator.filter(!_._1.isInitializer).toList.head._2 forall { readPC: Int ⇒
-            val index = pcToIndex(readPC)
-            index != -1 || index == readIndex || checkRead(index, guardedIndex, writeIndex, cfg)
-        }
-    }
-
-    /**
-     * Checks that a field read is only executed if the field did not have its default value or
-     * after the (single) field write.
-     */
-    def checkRead(
-        readIndex:    Int,
-        guardedIndex: Int,
-        writeIndex:   Int,
-        cfg:          CFG[Stmt[V], TACStmts[V]]
-    ): Boolean = {
-        val startBB = cfg.bb(readIndex).asBasicBlock
-        val writeBB = cfg.bb(writeIndex)
-
-        var enqueuedBBs: Set[CFGNode] = Set(startBB)
-        var worklist: List[BasicBlock] = List(startBB.asBasicBlock)
-
-        while (worklist.nonEmpty) {
-            val curBB = worklist.head
-            worklist = worklist.tail
-
-            val startPC = curBB.startPC
-
-            if (startPC == 0)
-                return false; // Reached the start of the method but not the guard or field write
-
-            if ((curBB eq writeBB) && writeIndex > readIndex)
-                return false; // In the basic block of the write, but before the write
-
-            if (startPC != guardedIndex && // Did not reach the guard
-                (curBB ne writeBB) /* Not the basic block of the write */ ) {
-                val predecessors = getPredecessors(curBB, enqueuedBBs)
-                worklist ++= predecessors
-                enqueuedBBs ++= predecessors
-            }
-        }
-
-        true
-    }
-
-    /**
      * Checks if an expression is a field read of the currently analyzed field.
      * For instance fields, the read must be on the `this` reference.
      */
-
     def isReadOfCurrentField(expr: Expr[V], tacCode: TACode[TACMethodParameter, V])(implicit state: State): Boolean = {
         var seenExpressions: Set[Expr[V]] = Set.empty
         def _isReadOfCurrentField(expr: Expr[V], tacCode: TACode[TACMethodParameter, V])(implicit state: State): Boolean = {
@@ -714,7 +584,6 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                 case VirtualFunctionCall.ASTID ⇒ {
                     val virtualFunctionCall = expr.asVirtualFunctionCall
                     val receiverDefSites = virtualFunctionCall.receiver.asVar.definedBy
-                    //TODO better check of these functions
                     for {
                         defSite ← receiverDefSites
                     } {
@@ -807,9 +676,12 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
         } else {
             false
         }
-        // true //TODO check
     }
 
+    /**
+     *
+     * Checks that the value of the field is returned.
+     */
     def checkThatTheValueOfTheFieldIsReturned(
         write:      FieldWriteAccessStmt[V],
         writeIndex: Int,
@@ -834,15 +706,14 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
                     if (returnValueDefs.size == 2 &&
                         returnValueDefs.contains(write.value.asVar.definedBy.head) &&
                         returnValueDefs.contains(readIndex)) {
-                        return true
-                    }; // direct return of the written value
+                        return true;
+                    } // direct return of the written value
                     else if (load >= 0 && (returnValueDefs == IntTrieSet(load) ||
                         returnValueDefs == IntTrieSet(readIndex, load))) {
-                        return true
-                    }; // return of field value loaded by field read
-                    else {
-                        return false
-                    }; // return of different value
+                        return true;
+                    } // return of field value loaded by field read
+                    else
+                        return false; // return of different value
                 case _ ⇒ ;
             }
             index += 1

@@ -52,6 +52,10 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.SelfReferenceParameter
 import scala.annotation.switch
 import org.opalj.br.ReferenceType
+import org.opalj.br.CharType
+import org.opalj.br.DoubleType
+import org.opalj.br.LongType
+import org.opalj.br.ObjectType
 
 /**
  *
@@ -87,8 +91,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     def doDetermineReferenceImmutability(entity: Entity): PropertyComputationResult = {
         entity match {
             case field: Field ⇒ {
-                //if (!field.isPublic || !field.isProtected)
-                //    return Result(field, MutableReference)
                 determineReferenceImmutability(field)
             }
             case _ ⇒
@@ -107,17 +109,11 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     private[analyses] def determineReferenceImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
-
         if (field.isFinal)
             return Result(field, ImmutableReference);
-
         if (field.isPublic)
             return Result(field, MutableReference);
-
         implicit val state: State = State(field)
-
-        // if (field.isPublic && field.isPackagePrivate) {
-
         state.referenceImmutability = ImmutableReference
         val thisType = field.classFile.thisType
 
@@ -125,7 +121,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key))) {
             return Result(field, MutableReference)
         };
-
         // Collect all classes that have access to the field, i.e. the declaring class and possibly
         // classes in the same package as well as subclasses
         // Give up if the set of classes having access to the field is not closed
@@ -153,17 +148,14 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             }
         // If there are native methods, we give up
         if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
-            //state.notEscapes = false
             if (!field.isFinal)
                 return Result(field, MutableReference)
         }
-
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             taCode ← getTACAI(method, pcs)
         } {
-            /*val tmp = method*/
-            if ( /*tmp == method ||*/ methodUpdatesField(method, taCode, pcs)) {
+            if (methodUpdatesField(method, taCode, pcs)) {
                 return Result(field, MutableReference);
             }
         }
@@ -171,9 +163,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
             val calleesEOP = propertyStore(state.lazyInitInvocation.get._1, Callees.key)
             handleCalls(calleesEOP)
         }
-
-        // }
-
         createResult()
     }
 
@@ -199,13 +188,12 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     def handleCallees(callees: Callees)(implicit state: State): Boolean = {
         val pc = state.lazyInitInvocation.get._2
         if (callees.isIncompleteCallSite(pc)) {
-
-            state.referenceImmutability = MutableReference //LazyInitializedNotThreadSafeReference //TODO //MutableReference //NonFinalFieldByAnalysis
+            state.referenceImmutability = MutableReference //NonFinalFieldByAnalysis
             true
         } else {
             val targets = callees.callees(pc)
             if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
-                state.referenceImmutability = MutableReference //LazyInitializedNotThreadSafeReference //MutableReference //NonFinalFieldByAnalysis
+                state.referenceImmutability = MutableReference //NonFinalFieldByAnalysis
                 true
             } else false
         }
@@ -216,10 +204,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
      * values.
      */
     def getDefaultValue()(implicit state: State): Option[Any] = {
-        import org.opalj.br.CharType
-        import org.opalj.br.DoubleType
-        import org.opalj.br.LongType
-        import org.opalj.br.ObjectType
 
         state.field.fieldType match {
             case ObjectType.Integer
@@ -319,15 +303,9 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     )(implicit state: State): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
-        val staticAddition = {
-            if (method.isStatic)
-                1
-            else
-                0
-        }
         for (pc ← pcs.iterator) {
             val index = taCode.pcToIndex(pc)
-            if (index > (-1 + staticAddition)) { //TODO unnötig
+            if (index > -1) { //TODO actually, unnecessary but required because there are '-1'
                 val stmt = stmts(index)
                 if (stmt.pc == pc) {
                     (stmt.astID: @switch) match {
@@ -360,7 +338,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
 
                                     // A field written outside an initializer must be lazily
                                     // initialized or it is non-final
-
                                     val result = handleLazyInitialization(
                                         index,
                                         defaultValue.get,
@@ -389,8 +366,6 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                                 }
 
                             }
-                        //TODO assignment statement ...
-                        //case Assignment.
                         case _ ⇒ throw new RuntimeException("unexpected field access");
                     }
                 } else {
@@ -402,7 +377,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
     }
 
     /**
-     * f
+     *
      * Checks whether the object reference of a PutField does escape (except for being returned).
      */
     def referenceHasEscaped(
@@ -410,18 +385,16 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         stmts:  Array[Stmt[V]],
         method: Method
     )(implicit state: State): Boolean = {
-
         ref.definedBy.forall { defSite ⇒
-            if (defSite < 0) true // Must be locally created
+            if (defSite < 0) true
+            // Must be locally created
             else {
                 val definition = stmts(defSite).asAssignment
                 // Must either be null or freshly allocated
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
                 else {
-                    val escape =
-                        propertyStore(definitionSites(method, definition.pc), EscapeProperty.key)
-                    handleEscapeProperty(escape)
+                    handleEscapeProperty(propertyStore(definitionSites(method, definition.pc), EscapeProperty.key))
                 }
             }
         }
@@ -489,7 +462,7 @@ object EagerL0ReferenceImmutabilityAnalysis
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0ReferenceImmutabilityAnalysis(p)
-        val fields = p.allFields // p.allProjectClassFiles.flatMap(_.fields) //TODO p.allFields
+        val fields = p.allProjectClassFiles.flatMap(_.fields) //p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineReferenceImmutability)
         analysis
     }

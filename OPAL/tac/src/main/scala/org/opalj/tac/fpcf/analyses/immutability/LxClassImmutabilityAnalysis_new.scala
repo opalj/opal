@@ -549,7 +549,7 @@ object EagerLxClassImmutabilityAnalysis_new
         ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineClassImmutability_new(
                 superClassType = null,
-                FinalEP(ObjectType.Object, DeepImmutableClass), //ImmutableObject),
+                FinalEP(ObjectType.Object, DeepImmutableClass),
                 superClassMutabilityIsFinal = true,
                 lazyComputation = false
             )
@@ -560,7 +560,6 @@ object EagerLxClassImmutabilityAnalysis_new
 
 /**
  * Scheduler to run the immutability analysis lazily.
- * @author Tobias Peter Roth
  * @author Michael Eichberg
  */
 object LazyLxClassImmutabilityAnalysis_new
