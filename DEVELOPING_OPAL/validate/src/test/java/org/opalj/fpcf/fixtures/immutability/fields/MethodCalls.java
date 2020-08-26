@@ -13,31 +13,16 @@ public class MethodCalls {
     @LazyInitializedThreadSafeReferenceAnnotation("")
     private TestMutable tm1;
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private TestMutable tm2;
-
-    @MutableFieldAnnotation("")
-    @LazyInitializedNotThreadSafeReferenceAnnotation("")
-    private TestMutable tm3;
-
-    @MutableReferenceAnnotation("")
-    @MutableFieldAnnotation("")
-    private TestMutable tm4;
-
-    @ShallowImmutableFieldAnnotation("")
-    private TestMutable tm5;
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private TestMutable tm6 = new TestMutable();
-
     public synchronized void getTM1(){
         if(tm1==null){
             tm1= new TestMutable();
         }
         tm1.nop();
     }
+
+    @ShallowImmutableFieldAnnotation("")
+    @LazyInitializedThreadSafeReferenceAnnotation("")
+    private TestMutable tm2;
 
     public synchronized TestMutable getTM2(){
         if(tm2==null){
@@ -46,11 +31,19 @@ public class MethodCalls {
         return tm2;
     }
 
+    @MutableFieldAnnotation("")
+    @LazyInitializedNotThreadSafeReferenceAnnotation("")
+    private TestMutable tm3;
+
     public void getTm3() {
         if(tm3==null){
             tm3 = new TestMutable();
         }
     }
+
+    @MutableReferenceAnnotation("")
+    @MutableFieldAnnotation("")
+    private TestMutable tm4;
 
     public synchronized TestMutable getTm4() {
         if(tm4==null){
@@ -58,18 +51,43 @@ public class MethodCalls {
         }
         return tm4;
     }
+
     public synchronized TestMutable getTm42() {
         if(tm4==null){
             tm4 = new TestMutable();
         }
         return tm4;
     }
+
+    @ShallowImmutableFieldAnnotation("")
+    private TestMutable tm5;
+
     public synchronized void getTm5() {
         if(tm5==null){
             tm5 = new TestMutable();
         }
         tm5.nop();
     }
+
+    @DeepImmutableFieldAnnotation("")
+    @ImmutableReferenceAnnotation("")
+    private TestMutable tm6 = new TestMutable();
+
+    @ShallowImmutableFieldAnnotation("")
+    @ImmutableReferenceAnnotation("")
+    private TestMutable tm7 = new TestMutable();
+
+    public void foo(){
+        tm7.nop();
+    }
+
+
+
+
+
+
+
+
 }
 
 class TestMutable{

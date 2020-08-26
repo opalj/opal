@@ -127,7 +127,7 @@ class GenericNotEscapesMutualEscapeDependencyAbleToResolve{
 @DependentImmutableClassAnnotation("")
 class SimpleGenericClass<T> {
     @DependentImmutableFieldAnnotation(value = "", genericString = "T")
-    T t;
+    private T t;
     SimpleGenericClass(T t){
         this.t = t;
     }

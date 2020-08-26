@@ -141,7 +141,7 @@ class DCLwithEarlyReturns {
 class DCL5 {
 
     @LazyInitializedThreadSafeReferenceAnnotation("")
-    DCL5 instance;
+    private DCL5 instance;
 
     public DCL5 DCL5(){
         if(instance==null){
@@ -364,7 +364,7 @@ class DoubleCheckedLockingClass19 {
 
 class ArrayLazyInitializationNotThreadSafe {
     @LazyInitializedNotThreadSafeReferenceAnnotation("During the initialization phase there is no lock")
-    int[] values;
+    private int[] values;
 
     public int[] getValues(){
         if(values==null){
@@ -376,7 +376,7 @@ class ArrayLazyInitializationNotThreadSafe {
 
 class ArrayLazyInitializationThreadSafe {
     @LazyInitializedThreadSafeReferenceAnnotation("it is a lock via the synchronized method")
-    int[] values;
+    private int[] values;
 
     public synchronized  int[] getValues(){
         if(values==null){

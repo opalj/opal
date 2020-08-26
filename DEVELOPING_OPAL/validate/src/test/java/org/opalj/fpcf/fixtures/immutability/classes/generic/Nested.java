@@ -25,7 +25,7 @@ class Complex<T>{
     }
 }
 
-class GenericClass<T> {
+final class GenericClass<T> {
     @DependentImmutableFieldAnnotation(value = "", genericString = "T")
     private T t;
     public GenericClass(T t){
