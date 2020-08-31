@@ -3,8 +3,10 @@ package org.opalj.fpcf
 
 import java.net.URL
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+import org.opalj.BaseConfig
 import org.opalj.ai.domain.l2
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
@@ -18,6 +20,9 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.reference.LazyL0ReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
+import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 /**
  * Tests the Type Immutability Analysis with the new lattice
@@ -27,13 +32,42 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
 class TypeImmutabilityTests extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability/sandbox")
+        List("org/opalj/fpcf/fixtures/immutability")
+    }
+
+    override def createConfig(): Config = {
+        import com.typesafe.config.ConfigValueFactory.fromAnyRef
+        val configForEntryPoints = BaseConfig.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+
+        configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+            .withValue(
+                "org.opalj.br.analyses.cg.ClosedPackagesKey",
+                fromAnyRef("org.opalj.br.analyses.cg.OpenCodeBase")
+            )
+            .withValue("org.opalj.br.analyses.cg.ClassExtensibilityKey", ConfigValueFactory.fromAnyRef(
+                "org.opalj.br.analyses.cg.ConfiguredExtensibleClasses"
+            ))
     }
 
     override def init(p: Project[URL]): Unit = {
+
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
             Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
         }
+
         p.get(RTACallGraphKey)
     }
 
@@ -45,7 +79,6 @@ class TypeImmutabilityTests extends PropertiesTest {
      * }
      */
     describe("the org.opalj.fpcf.analyses.LxTypeImmutabilityAnalysis_new is executed") {
-        println(1)
         val as = executeAnalyses(
             Set(
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
@@ -67,6 +100,6 @@ class TypeImmutabilityTests extends PropertiesTest {
             // fieldsWithAnnotations(as.project),
             classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability_new")
-        ) //TODO class files ... with annotation
+        )
     }
 }

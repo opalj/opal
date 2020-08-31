@@ -86,6 +86,7 @@ object Immutability {
         isLibrary:             Boolean,
         closedWorldAssumption: Boolean
     ): BasicReport = {
+        import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 
         OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
@@ -215,6 +216,13 @@ object Immutability {
             analysesManager.project.get(RTACallGraphKey)
         } { t ⇒ callGraphTime = t.toSeconds }
 
+        analysesManager.project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+            import java.net.URL
+
+            import org.opalj.ai.domain
+            //Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
+            Set[Class[_ <: AnyRef]](classOf[domain.l1.DefaultDomainWithCFGAndDefUse[URL]])
+        }
         //val propertyStore = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
 
         project.getOrCreateProjectInformationKeyInitializationData(
@@ -499,7 +507,6 @@ object Immutability {
             | with $numThreads threads
             |""".stripMargin
         )
-        // ${stringBuilderResults.toString()}
         println(
             s"""
 |
@@ -512,24 +519,6 @@ object Immutability {
 |""".stripMargin
         )
         println("resultsfolder: "+resultsFolder)
-        //
-        /*val l = mutableReferences.filter(x ⇒ !mutableFields.toSet.contains(x))
-        println(
-            s"""
-             | mut reference not contained in mutable fields:
-             | ${l.head}
-             |
-             |
-             |  field imm:
-             |  ${
-                import org.opalj.br.fpcf.properties.FieldImmutability
-                import org.opalj.br.fpcf.properties.ReferenceImmutability
-                propertyStore(l.head, ReferenceImmutability.key).toString+"/n"+
-                    propertyStore(l.head, FieldImmutability.key).toString
-            }
-             |""".stripMargin
-
-        )*/
 
         val calendar = Calendar.getInstance()
         if (resultsFolder != null) {
@@ -628,7 +617,7 @@ object Immutability {
             }
             i += 1
         }
-        evaluate(cp, analysis, numThreads, projectDir, libDir, resultFolder, timeEvaluation, threadEvaluation, isLibrary, withoutJDK, closedWorldAssumption)
+        evaluate(cp, analysis, numThreads, projectDir, libDir, resultFolder, timeEvaluation, threadEvaluation, withoutJDK, isLibrary, closedWorldAssumption)
     }
 }
 

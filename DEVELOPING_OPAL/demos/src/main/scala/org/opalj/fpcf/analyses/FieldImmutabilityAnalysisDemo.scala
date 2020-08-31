@@ -1,11 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.analyses
 
-import java.io.BufferedWriter
-import java.io.FileWriter
-import java.io.File
 import java.net.URL
-import java.util.Calendar
 
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
@@ -54,6 +50,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
+        import org.opalj.bytecode.JRELibraryFolder
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -135,7 +132,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
          | took : $analysisTime seconds
          |""".stripMargin
         )
-        val calendar = Calendar.getInstance()
+        /*val calendar = Calendar.getInstance()
         val file = new File(
             s"C:/MA/results/fieldImm_withNewPurity_${calendar.get(Calendar.YEAR)}_"+
                 s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
@@ -145,10 +142,11 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val bw = new BufferedWriter(new FileWriter(file))
         bw.write(sb.toString())
-        bw.close()
-
+        bw.close() */
+        println("xxx: "+JRELibraryFolder)
         s"""
        | took : $analysisTime seconds
        |""".stripMargin
+
     }
 }
