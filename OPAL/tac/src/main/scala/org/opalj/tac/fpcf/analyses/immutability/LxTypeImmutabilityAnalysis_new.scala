@@ -125,7 +125,8 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                     maxImmutability = ShallowImmutableType
                 case FinalP(DependentImmutableClass) ⇒
                     joinedImmutability = DependentImmutableType
-                    maxImmutability = DependentImmutableType
+                    if (maxImmutability != ShallowImmutableType)
+                        maxImmutability = DependentImmutableType
 
                 case eps @ InterimLUBP(lb, ub) ⇒
                     joinedImmutability = lb.correspondingTypeImmutability
@@ -149,7 +150,8 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
 
                     case FinalP(DependentImmutableType) ⇒
                         joinedImmutability = joinedImmutability.meet(DependentImmutableType)
-                        maxImmutability = DependentImmutableType
+                        if (maxImmutability != ShallowImmutableType)
+                            maxImmutability = DependentImmutableType
 
                     case eps @ InterimLUBP(subtypeLB, subtypeUB) ⇒
                         joinedImmutability = joinedImmutability.meet(subtypeLB)
@@ -226,7 +228,8 @@ class LxTypeImmutabilityAnalysis_new( final val project: SomeProject) extends FP
                             dependencies = dependencies - e
                             nextResult()
                         case FinalEP(e, DependentImmutableClass | DependentImmutableType) ⇒ {
-                            maxImmutability = DependentImmutableType
+                            if (maxImmutability != ShallowImmutableType)
+                                maxImmutability = DependentImmutableType
                             dependencies = dependencies - e
                             nextResult()
                         }

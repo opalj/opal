@@ -24,13 +24,13 @@ import org.opalj.br.fpcf.properties.ShallowImmutableClass
 import org.opalj.br.fpcf.properties.ShallowImmutableField
 import org.opalj.fpcf.ELBP
 import org.opalj.fpcf.EOptionP
-import org.opalj.fpcf.EPK
+
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.IncrementalResult
-import org.opalj.fpcf.InterimE
+
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.LBP
 import org.opalj.fpcf.LUBP
@@ -232,6 +232,8 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
 
         fieldsPropertyStoreInformation.foreach(
             f ⇒ {
+                import org.opalj.fpcf.EPK
+                import org.opalj.fpcf.InterimE
                 f match {
                     case FinalP(MutableField) ⇒ {
                         if (lazyComputation)
@@ -332,7 +334,8 @@ class LxClassImmutabilityAnalysis_new(val project: SomeProject) extends FPCFAnal
 
                 case UBP(DependentImmutableClass) ⇒
                     if (someEPS.isFinal) dependees -= SuperClassKey
-                    maxLocalImmutability = DependentImmutableClass
+                    if (maxLocalImmutability != ShallowImmutableClass)
+                        maxLocalImmutability = DependentImmutableClass
 
                 case LBP(ShallowImmutableClass) ⇒ // super class is a least shallow immutable
                     if (minLocalImmutability != ShallowImmutableClass &&
