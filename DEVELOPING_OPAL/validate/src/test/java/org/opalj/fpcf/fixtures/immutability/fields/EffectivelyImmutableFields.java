@@ -334,7 +334,7 @@ public class EffectivelyImmutableFields {
             o2 = new Object();
     }
 
-    @ShallowImmutableFieldAnnotation("")
+    @DeepImmutableFieldAnnotation("The concrete type of the object that is assigned is known")
     @LazyInitializedThreadSafeReferenceAnnotation("")
     private Object o3;
 
@@ -371,7 +371,7 @@ public class EffectivelyImmutableFields {
         linkedList3.add(new Object());
     }
 
-    @ShallowImmutableFieldAnnotation("")
+    @DeepImmutableFieldAnnotation("The concrete type of the object that is assigned is known")
     @LazyInitializedThreadSafeReferenceAnnotation("")
     private Object linkedList4;
 
