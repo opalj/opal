@@ -395,6 +395,8 @@ object Immutability {
                | deep immutable classes:
                | ${deepImmutableClasses.mkString(" || deep immutable classes \n")}
                |
+               | deep immutable interfaces:
+               | ${deepImmutableClassesInterfaces.mkString(" || deep immutable interfaces \n")}
                |""".stripMargin
             )
         }
@@ -478,6 +480,7 @@ object Immutability {
    | shallow immutable classes: ${shallowImmutableClasses.size}
    | dependent immutable classes: ${dependentImmutableClasses.size}
    | deep immutable classes: ${deepImmutableClasses.size}
+   | deep immutable interfaces: ${deepImmutableClassesInterfaces.size}
    | classes: ${allProjectClassFilesIterator.size}
    |
    |""".stripMargin
@@ -490,7 +493,7 @@ object Immutability {
     | shallow immutable types: ${shallowImmutableTypes.size}
     | dependent immutable types: ${dependentImmutableTypes.size}
     | deep immutable types: ${deepImmutableTypes.size}
-    |
+    | types: ${allProjectClassTypes.size}
     |""".stripMargin
             )
 
@@ -535,6 +538,8 @@ object Immutability {
             bw.write(s""" ${stringBuilderResults.toString()}
                       |
                       | ${stringBuilderAmounts.toString()}
+                      |
+                      | jdk folder: $JRELibraryFolder
                       |"""".stripMargin)
             bw.close()
         }
