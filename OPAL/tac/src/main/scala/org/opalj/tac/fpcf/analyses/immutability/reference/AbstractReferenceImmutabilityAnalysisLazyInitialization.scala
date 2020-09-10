@@ -114,6 +114,11 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             }
         }
         val guardedBB = cfg.bb(afterGuardRecognizedTheDefaultValueIndex)
+        val elseBB = cfg.bb(guardedIndex)
+
+        if (isTransitivePredecessorsOf(elseBB, writeBB, Set.empty)) //succsrs.toSet.contains(writeBB))
+            return MutableReference;
+
         val reads = fieldAccessInformation.readAccesses(state.field)
         if (reads.exists(mAndPCs ⇒ (mAndPCs._1 ne method) && !mAndPCs._1.isInitializer)) {
             return MutableReference;
@@ -438,6 +443,23 @@ trait AbstractReferenceImmutabilityAnalysisLazyInitialization
             else getPredecessors(curNode, visited)
         }
         result.toList
+    }
+
+    def isTransitivePredecessorsOf(possiblePredecessor: CFGNode, node: CFGNode, visited: Set[CFGNode]): Boolean = {
+        var tmpVisited = visited + node
+        if (possiblePredecessor == node)
+            true
+        else {
+            node.predecessors.foreach(
+                currentNode ⇒ {
+                    if (!tmpVisited.contains(currentNode))
+                        if (isTransitivePredecessorsOf(possiblePredecessor, currentNode, tmpVisited))
+                            return true;
+                    tmpVisited += currentNode
+                }
+            )
+            false
+        }
     }
 
     /**
