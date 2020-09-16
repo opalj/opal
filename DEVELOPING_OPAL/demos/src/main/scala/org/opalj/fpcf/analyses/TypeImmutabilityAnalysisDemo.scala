@@ -29,8 +29,9 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerLxTypeImmutabilityAnalysis_new
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.immutability.reference.LazyL0ReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
+import java.io.IOException
 
 /**
  * Runs the EagerLxClassImmutabilityAnalysis_new as well as analysis needed for improving the result
@@ -53,6 +54,9 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
+        import org.opalj.br.fpcf.properties.TypeImmutability_new
+        import org.opalj.fpcf.EPS
+        import org.opalj.fpcf.Entity
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -63,7 +67,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                 .runAll(
                     LazyUnsoundPrematurelyReadFieldsAnalysis,
                     LazyL2PurityAnalysis_new,
-                    LazyL0ReferenceImmutabilityAnalysis,
+                    LazyL0FieldReferenceImmutabilityAnalysis,
                     LazyL0FieldImmutabilityAnalysis,
                     LazyLxClassImmutabilityAnalysis_new,
                     EagerLxTypeImmutabilityAnalysis_new,
@@ -78,76 +82,57 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         } { t ⇒
             analysisTime = t.toSeconds
         }
-        val sb: StringBuilder = new StringBuilder
-        val allProjectClassFilesIterator = project.allProjectClassFiles
-        val types =
-            allProjectClassFilesIterator.filter(_.thisType ne ObjectType.Object).map(_.thisType).toSet
-        sb.append("\nMutableTypes: \n")
-        val mutableTypes = propertyStore
-            .finalEntities(MutableType_new)
-            .filter({ x ⇒
-                types.contains(x.asInstanceOf[ObjectType])
-            })
-            .toList
-        sb.append(
-            mutableTypes
-                .map(x ⇒ x.toString+"  |Mutable Type\n")
-                .toString
-        )
-        sb.append("\nShallow Immutable Types:\n")
-        val shallowImmutableTypes = propertyStore
-            .finalEntities(ShallowImmutableType)
-            .filter({ x ⇒
-                types.contains(x.asInstanceOf[ObjectType])
-            })
-            .toList
-        sb.append(shallowImmutableTypes.map(x ⇒ x.toString+" |Shallow Immutable Type\n"))
-        sb.append("\nDependent Immutable Types: \n")
-        val dependentImmutableTypes = propertyStore
-            .finalEntities(DependentImmutableType)
-            .filter({ x ⇒
-                types.contains(x.asInstanceOf[ObjectType])
-            })
-            .toList
-        sb.append(
-            dependentImmutableTypes.map(x ⇒ x.toString+" |Dependent Immutable Type\n")
-        )
-        sb.append("\nDeep Immutable Types:\n")
-        val deepImmutableTypes = propertyStore
-            .finalEntities(DeepImmutableType)
-            .filter({ x ⇒
-                types.contains(x.asInstanceOf[ObjectType])
-            })
-            .toList
-        sb.append(deepImmutableTypes.map(x ⇒ x.toString+"  |Deep Immutable Type\n"))
-        sb.append(s"\nType immutability analysis took: $analysisTime on average")
 
-        sb.append("\n\n")
-        sb.append(
+        val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
+
+        val groupedResults = propertyStore.entities(TypeImmutability_new.key).
+            filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
+
+        val order = (eps1: EPS[Entity, TypeImmutability_new], eps2: EPS[Entity, TypeImmutability_new]) ⇒
+            eps1.e.toString < eps2.e.toString
+        val mutableTypes = groupedResults(MutableType_new).toSeq.sortWith(order)
+        val shallowImmutableTypes = groupedResults(ShallowImmutableType).toSeq.sortWith(order)
+        val dependentImmutableTypes = groupedResults(DependentImmutableType).toSeq.sortWith(order)
+        val deepImmutableTypes = groupedResults(DeepImmutableType).toSeq.sortWith(order)
+
+        val output =
             s"""
-         | mutable types: ${mutableTypes.size}
-         | shallow immutable types: ${shallowImmutableTypes.size}
-         | dependent immutable types: ${dependentImmutableTypes.size}
-         | deep immutable types: ${deepImmutableTypes.size}
-         | 
-         | sum: ${mutableTypes.size + shallowImmutableTypes.size + dependentImmutableTypes.size + deepImmutableTypes.size}
-         | took : $analysisTime seconds
-         |""".stripMargin
-        )
+           | Mutable Types:
+           | ${mutableTypes.mkString(" | Mutable Type\n")}
+           |
+           | Shallow Immutable Types:
+           | ${shallowImmutableTypes.mkString(" | Shallow Immutable Type\n")}
+           |
+           | Dependent Immutable Types:
+           | ${dependentImmutableTypes.mkString(" | Dependent Immutable Type\n")}
+           |
+           | Deep Immutable Types:
+           | ${deepImmutableTypes.mkString(" | Deep Immutable Type\n")}
+           |
+           |
+           | mutable types: ${mutableTypes.size}
+           | shallow immutable types: ${shallowImmutableTypes.size}
+           | dependent immutable types: ${dependentImmutableTypes.size}
+           | deep immutable types: ${deepImmutableTypes.size}
+           |
+           | sum: ${mutableTypes.size + shallowImmutableTypes.size + dependentImmutableTypes.size + deepImmutableTypes.size}
+           | took : $analysisTime seconds
+           |""".stripMargin
 
-        val calendar = Calendar.getInstance()
         val file = new File(
-            s"C:/MA/results/typeImm_withNewPurity_${calendar.get(Calendar.YEAR)}_"+
-                s"${calendar.get(Calendar.MONTH)}_${calendar.get(Calendar.DAY_OF_MONTH)}_"+
-                s"${calendar.get(Calendar.HOUR_OF_DAY)}_${calendar.get(Calendar.MINUTE)}_"+
-                s"${calendar.get(Calendar.MILLISECOND)}.txt"
+            s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt"
         )
-        val bw = new BufferedWriter(new FileWriter(file))
-        bw.write(sb.toString())
-        bw.close()
 
-        s"""
-       | took : $analysisTime seconds
-       |""".stripMargin
+        try {
+            val bw = new BufferedWriter(new FileWriter(file))
+            bw.write(output)
+            bw.close()
+        } catch {
+            case e: IOException ⇒
+                println(s"could not write file: ${file.getName}"); throw e
+            case _: Throwable ⇒
+        }
+
+        s" took : $analysisTime seconds"
     }
 }
