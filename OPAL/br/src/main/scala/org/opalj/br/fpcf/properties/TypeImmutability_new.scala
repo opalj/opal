@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.properties
+package org.opalj
+package br
+package fpcf
+package properties
 
 import org.opalj.fpcf.OrderedProperty
 import org.opalj.fpcf.Entity
@@ -44,9 +47,6 @@ sealed trait TypeImmutability_new
     def meet(other: TypeImmutability_new): TypeImmutability_new
 }
 
-/**
- * Common constants use by all [[TypeImmutability_new]] properties associated with methods.
- */
 object TypeImmutability_new extends TypeImmutabilityPropertyMetaInformation_new {
 
     /**
