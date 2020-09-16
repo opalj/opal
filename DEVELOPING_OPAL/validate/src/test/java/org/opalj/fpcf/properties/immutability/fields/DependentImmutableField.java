@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.field_immutability;
+package org.opalj.fpcf.properties.immutability.fields;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
@@ -17,7 +17,7 @@ import java.lang.annotation.RetentionPolicy;
 @PropertyValidator(key="FieldImmutability",validator=DependentImmutableFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface DependentImmutableFieldAnnotation {
+public @interface DependentImmutableField {
 
     /**
      * A short reasoning of this property.

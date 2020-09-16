@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.type_immutability;
+package org.opalj.fpcf.properties.immutability.types;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
@@ -10,14 +10,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state that the annotated type shallow immutable.
+ * Annotation to state that the annotated type deep immutable.
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "TypeImmutability_new", validator = ShallowImmutableTypeMatcher.class)
+@PropertyValidator(key = "TypeImmutability_new", validator = DeepImmutableTypeMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface ShallowImmutableTypeAnnotation {
+public @interface DeepImmutableType {
 
     /**
      * A short reasoning of this property.

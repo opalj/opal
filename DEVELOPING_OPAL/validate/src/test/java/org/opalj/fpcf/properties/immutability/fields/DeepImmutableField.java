@@ -1,22 +1,23 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.field_immutability;
+package org.opalj.fpcf.properties.immutability.fields;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state that the annotated field is shallow immutable
+ * Annotation to state that the annotated field is deep immutable
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key="FieldImmutability",validator=ShallowImmutableFieldMatcher.class)
+@PropertyValidator(key="FieldImmutability",validator=DeepImmutableFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface ShallowImmutableFieldAnnotation {
+public @interface DeepImmutableField {
 
     /**
      * A short reasoning of this property.
