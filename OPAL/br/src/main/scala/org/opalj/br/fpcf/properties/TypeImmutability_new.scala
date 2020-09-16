@@ -15,7 +15,7 @@ sealed trait TypeImmutabilityPropertyMetaInformation_new extends PropertyMetaInf
 }
 
 /**
- * Specifies if all instances of a respective type (this includes the instances of the
+ * Specifies whether all instances of a respective type (this includes the instances of the
  * type's subtypes) are (conditionally) immutable. Conditionally immutable means that only the
  * instance of the type itself is guaranteed to be immutable, but not all reachable objects.
  * In general, all -- so called -- immutable collections are only conditionally immutable. I.e.,
