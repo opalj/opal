@@ -49,6 +49,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     ): Stmt[DUVar[ValueInformation]]
 
     // TYPE CONVERSION METHODS
+
     def asIf: If[V] = throw new ClassCastException();
     def asGoto: Goto = throw new ClassCastException();
     def asRet: Ret = throw new ClassCastException();
@@ -67,10 +68,8 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asFieldWriteAccessStmt: FieldWriteAccessStmt[V] = throw new ClassCastException();
     def asPutStatic: PutStatic[V] = throw new ClassCastException();
     def asPutField: PutField[V] = throw new ClassCastException();
-    /*inner type*/
-    def asMethodCall: MethodCall[V] = throw new ClassCastException();
-    /*inner type*/
-    def asInstanceMethodCall: InstanceMethodCall[V] = throw new ClassCastException();
+    /*inner type*/ def asMethodCall: MethodCall[V] = throw new ClassCastException();
+    /*inner type*/ def asInstanceMethodCall: InstanceMethodCall[V] = throw new ClassCastException();
     def asNonVirtualMethodCall: NonVirtualMethodCall[V] = throw new ClassCastException();
     def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
     def asStaticMethodCall: StaticMethodCall[V] = throw new ClassCastException();
@@ -85,6 +84,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def isNonVirtualMethodCall: Boolean = false
     def isVirtualMethodCall: Boolean = false
     def isStaticMethodCall: Boolean = false
+
     def isIf: Boolean = false
     def isMonitorEnter: Boolean = false
     def isMonitorExit: Boolean = false
@@ -117,7 +117,6 @@ case class If[+V <: Var[V]](
 ) extends Stmt[V] {
 
     final override def asIf: this.type = this
-
     final override def isIf: Boolean = true
     final override def astID: Int = If.ASTID
     final def leftExpr: Expr[V] = left
