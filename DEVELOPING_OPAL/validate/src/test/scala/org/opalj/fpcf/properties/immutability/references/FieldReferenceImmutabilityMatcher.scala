@@ -1,22 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.class_immutability
+package org.opalj
+package fpcf
+package properties
+package immutability
+package references
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.ClassImmutability_new
-import org.opalj.br.fpcf.properties.DeepImmutableClass
-import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.br.fpcf.properties.ShallowImmutableClass
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
+import org.opalj.br.fpcf.properties.FieldReferenceImmutability
 
 /**
+ * This is the basis for the matchers that match the immutability of a field reference
  * @author Tobias Peter Roth
  */
-class ClassImmutabilityMatcher(val property: ClassImmutability_new)
+class FieldReferenceImmutabilityMatcher(val property: FieldReferenceImmutability)
     extends AbstractPropertyMatcher {
 
     final private val PropertyReasonID = 0
@@ -34,7 +32,6 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new)
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
-
     }
 
     def validateProperty(
@@ -44,31 +41,19 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new)
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(p ⇒ {
-            val tmpProperty =
-                p match {
-                    case DeepImmutableClass ⇒
-                        DeepImmutableClass
-                    case _ ⇒
-                        p
-                }
-
-            property == tmpProperty
-        })) { //p == property)) {
+        if (!properties.exists(p ⇒ p == property)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
             None
         }
-
     }
-
 }
 
-class MutableClassMatcher extends ClassImmutabilityMatcher(MutableClass)
+class LazyInitializedThreadSafeFieldReferenceMatcher extends FieldReferenceImmutabilityMatcher(br.fpcf.properties.LazyInitializedThreadSafeFieldReference)
 
-class DependentImmutableClassMatcher extends ClassImmutabilityMatcher(DependentImmutableClass)
+class LazyInitializedNotThreadSafeButDeterministicFieldReferenceMatcher extends FieldReferenceImmutabilityMatcher(br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference)
 
-class ShallowImmutableClassMatcher extends ClassImmutabilityMatcher(ShallowImmutableClass)
+class LazyInitializedNotThreadSafeFieldReferenceMatcher extends FieldReferenceImmutabilityMatcher(br.fpcf.properties.LazyInitializedNotThreadSafeFieldReference)
 
-class DeepImmutableClassMatcher extends ClassImmutabilityMatcher(DeepImmutableClass)
+class ImmutableFieldReferenceMatcher extends FieldReferenceImmutabilityMatcher(br.fpcf.properties.ImmutableFieldReference)

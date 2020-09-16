@@ -1,25 +1,20 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.properties.reference_immutability
+package org.opalj
+package fpcf
+package properties
+package immutability
+package fields
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.BooleanValue
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.MutableReference
-import org.opalj.br.fpcf.properties.PrematurelyReadField
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.Property
-import org.opalj.fpcf.properties.AbstractPropertyMatcher
+import org.opalj.br.fpcf.properties.FieldImmutability
 
 /**
+ * This is the basis for the matchers that match the immutability of a field
  * @author Tobias Peter Roth
  */
-class MutableReferenceMatcher extends AbstractPropertyMatcher {
-
-    val property = MutableReference
+class FieldImmutabilityMatcher(val property: FieldImmutability) extends AbstractPropertyMatcher {
 
     final private val PropertyReasonID = 0
 
@@ -35,21 +30,8 @@ class MutableReferenceMatcher extends AbstractPropertyMatcher {
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
-        if (!analyses.exists(as.contains)) return false;
+        analyses.exists(as.contains)
 
-        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead")
-            .asInstanceOf[BooleanValue]
-            .value
-
-        if (prematurelyRead) {
-            val propertyStore = p.get(PropertyStoreKey)
-            propertyStore(entity, FieldPrematurelyRead.key) match {
-                case FinalP(PrematurelyReadField) ⇒ true
-                case _                            ⇒ false
-            }
-        } else {
-            true
-        }
     }
 
     def validateProperty(
@@ -66,5 +48,12 @@ class MutableReferenceMatcher extends AbstractPropertyMatcher {
             None
         }
     }
-
 }
+
+class MutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.MutableField)
+
+class ShallowImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.ShallowImmutableField)
+
+class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DependentImmutableField)
+
+class DeepImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DeepImmutableField)
