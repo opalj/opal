@@ -41,7 +41,7 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new) extends Abst
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists(p⇒ p == property)) {
+        if (!properties.exists(p ⇒ p == property)) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs(PropertyReasonID).value.asStringValue.value)
         } else {
