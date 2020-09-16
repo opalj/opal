@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.properties
+package org.opalj
+package br
+package fpcf
+package properties
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
@@ -11,17 +14,18 @@ sealed trait ClassImmutabilityPropertyMetaInformation_new extends PropertyMetaIn
 }
 
 /**
- * Describes the class immutability of org.opalj.br.ClassFile
+ * Describes the class immutability of org.opalj.br.ClassFile.
+ * The immutability of the classes are represented via their instance fields
  *
- * [[MutableClass]] A class with minimum 1 mutable field
+ * [[MutableClass]] A class with a mutable state.
  *
- * [[DependentImmutableClass]] A class with no mutable field but with at least one generic field where the
- *  immutability depends on the generic type of the field
+ * [[ShallowImmutableClass]] A class which transitive state is not immutable but the values or objects representing
+ * this transitive state (are not / can not be) exchanged.
  *
- * [[ShallowImmutableClass]] A class with no mutable field, no field with generic type but with at least one
- *  shallow immutable field
+ * [[DependentImmutableClass]] A class that is at least shallow immutable.
+ * Whether it is shallow or deep immutable depends on generic parameters.
  *
- * [[DeepImmutableClass]] A class with only deep immutable fields
+ * [[DeepImmutableClass]] A class with a transitive immutable state.
  *
  * @author Tobias Peter Roth
  */
@@ -44,54 +48,53 @@ object ClassImmutability_new extends ClassImmutabilityPropertyMetaInformation_ne
 }
 
 case object DeepImmutableClass extends ClassImmutability_new {
-    override def correspondingTypeImmutability: TypeImmutability_new = DeepImmutableType
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
-    def meet(that: ClassImmutability_new): ClassImmutability_new =
-        if (this == that)
-            this
-        else
-            that
+  override def correspondingTypeImmutability: TypeImmutability_new = DeepImmutableType
+
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
+
+  def meet(that: ClassImmutability_new): ClassImmutability_new = that
 }
 
 case object DependentImmutableClass extends ClassImmutability_new {
 
-    override def correspondingTypeImmutability: TypeImmutability_new =
-        DependentImmutableType //TODO check
+    override def correspondingTypeImmutability: TypeImmutability_new = DependentImmutableType
 
     def meet(that: ClassImmutability_new): ClassImmutability_new =
         if (that == MutableClass || that == ShallowImmutableClass)
             that
         else
             this
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
 
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == DeepImmutableClass) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }
-
 }
 
 case object ShallowImmutableClass extends ClassImmutability_new {
+
     override def correspondingTypeImmutability: TypeImmutability_new = ShallowImmutableType
-    def meet(that: ClassImmutability_new): ClassImmutability_new =
+
+    def meet(that: ClassImmutability_new): ClassImmutability_new = {
         if (that == MutableClass)
             that
         else
             this
+    }
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == DeepImmutableClass || other == DependentImmutableClass) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }
-
 }
 
 case object MutableClass extends ClassImmutability_new {
+
     def correspondingTypeImmutability = MutableType_new
+
     def meet(other: ClassImmutability_new): ClassImmutability_new = this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
@@ -99,5 +102,4 @@ case object MutableClass extends ClassImmutability_new {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }
-
 }

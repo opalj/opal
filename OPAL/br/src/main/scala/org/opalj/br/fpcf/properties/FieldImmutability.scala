@@ -1,5 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br.fpcf.properties
+package org.opalj
+package br
+package fpcf
+package properties
 
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.OrderedProperty
@@ -7,20 +10,21 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 
 sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
-
     type Self = FieldImmutability
-
 }
 
 /**
- * Describes the field immutability of org.opalj.br.Field.
- * [[MutableField]] A field with an immutable reference
+ * Describes the field immutability of org.opalj.br.Field
  *
- * [[ShallowImmutableField]] A field with an immutable reference and a shallow immutable or mutable data type
+ * [[MutableField]] A field with a mutable field reference
  *
- * [[DependentImmutableField]] A field which immutability depends on its type.
+ * [[ShallowImmutableField]] A field with an immutable field reference and a shallow immutable or mutable data type
  *
- * [[DeepImmutableField]] A field with an immutable reference and a deep immutable field type
+ * [[DependentImmutableField]] A field with an immutable field reference and a generic type and parts of it are no
+ * substantiated in an shallow or mutable way.
+ *
+ * [[DeepImmutableField]] A field with an immutable field reference and a deep immutable field type or with an
+ * immutable field reference and a referenced object that can not escape or its state be mutated.
  *
  * @author Tobias Peter Roth
  */
@@ -44,39 +48,38 @@ object FieldImmutability extends FieldImmutabilityPropertyMetaInformation {
 }
 
 case object DeepImmutableField extends FieldImmutability {
+
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
-    def meet(that: FieldImmutability): FieldImmutability =
-        if (this == that)
-            this
-        else
-            that
+
+    def meet(that: FieldImmutability): FieldImmutability = that
 }
 
 case object DependentImmutableField extends FieldImmutability {
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
 
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == DeepImmutableField) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         }
     }
 
-    def meet(that: FieldImmutability): FieldImmutability =
+    def meet(that: FieldImmutability): FieldImmutability = {
         if (that == MutableField || that == ShallowImmutableField)
             that
         else
             this
-
+    }
 }
 
 case object ShallowImmutableField extends FieldImmutability {
-    def meet(that: FieldImmutability): FieldImmutability =
+
+    def meet(that: FieldImmutability): FieldImmutability = {
         if (that == MutableField)
             that
         else
             this
+    }
 
-    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-
+  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == DeepImmutableField || other == DependentImmutableField) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         }
@@ -92,5 +95,4 @@ case object MutableField extends FieldImmutability {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }
-
 }

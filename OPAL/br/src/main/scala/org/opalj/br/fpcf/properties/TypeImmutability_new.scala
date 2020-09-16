@@ -24,9 +24,10 @@ sealed trait TypeImmutabilityPropertyMetaInformation_new extends PropertyMetaInf
  *
  * This property is of particular interest if the precise type cannot be computed statically. This
  * property basically depends on the [[org.opalj.br.analyses.cg.TypeExtensibilityKey]] and
- * [[ClassImmutability]].
+ * [[ClassImmutability_new]].
  *
  * @author Tobias Peter Roth
+ * @author Michael Eichberg
  */
 sealed trait TypeImmutability_new
     extends OrderedProperty
@@ -71,12 +72,7 @@ case object DeepImmutableType extends TypeImmutability_new {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
-    def meet(that: TypeImmutability_new): TypeImmutability_new =
-        if (this == that)
-            this
-        else
-            that
-
+    def meet(that: TypeImmutability_new): TypeImmutability_new = that
 }
 
 case object DependentImmutableType extends TypeImmutability_new {
@@ -92,12 +88,10 @@ case object DependentImmutableType extends TypeImmutability_new {
             this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-
         if (other == DeepImmutableType) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }
-
 }
 
 case object ShallowImmutableType extends TypeImmutability_new {
