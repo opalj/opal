@@ -79,7 +79,7 @@ case object ShallowImmutableField extends FieldImmutability {
             this
     }
 
-  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == DeepImmutableField || other == DependentImmutableField) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         }

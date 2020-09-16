@@ -69,11 +69,9 @@ case object LazyInitializedThreadSafeFieldReference extends FieldReferenceImmuta
     }
 
     def meet(other: FieldReferenceImmutability): FieldReferenceImmutability =
-        if (
-            other == MutableFieldReference ||
+        if (other == MutableFieldReference ||
             other == LazyInitializedNotThreadSafeFieldReference ||
-            other == LazyInitializedNotThreadSafeButDeterministicFieldReference
-        ) {
+            other == LazyInitializedNotThreadSafeButDeterministicFieldReference) {
             other
         } else {
             this

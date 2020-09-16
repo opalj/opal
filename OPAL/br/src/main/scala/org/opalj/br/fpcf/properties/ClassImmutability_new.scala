@@ -49,11 +49,11 @@ object ClassImmutability_new extends ClassImmutabilityPropertyMetaInformation_ne
 
 case object DeepImmutableClass extends ClassImmutability_new {
 
-  override def correspondingTypeImmutability: TypeImmutability_new = DeepImmutableType
+    override def correspondingTypeImmutability: TypeImmutability_new = DeepImmutableType
 
-  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
-  def meet(that: ClassImmutability_new): ClassImmutability_new = that
+    def meet(that: ClassImmutability_new): ClassImmutability_new = that
 }
 
 case object DependentImmutableClass extends ClassImmutability_new {
@@ -84,7 +84,7 @@ case object ShallowImmutableClass extends ClassImmutability_new {
             this
     }
 
-  override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
+    override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == DeepImmutableClass || other == DependentImmutableClass) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
