@@ -12,17 +12,17 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.LazyClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0ClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0TypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 
@@ -53,9 +53,9 @@ object PureVoidMethods extends ProjectAnalysisApplication {
             LazyInterProceduralEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
-            LazyL1FieldMutabilityAnalysis,
-            LazyClassImmutabilityAnalysis,
-            LazyTypeImmutabilityAnalysis,
+            LazyL1FieldImmutabilityAnalysis,
+            LazyL0ClassImmutabilityAnalysis,
+            LazyL0TypeImmutabilityAnalysis,
             EagerL2PurityAnalysis
         )
 

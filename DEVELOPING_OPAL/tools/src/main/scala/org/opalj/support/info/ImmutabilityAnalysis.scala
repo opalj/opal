@@ -10,13 +10,11 @@ import org.opalj.util.Seconds
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
@@ -35,6 +33,8 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
         isInterrupted: () ⇒ Boolean
     ): BasicReport = {
 
+        import org.opalj.br.fpcf.properties.ClassImmutability
+        import org.opalj.br.fpcf.properties.TypeImmutability
         import project.get
 
         // The following measurements (t) are done such that the results are comparable with the
@@ -43,13 +43,13 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
         val ps = time {
             val ps = get(PropertyStoreKey)
             val derivedPKs = Set.empty ++
-                EagerL0FieldMutabilityAnalysis.derives.map(_.pk) ++
-                EagerClassImmutabilityAnalysis.derives.map(_.pk) ++
-                EagerTypeImmutabilityAnalysis.derives.map(_.pk)
+                EagerL0FieldImmutabilityAnalysis.derives.map(_.pk) ++
+                EagerL0ClassImmutabilityAnalysis.derives.map(_.pk) ++
+                EagerL0TypeImmutabilityAnalysis.derives.map(_.pk)
             ps.setupPhase(derivedPKs)
-            EagerL0FieldMutabilityAnalysis.start(project, ps, null)
-            EagerClassImmutabilityAnalysis.start(project, ps, null)
-            EagerTypeImmutabilityAnalysis.start(project, ps, null)
+            EagerL0FieldImmutabilityAnalysis.start(project, ps, null)
+            EagerL0ClassImmutabilityAnalysis.start(project, ps, null)
+            EagerL0TypeImmutabilityAnalysis.start(project, ps, null)
             ps.waitOnPhaseCompletion()
             ps
         } { r ⇒ t = r.toSeconds }

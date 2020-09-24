@@ -18,7 +18,7 @@ import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL1FieldMutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerL1FieldImmutabilityAnalysis
 
 /**
  * Computes the field mutability; see [[org.opalj.br.fpcf.properties.FieldMutability]] for details.
@@ -43,7 +43,7 @@ object FieldMutability extends ProjectAnalysisApplication {
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyL2PurityAnalysis,
-            EagerL1FieldMutabilityAnalysis
+            EagerL1FieldImmutabilityAnalysis
         )
 
         val declaredFinal = ps.finalEntities(DeclaredFinalField).toSeq

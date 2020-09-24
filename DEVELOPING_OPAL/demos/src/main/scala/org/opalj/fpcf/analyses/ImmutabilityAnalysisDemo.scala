@@ -12,13 +12,13 @@ import org.opalj.br.ClassFile
 import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.Project
-import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
+import org.opalj.br.fpcf.properties.ClassImmutability
+import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.TypeImmutability
 
 /**
  * Determines the immutability of the classes of a project.
@@ -82,12 +82,13 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val propertyStore = project.get(PropertyStoreKey)
 
         time {
+
             propertyStore.setupPhase(Set[PropertyKind](
-                FieldMutability.key, ClassImmutability.key, TypeImmutability.key
+                FieldImmutability.key, ClassImmutability.key, TypeImmutability.key
             ))
-            LazyL0FieldMutabilityAnalysis.register(project, propertyStore, null)
-            EagerClassImmutabilityAnalysis.start(project, propertyStore, null)
-            EagerTypeImmutabilityAnalysis.start(project, propertyStore, null)
+            LazyL0FieldImmutabilityAnalysis.register(project, propertyStore, null)
+            EagerL0ClassImmutabilityAnalysis.start(project, propertyStore, null)
+            EagerL0TypeImmutabilityAnalysis.start(project, propertyStore, null)
 
             propertyStore.waitOnPhaseCompletion()
         } { r ⇒ analysisTime = r }
