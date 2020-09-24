@@ -3,7 +3,7 @@ package org.opalj.fpcf.properties.immutability.classes;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.LxClassImmutabilityAnalysis_new;
+import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -24,5 +24,5 @@ public @interface ShallowImmutableClass {
      */
     String value();// default = "N/A";
 
-    Class<? extends FPCFAnalysis>[] analyses() default {LxClassImmutabilityAnalysis_new.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {L1ClassImmutabilityAnalysis.class};
 }

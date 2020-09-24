@@ -1,13 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package properties
-package class_mutability
+package org.opalj.fpcf.properties.immutability.classes
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 class AbstractClassImmutabilityMatcher(
         val property: properties.ClassImmutability
@@ -31,13 +30,16 @@ class AbstractClassImmutabilityMatcher(
     }
 }
 
-class ImmutableObjectMatcher
-    extends AbstractClassImmutabilityMatcher(properties.ImmutableObject)
+class DeepImmutableClassMatcher
+    extends AbstractClassImmutabilityMatcher(properties.DeepImmutableClass)
 
-class ImmutableContainerObjectMatcher
-    extends AbstractClassImmutabilityMatcher(properties.ImmutableContainer)
+class DependentImmutableClassMatcher
+    extends AbstractClassImmutabilityMatcher(properties.DependentImmutableClass)
 
-class MutableObjectMatcher extends AbstractPropertyMatcher {
+class ShallowImmutableClassMatcher
+    extends AbstractClassImmutabilityMatcher(properties.ShallowImmutableClass)
+
+class MutableClassMatcher extends AbstractPropertyMatcher {
     override def validateProperty(
         p:          Project[_],
         as:         Set[ObjectType],
@@ -46,8 +48,8 @@ class MutableObjectMatcher extends AbstractPropertyMatcher {
         properties: Traversable[Property]
     ): Option[String] = {
         if (properties.exists {
-            case _: MutableObject ⇒ true
-            case _                ⇒ false
+            case _: MutableClass ⇒ true // MutableObject ⇒ true
+            case _               ⇒ false
         })
             Some(a.elementValuePairs.head.value.asStringValue.value)
         else
