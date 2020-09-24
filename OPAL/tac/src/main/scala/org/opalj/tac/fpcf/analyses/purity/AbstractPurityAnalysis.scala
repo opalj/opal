@@ -25,17 +25,11 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBPS
 import org.opalj.value.ValueInformation
-import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.CompileTimePure
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.ImmutableObject
-import org.opalj.br.fpcf.properties.ImmutableType
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.SideEffectFree
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -53,6 +47,14 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.br.fpcf.properties.DeepImmutableClass
+import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.ClassImmutability
+import org.opalj.br.fpcf.properties.TypeImmutability
 
 /**
  * Base trait for analyses that analyze the purity of methods.
@@ -371,10 +373,10 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         if (state.ubPurity.isDeterministic) {
             fieldRef.asFieldRead.resolveField match {
                 case Some(field) if field.isStatic ⇒
-                    checkFieldMutability(propertyStore(field, FieldMutability.key), None)
+                    checkFieldMutability(propertyStore(field, FieldImmutability.key), None)
                 case Some(field) ⇒
                     checkFieldMutability(
-                        propertyStore(field, FieldMutability.key), Some(fieldRef.asGetField.objRef)
+                        propertyStore(field, FieldImmutability.key), Some(fieldRef.asGetField.objRef)
                     )
                 case _ ⇒ // Unknown field
                     if (fieldRef.isGetField) isLocal(fieldRef.asGetField.objRef, SideEffectFree)
@@ -387,11 +389,13 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Examines the influence that a given field mutability has on the method's purity.
      */
     def checkFieldMutability(
-        ep:     EOptionP[Field, FieldMutability],
+        ep:     EOptionP[Field, FieldImmutability], //FieldMutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
-        case LBP(_: FinalField) ⇒ // Final fields don't impede purity
-        case _: FinalEP[Field, FieldMutability] ⇒ // Mutable field
+        case LBP(ShallowImmutableField |
+            DependentImmutableField |
+            DeepImmutableField) ⇒ // Immutable fields don't impede purity
+        case _: FinalEP[Field, FieldImmutability] ⇒ // Mutable field
             if (objRef.isDefined) {
                 if (state.ubPurity.isDeterministic)
                     isLocal(objRef.get, SideEffectFree)
@@ -407,7 +411,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Analyses must implement this method with the behavior they need, e.g. registering dependees.
      */
     def handleUnknownFieldMutability(
-        ep:     EOptionP[Field, FieldMutability],
+        ep:     EOptionP[Field, FieldImmutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit
 
@@ -478,7 +482,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case LBP(ImmutableType | ImmutableObject) ⇒ true
+        case LBP(DeepImmutableType | DeepImmutableClass) ⇒ true
         case _: FinalEP[ObjectType, Property] ⇒
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)

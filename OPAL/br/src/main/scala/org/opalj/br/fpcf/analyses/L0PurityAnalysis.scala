@@ -26,17 +26,20 @@ import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimePure
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.ImmutableContainerType
-import org.opalj.br.fpcf.properties.ImmutableType
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
 import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
-import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.instructions._
+import org.opalj.br.fpcf.properties.DependentImmutableType
+import org.opalj.br.fpcf.properties.MutableField
+import org.opalj.br.fpcf.properties.ShallowImmutableType
+import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.TypeImmutability
 
 /**
  * Very simple, fast, sound but also imprecise analysis of the purity of methods. See the
@@ -107,7 +110,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             }
                             if (!fieldType.isBaseType) {
                                 propertyStore(fieldType, TypeImmutability.key) match {
-                                    case FinalP(ImmutableType) ⇒
+                                    case FinalP(DeepImmutableType) ⇒
                                     case _: FinalEP[_, TypeImmutability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
@@ -115,9 +118,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                                 }
                             }
                             if (field.isNotFinal) {
-                                propertyStore(field, FieldMutability.key) match {
-                                    case FinalP(_: FinalField) ⇒
-                                    case _: FinalEP[Field, FieldMutability] ⇒
+
+                                propertyStore(field, FieldImmutability.key) match {
+                                    case FinalP(ShallowImmutableField | DependentImmutableField | DeepImmutableField) ⇒
+                                    case _: FinalEP[Field, FieldImmutability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -225,7 +229,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     dependees += eps
                     InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalP(_: FinalField | ImmutableType) ⇒
+                case FinalP(DeepImmutableField | DependentImmutableField | ShallowImmutableField | DeepImmutableType) ⇒
                     if (dependees.isEmpty) {
                         Result(definedMethod, Pure)
                     } else {
@@ -234,12 +238,12 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
-                case FinalP(ImmutableContainerType) ⇒
+                case FinalP(ShallowImmutableType | DependentImmutableType) ⇒ //ImmutableContainerType) ⇒
                     Result(definedMethod, ImpureByAnalysis)
 
                 // The type is at most conditionally immutable.
                 case FinalP(_: TypeImmutability) ⇒ Result(definedMethod, ImpureByAnalysis)
-                case FinalP(_: NonFinalField)    ⇒ Result(definedMethod, ImpureByAnalysis)
+                case FinalP(MutableField)        ⇒ Result(definedMethod, ImpureByAnalysis)
 
                 case FinalP(CompileTimePure | Pure) ⇒
                     if (dependees.isEmpty)
@@ -279,10 +283,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
         referenceTypedParameters foreach { e ⇒
             propertyStore(e, TypeImmutability.key) match {
-                case FinalP(ImmutableType) ⇒ /*everything is Ok*/
+                case FinalP(DeepImmutableType) ⇒ /*everything is Ok*/
                 case _: FinalEP[_, _] ⇒
                     return Result(definedMethod, ImpureByAnalysis);
-                case InterimUBP(ub) if ub ne ImmutableType ⇒
+                case InterimUBP(ub) if ub ne DeepImmutableType ⇒
                     return Result(definedMethod, ImpureByAnalysis);
                 case epk ⇒ dependees += epk
             }
@@ -334,7 +338,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = {
-        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldMutability))
+        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldImmutability))
     }
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)

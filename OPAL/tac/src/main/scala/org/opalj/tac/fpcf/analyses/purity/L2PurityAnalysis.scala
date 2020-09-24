@@ -6,9 +6,7 @@ package analyses
 package purity
 
 import scala.annotation.switch
-
 import scala.collection.immutable.IntMap
-
 import net.ceedubs.ficus.Ficus._
 
 import org.opalj.collection.immutable.EmptyIntTrieSet
@@ -45,7 +43,7 @@ import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.ExtensibleLocalField
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.br.fpcf.properties.FieldLocality
-import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.FreshReturnValue
 import org.opalj.br.fpcf.properties.Getter
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
@@ -117,17 +115,20 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     ) extends AnalysisState {
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
 
-        var fieldMutabilityDependees: Map[Field, (EOptionP[Field, FieldMutability], Set[Option[Expr[V]]])] = Map.empty
+        var fieldMutabilityDependees: Map[Field, (EOptionP[Field, FieldImmutability], Set[Option[Expr[V]]])] = Map.empty
 
         var classImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, ClassImmutability], Set[Expr[V]])] = Map.empty
+
         var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] = Map.empty
 
         var purityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
 
         var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
+
         var callees: Option[Callees] = None
 
         var rvfDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
+
         var rvfCallSites: IntMap[(Option[Expr[V]], Purity)] = IntMap.empty
 
         var staticDataUsage: Option[EOptionP[DeclaredMethod, StaticDataUsage]] = None
@@ -160,7 +161,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         def addFieldMutabilityDependee(
             f:     Field,
-            eop:   EOptionP[Field, FieldMutability],
+            eop:   EOptionP[Field, FieldImmutability],
             owner: Option[Expr[V]]
         ): Unit = {
             if (fieldMutabilityDependees.contains(f)) {
@@ -583,7 +584,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * Adds the dependee necessary if a field mutability is not known yet.
      */
     override def handleUnknownFieldMutability(
-        ep:     EOptionP[Field, FieldMutability],
+        ep:     EOptionP[Field, FieldImmutability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
         state.addFieldMutabilityDependee(ep.e, ep, objRef)
@@ -644,6 +645,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         var newFieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
+
         for ((dependee, (eop, data)) ← state.fieldLocalityDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
             if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, (eop, newData)))
@@ -657,6 +659,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         state.rvfCallSites = newRVFCallsites
 
         var newRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
+
         for ((dependee, (eop, data)) ← state.rvfDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
             if (newData.nonEmpty) newRVFDependees += ((dependee, (eop, newData)))
@@ -664,6 +667,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         state.rvfDependees = newRVFDependees
 
         var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
+
         for ((dependee, eAndD) ← state.purityDependees) {
             if (eAndD._1.isEPK || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
                 newPurityDependees += ((dependee, eAndD))
@@ -738,12 +742,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 dependees._2.foreach { e ⇒
                     checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]], e)
                 }
-            case FieldMutability.key ⇒
+            case FieldImmutability.key ⇒
                 val e = eps.e.asInstanceOf[Field]
                 val dependees = state.fieldMutabilityDependees(e)
                 state.removeFieldMutabilityDependee(e)
                 dependees._2.foreach { e ⇒
-                    checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldMutability]], e)
+                    checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldImmutability]], e)
                 }
             case ClassImmutability.key ⇒
                 val e = eps.e.asInstanceOf[ObjectType]
@@ -944,7 +948,7 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = {
         Set(
-            PropertyBounds.lub(FieldMutability),
+            PropertyBounds.lub(FieldImmutability),
             PropertyBounds.lub(ClassImmutability),
             PropertyBounds.lub(TypeImmutability),
             PropertyBounds.lub(StaticDataUsage),
@@ -981,7 +985,8 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
             // todo querying ps is quiet expensive
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
+                !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
                 dm.asDefinedMethod
         }
         ps.scheduleEagerComputationsForEntities(methods)(

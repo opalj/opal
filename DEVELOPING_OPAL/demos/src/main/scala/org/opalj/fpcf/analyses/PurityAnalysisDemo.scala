@@ -16,7 +16,7 @@ import org.opalj.br.Field
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0PurityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldMutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.Purity
 
@@ -88,7 +88,7 @@ object PurityAnalysisDemo extends ProjectAnalysisApplication {
         } { r ⇒ setupTime = r }
 
         time {
-            LazyL0FieldMutabilityAnalysis.register(project, propertyStore, null)
+            LazyL0FieldImmutabilityAnalysis.register(project, propertyStore, null)
             EagerL0PurityAnalysis.start(project, propertyStore, null)
             propertyStore.waitOnPhaseCompletion()
         } { r ⇒ analysisTime = r }
