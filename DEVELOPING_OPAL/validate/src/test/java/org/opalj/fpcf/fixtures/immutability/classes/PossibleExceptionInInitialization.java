@@ -1,12 +1,13 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.classes;
 
-import org.opalj.fpcf.properties.field_mutability.NonFinal;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeButDeterministicReference;
+import org.opalj.fpcf.properties.immutability.references.MutableReference;
 
 class PossibleExceptionInInitialization {
 
-    @LazyInitializedNotThreadSafeButDeterministicReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
+    @LazyInitializedNotThreadSafeButDeterministicReference("Incorrect because lazy initialization is may " +
+            "not happen due to exception")
     private int x;
 
     public int init(int i) {
@@ -21,7 +22,7 @@ class PossibleExceptionInInitialization {
 
 class CaughtExceptionInInitialization {
 
-    @MutableReferenceAnnotation("Incorrect because lazy initialization is may not happen due to exception")
+    @MutableReference("Incorrect because lazy initialization is may not happen due to exception")
     private int x;
 
     public int init(int i) {
@@ -36,15 +37,4 @@ class CaughtExceptionInInitialization {
             return 0;
         }
     }
-    //Test
-    //com.sun.corba.se.impl.io.FVDCodeBaseImp
-    //com.sun.xml.internal.bind.v2.model.impl.Messages
-    //com.sun.xml.internal.bind.v2.model.impl.Messages
-    //com.sun.jmx.defaults.JmxProperties
-    //com.sun.jmx.defaults
-    //com.sun.xml.internal.bind.v2.model.impl.ModelBuilder
-    //javax.management.loading.MLet
-
-    //com.sun.corba.se.impl.io.FVDCodeBaseImpl
-    //
 }
