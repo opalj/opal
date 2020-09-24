@@ -1,13 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package properties
-package type_mutability
+package org.opalj.fpcf.properties.immutability.types
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 class AbstractTypeImmutabilityMatcher(
         val property: TypeImmutability
@@ -31,9 +30,12 @@ class AbstractTypeImmutabilityMatcher(
     }
 }
 
-class ImmutableTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.ImmutableType)
-class ImmutableContainerTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.ImmutableContainerType)
+class DeepImmutableTypeMatcher
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.DeepImmutableType)
+class DependentImmutableTypeMatcher
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.DependentImmutableType)
+class ShallowImmutableTypeMatcher
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.ShallowImmutableType)
 class MutableTypeMatcher
     extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.MutableType)
+

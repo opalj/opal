@@ -17,8 +17,8 @@ import org.opalj.br.TestSupport.createJREProject
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.analyses.EagerClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerTypeImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerVirtualMethodPurityAnalysis
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -44,9 +44,9 @@ class L1PuritySmokeTest extends FunSpec with Matchers {
     )
 
     val supportAnalyses: Set[ComputationSpecification[FPCFAnalysis]] = Set(
-        EagerL1FieldMutabilityAnalysis,
-        EagerClassImmutabilityAnalysis,
-        EagerTypeImmutabilityAnalysis
+        EagerL1FieldImmutabilityAnalysis,
+        EagerL0ClassImmutabilityAnalysis,
+        EagerL0TypeImmutabilityAnalysis
     )
 
     def checkProject(p: SomeProject, withSupportAnalyses: Boolean): Unit = {

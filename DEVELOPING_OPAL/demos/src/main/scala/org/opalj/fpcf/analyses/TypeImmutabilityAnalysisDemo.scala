@@ -17,7 +17,7 @@ import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.DeepImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableType
-import org.opalj.br.fpcf.properties.MutableType_new
+import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.ShallowImmutableType
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
@@ -26,11 +26,11 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerLxTypeImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import java.io.IOException
 
 /**
@@ -54,7 +54,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
-        import org.opalj.br.fpcf.properties.TypeImmutability_new
+        import org.opalj.br.fpcf.properties.TypeImmutability
         import org.opalj.fpcf.EPS
         import org.opalj.fpcf.Entity
         var propertyStore: PropertyStore = null
@@ -66,11 +66,11 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             propertyStore = analysesManager
                 .runAll(
                     LazyUnsoundPrematurelyReadFieldsAnalysis,
-                    LazyL2PurityAnalysis_new,
+                    LazyL2PurityAnalysis,
                     LazyL0FieldReferenceImmutabilityAnalysis,
-                    LazyL0FieldImmutabilityAnalysis,
-                    LazyLxClassImmutabilityAnalysis_new,
-                    EagerLxTypeImmutabilityAnalysis_new,
+                    LazyL3FieldImmutabilityAnalysis,
+                    LazyL1ClassImmutabilityAnalysis,
+                    EagerL1TypeImmutabilityAnalysis,
                     LazyStaticDataUsageAnalysis,
                     LazyL0CompileTimeConstancyAnalysis,
                     LazyInterProceduralEscapeAnalysis,
@@ -85,12 +85,12 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
 
-        val groupedResults = propertyStore.entities(TypeImmutability_new.key).
+        val groupedResults = propertyStore.entities(TypeImmutability.key).
             filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
 
-        val order = (eps1: EPS[Entity, TypeImmutability_new], eps2: EPS[Entity, TypeImmutability_new]) ⇒
+        val order = (eps1: EPS[Entity, TypeImmutability], eps2: EPS[Entity, TypeImmutability]) ⇒
             eps1.e.toString < eps2.e.toString
-        val mutableTypes = groupedResults(MutableType_new).toSeq.sortWith(order)
+        val mutableTypes = groupedResults(MutableType).toSeq.sortWith(order)
         val shallowImmutableTypes = groupedResults(ShallowImmutableType).toSeq.sortWith(order)
         val dependentImmutableTypes = groupedResults(DependentImmutableType).toSeq.sortWith(order)
         val deepImmutableTypes = groupedResults(DeepImmutableType).toSeq.sortWith(order)
