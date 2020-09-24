@@ -3,7 +3,7 @@ package org.opalj.fpcf.properties.immutability.types;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.LxTypeImmutabilityAnalysis_new;
+import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -14,7 +14,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "TypeImmutability_new", validator = NewMutableTypeMatcher.class)
+@PropertyValidator(key = "TypeImmutability_new", validator = MutableTypeMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface MutableType {
@@ -24,5 +24,5 @@ public @interface MutableType {
      */
     String value();// default = "N/A";
 
-    Class<? extends FPCFAnalysis>[] analyses() default {LxTypeImmutabilityAnalysis_new.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {L1TypeImmutabilityAnalysis.class};
 }

@@ -14,7 +14,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "ReferenceImmutability",validator = LazyInitializedNotThreadSafeFieldReferenceMatcher.class)
+@PropertyValidator(key = "FieldReferenceImmutability",validator = LazyInitializedNotThreadSafeFieldReferenceMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface LazyInitializedNotThreadSafeReference {

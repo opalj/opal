@@ -13,7 +13,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "ReferenceImmutability",validator = ImmutableFieldReferenceMatcher.class)
+@PropertyValidator(key = "FieldReferenceImmutability",validator = ImmutableFieldReferenceMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface ImmutableReference {
