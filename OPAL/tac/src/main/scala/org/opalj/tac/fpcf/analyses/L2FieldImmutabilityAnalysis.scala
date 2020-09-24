@@ -8,26 +8,13 @@ import scala.annotation.switch
 
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
-
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.fpcf.properties.AtMost
-import org.opalj.br.fpcf.properties.DeclaredFinalField
-import org.opalj.br.fpcf.properties.EffectivelyFinalField
 import org.opalj.br.fpcf.properties.EscapeInCallee
-import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.LazyInitializedField
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.NonFinalField
-import org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis
-import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
 import org.opalj.br.fpcf.properties.NotPrematurelyReadField
 import org.opalj.br.fpcf.properties.PrematurelyReadField
-import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
@@ -35,8 +22,6 @@ import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.Property
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
@@ -67,9 +52,6 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
@@ -83,6 +65,11 @@ import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.MutableField
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -90,32 +77,33 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @note Requires that the 3-address code's expressions are not deeply nested.
  *
+ * @author Tobias Roth
  * @author Dominik Helm
  * @author Florian Kübler
  * @author Michael Eichberg
  */
-class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
     case class State(
-            field:                        Field,
-            var fieldMutability:          FieldMutability                               = DeclaredFinalField,
-            var prematurelyReadDependee:  Option[EOptionP[Field, FieldPrematurelyRead]] = None,
-            var purityDependees:          Set[EOptionP[DeclaredMethod, Purity]]         = Set.empty,
-            var lazyInitInvocation:       Option[(DeclaredMethod, PC)]                  = None,
-            var calleesDependee:          Option[EOptionP[DeclaredMethod, Callees]]     = None,
-            var fieldMutabilityDependees: Set[EOptionP[Field, FieldMutability]]         = Set.empty,
-            var escapeDependees:          Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty,
-            var tacDependees:             Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty
+            field:                          Field,
+            var fieldImmutability:          FieldImmutability                             = ShallowImmutableField, //DeclaredFinalField,
+            var prematurelyReadDependee:    Option[EOptionP[Field, FieldPrematurelyRead]] = None,
+            var purityDependees:            Set[EOptionP[DeclaredMethod, Purity]]         = Set.empty,
+            var lazyInitInvocation:         Option[(DeclaredMethod, PC)]                  = None,
+            var calleesDependee:            Option[EOptionP[DeclaredMethod, Callees]]     = None,
+            var fieldImmutabilityDependees: Set[EOptionP[Field, FieldImmutability]]       = Set.empty,
+            var escapeDependees:            Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty,
+            var tacDependees:               Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty
     ) {
         def hasDependees: Boolean = {
             prematurelyReadDependee.isDefined || purityDependees.nonEmpty ||
-                calleesDependee.isDefined || fieldMutabilityDependees.nonEmpty ||
+                calleesDependee.isDefined || fieldImmutabilityDependees.nonEmpty ||
                 escapeDependees.nonEmpty || tacDependees.nonEmpty
         }
 
         def dependees: Traversable[EOptionP[Entity, Property]] = {
             prematurelyReadDependee ++ purityDependees ++ calleesDependee ++
-                fieldMutabilityDependees ++ escapeDependees ++ tacDependees.valuesIterator.map(_._1)
+                fieldImmutabilityDependees ++ escapeDependees ++ tacDependees.valuesIterator.map(_._1)
         }
     }
 
@@ -127,8 +115,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = entity match {
-        case field: Field ⇒ determineFieldMutability(field)
+    def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = entity match {
+        case field: Field ⇒ determineFieldImmutability(field)
         case _ ⇒
             val m = entity.getClass.getSimpleName+" is not an org.opalj.br.Field"
             throw new IllegalArgumentException(m)
@@ -141,24 +129,25 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * If the analysis is schedulued using its companion object all class files with
      * native methods are filtered.
      */
-    private[analyses] def determineFieldMutability(
+    private[analyses] def determineFieldImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
+        import org.opalj.br.fpcf.properties.MutableField
         implicit val state: State = State(field)
 
         // Fields are not final if they are read prematurely!
         if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key)))
-            return Result(field, NonFinalFieldByAnalysis);
+            return Result(field, MutableField);
 
         if (field.isFinal)
             return createResult();
 
-        state.fieldMutability = EffectivelyFinalField
+        state.fieldImmutability = ShallowImmutableField
 
         val thisType = field.classFile.thisType
 
         if (field.isPublic)
-            return Result(field, NonFinalFieldByLackOfInformation)
+            return Result(field, MutableField)
 
         // Collect all classes that have access to the field, i.e. the declaring class and possibly
         // classes in the same package as well as subclasses
@@ -166,7 +155,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         val initialClasses =
             if (field.isProtected || field.isPackagePrivate) {
                 if (!closedPackages.isClosed(thisType.packageName)) {
-                    return Result(field, NonFinalFieldByLackOfInformation);
+                    return Result(field, MutableField);
                 }
                 project.classesPerPackage(thisType.packageName)
             } else {
@@ -176,7 +165,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         val classesHavingAccess: Iterator[ClassFile] =
             if (field.isProtected) {
                 if (typeExtensibility(thisType).isYesOrUnknown) {
-                    return Result(field, NonFinalFieldByLackOfInformation);
+                    return Result(field, MutableField);
                 }
                 val subclassesIterator: Iterator[ClassFile] =
                     classHierarchy.allSubclassTypes(thisType, reflexive = false).
@@ -190,7 +179,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         // If there are native methods, we give up
         if (classesHavingAccess.exists(_.methods.exists(_.isNative)))
-            return Result(field, NonFinalFieldByLackOfInformation);
+            return Result(field, MutableField);
 
         // We now (compared to the simple one) have to analyze the static initializer as
         // the static initializer can be used to initialize a private field of an instance
@@ -217,7 +206,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             taCode ← getTACAI(method, pcs)
         } {
             if (methodUpdatesField(method, taCode, pcs))
-                return Result(field, NonFinalFieldByAnalysis);
+                return Result(field, MutableField);
         }
 
         if (state.lazyInitInvocation.isDefined) {
@@ -250,12 +239,12 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def handleCallees(callees: Callees)(implicit state: State): Boolean = {
         val pc = state.lazyInitInvocation.get._2
         if (callees.isIncompleteCallSite(pc)) {
-            state.fieldMutability = NonFinalFieldByAnalysis
+            state.fieldImmutability = MutableField
             true
         } else {
             val targets = callees.callees(pc).toTraversable
             if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
-                state.fieldMutability = NonFinalFieldByAnalysis
+                state.fieldImmutability = MutableField
                 true
             } else false
         }
@@ -336,16 +325,16 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * dependees or as Result otherwise.
      */
     def createResult()(implicit state: State): ProperPropertyComputationResult = {
-        if (state.hasDependees && (state.fieldMutability ne NonFinalFieldByAnalysis))
+        if (state.hasDependees && (state.fieldImmutability ne MutableField))
             InterimResult(
                 state.field,
-                NonFinalFieldByAnalysis,
-                state.fieldMutability,
+                MutableField,
+                state.fieldImmutability,
                 state.dependees,
                 c
             )
         else
-            Result(state.field, state.fieldMutability)
+            Result(state.field, state.fieldImmutability)
     }
 
     /**
@@ -374,15 +363,15 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]
                 state.purityDependees = state.purityDependees.filter(_.e ne newEP.e)
                 isNonDeterministic(newEP)
-            case FieldMutability.key ⇒
-                val newEP = eps.asInstanceOf[EOptionP[Field, FieldMutability]]
-                state.fieldMutabilityDependees =
-                    state.fieldMutabilityDependees.filter(_.e ne newEP.e)
+            case FieldImmutability.key ⇒
+                val newEP = eps.asInstanceOf[EOptionP[Field, FieldImmutability]]
+                state.fieldImmutabilityDependees =
+                    state.fieldImmutabilityDependees.filter(_.e ne newEP.e)
                 !isFinalField(newEP)
         }
 
         if (isNotFinal)
-            Result(state.field, NonFinalFieldByAnalysis)
+            Result(state.field, MutableField)
         else
             createResult()
     }
@@ -554,7 +543,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                                     stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter) {
                                     // We consider lazy initialization if there is only single write
                                     // outside an initializer, so we can ignore synchronization
-                                    if (state.fieldMutability == LazyInitializedField)
+                                    if (state.fieldImmutability == ShallowImmutableField) //LazyInitializedField)
                                         return true;
 
                                     // A lazily initialized instance field must be initialized only
@@ -579,7 +568,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                                     ))
                                         return true;
 
-                                    state.fieldMutability = LazyInitializedField
+                                    state.fieldImmutability = ShallowImmutableField
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
                                     // note that here we assume real three address code (flat hierarchy)
 
@@ -761,7 +750,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                     val expr = code(index).asAssignment.expr
                     expr.isFieldRead && (expr.asFieldRead.resolveField(p) match {
                         case Some(field) ⇒
-                            isFinalField(propertyStore(field, FieldMutability.key))
+                            isFinalField(propertyStore(field, FieldImmutability.key))
                         case _ ⇒ // Unknown field
                             false
                     })
@@ -778,7 +767,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             case GetStatic.ASTID | GetField.ASTID ⇒
                 value.asFieldRead.resolveField(p) match {
                     case Some(field) ⇒
-                        isFinalField(propertyStore(field, FieldMutability.key))
+                        isFinalField(propertyStore(field, FieldImmutability.key))
                     case _ ⇒ // Unknown field
                         false
                 }
@@ -1055,18 +1044,18 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * ensuring that the same value is written even for concurrent executions.
      */
     def isFinalField(
-        eop: EOptionP[Field, FieldMutability]
+        eop: EOptionP[Field, FieldImmutability]
     )(implicit state: State): Boolean = eop match {
-        case LBP(_: FinalField) ⇒
+        case LBP(DeepImmutableField | DependentImmutableField | ShallowImmutableField) ⇒
             true
-        case UBP(_: NonFinalField) ⇒ false
+        case UBP(MutableField) ⇒ false
         case _ ⇒
-            state.fieldMutabilityDependees += eop
+            state.fieldImmutabilityDependees += eop
             true
     }
 }
 
-trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L2FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(
         TypeExtensibilityKey,
@@ -1080,25 +1069,25 @@ trait L2FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(Purity),
         PropertyBounds.lub(FieldPrematurelyRead),
         PropertyBounds.ub(TACAI),
-        PropertyBounds.lub(FieldMutability),
+        PropertyBounds.lub(FieldImmutability),
         PropertyBounds.ub(EscapeProperty)
     )
 
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldMutability)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
 
 }
 
 /**
  * Executor for the field mutability analysis.
  */
-object EagerL2FieldMutabilityAnalysis
-    extends L2FieldMutabilityAnalysisScheduler
+object EagerL2FieldImmutabilityAnalysis
+    extends L2FieldImmutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L2FieldMutabilityAnalysis(p)
+        val analysis = new L2FieldImmutabilityAnalysis(p)
         val fields = p.allFields
-        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
+        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }
 
@@ -1110,8 +1099,8 @@ object EagerL2FieldMutabilityAnalysis
 /**
  * Executor for the lazy field mutability analysis.
  */
-object LazyL2FieldMutabilityAnalysis
-    extends L2FieldMutabilityAnalysisScheduler
+object LazyL2FieldImmutabilityAnalysis
+    extends L2FieldImmutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 
     final override def register(
@@ -1119,9 +1108,9 @@ object LazyL2FieldMutabilityAnalysis
         ps:     PropertyStore,
         unused: Null
     ): FPCFAnalysis = {
-        val analysis = new L2FieldMutabilityAnalysis(p)
+        val analysis = new L2FieldImmutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
-            FieldMutability.key, analysis.determineFieldMutability
+            FieldImmutability.key, analysis.determineFieldImmutability
         )
         analysis
     }

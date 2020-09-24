@@ -1,22 +1,27 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package properties
-package immutability
-package fields
+package org.opalj.fpcf.properties.immutability.fields
 
+import org.opalj.br
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.properties.AbstractPropertyMatcher
+/*import org.opalj.br.fpcf.properties.FieldMutability
+import org.opalj.br.fpcf.properties.LazyInitializedField*/
 
 /**
- * This is the basis for the matchers that match the immutability of a field
- * @author Tobias Peter Roth
+ * Matches a field's `FieldImmutability` property. The match is successful if the field has the
+ * given property and a sufficiently capable analysis was scheduled.
+ *
+ * @author Michael Eichberg
+ * @author Dominik Helm
  */
 class FieldImmutabilityMatcher(val property: FieldImmutability) extends AbstractPropertyMatcher {
 
-    final private val PropertyReasonID = 0
+    private final val PropertyReasonID = 0
 
     override def isRelevant(
         p:      SomeProject,
@@ -31,7 +36,6 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
-
     }
 
     def validateProperty(
@@ -48,12 +52,16 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
             None
         }
     }
+
 }
+/*
+class DeclaredFinalMatcher extends FieldImmutabilityMatcher(ShallowImmutableField)
 
-class MutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.MutableField)
+class EffectivelyFinalMatcher extends FieldImmutabilityMatcher(ShallowImmutableField) */
 
-class ShallowImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.ShallowImmutableField)
+//class MutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.MutableField)
+class ShallowImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.ShallowImmutableField) //ShallowImmutableField)
 
-class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DependentImmutableField)
+class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.ShallowImmutableField)
+class DeepImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.ShallowImmutableField)
 
-class DeepImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DeepImmutableField)

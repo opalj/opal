@@ -11,12 +11,10 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.DeclaredFinalField
-import org.opalj.br.fpcf.properties.EffectivelyFinalField
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis
-import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
 import org.opalj.br.instructions.PUTSTATIC
+import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.MutableField
+import org.opalj.br.fpcf.properties.ShallowImmutableField
 
 /**
  * Determines if a private, static, non-final field is always initialized at most once or
@@ -25,7 +23,7 @@ import org.opalj.br.instructions.PUTSTATIC
  * available data-store) are not considered. This is in-line with the semantics of final,
  * which also does not prevent reads of partially initialized objects.
  */
-class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
 
@@ -34,11 +32,11 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * Final fields are considered [[org.opalj.br.fpcf.properties.DeclaredFinalField]], non-final and
      * non-private fields or fields of library classes whose method bodies are not available are
      * considered [[org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis]].
-     * For all other cases the call is delegated to [[determineFieldMutability]].
+     * For all other cases the call is delegated to [[determineFieldImmutability]].
      */
-    def determineFieldMutabilityLazy(e: Entity): ProperPropertyComputationResult = {
+    def determineFieldImmutabilityLazy(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case field: Field ⇒ determineFieldMutability(field)
+            case field: Field ⇒ determineFieldImmutability(field)
             case _            ⇒ throw new IllegalArgumentException(s"$e is not a Field")
         }
     }
@@ -54,18 +52,19 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      * @param field A field without native methods and where the method body of all
      *                  non-abstract methods is available.
      */
-    def determineFieldMutability(field: Field): ProperPropertyComputationResult = {
+    def determineFieldImmutability(field: Field): ProperPropertyComputationResult = {
+
         if (field.isFinal)
-            return Result(field, DeclaredFinalField);
+            return Result(field, ShallowImmutableField);
 
         if (!field.isPrivate)
-            return Result(field, NonFinalFieldByLackOfInformation);
+            return Result(field, MutableField);
 
         if (!field.isStatic)
-            return Result(field, NonFinalFieldByLackOfInformation);
+            return Result(field, MutableField);
 
         if (field.classFile.methods.exists(_.isNative))
-            return Result(field, NonFinalFieldByLackOfInformation);
+            return Result(field, MutableField);
 
         val classFile = field.classFile
         val thisType = classFile.thisType
@@ -83,33 +82,33 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                     // resolution of the field reference.
                     val field = classFile.findField(fieldName, fieldType)
                     if (field.isDefined) {
-                        return Result(field.get, NonFinalFieldByAnalysis);
+                        return Result(field.get, MutableField);
                     }
 
                 case _ ⇒
             }
         }
 
-        Result(field, EffectivelyFinalField)
+        Result(field, ShallowImmutableField)
     }
 }
 
-trait L0FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L0FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = {
         // currently, the analysis will derive the final result in a single step
-        PropertyBounds.finalP(FieldMutability)
+        PropertyBounds.finalP(FieldImmutability)
     }
 
 }
 
 /**
- * Factory object to create instances of the FieldMutabilityAnalysis.
+ * Factory object to create instances of the FieldImmutabilityAnalysis.
  */
-object EagerL0FieldMutabilityAnalysis
-    extends L0FieldMutabilityAnalysisScheduler
+object EagerL0FieldImmutabilityAnalysis
+    extends L0FieldImmutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -117,7 +116,7 @@ object EagerL0FieldMutabilityAnalysis
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0FieldMutabilityAnalysis(p)
+        val analysis = new L0FieldImmutabilityAnalysis(p)
         val classFileCandidates =
             if (p.libraryClassFilesAreInterfacesOnly)
                 p.allProjectClassFiles
@@ -126,22 +125,23 @@ object EagerL0FieldMutabilityAnalysis
         val fields = {
             classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
         }
-        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
+        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }
 }
 
-object LazyL0FieldMutabilityAnalysis
-    extends L0FieldMutabilityAnalysisScheduler
+object LazyL0FieldImmutabilityAnalysis
+    extends L0FieldImmutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0FieldMutabilityAnalysis(p)
+
+        val analysis = new L0FieldImmutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
-            FieldMutability.key,
-            (field: Field) ⇒ analysis.determineFieldMutabilityLazy(field)
+            FieldImmutability.key,
+            (field: Field) ⇒ analysis.determineFieldImmutabilityLazy(field)
         )
         analysis
     }

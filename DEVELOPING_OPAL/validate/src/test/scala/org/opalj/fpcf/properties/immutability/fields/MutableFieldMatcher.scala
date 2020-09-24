@@ -1,28 +1,28 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package fpcf
-package properties
-package field_mutability
+package org.opalj.fpcf.properties.immutability.fields
 
+import org.opalj.br
 import org.opalj.br.AnnotationLike
-import org.opalj.br.ObjectType
 import org.opalj.br.BooleanValue
+import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.PrematurelyReadField
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.FinalP
+import org.opalj.fpcf.Property
+import org.opalj.fpcf.properties.AbstractPropertyMatcher
 
 /**
- * Matches a field's `FieldMutability` property. The match is successful if the field either
+ * Matches a field's `FieldImmutability` property. The match is successful if the field either
  * does not have a corresponding property (in which case the fallback property will be
  * `NonFinalField`) or if the property is an instance of `NonFinalField`.
  *
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-class NonFinalMatcher extends AbstractPropertyMatcher {
+class MutableFieldMatcher extends AbstractPropertyMatcher {
 
     override def isRelevant(
         p:  SomeProject,
@@ -59,7 +59,8 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (properties.forall(p ⇒ p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))
+        import org.opalj.br.fpcf.properties.FieldImmutability
+        if (properties.forall(p ⇒ p == br.fpcf.properties.MutableField || p.key != FieldImmutability.key))
             None
         else {
             Some(a.elementValuePairs.head.value.toString)

@@ -94,6 +94,7 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asMethodTypeConst: MethodTypeConst = throw new ClassCastException();
     def isMethodHandleConst: Boolean = false
     def asMethodHandleConst: MethodHandleConst = throw new ClassCastException();
+    def isCompare: Boolean = false
     def isConst: Boolean = false
     def isIntConst: Boolean = false
     def asIntConst: IntConst = throw new ClassCastException();
@@ -178,7 +179,7 @@ case class Compare[+V <: Var[V]](
         condition: RelationalOperator,
         right:     Expr[V]
 ) extends Expr[V] {
-
+    final override def isCompare: Boolean = true
     final override def asCompare: this.type = this
     final override def astID: Int = Compare.ASTID
     final override def cTpe: ComputationalType = ComputationalTypeInt

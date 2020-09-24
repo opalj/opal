@@ -21,11 +21,11 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyLxClassImmutabilityAnalysis_new
-import org.opalj.tac.fpcf.analyses.immutability.LazyLxTypeImmutabilityAnalysis_new
+import org.opalj.tac.fpcf.analyses.immutability.EagerL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis_new
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.fpcf.properties.FieldImmutability
@@ -69,10 +69,10 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                 .runAll(
                     LazyL0FieldReferenceImmutabilityAnalysis,
                     LazyUnsoundPrematurelyReadFieldsAnalysis,
-                    LazyL2PurityAnalysis_new,
-                    EagerL0FieldImmutabilityAnalysis,
-                    LazyLxClassImmutabilityAnalysis_new,
-                    LazyLxTypeImmutabilityAnalysis_new,
+                    LazyL2PurityAnalysis,
+                    EagerL3FieldImmutabilityAnalysis,
+                    LazyL1ClassImmutabilityAnalysis,
+                    LazyL1TypeImmutabilityAnalysis,
                     LazyStaticDataUsageAnalysis,
                     LazyL0CompileTimeConstancyAnalysis,
                     LazyInterProceduralEscapeAnalysis,
