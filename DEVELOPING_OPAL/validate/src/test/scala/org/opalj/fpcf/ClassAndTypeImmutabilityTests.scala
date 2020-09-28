@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import java.net.URL
@@ -32,33 +33,6 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
     override def fixtureProjectPackage: List[String] = {
         List("org/opalj/fpcf/fixtures/immutability")
     }
-    /*
-    override def createConfig(): Config = {
-
-        val configForEntryPoints = BaseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
-        ).withValue(
-                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
-
-        configForEntryPoints.withValue(
-            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
-        ).withValue(
-                InitialInstantiatedTypesKey.ConfigKeyPrefix+
-                    "AllInstantiatedTypesFinder.projectClassesOnly",
-                ConfigValueFactory.fromAnyRef(true)
-            )
-            .withValue(
-                "org.opalj.br.analyses.cg.ClosedPackagesKey",
-                fromAnyRef("org.opalj.br.analyses.cg.AllPackagesClosed")
-            )
-            .withValue("org.opalj.br.analyses.cg.ClassExtensibilityKey", ConfigValueFactory.fromAnyRef(
-                "org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible"
-            ))
-    } */
 
     override def init(p: Project[URL]): Unit = {
 
