@@ -389,7 +389,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Examines the influence that a given field mutability has on the method's purity.
      */
     def checkFieldMutability(
-        ep:     EOptionP[Field, FieldImmutability], //FieldMutability],
+        ep:     EOptionP[Field, FieldImmutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
         case LBP(ShallowImmutableField |
