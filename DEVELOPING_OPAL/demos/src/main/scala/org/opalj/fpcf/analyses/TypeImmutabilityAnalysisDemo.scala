@@ -32,17 +32,21 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import java.io.IOException
+import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.Entity
 
 /**
- * Runs the EagerLxClassImmutabilityAnalysis_new as well as analysis needed for improving the result
+ * Runs the EagerL1TypeImmutabilityAnalysis as well as all analyses needed for improving the result
  *
- * @author Tobias Peter Roth
+ * @author Tobias Roth
  */
 object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-    override def title: String = "run EagerLxTypeImmutabilityAnalysis_new"
+    override def title: String = "determines the immutability of types respecting all possible subtypes"
 
-    override def description: String = "run EagerLxTypeImmutabilityAnalysis_new"
+    override def description: String = "identifies types that are immutable in a shallow or deep way respecting all"+
+        "possible subtypes"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -54,12 +58,13 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     }
 
     def analyze(project: Project[URL]): String = {
-        import org.opalj.br.fpcf.properties.TypeImmutability
-        import org.opalj.fpcf.EPS
-        import org.opalj.fpcf.Entity
+
         var propertyStore: PropertyStore = null
+
         var analysisTime: Seconds = Seconds.None
+
         val analysesManager = project.get(FPCFAnalysesManagerKey)
+
         analysesManager.project.get(RTACallGraphKey)
 
         time {
@@ -78,7 +83,9 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                     LazyFieldLocalityAnalysis
                 )
                 ._1
+
             propertyStore.waitOnPhaseCompletion();
+
         } { t ⇒
             analysisTime = t.toSeconds
         }
@@ -90,9 +97,13 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val order = (eps1: EPS[Entity, TypeImmutability], eps2: EPS[Entity, TypeImmutability]) ⇒
             eps1.e.toString < eps2.e.toString
+
         val mutableTypes = groupedResults(MutableType).toSeq.sortWith(order)
+
         val shallowImmutableTypes = groupedResults(ShallowImmutableType).toSeq.sortWith(order)
+
         val dependentImmutableTypes = groupedResults(DependentImmutableType).toSeq.sortWith(order)
+
         val deepImmutableTypes = groupedResults(DeepImmutableType).toSeq.sortWith(order)
 
         val output =
@@ -110,29 +121,29 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
            | ${deepImmutableTypes.mkString(" | Deep Immutable Type\n")}
            |
            |
-           | mutable types: ${mutableTypes.size}
-           | shallow immutable types: ${shallowImmutableTypes.size}
-           | dependent immutable types: ${dependentImmutableTypes.size}
-           | deep immutable types: ${deepImmutableTypes.size}
+           | Mutable Types: ${mutableTypes.size}
+           | Shallow Immutable Types: ${shallowImmutableTypes.size}
+           | Dependent Immutable Types: ${dependentImmutableTypes.size}
+           | Deep Immutable Types: ${deepImmutableTypes.size}
            |
            | sum: ${mutableTypes.size + shallowImmutableTypes.size + dependentImmutableTypes.size + deepImmutableTypes.size}
            | took : $analysisTime seconds
            |""".stripMargin
 
-        val file = new File(
-            s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt"
-        )
+        val file = new File(s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt")
+
+        val bw = new BufferedWriter(new FileWriter(file))
 
         try {
-            val bw = new BufferedWriter(new FileWriter(file))
             bw.write(output)
             bw.close()
         } catch {
             case e: IOException ⇒
-                println(s"could not write file: ${file.getName}"); throw e
-            case _: Throwable ⇒
+                println(s"could not write file: ${file.getName}")
+        } finally {
+            bw.close()
         }
 
-        s" took : $analysisTime seconds"
+        output
     }
 }

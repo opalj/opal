@@ -4,6 +4,11 @@ package fpcf
 package analyses
 
 import java.net.URL
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
+import java.util.Calendar
+import java.io.IOException
 
 import org.opalj.br.Field
 import org.opalj.br.analyses.BasicReport
@@ -30,24 +35,17 @@ import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.fpcf.properties.FieldImmutability
 
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileWriter
-import java.util.Calendar
-import org.opalj.bytecode.JRELibraryFolder
-import java.io.IOException
-
 /**
- * Runs the EagerL0FieldImmutabilityAnalysis including analysis needed for improving the result.
+ * Runs the EagerL0FieldImmutabilityAnalysis including all analyses needed for improving the result.
  *
  * @author Tobias Peter Roth
  */
 object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
-    override def title: String = "runs the EagerL0FieldImmutabilityAnalysis"
+    override def title: String = "determines the immutability of (instance/static) fields"
 
     override def description: String =
-        "runs the EagerL0FieldImmutabilityAnalysis"
+        "identifies fields that are immutable in a deep or shallow way"
 
     override def doAnalyze(
         project:       Project[URL],
@@ -113,31 +111,29 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | ${deepImmutableFields.mkString(" | Deep Immutable Field\n")}
              |
              |
-             | mutable fields: ${mutableFields.size}
-             | shallow immutable fields: ${shallowImmutableFields.size}
-             | dependent immutable fields: ${dependentImmutableFields.size}
-             | deep immutable fields: ${deepImmutableFields.size}
+             | Mutable Fields: ${mutableFields.size}
+             | Shallow Immutable Fields: ${shallowImmutableFields.size}
+             | Dependent Immutable Fields: ${dependentImmutableFields.size}
+             | Deep Immutable Fields: ${deepImmutableFields.size}
              |
-             | count: ${mutableFields.size + shallowImmutableFields.size + dependentImmutableFields.size + deepImmutableFields.size}
+             | sum: ${mutableFields.size + shallowImmutableFields.size + dependentImmutableFields.size + deepImmutableFields.size}
              |
              | took : $analysisTime seconds
              |""".stripMargin
 
-        val file = new File(
-            s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt"
-        )
+        val file = new File(s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt")
+
+        val bw = new BufferedWriter(new FileWriter(file))
 
         try {
-            val bw = new BufferedWriter(new FileWriter(file))
             bw.write(output)
             bw.close()
         } catch {
-            case e: IOException ⇒ println(s"could not write file ${file.getName}"); throw e;
-            case _: Throwable   ⇒
+            case e: IOException ⇒ println(s"could not write file ${file.getName}")
+        } finally {
+            bw.close()
         }
-        println("JRELibraryFolder: "+JRELibraryFolder)
 
-        s"took : $analysisTime seconds"
-
+        output
     }
 }
