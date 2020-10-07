@@ -123,7 +123,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
         code:   Array[Stmt[V]]
     )(implicit state: State): Boolean = {
         //over-approximates that the lazy initialization can not be influenced via a parameter
-        if (method.descriptor.parametersCount >= 0)
+        if (method.descriptor.parametersCount > 0)
             false
         else
             !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
