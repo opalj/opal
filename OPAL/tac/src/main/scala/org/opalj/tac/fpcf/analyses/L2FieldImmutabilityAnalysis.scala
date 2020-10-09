@@ -136,8 +136,9 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         implicit val state: State = State(field)
 
         // Fields are not final if they are read prematurely!
-        if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key)))
-            return Result(field, MutableField);
+        if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key))) {
+            return Result(field, MutableField)
+        };
 
         if (field.isFinal)
             return createResult();
@@ -146,8 +147,9 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
 
         val thisType = field.classFile.thisType
 
-        if (field.isPublic)
+        if (field.isPublic) {
             return Result(field, MutableField)
+        }
 
         // Collect all classes that have access to the field, i.e. the declaring class and possibly
         // classes in the same package as well as subclasses
@@ -178,8 +180,9 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             }
 
         // If there are native methods, we give up
-        if (classesHavingAccess.exists(_.methods.exists(_.isNative)))
-            return Result(field, MutableField);
+        if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
+            return Result(field, MutableField)
+        };
 
         // We now (compared to the simple one) have to analyze the static initializer as
         // the static initializer can be used to initialize a private field of an instance
@@ -205,8 +208,9 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             taCode ← getTACAI(method, pcs)
         } {
-            if (methodUpdatesField(method, taCode, pcs))
-                return Result(field, MutableField);
+            if (methodUpdatesField(method, taCode, pcs)) {
+                return Result(field, MutableField)
+            };
         }
 
         if (state.lazyInitInvocation.isDefined) {
@@ -333,8 +337,9 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                 state.dependees,
                 c
             )
-        else
+        else {
             Result(state.field, state.fieldImmutability)
+        }
     }
 
     /**
@@ -370,9 +375,9 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                 !isFinalField(newEP)
         }
 
-        if (isNotFinal)
+        if (isNotFinal) {
             Result(state.field, MutableField)
-        else
+        } else
             createResult()
     }
 
@@ -531,30 +536,30 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                         case PutStatic.ASTID | PutField.ASTID ⇒
                             if (method.isInitializer) {
                                 if (field.isStatic) {
-                                    if (method.isConstructor)
-                                        return true;
+                                    if (method.isConstructor) {
+                                        return true
+                                    };
                                 } else {
                                     val receiverDefs = stmt.asPutField.objRef.asVar.definedBy
-                                    if (receiverDefs != SelfReferenceParameter)
-                                        return true;
+                                    if (receiverDefs != SelfReferenceParameter) {
+                                        return true
+                                    };
                                 }
                             } else {
                                 if (field.isStatic ||
                                     stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter) {
-                                    // We consider lazy initialization if there is only single write
-                                    // outside an initializer, so we can ignore synchronization
-                                    if (state.fieldImmutability == ShallowImmutableField) //LazyInitializedField)
-                                        return true;
 
                                     // A lazily initialized instance field must be initialized only
                                     // by its owning instance
                                     if (!field.isStatic &&
-                                        stmt.asPutField.objRef.asVar.definedBy != SelfReferenceParameter)
-                                        return true;
+                                        stmt.asPutField.objRef.asVar.definedBy != SelfReferenceParameter) {
+                                        return true
+                                    };
 
                                     val defaultValue = getDefaultValue()
-                                    if (defaultValue.isEmpty)
-                                        return true;
+                                    if (defaultValue.isEmpty) {
+                                        return true
+                                    };
 
                                     // A field written outside an initializer must be lazily
                                     // initialized or it is non-final
@@ -565,8 +570,9 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                                         taCode.stmts,
                                         taCode.cfg,
                                         taCode.pcToIndex
-                                    ))
-                                        return true;
+                                    )) {
+                                        return true
+                                    };
 
                                     state.fieldImmutability = ShallowImmutableField
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
@@ -1086,7 +1092,7 @@ object EagerL2FieldImmutabilityAnalysis
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L2FieldImmutabilityAnalysis(p)
-        val fields = p.allFields
+        val fields = p.allProjectClassFiles.flatMap(_.fields) // p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }

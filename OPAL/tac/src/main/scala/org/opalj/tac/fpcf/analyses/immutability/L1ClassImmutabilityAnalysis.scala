@@ -235,6 +235,8 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         var hasDependentImmutableFields = false
 
         val fieldsPropertyStoreInformation = propertyStore(instanceFields, FieldImmutability)
+        //println("class Inner: ")
+        //fieldsPropertyStoreInformation.foreach(println(_))
 
         fieldsPropertyStoreInformation.foreach(
             _ match {
@@ -278,6 +280,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
          */
         var minLocalImmutability: ClassImmutability = MutableClass
 
+        //println(s"suerclassinformation $superClassInformation")
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ClassImmutability = superClassInformation match {
             case UBP(MutableClass)            ⇒ MutableClass
@@ -286,6 +289,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
             case _                            ⇒ DeepImmutableClass
         }
         if (hasShallowImmutableFields) {
+            //println("has shallow immutable fields")
             maxLocalImmutability = ShallowImmutableClass
         }
 
@@ -536,12 +540,11 @@ trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 }
 
 /**
- * Scheduler to run the immutability analysis eagerly.
- * @author Tobias Peter Roth
+ * Scheduler to run the class immutability analysis eagerly.
+ * @author Tobias Roth
  * @author Michael Eichberg
  */
-object EagerL1ClassImmutabilityAnalysis
-    extends L1ClassImmutabilityAnalysisScheduler
+object EagerL1ClassImmutabilityAnalysis extends L1ClassImmutabilityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -563,11 +566,10 @@ object EagerL1ClassImmutabilityAnalysis
 }
 
 /**
- * Scheduler to run the immutability analysis lazily.
+ * Scheduler to run the class immutability analysis lazily.
  * @author Michael Eichberg
  */
-object LazyL1ClassImmutabilityAnalysis
-    extends L1ClassImmutabilityAnalysisScheduler
+object LazyL1ClassImmutabilityAnalysis extends L1ClassImmutabilityAnalysisScheduler
     with FPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)

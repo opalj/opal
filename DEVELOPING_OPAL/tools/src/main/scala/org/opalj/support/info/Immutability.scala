@@ -302,21 +302,25 @@ object Immutability {
             filter(field ⇒ allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field])).
             toTraversable.groupBy(_.toFinalELBP.p)
 
-        val fieldReferenceOrder = (eps1: EPS[Entity, FieldReferenceImmutability], eps2: EPS[Entity, FieldReferenceImmutability]) ⇒
-            eps1.e.toString < eps2.e.toString
+        val fieldReferenceOrder =
+            (eps1: EPS[Entity, FieldReferenceImmutability], eps2: EPS[Entity, FieldReferenceImmutability]) ⇒
+                eps1.e.toString < eps2.e.toString
 
-        val mutableFieldReferences = fieldReferenceGroupedResults(MutableFieldReference).toSeq.sortWith(fieldReferenceOrder)
+        val mutableFieldReferences =
+            fieldReferenceGroupedResults(MutableFieldReference).toSeq.sortWith(fieldReferenceOrder)
 
         val notThreadSafeLazyInitializedFieldReferences =
             fieldReferenceGroupedResults(LazyInitializedNotThreadSafeFieldReference).toSeq.sortWith(fieldReferenceOrder)
 
         val lazyInitializedReferencesNotThreadSafeButDeterministic =
-            fieldReferenceGroupedResults(LazyInitializedNotThreadSafeButDeterministicFieldReference).toSeq.sortWith(fieldReferenceOrder)
+            fieldReferenceGroupedResults(LazyInitializedNotThreadSafeButDeterministicFieldReference).
+                toSeq.sortWith(fieldReferenceOrder)
 
         val threadSafeLazyInitializedFieldReferences =
             fieldReferenceGroupedResults(LazyInitializedThreadSafeFieldReference).toSeq.sortWith(fieldReferenceOrder)
 
-        val immutableReferences = fieldReferenceGroupedResults(ImmutableFieldReference).toSeq.sortWith(fieldReferenceOrder)
+        val immutableReferences = fieldReferenceGroupedResults(ImmutableFieldReference).
+            toSeq.sortWith(fieldReferenceOrder)
 
         if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.References) {
             stringBuilderResults.append(

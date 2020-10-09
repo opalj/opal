@@ -1,16 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.tac.fpcf.analyses.immutability.reference
+package org.opalj
+package tac
+package fpcf
+package analyses
+package immutability
+package fieldreference
 
 import org.opalj.br.BooleanType
-import org.opalj.br.ByteType
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
-import org.opalj.br.FloatType
-import org.opalj.br.IntegerType
 import org.opalj.br.Method
 import org.opalj.br.PCs
-import org.opalj.br.ShortType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
@@ -21,13 +22,13 @@ import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.ImmutableReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicReference
-import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeReference
-import org.opalj.br.fpcf.properties.MutableReference
+import org.opalj.br.fpcf.properties.ImmutableFieldReference
+import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference
+import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeFieldReference
+import org.opalj.br.fpcf.properties.MutableFieldReference
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.properties.ReferenceImmutability
+import org.opalj.br.fpcf.properties.FieldReferenceImmutability
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
@@ -42,26 +43,23 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
-import org.opalj.tac.PutField
-import org.opalj.tac.PutStatic
-import org.opalj.tac.Stmt
-import org.opalj.tac.TACMethodParameter
-import org.opalj.tac.TACode
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.tac.SelfReferenceParameter
 import scala.annotation.switch
 import org.opalj.br.ReferenceType
+import org.opalj.br.ByteType
 import org.opalj.br.CharType
 import org.opalj.br.DoubleType
+import org.opalj.br.FloatType
+import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.ObjectType
+import org.opalj.br.ShortType
 
 /**
  *
  * Determines the immutability of the reference of a classes field.
- * In cases of fields with primitive types, we consider them also as a combination of fields and types
- * The field immutability will be determined in the FieldImmutabilityAnalysis.
+ * A field reference can either refer to an reference object or store a value.
  *
  * Examples:
  * class ... {
@@ -71,27 +69,26 @@ import org.opalj.br.ObjectType
  * ...
  * }
  *
- * In both cases we consider o and an as references with their respective types.
- * The combination of both is the field immutability.
- *
+ * In both cases we consider o and n as a field reference.
+ * o refers to a reference object with type Object and n is storing an integer-value.
  *
  * @note Requires that the 3-address code's expressions are not deeply nested.
  *
- * @author Tobias Peter Roth
+ * @author Tobias Roth
  * @author Dominik Helm
  * @author Florian Kübler
  * @author Michael Eichberg
  *
  */
-class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProject)
-    extends AbstractReferenceImmutabilityAnalysisLazyInitialization
-    with AbstractReferenceImmutabilityAnalysis
+class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeProject)
+    extends AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
+    with AbstractFieldReferenceImmutabilityAnalysis
     with FPCFAnalysis {
 
-    def doDetermineReferenceImmutability(entity: Entity): PropertyComputationResult = {
+    def doDetermineFieldReferenceImmutability(entity: Entity): PropertyComputationResult = {
         entity match {
             case field: Field ⇒ {
-                determineReferenceImmutability(field)
+                determineFieldReferenceImmutability(field)
             }
             case _ ⇒
                 val m = entity.getClass.getSimpleName+" is not an org.opalj.br.Field"
@@ -106,29 +103,37 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
      * If the analysis is schedulued using its companion object all class files with
      * native methods are filtered.
      */
-    private[analyses] def determineReferenceImmutability(
+    private[analyses] def determineFieldReferenceImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
+        println(
+            s"""
+             | determine field reference immutability:
+             | field ${field}
+             |
+             |
+             |""".stripMargin
+        )
+
         if (field.isFinal)
-            return Result(field, ImmutableReference);
+            return Result(field, ImmutableFieldReference);
+
         if (field.isPublic)
-            return Result(field, MutableReference);
+            return Result(field, MutableFieldReference);
+
         implicit val state: State = State(field)
-        state.referenceImmutability = ImmutableReference
+
         val thisType = field.classFile.thisType
 
         // Fields are not final if they are read prematurely!
-        if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key))) {
-            return Result(field, MutableReference)
-        };
+        if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key)))
+            return Result(field, MutableFieldReference)
+
         // Collect all classes that have access to the field, i.e. the declaring class and possibly
         // classes in the same package as well as subclasses
         // Give up if the set of classes having access to the field is not closed
         val initialClasses =
             if (field.isProtected || field.isPackagePrivate) {
-                if (!closedPackages.isClosed(thisType.packageName)) {
-                    return Result(field, MutableReference);
-                }
                 project.classesPerPackage(thisType.packageName)
             } else {
                 Set(field.classFile)
@@ -136,7 +141,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         val classesHavingAccess: Iterator[ClassFile] =
             if (field.isProtected) {
                 if (typeExtensibility(thisType).isYesOrUnknown) {
-                    return Result(field, MutableReference);
+                    return Result(field, MutableFieldReference);
                 }
                 val subclassesIterator: Iterator[ClassFile] =
                     classHierarchy.allSubclassTypes(thisType, reflexive = false).flatMap { ot ⇒
@@ -149,80 +154,39 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         // If there are native methods, we give up
         if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
             if (!field.isFinal)
-                return Result(field, MutableReference)
+                return Result(field, MutableFieldReference)
         }
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             taCode ← getTACAI(method, pcs)
         } {
             if (methodUpdatesField(method, taCode, pcs)) {
-                return Result(field, MutableReference);
+                return Result(field, MutableFieldReference);
             }
         }
         if (state.lazyInitInvocation.isDefined) {
             val calleesEOP = propertyStore(state.lazyInitInvocation.get._1, Callees.key)
-            handleCalls(calleesEOP)
+            handleCalls(calleesEOP, state.lazyInitInvocation.get._2)
         }
         createResult()
-    }
-
-    def handleCalls(
-        calleesEOP: EOptionP[DeclaredMethod, Callees]
-    )(
-        implicit
-        state: State
-    ): Boolean = {
-        calleesEOP match {
-            case FinalP(callees) ⇒
-                state.calleesDependee = None
-                handleCallees(callees)
-            case InterimUBP(callees) ⇒
-                state.calleesDependee = Some(calleesEOP)
-                handleCallees(callees)
-            case _ ⇒
-                state.calleesDependee = Some(calleesEOP)
-                false
-        }
-    }
-
-    def handleCallees(callees: Callees)(implicit state: State): Boolean = {
-        val pc = state.lazyInitInvocation.get._2
-        if (callees.isIncompleteCallSite(pc)) {
-            state.referenceImmutability = MutableReference //NonFinalFieldByAnalysis
-            true
-        } else {
-            val targets = callees.callees(pc)
-            if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
-                state.referenceImmutability = MutableReference //NonFinalFieldByAnalysis
-                true
-            } else false
-        }
     }
 
     /**
      * Returns the value the field will have after initialization or None if there may be multiple
      * values.
      */
-    def getDefaultValue()(implicit state: State): Option[Any] = {
+    def getDefaultValue()(implicit state: State): Any = {
 
         state.field.fieldType match {
-            case ObjectType.Integer
-                | ObjectType.Float
-                | ObjectType.Long
-                | ObjectType.Short
-                | ObjectType.Byte
-                | ObjectType.Double ⇒ Some(0)
-            case FloatType        ⇒ Some(0.0f)
-            case DoubleType       ⇒ Some(0.0d)
-            case LongType         ⇒ Some(0.0)
-            case CharType         ⇒ Some(0)
-            case IntegerType      ⇒ Some(0)
-            case _: ReferenceType ⇒ Some(null)
-            case BooleanType      ⇒ Some(false)
-            case ByteType         ⇒ Some(0)
-            case ShortType        ⇒ Some(0)
-
-            case _                ⇒ None
+            case FloatType | ObjectType.Float     ⇒ 0.0f
+            case DoubleType | ObjectType.Double   ⇒ 0.0d
+            case LongType | ObjectType.Long       ⇒ 0L
+            case CharType | ObjectType.Character  ⇒ '\u0000'
+            case BooleanType | ObjectType.Boolean ⇒ false
+            case IntegerType | ObjectType.Integer |
+                ByteType | ObjectType.Byte |
+                ShortType | ObjectType.Short ⇒ 0
+            case _: ReferenceType ⇒ null
         }
     }
 
@@ -231,10 +195,11 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
      * dependees or as Result otherwise.
      */
     def createResult()(implicit state: State): ProperPropertyComputationResult = {
-        if (state.hasDependees && (state.referenceImmutability ne MutableReference)) { //NonFinalFieldByAnalysis))
+
+        if (state.hasDependees && (state.referenceImmutability ne MutableFieldReference)) {
             InterimResult(
                 state.field,
-                MutableReference, //NonFinalFieldByAnalysis,
+                MutableFieldReference,
                 state.referenceImmutability,
                 state.dependees,
                 c
@@ -249,8 +214,14 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
      * property of the method that initializes a (potentially) lazy initialized field.
      */
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
-        var isNotFinal = false
 
+        var isNotFinal = false
+        println(
+            s"""
+               | enter continuation
+               | eps: $eps
+               |""".stripMargin
+        )
         eps.pk match {
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
@@ -263,12 +234,19 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                 state.tacDependees -= method
                 if (eps.isRefinable)
                     state.tacDependees += method -> ((newEP, pcs))
-                //TODO tacai funktionen alle ausführen
-                val tmp = method
-                if (tmp != method)
-                    isNotFinal = methodUpdatesField(method, newEP.ub.tac.get, pcs)
+                isNotFinal = methodUpdatesField(method, newEP.ub.tac.get, pcs)
             case Callees.key ⇒
-                isNotFinal = handleCalls(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]])
+                //if (eps.e.isInstanceOf[DeclaredMethod])
+
+                //state.lazyInitInvocation
+                val newEPS = eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
+                val pcs = state.calleesDependee(newEPS.e)._2
+                isNotFinal = pcs.forall(pc ⇒ handleCalls(newEPS, pc))
+            //state.calleesDependee+= (calleesEOP.e → (calleesEOP,pc :: state.calleesDependee(calleesEOP.e)._2))
+            //    isNotFinal = handleCalls()
+            //else {
+            //-T ODO callees handling
+            //}
             case FieldPrematurelyRead.key ⇒
                 isNotFinal = isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
             case Purity.key ⇒
@@ -281,14 +259,16 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                 isNotFinal = nonDeterministicResult
             //}
 
-            case ReferenceImmutability.key ⇒
-                val newEP = eps.asInstanceOf[EOptionP[Field, ReferenceImmutability]]
+            case FieldReferenceImmutability.key ⇒
+                val newEP = eps.asInstanceOf[EOptionP[Field, FieldReferenceImmutability]]
                 state.referenceImmutabilityDependees =
                     state.referenceImmutabilityDependees.iterator.filter(_.e ne newEP.e).toSet
                 isNotFinal = !isImmutableReference(newEP)
         }
+
+        println("result is not final: "+isNotFinal)
         if (isNotFinal)
-            state.referenceImmutability = MutableReference
+            state.referenceImmutability = MutableFieldReference
         createResult()
     }
 
@@ -305,7 +285,7 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
         val stmts = taCode.stmts
         for (pc ← pcs.iterator) {
             val index = taCode.pcToIndex(pc)
-            if (index > -1) { //TODO actually, unnecessary but required because there are '-1'
+            if (index > -1) { //TODO actually, unnecessary but required because there are '-1'; dead
                 val stmt = stmts(index)
                 if (stmt.pc == pc) {
                     (stmt.astID: @switch) match {
@@ -324,34 +304,33 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
                                     stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter) {
                                     // We consider lazy initialization if there is only single write
                                     // outside an initializer, so we can ignore synchronization
-                                    if (state.referenceImmutability == LazyInitializedThreadSafeReference ||
-                                        state.referenceImmutability == LazyInitializedNotThreadSafeButDeterministicReference) //LazyInitializedField)
+                                    if (state.referenceImmutability == LazyInitializedThreadSafeFieldReference ||
+                                        state.referenceImmutability == LazyInitializedNotThreadSafeButDeterministicFieldReference) //LazyInitializedField)
                                         return true;
                                     // A lazily initialized instance field must be initialized only
                                     // by its owning instance
                                     if (!field.isStatic &&
                                         stmt.asPutField.objRef.asVar.definedBy != SelfReferenceParameter)
                                         return true;
-                                    val defaultValue = getDefaultValue()
-                                    if (defaultValue.isEmpty)
-                                        return true;
 
                                     // A field written outside an initializer must be lazily
                                     // initialized or it is non-final
                                     val result = handleLazyInitialization(
                                         index,
-                                        defaultValue.get,
+                                        getDefaultValue(),
                                         method,
                                         taCode.stmts,
                                         taCode.cfg,
                                         taCode.pcToIndex,
                                         taCode
                                     )
-                                    if (result.isDefined)
-                                        return result.get;
+                                    if (result) {
+                                        println("result7: "+result)
+                                        return result
+                                    };
 
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
-
+                                    println("reference has escaped")
                                     // note that here we assume real three address code (flat hierarchy)
 
                                     // for instance fields it is okay if they are written in the
@@ -436,61 +415,58 @@ class L0ReferenceImmutabilityAnalysis private[analyses] (val project: SomeProjec
 
 }
 
-trait L0ReferenceImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+trait L0FieldReferenceImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     import org.opalj.br.fpcf.properties.FieldImmutability
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(Purity),
         PropertyBounds.lub(FieldPrematurelyRead),
-        PropertyBounds.finalP(TACAI),
+        PropertyBounds.ub(TACAI),
         PropertyBounds.ub(EscapeProperty),
-        PropertyBounds.ub(ReferenceImmutability),
+        PropertyBounds.ub(FieldReferenceImmutability),
         PropertyBounds.ub(FieldImmutability)
     )
 
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(ReferenceImmutability)
-
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldReferenceImmutability)
 }
 
 /**
- * Executor for the field mutability analysis.
+ * Executor for the eager field reference immutability analysis.
  */
-object EagerL0ReferenceImmutabilityAnalysis
-    extends L0ReferenceImmutabilityAnalysisScheduler
+object EagerL0FieldReferenceImmutabilityAnalysis extends L0FieldReferenceImmutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L0ReferenceImmutabilityAnalysis(p)
-        val fields = p.allFields // p.allProjectClassFiles.flatMap(_.fields) //p.allFields
-        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineReferenceImmutability)
-        analysis
-    }
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
+
+    final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
+        val analysis = new L0FieldReferenceImmutabilityAnalysis(p)
+        val fields = p.allFields // p.allProjectClassFiles.flatMap(_.fields) //p.allFields
+        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldReferenceImmutability)
+        analysis
+    }
 }
 
 /**
- * Executor for the lazy field mutability analysis.
+ * Executor for the lazy field reference immutability analysis.
  */
-object LazyL0ReferenceImmutabilityAnalysis
-    extends L0ReferenceImmutabilityAnalysisScheduler
+object LazyL0FieldReferenceImmutabilityAnalysis extends L0FieldReferenceImmutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
+
+    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     final override def register(
         p:      SomeProject,
         ps:     PropertyStore,
         unused: Null
     ): FPCFAnalysis = {
-        val analysis = new L0ReferenceImmutabilityAnalysis(p)
+        val analysis = new L0FieldReferenceImmutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
-            ReferenceImmutability.key,
-            analysis.determineReferenceImmutability
+            FieldReferenceImmutability.key,
+            analysis.determineFieldReferenceImmutability
         )
         analysis
     }
-
-    override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 }
