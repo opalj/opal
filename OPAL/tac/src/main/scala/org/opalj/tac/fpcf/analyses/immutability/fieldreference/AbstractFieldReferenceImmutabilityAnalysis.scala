@@ -163,7 +163,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
         }
     }
 
-    def handleCalls(
+    def doCallsIntroduceNonDeterminism(
         calleesEOP: EOptionP[DeclaredMethod, Callees],
         pc:         PC
     )(
@@ -171,8 +171,8 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
         state: State
     ): Boolean = {
         calleesEOP match {
-            case FinalP(callees)     ⇒ handleCallees(callees, pc)
-            case InterimUBP(callees) ⇒ handleCallees(callees.asInstanceOf[Callees], pc)
+            case FinalP(callees)     ⇒ isACalleeNotDeterministic(callees, pc)
+            case InterimUBP(callees) ⇒ isACalleeNotDeterministic(callees.asInstanceOf[Callees], pc)
             case _ ⇒
                 state.calleesDependee +=
                     calleesEOP.e → ((calleesEOP, pc :: state.calleesDependee(calleesEOP.e)._2))
@@ -180,7 +180,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
         }
     }
 
-    def handleCallees(callees: Callees, pc: PC)(implicit state: State): Boolean = {
+    def isACalleeNotDeterministic(callees: Callees, pc: PC)(implicit state: State): Boolean = {
         if (callees.isIncompleteCallSite(pc)) {
             state.referenceImmutability = MutableFieldReference
             true

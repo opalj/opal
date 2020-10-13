@@ -53,7 +53,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
      * The key associated with every [[TypeImmutability]] property.
      */
     final val key: PropertyKey[TypeImmutability] = PropertyKey.create(
-        "org.opalj.TypeImmutability_new",
+        "org.opalj.TypeImmutability",
         MutableType
     )
 }

@@ -147,7 +147,11 @@ object FieldReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication
             bw.write(output)
             bw.close()
         } catch {
-            case e: IOException ⇒ println(s"Could not write file: ${file.getName}")
+            case e: IOException ⇒ println(
+                s""" Could not write file: ${file.getName}
+               | ${e.getMessage}
+               |""".stripMargin
+            )
         } finally {
             bw.close()
         }

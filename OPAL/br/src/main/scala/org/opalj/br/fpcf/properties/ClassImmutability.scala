@@ -15,7 +15,8 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
 
 /**
  * Describes the class immutability of org.opalj.br.ClassFile.
- * The immutability of the classes are represented via their instance fields and the immutability of its supertype.
+ * The immutability of the classes are represented via the lower bound of the immutability of
+ * their instance fields and the immutability of its supertype.
  *
  * [[MutableClass]] A class with a mutable state.
  *
@@ -42,7 +43,7 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
      * The key associated with every [[ClassImmutability]] property.
      */
     final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
-        "opalj.ClassImmutability_new",
+        "opalj.ClassImmutability",
         MutableClass
     )
 }
@@ -57,7 +58,6 @@ case object DeepImmutableClass extends ClassImmutability {
 }
 
 case object DependentImmutableClass extends ClassImmutability {
-
     override def correspondingTypeImmutability: TypeImmutability = DependentImmutableType
 
     def meet(that: ClassImmutability): ClassImmutability =
@@ -74,7 +74,6 @@ case object DependentImmutableClass extends ClassImmutability {
 }
 
 case object ShallowImmutableClass extends ClassImmutability {
-
     override def correspondingTypeImmutability: TypeImmutability = ShallowImmutableType
 
     def meet(that: ClassImmutability): ClassImmutability = {
@@ -92,7 +91,6 @@ case object ShallowImmutableClass extends ClassImmutability {
 }
 
 case object MutableClass extends ClassImmutability {
-
     def correspondingTypeImmutability = MutableType
 
     def meet(other: ClassImmutability): ClassImmutability = this

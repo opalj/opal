@@ -65,7 +65,6 @@ import org.opalj.log.GlobalLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreContext
-import org.opalj.support.info.RunningAnalyses.RunningAnalysis
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.ai.domain
@@ -85,17 +84,14 @@ import org.opalj.fpcf.EPS
  *
  * @author Tobias Peter Roth
  */
-object RunningAnalyses extends Enumeration {
-    type RunningAnalysis = Value
-    val References, Fields, Classes, Types, All = Value
-}
-import RunningAnalyses.References
-import RunningAnalyses.Fields
-import RunningAnalyses.Classes
-import RunningAnalyses.Types
-import RunningAnalyses.All
-
 object Immutability {
+
+    sealed trait RunningAnalysis
+    case object References extends RunningAnalysis
+    case object Fields extends RunningAnalysis
+    case object Classes extends RunningAnalysis
+    case object Types extends RunningAnalysis
+    case object All extends RunningAnalysis
 
     def evaluate(
         cp:                    File,
@@ -291,10 +287,10 @@ object Immutability {
 
         val allFieldsInProjectClassFiles = {
             if (reImInferComparison) {
-                project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
-            } else {
                 project.allProjectClassFiles.toIterator.flatMap { _.fields }.
-                    filter(f ⇒ (!f.isTransient && !f.isSynthetic)).toSet
+                    filter(f ⇒ !f.isTransient && !f.isSynthetic).toSet
+            } else {
+                project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
             }
         }
 
@@ -322,7 +318,7 @@ object Immutability {
         val immutableReferences = fieldReferenceGroupedResults(ImmutableFieldReference).
             toSeq.sortWith(fieldReferenceOrder)
 
-        if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.References) {
+        if (analysis == All || analysis == References) {
             stringBuilderResults.append(
                 s"""
                 | Mutable References:
@@ -368,7 +364,7 @@ object Immutability {
 
         val deepImmutableFields = fieldGroupedResults(DeepImmutableField).toSeq.sortWith(fieldOrder)
 
-        if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.Fields) {
+        if (analysis == All || analysis == Fields) {
             stringBuilderResults.append(
                 s"""
                 | Mutable Fields:
@@ -413,7 +409,7 @@ object Immutability {
         val deepImmutableClasses = deepImmutables
             .filter(eps ⇒ !allInterfaces.contains(eps.asInstanceOf[ObjectType])).toSeq.sortWith(order)
 
-        if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.Classes) {
+        if (analysis == All || analysis == Classes) {
             stringBuilderResults.append(
                 s"""
                 | Mutable Classes:
@@ -448,7 +444,7 @@ object Immutability {
 
         val deepImmutableTypes = typeGroupedResults(DeepImmutableType).toSeq.sortWith(typeOrder)
 
-        if (analysis == RunningAnalyses.All || analysis == RunningAnalyses.Types) {
+        if (analysis == All || analysis == Types) {
             stringBuilderResults.append(
                 s"""
                 | Mutable Types:
@@ -468,7 +464,7 @@ object Immutability {
 
         val stringBuilderAmounts: StringBuilder = new StringBuilder
 
-        if (analysis == RunningAnalyses.References || analysis == RunningAnalyses.All) {
+        if (analysis == References || analysis == All) {
             stringBuilderAmounts.append(
                 s"""
                 | Mutable References: ${mutableFieldReferences.size}
@@ -481,7 +477,7 @@ object Immutability {
                 |""".stripMargin
             )
         }
-        if (analysis == RunningAnalyses.Fields || analysis == RunningAnalyses.All) {
+        if (analysis == Fields || analysis == All) {
             stringBuilderAmounts.append(
                 s"""
                 | Mutable Fields: ${mutableFields.size}
@@ -493,7 +489,7 @@ object Immutability {
             )
         }
 
-        if (analysis == RunningAnalyses.Classes || analysis == RunningAnalyses.All) {
+        if (analysis == Classes || analysis == All) {
             stringBuilderAmounts.append(
                 s"""
                 | Mutable Classes: ${mutableClasses.size}
@@ -507,7 +503,7 @@ object Immutability {
             )
         }
 
-        if (analysis == RunningAnalyses.Types || analysis == RunningAnalyses.All)
+        if (analysis == Types || analysis == All)
             stringBuilderAmounts.append(
                 s"""
                 | Mutable Types: ${mutableTypes.size}
@@ -625,22 +621,22 @@ object Immutability {
             }
         }
 
-        var analysis: RunningAnalysis = RunningAnalyses.All
+        var analysis: RunningAnalysis = All
 
         while (i < args.length) {
             args(i) match {
                 case "-analysis" ⇒ {
                     val result = readNextArg()
                     if (result == "All")
-                        analysis = RunningAnalyses.All
+                        analysis = All
                     else if (result == "References")
-                        analysis = RunningAnalyses.References
+                        analysis = References
                     else if (result == "Fields")
-                        analysis = RunningAnalyses.Fields
+                        analysis = Fields
                     else if (result == "Classes")
-                        analysis = RunningAnalyses.Classes
+                        analysis = Classes
                     else if (result == "Types")
-                        analysis = RunningAnalyses.Types
+                        analysis = Types
                     else throw new IllegalArgumentException(s"unknown parameter: $result")
                 }
                 case "-threads" ⇒ numThreads = readNextArg().toInt

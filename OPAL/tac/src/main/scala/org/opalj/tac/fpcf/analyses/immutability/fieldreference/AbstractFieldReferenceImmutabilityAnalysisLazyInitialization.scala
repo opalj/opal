@@ -150,7 +150,7 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
         // println("C")
         // println (s"field: ${state.field}")
         if (method.returnType == state.field.fieldType &&
-            !isTheFieldsValueReturned(write, writeIndex, readIndex, cfg, tacCode)) {
+            !isTheFieldValueReturned(write, writeIndex, readIndex, cfg, tacCode)) {
             return MutableFieldReference;
         }
         // println("D")
@@ -237,18 +237,16 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
      *         the bb of the caughtException)
      * @return The second element of the tuple returns:
      *         The throw statements: (the pc, the definitionSites, the bb of the throw statement)
-     *         The third element of the triple returns:
      * @author Tobias Roth
      */
     def findCaughtsThrowsAndResults(
         tacCode: TACode[TACMethodParameter, V],
         cfg:     CFG[Stmt[V], TACStmts[V]]
-    ): (List[(Int, ObjectType, IntTrieSet, CFGNode)], List[(Int, IntTrieSet, CFGNode)]) = { //}, List[CFGNode]) = {
+    ): (List[(Int, ObjectType, IntTrieSet, CFGNode)], List[(Int, IntTrieSet, CFGNode)]) = {
         var caughtExceptions: List[(Int, ObjectType, IntTrieSet, CFGNode)] = List.empty
         var throwStatements: List[(Int, IntTrieSet, CFGNode)] = List.empty
-        //var returnNodes: List[CFGNode] = List.empty
         for (stmt ← tacCode.stmts) {
-            if (!stmt.isNop) { //pc < ...
+            if (!stmt.isNop) { // to prevent the handling of partially negative pcs of nops
                 val currentBB = cfg.bb(tacCode.pcToIndex(stmt.pc))
                 (stmt.astID: @switch) match {
                     case CaughtException.ASTID ⇒
@@ -256,32 +254,32 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                         val exceptionType =
                             if (caughtException.exceptionType.isDefined) {
                                 val intermediateExceptionType = caughtException.exceptionType.get
-                                //if (intermediateExceptionType.isObjectType)
                                 intermediateExceptionType.asObjectType
-                                //else
-                                //ObjectType.Throwable //   ObjectType.Exception
                             } else
-                                ObjectType.Throwable // ObjectType.Exception
+                                ObjectType.Throwable
                         caughtExceptions =
-                            ((caughtException.pc, exceptionType, caughtException.origins, currentBB)) :: caughtExceptions
+                            (caughtException.pc, exceptionType, caughtException.origins, currentBB) :: caughtExceptions
                     case Throw.ASTID ⇒
                         val throwStatement = stmt.asThrow
-                        val throwStatementDefinedBys =
-                            // if (throwStatement.exception.isVar) {
-                            throwStatement.exception.asVar.definedBy
-                        // } else
-                        //    IntTrieSet.empty
-                        throwStatements = ((throwStatement.pc, throwStatementDefinedBys, currentBB)) :: throwStatements
-                    //case ReturnValue.ASTID ⇒
-                    //    returnNodes = (currentBB) :: returnNodes
+                        val throwStatementDefinedBys = throwStatement.exception.asVar.definedBy
+                        throwStatements = (throwStatement.pc, throwStatementDefinedBys, currentBB) :: throwStatements
                     case _ ⇒
                 }
-                //}
             }
         }
-        (caughtExceptions, throwStatements) //, returnNodes)
+        (caughtExceptions, throwStatements)
     }
 
+    /**
+     *
+     * @param fieldWrite
+     * @param defaultValue
+     * @param code
+     * @param cfg
+     * @param tacCode
+     * @param state
+     * @return
+     */
     def findMonitors(
         fieldWrite:   Int,
         defaultValue: Any,
@@ -297,6 +295,12 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
         var monitorExitQueuedBBs: Set[CFGNode] = startBB.successors
         var worklistMonitorExit = getSuccessors(startBB, Set.empty)
 
+        /**
+         *
+         * @param v
+         * @param state
+         * @return
+         */
         def checkMonitor(v: V)(implicit state: State): Boolean = {
             v.definedBy
                 .forall(definedByIndex ⇒ {
@@ -422,8 +426,6 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
             if (!seen.contains(curBB)) {
                 seen += curBB
 
-                // println("curBB: "+curBB)
-
                 //val startPC = curBB.startPC
                 val endPC = curBB.endPC
 
@@ -434,16 +436,6 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                         // println("ifstmt: ")
                         // println(cfStmt)
                         val ifStmt = cfStmt.asIf
-                        //ifStmt.condition match {
-                        // println("AA")
-                        /*  println(s"isguard: ${
-                        isGuard(
-                            ifStmt,
-                            defaultValue,
-                            code,
-                            tacCode
-                        )
-                    }") */
                         if (ifStmt.condition.equals(EQ) && curBB != startBB && isGuard(
                             ifStmt,
                             defaultValue,
@@ -521,25 +513,16 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                 else
                     ifStmt.leftExpr
             val definitions = expr.asVar.definedBy
-            if (definitions.exists(_ < 0)) //.head < 0)
-                return finalResult;
-            println(
-                s"""definitions:
-                   |field read
-                   | ${code(definitions.head).asAssignment.expr}
-                   |
-                   |
-                   |""".stripMargin
-            )
-            fieldReadIndex = definitions.head
-            val fieldReadUses = code(definitions.head).asAssignment.targetVar.usedBy //TODO ...
-            val fieldReadUsedCorrectly =
-                fieldReadUses.forall(use ⇒ use == result._1 || use == result._2)
-
-            if (definitions.size == 1 && definitions.head >= 0 && fieldReadUsedCorrectly)
-                finalResult = (result._1, result._2, definitions.head, result._3, result._4, fieldReadIndex) :: finalResult // Found proper guard
-            else finalResult
-        }) // else None)
+            if (!definitions.exists(_ < 0)) {
+                //return finalResult;
+                fieldReadIndex = definitions.head
+                val fieldReadUses = code(definitions.head).asAssignment.targetVar.usedBy
+                val fieldReadUsedCorrectly =
+                    fieldReadUses.forall(use ⇒ use == result._1 || use == result._2)
+                if (definitions.size == 1 && definitions.head >= 0 && fieldReadUsedCorrectly)
+                    finalResult = (result._1, result._2, definitions.head, result._3, result._4, fieldReadIndex) :: finalResult // Found proper guard
+            }
+        })
         finalResult
     }
 
@@ -559,27 +542,16 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
     }
 
     def isTransitivePredecessor(possiblePredecessor: CFGNode, node: CFGNode): Boolean = {
-        var visited: Set[CFGNode] = Set.empty
-        def isTransitivePredecessorInternal(possiblePredecessor: CFGNode, node: CFGNode): Boolean = {
-            /*println(
-                s"""
-               |is transitive predecessor:
-               |possiblePredecessor: $possiblePredecessor
-               | node: $node
-               | visited: ${visited.mkString("\n")}
-               |""".stripMargin
-            ) */
 
+        var visited: Set[CFGNode] = Set.empty
+
+        def isTransitivePredecessorInternal(possiblePredecessor: CFGNode, node: CFGNode): Boolean = {
             if (possiblePredecessor == node) {
                 true
             } else if (visited.contains(node))
                 false
             else {
                 visited += node
-                //val predecessors = node.predecessors //getPredecessors(node, Set.empty)
-                //val tmpVisited2 = tmpVisited ++ predecessors
-                //println("predecessors: "+predecessors.mkString(", \n"))
-                //println("tmpVisited2: "+tmpVisited2)
                 node.predecessors.exists(
                     currentNode ⇒ {
                         isTransitivePredecessorInternal(possiblePredecessor, currentNode)
@@ -587,7 +559,6 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                 )
             }
         }
-        println("--------------------------------------------------------------------------------------------------------")
         isTransitivePredecessorInternal(possiblePredecessor, node)
     }
 
@@ -669,7 +640,7 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                     true //TODO look at it
                 case Var.ASTID ⇒ {
                     val varValue = value.asVar
-                    varValue.definedBy.size == 1 && //stronger requirement -> only one definition side
+                    varValue.definedBy.size == 1 && //no different values due to different control flows
                         varValue.definedBy.forall(i ⇒ i >= 0 && isNonConstDeterministic(code(i).asAssignment.expr))
                 }
                 case New.ASTID ⇒ {
@@ -678,8 +649,10 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                     //TODO check
                     val nonVirtualMethodCallIndex =
                         origin.asAssignment.targetVar.usedBy.iterator.filter(i ⇒ code(i).isNonVirtualMethodCall).toList.head
-                    val resultCallees = propertyStore(declaredMethods(method), Callees.key)
-                    !handleCalls(resultCallees, nonVirtualMethodCallIndex) &&
+
+                    //code(nonVirtualMethodCallIndex).asNonVirtualMethodCall.
+                    val propertyStoreResultCallees = propertyStore(declaredMethods(method), Callees.key)
+                    !doCallsIntroduceNonDeterminism(propertyStoreResultCallees, nonVirtualMethodCallIndex) &&
                         code(nonVirtualMethodCallIndex).asNonVirtualMethodCall.params.forall(isConstant)
                 }
                 case _ ⇒
@@ -701,10 +674,8 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
     def isReadOfCurrentField(expr: Expr[V], tacCode: TACode[TACMethodParameter, V])(implicit state: State): Boolean = {
         var seenExpressions: Set[Expr[V]] = Set.empty
         def isReadOfCurrentFieldInternal(expr: Expr[V], tacCode: TACode[TACMethodParameter, V])(implicit state: State): Boolean = {
-
-            if (seenExpressions.contains(expr)) {
-                return false
-            };
+            if (seenExpressions.contains(expr))
+                return false;
             seenExpressions += expr
             def isExprReadOfCurrentField(pc: Int): Int ⇒ Boolean = index ⇒
                 index == tacCode.pcToIndex(pc) ||
@@ -712,22 +683,11 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                     isReadOfCurrentFieldInternal(tacCode.stmts(index).asAssignment.expr, tacCode)
             (expr.astID: @switch) match {
                 case GetField.ASTID ⇒
-
-                    //f (state.field.classFile.thisType.simpleName.contains("DoubleCheckedLocking")) {
-                    /*println(
-                        s"""
-                             | field: ${state.field}
-                             | expr: $expr
-                             | objectDefinition: ${expr.asGetField.objRef.asVar.definedBy}
-                             | SelfReferenceParameter: ${SelfReferenceParameter}
-                             | resolve: ${if (expr.asGetField.objRef.asVar.definedBy == SelfReferenceParameter) expr.asGetField.resolveField(project)}
-                             | field: ${state.field}
-                             |""".stripMargin
-                    ) */
-                    //}
                     val objRefDefinition = expr.asGetField.objRef.asVar.definedBy
-                    if (objRefDefinition != SelfReferenceParameter) false
-                    else expr.asGetField.resolveField(project).contains(state.field)
+                    if (objRefDefinition != SelfReferenceParameter)
+                        false
+                    else
+                        expr.asGetField.resolveField(project).contains(state.field)
                 case GetStatic.ASTID ⇒ expr.asGetStatic.resolveField(project).contains(state.field)
                 case Compare.ASTID ⇒ {
                     val leftExpr = expr.asCompare.left
@@ -744,27 +704,19 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                 case VirtualFunctionCall.ASTID
                     | NonVirtualFunctionCall.ASTID
                     | StaticFunctionCall.ASTID ⇒ {
-                    // val (receiverDefSites,
                     val (params, pc) =
                         if (expr.isVirtualFunctionCall) {
                             val virtualFunctionCall = expr.asVirtualFunctionCall
-                            //(virtualFunctionCall.receiver.asVar.definedBy,
                             (virtualFunctionCall.params, virtualFunctionCall.pc)
                         } else if (expr.isStaticFunctionCall) {
                             val staticFunctionCall = expr.asStaticFunctionCall
-                            //val receiverDefSites = staticFunctionCall.receiverOption
-                            //if (receiverDefSites.isEmpty)
-                            //    return false;
-                            //(receiverDefSites.get.asVar.definedBy,
                             (staticFunctionCall.params, staticFunctionCall.pc)
                         } else {
                             val nonVirtualFunctionCall = expr.asNonVirtualFunctionCall
-                            //(nonVirtualFunctionCall.receiver.asVar.definedBy,
                             (nonVirtualFunctionCall.params, nonVirtualFunctionCall.pc)
                         }
                     params.forall(expr ⇒
                         expr.asVar.definedBy.forall(isExprReadOfCurrentField(pc)))
-                    //isReadOfCurrentFieldInternal(expr, tacCode))
                 }
                 case _ ⇒ false
             }
@@ -839,7 +791,7 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
 
                         val calleesResult = propertyStore(declaredMethods(method), Callees.key)
 
-                        if (handleCalls(calleesResult, code(index).asAssignment.pc))
+                        if (doCallsIntroduceNonDeterminism(calleesResult, code(index).asAssignment.pc))
                             return false;
 
                         if (isVirtualFunctionCall) {
@@ -916,11 +868,9 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
     }
 
     /**
-     *
      * Checks that the value of the field is returned.
-     *
      */
-    def isTheFieldsValueReturned(
+    def isTheFieldValueReturned(
         write:      FieldWriteAccessStmt[V],
         writeIndex: Int,
         readIndex:  Int,
@@ -928,7 +878,6 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
         tacCode:    TACode[TACMethodParameter, V]
     )(implicit state: State): Boolean = {
         val startBB = cfg.bb(0).asBasicBlock
-        //var curBB = startBB
         var queuedNodes: Set[CFGNode] = Set.empty
         var workList = getSuccessors(startBB, queuedNodes)
         workList ++= Set(startBB)

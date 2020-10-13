@@ -6,6 +6,8 @@ package analyses
 package immutability
 package fieldreference
 
+import scala.annotation.switch
+
 import org.opalj.br.BooleanType
 import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
@@ -45,7 +47,6 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.properties.TACAI
-import scala.annotation.switch
 import org.opalj.br.ReferenceType
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
@@ -58,8 +59,8 @@ import org.opalj.br.ShortType
 
 /**
  *
- * Determines the immutability of the reference of a classes field.
- * A field reference can either refer to an reference object or store a value.
+ * Determines the immutability of the reference of a class' field.
+ * A field reference can either refer to an reference object or have a value.
  *
  * Examples:
  * class ... {
@@ -70,7 +71,7 @@ import org.opalj.br.ShortType
  * }
  *
  * In both cases we consider o and n as a field reference.
- * o refers to a reference object with type Object and n is storing an integer-value.
+ * o refers to a reference object with type [[Object]] and n is storing an a value with type int.
  *
  * @note Requires that the 3-address code's expressions are not deeply nested.
  *
@@ -106,14 +107,14 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     private[analyses] def determineFieldReferenceImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
-        println(
+        /* println(
             s"""
              | determine field reference immutability:
              | field ${field}
              |
              |
              |""".stripMargin
-        )
+        )*/
 
         if (field.isFinal)
             return Result(field, ImmutableFieldReference);
@@ -166,7 +167,7 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
         }
         if (state.lazyInitInvocation.isDefined) {
             val calleesEOP = propertyStore(state.lazyInitInvocation.get._1, Callees.key)
-            handleCalls(calleesEOP, state.lazyInitInvocation.get._2)
+            doCallsIntroduceNonDeterminism(calleesEOP, state.lazyInitInvocation.get._2)
         }
         createResult()
     }
@@ -241,7 +242,7 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                 //state.lazyInitInvocation
                 val newEPS = eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
                 val pcs = state.calleesDependee(newEPS.e)._2
-                isNotFinal = pcs.forall(pc ⇒ handleCalls(newEPS, pc))
+                isNotFinal = pcs.forall(pc ⇒ doCallsIntroduceNonDeterminism(newEPS, pc))
             //state.calleesDependee+= (calleesEOP.e → (calleesEOP,pc :: state.calleesDependee(calleesEOP.e)._2))
             //    isNotFinal = handleCalls()
             //else {
@@ -443,7 +444,7 @@ object EagerL0FieldReferenceImmutabilityAnalysis extends L0FieldReferenceImmutab
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldReferenceImmutabilityAnalysis(p)
-        val fields = p.allFields // p.allProjectClassFiles.flatMap(_.fields) //p.allFields
+        val fields = p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldReferenceImmutability)
         analysis
     }

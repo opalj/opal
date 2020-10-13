@@ -246,13 +246,9 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                     else
                         return createResultForAllSubtypes(t, MutableClass);
                 }
-                case FinalP(ShallowImmutableField) ⇒
-                    hasShallowImmutableFields = true
-                case FinalEP(fi, DependentImmutableField) ⇒ {
-                    hasDependentImmutableFields = true
-                }
-
-                case FinalP(DeepImmutableField) ⇒
+                case FinalP(ShallowImmutableField)   ⇒ hasShallowImmutableFields = true
+                case FinalP(DependentImmutableField) ⇒ hasDependentImmutableFields = true
+                case FinalP(DeepImmutableField)      ⇒
                 case ep @ InterimE(e) ⇒
                     hasFieldsWithUnknownMutability = true
                     dependees += (e -> ep)
@@ -269,18 +265,8 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
 
         )
 
-        /**
-         * var minLocalImmutability: ClassImmutability_new =
-         * if (!superClassMutabilityIsFinal) {
-         * MutableClass //MutableObjectByAnalysis
-         *
-         * } else {
-         * ShallowImmutableClass //ImmutableContainer
-         * } *
-         */
         var minLocalImmutability: ClassImmutability = MutableClass
 
-        //println(s"suerclassinformation $superClassInformation")
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ClassImmutability = superClassInformation match {
             case UBP(MutableClass)            ⇒ MutableClass
@@ -289,12 +275,11 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
             case _                            ⇒ DeepImmutableClass
         }
         if (hasShallowImmutableFields) {
-            //println("has shallow immutable fields")
             maxLocalImmutability = ShallowImmutableClass
         }
 
-        //if (!dependentImmutableFields.isEmpty && maxLocalImmutability != ShallowImmutableClass) {
-        if (hasDependentImmutableFields && maxLocalImmutability != ShallowImmutableClass && maxLocalImmutability != MutableClass) {
+        if (hasDependentImmutableFields &&
+            maxLocalImmutability != ShallowImmutableClass && maxLocalImmutability != MutableClass) {
             maxLocalImmutability = DependentImmutableClass
         }
 
@@ -357,44 +342,19 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                     } else if (maxLocalImmutability != MutableClass && maxLocalImmutability != ShallowImmutableClass) {
                         maxLocalImmutability = DependentImmutableClass
                     }
-                    /**
-                     * if (hasShallowImmutableFields && maxLocalImmutability != MutableClass) {
-                     * maxLocalImmutability = ShallowImmutableClass
-                     * } else if (maxLocalImmutability != ShallowImmutableClass && maxLocalImmutability != MutableClass) {
-                     * maxLocalImmutability = DependentImmutableClass
-                     * } else
-                     * maxLocalImmutability = ShallowImmutableClass
-                     * }*
-                     */
-
-                    //} else
-                    //    maxLocalImmutability = DependentImmutableClass // DependentImmutableClass
                 }
 
-                // Field Mutability related dependencies:
-                //
-                case FinalP(DeepImmutableField) ⇒
-                case FinalP(ShallowImmutableField) ⇒ {
-                    maxLocalImmutability = ShallowImmutableClass
-                }
-                case FinalP(MutableField) ⇒ return Result(t, MutableClass);
-
-                case UBP(MutableField) ⇒
-                    return Result(t, MutableClass);
-
-                case ELBP(e, ShallowImmutableField | DeepImmutableField) ⇒
-                    dependees -= e
-                //xx if (minLocalImmutability != ShallowImmutableClass) // && // ImmutableContainer &&
-                //!dependees.valuesIterator.exists(_.pk != TypeImmutability_new.key)) //TypeImmutability.key))
-                //xx minLocalImmutability = ShallowImmutableClass //ImmutableContainer // Lift lower bound when possible
-
-                case UBP(DeepImmutableField)    ⇒ //_: FinalField) ⇒ // no information about field mutability
-                case UBP(ShallowImmutableField) ⇒ maxLocalImmutability = ShallowImmutableClass
+                // Field Immutability related dependencies:
+                case FinalP(DeepImmutableField)                          ⇒
+                case FinalP(ShallowImmutableField)                       ⇒ maxLocalImmutability = ShallowImmutableClass
+                case FinalP(MutableField)                                ⇒ return Result(t, MutableClass);
+                case UBP(MutableField)                                   ⇒ return Result(t, MutableClass);
+                case ELBP(e, ShallowImmutableField | DeepImmutableField) ⇒ dependees -= e
+                case UBP(DeepImmutableField)                             ⇒ // no information about field mutability
+                case UBP(ShallowImmutableField)                          ⇒ maxLocalImmutability = ShallowImmutableClass
                 case UBP(DependentImmutableField) if (maxLocalImmutability != ShallowImmutableClass) ⇒
                     maxLocalImmutability = DependentImmutableClass
-
                 case _ ⇒ Result(t, MutableClass) //TODO check
-
             }
 
             if (someEPS.isRefinable) {
@@ -409,10 +369,6 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 )
        */
 
-            // Lift lower bound once no dependencies other than field type mutabilities are left
-            ////if (minLocalImmutability != ShallowImmutableClass) // && //ImmutableContainer &&
-            //dependees.valuesIterator.forall(_.pk == TypeImmutability_new.key)) //TypeImmutability.key))
-            ////    minLocalImmutability = ShallowImmutableClass //ImmutableContainer
             if (dependees.isEmpty || minLocalImmutability == maxLocalImmutability) {
                 /*[DEBUG]
                     assert(

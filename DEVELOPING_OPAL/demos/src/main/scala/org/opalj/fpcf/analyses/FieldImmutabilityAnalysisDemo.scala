@@ -116,7 +116,10 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              | Dependent Immutable Fields: ${dependentImmutableFields.size}
              | Deep Immutable Fields: ${deepImmutableFields.size}
              |
-             | sum: ${mutableFields.size + shallowImmutableFields.size + dependentImmutableFields.size + deepImmutableFields.size}
+             | sum: ${
+                mutableFields.size + shallowImmutableFields.size +
+                    dependentImmutableFields.size + deepImmutableFields.size
+            }
              |
              | took : $analysisTime seconds
              |""".stripMargin
@@ -129,7 +132,11 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             bw.write(output)
             bw.close()
         } catch {
-            case e: IOException ⇒ println(s"could not write file ${file.getName}")
+            case e: IOException ⇒ println(
+                s""" Could not write file: ${file.getName}
+               | ${e.getMessage}
+               |""".stripMargin
+            )
         } finally {
             bw.close()
         }

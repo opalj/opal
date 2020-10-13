@@ -8,6 +8,7 @@ import java.io.File
 import java.io.FileWriter
 import java.net.URL
 import java.util.Calendar
+import java.io.IOException
 
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
@@ -36,7 +37,7 @@ import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 
 /**
- * Runs the EagerL1ClassImmutabilityAnalysis as well as analyses needed for improving the result
+ * Runs the EagerL1ClassImmutabilityAnalysis as well as analyses needed for improving the result.
  *
  * @author Tobias Roth
  */
@@ -157,8 +158,11 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             bw.write(output)
             bw.close()
         } catch {
-            case _: IOException ⇒
-                println(s"Could not write file: ${file.getName}")
+            case e: IOException ⇒ println(
+                s""" Could not write file: ${file.getName}
+                   | ${e.getMessage}
+                   |""".stripMargin
+            )
         } finally {
             bw.close()
         }
