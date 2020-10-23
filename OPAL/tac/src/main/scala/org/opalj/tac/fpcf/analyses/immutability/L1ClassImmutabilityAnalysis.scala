@@ -117,7 +117,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                     nextComputations ::= (
                         (
                             determineL1ClassImmutability(t, cfMutability, cfMutabilityIsFinal,
-                                lazyComputation = false) _, scf
+                                lazyComputation = false), scf
                         )
                     )
                 case None ⇒
@@ -134,27 +134,19 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
     def determineGenericTypeBounds(classFile: ClassFile): Set[(String, String)] = {
         var genericTypeBounds: Set[(String, String)] = Set.empty
         classFile.attributes.toList.collectFirst({
-            case ClassSignature(typeParameters, _, _) ⇒
-                typeParameters
-                    .collect({
-                        case ftp @ FormalTypeParameter(identifier, classBound, interfaceBound) ⇒ ftp
-                    })
-                    .foreach({
-                        case FormalTypeParameter(identifier, classBound, interfaceBound) ⇒
-                            classBound match {
-                                case Some(
-                                    ClassTypeSignature(
-                                        packageIdentifier,
-                                        SimpleClassTypeSignature(simpleName, typeArguments),
-                                        classTypeSignatureSuffix
-                                        )
-                                    ) ⇒ {
-                                    genericTypeBounds += ((identifier, simpleName)) //+ typeBounds
-                                }
-                                case _ ⇒
-                            }
+            case ClassSignature(typeParameters, _, _) ⇒ typeParameters.collect({
+                case ftp @ FormalTypeParameter(_, _, _) ⇒ ftp
+            })
+                .foreach {
+                    case FormalTypeParameter(identifier, classBound, _) ⇒ classBound match {
 
-                    })
+                        case Some(ClassTypeSignature(_, SimpleClassTypeSignature(simpleName, _), _)) ⇒
+                            genericTypeBounds += ((identifier, simpleName))
+
+                        case _ ⇒
+                    }
+
+                }
         })
         genericTypeBounds
     }
@@ -235,35 +227,36 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         var hasDependentImmutableFields = false
 
         val fieldsPropertyStoreInformation = propertyStore(instanceFields, FieldImmutability)
-        //println("class Inner: ")
-        //fieldsPropertyStoreInformation.foreach(println(_))
 
-        fieldsPropertyStoreInformation.foreach(
-            _ match {
-                case FinalP(MutableField) ⇒ {
-                    if (lazyComputation)
-                        return Result(t, MutableClass);
-                    else
-                        return createResultForAllSubtypes(t, MutableClass);
-                }
-                case FinalP(ShallowImmutableField)   ⇒ hasShallowImmutableFields = true
-                case FinalP(DependentImmutableField) ⇒ hasDependentImmutableFields = true
-                case FinalP(DeepImmutableField)      ⇒
-                case ep @ InterimE(e) ⇒
-                    hasFieldsWithUnknownMutability = true
-                    dependees += (e -> ep)
-                case epk @ EPK(e: Entity, _) ⇒
-                    // <=> The mutability information is not yet available.
-                    hasFieldsWithUnknownMutability = true
-                    dependees += (e -> epk)
-                case _ ⇒
-                    if (lazyComputation) //TODO check
-                        return Result(t, MutableClass);
-                    else
-                        return createResultForAllSubtypes(t, MutableClass);
-            }
+        fieldsPropertyStoreInformation.foreach {
 
-        )
+            case FinalP(MutableField) ⇒
+                if (lazyComputation)
+                    return Result(t, MutableClass);
+                else
+                    return createResultForAllSubtypes(t, MutableClass);
+
+            case FinalP(ShallowImmutableField)   ⇒ hasShallowImmutableFields = true
+
+            case FinalP(DependentImmutableField) ⇒ hasDependentImmutableFields = true
+
+            case FinalP(DeepImmutableField)      ⇒
+
+            case ep @ InterimE(e) ⇒
+                hasFieldsWithUnknownMutability = true
+                dependees += (e -> ep)
+
+            case epk @ EPK(e: Entity, _) ⇒
+                // <=> The mutability information is not yet available.
+                hasFieldsWithUnknownMutability = true
+                dependees += (e -> epk)
+
+            case _ ⇒
+                if (lazyComputation) //TODO check
+                    return Result(t, MutableClass);
+                else
+                    return createResultForAllSubtypes(t, MutableClass);
+        }
 
         var minLocalImmutability: ClassImmutability = MutableClass
 
@@ -336,13 +329,12 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
 
                 case LUBP(MutableClass, DeepImmutableClass) ⇒ // No information about superclass
 
-                case FinalEP(f, DependentImmutableField) ⇒ {
+                case FinalP(DependentImmutableField) ⇒
                     if (hasShallowImmutableFields) {
                         maxLocalImmutability = ShallowImmutableClass
                     } else if (maxLocalImmutability != MutableClass && maxLocalImmutability != ShallowImmutableClass) {
                         maxLocalImmutability = DependentImmutableClass
                     }
-                }
 
                 // Field Immutability related dependencies:
                 case FinalP(DeepImmutableField)                          ⇒
@@ -352,7 +344,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 case ELBP(e, ShallowImmutableField | DeepImmutableField) ⇒ dependees -= e
                 case UBP(DeepImmutableField)                             ⇒ // no information about field mutability
                 case UBP(ShallowImmutableField)                          ⇒ maxLocalImmutability = ShallowImmutableClass
-                case UBP(DependentImmutableField) if (maxLocalImmutability != ShallowImmutableClass) ⇒
+                case UBP(DependentImmutableField) if maxLocalImmutability != ShallowImmutableClass ⇒
                     maxLocalImmutability = DependentImmutableClass
                 case _ ⇒ Result(t, MutableClass) //TODO check
             }
@@ -436,7 +428,7 @@ trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         // 1.2
         // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
-        allInterfaces.map(cf ⇒ set(cf.thisType, DeepImmutableClass)) //ImmutableObject))
+        allInterfaces.foreach(cf ⇒ set(cf.thisType, DeepImmutableClass))
 
         // 2.
         // All classes that do not have complete superclass information are mutable

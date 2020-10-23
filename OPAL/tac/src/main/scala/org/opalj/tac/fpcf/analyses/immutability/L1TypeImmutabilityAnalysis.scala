@@ -96,19 +96,18 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                 }
             }
 
-            val resultToMatch = ps(t, ClassImmutability.key)
-            resultToMatch match {
-                case x @ FinalP(p) ⇒ {
+            ps(t, ClassImmutability.key) match {
+
+                case FinalP(p) ⇒
                     Result(t, p.correspondingTypeImmutability);
-                }
 
                 case eps @ InterimLUBP(lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
                     InterimResult(t, thisLB, thisUB, Seq(eps), c)
-                case epk ⇒ {
+
+                case epk ⇒
                     InterimResult(t, MutableType, DeepImmutableType, Seq(epk), c)
-                }
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]
@@ -221,19 +220,20 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                             dependencies = dependencies - e
                             nextResult()
 
-                        case UBP(x) if (x == MutableType || x == MutableClass) ⇒
+                        case UBP(x) if x == MutableType || x == MutableClass ⇒
                             Result(t, MutableType) //MutableType)
 
-                        case FinalEP(e, x) if (x == ShallowImmutableType || x == ShallowImmutableClass) ⇒
+                        case FinalEP(e, x) if x == ShallowImmutableType || x == ShallowImmutableClass ⇒
                             maxImmutability = ShallowImmutableType
                             dependencies = dependencies - e
                             nextResult()
-                        case FinalEP(e, DependentImmutableClass | DependentImmutableType) ⇒ {
+
+                        case FinalEP(e, DependentImmutableClass | DependentImmutableType) ⇒
                             if (maxImmutability != ShallowImmutableType)
                                 maxImmutability = DependentImmutableType
                             dependencies = dependencies - e
                             nextResult()
-                        }
+
                         case eps @ InterimEUBP(e, subtypeP) ⇒
                             dependencies = dependencies.updated(e, eps)
                             subtypeP match {

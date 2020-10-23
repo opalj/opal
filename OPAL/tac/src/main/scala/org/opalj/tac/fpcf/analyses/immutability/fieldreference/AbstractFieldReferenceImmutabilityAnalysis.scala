@@ -49,7 +49,6 @@ import org.opalj.value.ValueInformation
  * @author Dominik Helm
  * @author Florian Kübler
  * @author Michael Eichberg
- *
  */
 trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
 
@@ -73,9 +72,8 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
             var typeDependees:                  Set[EOptionP[ObjectType, TypeImmutability]]                        = Set.empty
     ) {
         def hasDependees: Boolean = {
-            prematurelyReadDependee.isDefined || purityDependees.nonEmpty ||
-                prematurelyReadDependee.isDefined || purityDependees.nonEmpty ||
-                calleesDependee.nonEmpty || referenceImmutabilityDependees.nonEmpty ||
+            prematurelyReadDependee.isDefined || purityDependees.nonEmpty || prematurelyReadDependee.isDefined ||
+                purityDependees.nonEmpty || calleesDependee.nonEmpty || referenceImmutabilityDependees.nonEmpty ||
                 escapeDependees.nonEmpty || tacDependees.nonEmpty || typeDependees.nonEmpty
         }
 
@@ -93,8 +91,9 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
         pcs:    PCs
     )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case finalEP: FinalEP[Method, TACAI] ⇒
-                finalEP.ub.tac
+
+            case finalEP: FinalEP[Method, TACAI] ⇒ finalEP.ub.tac
+
             case epk ⇒
                 state.tacDependees += method -> ((epk, pcs))
                 None
@@ -109,24 +108,20 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     def isNonDeterministic(
         eop: EOptionP[DeclaredMethod, Purity]
     )(implicit state: State): Boolean = eop match {
-        case LBP(p: Purity) if p.isDeterministic ⇒
-            false
-        case UBP(p: Purity) if !p.isDeterministic ⇒
-            true
+        case LBP(p: Purity) if p.isDeterministic  ⇒ false
+        case UBP(p: Purity) if !p.isDeterministic ⇒ true
+
         case _ ⇒
             state.purityDependees += eop
             false
     }
 
     def lazyInitializerIsDeterministic(
-        method: Method,
-        code:   Array[Stmt[V]]
+        method: Method
     )(implicit state: State): Boolean = {
         //over-approximates that the lazy initialization can not be influenced via a parameter
-        if (method.descriptor.parametersCount > 0)
-            false
-        else
-            !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
+        if (method.descriptor.parametersCount > 0) false
+        else !isNonDeterministic(propertyStore(declaredMethods(method), Purity.key))
     }
 
     /**
@@ -136,8 +131,10 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     def isImmutableReference(
         eop: EOptionP[Field, FieldReferenceImmutability]
     )(implicit state: State): Boolean = eop match {
+
         case LBP(ImmutableFieldReference) ⇒ true
         case UBP(MutableFieldReference)   ⇒ false
+
         case _ ⇒
             state.referenceImmutabilityDependees += eop
             true
@@ -151,36 +148,46 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
         eop: EOptionP[Field, FieldPrematurelyRead]
     )(implicit state: State): Boolean = {
         eop match {
+
             case LBP(NotPrematurelyReadField) ⇒
                 state.prematurelyReadDependee = None
                 false
+
             case UBP(PrematurelyReadField) ⇒
                 state.prematurelyReadDependee = None
                 true
+
             case eps ⇒
                 state.prematurelyReadDependee = Some(eps)
                 false
         }
     }
 
+    /**
+     * Checks if the calls at a given pc within a given method introduce non determinism.
+     * @return if the calls introduce nondeterminism
+     */
     def doCallsIntroduceNonDeterminism(
         calleesEOP: EOptionP[DeclaredMethod, Callees],
         pc:         PC
-    )(
-        implicit
-        state: State
-    ): Boolean = {
+    )(implicit state: State): Boolean = {
         calleesEOP match {
-            case FinalP(callees)     ⇒ isACalleeNotDeterministic(callees, pc)
-            case InterimUBP(callees) ⇒ isACalleeNotDeterministic(callees.asInstanceOf[Callees], pc)
+
+            case FinalP(callees)     ⇒ isNonDeterministicCallee(callees, pc)
+            case InterimUBP(callees) ⇒ isNonDeterministicCallee(callees.asInstanceOf[Callees], pc)
+
             case _ ⇒
-                state.calleesDependee +=
-                    calleesEOP.e → ((calleesEOP, pc :: state.calleesDependee(calleesEOP.e)._2))
+                state.calleesDependee += calleesEOP.e → ((calleesEOP, pc :: state.calleesDependee(calleesEOP.e)._2))
                 false
         }
     }
 
-    def isACalleeNotDeterministic(callees: Callees, pc: PC)(implicit state: State): Boolean = {
+    /**
+     * Checks if a callee is nondeterministic and sets the [[State.referenceImmutability]]
+     * if it is to MutableFieldReference.
+     * @return if the callee is nondeterministic
+     */
+    def isNonDeterministicCallee(callees: Callees, pc: PC)(implicit state: State): Boolean = {
         if (callees.isIncompleteCallSite(pc)) {
             state.referenceImmutability = MutableFieldReference
             true
@@ -189,9 +196,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
             if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
                 state.referenceImmutability = MutableFieldReference
                 true
-            } else {
-                false
-            }
+            } else false
         }
     }
 }

@@ -88,9 +88,10 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
 
     def doDetermineFieldReferenceImmutability(entity: Entity): PropertyComputationResult = {
         entity match {
-            case field: Field ⇒ {
+
+            case field: Field ⇒
                 determineFieldReferenceImmutability(field)
-            }
+
             case _ ⇒
                 val m = entity.getClass.getSimpleName+" is not an org.opalj.br.Field"
                 throw new IllegalArgumentException(m)
@@ -107,14 +108,6 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     private[analyses] def determineFieldReferenceImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
-        /* println(
-            s"""
-             | determine field reference immutability:
-             | field ${field}
-             |
-             |
-             |""".stripMargin
-        )*/
 
         if (field.isFinal)
             return Result(field, ImmutableFieldReference);
@@ -217,12 +210,12 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
 
         var isNotFinal = false
-        println(
+        /*println(
             s"""
                | enter continuation
                | eps: $eps
                |""".stripMargin
-        )
+        ) */
         eps.pk match {
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
@@ -267,7 +260,7 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                 isNotFinal = !isImmutableReference(newEP)
         }
 
-        println("result is not final: "+isNotFinal)
+        // println("result is not final: "+isNotFinal)
         if (isNotFinal)
             state.referenceImmutability = MutableFieldReference
         createResult()
@@ -284,7 +277,7 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     )(implicit state: State): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
-        for (pc ← pcs.iterator) {
+        pcs.iterator.exists { pc ⇒
             val index = taCode.pcToIndex(pc)
             if (index > -1) { //TODO actually, unnecessary but required because there are '-1'; dead
                 val stmt = stmts(index)
@@ -293,45 +286,34 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                         case PutStatic.ASTID | PutField.ASTID ⇒
                             if (method.isInitializer) {
                                 if (field.isStatic) {
-                                    if (method.isConstructor)
-                                        return true;
+                                    method.isConstructor
                                 } else {
                                     val receiverDefs = stmt.asPutField.objRef.asVar.definedBy
-                                    if (receiverDefs != SelfReferenceParameter)
-                                        return true;
+                                    receiverDefs != SelfReferenceParameter
                                 }
                             } else {
                                 if (field.isStatic ||
                                     stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter) {
                                     // We consider lazy initialization if there is only single write
                                     // outside an initializer, so we can ignore synchronization
-                                    if (state.referenceImmutability == LazyInitializedThreadSafeFieldReference ||
-                                        state.referenceImmutability == LazyInitializedNotThreadSafeButDeterministicFieldReference) //LazyInitializedField)
-                                        return true;
-                                    // A lazily initialized instance field must be initialized only
-                                    // by its owning instance
-                                    if (!field.isStatic &&
-                                        stmt.asPutField.objRef.asVar.definedBy != SelfReferenceParameter)
-                                        return true;
-
-                                    // A field written outside an initializer must be lazily
-                                    // initialized or it is non-final
-                                    val result = handleLazyInitialization(
-                                        index,
-                                        getDefaultValue(),
-                                        method,
-                                        taCode.stmts,
-                                        taCode.cfg,
-                                        taCode.pcToIndex,
-                                        taCode
-                                    )
-                                    if (result) {
-                                        println("result7: "+result)
-                                        return result
-                                    };
+                                    state.referenceImmutability == LazyInitializedThreadSafeFieldReference ||
+                                        state.referenceImmutability ==
+                                        LazyInitializedNotThreadSafeButDeterministicFieldReference ||
+                                        // A lazily initialized instance field must be initialized only
+                                        // by its owning instance
+                                        !field.isStatic &&
+                                        stmt.asPutField.objRef.asVar.definedBy != SelfReferenceParameter ||
+                                        // A field written outside an initializer must be lazily
+                                        // initialized or it is non-final
+                                        handleLazyInitialization(
+                                            index,
+                                            getDefaultValue(),
+                                            method,
+                                            taCode
+                                        )
 
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
-                                    println("reference has escaped")
+                                    // println("reference has escaped")
                                     // note that here we assume real three address code (flat hierarchy)
 
                                     // for instance fields it is okay if they are written in the
@@ -342,7 +324,17 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
 
                                     // However, a method (e.g. clone) may instantiate a new object and
                                     // write the field as long as that new object did not yet escape.
-                                    return true;
+                                    true
+                                } else {
+                                    false
+                                    /*println(
+                                        s"""
+                                         | class: ${state.field.classFile.thisType}
+                                         | field: ${state.field}
+                                         | method: $method
+                                         |""".stripMargin
+                                    )
+                                    throw new Exception("else case in methodUpdatesField")*/
                                 }
 
                             }
@@ -350,10 +342,11 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                     }
                 } else {
                     // nothing to do as the put field is dead
+                    false
                 }
-            }
+            } else false
         }
-        false
+        //false
     }
 
     /**
@@ -367,15 +360,12 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     )(implicit state: State): Boolean = {
         ref.definedBy.forall { defSite ⇒
             if (defSite < 0) true
-            // Must be locally created
-            else {
+            else { // Must be locally created
                 val definition = stmts(defSite).asAssignment
                 // Must either be null or freshly allocated
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
-                else {
-                    handleEscapeProperty(propertyStore(definitionSites(method, definition.pc), EscapeProperty.key))
-                }
+                else handleEscapeProperty(propertyStore(definitionSites(method, definition.pc), EscapeProperty.key))
             }
         }
     }
@@ -388,30 +378,25 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = {
-        ep match {
-            case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
-                false
-
-            case FinalP(AtMost(_)) ⇒
-                true
-
-            case _: FinalEP[DefinitionSite, EscapeProperty] ⇒
-                true // Escape state is worse than via return
+        //println(s"ep: $ep")
+        val result = ep match {
+            case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒ false
+            case FinalP(AtMost(_))                                   ⇒ true
+            case _: FinalEP[DefinitionSite, EscapeProperty]          ⇒ true // Escape state is worse than via return
 
             case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
                 state.escapeDependees += ep
                 false
 
-            case InterimUBP(AtMost(_)) ⇒
-                true
-
-            case _: InterimEP[DefinitionSite, EscapeProperty] ⇒
-                true // Escape state is worse than via return
+            case InterimUBP(AtMost(_))                        ⇒ true
+            case _: InterimEP[DefinitionSite, EscapeProperty] ⇒ true // Escape state is worse than via return
 
             case _ ⇒
                 state.escapeDependees += ep
                 false
         }
+        println(s"result: $result")
+        result
     }
 
 }
@@ -444,7 +429,7 @@ object EagerL0FieldReferenceImmutabilityAnalysis extends L0FieldReferenceImmutab
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0FieldReferenceImmutabilityAnalysis(p)
-        val fields = p.allFields
+        val fields = p.allFields // p.allProjectClassFiles.flatMap(_.fields) // p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldReferenceImmutability)
         analysis
     }
