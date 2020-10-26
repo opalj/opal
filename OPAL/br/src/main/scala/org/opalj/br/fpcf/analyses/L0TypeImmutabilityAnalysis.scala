@@ -27,11 +27,9 @@ import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.DeepImmutableClass
-import org.opalj.br.fpcf.properties.DeepImmutableType
 import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.ShallowImmutableClass
 import org.opalj.br.fpcf.properties.TypeImmutability
-import org.opalj.br.fpcf.properties.ImmutableContainerType
 import org.opalj.br.fpcf.properties.ShallowImmutableType
 import org.opalj.br.fpcf.properties.DeepImmutableType
 
@@ -182,7 +180,7 @@ class L0TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                                 }
                             }
                             if (joinedImmutability == maxImmutability) {
-                                assert(maxImmutability == ImmutableContainerType)
+                                assert(maxImmutability == ShallowImmutableType)
                                 Result(t, maxImmutability)
                             } else {
                                 InterimResult(
