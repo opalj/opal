@@ -571,54 +571,10 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                 val objRefDefinition = expr.asGetField.objRef.asVar.definedBy
                 if (objRefDefinition != SelfReferenceParameter) false
                 else expr.asGetField.resolveField(project).contains(state.field)
-            case GetStatic.ASTID ⇒
-                expr.asGetStatic.resolveField(project).contains(state.field)
-            case PrimitiveTypecastExpr.ASTID ⇒
-                /*val primitiveTypecastExpr = expr.asPrimitiveTypeCastExpr
-                val targetTypeBeforConversion = primitiveTypecastExpr.targetTpe
 
-                if (primitiveTypecastExpr.operand.asVar.definedBy.forall(isExprReadOfCurrentField(_))) {
-                    val fieldTypeBeforConversion = state.field.fieldType
+            case GetStatic.ASTID             ⇒ expr.asGetStatic.resolveField(project).contains(state.field)
+            case PrimitiveTypecastExpr.ASTID ⇒ false
 
-
-                  val fieldType =
-                  if(fieldTypeBeforConversion.isReferenceType)
-                      fieldTypeBeforConversion
-                  else
-                    fieldTypeBeforConversion.asBaseType.WrapperType
-
-                  val targetType =
-                  if(targetTypeBeforConversion.isReferenceType)
-                    targetTypeBeforConversion
-                  else
-                    targetTypeBeforConversion.asBaseType.WrapperType
-
-                    //prevent lossy conversion of the field
-
-                    fieldType match {
-                        case ObjectType.Integer ⇒
-                    }
-
-                    fieldType == ObjectType.Byte ||
-                    (fieldType == ObjectType.Short) &&
-                        (targetType != ObjectType.Byte) ||
-
-                        (fieldType == ObjectType.Integer || fieldType == ObjectType.Float) &&
-                            (targetType != ObjectType.Short) &&
-                            (targetType != ObjectType.Byte) ||
-
-                            (fieldType == ObjectType.Long ||
-                                fieldType == ObjectType.Double) &&
-                                (targetType == ObjectType.Long ||
-                                    targetType == ObjectType.Double)
-                } else */
-                /*println(
-                    s"""
-                     | class: ${state.field.classFile.thisType}
-                     | field: ${state.field}
-                     |""".stripMargin
-                ) */
-                false
             case Compare.ASTID ⇒
                 val leftExpr = expr.asCompare.left
                 val rightExpr = expr.asCompare.right
