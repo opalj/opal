@@ -395,7 +395,6 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                 state.escapeDependees += ep
                 false
         }
-        println(s"result: $result")
         result
     }
 
