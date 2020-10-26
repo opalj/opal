@@ -26,17 +26,13 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
  * [[DeepImmutableField]] A field with an immutable field reference and a deep immutable field type or with an
  * immutable field reference and a referenced object that can not escape or its state be mutated.
  *
- * @author Tobias Peter Roth
+ * @author Tobias Roth
  */
-sealed trait FieldImmutability
-    extends OrderedProperty
-    with FieldImmutabilityPropertyMetaInformation {
-
+sealed trait FieldImmutability extends OrderedProperty with FieldImmutabilityPropertyMetaInformation {
     final def key: PropertyKey[FieldImmutability] = FieldImmutability.key
 }
 
 object FieldImmutability extends FieldImmutabilityPropertyMetaInformation {
-
     final val PropertyKeyName = "opalj.FieldImmutability"
 
     final val key: PropertyKey[FieldImmutability] = {

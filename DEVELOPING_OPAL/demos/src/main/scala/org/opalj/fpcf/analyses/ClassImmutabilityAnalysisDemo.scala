@@ -8,7 +8,6 @@ import java.io.File
 import java.io.FileWriter
 import java.net.URL
 import java.util.Calendar
-import java.io.IOException
 
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
@@ -59,11 +58,8 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
     def analyze(project: Project[URL]): String = {
 
         var propertyStore: PropertyStore = null
-
         var analysisTime: Seconds = Seconds.None
-
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-
         analysesManager.project.get(RTACallGraphKey)
 
         time {

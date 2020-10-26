@@ -91,7 +91,8 @@ case object ShallowImmutableClass extends ClassImmutability {
 }
 
 case object MutableClass extends ClassImmutability {
-    def correspondingTypeImmutability = MutableType
+
+    def correspondingTypeImmutability: TypeImmutability = MutableType
 
     def meet(other: ClassImmutability): ClassImmutability = this
 

@@ -94,6 +94,7 @@ case object LazyInitializedNotThreadSafeButDeterministicFieldReference extends F
         }
     }
 }
+
 case object LazyInitializedNotThreadSafeFieldReference extends FieldReferenceImmutability {
 
     def meet(other: FieldReferenceImmutability): properties.FieldReferenceImmutability = {
@@ -115,8 +116,7 @@ case object LazyInitializedNotThreadSafeFieldReference extends FieldReferenceImm
 }
 
 case object MutableFieldReference extends FieldReferenceImmutability {
-
-    def meet(other: FieldReferenceImmutability): this.type = this
+    def meet(other: FieldReferenceImmutability): FieldReferenceImmutability = this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: FieldReferenceImmutability): Unit = {
         if (other != MutableFieldReference) {

@@ -16,6 +16,7 @@ sealed trait TypeImmutabilityPropertyMetaInformation extends PropertyMetaInforma
 /**
  * Specifies whether all instances of a respective type (this includes the instances of the
  * type's subtypes) are (conditionally) immutable. Conditionally immutable means that only the
+ * type's subtypes) are (conditionally) immutable. Conditionally immutable means that only the
  * instance of the type itself is guaranteed to be immutable, but not all reachable objects.
  * In general, all -- so called -- immutable collections are only conditionally immutable. I.e.,
  * the collection as a whole is only immutable if only immutable objects are stored in the
@@ -107,7 +108,6 @@ case object ShallowImmutableType extends TypeImmutability {
             this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-
         if (other == DeepImmutableType || other == DependentImmutableType) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
@@ -121,10 +121,9 @@ case object MutableType extends TypeImmutability {
     override def isMutable: Boolean = true
     override def isDependentImmutable: Boolean = false
 
-    def meet(other: TypeImmutability): this.type = this
+    def meet(other: TypeImmutability): TypeImmutability = this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-
         if (other != MutableType) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }

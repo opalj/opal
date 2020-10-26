@@ -80,28 +80,26 @@ import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.EPS
 
 /**
- * Determines the immutability of field references, fields, classes or/and types
+ * Determines the immutability of field references, fields, classes and types
  *
- * @author Tobias Peter Roth
+ * @author Tobias Roth
  */
 object Immutability {
 
-    sealed trait RunningAnalysis
-    case object References extends RunningAnalysis
-    case object Fields extends RunningAnalysis
-    case object Classes extends RunningAnalysis
-    case object Types extends RunningAnalysis
-    case object All extends RunningAnalysis
+    sealed trait Analyses
+    case object FieldReferences extends Analyses
+    case object Fields extends Analyses
+    case object Classes extends Analyses
+    case object Types extends Analyses
+    case object All extends Analyses
 
     def evaluate(
         cp:                    File,
-        analysis:              RunningAnalysis,
+        analysis:              Analyses,
         numThreads:            Int,
         projectDir:            Option[String],
         libDir:                Option[String],
         resultsFolder:         Path,
-        timeEvaluation:        Boolean,
-        threadEvaluation:      Boolean,
         withoutJDK:            Boolean,
         isLibrary:             Boolean,
         closedWorldAssumption: Boolean,
@@ -144,17 +142,10 @@ object Immutability {
         var callGraphTime: Seconds = Seconds.None
 
         val project = time {
-            Project(
-                classFiles,
-                libFiles ++ JDKFiles,
-                libraryClassFilesAreInterfacesOnly = false,
-                Traversable.empty
-            )
-        } {
-            t ⇒ projectTime = t.toSeconds
-        }
+            Project(classFiles, libFiles ++ JDKFiles, libraryClassFilesAreInterfacesOnly = false, Traversable.empty)
+        } { t ⇒ projectTime = t.toSeconds }
 
-        val referenceDependencies: List[FPCFAnalysisScheduler] = List(
+        val fieldReferenceDependencies: List[FPCFAnalysisScheduler] = List(
             EagerL0FieldReferenceImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL2PurityAnalysis,
@@ -223,11 +214,11 @@ object Immutability {
             )
 
         val dependencies = analysis match {
-            case References ⇒ referenceDependencies
-            case Fields     ⇒ fieldDependencies
-            case Classes    ⇒ classDepencencies
-            case Types      ⇒ typeDependencies
-            case All        ⇒ allImmAnalysisDependencies
+            case FieldReferences ⇒ fieldReferenceDependencies
+            case Fields          ⇒ fieldDependencies
+            case Classes         ⇒ classDepencencies
+            case Types           ⇒ typeDependencies
+            case All             ⇒ allImmAnalysisDependencies
         }
 
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
@@ -252,13 +243,12 @@ object Immutability {
             else if (level == 2)
                 Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
             else
-                throw new Exception("wrong level")
+                throw new Exception(s"The level $level does not exist")
         }
 
         project.getOrCreateProjectInformationKeyInitializationData(
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
-
                 implicit val lg: LogContext = project.logContext
                 if (numThreads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
@@ -271,54 +261,50 @@ object Immutability {
         )
 
         time {
-            propertyStore = analysesManager
-                .runAll(
-                    dependencies
-                )
-                ._1
+            propertyStore = analysesManager.runAll(dependencies)._1
             propertyStore.waitOnPhaseCompletion()
-        } {
-            t ⇒ analysisTime = t.toSeconds
-        }
+        } { t ⇒ analysisTime = t.toSeconds }
 
         val stringBuilderResults: StringBuilder = new StringBuilder()
 
-        val allProjectClassTypes = project.allProjectClassFiles.map(_.thisType).toSet
+        val allProjectClassTypes = project.allProjectClassFiles.toIterator.map(_.thisType).toSet
 
         val allFieldsInProjectClassFiles = {
             if (reImInferComparison) {
                 project.allProjectClassFiles.toIterator.flatMap { _.fields }.
                     filter(f ⇒ !f.isTransient && !f.isSynthetic).toSet
-            } else {
+            } else
                 project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
-            }
         }
 
         val fieldReferenceGroupedResults = propertyStore.entities(FieldReferenceImmutability.key).
-            filter(field ⇒ allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field])).
-            toTraversable.groupBy(_.toFinalELBP.p)
+            filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field])).
+            toTraversable.groupBy(_.asFinal.p)
 
-        val fieldReferenceOrder =
-            (eps1: EPS[Entity, FieldReferenceImmutability], eps2: EPS[Entity, FieldReferenceImmutability]) ⇒
-                eps1.e.toString < eps2.e.toString
+        val fieldReferenceOrder: (EPS[Entity, FieldReferenceImmutability], EPS[Entity, FieldReferenceImmutability]) ⇒ Boolean =
+            (epsLeftHandSide, epsRightHandSide) ⇒ epsLeftHandSide.e.toString < epsRightHandSide.e.toString
 
         val mutableFieldReferences =
-            fieldReferenceGroupedResults(MutableFieldReference).toSeq.sortWith(fieldReferenceOrder)
+            fieldReferenceGroupedResults.getOrElse(MutableFieldReference, Iterator.empty).toSeq.
+                sortWith(fieldReferenceOrder)
 
         val notThreadSafeLazyInitializedFieldReferences =
-            fieldReferenceGroupedResults(LazyInitializedNotThreadSafeFieldReference).toSeq.sortWith(fieldReferenceOrder)
+            fieldReferenceGroupedResults.getOrElse(LazyInitializedNotThreadSafeFieldReference, Iterator.empty).toSeq.
+                sortWith(fieldReferenceOrder)
 
         val lazyInitializedReferencesNotThreadSafeButDeterministic =
-            fieldReferenceGroupedResults(LazyInitializedNotThreadSafeButDeterministicFieldReference).
-                toSeq.sortWith(fieldReferenceOrder)
+            fieldReferenceGroupedResults.
+                getOrElse(LazyInitializedNotThreadSafeButDeterministicFieldReference, Iterator.empty).toSeq.
+                sortWith(fieldReferenceOrder)
 
         val threadSafeLazyInitializedFieldReferences =
-            fieldReferenceGroupedResults(LazyInitializedThreadSafeFieldReference).toSeq.sortWith(fieldReferenceOrder)
+            fieldReferenceGroupedResults.getOrElse(LazyInitializedThreadSafeFieldReference, Iterator.empty).toSeq.
+                sortWith(fieldReferenceOrder)
 
-        val immutableReferences = fieldReferenceGroupedResults(ImmutableFieldReference).
+        val immutableReferences = fieldReferenceGroupedResults.getOrElse(ImmutableFieldReference, Iterator.empty).
             toSeq.sortWith(fieldReferenceOrder)
 
-        if (analysis == All || analysis == References) {
+        if (analysis == All || analysis == FieldReferences) {
             stringBuilderResults.append(
                 s"""
                 | Mutable References:
@@ -350,19 +336,22 @@ object Immutability {
         }
 
         val fieldGroupedResults = propertyStore.entities(FieldImmutability.key).
-            filter(field ⇒ allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field])).
-            toTraversable.groupBy(_.toFinalELBP.p)
+            filter(eps ⇒ allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field])).
+            toTraversable.groupBy(_.asFinal.p)
 
-        val fieldOrder = (eps1: EPS[Entity, FieldImmutability], eps2: EPS[Entity, FieldImmutability]) ⇒
-            eps1.e.toString < eps2.e.toString
+        val fieldOrder: (EPS[Entity, FieldImmutability], EPS[Entity, FieldImmutability]) ⇒ Boolean =
+            (epsLeftHandSide, epsRightHandSide) ⇒ epsLeftHandSide.e.toString < epsRightHandSide.e.toString
 
-        val mutableFields = fieldGroupedResults(MutableField).toSeq.sortWith(fieldOrder)
+        val mutableFields = fieldGroupedResults.getOrElse(MutableField, Iterator.empty).toSeq.sortWith(fieldOrder)
 
-        val shallowImmutableFields = fieldGroupedResults(ShallowImmutableField).toSeq.sortWith(fieldOrder)
+        val shallowImmutableFields = fieldGroupedResults.getOrElse(ShallowImmutableField, Iterator.empty).toSeq.
+            sortWith(fieldOrder)
 
-        val dependentImmutableFields = fieldGroupedResults(DependentImmutableField).toSeq.sortWith(fieldOrder)
+        val dependentImmutableFields = fieldGroupedResults.getOrElse(DependentImmutableField, Iterator.empty).toSeq.
+            sortWith(fieldOrder)
 
-        val deepImmutableFields = fieldGroupedResults(DeepImmutableField).toSeq.sortWith(fieldOrder)
+        val deepImmutableFields = fieldGroupedResults.getOrElse(DeepImmutableField, Iterator.empty).toSeq.
+            sortWith(fieldOrder)
 
         if (analysis == All || analysis == Fields) {
             stringBuilderResults.append(
@@ -383,31 +372,35 @@ object Immutability {
             )
         }
 
-        val classGroupedResults = propertyStore.entities(ClassImmutability.key).
-            filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
+        //val classGroupedResults = propertyStore.entities(ClassImmutability.key).
+        //    filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.p)
 
-        val order = (eps1: EPS[Entity, ClassImmutability], eps2: EPS[Entity, ClassImmutability]) ⇒
-            eps1.e.toString < eps2.e.toString
+        val classGroupedResults = propertyStore.entities(ClassImmutability.key).
+            filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.asFinal.p)
+
+        // println(s"cgr size: ${classGroupedResults.size}")
+        val order: (EPS[Entity, ClassImmutability], EPS[Entity, ClassImmutability]) ⇒ Boolean =
+            (epsLeftHandSide, epsRightHandSide) ⇒ epsLeftHandSide.e.toString < epsRightHandSide.e.toString
 
         val mutableClasses =
-            classGroupedResults(MutableClass).toSeq.sortWith(order)
+            classGroupedResults.getOrElse(MutableClass, Iterator.empty).toSeq.sortWith(order)
 
         val shallowImmutableClasses =
-            classGroupedResults(ShallowImmutableClass).toSeq.sortWith(order)
+            classGroupedResults.getOrElse(ShallowImmutableClass, Iterator.empty).toSeq.sortWith(order)
 
         val dependentImmutableClasses =
-            classGroupedResults(DependentImmutableClass).toSeq.sortWith(order)
+            classGroupedResults.getOrElse(DependentImmutableClass, Iterator.empty).toSeq.sortWith(order)
 
-        val deepImmutables = classGroupedResults(DeepImmutableClass)
+        val deepImmutables = classGroupedResults.getOrElse(DeepImmutableClass, Iterator.empty)
 
         val allInterfaces =
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val deepImmutableClassesInterfaces = deepImmutables
-            .filter(eps ⇒ allInterfaces.contains(eps.asInstanceOf[ObjectType])).toSeq.sortWith(order)
+            .filter(eps ⇒ allInterfaces.contains(eps.e.asInstanceOf[ObjectType])).toSeq.sortWith(order)
 
         val deepImmutableClasses = deepImmutables
-            .filter(eps ⇒ !allInterfaces.contains(eps.asInstanceOf[ObjectType])).toSeq.sortWith(order)
+            .filter(eps ⇒ !allInterfaces.contains(eps.e.asInstanceOf[ObjectType])).toSeq.sortWith(order)
 
         if (analysis == All || analysis == Classes) {
             stringBuilderResults.append(
@@ -430,19 +423,26 @@ object Immutability {
             )
         }
 
+        // val typeGroupedResults = propertyStore.entities(TypeImmutability.key).
+        //     filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
+
         val typeGroupedResults = propertyStore.entities(TypeImmutability.key).
-            filter(x ⇒ allProjectClassTypes.contains(x.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
+            filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.asFinal.p)
 
-        val typeOrder = (eps1: EPS[Entity, TypeImmutability], eps2: EPS[Entity, TypeImmutability]) ⇒
-            eps1.e.toString < eps2.e.toString
+        val typeOrder: (EPS[Entity, TypeImmutability], EPS[Entity, TypeImmutability]) ⇒ Boolean =
+            (epsLeftHandSide, epsRightHandSide) ⇒ epsLeftHandSide.e.toString < epsRightHandSide.e.toString
 
-        val mutableTypes = typeGroupedResults(MutableType).toSeq.sortWith(typeOrder)
+        val mutableTypes = typeGroupedResults.getOrElse(MutableType, Iterator.empty).toSeq.
+            sortWith(typeOrder)
 
-        val shallowImmutableTypes = typeGroupedResults(ShallowImmutableType).toSeq.sortWith(typeOrder)
+        val shallowImmutableTypes = typeGroupedResults.getOrElse(ShallowImmutableType, Iterator.empty).toSeq.
+            sortWith(typeOrder)
 
-        val dependentImmutableTypes = typeGroupedResults(DependentImmutableType).toSeq.sortWith(typeOrder)
+        val dependentImmutableTypes = typeGroupedResults.getOrElse(DependentImmutableType, Iterator.empty).toSeq.
+            sortWith(typeOrder)
 
-        val deepImmutableTypes = typeGroupedResults(DeepImmutableType).toSeq.sortWith(typeOrder)
+        val deepImmutableTypes = typeGroupedResults.getOrElse(DeepImmutableType, Iterator.empty).toSeq.
+            sortWith(typeOrder)
 
         if (analysis == All || analysis == Types) {
             stringBuilderResults.append(
@@ -462,10 +462,10 @@ object Immutability {
             )
         }
 
-        val stringBuilderAmounts: StringBuilder = new StringBuilder
+        val stringBuilderNumber: StringBuilder = new StringBuilder
 
-        if (analysis == References || analysis == All) {
-            stringBuilderAmounts.append(
+        if (analysis == FieldReferences || analysis == All) {
+            stringBuilderNumber.append(
                 s"""
                 | Mutable References: ${mutableFieldReferences.size}
                 | Lazy Initialized Not Thread Safe Field References: ${notThreadSafeLazyInitializedFieldReferences.size}
@@ -478,7 +478,7 @@ object Immutability {
             )
         }
         if (analysis == Fields || analysis == All) {
-            stringBuilderAmounts.append(
+            stringBuilderNumber.append(
                 s"""
                 | Mutable Fields: ${mutableFields.size}
                 | Shallow Immutable Fields: ${shallowImmutableFields.size}
@@ -490,7 +490,7 @@ object Immutability {
         }
 
         if (analysis == Classes || analysis == All) {
-            stringBuilderAmounts.append(
+            stringBuilderNumber.append(
                 s"""
                 | Mutable Classes: ${mutableClasses.size}
                 | Shallow Immutable Classes: ${shallowImmutableClasses.size}
@@ -504,7 +504,7 @@ object Immutability {
         }
 
         if (analysis == Types || analysis == All)
-            stringBuilderAmounts.append(
+            stringBuilderNumber.append(
                 s"""
                 | Mutable Types: ${mutableTypes.size}
                 | Shallow Immutable Types: ${shallowImmutableTypes.size}
@@ -516,7 +516,7 @@ object Immutability {
 
         val totalTime = projectTime + callGraphTime + analysisTime
 
-        stringBuilderAmounts.append(
+        stringBuilderNumber.append(
             s"""
             | running ${analysis.toString} analysis
             | took:
@@ -530,7 +530,7 @@ object Immutability {
         println(
             s"""
             |
-            | ${stringBuilderAmounts.toString()}
+            | ${stringBuilderNumber.toString()}
             |
             | time results:
             |
@@ -541,16 +541,24 @@ object Immutability {
         )
 
         if (resultsFolder != null) {
+            import java.text.SimpleDateFormat
 
-            val file = new File(s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt")
+            val calender = Calendar.getInstance()
+            calender.add(Calendar.ALL_STYLES, 1)
+            val date = calender.getTime();
+            val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
+            val file = new File(s"$resultsFolder/${analysis.toString}_${simpleDateFormat.format(date)}.txt")
 
+            println(s"filepath: ${file.getAbsolutePath}")
             val bw = new BufferedWriter(new FileWriter(file))
 
             try {
                 bw.write(
                     s""" ${stringBuilderResults.toString()}
                     |
-                    | ${stringBuilderAmounts.toString()}
+                    | ${stringBuilderNumber.toString()}
+                    |
+                    | level: $level
                     |
                     | jdk folder: $JRELibraryFolder
                     |
@@ -559,20 +567,18 @@ object Immutability {
 
                 bw.close()
             } catch {
-                case e: IOException ⇒ println(s"could not write file: ${file.getName}")
+                case _: IOException ⇒ println(s"could not write file: ${file.getName}")
             } finally {
-                bw.close
+                bw.close()
             }
 
         }
 
-        println(s"propertyStore: ${propertyStore.getClass.toString()}")
+        println(s"propertyStore: ${propertyStore.getClass.toString}")
 
         println(s"jdk folder: $JRELibraryFolder")
 
-        BasicReport(
-            stringBuilderAmounts.toString()
-        )
+        BasicReport(stringBuilderNumber.toString())
     }
 
     def main(args: Array[String]): Unit = {
@@ -621,16 +627,17 @@ object Immutability {
             }
         }
 
-        var analysis: RunningAnalysis = All
+        var analysis: Analyses = All
 
         while (i < args.length) {
             args(i) match {
-                case "-analysis" ⇒ {
+
+                case "-analysis" ⇒
                     val result = readNextArg()
                     if (result == "All")
                         analysis = All
-                    else if (result == "References")
-                        analysis = References
+                    else if (result == "FieldReferences")
+                        analysis = FieldReferences
                     else if (result == "Fields")
                         analysis = Fields
                     else if (result == "Classes")
@@ -638,11 +645,10 @@ object Immutability {
                     else if (result == "Types")
                         analysis = Types
                     else throw new IllegalArgumentException(s"unknown parameter: $result")
-                }
-                case "-threads" ⇒ numThreads = readNextArg().toInt
-                case "-cp"      ⇒ cp = new File(readNextArg())
-                case "-resultFolder" ⇒
-                    resultFolder = FileSystems.getDefault().getPath(readNextArg())
+
+                case "-threads"             ⇒ numThreads = readNextArg().toInt
+                case "-cp"                  ⇒ cp = new File(readNextArg())
+                case "-resultFolder"        ⇒ resultFolder = FileSystems.getDefault.getPath(readNextArg())
                 case "-timeEvaluation"      ⇒ timeEvaluation = true
                 case "-threadEvaluation"    ⇒ threadEvaluation = true
                 case "-projectDir"          ⇒ projectDir = Some(readNextArg())
@@ -653,8 +659,11 @@ object Immutability {
                 case "-callGraph"           ⇒ callGraphName = Some(readNextArg())
                 case "-level"               ⇒ level = Integer.parseInt(readNextArg())
                 case "-ReImInferComparison" ⇒ reImInferComparison = true
+
                 case "-JDK" ⇒
-                    cp = JRELibraryFolder; withoutJDK = true
+                    cp = JRELibraryFolder
+                    withoutJDK = true
+
                 case unknown ⇒
                     Console.println(usage)
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
@@ -681,8 +690,6 @@ object Immutability {
             projectDir,
             libDir,
             resultFolder,
-            timeEvaluation,
-            threadEvaluation,
             withoutJDK,
             isLibrary,
             closedWorldAssumption,

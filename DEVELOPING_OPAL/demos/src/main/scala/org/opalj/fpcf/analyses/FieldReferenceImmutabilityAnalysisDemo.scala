@@ -60,9 +60,9 @@ object FieldReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication
 
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
-
         val analysesManager = project.get(FPCFAnalysesManagerKey)
         analysesManager.project.get(RTACallGraphKey)
+
         time {
             propertyStore = analysesManager
                 .runAll(
