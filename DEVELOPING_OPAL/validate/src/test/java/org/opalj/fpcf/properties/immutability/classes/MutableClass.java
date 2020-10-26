@@ -12,7 +12,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Annotation to state that the annotated class is mutable
  *
- * @author Tobias Peter Roth
+ * @author Tobias Roth
  */
 @PropertyValidator(key = "ClassImmutability",validator = MutableClassMatcher.class)
 @Documented
@@ -22,7 +22,7 @@ public @interface MutableClass {
     /**
      * A short reasoning of this property.
      */
-    String value();// default = "N/A";
+    String value();
 
     Class<? extends FPCFAnalysis>[] analyses() default {L1ClassImmutabilityAnalysis.class};
 }

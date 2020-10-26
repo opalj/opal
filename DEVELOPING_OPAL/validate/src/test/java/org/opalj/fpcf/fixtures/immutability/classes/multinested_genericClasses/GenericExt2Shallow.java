@@ -1,15 +1,13 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.classes.multinested_genericClasses;
-
-import org.opalj.fpcf.properties.class_immutability.ShallowImmutableClassAnnotation;
-import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
 
 //TODO @ShallowImmutableClassAnnotation("")
 public class GenericExt2Shallow<T extends FinalMutableClass> {
-    //TODO @ShallowImmutableFieldAnnotation("")
-    private Generic_class1<T,T,T,T,T> gc;
-    GenericExt2Shallow(Generic_class1<T,T,T,T,T> gc) {
+   /* //TODO @ShallowImmutableFieldAnnotation("")
+    private GenericClass<T,T,T,T,T> gc;
+    GenericExt2Shallow(GenericClass<T,T,T,T,T> gc) {
         this.gc = gc;
-    }
+    }*/
 }
 
 final class FinalMutableClass{

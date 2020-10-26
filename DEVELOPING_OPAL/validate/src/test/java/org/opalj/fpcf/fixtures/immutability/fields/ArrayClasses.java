@@ -1,29 +1,30 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.field_immutability.DeepImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.field_immutability.MutableFieldAnnotation;
-import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedThreadSafeReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
+import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 
 public class ArrayClasses {
 
-    @DeepImmutableFieldAnnotation("The elements of the array can not escape")
-    @ImmutableReferenceAnnotation("Array is eager initialized")
+    @DeepImmutableField("The elements of the array can not escape")
+    @ImmutableFieldReference("Array is eager initialized")
     private Object[] zzz = new Object[]{1, 2, 3};
 
-    @DeepImmutableFieldAnnotation("The elements of the array can not escape")
-    @ImmutableReferenceAnnotation("Array is initialized in the constructor")
+    @DeepImmutableField("The elements of the array can not escape")
+    @ImmutableFieldReference("Array is initialized in the constructor")
     private Object[] a;
 
     public ArrayClasses() {
         a = new Object[]{5, 6, 7, 8};
     }
 
-    @ShallowImmutableFieldAnnotation("The elements of the array are manipulated after initialization and can escape.")
-    @ImmutableReferenceAnnotation("The array is eager initialized.")
+    @ShallowImmutableField("The elements of the array are manipulated after initialization and can escape.")
+    @ImmutableFieldReference("The array is eager initialized.")
     private Object[] b = new Object[]{1, 2, 3, 4, 5};
 
     public Object[] getB() {
@@ -31,8 +32,8 @@ public class ArrayClasses {
         return b;
     }
 
-    @MutableFieldAnnotation("Array has a mutable reference.")
-    @MutableReferenceAnnotation("The array is initalized always when the InitC function is called")
+    @MutableField("Array has a mutable reference.")
+    @MutableFieldReference("The array is initalized always when the InitC function is called")
     private Object[] c;
 
     public void InitC() {
@@ -40,8 +41,8 @@ public class ArrayClasses {
     }
 
 
-    @ShallowImmutableFieldAnnotation("The elements of the array can escape.")
-    @ImmutableReferenceAnnotation("The array is eager initialized.")
+    @ShallowImmutableField("The elements of the array can escape.")
+    @ImmutableFieldReference("The array is eager initialized.")
     private Object[] d = new Object[]{1, 2, 3, 4, 5,};
 
     public Object[] getD() {
@@ -49,8 +50,8 @@ public class ArrayClasses {
     }
 
 
-    @ShallowImmutableFieldAnnotation("The elements of the array can escape.")
-    @LazyInitializedThreadSafeReferenceAnnotation("The array is initialized lazily.")
+    @ShallowImmutableField("The elements of the array can escape.")
+    @LazyInitializedThreadSafeFieldReference("The array is initialized lazily.")
     private Object[] e;
 
     public synchronized Object[] getE() {
@@ -65,8 +66,8 @@ public class ArrayClasses {
     }
 
 
-    @MutableFieldAnnotation("The reference is seen as mutable.")
-    @LazyInitializedNotThreadSafeReferenceAnnotation("The array is initialized lazily but not thread safe.")
+    @MutableField("The reference is seen as mutable.")
+    @LazyInitializedNotThreadSafeFieldReference("The array is initialized lazily but not thread safe.")
     private Object[] f;
 
     public void getF() {
@@ -76,8 +77,8 @@ public class ArrayClasses {
     }
 
 
-    @ShallowImmutableFieldAnnotation("One element of the array is written after initialization.")
-    @LazyInitializedThreadSafeReferenceAnnotation("The array is initialized lazily and thread safe.")
+    @ShallowImmutableField("One element of the array is written after initialization.")
+    @LazyInitializedThreadSafeFieldReference("The array is initialized lazily and thread safe.")
     private Object[] g;
 
     public synchronized void getG() {
@@ -88,13 +89,13 @@ public class ArrayClasses {
     }
 
 
-    @DeepImmutableFieldAnnotation("The elements of the array can not escape.")
-    @ImmutableReferenceAnnotation("The array is initialized eagerly.")
+    @DeepImmutableField("The elements of the array can not escape.")
+    @ImmutableFieldReference("The array is initialized eagerly.")
     private Object[] h = new Object[]{new Object(), new Object(), new Object()};
 
 
-    @ShallowImmutableFieldAnnotation("The elements of the array can escape.")
-    @LazyInitializedThreadSafeReferenceAnnotation("The array is initialized thread safe and eagerly.")
+    @ShallowImmutableField("The elements of the array can escape.")
+    @LazyInitializedThreadSafeFieldReference("The array is initialized thread safe and eagerly.")
     private Object[] i;
 
     public synchronized Object[] getI(){
@@ -104,8 +105,8 @@ public class ArrayClasses {
     }
 
 
-    @DeepImmutableFieldAnnotation("The elements of the array can not escape.")
-    @LazyInitializedThreadSafeReferenceAnnotation("The array is initialized thread safen and eagerly.")
+    @DeepImmutableField("The elements of the array can not escape.")
+    @LazyInitializedThreadSafeFieldReference("The array is initialized thread safen and eagerly.")
     private Object[] j;
 
     public synchronized void getJ(){ //Object[]
@@ -116,13 +117,13 @@ public class ArrayClasses {
     }
 
 
-    @DeepImmutableFieldAnnotation("The elements of the array can not escape")
-    @ImmutableReferenceAnnotation("The array is not initialized.")
+    @DeepImmutableField("The elements of the array can not escape")
+    @ImmutableFieldReference("The array is not initialized.")
     private Object[] k;
 
 
-    @MutableFieldAnnotation("The reference is seen as mutable.")
-    @LazyInitializedNotThreadSafeReferenceAnnotation("The array is initialized lazily but not thread-safe.")
+    @MutableField("The reference is seen as mutable.")
+    @LazyInitializedNotThreadSafeFieldReference("The array is initialized lazily but not thread-safe.")
     private int[] m;
 
      public int[] getM() {
@@ -132,8 +133,8 @@ public class ArrayClasses {
     }
 
 
-    @MutableFieldAnnotation("The reference is seen as mutable.")
-    @LazyInitializedNotThreadSafeReferenceAnnotation("The array is initialized lazily but not thread-safe.")
+    @MutableField("The reference is seen as mutable.")
+    @LazyInitializedNotThreadSafeFieldReference("The array is initialized lazily but not thread-safe.")
     private Object[] n;
 
     public Object[] getN(){ //Object[]
@@ -144,8 +145,8 @@ public class ArrayClasses {
     }
 
 
-    @ShallowImmutableFieldAnnotation("The elements of the array can escape.")
-    @LazyInitializedThreadSafeReferenceAnnotation("The array is initialized thread safe and lazily.")
+    @ShallowImmutableField("The elements of the array can escape.")
+    @LazyInitializedThreadSafeFieldReference("The array is initialized thread safe and lazily.")
     private Object[] o;
 
     public synchronized Object[] getO(){
@@ -155,8 +156,8 @@ public class ArrayClasses {
         return o;
     }
 
-    @ShallowImmutableFieldAnnotation("One element of the array can escape")
-    @LazyInitializedThreadSafeReferenceAnnotation("The array is thread safe lazily intialized.")
+    @ShallowImmutableField("One element of the array can escape")
+    @LazyInitializedThreadSafeFieldReference("The array is thread safe lazily intialized.")
     private Object[] p;
     public synchronized Object getP(){
         if(p==null)
@@ -164,8 +165,8 @@ public class ArrayClasses {
         return p[2];
     }
 
-    @DeepImmutableFieldAnnotation("The elements of the array can escape, but have a deep immutable reference.")
-    @LazyInitializedThreadSafeReferenceAnnotation("The array is thread safe lazily intialized.")
+    @DeepImmutableField("The elements of the array can escape, but have a deep immutable reference.")
+    @LazyInitializedThreadSafeFieldReference("The array is thread safe lazily intialized.")
     private Integer[] q;
     public synchronized Integer getQ(){
         if(q==null)

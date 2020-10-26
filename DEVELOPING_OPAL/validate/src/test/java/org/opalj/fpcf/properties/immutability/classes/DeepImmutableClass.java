@@ -12,9 +12,9 @@ import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
 /**
  * Annotation to state that the annotated class is deep immutable
  *
- * @author Tobias Peter Roth
+ * @author Tobias Roth
  */
-@PropertyValidator(key = "ClassImmutability_new",validator = DeepImmutableClassMatcher.class)
+@PropertyValidator(key = "ClassImmutability",validator = DeepImmutableClassMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface DeepImmutableClass {

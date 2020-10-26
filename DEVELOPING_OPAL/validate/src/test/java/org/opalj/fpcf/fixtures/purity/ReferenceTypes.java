@@ -64,24 +64,24 @@ final public class ReferenceTypes {
     // Setting static fields is impure
 
     @Pure(value = "Uses final static immutable object",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "ImmutableObject"))
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "DeepImmutableClass"))
     @Impure(value = "DependentCalls not recognized as immutable",
-            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "ImmutableObject"),
+            eps = @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "DeepImmutableClass"),
             negate = true, analyses = L0PurityAnalysis.class)
     public static DependentCalls getStaticFinalImmutableObj() {
         return staticFinalImmutableObj;
     }
 
     @Pure(value = "Uses effectively final static immutable object", eps = {
-            @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "ImmutableObject"),
+            @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "DeepImmutableClass"),
             @EP(cf = ReferenceTypes.class, field = "staticEffectivelyFinalImmutableObj",
-                    pk = "FieldMutability", p = "EffectivelyFinalField")
+                    pk = "FieldImmutability", p = "ShallowImmutableField")
     })
     @Impure(value = "staticEffectivelyFinalImmutableObj not recognized as effectively final static immutable object",
             negate = true, eps = {
-            @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "ImmutableObject"),
+            @EP(cf = DependentCalls.class, pk = "ClassImmutability", p = "DeepImmutableClass"),
             @EP(cf = ReferenceTypes.class, field = "staticEffectivelyFinalImmutableObj",
-                    pk = "FieldMutability", p = "EffectivelyFinalField")
+                    pk = "FieldImmutability", p = "ShallowImmutableField")
     }, analyses = L0PurityAnalysis.class)
     public static DependentCalls getStaticEffectivelyFinalImmutableObj() {
         return staticEffectivelyFinalImmutableObj;
@@ -205,10 +205,10 @@ final public class ReferenceTypes {
 
     @CompileTimePure(value = "Uses array length of effectively final array",
             eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyFinalArr",
-                    pk = "FieldMutability", p = "EffectivelyFinalField"))
+                    pk = "FieldImmutability", p = "ShallowImmutableField"))
     @Pure(value = "Uses array length of effectively final array",
             eps = @EP(cf = ReferenceTypes.class, field = "constEffectivelyFinalArr",
-                    pk = "FieldMutability", p = "EffectivelyFinalField"),
+                    pk = "FieldImmutability", p = "ShallowImmutableField"),
             analyses = L1PurityAnalysis.class)
     @Impure(value = "Uses array length", analyses = L0PurityAnalysis.class)
     public int getEffectivelyFinalArrLength() {

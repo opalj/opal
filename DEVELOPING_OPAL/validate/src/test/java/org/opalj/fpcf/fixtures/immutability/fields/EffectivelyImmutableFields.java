@@ -1,280 +1,312 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.field_immutability.DeepImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedThreadSafeReferenceAnnotation;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.ArrayList;
 
-import java.util.*;
+import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
 
 public class EffectivelyImmutableFields {
 
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private int n1 = 5;
+    @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",
+    analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "can not handle transitive immutability",
+    analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class})
+    @MutableField(value = "can not handle effective immutabiltiy", analyses = L0FieldImmutabilityAnalysis.class)
+    @ImmutableFieldReference(value = "field is not written after initialization",
+    analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    private int simpleInitializedFieldWithPrimitiveType = 5;
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private int n2;
+    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
+    private int lazyInitializedFieldWithPrimitiveType;
 
-    public synchronized  void initN2(){
-        if(n2==0)
-            n2 = 5;
+    public synchronized void initLazyInitializedFieldWithPrimitiveType(){
+        if(lazyInitializedFieldWithPrimitiveType == 0)
+            lazyInitializedFieldWithPrimitiveType = 5;
     }
 
-     @DeepImmutableFieldAnnotation("")
-     @LazyInitializedThreadSafeReferenceAnnotation("")
-    private int n3;
+     @DeepImmutableField("Lazy initialized field with primitive type.")
+     @LazyInitializedThreadSafeFieldReference("field is thread safely lazy initialized")
+    private int inTheGetterLazyInitializedFieldWithPrimitiveType;
 
-    public synchronized int getN3(){
-        if(n3==0)
-            n3 = 5;
-        return n3;
+    public synchronized int getInTheGetterLazyInitializedFieldWithPrimitiveType(){
+        if(inTheGetterLazyInitializedFieldWithPrimitiveType ==0)
+            inTheGetterLazyInitializedFieldWithPrimitiveType = 5;
+        return inTheGetterLazyInitializedFieldWithPrimitiveType;
     }
 
+    @DeepImmutableField(value = "immutable reference and deep immutable type",
+    analyses = L3FieldImmutabilityAnalysis.class)
+    @ImmutableFieldReference(value = "effective immutable field",
+            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    private Integer effectiveImmutableIntegerField = 5;
 
 
+    @MutableField(value = "due to mutable field reference",
+            analyses = L3FieldImmutabilityAnalysis.class)
+    @MutableFieldReference(value = "write of reference objects is not atomic",
+            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    private Integer simpleLazyInitializedIntegerField;
 
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private Integer nO = 5;
+    public void initSimpleLazyInitializedIntegerField(){
+        if(simpleLazyInitializedIntegerField==0)
+            simpleLazyInitializedIntegerField = 5;
+    }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Integer nO2;
+    @DeepImmutableField("immutable reference and deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized method")
+    private Integer synchronizedSimpleLazyInitializedIntegerField;
 
     public synchronized void initNO2(){
-        if(nO2==0)
-            nO2 = 5; //TODO test again
+        if(synchronizedSimpleLazyInitializedIntegerField==0)
+            synchronizedSimpleLazyInitializedIntegerField = 5;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Integer nO3;
+    @DeepImmutableField("immutable reference and deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
+    private Integer inGetterSynchronizedSimpleLazyInitializedIntegerField;
 
-    public synchronized Integer getNO3(){
-        if(nO3==0)
-            nO3 = 5;
-        return nO3;
+    public synchronized Integer getInGetterSynchronizedSimpleLazyInitializedIntegerField(){
+        if(inGetterSynchronizedSimpleLazyInitializedIntegerField==0)
+            inGetterSynchronizedSimpleLazyInitializedIntegerField = 5;
+        return inGetterSynchronizedSimpleLazyInitializedIntegerField;
     }
 
+    @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",
+            analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "can not handle transitive immutability",
+            analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class})
+    @MutableField(value = "can not handle effective immutabiltiy", analyses = L0FieldImmutabilityAnalysis.class)
+    @ImmutableFieldReference(value = "field is effective immutable",
+            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    private double effectiveImmutableDoubleField = 5d;
 
-
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private double d = 5d;
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private double d2;
+    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
+    private double synchronizedLazyInitializedDoubleField;
 
     public synchronized void initD2(){
-        if(d2==0d)
-            d2 = 5d;
+        if(synchronizedLazyInitializedDoubleField ==0d)
+            synchronizedLazyInitializedDoubleField = 5d;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private double d3;
+    @DeepImmutableField("immutable reference and deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
+    private double inGetterSynchronizedLazyInitializedDoubleField;
 
     public synchronized double getD3(){
-        if(d3==0d)
-            d3 = 5;
-        return d3;
+        if(inGetterSynchronizedLazyInitializedDoubleField==0d)
+            inGetterSynchronizedLazyInitializedDoubleField = 5;
+        return inGetterSynchronizedLazyInitializedDoubleField;
     }
 
+    @DeepImmutableField("immutable reference and deep immutable type")
+    @ImmutableFieldReference("field is effective immutable")
+    private Double effectiveImmutableObjectDoubleField = 5d;
 
+    @DeepImmutableField("field has an immutable reference and deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
+    private Double lazyInitializedObjectDoubleField;
 
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private Double dO = 5d;
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Double dO2;
-
-    public synchronized void initDO2(){
-        if(dO2==0)
-            dO2 = 5d;
+    public synchronized void initLazyInitializedObjectDoubleField(){
+        if(lazyInitializedObjectDoubleField==0)
+            lazyInitializedObjectDoubleField = 5d;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Double dO3;
+    @DeepImmutableField("field has an immutable reference and a deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("field is in a synchronized getter lazy initialized")
+    private Double inAGetterLazyInitializedObjectDoubleField;
 
-    public synchronized Double getDO3(){
-        if(dO3==0)
-            dO3 = 5d;
-        return dO3;
+    public synchronized Double getInAGetterLazyInitializedObjectDoubleField(){
+        if(inAGetterLazyInitializedObjectDoubleField==0)
+            inAGetterLazyInitializedObjectDoubleField = 5d;
+        return inAGetterLazyInitializedObjectDoubleField;
     }
 
+    @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",
+            analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "can not handle transitive immutability",
+            analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class})
+    @MutableField(value = "can not handle effective immutabiltiy", analyses = L0FieldImmutabilityAnalysis.class)
+    @ImmutableFieldReference(value = "field is not written after initialization",
+            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    private float effectiveImmutableFloatField = 5;
 
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private float  f = 5;
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private float f2;
+    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
+    private float synchronizedLazyInitializedFloatField;
 
     public synchronized void initF2(){
-        if(f2==0)
-            f2 = 5f;
+        if(synchronizedLazyInitializedFloatField ==0)
+            synchronizedLazyInitializedFloatField = 5f;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private float f3;
+    @DeepImmutableField("immutable reference and deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
+    private float inGetterSynchronizedLazyInitializedFloatField;
 
     public synchronized float getf3(){
-        if(f3==0)
-            f3 = 5f;
-        return f3;
+        if(inGetterSynchronizedLazyInitializedFloatField==0)
+            inGetterSynchronizedLazyInitializedFloatField = 5f;
+        return inGetterSynchronizedLazyInitializedFloatField;
     }
 
+    @DeepImmutableField("field has an immutable field reference and a deep immutable type")
+    @ImmutableFieldReference("the field reference is effective immutable")
+    private Float effectiveImmutableFloatObjectField = 5f;
 
-
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private Float fO = 5f;
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Float fO2;
+    @DeepImmutableField("field has an immutable field reference and a deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("the field is thread safely lazy initialized")
+    private Float lazyInitializedFloatObjectField;
 
     public synchronized void initFO2(){
-        if(fO2==0)
-            fO2 = 5f;
+        if(lazyInitializedFloatObjectField ==0)
+            lazyInitializedFloatObjectField = 5f;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private float fO3;
+    @DeepImmutableField("field has an immutable field reference and a deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("the field is in a getter thread safely lazy initialized")
+    private float inAGetterLazyInitializedFloatObjectField;
 
-    public synchronized Float getfO3(){
-        if(fO3==0)
-            fO3 = 5f;
-        return fO3;
+    public synchronized Float getInAGetterLazyInitializedFloatObjectField(){
+        if(inAGetterLazyInitializedFloatObjectField==0)
+            inAGetterLazyInitializedFloatObjectField = 5f;
+        return inAGetterLazyInitializedFloatObjectField;
     }
 
+    @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",
+            analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "can not handle transitive immutability",
+            analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class})
+    @MutableField(value = "can not handle effective immutability", analyses = L0FieldImmutabilityAnalysis.class)
+    @ImmutableFieldReference(value = "field is effective immutable",
+            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    private byte effectiveImmutableByteField = 5;
 
-
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private byte b = 5;
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private byte b2;
+    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @LazyInitializedThreadSafeFieldReference("field is thread safely lazy initialized")
+    private byte synchronizedLazyInitializedByteField;
 
     public synchronized void initB2(){
-        if(b2==0)
-            b2 = 5;
+        if(synchronizedLazyInitializedByteField ==0)
+            synchronizedLazyInitializedByteField = 5;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private byte b3;
+    @DeepImmutableField("immutable reference and deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
+    private byte inGetterSynchronizedLazyInitializedByteField;
 
-    public synchronized byte b3(){
-        if(b3==0)
-            b3 = 5;
-        return b3;
+    public synchronized byte getInGetterSynchronizedLazyInitializedByteField(){
+        if(inGetterSynchronizedLazyInitializedByteField==0)
+            inGetterSynchronizedLazyInitializedByteField = 5;
+        return inGetterSynchronizedLazyInitializedByteField;
     }
 
+    @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",
+            analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "can not handle transitive immutability",
+            analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class})
+    @MutableField(value = "can not handle effective immutability", analyses = L0FieldImmutabilityAnalysis.class)
+    @ImmutableFieldReference(value = "field is effective immutable",
+            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    private Byte effectiveImmutableByteObjectField = 5;
 
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private Byte b0 = 5;
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Byte bO2;
+    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @LazyInitializedThreadSafeFieldReference("field is thread safely lazy initialized")
+    private Byte lazyInitializedByteObjectField;
 
     public synchronized void initBO2(){
-        if(bO2==0)
-            bO2 = 5;
+        if(lazyInitializedByteObjectField ==0)
+            lazyInitializedByteObjectField = 5;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Byte bO3;
+    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @LazyInitializedThreadSafeFieldReference("field is thread safely lazy initialized in a getter")
+    private Byte inAGetterLazyInitializedByteObjectField;
 
-    public synchronized Byte bO3(){
-        if(bO3==0)
-            bO3 = 5;
-        return bO3;
+    public synchronized Byte getInAGetterLazyInitializedByteObjectField(){
+        if(inAGetterLazyInitializedByteObjectField==0)
+            inAGetterLazyInitializedByteObjectField = 5;
+        return inAGetterLazyInitializedByteObjectField;
     }
 
-
-
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
+    @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",
+            analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "can not handle transitive immutability",
+            analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class})
+    @MutableField(value = "can not handle effective immutability", analyses = L0FieldImmutabilityAnalysis.class)
+    @ImmutableFieldReference(value = "field is effective immutable",
+            analyses = L0FieldReferenceImmutabilityAnalysis.class)
     private char c = 'a';
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private char c2;
+    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
+    private char synchronizedLazyInitializedCharField;
 
     public synchronized void initC2(){
-        if(c2 == '\u0000')
-            c2 = 'a';
+        if(synchronizedLazyInitializedCharField == '\u0000')
+            synchronizedLazyInitializedCharField = 'a';
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private char c3;
+    @DeepImmutableField("immutable reference and deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
+    private char inGetterSynchronizedLazyInitializedCharField;
 
     public synchronized char c3(){
-        if(c3 == '\u0000')
-            c3 = 5;
-        return c3;
+        if(inGetterSynchronizedLazyInitializedCharField == '\u0000')
+            inGetterSynchronizedLazyInitializedCharField = 5;
+        return inGetterSynchronizedLazyInitializedCharField;
     }
 
+    @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",
+            analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "can not handle transitive immutability",
+            analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class})
+    @MutableField(value = "can not handle effective immutabiltiy", analyses = L0FieldImmutabilityAnalysis.class)
+    @ImmutableFieldReference(value = "field is not written after initialization",
+            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    private long effectiveImmutableLongField = 5;
 
-
-//------------------------------------------------------------------------------------------------------
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private long l = 5;
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private long l2;
+    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
+    private long sychronizedLazyInitializedLongField;
 
     public synchronized void initL2(){
-        if(l2 == 0l)
-            l2 = 5l;
+        if(sychronizedLazyInitializedLongField == 0l)
+            sychronizedLazyInitializedLongField = 5l;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private long l3;
+    @DeepImmutableField("immutable reference and deep immutable type")
+    @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
+    private long inGetterSynchronizedLazyInitializedLongField;
 
-    public synchronized long l3(){
-        if(l3 == 0l)
-            l3 = 5;
-        return l3;
+    public synchronized long getInGetterSynchronizedLazyInitializedLongField(){
+        if(inGetterSynchronizedLazyInitializedLongField == 0l)
+            inGetterSynchronizedLazyInitializedLongField = 5;
+        return inGetterSynchronizedLazyInitializedLongField;
     }
 
-
-
-
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
+    @DeepImmutableField("")
+    @ImmutableFieldReference("")
     private Long lO = 5l;
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
+    @DeepImmutableField("")
+    @LazyInitializedThreadSafeFieldReference("")
     private Long lO2;
 
     public synchronized void initLO2(){
@@ -282,8 +314,8 @@ public class EffectivelyImmutableFields {
             lO2 = 5l;
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
+    @DeepImmutableField("")
+    @LazyInitializedThreadSafeFieldReference("")
     private Long lO3;
 
     public synchronized Long lO3(){
@@ -292,201 +324,185 @@ public class EffectivelyImmutableFields {
         return lO3;
     }
 
-//--------------------------------------------------------------------------------------------------------
+    @DeepImmutableField("The concrete assigned object is known to be deep immutable")
+    @ImmutableFieldReference("The field is effective immutable")
+    private String effectiveImmutableString = "abc";
 
+    @DeepImmutableField("The concrete type of the object that is assigned is known")
+    @LazyInitializedThreadSafeFieldReference("lazy initialized within a synchronized method")
+    private String lazyInitializedString;
 
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private String s = "abc";
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private String s2;
-
-    public synchronized void initS2(){
-        if(s2 == null)
-            s2 = "abc";
+    public synchronized void initLazyInitializedString(){
+        if(lazyInitializedString == null)
+            lazyInitializedString = "abc";
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private String s3;
+    @DeepImmutableField("The concrete type of the object that is assigned is known")
+    @LazyInitializedThreadSafeFieldReference("lazy initialized within a synchronized method")
+    private String inAGetterLazyInitializedString;
 
-    public synchronized String getS3(){
-        if(s3 == null)
-            s3 = "abc";
-        return s3;
+    public synchronized String getInAGetterLazyInitializedString(){
+        if(inAGetterLazyInitializedString == null)
+            inAGetterLazyInitializedString = "abc";
+        return inAGetterLazyInitializedString;
     }
 
+    @DeepImmutableField("The concrete assigned object is known to be deep immutable")
+    @ImmutableFieldReference("The field is effective immutable")
+    private Object effectiveImmutableObjectReference = new Object();
 
+    @DeepImmutableField("The concrete type of the object that is assigned is known")
+    @LazyInitializedThreadSafeFieldReference("lazy initialized within a synchronized method")
+    private Object lazyInitializedObjectReference;
 
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private Object o = new Object();
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Object o2;
-
-    public synchronized void initO2(){
-        if(o2 == null)
-            o2 = new Object();
+    public synchronized void initLazyInitializedObjectReference(){
+        if(lazyInitializedObjectReference == null)
+            lazyInitializedObjectReference = new Object();
     }
 
-    @DeepImmutableFieldAnnotation("The concrete type of the object that is assigned is known")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Object o3;
+    @DeepImmutableField("The concrete type of the object that is assigned is known")
+    @LazyInitializedThreadSafeFieldReference("lazy initialized within a synchronized method")
+    private Object inAGetterLazyInitializedObjectReference;
 
-    public synchronized Object getO3(){
-        if(o3 == null)
-            o3 = new Object();
-        return o3;
+    public synchronized Object getInAGetterLazyInitializedObjectReference(){
+        if(inAGetterLazyInitializedObjectReference == null)
+            inAGetterLazyInitializedObjectReference = new Object();
+        return inAGetterLazyInitializedObjectReference;
     }
 
 
 
+    @DeepImmutableField("concrete object that is assigned is known and no other manipulation")
+    @ImmutableFieldReference("effective immutable reference")
+    private List<Object> effectiveImmutableLinkedList = new LinkedList<Object>();
 
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private List<Object> linkedList = new LinkedList<Object>();
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private List<Object> linkedList2;
+    @DeepImmutableField("concrete object that is assigned is known and no other manipulation")
+    @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
+    private List<Object> lazyInitializedLinkedList;
 
     public synchronized void initLinkedList2(){
-        if(linkedList2 == null)
-            linkedList2 = new LinkedList<Object>();
+        if(lazyInitializedLinkedList == null)
+            lazyInitializedLinkedList = new LinkedList<Object>();
     }
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private List<Object> linkedList3;
+    @ShallowImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
+    @LazyInitializedThreadSafeFieldReference("thread safe lazy initialization due to synchronized method")
+    private List<Object> lazyInitializedLinkedListWithManipulationAfterwards;
 
     public synchronized void initLinkedList3(){
-        if(linkedList3 == null)
-            linkedList3 = new LinkedList<Object>();
-        linkedList3.add(new Object());
+        if(lazyInitializedLinkedListWithManipulationAfterwards == null)
+            lazyInitializedLinkedListWithManipulationAfterwards = new LinkedList<Object>();
+        lazyInitializedLinkedListWithManipulationAfterwards.add(new Object());
     }
 
-    @DeepImmutableFieldAnnotation("The concrete type of the object that is assigned is known")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Object linkedList4;
+    @DeepImmutableField("The concrete type of the object that is assigned is known " +
+            "and no manipulation after assignment")
+    @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
+    private Object inTheGetterLazyInitializedlinkedList;
 
-    public synchronized Object getLinkedList4(){
-        if(linkedList4 == null)
-            linkedList4 = new Object();
-        return linkedList4;
+    public synchronized Object getInTheGetterLazyInitializedlinkedList(){
+        if(inTheGetterLazyInitializedlinkedList == null)
+            inTheGetterLazyInitializedlinkedList = new Object();
+        return inTheGetterLazyInitializedlinkedList;
     }
 
+    @DeepImmutableField("concrete object that is assigned is known and no other manipulation")
+    @ImmutableFieldReference("effective immutable reference")
+    private List<Object> effectiveImmutableArrayList = new ArrayList<Object>();
 
+    @DeepImmutableField("concrete object that is assigned is known and no other manipulation")
+    @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
+    private List<Object> lazyInitializedArrayList;
 
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private List<Object> arrayList = new ArrayList<Object>();
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private List<Object> arrayList2;
-
-    public synchronized void initArrayList2(){
-        if(arrayList2 == null)
-            arrayList2 = new ArrayList<Object>();
+    public synchronized void initLazyInitializedArrayList(){
+        if(lazyInitializedArrayList == null)
+            lazyInitializedArrayList = new ArrayList<Object>();
     }
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private List<Object> arrayList3;
+    @ShallowImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
+    @LazyInitializedThreadSafeFieldReference("thread safe lazy initialization due to synchronized method")
+    private List<Object> lazyInitializedArrayListWithManipulationAfterwards;
 
-    public synchronized void initArrayList3(){
-        if(arrayList3 == null)
-            arrayList3 = new ArrayList<Object>();
-        arrayList3.add(new Object());
+    public synchronized void initLazyInitializedArrayListWithManipulationAfterwards(){
+        if(lazyInitializedArrayListWithManipulationAfterwards == null)
+            lazyInitializedArrayListWithManipulationAfterwards = new ArrayList<Object>();
+        lazyInitializedArrayListWithManipulationAfterwards.add(new Object());
     }
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private List<Object> arrayList4;
+    @ShallowImmutableField("immutable reference but assigned object escapes via getter")
+    @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
+    private List<Object> inTheGetterLazyInitializedArrayList;
 
-    public synchronized List<Object> getArrayList4(){
-        if(arrayList4 == null)
-            arrayList4 = new ArrayList<Object>();
-        return arrayList4;
+    public synchronized List<Object> getInTheGetterLazyInitializedArrayList(){
+        if(inTheGetterLazyInitializedArrayList == null)
+            inTheGetterLazyInitializedArrayList = new ArrayList<Object>();
+        return inTheGetterLazyInitializedArrayList;
     }
 
+    @DeepImmutableField("concrete object that is assigned is known and no other manipulation")
+    @ImmutableFieldReference("effective immutable reference")
+    private Set<Object> effectiveImmutableSet = new HashSet<Object>();
 
+    @DeepImmutableField("concrete object that is assigned is known and no other manipulation")
+    @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
+    private Set<Object> lazyInitializedSet;
 
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private Set<Object> set = new HashSet<Object>();
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Set<Object> set2;
-
-    public synchronized void initSet2(){
-        if(set2 == null)
-            set2 = new HashSet<Object>();
+    public synchronized void initLazyInitializedSet(){
+        if(lazyInitializedSet == null)
+            lazyInitializedSet = new HashSet<Object>();
     }
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Set<Object> set3;
+    @ShallowImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
+    @LazyInitializedThreadSafeFieldReference("thread safe lazy initialization due to synchronized method")
+    private Set<Object> lazyInitializedSetWithManipulationAfterwards;
 
     public synchronized void initSet3(){
-        if(set3 == null)
-            set3 = new HashSet<Object>();
-       set3.add(new Object());
+        if(lazyInitializedSetWithManipulationAfterwards == null)
+            lazyInitializedSetWithManipulationAfterwards = new HashSet<Object>();
+       lazyInitializedSetWithManipulationAfterwards.add(new Object());
     }
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private Set<Object> set4;
+    @ShallowImmutableField("immutable reference but assigned object escapes via getter")
+    @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
+    private Set<Object> inTheGetterLazyInitializedSet;
 
-    public synchronized Set<Object> getSet4(){
-        if(set4 == null)
-            set4 = new HashSet<Object>();
-        return set4;
+    public synchronized Set<Object> getInTheGetterLazyInitializedSet(){
+        if(inTheGetterLazyInitializedSet == null)
+            inTheGetterLazyInitializedSet = new HashSet<Object>();
+        return inTheGetterLazyInitializedSet;
     }
 
+    @DeepImmutableField("concrete object that is assigned is known and no other manipulation")
+    @ImmutableFieldReference("effective immutable reference")
+    private HashMap<Object, Object> effectiveImmutableHashMap = new HashMap<Object, Object>();
 
+    @DeepImmutableField("concrete object that is assigned is known and no other manipulation")
+    @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
+    private HashMap<Object, Object> lazyInitializedHashMap;
 
-
-
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
-    private HashMap<Object, Object> hashMap = new HashMap<Object, Object>();
-
-    @DeepImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private HashMap<Object, Object> hashMap2;
-
-    public synchronized void initHashMap2(){
-        if(hashMap2 == null)
-            hashMap2 = new HashMap<Object, Object>();
+    public synchronized void initLazyInitializedHashMap(){
+        if(lazyInitializedHashMap == null)
+            lazyInitializedHashMap = new HashMap<Object, Object>();
     }
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private HashMap<Object, Object> hashMap3;
+    @ShallowImmutableField("concrete assigned object is known but manipulation of the referenced object with .put")
+    @LazyInitializedThreadSafeFieldReference("thread safe lazy initialization due to synchronized method")
+    private HashMap<Object, Object> lazyInitializedHashMapWithManipulationAfterwards;
 
     public synchronized void initHashMap3(){
-        if(hashMap3 == null)
-            hashMap3 = new HashMap<Object, Object>();
-        hashMap3.put(new Object(), new Object());
+        if(lazyInitializedHashMapWithManipulationAfterwards == null)
+            lazyInitializedHashMapWithManipulationAfterwards = new HashMap<Object, Object>();
+        lazyInitializedHashMapWithManipulationAfterwards.put(new Object(), new Object());
     }
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
-    private HashMap<Object, Object> hashMap4;
+    @ShallowImmutableField("immutable reference but assigned object escapes via getter")
+    @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
+    private HashMap<Object, Object> inTheGetterLazyInitializedHashMap;
 
-    public synchronized HashMap<Object, Object> getHashMap4(){
-        if(hashMap4 == null)
-            hashMap4 = new HashMap<Object, Object>();
-        return hashMap4;
+    public synchronized HashMap<Object, Object> getInTheGetterLazyInitializedHashMap(){
+        if(inTheGetterLazyInitializedHashMap == null)
+            inTheGetterLazyInitializedHashMap = new HashMap<Object, Object>();
+        return inTheGetterLazyInitializedHashMap;
     }
 
 }

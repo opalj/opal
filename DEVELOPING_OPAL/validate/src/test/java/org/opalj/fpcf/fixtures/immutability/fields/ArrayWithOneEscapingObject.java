@@ -1,31 +1,37 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.field_immutability.MutableFieldAnnotation;
-import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedThreadSafeReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
+import org.opalj.fpcf.properties.immutability.classes.MutableClass;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.types.MutableType;
 
+@MutableType("It has a mutable state")
+@MutableClass("It has a mutable state")
 public class ArrayWithOneEscapingObject {
- @MutableFieldAnnotation("Reference of the field is mutable")
-    @MutableReferenceAnnotation("Field is public")
+
+    @MutableField("Reference of the field is mutable")
+    @MutableFieldReference("Field is public")
     public Object o = new Object();
 
-    @ShallowImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("Reference is only initialized once")
+    @ShallowImmutableField("")
+    @ImmutableFieldReference("Reference is only initialized once")
     private Object[] array1 = new Object[]{o, new Object(), new Object()}; //TODO
 
 
-    @ShallowImmutableFieldAnnotation("Field is initialized with an Shallow immutable field")
-    @ImmutableReferenceAnnotation("Field is only initialized once.")
+    @ShallowImmutableField("Field is initialized with an Shallow immutable field")
+    @ImmutableFieldReference("Field is only initialized once.")
     private Object[] array2;
 
     public ArrayWithOneEscapingObject() {
         array2 = new Object[]{o};
     }
 
-    @ShallowImmutableFieldAnnotation("Field is initialized with a shallow immutable field.")
-    @LazyInitializedThreadSafeReferenceAnnotation("Synchronized method with a guard-statement around the write")
+    @ShallowImmutableField("Field is initialized with a shallow immutable field.")
+    @LazyInitializedThreadSafeFieldReference("Synchronized method with a guard-statement around the write")
     private Object[] array3;
 
     public synchronized void initArray3(Object o){
@@ -33,14 +39,17 @@ public class ArrayWithOneEscapingObject {
             array3 = new Object[]{o};
     }
 
-    @ShallowImmutableFieldAnnotation("An array element escapes")
-    @LazyInitializedThreadSafeReferenceAnnotation("Synchronized method, with guarding if-statement.")
+    @ShallowImmutableField("An array element escapes")
+    @LazyInitializedThreadSafeFieldReference("Synchronized method, with guarding if-statement.")
     private Object[] array4;
 
     public synchronized Object initArray4(Object o){
+
         Object tmp0 = new Object();
+
         if(array4==null)
             array4 = new Object[]{tmp0};
+
         return tmp0;
     }
 }

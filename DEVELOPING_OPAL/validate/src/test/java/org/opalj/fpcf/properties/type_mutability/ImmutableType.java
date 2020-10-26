@@ -12,10 +12,10 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Florian Kuebler
  */
-@PropertyValidator(key = "TypeImmutability", validator = ImmutableTypeMatcher.class)
-@Documented
-@Retention(RetentionPolicy.CLASS)
-public @interface ImmutableType {
+//@PropertyValidator(key = "TypeImmutability", validator = ImmutableTypeMatcher.class)
+//@Documented
+//@Retention(RetentionPolicy.CLASS)
+@interface _ImmutableType {
 
     /**
      * A short reasoning of this property.

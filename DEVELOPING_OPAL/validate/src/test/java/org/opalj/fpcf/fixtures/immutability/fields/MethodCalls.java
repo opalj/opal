@@ -1,16 +1,17 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.field_immutability.DeepImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.field_immutability.MutableFieldAnnotation;
-import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.ImmutableReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedNotThreadSafeReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.LazyInitializedThreadSafeReferenceAnnotation;
-import org.opalj.fpcf.properties.reference_immutability.MutableReferenceAnnotation;
+import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 
 public class MethodCalls {
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
+    @ShallowImmutableField("")
+    @LazyInitializedThreadSafeFieldReference("")
     private TestMutable tm1;
 
     public synchronized void getTM1(){
@@ -20,8 +21,8 @@ public class MethodCalls {
         tm1.nop();
     }
 
-    @ShallowImmutableFieldAnnotation("")
-    @LazyInitializedThreadSafeReferenceAnnotation("")
+    @ShallowImmutableField("")
+    @LazyInitializedThreadSafeFieldReference("")
     private TestMutable tm2;
 
     public synchronized TestMutable getTM2(){
@@ -31,8 +32,8 @@ public class MethodCalls {
         return tm2;
     }
 
-    @MutableFieldAnnotation("")
-    @LazyInitializedNotThreadSafeReferenceAnnotation("")
+    @MutableField("")
+    @LazyInitializedNotThreadSafeFieldReference("")
     private TestMutable tm3;
 
     public void getTm3() {
@@ -41,8 +42,8 @@ public class MethodCalls {
         }
     }
 
-    @MutableReferenceAnnotation("")
-    @MutableFieldAnnotation("")
+    @MutableFieldReference("")
+    @MutableField("")
     private TestMutable tm4;
 
     public synchronized TestMutable getTm4() {
@@ -59,7 +60,7 @@ public class MethodCalls {
         return tm4;
     }
 
-    @ShallowImmutableFieldAnnotation("")
+    @ShallowImmutableField("")
     private TestMutable tm5;
 
     public synchronized void getTm5() {
@@ -69,12 +70,12 @@ public class MethodCalls {
         tm5.nop();
     }
 
-    @DeepImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
+    @DeepImmutableField("")
+    @ImmutableFieldReference("")
     private TestMutable tm6 = new TestMutable();
 
-    @ShallowImmutableFieldAnnotation("")
-    @ImmutableReferenceAnnotation("")
+    @ShallowImmutableField("")
+    @ImmutableFieldReference("")
     private TestMutable tm7 = new TestMutable();
 
     public void foo(){

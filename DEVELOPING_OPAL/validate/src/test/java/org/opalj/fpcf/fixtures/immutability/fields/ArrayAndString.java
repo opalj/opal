@@ -1,23 +1,31 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.field_immutability.DeepImmutableFieldAnnotation;
-import org.opalj.fpcf.properties.field_immutability.ShallowImmutableFieldAnnotation;
+import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 
 public class ArrayAndString<T> {
-    @ShallowImmutableFieldAnnotation("")
+
+    @ShallowImmutableField("")
     private String[] stringArray;
-    @ShallowImmutableFieldAnnotation("")
+
+    @ShallowImmutableField("")
     private int[] intArray;
-    @DeepImmutableFieldAnnotation("")
+
+    @DeepImmutableField("")
     private String string;
-    @DeepImmutableFieldAnnotation("")
+
+    @DeepImmutableField("")
     private int i;
-    @ShallowImmutableFieldAnnotation("")
-    private TrivialMutableClass[] tmc;
-    @ShallowImmutableFieldAnnotation("")
+
+    @ShallowImmutableField("")
+    private ClassWithPublicFields[] tmc;
+
+    @ShallowImmutableField("")
     private T[] tArray;
 
-    ArrayAndString(String[] stringArray, int[] intArray, String string, int i, TrivialMutableClass[] tmc, T[] tArray) {
+    ArrayAndString(String[] stringArray, int[] intArray, String string, int i,
+                   ClassWithPublicFields[] tmc, T[] tArray) {
         this.stringArray = stringArray;
         this.intArray = intArray;
         this.string = string;
