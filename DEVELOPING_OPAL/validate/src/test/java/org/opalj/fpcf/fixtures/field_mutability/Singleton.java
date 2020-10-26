@@ -1,23 +1,23 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.br.fpcf.analyses.L0FieldMutabilityAnalysis;
-import org.opalj.fpcf.properties.field_mutability.EffectivelyFinal;
-import org.opalj.fpcf.properties.field_mutability.NonFinal;
-import org.opalj.tac.fpcf.analyses.L1FieldMutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.L2FieldMutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 
 public class Singleton {
 
-    @NonFinal("written by static initializer after the field becomes (indirectly) readable")
+    @MutableField("written by static initializer after the field becomes (indirectly) readable")
     private String name;
 
-    @EffectivelyFinal(
+    @ShallowImmutableField(
             value = "only initialized once by the constructor",
-            analyses = { L1FieldMutabilityAnalysis.class, L2FieldMutabilityAnalysis.class }
+            analyses = { L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class }
     )
-    @NonFinal(value = "instance field not recognized by analysis",
-            analyses = L0FieldMutabilityAnalysis.class)
+    @MutableField(value = "instance field not recognized by analysis",
+            analyses = L0FieldImmutabilityAnalysis.class)
     private Object mutex = new Object();
 
     private Singleton() {
@@ -32,7 +32,7 @@ public class Singleton {
 
     // STATIC FUNCTIONALITY
 
-    @EffectivelyFinal("only set in the static initializer")
+    @ShallowImmutableField("only set in the static initializer")
     private static Singleton theInstance;
 
     static {

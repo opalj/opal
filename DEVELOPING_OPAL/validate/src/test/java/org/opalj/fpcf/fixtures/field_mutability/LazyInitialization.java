@@ -32,6 +32,7 @@ import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns.
@@ -41,7 +42,7 @@ import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 
 class Simple {
 
-    @ShallowImmutableField("Simple lazy initialization")
+    @ShallowImmutableField(value = "Simple lazy initialization", analyses = L2FieldImmutabilityAnalysis.class)
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;

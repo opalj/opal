@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.fpcf.properties.field_mutability.DeclaredFinal;
-import org.opalj.fpcf.properties.field_mutability.NonFinal;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 
 /**
  * Base class for tests below that calls a virtual method in its constructor that makes declared
@@ -26,19 +26,19 @@ abstract class Super{
  */
 public class DeclaredFinalFields extends Super {
 
-    @DeclaredFinal("Initialized directly")
+    @ShallowImmutableField("Initialized directly")
     private final int a = 1;
 
-    @DeclaredFinal("Initialized through instance initializer")
+    @ShallowImmutableField("Initialized through instance initializer")
     private final int b;
 
-    @DeclaredFinal("Initialized through constructor")
+    @ShallowImmutableField("Initialized through constructor")
     private final int c;
 
-    @NonFinal(value = "Prematurely read through super constructor", prematurelyRead = true)
+    @MutableField(value = "Prematurely read through super constructor", prematurelyRead = true)
     private final int d;
 
-    @NonFinal(value = "Prematurely read through own constructor", prematurelyRead = true)
+    @MutableField(value = "Prematurely read through own constructor", prematurelyRead = true)
     private final int e;
 
     public DeclaredFinalFields() {
