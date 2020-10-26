@@ -3,18 +3,19 @@ package org.opalj
 package fpcf
 package properties
 package immutability
-package classes
+package types
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.ClassImmutability_new
+import org.opalj.br.fpcf.properties.TypeImmutability
 
 /**
- * This is the basis for the matchers that match a class immutability
+ * This is the basis for the matchers that match the immutability of a type
  * @author Tobias Peter Roth
  */
-class ClassImmutabilityMatcher(val property: ClassImmutability_new) extends AbstractPropertyMatcher {
+class _NewTypeImmutabilityMatcher(val property: TypeImmutability)
+    extends AbstractPropertyMatcher {
 
     final private val PropertyReasonID = 0
 
@@ -28,7 +29,6 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new) extends Abst
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
@@ -49,11 +49,10 @@ class ClassImmutabilityMatcher(val property: ClassImmutability_new) extends Abst
         }
     }
 }
+class _NewMutableTypeMatcher extends _NewTypeImmutabilityMatcher(br.fpcf.properties.MutableType)
 
-class MutableClassMatcher extends ClassImmutabilityMatcher(br.fpcf.properties.MutableClass)
+class _ShallowImmutableTypeMatcher extends _NewTypeImmutabilityMatcher(br.fpcf.properties.ShallowImmutableType)
 
-class DependentImmutableClassMatcher extends ClassImmutabilityMatcher(br.fpcf.properties.DependentImmutableClass)
+class _DependentImmutableTypeMatcher extends _NewTypeImmutabilityMatcher(br.fpcf.properties.DependentImmutableType)
 
-class ShallowImmutableClassMatcher extends ClassImmutabilityMatcher(br.fpcf.properties.ShallowImmutableClass)
-
-class DeepImmutableClassMatcher extends ClassImmutabilityMatcher(br.fpcf.properties.DeepImmutableClass)
+class _DeepImmutableTypeMatcher extends _NewTypeImmutabilityMatcher(br.fpcf.properties.DeepImmutableType)

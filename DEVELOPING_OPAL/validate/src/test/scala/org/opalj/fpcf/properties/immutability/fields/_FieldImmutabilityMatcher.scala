@@ -3,19 +3,18 @@ package org.opalj
 package fpcf
 package properties
 package immutability
-package types
+package fields
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.TypeImmutability_new
+import org.opalj.br.fpcf.properties.FieldImmutability
 
 /**
- * This is the basis for the matchers that match the immutability of a type
+ * This is the basis for the matchers that match the immutability of a field
  * @author Tobias Peter Roth
  */
-class NewTypeImmutabilityMatcher(val property: TypeImmutability_new)
-    extends AbstractPropertyMatcher {
+class _FieldImmutabilityMatcher(val property: FieldImmutability) extends AbstractPropertyMatcher {
 
     final private val PropertyReasonID = 0
 
@@ -32,6 +31,7 @@ class NewTypeImmutabilityMatcher(val property: TypeImmutability_new)
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
+
     }
 
     def validateProperty(
@@ -49,10 +49,11 @@ class NewTypeImmutabilityMatcher(val property: TypeImmutability_new)
         }
     }
 }
-class NewMutableTypeMatcher extends NewTypeImmutabilityMatcher(br.fpcf.properties.MutableType_new)
 
-class ShallowImmutableTypeMatcher extends NewTypeImmutabilityMatcher(br.fpcf.properties.ShallowImmutableType)
+class _MutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.MutableField)
 
-class DependentImmutableTypeMatcher extends NewTypeImmutabilityMatcher(br.fpcf.properties.DependentImmutableType)
+class _ShallowImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.ShallowImmutableField)
 
-class DeepImmutableTypeMatcher extends NewTypeImmutabilityMatcher(br.fpcf.properties.DeepImmutableType)
+class _DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DependentImmutableField)
+
+class _DeepImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DeepImmutableField)

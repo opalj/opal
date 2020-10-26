@@ -2,23 +2,27 @@
 package org.opalj
 package fpcf
 
-import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+//import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import java.net.URL
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
+/*import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis */
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.RTACallGraphKey /*
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis */
+import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldImmutabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -46,10 +50,10 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
     describe("the 0 class and type immutability analyses are executed") {
 
         val as = executeAnalyses(Set(
-            EagerL1ClassImmutabilityAnalysis,
-            EagerL1TypeImmutabilityAnalysis,
+            EagerL0ClassImmutabilityAnalysis,
+            EagerL0TypeImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL3FieldImmutabilityAnalysis,
+            LazyL2FieldImmutabilityAnalysis,
             LazyL0FieldReferenceImmutabilityAnalysis,
             LazyL0BaseAIAnalysis
         ))
@@ -62,7 +66,7 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
             Set("TypeImmutability", "ClassImmutability")
         )
     }
-
+    /*
     describe("the 1 class and type immutability analysis are executed") {
 
         val as = executeAnalyses(Set(
@@ -86,5 +90,5 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
             classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability", "ClassImmutability")
         )
-    }
+    }*/
 }

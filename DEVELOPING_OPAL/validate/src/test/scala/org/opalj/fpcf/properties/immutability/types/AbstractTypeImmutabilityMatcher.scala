@@ -12,6 +12,23 @@ class AbstractTypeImmutabilityMatcher(
         val property: TypeImmutability
 ) extends AbstractPropertyMatcher {
 
+    import org.opalj.br.analyses.SomeProject
+
+    override def isRelevant(
+        p:      SomeProject,
+        as:     Set[ObjectType],
+        entity: Object,
+        a:      AnnotationLike
+    ): Boolean = {
+        val annotationType = a.annotationType.asObjectType
+
+        val analysesElementValues =
+            getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+
+        analyses.exists(as.contains)
+    }
+
     override def validateProperty(
         p:          Project[_],
         as:         Set[ObjectType],

@@ -12,7 +12,7 @@ import org.opalj.br.fpcf.properties.FieldReferenceImmutability
 
 /**
  * This is the basis for the matchers that match the immutability of a field reference
- * @author Tobias Peter Roth
+ * @author Tobias Roth
  */
 class FieldReferenceImmutabilityMatcher(val property: FieldReferenceImmutability)
     extends AbstractPropertyMatcher {

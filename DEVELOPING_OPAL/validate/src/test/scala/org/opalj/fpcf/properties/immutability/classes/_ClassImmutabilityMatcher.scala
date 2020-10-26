@@ -2,26 +2,21 @@
 package org.opalj
 package fpcf
 package properties
-package field_mutability
+package immutability
+package classes
 
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.properties.DeclaredFinalField
-import org.opalj.br.fpcf.properties.EffectivelyFinalField
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.LazyInitializedField
+import org.opalj.br.fpcf.properties.ClassImmutability
 
 /**
- * Matches a field's `FieldMutability` property. The match is successful if the field has the
- * given property and a sufficiently capable analysis was scheduled.
- *
- * @author Michael Eichberg
- * @author Dominik Helm
+ * This is the basis for the matchers that match a class immutability
+ * @author Tobias Peter Roth
  */
-class FieldMutabilityMatcher(val property: FieldMutability) extends AbstractPropertyMatcher {
+class _ClassImmutabilityMatcher(val property: ClassImmutability) extends AbstractPropertyMatcher {
 
-    private final val PropertyReasonID = 0
+    final private val PropertyReasonID = 0
 
     override def isRelevant(
         p:      SomeProject,
@@ -33,6 +28,7 @@ class FieldMutabilityMatcher(val property: FieldMutability) extends AbstractProp
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
+
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
         analyses.exists(as.contains)
@@ -52,11 +48,12 @@ class FieldMutabilityMatcher(val property: FieldMutability) extends AbstractProp
             None
         }
     }
-
 }
 
-class DeclaredFinalMatcher extends FieldMutabilityMatcher(DeclaredFinalField)
+class _MutableClassMatcher extends _ClassImmutabilityMatcher(br.fpcf.properties.MutableClass)
 
-class EffectivelyFinalMatcher extends FieldMutabilityMatcher(EffectivelyFinalField)
+class _DependentImmutableClassMatcher extends _ClassImmutabilityMatcher(br.fpcf.properties.DependentImmutableClass)
 
-class LazyInitializedMatcher extends FieldMutabilityMatcher(LazyInitializedField)
+class _ShallowImmutableClassMatcher extends _ClassImmutabilityMatcher(br.fpcf.properties.ShallowImmutableClass)
+
+class _DeepImmutableClassMatcher extends _ClassImmutabilityMatcher(br.fpcf.properties.DeepImmutableClass)

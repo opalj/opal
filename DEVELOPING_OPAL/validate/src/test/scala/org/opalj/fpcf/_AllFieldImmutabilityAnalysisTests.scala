@@ -5,10 +5,13 @@ package fpcf
 import java.net.URL
 
 import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.ai.domain.l2
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.br.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
@@ -16,20 +19,22 @@ import org.opalj.tac.fpcf.analyses.immutability.EagerL3FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
-import org.opalj.ai.domain.l2
-import org.opalj.br.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey /*
-import org.opalj.tac.fpcf.analyses.EagerL2FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL1FieldImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis */
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.EagerL2FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
 
 /**
- * Tests the field immutability analyses
+ * Tests if the properties specified in the test project (the classes in the (sub-)package of
+ * org.opalj.fpcf.fixture) and the computed ones match. The actual matching is delegated to
+ * PropertyMatchers to facilitate matching arbitrary complex property specifications.
  *
- * @author Tobias Roth
+ * @author Michael Eichberg
  */
-class FieldImmutabilityTests extends PropertiesTest {
+class _AllFieldImmutabilityAnalysisTests extends PropertiesTest {
 
     override def withRT = true
 
@@ -54,7 +59,7 @@ class FieldImmutabilityTests extends PropertiesTest {
 
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
     }
-    /*
+
     describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
 
         val as = executeAnalyses(
@@ -98,8 +103,9 @@ class FieldImmutabilityTests extends PropertiesTest {
 
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
     }
-*/
+
     describe("the org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis is executed") {
+
         val as = executeAnalyses(
             Set(
                 LazyL0FieldReferenceImmutabilityAnalysis,
@@ -116,7 +122,9 @@ class FieldImmutabilityTests extends PropertiesTest {
                 LazyVirtualCallAggregatingEscapeAnalysis
             )
         )
+
         as.propertyStore.shutdown()
+
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
     }
 }
