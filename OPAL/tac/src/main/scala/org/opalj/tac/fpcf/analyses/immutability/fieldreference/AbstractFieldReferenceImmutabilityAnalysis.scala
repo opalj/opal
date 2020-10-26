@@ -101,7 +101,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Checks if the method that defines the value assigned to a (potentially) lazily initialized
+     * Checks whether the method that defines the value assigned to a (potentially) lazily initialized
      * field is deterministic, ensuring that the same value is written even for concurrent
      * executions.
      */
@@ -125,7 +125,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Checks if the field the value assigned to a (potentially) lazily initialized field is final,
+     * Checks whether the field the value assigned to a (potentially) lazily initialized field is final,
      * ensuring that the same value is written even for concurrent executions.
      */
     def isImmutableReference(
@@ -141,7 +141,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Checks if the field is prematurely read, i.e. read before it is initialized in the
+     * Checks whether the field is prematurely read, i.e. read before it is initialized in the
      * constructor, using the corresponding property.
      */
     def isPrematurelyRead(
@@ -164,7 +164,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Checks if the calls at a given pc within a given method introduce non determinism.
+     * Checks whether the calls at a given pc within a given method introduce non determinism.
      * @return if the calls introduce nondeterminism
      */
     def doCallsIntroduceNonDeterminism(
@@ -183,8 +183,8 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     }
 
     /**
-     * Checks if a callee is nondeterministic and sets the [[State.referenceImmutability]]
-     * if it is to MutableFieldReference.
+     * Checks whether a callee is nondeterministic and sets the [[State.referenceImmutability]] to
+     * MutableFieldReference if it is not deterministic
      * @return if the callee is nondeterministic
      */
     def isNonDeterministicCallee(callees: Callees, pc: PC)(implicit state: State): Boolean = {
@@ -196,7 +196,8 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
             if (targets.exists(target ⇒ isNonDeterministic(propertyStore(target, Purity.key)))) {
                 state.referenceImmutability = MutableFieldReference
                 true
-            } else false
+            } else
+                false
         }
     }
 }
