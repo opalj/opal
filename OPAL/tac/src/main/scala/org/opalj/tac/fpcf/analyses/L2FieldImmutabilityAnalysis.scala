@@ -1030,7 +1030,7 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         }
 
     /**
-     * Checkes if the method that defines the value assigned to a (potentially) lazily initialized
+     * Checks if the method that defines the value assigned to a (potentially) lazily initialized
      * field is deterministic, ensuring that the same value is written even for concurrent
      * executions.
      */

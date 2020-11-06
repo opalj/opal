@@ -86,6 +86,11 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     with AbstractFieldReferenceImmutabilityAnalysis
     with FPCFAnalysis {
 
+    val considerLazyInitialization: Boolean =
+        project.config.getBoolean(
+            "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization"
+        )
+
     def doDetermineFieldReferenceImmutability(entity: Entity): PropertyComputationResult = {
         entity match {
 
@@ -305,12 +310,17 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                                         stmt.asPutField.objRef.asVar.definedBy != SelfReferenceParameter ||
                                         // A field written outside an initializer must be lazily
                                         // initialized or it is non-final
-                                        handleLazyInitialization(
-                                            index,
-                                            getDefaultValue(),
-                                            method,
-                                            taCode
-                                        )
+                                        {
+                                            if (considerLazyInitialization) {
+                                                handleLazyInitialization(
+                                                    index,
+                                                    getDefaultValue(),
+                                                    method,
+                                                    taCode
+                                                )
+                                            } else
+                                                true
+                                        }
 
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
                                     // println("reference has escaped")
@@ -378,7 +388,7 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = {
-        //println(s"ep: $ep")
+
         val result = ep match {
             case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒ false
             case FinalP(AtMost(_))                                   ⇒ true

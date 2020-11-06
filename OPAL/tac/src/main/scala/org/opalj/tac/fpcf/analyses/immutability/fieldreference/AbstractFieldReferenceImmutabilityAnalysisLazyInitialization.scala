@@ -15,7 +15,6 @@ import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.Method
 import org.opalj.br.cfg.BasicBlock
-import org.opalj.br.cfg.CFG
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference
@@ -52,13 +51,28 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
         writeIndex:   Int,
         defaultValue: Any,
         method:       Method,
-        tacCai:       TACode[TACMethodParameter, V]
+        taCode:       TACode[TACMethodParameter, V]
     )(implicit state: State): Boolean = {
         val lazyInitializationResult: FieldReferenceImmutability =
-            determineLazyInitialization(writeIndex, defaultValue, method, tacCai)
+            determineLazyInitialization(writeIndex, defaultValue, method, taCode)
 
         state.referenceImmutability = lazyInitializationResult
         lazyInitializationResult == MutableFieldReference
+    }
+
+    /**
+     * Determines whether the basic block of a given index dominates the basic block of the other or is executed
+     * before the other when the basic blocks are the same
+     */
+    def dominates(
+        potentiallyDominator: Int,
+        potentiallyDominated: Int, taCode: TACode[TACMethodParameter, V]
+    ): Boolean = {
+        val bbPotentiallyDominator = taCode.cfg.bb(potentiallyDominator)
+        val bbPotentiallyDominated = taCode.cfg.bb(potentiallyDominated)
+
+        taCode.cfg.dominatorTree.strictlyDominates(bbPotentiallyDominator.nodeId, bbPotentiallyDominated.nodeId) ||
+            bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominator < potentiallyDominated
     }
 
     /**
@@ -69,26 +83,14 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
         writeIndex:   Int,
         defaultValue: Any,
         method:       Method,
-        tacCode:      TACode[TACMethodParameter, V]
+        taCode:       TACode[TACMethodParameter, V]
     )(implicit state: State): FieldReferenceImmutability = {
-        val code = tacCode.stmts
-        val cfg = tacCode.cfg
+        val code = taCode.stmts
+        val cfg = taCode.cfg
 
         val write = code(writeIndex).asFieldWriteAccessStmt
         val writeBB = cfg.bb(writeIndex).asBasicBlock
-        val domTree = cfg.dominatorTree
-        val resultCatchesAndThrows = findCatchesAndThrows(tacCode, cfg) //TODO remove values
-
-        /**
-         * Determines whether the basic block of a given index dominates the basic block of the other or is executed
-         * before the other when the basic blocks are the same
-         */
-        def dominates(potentiallyDominator: Int, potentiallyDominated: Int): Boolean = {
-            val bbPotentiallyDominator = cfg.bb(potentiallyDominator)
-            val bbPotentiallyDominated = cfg.bb(potentiallyDominated)
-            domTree.strictlyDominates(bbPotentiallyDominator.nodeId, bbPotentiallyDominated.nodeId) ||
-                bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominator < potentiallyDominated
-        }
+        val resultCatchesAndThrows = findCatchesAndThrows(taCode)
 
         /**
          * Determines whether all exceptions that are caught are thrown
@@ -98,39 +100,40 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                 case (catchPC, originsCaughtException) ⇒
                     resultCatchesAndThrows._2.exists {
                         case (throwPC, throwDefinitionSites) ⇒
-                            dominates(tacCode.pcToIndex(catchPC), tacCode.pcToIndex(throwPC)) &&
+                            dominates(taCode.pcToIndex(catchPC), taCode.pcToIndex(throwPC), taCode) &&
                                 throwDefinitionSites == originsCaughtException //throwing and catching same exceptions
                     }
             }
         }
 
-        val findGuardResult = findGuard(method, writeIndex, defaultValue, tacCode)
+        val findGuardResult = findGuards(method, writeIndex, defaultValue, taCode)
 
-        val (guardedIndex, readIndex, trueCaseIndex, fieldReadIndex) =
+        val (readIndex, guardIndex, defaultCaseIndex, elseCaseIndex) = //guardIndex: for debugging purposes
             if (findGuardResult.nonEmpty)
                 (findGuardResult.head._1, findGuardResult.head._2, findGuardResult.head._3, findGuardResult.head._4)
             else
                 return MutableFieldReference;
 
-        if (!dominates(trueCaseIndex, writeIndex)) return MutableFieldReference;
+        if (!dominates(defaultCaseIndex, writeIndex, taCode)) return MutableFieldReference;
 
-        val elseBB = cfg.bb(guardedIndex)
+        val elseBB = cfg.bb(elseCaseIndex)
 
-        // prevents a wrong control flow
+        // prevents wrong control flow
         if (isTransitivePredecessor(elseBB, writeBB))
             return MutableFieldReference;
 
         if (method.returnType == state.field.fieldType) {
             // prevents that another value than the field value is returned with the same type
-            if (!isFieldValueReturned(write, writeIndex, readIndex, cfg, tacCode)) return MutableFieldReference;
+            if (!isFieldValueReturned(write, writeIndex, readIndex, taCode, findGuardResult))
+                return MutableFieldReference;
             //prevents that the field is seen with another value
             if ( // potentially unsound with method.returnType == state.field.fieldType
             // TODO comment it out and look at appearing cases
-            tacCode.stmts.exists(stmt ⇒ stmt.isReturnValue &&
-                !isTransitivePredecessor(writeBB, cfg.bb(tacCode.pcToIndex(stmt.pc))) &&
+            taCode.stmts.exists(stmt ⇒ stmt.isReturnValue &&
+                !isTransitivePredecessor(writeBB, cfg.bb(taCode.pcToIndex(stmt.pc))) &&
                 findGuardResult.forall {
                     case (indexOfFieldRead, _, _, _) ⇒
-                        !isTransitivePredecessor(cfg.bb(indexOfFieldRead), cfg.bb(tacCode.pcToIndex(stmt.pc)))
+                        !isTransitivePredecessor(cfg.bb(indexOfFieldRead), cfg.bb(taCode.pcToIndex(stmt.pc)))
                 }))
                 return MutableFieldReference;
         }
@@ -151,22 +154,25 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
 
         // if the method is synchronized the monitor within the method doesn't have to be searched
         if (method.isSynchronized) {
-            if (dominates(trueCaseIndex, writeIndex) && noInterferingExceptions())
+            if (dominates(defaultCaseIndex, writeIndex, taCode) && noInterferingExceptions())
                 LazyInitializedThreadSafeFieldReference
-            else MutableFieldReference
+            else
+                MutableFieldReference
         } else {
 
-            val (indexMonitorEnter, indexMonitorExit) = findMonitors(writeIndex, code, cfg, tacCode)
+            val (indexMonitorEnter, indexMonitorExit) = findMonitors(writeIndex, taCode, method)
 
             val monitorResultsDefined = indexMonitorEnter.isDefined && indexMonitorExit.isDefined
 
             if (monitorResultsDefined && //dominates(indexMonitorEnter.get, trueCaseIndex) &&
-                dominates(indexMonitorEnter.get, fieldReadIndex)) {
-                if (noInterferingExceptions()) LazyInitializedThreadSafeFieldReference
-                else MutableFieldReference
+                dominates(indexMonitorEnter.get, readIndex, taCode)) {
+                if (noInterferingExceptions())
+                    LazyInitializedThreadSafeFieldReference
+                else
+                    MutableFieldReference
             } else {
                 if (write.value.asVar.definedBy.forall { defSite ⇒
-                    defSite >= 0 && checkWriteIsDeterministic(code(defSite).asAssignment, method, code, tacCode)
+                    defSite >= 0 && checkWriteIsDeterministic(code(defSite).asAssignment, method, code, taCode)
                 }
                     && noInterferingExceptions()) {
                     val computationalFieldType = state.field.fieldType.computationalType
@@ -177,7 +183,6 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                         LazyInitializedNotThreadSafeButDeterministicFieldReference
                 } else MutableFieldReference
             }
-
         }
     }
 
@@ -195,23 +200,17 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
      * @author Tobias Roth
      */
     def findCatchesAndThrows(
-        tacCode: TACode[TACMethodParameter, V],
-        cfg:     CFG[Stmt[V], TACStmts[V]]
+        tacCode: TACode[TACMethodParameter, V]
     ): (List[(Int, IntTrieSet)], List[(Int, IntTrieSet)]) = {
         var caughtExceptions: List[(Int, IntTrieSet)] = List.empty
         var throwStatements: List[(Int, IntTrieSet)] = List.empty
         for (stmt ← tacCode.stmts) {
             if (!stmt.isNop) { // to prevent the handling of partially negative pcs of nops
-                //val currentBB = cfg.bb(tacCode.pcToIndex(stmt.pc))
                 (stmt.astID: @switch) match {
 
                     case CaughtException.ASTID ⇒
                         val caughtException = stmt.asCaughtException
-                        /*val exceptionType =
-                            if (caughtException.exceptionType.isDefined) caughtException.exceptionType.get.asObjectType
-                            else ObjectType.Throwable*/
-                        caughtExceptions =
-                            (caughtException.pc, caughtException.origins) :: caughtExceptions
+                        caughtExceptions = (caughtException.pc, caughtException.origins) :: caughtExceptions
 
                     case Throw.ASTID ⇒
                         val throwStatement = stmt.asThrow
@@ -226,42 +225,44 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
     }
 
     /**
-     * Searches the monitor enter and exit that is closest to the field write.
+     * Searches the closest monitor enter and exit to the field write.
      * @return the index of the monitor enter and exit
      * @author Tobias Roth
      */
     def findMonitors(
-        fieldWrite: Int,
-        code:       Array[Stmt[V]],
-        cfg:        CFG[Stmt[V], TACStmts[V]],
-        tacCode:    TACode[TACMethodParameter, V]
+        fieldWrite: Int, tacCode: TACode[TACMethodParameter, V], method: Method
     )(implicit state: State): (Option[Int], Option[Int]) = {
 
         var result: (Option[Int], Option[Int]) = (None, None)
-        val startBB = cfg.bb(fieldWrite)
+        val startBB = tacCode.cfg.bb(fieldWrite)
         var monitorExitQueuedBBs: Set[CFGNode] = startBB.successors
         var worklistMonitorExit = getSuccessors(startBB, Set.empty)
 
         /**
-         * checks that a given monitor supports a thread safe lazy initialization
+         * checks that a given monitor supports a thread safe lazy initialization.
+         * Supports two ways of synchronized blocks.
+         *
+         * When determining the lazy initialization of a static field,
+         * it allows only global locks on Foo.class. Independent of which class Foo is.
+         *
+         * When determining the lazy initialization of an instance fields, it allows
+         * synchronized(this) and synchronized(Foo.class). Independent of which class Foo is.
+         * In case of an instance field the second case is even stronger than synchronized(this).
+         *
          */
         def checkMonitor(v: V)(implicit state: State): Boolean = {
             v.definedBy.forall(definedByIndex ⇒ {
                 if (definedByIndex >= 0) {
-                    //supports two ways of synchronization
                     tacCode.stmts(definedByIndex) match {
-                        //synchronized(... //TODO
-                        case Assignment(_, DVar(_, _), classConst: ClassConst) ⇒
-                            state.field.classFile.thisType == classConst.value ||
-                                state.field.fieldType == classConst.value
 
-                        //synchronized(... //TODO
-                        case Assignment(_, DVar(_, _), GetField(_, _, _, classType, UVar(_, _))) ⇒
-                            classType == state.field.classFile.thisType
-
-                        case _ ⇒ false
+                        //synchronized(Foo.class)
+                        case Assignment(_, _, _: ClassConst) ⇒ true
+                        case _                               ⇒ false
                     }
-                } else true // (definedByIndex <= -1)
+                } else {
+                    //synchronized(this)
+                    state.field.isNotStatic && IntTrieSet(definedByIndex) == SelfReferenceParameter
+                }
             })
         }
 
@@ -276,9 +277,9 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
             val endPC = curBB.endPC
             var hasNotFoundAnyMonitorYet = true
             for (i ← startPC to endPC) {
-                (code(i).astID: @switch) match {
+                (tacCode.stmts(i).astID: @switch) match {
                     case MonitorEnter.ASTID ⇒
-                        val monitorEnter = code(i).asMonitorEnter
+                        val monitorEnter = tacCode.stmts(i).asMonitorEnter
                         if (checkMonitor(monitorEnter.objRef.asVar)) {
                             result = (Some(tacCode.pcToIndex(monitorEnter.pc)), result._2)
                             hasNotFoundAnyMonitorYet = false
@@ -299,7 +300,7 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
             worklistMonitorExit = worklistMonitorExit.tail
             val endPC = curBB.endPC
 
-            val cfStmt = code(endPC)
+            val cfStmt = tacCode.stmts(endPC)
             (cfStmt.astID: @switch) match {
 
                 case MonitorExit.ASTID ⇒
@@ -320,23 +321,23 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
     /**
      * Finds the index of the guarding if-Statement for a lazy initialization, the index of the
      * first statement executed if the field does not have its default value and the index of the
-     * field read used for the guard and the index of the fieldread.
+     * field read used for the guard and the index of the field-read.
      */
-    def findGuard(
+    def findGuards(
         method:       Method,
         fieldWrite:   Int,
         defaultValue: Any,
-        tacCode:      TACode[TACMethodParameter, V]
+        taCode:       TACode[TACMethodParameter, V]
     )(implicit state: State): List[(Int, Int, Int, Int)] = {
-        val cfg = tacCode.cfg
-        val code = tacCode.stmts
+        val cfg = taCode.cfg
+        val code = taCode.stmts
 
         val startBB = cfg.bb(fieldWrite).asBasicBlock
 
         var enqueuedBBs: Set[CFGNode] = startBB.predecessors
         var worklist: List[BasicBlock] = getPredecessors(startBB, Set.empty)
         var seen: Set[BasicBlock] = Set.empty
-        var result: List[(Int, Int, Int)] = List.empty //None
+        var result: List[(Int, Int, Int)] = List.empty
 
         while (worklist.nonEmpty) {
             val curBB = worklist.head
@@ -355,18 +356,18 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                             ifStmt,
                             defaultValue,
                             code,
-                            tacCode,
+                            taCode,
                             method
                         )) {
-                            result = (endPC, endPC + 1, ifStmt.targetStmt) :: result
+                            result = (endPC, ifStmt.targetStmt, endPC + 1) :: result
                         } else if (ifStmt.condition.equals(NE) && curBB != startBB && isGuard(
                             ifStmt,
                             defaultValue,
                             code,
-                            tacCode,
+                            taCode,
                             method
                         )) {
-                            result = (endPC, ifStmt.targetStmt, endPC + 1) :: result
+                            result = (endPC, endPC + 1, ifStmt.targetStmt) :: result
                         } else {
                             if ((cfg.bb(fieldWrite) != cfg.bb(ifStmt.target) || fieldWrite < ifStmt.target) &&
                                 isTransitivePredecessor(cfg.bb(fieldWrite), cfg.bb(ifStmt.target))) {
@@ -387,7 +388,7 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
 
         }
 
-        var finalResult: List[(Int, Int, Int, Int)] = List.empty // 2 3 5 6
+        var finalResult: List[(Int, Int, Int, Int)] = List.empty
         var fieldReadIndex = 0
         result.foreach(result ⇒ {
             // The field read that defines the value checked by the guard must be used only for the
@@ -405,12 +406,12 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                 val fieldReadUses = code(definitions.head).asAssignment.targetVar.usedBy
 
                 val fieldReadUsedCorrectly =
-                    fieldReadUses.forall(use ⇒ use == result._1 || use == result._2)
+                    fieldReadUses.forall(use ⇒ use == result._1 || use == result._3)
 
                 if (definitions.size == 1 && definitions.head >= 0 && fieldReadUsedCorrectly) {
                     // Found proper guard
-                    finalResult = (result._2, definitions.head, result._3, fieldReadIndex) :: finalResult
-                } // 2 3 5 6
+                    finalResult = (fieldReadIndex, result._1, result._2, result._3) :: finalResult
+                }
             }
         })
         finalResult
@@ -499,7 +500,10 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
 
         val value = origin.expr
 
-        def isNonConstDeterministic(value: Expr[V], taCode: TACode[TACMethodParameter, V])(implicit state: State): Boolean = {
+        def isNonConstDeterministic(
+            value:  Expr[V],
+            taCode: TACode[TACMethodParameter, V]
+        )(implicit state: State): Boolean = {
             (value.astID: @switch) match {
                 case BinaryExpr.ASTID ⇒ isConstant(value.asBinaryExpr.left) && isConstant(value.asBinaryExpr.right)
 
@@ -565,7 +569,6 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
         def isExprReadOfCurrentField: Int ⇒ Boolean = exprIndex ⇒
             exprIndex == index ||
                 exprIndex >= 0 && isReadOfCurrentField(tacCode.stmts(exprIndex).asAssignment.expr, tacCode, exprIndex)
-        //println("expr: "+expr)
         (expr.astID: @switch) match {
             case GetField.ASTID ⇒
                 val objRefDefinition = expr.asGetField.objRef.asVar.definedBy
@@ -648,7 +651,8 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                         //in case of Integer etc.... .initValue()
 
                         val calleesResult = propertyStore(declaredMethods(method), Callees.key)
-                        if (doCallsIntroduceNonDeterminism(calleesResult, code(index).asAssignment.pc)) return false;
+                        if (doCallsIntroduceNonDeterminism(calleesResult, code(index).asAssignment.pc))
+                            return false;
 
                         if (isVirtualFunctionCall) {
                             val virtualFunctionCall = code(index).asAssignment.expr.asVirtualFunctionCall
@@ -656,36 +660,34 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
                                 receiverDefSite >= 0 &&
                                     isReadOfCurrentField(code(receiverDefSite).asAssignment.expr, tacCode, index))
                         } else {
-                            //if(isStaticFunctionCall){
-                            //val staticFunctionCall = code(index).asAssignment.expr.asStaticFunctionCall
-                            //staticFunctionCall.receiverOption.
                             isReadOfCurrentField(code(index).asAssignment.expr, tacCode, index)
                         }
                     } else {
-                        //method.asMethod.isVirtualCallTarget
                         isReadOfCurrentField(code(index).asAssignment.expr, tacCode, index)
                     }
                 }
             }
         }
 
-        def isFloatDoubleOrLong(fieldType: FieldType): Boolean =
+        //Special handling for these types needed because of compare function in bytecode
+        def hasFloatDoubleOrLongType(fieldType: FieldType): Boolean =
             fieldType.isDoubleType || fieldType.isFloatType || fieldType.isLongType
 
-        if (ifStmt.rightExpr.isVar && isFloatDoubleOrLong(state.field.fieldType) && ifStmt.rightExpr.asVar.definedBy.head > 0 && tacCode.stmts(ifStmt.rightExpr.asVar.definedBy.head).asAssignment.expr.isCompare) {
+        if (ifStmt.rightExpr.isVar && hasFloatDoubleOrLongType(state.field.fieldType) &&
+            ifStmt.rightExpr.asVar.definedBy.head > 0 &&
+            tacCode.stmts(ifStmt.rightExpr.asVar.definedBy.head).asAssignment.expr.isCompare) {
 
             val left = tacCode.stmts(ifStmt.rightExpr.asVar.definedBy.head).asAssignment.expr.asCompare.left.asVar
             val right = tacCode.stmts(ifStmt.rightExpr.asVar.definedBy.head).asAssignment.expr.asCompare.right.asVar
             val leftExpr = tacCode.stmts(left.definedBy.head).asAssignment.expr
             val rightExpr = tacCode.stmts(right.definedBy.head).asAssignment.expr
 
-            if (leftExpr.isGetField) isDefaultConst(rightExpr)
-            else if (rightExpr.isGetField) isDefaultConst(leftExpr)
-            else false //TODO reasoning
+            if (leftExpr.isGetField || leftExpr.isGetStatic) isDefaultConst(rightExpr)
+            else (rightExpr.isGetField || rightExpr.isGetStatic) && isDefaultConst(leftExpr)
 
         } else if (ifStmt.leftExpr.isVar && ifStmt.rightExpr.isVar && ifStmt.leftExpr.asVar.definedBy.head >= 0 &&
             ifStmt.rightExpr.asVar.definedBy.head >= 0 &&
-            isFloatDoubleOrLong(state.field.fieldType) && tacCode.stmts(ifStmt.leftExpr.asVar.definedBy.head).
+            hasFloatDoubleOrLongType(state.field.fieldType) && tacCode.stmts(ifStmt.leftExpr.asVar.definedBy.head).
             asAssignment.expr.isCompare &&
             ifStmt.leftExpr.isVar && ifStmt.rightExpr.isVar) {
 
@@ -694,9 +696,8 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
             val leftExpr = tacCode.stmts(left.definedBy.head).asAssignment.expr
             val rightExpr = tacCode.stmts(right.definedBy.head).asAssignment.expr
 
-            if (leftExpr.isGetField) isDefaultConst(rightExpr)
-            else if (rightExpr.isGetField) isDefaultConst(leftExpr)
-            else false //TODO reasoning
+            if (leftExpr.isGetField || leftExpr.isGetStatic) isDefaultConst(rightExpr)
+            else (rightExpr.isGetField || rightExpr.isGetStatic) && isDefaultConst(leftExpr)
 
         } else if (ifStmt.rightExpr.isVar && isDefaultConst(ifStmt.leftExpr)) {
             isGuardInternal(ifStmt.rightExpr.asVar, tacCode, method)
@@ -706,63 +707,68 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization extends Abstr
     }
 
     /**
-     * Checks that the value of the field is returned.
+     * Checks that the returned value is definitely read from the field.
      */
     def isFieldValueReturned(
-        write:      FieldWriteAccessStmt[V],
-        writeIndex: Int,
-        readIndex:  Int,
-        cfg:        CFG[Stmt[V], TACStmts[V]],
-        tacCode:    TACode[TACMethodParameter, V]
+        write:        FieldWriteAccessStmt[V],
+        writeIndex:   Int,
+        readIndex:    Int,
+        taCode:       TACode[TACMethodParameter, V],
+        guardIndexes: List[(Int, Int, Int, Int)]
     )(implicit state: State): Boolean = {
-        val startBB = cfg.bb(0).asBasicBlock
-        var queuedNodes: Set[CFGNode] = Set.empty
-        var workList = getSuccessors(startBB, queuedNodes)
 
-        workList ++= Set(startBB)
+        def isSimpleReadOfField(expr: Expr[V]) = {
+            expr.astID match {
+                case GetField.ASTID ⇒
+                    val objRefDefinition = expr.asGetField.objRef.asVar.definedBy
+                    if (objRefDefinition != SelfReferenceParameter)
+                        false
+                    else
+                        expr.asGetField.resolveField(project).contains(state.field)
 
-        var potentiallyReadIndex: Option[Int] = None
+                case GetStatic.ASTID ⇒
+                    expr.asGetStatic.resolveField(project).contains(state.field)
 
-        while (workList.nonEmpty) {
-            val currentBB = workList.head
-            workList = workList.tail
-
-            val startPC = {
-                if (currentBB == startBB) writeIndex + 1
-                else currentBB.startPC
+                case _ ⇒ false
             }
-
-            val endPC = currentBB.endPC
-            var index = startPC
-
-            while (index <= endPC) {
-                val stmt = tacCode.stmts(index)
-                if (stmt.isAssignment) {
-                    val assignment = stmt.asAssignment
-                    if (isReadOfCurrentField(assignment.expr, tacCode, index)) {
-                        potentiallyReadIndex = Some(index)
-                    }
-                } else if (stmt.isReturnValue) {
-                    val returnValueDefs = stmt.asReturnValue.expr.asVar.definedBy
-                    if (returnValueDefs.size == 2 &&
-                        returnValueDefs.contains(write.value.asVar.definedBy.head) &&
-                        returnValueDefs.contains(readIndex)) {
-                        return true;
-                    } // direct return of the written value
-                    else if (potentiallyReadIndex.isDefined &&
-                        (returnValueDefs == IntTrieSet(potentiallyReadIndex.get) ||
-                            returnValueDefs == IntTrieSet(readIndex, potentiallyReadIndex.get))) {
-                        return true;
-                    } // return of field value loaded by field read
-                    else return false; // return of different value
-                }
-                index = index + 1
-            }
-            val successors = getSuccessors(currentBB, queuedNodes)
-            workList ++= successors
-            queuedNodes ++= successors
         }
-        false
-    }
 
+        taCode.stmts.forall { stmt ⇒
+            !stmt.isReturnValue || {
+
+                val returnValueDefs = stmt.asReturnValue.expr.asVar.definedBy
+                val assignedValueDefSite = write.value.asVar.definedBy
+                returnValueDefs.forall(_ >= 0) &&
+                    {
+                        if (returnValueDefs.size == 1 && returnValueDefs.head != readIndex) {
+                            val expr = taCode.stmts(returnValueDefs.head).asAssignment.expr
+                            isSimpleReadOfField(expr) && guardIndexes.exists {
+                                case (_, guardIndex, defaultCase, _) ⇒
+                                    dominates(guardIndex, returnValueDefs.head, taCode) &&
+                                        (!dominates(defaultCase, returnValueDefs.head, taCode) ||
+                                            dominates(writeIndex, returnValueDefs.head, taCode))
+                            }
+                        } //The field is either read before the guard and returned or
+                        // the value assigned to the field is returned
+                        else {
+                            returnValueDefs.size == 2 && assignedValueDefSite.size == 1 &&
+                                returnValueDefs.contains(readIndex) &&
+                                {
+                                    returnValueDefs.contains(assignedValueDefSite.head) || {
+                                        val potentiallyReadIndex = returnValueDefs.filter(_ != readIndex).head
+                                        val expr = taCode.stmts(potentiallyReadIndex).asAssignment.expr
+                                        isSimpleReadOfField(expr) &&
+                                            guardIndexes.exists {
+                                                case (_, guardIndex, defaultCase, _) ⇒
+                                                    dominates(guardIndex, potentiallyReadIndex, taCode) &&
+                                                        (!dominates(defaultCase, returnValueDefs.head, taCode) ||
+                                                            dominates(writeIndex, returnValueDefs.head, taCode))
+                                            }
+                                    }
+                                }
+                        }
+                    }
+            }
+        }
+    }
 }

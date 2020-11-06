@@ -126,6 +126,16 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
+    val considerEscape =
+        project.config.getBoolean(
+            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape"
+        )
+
+    val considerGenericity =
+        project.config.getBoolean(
+            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity"
+        )
+
     def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult =
         entity match {
 
@@ -368,7 +378,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                             val (method, pcs) = read
                             val taCodeOption = getTACAI(method, pcs, isRead = true)
                             if (taCodeOption.isDefined)
-                                determineEscapeViaFieldReadsWithKnownTAC(pcs, taCodeOption.get, method)
+                                determineEscapeViaFieldReadsWithKnownTAC(pcs, taCodeOption.get)
                         }
                 }
             }
@@ -379,8 +389,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
          */
         def determineEscapeViaFieldReadsWithKnownTAC(
             pcs:    PCs,
-            taCode: TACode[TACMethodParameter, V],
-            method: Method
+            taCode: TACode[TACMethodParameter, V]
         )(implicit state: State): Unit = {
             if (pcs.exists { pc ⇒
                 val readIndex = taCode.pcToIndex(pc)
@@ -727,7 +736,6 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                                 } else {
                                     definitionSiteAssignment.targetVar.usedBy.exists { useSite ⇒
                                         val useSiteStmt = taCode.stmts(useSite)
-                                        // println(s"constructor use site stmt: $useSiteStmt")
                                         if (useSiteStmt.isNonVirtualMethodCall) {
                                             doesNonVirtualMethodCallEnablesEscape(useSiteStmt.asNonVirtualMethodCall)
                                         } else if (useSiteStmt.isPutStatic || useSiteStmt.isPutField) {
@@ -839,6 +847,14 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
 
         def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
             import org.opalj.fpcf.EUBP
+
+            def typeMatch(entity: Entity) =
+                entity match {
+                    case objectType: ObjectType if state.innerArrayTypes.contains(objectType) ⇒
+                        state.noEscapePossibilityViaReference = false
+                    case _ ⇒
+                }
+
             if (eps.asEPS.pk != TACAI.key)
                 state.dependees = state.dependees.filter(_.e ne eps.e)
             eps match {
@@ -849,21 +865,13 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                     if (t != ObjectType.Object) { // in case of generic fields
                         state.dependentImmutability = Dependent
                     }
-                    t match {
-                        case objectType: ObjectType if state.innerArrayTypes.contains(objectType) ⇒
-                            state.noEscapePossibilityViaReference = false
-                        case _ ⇒
-                    }
+                    typeMatch(t)
 
                 case FinalEP(t, DependentImmutableType) ⇒
                     state.typeIsImmutable = false
                     if (t != field.fieldType && state.dependentImmutability == OnlyDeepImmutable)
                         state.dependentImmutability = NotShallowOrMutable
-                    t match {
-                        case objectType: ObjectType if state.innerArrayTypes.contains(objectType) ⇒
-                            state.noEscapePossibilityViaReference = false
-                        case _ ⇒
-                    }
+                    typeMatch(t)
 
                 case UBP(MutableFieldReference | LazyInitializedNotThreadSafeFieldReference) ⇒
                     state.typeIsImmutable = false
@@ -887,7 +895,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                     if (eps.isFinal) {
                         val finalEP = eps.asInstanceOf[FinalEP[Method, TACAI]]
                         checkFieldWritesForEffImmutabilityWithKnownTAC(method, pcs._2, finalEP.p.tac.get)(state)
-                        determineEscapeViaFieldReadsWithKnownTAC(pcs._1, finalEP.p.tac.get, method)(state)
+                        determineEscapeViaFieldReadsWithKnownTAC(pcs._1, finalEP.p.tac.get)(state)
                     } else {
                         state.tacDependees += method -> ((newEP, pcs))
                     }
@@ -922,27 +930,34 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             case ep ⇒
                 state.dependees += ep
         }
-        // println("A")
         /**
-         * Determines whether the field is dependent immutable
+         * Determines whether the field is dependent immutable if the flag is set
          */
-        handleGenericity()
-        // println("B")
+        if (considerGenericity) {
+            handleGenericity()
+        } else {
+            state.dependentImmutability = Dependent
+        }
+
         /**
          * Determines whether the reference object escapes or can be mutated.
          */
-        if (state.referenceIsImmutable.isEmpty || state.referenceIsImmutable.get) {
-            determineEscapeOfReferencedObjectOrValue()
+        if (considerEscape) {
+            if (state.referenceIsImmutable.isEmpty || state.referenceIsImmutable.get) {
+                determineEscapeOfReferencedObjectOrValue()
+            }
+        } else {
+            state.noEscapePossibilityViaReference = false
+            state.concreteClassTypeIsKnown = false
+            state.escapesStillDetermined = true
         }
-        // println("c")
         /**
          * In cases where we know the concrete class type assigned to the field we could use the immutabiltiy of this.
          */
         if (!state.concreteClassTypeIsKnown) {
-            // println("C1")
             handleTypeImmutability(state)
         }
-        // println("D")
+
         createResult
     }
 }

@@ -3,9 +3,11 @@ package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_f
 
 import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeButDeterministicReference;
+import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
@@ -26,9 +28,10 @@ public class SimpleStringModel {
         return value;
     }
 
-    @DeepImmutableField(value="", analyses = L3FieldImmutabilityAnalysis.class)
-    @LazyInitializedNotThreadSafeButDeterministicReference(value = "",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    //TODO @DeepImmutableField
+    //TODO @LazyInitializedNotThreadSafeButDeterministicReference
+    @MutableField("Mutable field reference")
+    @MutableFieldReference(value="The two def sites of h are conservatively handled as mutable")
     private int hash; // Default value 0
 
 

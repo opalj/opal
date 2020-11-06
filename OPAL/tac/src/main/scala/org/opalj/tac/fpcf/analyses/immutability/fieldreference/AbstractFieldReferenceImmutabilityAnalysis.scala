@@ -105,9 +105,8 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
      * field is deterministic, ensuring that the same value is written even for concurrent
      * executions.
      */
-    def isNonDeterministic(
-        eop: EOptionP[DeclaredMethod, Purity]
-    )(implicit state: State): Boolean = eop match {
+    def isNonDeterministic(eop: EOptionP[DeclaredMethod, Purity])(implicit state: State): Boolean = eop match {
+
         case LBP(p: Purity) if p.isDeterministic  ⇒ false
         case UBP(p: Purity) if !p.isDeterministic ⇒ true
 
@@ -128,17 +127,16 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
      * Checks whether the field the value assigned to a (potentially) lazily initialized field is final,
      * ensuring that the same value is written even for concurrent executions.
      */
-    def isImmutableReference(
-        eop: EOptionP[Field, FieldReferenceImmutability]
-    )(implicit state: State): Boolean = eop match {
+    def isImmutableReference(eop: EOptionP[Field, FieldReferenceImmutability])(implicit state: State): Boolean =
+        eop match {
 
-        case LBP(ImmutableFieldReference) ⇒ true
-        case UBP(MutableFieldReference)   ⇒ false
+            case LBP(ImmutableFieldReference) ⇒ true
+            case UBP(MutableFieldReference)   ⇒ false
 
-        case _ ⇒
-            state.referenceImmutabilityDependees += eop
-            true
-    }
+            case _ ⇒
+                state.referenceImmutabilityDependees += eop
+                true
+        }
 
     /**
      * Checks whether the field is prematurely read, i.e. read before it is initialized in the

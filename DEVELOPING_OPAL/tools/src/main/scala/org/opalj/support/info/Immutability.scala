@@ -78,9 +78,11 @@ import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.FieldReferenceImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.EPS
+import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 
 /**
- * Determines the immutability of field references, fields, classes and types
+ * Determines the immutability of field references, fields, classes and types and gives several setting options for the
+ * evaluation.
  *
  * @author Tobias Roth
  */
@@ -94,19 +96,23 @@ object Immutability {
     case object All extends Analyses
 
     def evaluate(
-        cp:                    File,
-        analysis:              Analyses,
-        numThreads:            Int,
-        projectDir:            Option[String],
-        libDir:                Option[String],
-        resultsFolder:         Path,
-        withoutJDK:            Boolean,
-        isLibrary:             Boolean,
-        closedWorldAssumption: Boolean,
-        callGraphKey:          AbstractCallGraphKey,
-        level:                 Int,
-        reImInferComparison:   Boolean
+        cp:                                File,
+        analysis:                          Analyses,
+        numThreads:                        Int,
+        projectDir:                        Option[String],
+        libDir:                            Option[String],
+        resultsFolder:                     Path,
+        withoutJDK:                        Boolean,
+        isLibrary:                         Boolean,
+        closedWorldAssumption:             Boolean,
+        callGraphKey:                      AbstractCallGraphKey,
+        level:                             Int,
+        reImInferComparison:               Boolean,
+        withoutConsiderEscape:             Boolean,
+        withoutConsiderGenericity:         Boolean,
+        withoutConsiderLazyInitialization: Boolean
     ): BasicReport = {
+        import org.opalj.fpcf.OrderedProperty
 
         OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
@@ -137,6 +143,28 @@ object Immutability {
             )
         }
 
+        if (withoutConsiderEscape) {
+            config = config.withValue(
+                "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape",
+                ConfigValueFactory.fromAnyRef("false")
+            )
+        }
+
+        if (withoutConsiderGenericity) {
+            config = config.withValue(
+                "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity",
+                ConfigValueFactory.fromAnyRef("false")
+            )
+        }
+
+        if (withoutConsiderLazyInitialization) {
+            config =
+                config.withValue(
+                    "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization",
+                    ConfigValueFactory.fromAnyRef("false")
+                )
+        }
+
         var projectTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
@@ -145,10 +173,16 @@ object Immutability {
             Project(classFiles, libFiles ++ JDKFiles, libraryClassFilesAreInterfacesOnly = false, Traversable.empty)
         } { t ⇒ projectTime = t.toSeconds }
 
+        val purityAnalysis =
+            if (reImInferComparison)
+                EagerL2PurityAnalysis
+            else
+                LazyL2PurityAnalysis
+
         val fieldReferenceDependencies: List[FPCFAnalysisScheduler] = List(
             EagerL0FieldReferenceImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2PurityAnalysis,
+            purityAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
@@ -159,7 +193,7 @@ object Immutability {
         val fieldDependencies: List[FPCFAnalysisScheduler] = List(
             LazyL0FieldReferenceImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2PurityAnalysis,
+            purityAnalysis,
             EagerL3FieldImmutabilityAnalysis,
             LazyL1ClassImmutabilityAnalysis,
             LazyL1TypeImmutabilityAnalysis,
@@ -172,7 +206,7 @@ object Immutability {
 
         val classDepencencies: List[FPCFAnalysisScheduler] = List(
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2PurityAnalysis,
+            purityAnalysis,
             LazyL0FieldReferenceImmutabilityAnalysis,
             LazyL3FieldImmutabilityAnalysis,
             LazyL1TypeImmutabilityAnalysis,
@@ -186,7 +220,7 @@ object Immutability {
 
         val typeDependencies: List[FPCFAnalysisScheduler] = List(
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2PurityAnalysis,
+            purityAnalysis,
             LazyL0FieldReferenceImmutabilityAnalysis,
             LazyL3FieldImmutabilityAnalysis,
             LazyL1ClassImmutabilityAnalysis,
@@ -201,7 +235,7 @@ object Immutability {
         val allImmAnalysisDependencies: List[FPCFAnalysisScheduler] =
             List(
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyL2PurityAnalysis,
+                purityAnalysis,
                 EagerL0FieldReferenceImmutabilityAnalysis,
                 EagerL3FieldImmutabilityAnalysis,
                 EagerL1ClassImmutabilityAnalysis,
@@ -227,13 +261,16 @@ object Immutability {
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-        println(s"callgraph $callGraphKey")
-
         time {
             analysesManager.project.get(callGraphKey)
         } { t ⇒ callGraphTime = t.toSeconds }
 
-        println(s"level: $level")
+        println(
+            s"""
+               | level: $level
+               | callgraph: $callGraphKey
+               |""".stripMargin
+        )
 
         analysesManager.project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
             if (level == 0)
@@ -281,28 +318,33 @@ object Immutability {
             filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field])).
             toTraversable.groupBy(_.asFinal.p)
 
-        val fieldReferenceOrder: (EPS[Entity, FieldReferenceImmutability], EPS[Entity, FieldReferenceImmutability]) ⇒ Boolean =
-            (epsLeftHandSide, epsRightHandSide) ⇒ epsLeftHandSide.e.toString < epsRightHandSide.e.toString
+        def unpackFieldEPS(eps: EPS[Entity, OrderedProperty]): String = {
+            val field = eps.e.asInstanceOf[Field]
+            val fieldName = field.name
+            val packageName = field.classFile.thisType.packageName.replace("/", ".")
+            val className = field.classFile.thisType.simpleName
+            packageName+"."+className+"."+fieldName
+        }
 
         val mutableFieldReferences =
-            fieldReferenceGroupedResults.getOrElse(MutableFieldReference, Iterator.empty).toSeq.
-                sortWith(fieldReferenceOrder)
+            fieldReferenceGroupedResults.getOrElse(MutableFieldReference, Iterator.empty).map(unpackFieldEPS).
+                toSeq.sortWith(_ < _)
 
         val notThreadSafeLazyInitializedFieldReferences =
             fieldReferenceGroupedResults.getOrElse(LazyInitializedNotThreadSafeFieldReference, Iterator.empty).toSeq.
-                sortWith(fieldReferenceOrder)
+                map(unpackFieldEPS).sortWith(_ < _)
 
         val lazyInitializedReferencesNotThreadSafeButDeterministic =
             fieldReferenceGroupedResults.
-                getOrElse(LazyInitializedNotThreadSafeButDeterministicFieldReference, Iterator.empty).toSeq.
-                sortWith(fieldReferenceOrder)
+                getOrElse(LazyInitializedNotThreadSafeButDeterministicFieldReference, Iterator.empty).
+                toSeq.map(unpackFieldEPS).sortWith(_ < _)
 
         val threadSafeLazyInitializedFieldReferences =
-            fieldReferenceGroupedResults.getOrElse(LazyInitializedThreadSafeFieldReference, Iterator.empty).toSeq.
-                sortWith(fieldReferenceOrder)
+            fieldReferenceGroupedResults.getOrElse(LazyInitializedThreadSafeFieldReference, Iterator.empty).
+                toSeq.map(unpackFieldEPS).sortWith(_ < _)
 
         val immutableReferences = fieldReferenceGroupedResults.getOrElse(ImmutableFieldReference, Iterator.empty).
-            toSeq.sortWith(fieldReferenceOrder)
+            toSeq.map(unpackFieldEPS).sortWith(_ < _)
 
         if (analysis == All || analysis == FieldReferences) {
             stringBuilderResults.append(
@@ -339,57 +381,56 @@ object Immutability {
             filter(eps ⇒ allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field])).
             toTraversable.groupBy(_.asFinal.p)
 
-        val fieldOrder: (EPS[Entity, FieldImmutability], EPS[Entity, FieldImmutability]) ⇒ Boolean =
-            (epsLeftHandSide, epsRightHandSide) ⇒ epsLeftHandSide.e.toString < epsRightHandSide.e.toString
-
-        val mutableFields = fieldGroupedResults.getOrElse(MutableField, Iterator.empty).toSeq.sortWith(fieldOrder)
+        val mutableFields = fieldGroupedResults.getOrElse(MutableField, Iterator.empty).toSeq.map(unpackFieldEPS).
+            sortWith(_ < _)
 
         val shallowImmutableFields = fieldGroupedResults.getOrElse(ShallowImmutableField, Iterator.empty).toSeq.
-            sortWith(fieldOrder)
+            map(unpackFieldEPS).sortWith(_ < _)
 
         val dependentImmutableFields = fieldGroupedResults.getOrElse(DependentImmutableField, Iterator.empty).toSeq.
-            sortWith(fieldOrder)
+            map(unpackFieldEPS).sortWith(_ < _)
 
         val deepImmutableFields = fieldGroupedResults.getOrElse(DeepImmutableField, Iterator.empty).toSeq.
-            sortWith(fieldOrder)
+            map(unpackFieldEPS).sortWith(_ < _)
 
         if (analysis == All || analysis == Fields) {
             stringBuilderResults.append(
                 s"""
                 | Mutable Fields:
-                | ${mutableFields.mkString(" || Mutable Field \n")}
+                | ${mutableFields.mkString(" | Mutable Field \n")}
                 |
                 | Shallow Immutable Fields:
-                | ${shallowImmutableFields.mkString(" || Shallow Immutable Field \n")}
+                | ${shallowImmutableFields.mkString(" | Shallow Immutable Field \n")}
                 |
                 | Dependent Immutable Fields:
-                | ${dependentImmutableFields.mkString(" || Dependent Immutable Field \n")}
+                | ${dependentImmutableFields.mkString(" | Dependent Immutable Field \n")}
                 |
                 | Deep Immutable Fields:
-                | ${deepImmutableFields.mkString(" || Deep Immutable Field \n")}
+                | ${deepImmutableFields.mkString(" | Deep Immutable Field \n")}
                 |
                 |""".stripMargin
             )
         }
 
-        //val classGroupedResults = propertyStore.entities(ClassImmutability.key).
-        //    filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.p)
-
         val classGroupedResults = propertyStore.entities(ClassImmutability.key).
             filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.asFinal.p)
 
-        // println(s"cgr size: ${classGroupedResults.size}")
-        val order: (EPS[Entity, ClassImmutability], EPS[Entity, ClassImmutability]) ⇒ Boolean =
-            (epsLeftHandSide, epsRightHandSide) ⇒ epsLeftHandSide.e.toString < epsRightHandSide.e.toString
+        def unpackClass(eps: EPS[Entity, OrderedProperty]): String = {
+            val classFile = eps.e.asInstanceOf[ObjectType]
+            val className = classFile.simpleName
+            s"${classFile.packageName.replace("/", ".")}.$className"
+        }
 
         val mutableClasses =
-            classGroupedResults.getOrElse(MutableClass, Iterator.empty).toSeq.sortWith(order)
+            classGroupedResults.getOrElse(MutableClass, Iterator.empty).toSeq.map(unpackClass).sortWith(_ < _)
 
         val shallowImmutableClasses =
-            classGroupedResults.getOrElse(ShallowImmutableClass, Iterator.empty).toSeq.sortWith(order)
+            classGroupedResults.getOrElse(ShallowImmutableClass, Iterator.empty).toSeq.
+                map(unpackClass).sortWith(_ < _)
 
         val dependentImmutableClasses =
-            classGroupedResults.getOrElse(DependentImmutableClass, Iterator.empty).toSeq.sortWith(order)
+            classGroupedResults.getOrElse(DependentImmutableClass, Iterator.empty).toSeq.
+                map(unpackClass).sortWith(_ < _)
 
         val deepImmutables = classGroupedResults.getOrElse(DeepImmutableClass, Iterator.empty)
 
@@ -397,52 +438,48 @@ object Immutability {
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val deepImmutableClassesInterfaces = deepImmutables
-            .filter(eps ⇒ allInterfaces.contains(eps.e.asInstanceOf[ObjectType])).toSeq.sortWith(order)
+            .filter(eps ⇒ allInterfaces.contains(eps.e.asInstanceOf[ObjectType])).toSeq.
+            map(unpackClass).sortWith(_ < _)
 
         val deepImmutableClasses = deepImmutables
-            .filter(eps ⇒ !allInterfaces.contains(eps.e.asInstanceOf[ObjectType])).toSeq.sortWith(order)
+            .filter(eps ⇒ !allInterfaces.contains(eps.e.asInstanceOf[ObjectType])).toSeq.
+            map(unpackClass).sortWith(_ < _)
 
         if (analysis == All || analysis == Classes) {
             stringBuilderResults.append(
                 s"""
                 | Mutable Classes:
-                | ${mutableClasses.mkString(" || Mutable Class \n")}
+                | ${mutableClasses.mkString(" | Mutable Class \n")}
                 |
                 | Shallow Immutable Classes:
-                | ${shallowImmutableClasses.mkString(" || Shallow Immutable Class \n")}
+                | ${shallowImmutableClasses.mkString(" | Shallow Immutable Class \n")}
                 |
                 | Dependent Immutable Classes:
-                | ${dependentImmutableClasses.mkString(" || Dependent Immutable Class \n")}
+                | ${dependentImmutableClasses.mkString(" | Dependent Immutable Class \n")}
                 |
                 | Deep Immutable Classes:
-                | ${deepImmutableClasses.mkString(" || Deep Immutable Classes \n")}
+                | ${deepImmutableClasses.mkString(" | Deep Immutable Classes \n")}
                 |
                 | Deep Immutable Interfaces:
-                | ${deepImmutableClassesInterfaces.mkString(" || Deep Immutable Interfaces \n")}
+                | ${deepImmutableClassesInterfaces.mkString(" | Deep Immutable Interfaces \n")}
                 |""".stripMargin
             )
         }
 
-        // val typeGroupedResults = propertyStore.entities(TypeImmutability.key).
-        //     filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.e)
-
         val typeGroupedResults = propertyStore.entities(TypeImmutability.key).
             filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.asFinal.p)
 
-        val typeOrder: (EPS[Entity, TypeImmutability], EPS[Entity, TypeImmutability]) ⇒ Boolean =
-            (epsLeftHandSide, epsRightHandSide) ⇒ epsLeftHandSide.e.toString < epsRightHandSide.e.toString
-
-        val mutableTypes = typeGroupedResults.getOrElse(MutableType, Iterator.empty).toSeq.
-            sortWith(typeOrder)
+        val mutableTypes = typeGroupedResults.getOrElse(MutableType, Iterator.empty).toSeq.map(unpackClass).
+            sortWith(_ < _)
 
         val shallowImmutableTypes = typeGroupedResults.getOrElse(ShallowImmutableType, Iterator.empty).toSeq.
-            sortWith(typeOrder)
+            map(unpackClass).sortWith(_ < _)
 
         val dependentImmutableTypes = typeGroupedResults.getOrElse(DependentImmutableType, Iterator.empty).toSeq.
-            sortWith(typeOrder)
+            map(unpackClass).sortWith(_ < _)
 
         val deepImmutableTypes = typeGroupedResults.getOrElse(DeepImmutableType, Iterator.empty).toSeq.
-            sortWith(typeOrder)
+            map(unpackClass).sortWith(_ < _)
 
         if (analysis == All || analysis == Types) {
             stringBuilderResults.append(
@@ -539,6 +576,24 @@ object Immutability {
             | results folder: $resultsFolder
             |""".stripMargin
         )
+        val fileNameExtension = {
+            {
+                if (withoutConsiderEscape) {
+                    println("withoutConsiderEscape")
+                    "_withoutConsiderEscape"
+                } else ""
+            } + {
+                if (withoutConsiderGenericity) {
+                    println("withoutConsiderGenericity")
+                    "_withoutConsiderGenericity"
+                } else ""
+            } + {
+                if (withoutConsiderLazyInitialization) {
+                    println("withoutConsiderLazyInitialization")
+                    "_withoutConsiderLazyInitialization"
+                } else ""
+            }
+        }
 
         if (resultsFolder != null) {
             import java.text.SimpleDateFormat
@@ -547,7 +602,10 @@ object Immutability {
             calender.add(Calendar.ALL_STYLES, 1)
             val date = calender.getTime();
             val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
-            val file = new File(s"$resultsFolder/${analysis.toString}_${simpleDateFormat.format(date)}.txt")
+
+            val file = new File(
+                s"$resultsFolder/${analysis.toString}_${simpleDateFormat.format(date)}_$fileNameExtension.txt"
+            )
 
             println(s"filepath: ${file.getAbsolutePath}")
             val bw = new BufferedWriter(new FileWriter(file))
@@ -562,7 +620,7 @@ object Immutability {
                     |
                     | jdk folder: $JRELibraryFolder
                     |
-                    |"""".stripMargin
+                    |""".stripMargin
                 )
 
                 bw.close()
@@ -598,7 +656,10 @@ object Immutability {
             | [-noJDK] (running without the JDK)
             | [-callGraph <CHA|RTA|PointsTo> (Default: RTA)
             | [-level] <0|1|2> (domain level  Default: 2)
-            | [-ReImInferComparison] (without transient fields)
+            | [-ReImInferComparison] (without transient fields and with eager L2 purity analysis)
+            | [-withoutConsiderGenericity]
+            | [-withoutConsiderEscape]
+            | [-withoutConsiderLazyInitialization]
             |""".stripMargin
         }
 
@@ -616,6 +677,9 @@ object Immutability {
         var callGraphName: Option[String] = None
         var level = 2
         var reImInferComparison = false
+        var withoutConsiderLazyInitialization = false
+        var withoutConsiderGenericity = false
+        var withoutConsiderEscape = false
 
         def readNextArg(): String = {
             i = i + 1
@@ -644,28 +708,33 @@ object Immutability {
                         analysis = Classes
                     else if (result == "Types")
                         analysis = Types
-                    else throw new IllegalArgumentException(s"unknown parameter: $result")
+                    else {
+                        println(usage)
+                        throw new IllegalArgumentException(s"unknown parameter: $result")
+                    }
 
-                case "-threads"             ⇒ numThreads = readNextArg().toInt
-                case "-cp"                  ⇒ cp = new File(readNextArg())
-                case "-resultFolder"        ⇒ resultFolder = FileSystems.getDefault.getPath(readNextArg())
-                case "-timeEvaluation"      ⇒ timeEvaluation = true
-                case "-threadEvaluation"    ⇒ threadEvaluation = true
-                case "-projectDir"          ⇒ projectDir = Some(readNextArg())
-                case "-libDir"              ⇒ libDir = Some(readNextArg())
-                case "-closedWorld"         ⇒ closedWorldAssumption = true
-                case "-isLibrary"           ⇒ isLibrary = true
-                case "-noJDK"               ⇒ withoutJDK = true
-                case "-callGraph"           ⇒ callGraphName = Some(readNextArg())
-                case "-level"               ⇒ level = Integer.parseInt(readNextArg())
-                case "-ReImInferComparison" ⇒ reImInferComparison = true
-
+                case "-threads"                           ⇒ numThreads = readNextArg().toInt
+                case "-cp"                                ⇒ cp = new File(readNextArg())
+                case "-resultFolder"                      ⇒ resultFolder = FileSystems.getDefault.getPath(readNextArg())
+                case "-timeEvaluation"                    ⇒ timeEvaluation = true
+                case "-threadEvaluation"                  ⇒ threadEvaluation = true
+                case "-projectDir"                        ⇒ projectDir = Some(readNextArg())
+                case "-libDir"                            ⇒ libDir = Some(readNextArg())
+                case "-closedWorld"                       ⇒ closedWorldAssumption = true
+                case "-isLibrary"                         ⇒ isLibrary = true
+                case "-noJDK"                             ⇒ withoutJDK = true
+                case "-callGraph"                         ⇒ callGraphName = Some(readNextArg())
+                case "-level"                             ⇒ level = Integer.parseInt(readNextArg())
+                case "-ReImInferComparison"               ⇒ reImInferComparison = true
+                case "-withoutConsiderGenericity"         ⇒ withoutConsiderGenericity = true
+                case "-withoutConsiderEscape"             ⇒ withoutConsiderEscape = true
+                case "-withoutConsiderLazyInitialization" ⇒ withoutConsiderLazyInitialization = true
                 case "-JDK" ⇒
                     cp = JRELibraryFolder
                     withoutJDK = true
 
                 case unknown ⇒
-                    Console.println(usage)
+                    println(usage)
                     throw new IllegalArgumentException(s"unknown parameter: $unknown")
             }
             i += 1
@@ -695,7 +764,10 @@ object Immutability {
             closedWorldAssumption,
             callGraphKey,
             level,
-            reImInferComparison
+            reImInferComparison,
+            withoutConsiderEscape,
+            withoutConsiderGenericity,
+            withoutConsiderLazyInitialization
         )
     }
 }
