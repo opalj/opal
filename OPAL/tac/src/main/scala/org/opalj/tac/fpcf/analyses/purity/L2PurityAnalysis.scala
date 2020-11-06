@@ -11,7 +11,6 @@ import net.ceedubs.ficus.Ficus._
 
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
@@ -135,7 +134,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         var tacai: Option[EOptionP[Method, TACAI]] = None
 
-        def dependees: Traversable[EOptionP[Entity, Property]] =
+        def dependees: Set[SomeEOptionP] =
             (fieldLocalityDependees.valuesIterator.map(_._1) ++
                 fieldMutabilityDependees.valuesIterator.map(_._1) ++
                 classImmutabilityDependees.valuesIterator.map(_._1) ++
@@ -144,7 +143,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 calleesDependee ++
                 rvfDependees.valuesIterator.map(_._1) ++
                 staticDataUsage ++
-                tacai).toTraversable
+                tacai).toSet
 
         def addFieldLocalityDependee(
             f:    Field,
@@ -304,8 +303,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         treatParamsAsFresh: Boolean,
         excludedDefSites:   IntTrieSet   = EmptyIntTrieSet
     )(implicit state: State): Boolean = {
-        if (expr eq null) // Expression is unknown due to an indirect call (e.g. reflection)
-            return false;
+        if (expr eq null) {
+            // Expression is unknown due to an indirect call (e.g. reflection)
+            atMost(otherwise)
+            return false
+        };
 
         if (expr.isConst)
             return true;
@@ -856,8 +858,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         val callees = propertyStore(state.definedMethod, Callees.key)
-        if (!checkPurityOfCallees(callees))
+        if (!checkPurityOfCallees(callees)) {
+            assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
             return Result(state.definedMethod, state.ubPurity)
+        }
 
         if (callees.hasUBP)
             state.rvfCallSites.foreach {

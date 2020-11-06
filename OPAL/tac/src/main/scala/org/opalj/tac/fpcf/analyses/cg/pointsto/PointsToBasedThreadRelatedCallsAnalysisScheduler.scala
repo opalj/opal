@@ -10,6 +10,7 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBPS
+import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -38,6 +39,7 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
  * On calls to Thread.start(), it adds calls to the corresponding run method.
@@ -47,7 +49,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Dominik Helm
  */
 trait PointsToBasedThreadStartAnalysis
-    extends APIBasedAnalysis
+    extends TACAIBasedAPIBasedAnalysis
     with AbstractPointsToBasedAnalysis {
 
     def threadStartMethod: DeclaredMethod
@@ -56,16 +58,21 @@ trait PointsToBasedThreadStartAnalysis
     override type State = PointsToBasedCGState[PointsToSet]
     override type DependerType = CallSiteT
 
-    override def handleNewCaller(
-        caller: DefinedMethod, pc: Int, isDirect: Boolean
+    override def processNewCaller(
+        caller:          DefinedMethod,
+        pc:              Int,
+        tac:             TACode[TACMethodParameter, V],
+        receiverOption:  Option[Expr[V]],
+        params:          Seq[Option[Expr[V]]],
+        targetVarOption: Option[V],
+        isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         val indirectCalls = new IndirectCalls()
 
-        val tacEPS = propertyStore(caller.definedMethod, TACAI.key)
-        implicit val state: State = new PointsToBasedCGState[PointsToSet](caller, tacEPS)
+        implicit val state: State = new PointsToBasedCGState[PointsToSet](caller, FinalEP(caller.definedMethod, TheTACAI(tac)))
 
         if (isDirect) {
-            val receiver = state.tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
+            val receiver = tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
             handleStart(caller, receiver, pc, indirectCalls)
         } else
             indirectCalls.addIncompleteCallSite(pc)

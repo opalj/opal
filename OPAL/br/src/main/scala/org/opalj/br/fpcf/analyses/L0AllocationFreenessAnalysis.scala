@@ -50,9 +50,9 @@ class L0AllocationFreenessAnalysis private[analyses] (
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
             case FinalP(af) ⇒ Result(dm, af)
             case ep @ InterimLUBP(lb, ub) ⇒
-                InterimResult(dm, lb, ub, Seq(ep), c)
+                InterimResult(dm, lb, ub, Set(ep), c)
             case epk ⇒
-                InterimResult(dm, MethodWithAllocations, AllocationFreeMethod, Seq(epk), c)
+                InterimResult(dm, MethodWithAllocations, AllocationFreeMethod, Set(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), AllocationFreeness.key))

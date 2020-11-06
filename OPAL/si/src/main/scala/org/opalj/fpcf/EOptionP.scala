@@ -392,7 +392,7 @@ object LBP {
  */
 final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EPS[E, P] {
 
-    override def pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
+    override lazy val pk: PropertyKey[P] = p.key.asInstanceOf[PropertyKey[P]]
 
     override def isFinal: Boolean = true
     override def asFinal: FinalEP[E, P] = this
@@ -429,7 +429,7 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
         }
     }
 
-    override def hashCode: Int = e.hashCode() * 727 + p.hashCode()
+    override lazy val hashCode: Int = e.hashCode() * 727 + p.hashCode()
 
     override def toString: String = {
         s"FinalEP($e@${System.identityHashCode(e).toHexString},p=$p)"
@@ -546,7 +546,7 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
         ubAsOP.checkIsEqualOrBetterThan(e, lb.asInstanceOf[ubAsOP.Self])
     }
 
-    override def pk: PropertyKey[P] = ub /* or lb */ .key.asInstanceOf[PropertyKey[P]]
+    override lazy val pk: PropertyKey[P] = ub /* or lb */ .key.asInstanceOf[PropertyKey[P]]
 
     override private[fpcf] def toFinalEP: FinalEP[E, P] = FinalEP(e, ub)
 
@@ -562,13 +562,13 @@ final class InterimELUBP[+E <: Entity, +P <: Property](
     override def equals(other: Any): Boolean = {
         other match {
             case that: InterimELUBP[_, _] ⇒
-                (this.e eq that.e) || (e == that.e && lb == that.lb && ub == that.ub)
+                (this eq that) || (e == that.e && lb == that.lb && ub == that.ub)
             case _ ⇒
                 false
         }
     }
 
-    override def hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
+    override lazy val hashCode: Int = ((e.hashCode() * 31 + lb.hashCode()) * 31) + ub.hashCode()
 
     override def toString: String = {
         s"InterimELUBP($e@${System.identityHashCode(e).toHexString},lb=$lb,ub=$ub)"
@@ -601,7 +601,7 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
 
     assert(ub != null)
 
-    override def pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
+    override lazy val pk: PropertyKey[P] = ub.key.asInstanceOf[PropertyKey[P]]
 
     override private[fpcf] def toFinalEP: FinalEP[E, P] = FinalEP(e, ub)
 
@@ -625,7 +625,7 @@ final class InterimEUBP[+E <: Entity, +P <: Property](
         }
     }
 
-    override def hashCode: Int = e.hashCode() * 31 + ub.hashCode()
+    override lazy val hashCode: Int = e.hashCode() * 31 + ub.hashCode()
 
     override def toString: String = {
         s"InterimEUBP($e@${System.identityHashCode(e).toHexString},ub=$ub)"
@@ -717,7 +717,7 @@ final class InterimELBP[+E <: Entity, +P <: Property](
 
     assert(lb != null)
 
-    override def pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
+    override lazy val pk: PropertyKey[P] = lb.key.asInstanceOf[PropertyKey[P]]
 
     override private[fpcf] def toFinalEP: FinalEP[E, P] = FinalEP(e, lb)
 
@@ -741,7 +741,7 @@ final class InterimELBP[+E <: Entity, +P <: Property](
         }
     }
 
-    override def hashCode: Int = e.hashCode() * 31 + lb.hashCode()
+    override lazy val hashCode: Int = e.hashCode() * 31 + lb.hashCode()
 
     override def toString: String = {
         s"InterimELBP($e@${System.identityHashCode(e).toHexString},lb=$lb)"
@@ -827,7 +827,7 @@ final class EPK[+E <: Entity, +P <: Property](
         }
     }
 
-    override def hashCode: Int = e.hashCode() * 31 + pk.id
+    override lazy val hashCode: Int = e.hashCode() * 31 + pk.id
 
     override def toString: String = {
         val pkId = pk.id

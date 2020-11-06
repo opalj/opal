@@ -208,17 +208,17 @@ final class TypePropagationState(
             _backwardPropagationDependees.nonEmpty
     }
 
-    override def dependees: List[SomeEOptionP] = {
+    override def dependees: Set[SomeEOptionP] = {
         var dependees = super.dependees
 
-        dependees ::= _ownInstantiatedTypesDependee
+        dependees += _ownInstantiatedTypesDependee
 
         if (calleeDependee.isDefined)
-            dependees ::= calleeDependee.get
+            dependees += calleeDependee.get
 
         // Note: The values are copied here. The "++" operator on List
         // forces immediate evaluation of the map values iterator.
-        dependees ++= _backwardPropagationDependees.values
+        dependees ++= _backwardPropagationDependees.valuesIterator
 
         dependees
     }

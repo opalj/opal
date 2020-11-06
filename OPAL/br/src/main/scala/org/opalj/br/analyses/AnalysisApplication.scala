@@ -117,8 +117,8 @@ trait AnalysisApplication {
         //
         // 1. Process args
         //
-        def splitCPath(path: String) = path.substring(4).split(File.pathSeparator)
-        def splitLibCPath(path: String) = path.substring(7).split(File.pathSeparator)
+        def splitCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
+        def splitLibCPath(path: String) = path.substring(path.indexOf('=') + 1).split(File.pathSeparator)
         args.foreach { arg ⇒
             if (arg == "-help") {
                 printUsage
@@ -130,7 +130,7 @@ trait AnalysisApplication {
             } else if (arg == "-completelyLoadLibraries") {
                 completelyLoadLibraries = true
             } else if (arg.startsWith("-projectConfig=")) {
-                projectConfig = Some(arg.substring(13))
+                projectConfig = Some(arg.substring(arg.indexOf('=') + 1))
             } else if (arg == "-renderConfig") {
                 renderConfig = true
             } else {

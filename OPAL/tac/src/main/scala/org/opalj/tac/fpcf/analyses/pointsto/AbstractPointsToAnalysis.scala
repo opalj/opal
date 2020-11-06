@@ -453,7 +453,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         if (state.hasCalleesDepenedee) {
             val calleesDependee = state.calleesDependee
             results += InterimPartialResult(
-                Some(calleesDependee),
+                Set(calleesDependee),
                 continuationForCallees(
                     calleesDependee,
                     new PointsToAnalysisState[ElementType, PointsToSet](state.method, state.tacDependee)

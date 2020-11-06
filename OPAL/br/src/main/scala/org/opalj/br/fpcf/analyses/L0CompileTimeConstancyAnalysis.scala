@@ -65,7 +65,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
                         field,
                         CompileTimeVaryingField,
                         CompileTimeConstantField,
-                        Seq(dependee),
+                        Set(dependee),
                         c
                     )
 
@@ -75,7 +75,7 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
             }
         }
 
-        InterimResult(field, CompileTimeVaryingField, CompileTimeConstantField, Seq(dependee), c)
+        InterimResult(field, CompileTimeVaryingField, CompileTimeConstantField, Set(dependee), c)
     }
 
     /** Called when the analysis is scheduled lazily. */

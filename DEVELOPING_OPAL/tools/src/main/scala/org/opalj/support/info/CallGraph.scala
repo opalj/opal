@@ -10,7 +10,9 @@ import java.net.URL
 import java.util.Calendar
 
 import scala.collection.JavaConverters._
+
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -35,9 +37,6 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.log.DevNullLogger
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
@@ -58,7 +57,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  *  -algorithm=PointsTo for a points-to based call graph
  * The default algorithm is RTA.
  *
- * Please also specify whether the target (-cp=) is an application or a library using "-projectConf=".
+ * Please also specify whether the target (-cp=) is an application or a library using "-projectConfig=".
  * Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf` can be used here.
  *
  * Furthermore, it can be used to print the callees or callers of specific methods.
@@ -69,7 +68,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  */
 object CallGraph extends ProjectAnalysisApplication {
 
-    OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
+    //OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
     override def title: String = "Call Graph Analysis"
 
@@ -144,8 +143,7 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (threads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = threads
-                    // FIXME: The PKECPropertyStore is broken
+                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = threads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
             }
