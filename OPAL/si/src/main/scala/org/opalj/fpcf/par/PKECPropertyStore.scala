@@ -27,7 +27,7 @@ class PKECPropertyStore(
 
     implicit val propertyStore: PKECPropertyStore = this
 
-    val taskManager: PKECTaskManager = PKECManyDependenciesLastTaskManager//PKECFIFOTaskManager
+    val taskManager: PKECTaskManager = PKECManyDependenciesLastTaskManager //PKECFIFOTaskManager
 
     override def MaxEvaluationDepth: Int = 0
 
