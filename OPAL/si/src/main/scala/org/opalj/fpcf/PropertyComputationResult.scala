@@ -179,7 +179,7 @@ final class InterimResult[P >: Null <: Property] private (
             case that: InterimResult[_] if this.eps == that.eps ⇒
                 val dependees = this.dependees
                 dependees.size == that.dependees.size &&
-                    dependees.forall(thisDependee ⇒ that.dependees.exists(_ == thisDependee))
+                    dependees.forall(thisDependee ⇒ that.dependees.contains(thisDependee))
 
             case _ ⇒
                 false
@@ -190,6 +190,7 @@ final class InterimResult[P >: Null <: Property] private (
         s"InterimResult($eps,dependees=${dependees.mkString("[", ", ", "]")},c=$c)"
     }
 }
+
 object InterimResult {
 
     private[fpcf] final val id = 3
