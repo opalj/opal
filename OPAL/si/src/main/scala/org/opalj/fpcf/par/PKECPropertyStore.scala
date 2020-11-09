@@ -839,15 +839,15 @@ case class EPKState(
             val theEOptP = eOptP
             // If the epk state is already updated (compared to the given dependee)
             // AND that update must not be suppressed (either final or not a suppressed PK).
-            if ((theEOptP ne dependee) &&
-                (theEOptP.isFinal || !suppressedPKs(dependeePK))) {
-                if (theEOptP.isFinal)
+            val isSuppressed = suppressedPKs(dependeePK)
+            if ((theEOptP ne dependee) && (!isSuppressed || theEOptP.isFinal)) {
+                if (isSuppressed)
                     ps.scheduleTask(new ps.ContinuationTask(depender, theEOptP, this))
                 else
                     ps.scheduleTask(new ps.ContinuationTask(depender, dependee, this))
                 false
             } else {
-                if (suppressedPKs(dependeePK)) {
+                if (isSuppressed) {
                     suppressedDependers.add(depender)
                 } else {
                     dependers.add(depender)
@@ -882,7 +882,7 @@ case class EPKState(
     def applyContinuation(oldDependee: SomeEOptionP)(implicit ps: PKECPropertyStore): Unit = {
         this.synchronized {
             val theDependees = dependees
-            // We are still interessted in that dependee?
+            // Are we still interested in that dependee?
             if (theDependees != null &&
                 (oldDependee.isFinal || theDependees.contains(oldDependee))) {
                 // We always retrieve the most up-to-date state of the dependee.
