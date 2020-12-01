@@ -61,7 +61,6 @@ import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Property
-import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -76,12 +75,16 @@ import org.opalj.br.ClassFile
 import org.opalj.br.FormalTypeParameter
 import org.opalj.br.fpcf.properties.ClassImmutability
 import scala.collection.mutable
+import org.opalj.fpcf.PropertyBounds
+import org.opalj.fpcf.EUBP
+import org.opalj.fpcf.LBP
 
 /**
  * Analysis that determines the immutability of org.opalj.br.Field
  * @author Tobias Roth
  */
-class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
+    extends FPCFAnalysis {
 
     /**
      *  Describes the different kinds of dependent immutable fields, that depend on the concrete types that replace
@@ -104,6 +107,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     case class State(
             field:                               Field,
             var typeIsImmutable:                 Boolean                                            = true,
+            var classTypeIsImmutable:            Boolean                                            = true,
             var referenceIsImmutable:            Option[Boolean]                                    = None,
             var noEscapePossibilityViaReference: Boolean                                            = true,
             var dependentImmutability:           DependentImmutabilityKind                          = OnlyDeepImmutable,
@@ -111,13 +115,14 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             var tacDependees:                    Map[Method, (EOptionP[Method, TACAI], (PCs, PCs))] = Map.empty,
             var dependees:                       Set[EOptionP[Entity, Property]]                    = Set.empty,
             var innerArrayTypes:                 Set[ObjectType]                                    = Set.empty,
+            var concreteGenericTypes:            Set[ObjectType]                                    = Set.empty,
             var escapesStillDetermined:          Boolean                                            = false,
             var concreteClassTypeIsKnown:        Boolean                                            = false,
             var totalNumberOfFieldWrites:        Int                                                = 0
     ) {
         def hasDependees: Boolean = dependees.nonEmpty || tacDependees.nonEmpty
-
-        def getDependees: Traversable[EOptionP[Entity, Property]] = dependees ++ tacDependees.valuesIterator.map(_._1)
+        def getDependees: Set[EOptionP[Entity, Property]] =
+            dependees ++ tacDependees.valuesIterator.map(_._1)
     }
 
     final val typeExtensibility = project.get(TypeExtensibilityKey)
@@ -136,15 +141,11 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity"
         )
 
-    def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult =
-        entity match {
-
-            case field: Field ⇒ determineFieldImmutability(field)
-
-            case _ ⇒
-                val m = s"${entity.getClass.getName} is not an org.opalj.br.Field"
-                throw new IllegalArgumentException(m)
-        }
+    def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = entity match {
+        case field: Field ⇒ determineFieldImmutability(field)
+        case _ ⇒
+            throw new IllegalArgumentException(s"${entity.getClass.getName} is not an org.opalj.br.Field")
+    }
 
     private[analyses] def determineFieldImmutability(
         field: Field
@@ -159,30 +160,30 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
              *
              * Extract the formal type parameters if it exists of a class' attribute
              */
-            def collectFormalTypeParameterFromClassAttribute(attribute: Attribute): Iterator[String] = attribute match {
+            def collectFormalTypeParameterFromClassAttribute(attribute: Attribute): Iterator[String] =
+                attribute match {
 
-                case ClassSignature(typeParameters, _, _) ⇒
-                    typeParameters.iterator.map { case FormalTypeParameter(identifier, _, _) ⇒ identifier }
+                    case ClassSignature(typeParameters, _, _) ⇒
+                        typeParameters.iterator.map { case FormalTypeParameter(identifier, _, _) ⇒ identifier }
 
-                case _ ⇒ Iterator.empty
-            }
+                    case _ ⇒ Iterator.empty
+                }
 
             /**
              * If the genericity is nested in an inner class
              * collect the generic type parameters from the field's outer classes
              */
             def getAllFormalParameters(classFile: ClassFile): Iterator[String] = {
-                classFile.attributes.iterator.flatMap(collectFormalTypeParameterFromClassAttribute(_)) ++
-                    {
-                        if (classFile.outerType.isDefined) {
-                            val outerClassFile = project.classFile(classFile.outerType.get._1)
-                            if (outerClassFile.isDefined && outerClassFile.get != classFile) {
-                                getAllFormalParameters(outerClassFile.get)
-                            } else
-                                Iterator.empty
+                classFile.attributes.iterator.flatMap(collectFormalTypeParameterFromClassAttribute(_)) ++ {
+                    if (classFile.outerType.isDefined) {
+                        val outerClassFile = project.classFile(classFile.outerType.get._1)
+                        if (outerClassFile.isDefined && outerClassFile.get != classFile) {
+                            getAllFormalParameters(outerClassFile.get)
                         } else
                             Iterator.empty
-                    }
+                    } else
+                        Iterator.empty
+                }
             }
             getAllFormalParameters(field.classFile).toSet
         }
@@ -193,7 +194,8 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
          * Returns, if a generic parameter like e.g. 'T' is in the class' or an outer class' signature
          * @param string The generic type parameter that should be looked for
          */
-        def isInClassesGenericTypeParameters(string: String): Boolean = classFormalTypeParameters.contains(string)
+        def isInClassesGenericTypeParameters(string: String): Boolean =
+            classFormalTypeParameters.contains(string)
 
         /**
          * Determines the immutability of a field's type. Adjusts the state and registers the dependencies if necessary.
@@ -214,9 +216,9 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                     case FinalP(DeepImmutableType)      ⇒ // deep immutable type is set as default
                     case FinalP(DependentImmutableType) ⇒ state.typeIsImmutable = false
 
-                    case UBP(ShallowImmutableType | MutableType) ⇒
+                    case EUBP(t, ShallowImmutableType | MutableType) ⇒
                         state.typeIsImmutable = false
-                        if (field.fieldType != ObjectType.Object)
+                        if (t == field.fieldType && field.fieldType != ObjectType.Object)
                             state.dependentImmutability = Dependent
 
                     case epk ⇒ state.dependees += epk
@@ -250,12 +252,16 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                             if (!isInClassesGenericTypeParameters(identifier))
                                 noShallowOrMutableTypesInGenericTypeFound = false
 
-                        case ProperTypeArgument(_, ClassTypeSignature(outerPackageIdentifier,
-                            SimpleClassTypeSignature(innerPackageIdentifier, _), _)) ⇒
-                            val objectPath = outerPackageIdentifier match {
-                                case Some(prepackageIdentifier) ⇒ prepackageIdentifier + innerPackageIdentifier
-                                case _                          ⇒ innerPackageIdentifier
-                            }
+                        case ProperTypeArgument(
+                            _,
+                            ClassTypeSignature(
+                                outerPackageIdentifier,
+                                SimpleClassTypeSignature(innerPackageIdentifier, _),
+                                _
+                                )
+                            ) ⇒
+                            val objectPath = outerPackageIdentifier.getOrElse("") + innerPackageIdentifier
+
                             genericParameters ::= ObjectType(objectPath)
 
                         case _ ⇒
@@ -270,18 +276,21 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             genericParameters.foreach(objectType ⇒ {
                 propertyStore(objectType, TypeImmutability.key) match {
 
-                    case FinalP(DeepImmutableType) ⇒ //nothing to do here: default value is deep immutable
+                    case LBP(DeepImmutableType) ⇒ //nothing to do here: default value is deep immutable
 
-                    case FinalP(DependentImmutableType) ⇒
-                        onlyDeepImmutableTypesInGenericTypeFound = false
-                        state.typeIsImmutable = false
+                    /* FinalP(DependentImmutableType) =>
+                    onlyDeepImmutableTypesInGenericTypeFound = false
+                    state.typeIsImmutable = false */
+                    //conservative overapproximation that allows no nested generic classes
 
-                    case UBP(ShallowImmutableType | MutableType) ⇒
+                    case UBP(DependentImmutableType | ShallowImmutableType | MutableType) ⇒
                         noShallowOrMutableTypesInGenericTypeFound = false
                         onlyDeepImmutableTypesInGenericTypeFound = false
                         state.typeIsImmutable = false
 
-                    case ep ⇒ state.dependees += ep
+                    case ep ⇒
+                        state.concreteGenericTypes += ep.e
+                        state.dependees += ep
                 }
             })
 
@@ -293,11 +302,12 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                 } else if (noShallowOrMutableTypesInGenericTypeFound &&
                     state.dependentImmutability != Dependent) {
                     state.dependentImmutability = NotShallowOrMutable
-                } else
+                } else {
                     state.dependentImmutability = Dependent
-
-            } else
+                }
+            } else {
                 state.dependentImmutability = Dependent
+            }
         }
 
         /**
@@ -313,11 +323,8 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                 case finalEP: FinalEP[Method, TACAI] ⇒ finalEP.ub.tac
 
                 case epk ⇒
-                    val (reads, writes) =
-                        if (state.tacDependees.contains(method))
-                            (state.tacDependees(method)._2._1, state.tacDependees(method)._2._2)
-                        else
-                            (IntTrieSet.empty, IntTrieSet.empty)
+                    val (reads: IntTrieSet, writes: IntTrieSet) =
+                        state.tacDependees.getOrElse(method, (IntTrieSet.empty, IntTrieSet.empty))
                     if (isRead) state.tacDependees += method -> ((epk, (reads ++ pcs, writes)))
                     if (!isRead) state.tacDependees += method -> ((epk, (reads, writes ++ pcs)))
                     None
@@ -329,7 +336,9 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
          * @return true if the object - on which a field write occurred - escapes, false otherwise.
          * @note (Re-)Adds dependees as necessary.
          */
-        def escapesViaMethod(ep: EOptionP[DefinitionSite, EscapeProperty])(implicit state: State): Boolean = {
+        def doesEscapeViaMethod(
+            ep: EOptionP[DefinitionSite, EscapeProperty]
+        )(implicit state: State): Boolean = {
             ep match {
                 case FinalP(NoEscape) ⇒ false
 
@@ -337,10 +346,11 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                     state.dependees += ep
                     false
 
-                case UBP(EscapeInCallee | EscapeViaReturn)      ⇒ true
-                case FinalP(AtMost(_))                          ⇒ true
-                case _: FinalEP[DefinitionSite, EscapeProperty] ⇒ true // Escape state is worse than via return
-                case InterimUBP(AtMost(_))                      ⇒ true
+                case UBP(EscapeInCallee | EscapeViaReturn) ⇒ true
+                case FinalP(AtMost(_))                     ⇒ true
+                case _: FinalEP[DefinitionSite, EscapeProperty] ⇒
+                    true // Escape state is worse than via return
+                case InterimUBP(AtMost(_)) ⇒ true
 
                 case epk ⇒
                     state.dependees += epk
@@ -353,33 +363,27 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
          */
         def determineEscapeOfReferencedObjectOrValue()(implicit state: State): Unit = {
             state.escapesStillDetermined = true
-            state.noEscapePossibilityViaReference = state.field.isPrivate
 
             if (state.noEscapePossibilityViaReference) {
                 val writes = fieldAccessInformation.writeAccesses(state.field)
 
                 //has to be determined before the following foreach loop because in this the information is still needed
                 state.totalNumberOfFieldWrites = writes.foldLeft(0)(_ + _._2.size)
-                writes.foreach { write ⇒
-                    val (method, pcs) = write
-                    /**
-                     * Begin of method check field writes
-                     */
-                    val tacCodeOption = getTACAI(method, pcs, isRead = false)
-                    if (tacCodeOption.isDefined) {
-                        val taCode = tacCodeOption.get
-                        checkFieldWritesForEffImmutabilityWithKnownTAC(method, pcs, taCode)
-                    }
+
+                writes.foreach {
+                    case (method, pcs) ⇒
+                        val taCodeOption = getTACAI(method, pcs, isRead = false)
+                        if (taCodeOption.isDefined)
+                            determineEscapeViaFieldWritesWithKnownTAC(method, pcs, taCodeOption.get)
                 }
 
                 if (state.noEscapePossibilityViaReference) {
-                    fieldAccessInformation.readAccesses(state.field).
-                        foreach { read ⇒
-                            val (method, pcs) = read
+                    fieldAccessInformation.readAccesses(state.field).foreach {
+                        case (method, pcs) ⇒
                             val taCodeOption = getTACAI(method, pcs, isRead = true)
                             if (taCodeOption.isDefined)
-                                determineEscapeViaFieldReadsWithKnownTAC(pcs, taCodeOption.get)
-                        }
+                                determineEscapeViaFieldReadsWithKnownTAC(method, pcs, taCodeOption.get)
+                    }
                 }
             }
         }
@@ -388,6 +392,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
          * Determine if the referenced object can escape via field reads.
          */
         def determineEscapeViaFieldReadsWithKnownTAC(
+            method: Method,
             pcs:    PCs,
             taCode: TACode[TACMethodParameter, V]
         )(implicit state: State): Unit = {
@@ -405,12 +410,16 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                             if (fieldsUseSiteStmt.isAssignment) {
 
                                 val assignment = fieldsUseSiteStmt.asAssignment
-
                                 if (assignment.expr.isVirtualFunctionCall ||
                                     assignment.expr.isStaticFunctionCall) {
                                     val functionCall = assignment.expr.asFunctionCall
-                                    field.fieldType.isObjectType && functionCall.params.exists(!_.isConst)
-
+                                    field.fieldType.isObjectType && functionCall.params.exists(!_.isConst) ||
+                                        doesEscapeViaMethod(
+                                            propertyStore(
+                                                definitionSites(method, assignment.pc),
+                                                EscapeProperty.key
+                                            )
+                                        )
                                 } else if (assignment.expr.isArrayLoad) {
                                     val arrayLoad = assignment.expr.asArrayLoad
                                     arrayLoad.arrayRef.asVar.value.toCanonicalForm match {
@@ -423,11 +432,10 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                                             } else if (innerArrayType.isObjectType) {
                                                 //If a deep immutable object escapes, it can not be mutated
                                                 propertyStore(innerArrayType, TypeImmutability.key) match {
-
-                                                    case FinalP(DeepImmutableType) ⇒ false //nothing to do
-
-                                                    case UBP(DependentImmutableType | ShallowImmutableType |
-                                                        MutableType) ⇒
+                                                    case LBP(DeepImmutableType) ⇒ false //nothing to do
+                                                    case UBP(
+                                                        DependentImmutableType | ShallowImmutableType | MutableType
+                                                        ) ⇒
                                                         true
 
                                                     case ep ⇒
@@ -445,7 +453,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                                     !fieldsUseSiteStmt.isIf
                         })
                     } else {
-                        //there could occur other cases; see issue #44
+                        //there can occur other cases; see issue #44
                         //TODO make it more precise when issue #44 is fixed
                         !(stmt.isExprStmt || stmt.isNop)
                     }
@@ -458,7 +466,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         /**
          * Determine if the referenced object can escape via field writes
          */
-        def checkFieldWritesForEffImmutabilityWithKnownTAC(
+        def determineEscapeViaFieldWritesWithKnownTAC(
             method: Method,
             pcs:    PCs,
             taCode: TACode[TACMethodParameter, V]
@@ -473,24 +481,28 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
              */
             def doesStaticFunctionCallEnableEscape(
                 staticFunctionCall: StaticFunctionCall[V]
-            ): Boolean = staticFunctionCall.params.exists(_.asVar.definedBy.exists(
-                definedByIndex ⇒ definedByIndex < 0 ||
-                    !taCode.stmts(definedByIndex).asAssignment.expr.isConst
-            ))
+            ): Boolean =
+                staticFunctionCall.params.exists(
+                    _.asVar.definedBy.exists(
+                        definedByIndex ⇒
+                            definedByIndex < 0 ||
+                                !taCode.stmts(definedByIndex).asAssignment.expr.isConst
+                    )
+                )
 
             /**
              * In case of the concrete assigned classtype is known this method handles the immutability of it.
              * @note [[state.concreteClassTypeIsKnown]] must be set to true, when calling this function
              */
-            def handleKnownClassType(objectType: ObjectType)(implicit state: State): Unit = {
+            def handleKnownClassType(objectType: ObjectType): Unit = {
 
-                propertyStore(objectType, ClassImmutability.key) match {
+                val result = propertyStore(objectType, ClassImmutability.key)
+                result match {
 
-                    case UBP(MutableClass | ShallowImmutableClass | DependentImmutableClass) ⇒
-                        state.typeIsImmutable = false
+                    case FinalP(MutableClass | ShallowImmutableClass | DependentImmutableClass) ⇒
+                        state.classTypeIsImmutable = false
 
-                    case FinalP(DeepImmutableClass) ⇒
-                        state.typeIsImmutable = true
+                    case FinalP(DeepImmutableClass) ⇒ //nothing to do ; true ist default
 
                     case eps ⇒
                         state.dependees += eps
@@ -503,94 +515,87 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             def doesNonVirtualMethodCallEnablesEscape(
                 nonVirtualMethodCall: NonVirtualMethodCall[V]
             )(implicit state: State): Boolean =
-                nonVirtualMethodCall.params.exists {
-                    param ⇒
-                        param.asVar.definedBy.exists {
-                            paramDefinedByIndex ⇒
-                                if (paramDefinedByIndex < 0) {
-                                    true
-                                } else {
-                                    val paramDefinitionStmt = taCode.stmts(paramDefinedByIndex)
-                                    // println(s"parameterDefinitionStmt: $paramDefinitionStmt")
-                                    if (paramDefinitionStmt.isAssignment) {
-                                        val assignmentExpression = paramDefinitionStmt.asAssignment.expr
-                                        if (assignmentExpression.isGetField ||
-                                            assignmentExpression.isGetStatic) {
-                                            val assignedField: Option[Field] =
-                                                if (assignmentExpression.isGetField)
-                                                    assignmentExpression.asGetField.resolveField
-                                                else if (assignmentExpression.isGetStatic)
-                                                    assignmentExpression.asGetStatic.resolveField
-                                                else
-                                                    None
+                nonVirtualMethodCall.params.exists { param ⇒
+                    param.asVar.definedBy.exists { paramDefinedByIndex ⇒
+                        if (paramDefinedByIndex < 0) {
+                            true
+                        } else {
+                            val paramDefinitionStmt = taCode.stmts(paramDefinedByIndex)
+                            if (paramDefinitionStmt.isAssignment) {
+                                val assignmentExpression = paramDefinitionStmt.asAssignment.expr
+                                if (assignmentExpression.isGetField ||
+                                    assignmentExpression.isGetStatic) {
+                                    val assignedField: Option[Field] =
+                                        if (assignmentExpression.isGetField)
+                                            assignmentExpression.asGetField.resolveField
+                                        else if (assignmentExpression.isGetStatic)
+                                            assignmentExpression.asGetStatic.resolveField
+                                        else
+                                            throw new Error(s"$assignmentExpression is not an assigned field")
 
-                                            if (assignedField.isDefined && assignedField.get != state.field) {
-                                                propertyStore(assignedField.get, FieldImmutability.key) match {
+                                    if (assignedField.isDefined && assignedField.get != state.field) {
+                                        propertyStore(assignedField.get, FieldImmutability.key) match {
 
-                                                    case UBP(MutableField
-                                                        | ShallowImmutableField
-                                                        | DependentImmutableField) ⇒ true
+                                            case FinalP(DeepImmutableField) ⇒ false //nothing to do here
+                                            case UBP(MutableField | ShallowImmutableField | DependentImmutableField) ⇒
+                                                true
+                                            case FinalP(_) ⇒ true
 
-                                                    case FinalP(DeepImmutableField) ⇒ false //nothing to do here
-                                                    case FinalP(_) ⇒
-                                                        true
+                                            case ep ⇒
+                                                state.dependees += ep
+                                                false
+                                        }
+                                    } else false
+                                } else if (assignmentExpression.isVirtualFunctionCall) {
+                                    val virtualFunctionCall = assignmentExpression.asVirtualFunctionCall
+                                    virtualFunctionCall.params.exists(
+                                        param ⇒
+                                            param.asVar.definedBy.head < 0 ||
+                                                !taCode.stmts(param.asVar.definedBy.head).asAssignment.expr.isConst
+                                    )
+                                } else if (assignmentExpression.isStaticFunctionCall) {
+                                    doesStaticFunctionCallEnableEscape(assignmentExpression.asStaticFunctionCall)
+                                } else if (assignmentExpression.isNew) {
+                                    val newStmt = assignmentExpression.asNew
+                                    if (field.fieldType.isObjectType &&
+                                        newStmt.tpe.mostPreciseObjectType == field.fieldType.asObjectType &&
+                                        state.totalNumberOfFieldWrites == 1) {
+                                        state.concreteClassTypeIsKnown = true
+                                        handleKnownClassType(newStmt.tpe.mostPreciseObjectType)
+                                    }
 
-                                                    case ep ⇒
-                                                        state.dependees += ep
-                                                        false
-                                                }
-                                            } else false
-                                        } else if (assignmentExpression.isVirtualFunctionCall) {
-                                            val virtualFunctionCall = assignmentExpression.asVirtualFunctionCall
-                                            virtualFunctionCall.params.exists(
-                                                param ⇒ param.asVar.definedBy.head < 0 ||
-                                                    !taCode.stmts(param.asVar.definedBy.head).asAssignment.expr.isConst
-                                            )
-                                        } else if (assignmentExpression.isStaticFunctionCall) {
-                                            doesStaticFunctionCallEnableEscape(assignmentExpression.asStaticFunctionCall)
-                                        } else if (assignmentExpression.isNew) {
-                                            val newStmt = assignmentExpression.asNew
-                                            if (field.fieldType.isObjectType &&
-                                                newStmt.tpe.mostPreciseObjectType == field.fieldType.asObjectType &&
-                                                state.totalNumberOfFieldWrites == 1) {
-                                                state.concreteClassTypeIsKnown = true
-                                                handleKnownClassType(newStmt.tpe.mostPreciseObjectType)
-                                            }
-
-                                            paramDefinitionStmt.asAssignment.targetVar.asVar.usedBy.exists { usedSiteIndex ⇒
-                                                val stmt = taCode.stmts(usedSiteIndex)
-                                                if (stmt.isNonVirtualMethodCall) {
-                                                    if (!seen.contains(stmt)) {
-                                                        seen += stmt
-                                                        doesNonVirtualMethodCallEnablesEscape(stmt.asNonVirtualMethodCall)
-                                                    } else false
-                                                } else true
-                                            }
-
-                                        } else
-                                            assignmentExpression.isConst
-                                    } else {
-                                        val definitionSitesOfParam = definitionSites(method, paramDefinedByIndex)
-                                        val stmt = taCode.stmts(taCode.pcToIndex(definitionSitesOfParam.pc))
+                                    paramDefinitionStmt.asAssignment.targetVar.asVar.usedBy.exists { usedSiteIndex ⇒
+                                        val stmt = taCode.stmts(usedSiteIndex)
                                         if (stmt.isNonVirtualMethodCall) {
                                             if (!seen.contains(stmt)) {
                                                 seen += stmt
                                                 doesNonVirtualMethodCallEnablesEscape(stmt.asNonVirtualMethodCall)
                                             } else false
-                                        } else if (stmt.isPutField || stmt.isPutStatic) {
-                                            if (!seen.contains(stmt)) {
-                                                seen += stmt
-                                                doesPutEnableEscape(stmt)
-                                            } else false
-                                        } else if (stmt.isArrayStore) {
-                                            true //TODO handling that case more precise
-                                        } else { // other cases that the purity analysis can not handle
-                                            escapesViaMethod(propertyStore(definitionSitesOfParam, EscapeProperty.key))
-                                            //false
-                                        }
-                                    } //TODO go further
+                                        } else true
+                                    }
+                                } else
+                                    assignmentExpression.isConst
+                            } else {
+                                val definitionSitesOfParam = definitionSites(method, paramDefinedByIndex)
+                                val stmt = taCode.stmts(taCode.pcToIndex(definitionSitesOfParam.pc))
+                                if (stmt.isNonVirtualMethodCall) {
+                                    if (!seen.contains(stmt)) {
+                                        seen += stmt
+                                        doesNonVirtualMethodCallEnablesEscape(stmt.asNonVirtualMethodCall)
+                                    } else false
+                                } else if (stmt.isPutField || stmt.isPutStatic) {
+                                    if (!seen.contains(stmt)) {
+                                        seen += stmt
+                                        doesPutEnableEscape(stmt)
+                                    } else false
+                                } else if (stmt.isArrayStore) {
+                                    true //TODO handling that case more precise
+                                } else { // other cases that the purity analysis can not handle
+                                    doesEscapeViaMethod(propertyStore(definitionSitesOfParam, EscapeProperty.key))
                                 }
+                            } //TODO go further
                         }
+                    }
                 }
 
             /**
@@ -605,63 +610,66 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                     } else if (putStmt.isPutStatic) {
                         val putStatic = putStmt.asPutStatic
                         (putStatic.value.asVar.definedBy, putStatic.value.asVar)
-                    } else {
-                        //state.noEscapePossibilityViaReference = false
-                        return true;
-                    }
+                    } else
+                        throw new Exception(s"$putStmt is not a  putStmt")
                 }
 
                 if (putValue.value.isArrayValue.isYes) {
                     if (putValue.definedBy.forall(_ >= 0)) { //necessary
                         putValue.definedBy.exists { putValueDefinedByIndex ⇒
-                            taCode.stmts(putValueDefinedByIndex).asAssignment.targetVar.usedBy.exists { usedByIndex ⇒
-                                val arrayStmt = taCode.stmts(usedByIndex)
-                                if (arrayStmt != putStmt) {
-                                    if (arrayStmt.isArrayStore) {
-                                        val arrayStore = arrayStmt.asArrayStore
-                                        val arrayStoreIndex = arrayStore.index
-                                        val isArrayIndexConst =
-                                            taCode.stmts(arrayStoreIndex.asVar.definedBy.head).asAssignment.expr.isConst
-                                        val assignedValue = arrayStore.value
-                                        if (assignedValue.asVar.definedBy.head >= 0) {
-                                            val valueAssignment = taCode.stmts(assignedValue.asVar.definedBy.head).asAssignment
-                                            val assignedExpr = valueAssignment.expr
-                                            val useSites = valueAssignment.targetVar.usedBy.map(taCode.stmts(_))
-                                            useSites.exists { useSite ⇒
-                                                if (useSite.isNonVirtualMethodCall) {
-                                                    val nonVirtualMethodCall = useSite.asNonVirtualMethodCall
-                                                    nonVirtualMethodCall.params.exists(param ⇒
-                                                        !param.isConst &&
-                                                            param.asVar.definedBy.
-                                                            forall(i ⇒ i >= 0 && taCode.stmts(i).asAssignment.expr.isConst))
-                                                    //param.asVar.definedBy.head > -1 && //TODO look at more than the head
-                                                    //!tacCode.stmts(param.asVar.definedBy.head).asAssignment.expr.isConst)
-                                                } else if (useSite == arrayStore) {
+                            taCode.stmts(putValueDefinedByIndex).asAssignment.targetVar.usedBy.exists {
+                                usedByIndex ⇒
+                                    val arrayStmt = taCode.stmts(usedByIndex)
+                                    if (arrayStmt != putStmt) {
+                                        if (arrayStmt.isArrayStore) {
+                                            val arrayStore = arrayStmt.asArrayStore
+                                            val arrayStoreIndex = arrayStore.index
+                                            val isArrayIndexConst =
+                                                taCode.stmts(arrayStoreIndex.asVar.definedBy.head).asAssignment.expr.isConst
+                                            val assignedValue = arrayStore.value
+                                            if (assignedValue.asVar.definedBy.size == 1 &&
+                                                assignedValue.asVar.definedBy.head >= 0) {
+                                                val valueAssignment =
+                                                    taCode.stmts(assignedValue.asVar.definedBy.head).asAssignment
+                                                val assignedExpr = valueAssignment.expr
+                                                val useSites = valueAssignment.targetVar.usedBy.map(taCode.stmts(_))
+                                                if (assignedExpr.isConst)
                                                     false
-                                                } else if (useSite.isReturnValue) {
-                                                    //assigned array-element escapes
+                                                else if (useSites.exists { useSite ⇒
+                                                    if (useSite.isNonVirtualMethodCall) {
+                                                        val nonVirtualMethodCall = useSite.asNonVirtualMethodCall
+                                                        nonVirtualMethodCall.params.exists(
+                                                            param ⇒
+                                                                !param.isConst && param.asVar.definedBy
+                                                                    .forall(
+                                                                        i ⇒ i >= 0 && taCode.stmts(i).asAssignment.expr.isConst
+                                                                    )
+                                                        )
+                                                    } else if (useSite == arrayStore) {
+                                                        false
+                                                    } else if (useSite.isReturnValue) {
+                                                        //assigned array-element escapes
+                                                        true
+                                                    } else {
+                                                        true //to be sound
+                                                    }
+                                                })
                                                     true
-                                                } else {
-                                                    true //to be sound
-                                                }
-                                            }
+                                                else if (!isArrayIndexConst) {
+                                                    true
+                                                } else if (assignedExpr.isStaticFunctionCall) {
+                                                    doesStaticFunctionCallEnableEscape(assignedExpr.asStaticFunctionCall)
+                                                } else if (assignedExpr.isNew) {
+                                                    val newStmt = assignedExpr.asNew
 
-                                            if (!isArrayIndexConst) {
-                                                true
-                                            } else if (assignedExpr.isStaticFunctionCall) {
-                                                doesStaticFunctionCallEnableEscape(assignedExpr.asStaticFunctionCall)
-                                            } else if (assignedExpr.isNew) {
-                                                val newStmt = assignedExpr.asNew
+                                                    if (field.fieldType.isObjectType &&
+                                                        newStmt.tpe.mostPreciseObjectType == field.fieldType.asObjectType &&
+                                                        state.totalNumberOfFieldWrites == 1) {
+                                                        state.concreteClassTypeIsKnown = true
+                                                        handleKnownClassType(newStmt.tpe.mostPreciseObjectType)
+                                                    }
 
-                                                if (field.fieldType.isObjectType &&
-                                                    newStmt.tpe.mostPreciseObjectType == field.fieldType.asObjectType &&
-                                                    state.totalNumberOfFieldWrites == 1) {
-                                                    state.concreteClassTypeIsKnown = true
-                                                    handleKnownClassType(newStmt.tpe.mostPreciseObjectType)
-                                                }
-
-                                                valueAssignment.targetVar.asVar.usedBy.exists {
-                                                    index ⇒
+                                                    valueAssignment.targetVar.asVar.usedBy.exists { index ⇒
                                                         val tmpStmt = taCode.stmts(index)
                                                         if (tmpStmt.isArrayStore) {
                                                             false // can be ingored
@@ -673,11 +681,11 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                                                             }
                                                             false //nothing to do in the else case. Stmt has still been handled
                                                         } else true
-                                                }
+                                                    }
+                                                } else true
                                             } else true
                                         } else true
-                                    } else true
-                                } else false
+                                    } else false
                             }
                         }
                     } else true
@@ -686,28 +694,22 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                     putDefinitionSites.exists { putDefinitionSite ⇒
                         if (putDefinitionSite >= 0) { //necessary
                             val definitionSiteStatement = taCode.stmts(putDefinitionSite)
-                            // println("def site stmt: "+definitionSiteStatement)
                             val definitionSiteAssignment = definitionSiteStatement.asAssignment
-                            //println("def site assignement: "+definitionSiteAssignment)
                             if (definitionSiteAssignment.expr.isStaticFunctionCall) {
-                                // println("handle static function call")
-                                doesStaticFunctionCallEnableEscape(definitionSiteAssignment.expr.asStaticFunctionCall)
+                                doesStaticFunctionCallEnableEscape(
+                                    definitionSiteAssignment.expr.asStaticFunctionCall
+                                )
 
                             } else if (definitionSiteAssignment.expr.isVar) {
                                 val definitionSiteVar = definitionSiteAssignment.expr.asVar
-                                definitionSiteVar.usedBy.exists {
-                                    definitionSiteVarUseSite ⇒
-                                        val definitionSiteVarUseSiteStmt = taCode.stmts(definitionSiteVarUseSite)
-                                        if (definitionSiteVarUseSiteStmt.isNonVirtualMethodCall) {
-                                            val nonVirtualMethodCall = definitionSiteVarUseSiteStmt.asNonVirtualMethodCall
-                                            doesNonVirtualMethodCallEnablesEscape(nonVirtualMethodCall)
-                                        } else true
+                                definitionSiteVar.usedBy.exists { definitionSiteVarUseSite ⇒
+                                    val definitionSiteVarUseSiteStmt = taCode.stmts(definitionSiteVarUseSite)
+                                    if (definitionSiteVarUseSiteStmt.isNonVirtualMethodCall) {
+                                        val nonVirtualMethodCall = definitionSiteVarUseSiteStmt.asNonVirtualMethodCall
+                                        doesNonVirtualMethodCallEnablesEscape(nonVirtualMethodCall)
+                                    } else true
                                     //TODO handle all cases
                                 }
-
-                                /*for (definitionSiteVarUseSite ← definitionSiteVar.usedBy) {
-
-                                } */
                             } else if (definitionSiteAssignment.expr.isNew) {
 
                                 val newStmt = definitionSiteAssignment.expr.asNew
@@ -718,20 +720,19 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                                     handleKnownClassType(newStmt.tpe.mostPreciseObjectType)
                                 }
                                 if (!method.isConstructor) {
-                                    definitionSiteAssignment.targetVar.asVar.usedBy.exists {
-                                        x ⇒
-                                            val tmpStmt = taCode.stmts(x)
-                                            if (tmpStmt.isPutStatic || tmpStmt.isPutField) {
-                                                if (!seen.contains(tmpStmt)) {
-                                                    seen += tmpStmt
-                                                    doesPutEnableEscape(tmpStmt)
-                                                } else false
-                                            } else if (tmpStmt.isNonVirtualMethodCall) {
-                                                if (!seen.contains(tmpStmt)) {
-                                                    seen += tmpStmt
-                                                    doesNonVirtualMethodCallEnablesEscape(tmpStmt.asNonVirtualMethodCall)
-                                                } else false
-                                            } else true
+                                    definitionSiteAssignment.targetVar.asVar.usedBy.exists { x ⇒
+                                        val tmpStmt = taCode.stmts(x)
+                                        if (tmpStmt.isPutStatic || tmpStmt.isPutField) {
+                                            if (!seen.contains(tmpStmt)) {
+                                                seen += tmpStmt
+                                                doesPutEnableEscape(tmpStmt)
+                                            } else false
+                                        } else if (tmpStmt.isNonVirtualMethodCall) {
+                                            if (!seen.contains(tmpStmt)) {
+                                                seen += tmpStmt
+                                                doesNonVirtualMethodCallEnablesEscape(tmpStmt.asNonVirtualMethodCall)
+                                            } else false
+                                        } else true
                                     }
                                 } else {
                                     definitionSiteAssignment.targetVar.usedBy.exists { useSite ⇒
@@ -761,7 +762,6 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                 val index = taCode.pcToIndex(pc)
                 if (index >= 0) {
                     val stmt = taCode.stmts(index)
-                    // println(s"stmt: $stmt")
                     if (!seen.contains(stmt)) {
                         seen += stmt
                         doesPutEnableEscape(stmt)
@@ -775,44 +775,38 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         /**
          * If there are no dependencies left, this method can be called to create the result.
          */
-        def createResult(implicit state: State): ProperPropertyComputationResult = {
+        def createResult()(implicit state: State): ProperPropertyComputationResult = {
+
             if (state.hasDependees) {
                 val lowerBound =
-                    if (state.referenceIsImmutable.isDefined && state.referenceIsImmutable.get)
+                    if (state.referenceIsImmutable.getOrElse(false))
                         ShallowImmutableField
                     else
                         MutableField
-                val upperBound = {
-                    if (state.referenceIsImmutable.isEmpty)
-                        DeepImmutableField
+                val upperBound =
+                    if (state.referenceIsImmutable.isEmpty) DeepImmutableField
                     else {
                         state.referenceIsImmutable match {
 
-                            case Some(false) | None ⇒ MutableField
+                            case Some(false) ⇒ MutableField
 
-                            case Some(true) ⇒
+                            case Some(true) | None ⇒
                                 if (state.tacDependees.isEmpty && !state.concreteClassTypeIsKnown) {
-                                    if (state.typeIsImmutable) {
+                                    if (state.typeIsImmutable || state.noEscapePossibilityViaReference)
                                         DeepImmutableField
-                                    } else {
-                                        if (state.noEscapePossibilityViaReference) {
-                                            DeepImmutableField
-                                        } else {
-                                            state.dependentImmutability match {
-                                                case NotShallowOrMutable ⇒ DependentImmutableField
-                                                case OnlyDeepImmutable   ⇒ DeepImmutableField
-                                                case _                   ⇒ ShallowImmutableField
-
-                                            }
+                                    else {
+                                        state.dependentImmutability match {
+                                            case NotShallowOrMutable ⇒ DependentImmutableField
+                                            case OnlyDeepImmutable   ⇒ DeepImmutableField
+                                            case _                   ⇒ ShallowImmutableField
                                         }
                                     }
+
                                 } else
                                     DeepImmutableField
                         }
                     }
 
-                } //TODO check
-                DeepImmutableField
                 InterimResult(
                     field,
                     lowerBound,
@@ -823,21 +817,23 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             } else {
                 if (!state.escapesStillDetermined)
                     state.noEscapePossibilityViaReference = false
+
                 state.referenceIsImmutable match {
 
                     case Some(false) | None ⇒ Result(field, MutableField)
 
                     case Some(true) ⇒
-                        if (state.typeIsImmutable) {
+                        if (!state.concreteClassTypeIsKnown && state.typeIsImmutable ||
+                            state.concreteClassTypeIsKnown && state.classTypeIsImmutable) {
                             Result(field, DeepImmutableField)
                         } else {
                             if (state.noEscapePossibilityViaReference) {
                                 Result(field, DeepImmutableField)
                             } else {
                                 state.dependentImmutability match {
-                                    case NotShallowOrMutable ⇒ Result(field, DependentImmutableField)
                                     case OnlyDeepImmutable   ⇒ Result(field, DeepImmutableField)
-                                    case _                   ⇒ Result(field, ShallowImmutableField)
+                                    case NotShallowOrMutable ⇒ Result(field, DependentImmutableField)
+                                    case Dependent           ⇒ Result(field, ShallowImmutableField)
                                 }
                             }
                         }
@@ -846,130 +842,150 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         }
 
         def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
-            import org.opalj.fpcf.EUBP
-
-            def typeMatch(entity: Entity) =
-                entity match {
-                    case objectType: ObjectType if state.innerArrayTypes.contains(objectType) ⇒
-                        state.noEscapePossibilityViaReference = false
-                    case _ ⇒
-                }
 
             if (eps.asEPS.pk != TACAI.key)
-                state.dependees = state.dependees.filter(_.e ne eps.e)
+                state.dependees = state.dependees.filter(ep ⇒ (ep.e != eps.e) || (ep.pk != eps.pk))
             eps match {
-                case FinalP(DeepImmutableType) ⇒ //nothing to do -> is default
+                case LBP(DeepImmutableType) ⇒ //nothing to do -> is default
 
                 case EUBP(t, MutableType | ShallowImmutableType) ⇒
-                    state.typeIsImmutable = false
-                    if (t != ObjectType.Object) { // in case of generic fields
+                    val tpe = t.asInstanceOf[ObjectType]
+                    if (state.innerArrayTypes.contains(tpe))
+                        state.noEscapePossibilityViaReference = false
+                    if (state.concreteGenericTypes.contains(tpe) ||
+                        t == state.field.fieldType && t != ObjectType.Object) {
+                        //TODO reasoning
+                        // if (t != ObjectType.Object) { // in case of generic fields
                         state.dependentImmutability = Dependent
+                        // }
                     }
-                    typeMatch(t)
+                    //  else if(t!=ObjectType.Object)
+                    //    state.dependentImmutability = Dependent
+
+                    state.typeIsImmutable = false
 
                 case FinalEP(t, DependentImmutableType) ⇒
+                    val tpe = t.asInstanceOf[ObjectType]
+                    if (state.innerArrayTypes.contains(tpe)) {
+                        state.noEscapePossibilityViaReference = false
+                    }
+                    if (state.concreteGenericTypes.contains(tpe)) {
+                        //TODO reasoning
+                        if (state.dependentImmutability == OnlyDeepImmutable)
+                            state.dependentImmutability = NotShallowOrMutable
+                    }
                     state.typeIsImmutable = false
-                    if (t != field.fieldType && state.dependentImmutability == OnlyDeepImmutable)
-                        state.dependentImmutability = NotShallowOrMutable
-                    typeMatch(t)
 
                 case UBP(MutableFieldReference | LazyInitializedNotThreadSafeFieldReference) ⇒
-                    state.typeIsImmutable = false
+                    //state.typeIsImmutable = false
                     state.referenceIsImmutable = Some(false)
                     return Result(field, MutableField);
 
-                case FinalP(ImmutableFieldReference | LazyInitializedThreadSafeFieldReference |
-                    LazyInitializedNotThreadSafeButDeterministicFieldReference) ⇒
+                case LBP(
+                    ImmutableFieldReference | LazyInitializedThreadSafeFieldReference |
+                    LazyInitializedNotThreadSafeButDeterministicFieldReference
+                    ) ⇒
                     state.referenceIsImmutable = Some(true)
 
-                case FinalP(DeepImmutableField) ⇒ // nothing to do
+                case LBP(DeepImmutableField) ⇒ // nothing to do
 
                 case UBP(DependentImmutableField | ShallowImmutableField | MutableField) ⇒
                     state.noEscapePossibilityViaReference = false
 
-                case eps if eps.asEPS.pk == TACAI.key ⇒
-                    val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
+                case epk if epk.asEPS.pk == TACAI.key ⇒
+                    val newEP = epk.asInstanceOf[EOptionP[Method, TACAI]]
                     val method = newEP.e
                     val pcs = state.tacDependees(method)._2
                     state.tacDependees -= method
-                    if (eps.isFinal) {
-                        val finalEP = eps.asInstanceOf[FinalEP[Method, TACAI]]
-                        checkFieldWritesForEffImmutabilityWithKnownTAC(method, pcs._2, finalEP.p.tac.get)(state)
-                        determineEscapeViaFieldReadsWithKnownTAC(pcs._1, finalEP.p.tac.get)(state)
+                    if (epk.isFinal) {
+                        val tac = epk.asInstanceOf[FinalEP[Method, TACAI]].p.tac.get
+                        determineEscapeViaFieldWritesWithKnownTAC(method, pcs._2, tac)(state)
+                        determineEscapeViaFieldReadsWithKnownTAC(method, pcs._1, tac)(state)
                     } else {
                         state.tacDependees += method -> ((newEP, pcs))
                     }
 
-                case eps if eps.isFinal && eps.asEPS.pk == EscapeProperty.key ⇒
-                    if (escapesViaMethod(eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]])(state))
+                case epk if epk.isFinal && epk.asEPS.pk == EscapeProperty.key ⇒
+                    if (doesEscapeViaMethod(eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]))
                         state.noEscapePossibilityViaReference = false
 
                 case FinalP(DeepImmutableClass) ⇒
-                    state.typeIsImmutable = true
+                case FinalEP(t, ShallowImmutableClass | DependentImmutableClass | MutableClass) ⇒
+                    state.classTypeIsImmutable = false
+                    val tpe = t.asInstanceOf[ObjectType]
+                    if (state.concreteGenericTypes.contains(tpe) || t != ObjectType.Object && t != field.fieldType)
+                        //TODO reasoning
+                        // if (t != ObjectType.Object) { // in case of generic fields
+                        state.dependentImmutability = Dependent
+                // }
 
-                case UBP(ShallowImmutableClass | DependentImmutableClass | MutableClass) ⇒
-                    state.typeIsImmutable = false
+                case FinalP(DependentImmutableClass) ⇒
+                    state.classTypeIsImmutable = false
 
-                case eps ⇒
-                    state.dependees += eps
+                case epk ⇒
+                    state.dependees += epk
             }
             createResult
         }
 
-        /**
-         * Requests the immutability of the field reference and registers the dependees if necessary
-         */
         implicit val state: State = State(field)
-        propertyStore(field, FieldReferenceImmutability.key) match {
-            case FinalP(ImmutableFieldReference) ⇒ state.referenceIsImmutable = Some(true)
-            case FinalP(LazyInitializedThreadSafeFieldReference |
-                LazyInitializedNotThreadSafeButDeterministicFieldReference) ⇒
-                state.referenceIsImmutable = Some(true)
-            case FinalP(MutableFieldReference | LazyInitializedNotThreadSafeFieldReference) ⇒
-                return Result(field, MutableField);
-            case ep ⇒
-                state.dependees += ep
-        }
+
         /**
-         * Determines whether the field is dependent immutable if the flag is set
+         * Determines the immutability of the field reference and registers the dependees if necessary
          */
-        if (considerGenericity) {
-            handleGenericity()
-        } else {
-            state.dependentImmutability = Dependent
+        propertyStore(field, FieldReferenceImmutability.key) match {
+
+            case LBP(
+                ImmutableFieldReference | LazyInitializedThreadSafeFieldReference |
+                LazyInitializedNotThreadSafeButDeterministicFieldReference
+                ) ⇒
+                state.referenceIsImmutable = Some(true)
+
+            case UBP(MutableFieldReference | LazyInitializedNotThreadSafeFieldReference) ⇒
+                return Result(field, MutableField);
+
+            case ep ⇒ state.dependees += ep
         }
 
         /**
-         * Determines whether the reference object escapes or can be mutated.
+         * Determines whether the field is dependent immutable if the flag [[considerGenericity]] is set
+         */
+        if (considerGenericity)
+            handleGenericity()
+        else
+            state.dependentImmutability = Dependent
+
+        /**
+         * Determines whether the reference object escapes or can be mutated if the flag [[considerEscape]] is set
          */
         if (considerEscape) {
-            if (state.referenceIsImmutable.isEmpty || state.referenceIsImmutable.get) {
+            state.noEscapePossibilityViaReference = state.field.isPrivate
+            if (state.referenceIsImmutable.isEmpty || state.referenceIsImmutable.get)
                 determineEscapeOfReferencedObjectOrValue()
-            }
         } else {
             state.noEscapePossibilityViaReference = false
             state.concreteClassTypeIsKnown = false
             state.escapesStillDetermined = true
         }
-        /**
-         * In cases where we know the concrete class type assigned to the field we could use the immutabiltiy of this.
-         */
-        if (!state.concreteClassTypeIsKnown) {
-            handleTypeImmutability(state)
-        }
 
-        createResult
+        /**
+         * In cases where we know the concrete class type assigned to the field we could use the immutability of this.
+         */
+        if (!state.concreteClassTypeIsKnown)
+            handleTypeImmutability(state)
+        else
+            state.typeIsImmutable = false
+
+        createResult()
     }
 }
 
 trait L3FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    import org.opalj.fpcf.PropertyBounds
-
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.ub(TACAI),
         PropertyBounds.ub(EscapeProperty),
-        PropertyBounds.lub(FieldReferenceImmutability),
+        PropertyBounds.ub(FieldReferenceImmutability),
         PropertyBounds.lub(TypeImmutability),
         PropertyBounds.lub(FieldImmutability)
     )
@@ -982,7 +998,8 @@ trait L3FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
  * Executor for the eager field immutability analysis.
  *
  */
-object EagerL3FieldImmutabilityAnalysis extends L3FieldImmutabilityAnalysisScheduler
+object EagerL3FieldImmutabilityAnalysis
+    extends L3FieldImmutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -991,7 +1008,7 @@ object EagerL3FieldImmutabilityAnalysis extends L3FieldImmutabilityAnalysisSched
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L3FieldImmutabilityAnalysis(p)
-        val fields = p.allFields // p.allProjectClassFiles.flatMap(classfile ⇒ classfile.fields) // p.allFields
+        val fields = p.allFields // p.allProjectClassFiles.flatMap(classfile => classfile.fields) // p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }
@@ -1002,7 +1019,8 @@ object EagerL3FieldImmutabilityAnalysis extends L3FieldImmutabilityAnalysisSched
  * Executor for the lazy field immutability analysis.
  *
  */
-object LazyL3FieldImmutabilityAnalysis extends L3FieldImmutabilityAnalysisScheduler
+object LazyL3FieldImmutabilityAnalysis
+    extends L3FieldImmutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
