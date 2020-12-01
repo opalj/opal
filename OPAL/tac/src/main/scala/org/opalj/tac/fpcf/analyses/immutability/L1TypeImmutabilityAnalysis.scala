@@ -91,7 +91,7 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                             if (eps.isFinal)
                                 Result(t, thisUB)
                             else
-                                InterimResult(t, thisLB, thisUB, Seq(eps), c)
+                                InterimResult(t, thisLB, thisUB, Set(eps), c)
                     }
                 }
             }
@@ -104,10 +104,10 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                 case eps @ InterimLUBP(lb, ub) ⇒
                     val thisUB = ub.correspondingTypeImmutability
                     val thisLB = lb.correspondingTypeImmutability
-                    InterimResult(t, thisLB, thisUB, Seq(eps), c)
+                    InterimResult(t, thisLB, thisUB, Set(eps), c)
 
                 case epk ⇒
-                    InterimResult(t, MutableType, DeepImmutableType, Seq(epk), c)
+                    InterimResult(t, MutableType, DeepImmutableType, Set(epk), c)
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]
@@ -208,7 +208,7 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                                     t,
                                     joinedImmutability,
                                     maxImmutability,
-                                    dependencies.values,
+                                    dependencies.values.toSet,
                                     c
                                 )
                             }
@@ -245,7 +245,7 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                             nextResult()
                     }
                 }
-                InterimResult(t, joinedImmutability, maxImmutability, dependencies.values, c)
+                InterimResult(t, joinedImmutability, maxImmutability, dependencies.values.toSet, c)
             }
         }
     }

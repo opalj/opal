@@ -215,17 +215,14 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
 
         var isNotFinal = false
-        /*println(
-            s"""
-               | enter continuation
-               | eps: $eps
-               |""".stripMargin
-        ) */
+
         eps.pk match {
+
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
                 state.escapeDependees = state.escapeDependees.iterator.filter(_.e ne newEP.e).toSet
                 isNotFinal = handleEscapeProperty(newEP)
+
             case TACAI.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val method = newEP.e
@@ -234,29 +231,20 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                 if (eps.isRefinable)
                     state.tacDependees += method -> ((newEP, pcs))
                 isNotFinal = methodUpdatesField(method, newEP.ub.tac.get, pcs)
-            case Callees.key ⇒
-                //if (eps.e.isInstanceOf[DeclaredMethod])
 
-                //state.lazyInitInvocation
+            case Callees.key ⇒
                 val newEPS = eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
                 val pcs = state.calleesDependee(newEPS.e)._2
                 isNotFinal = pcs.forall(pc ⇒ doCallsIntroduceNonDeterminism(newEPS, pc))
-            //state.calleesDependee+= (calleesEOP.e → (calleesEOP,pc :: state.calleesDependee(calleesEOP.e)._2))
-            //    isNotFinal = handleCalls()
-            //else {
-            //-T ODO callees handling
-            //}
+
             case FieldPrematurelyRead.key ⇒
                 isNotFinal = isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
+
             case Purity.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]
                 state.purityDependees = state.purityDependees.iterator.filter(_.e ne newEP.e).toSet
                 val nonDeterministicResult = isNonDeterministic(newEP)
-                //if (!r) state.referenceImmutability = LazyInitializedReference
-                //if (state.referenceImmutability != LazyInitializedNotThreadSafeReference &&
-                //    state.referenceImmutability != LazyInitializedThreadSafeReference) { // both dont need determinism
                 isNotFinal = nonDeterministicResult
-            //}
 
             case FieldReferenceImmutability.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Field, FieldReferenceImmutability]]
@@ -265,7 +253,6 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                 isNotFinal = !isImmutableReference(newEP)
         }
 
-        // println("result is not final: "+isNotFinal)
         if (isNotFinal)
             state.referenceImmutability = MutableFieldReference
         createResult()

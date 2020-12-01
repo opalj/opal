@@ -77,9 +77,9 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
                 escapeDependees.nonEmpty || tacDependees.nonEmpty || typeDependees.nonEmpty
         }
 
-        def dependees: Traversable[EOptionP[Entity, Property]] = {
-            prematurelyReadDependee ++ purityDependees ++ referenceImmutabilityDependees ++ escapeDependees ++
-                calleesDependee.valuesIterator.map(_._1) ++ tacDependees.valuesIterator.map(_._1) ++ typeDependees
+        def dependees: Set[EOptionP[Entity, Property]] = {
+            (prematurelyReadDependee ++ purityDependees ++ referenceImmutabilityDependees ++ escapeDependees ++
+                calleesDependee.valuesIterator.map(_._1) ++ tacDependees.valuesIterator.map(_._1) ++ typeDependees).toSet
         }
     }
 

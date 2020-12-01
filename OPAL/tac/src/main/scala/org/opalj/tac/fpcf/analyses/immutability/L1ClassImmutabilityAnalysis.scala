@@ -382,12 +382,12 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
          */
                 Result(t, maxLocalImmutability)
             } else {
-                InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values, c)
+                InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values.toSet, c)
             }
         }
 
         val result =
-            InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values, c)
+            InterimResult(t, minLocalImmutability, maxLocalImmutability, dependees.values.toSet, c)
         if (lazyComputation)
             result
         else {

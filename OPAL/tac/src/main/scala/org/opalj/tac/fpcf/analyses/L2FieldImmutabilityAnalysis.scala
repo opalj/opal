@@ -21,7 +21,6 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Result
-import org.opalj.fpcf.Property
 import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
@@ -95,15 +94,18 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             var escapeDependees:            Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty,
             var tacDependees:               Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty
     ) {
+
+        import org.opalj.fpcf.SomeEOptionP
+
         def hasDependees: Boolean = {
             prematurelyReadDependee.isDefined || purityDependees.nonEmpty ||
                 calleesDependee.isDefined || fieldImmutabilityDependees.nonEmpty ||
                 escapeDependees.nonEmpty || tacDependees.nonEmpty
         }
 
-        def dependees: Traversable[EOptionP[Entity, Property]] = {
-            prematurelyReadDependee ++ purityDependees ++ calleesDependee ++
-                fieldImmutabilityDependees ++ escapeDependees ++ tacDependees.valuesIterator.map(_._1)
+        def dependees: Set[SomeEOptionP] = {
+            (tacDependees.valuesIterator.map(_._1) ++ prematurelyReadDependee ++ purityDependees ++ calleesDependee ++
+                fieldImmutabilityDependees ++ escapeDependees).toSet
         }
     }
 
