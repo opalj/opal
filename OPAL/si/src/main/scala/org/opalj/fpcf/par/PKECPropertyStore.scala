@@ -511,6 +511,7 @@ class PKECPropertyStore(
             startThreads(new PartialPropertiesFinalizerThread(_))
 
             subPhaseId += 1
+            ps(AnalysisKeyId).clear()
         }
 
         idle = true
