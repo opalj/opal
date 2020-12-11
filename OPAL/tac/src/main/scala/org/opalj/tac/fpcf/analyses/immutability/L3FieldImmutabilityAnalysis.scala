@@ -76,8 +76,8 @@ import org.opalj.br.FormalTypeParameter
 import org.opalj.br.fpcf.properties.ClassImmutability
 import scala.collection.mutable
 import org.opalj.fpcf.PropertyBounds
-import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.LBP
+import org.opalj.fpcf.EUBP
 
 /**
  * Analysis that determines the immutability of org.opalj.br.Field
@@ -90,7 +90,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
      *  Describes the different kinds of dependent immutable fields, that depend on the concrete types that replace
      *  the generic parameters.
      *
-     *  [[Dependent]] Shallow or mutable types could still exist.
+     *  [[NotDependentImmutable]] Shallow or mutable types could still exist.
      *  Example: Foo<T, MutableClass> f
      *
      *  [[NotShallowOrMutable]] There are no shallow and no mutable types.
@@ -99,26 +99,31 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
      *  [[OnlyDeepImmutable]] There are only deep immutable types and no generic parameters left.
      *  Example: Foo<String, String> f
      */
-    sealed trait DependentImmutabilityKind
-    case object Dependent extends DependentImmutabilityKind
-    case object NotShallowOrMutable extends DependentImmutabilityKind
-    case object OnlyDeepImmutable extends DependentImmutabilityKind
+    sealed trait DependentImmutabilityTypes
+    case object NotDependentImmutable extends DependentImmutabilityTypes
+    case object NotShallowOrMutable extends DependentImmutabilityTypes
+    case object OnlyDeepImmutable extends DependentImmutabilityTypes
+
+    sealed trait ImmutabilityTypes
+    case object Mutable extends ImmutabilityTypes
+    case object DependentImmutable extends ImmutabilityTypes
+    case object DeepImmutable extends ImmutabilityTypes
 
     case class State(
             field:                               Field,
-            var typeIsImmutable:                 Boolean                                            = true,
-            var classTypeIsImmutable:            Boolean                                            = true,
+            var typeImmutability:                ImmutabilityTypes                                  = DeepImmutable,
+            var classTypeImmutability:           ImmutabilityTypes                                  = DeepImmutable,
             var referenceIsImmutable:            Option[Boolean]                                    = None,
             var noEscapePossibilityViaReference: Boolean                                            = true,
-            var dependentImmutability:           DependentImmutabilityKind                          = OnlyDeepImmutable,
-            var genericTypeSetNotDeepImmutable:  Boolean                                            = false,
+            var dependentImmutability:           DependentImmutabilityTypes                         = OnlyDeepImmutable,
             var tacDependees:                    Map[Method, (EOptionP[Method, TACAI], (PCs, PCs))] = Map.empty,
             var dependees:                       Set[EOptionP[Entity, Property]]                    = Set.empty,
             var innerArrayTypes:                 Set[ObjectType]                                    = Set.empty,
             var concreteGenericTypes:            Set[ObjectType]                                    = Set.empty,
             var escapesStillDetermined:          Boolean                                            = false,
             var concreteClassTypeIsKnown:        Boolean                                            = false,
-            var totalNumberOfFieldWrites:        Int                                                = 0
+            var totalNumberOfFieldWrites:        Int                                                = 0,
+            var fieldTypeIsDependentImmutable:   Boolean                                            = false
     ) {
         def hasDependees: Boolean = dependees.nonEmpty || tacDependees.nonEmpty
         def getDependees: Set[EOptionP[Entity, Property]] =
@@ -131,16 +136,6 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    val considerEscape =
-        project.config.getBoolean(
-            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape"
-        )
-
-    val considerGenericity =
-        project.config.getBoolean(
-            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity"
-        )
-
     def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = entity match {
         case field: Field ⇒ determineFieldImmutability(field)
         case _ ⇒
@@ -150,6 +145,15 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     private[analyses] def determineFieldImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
+
+        val considerEscape = project.config.getBoolean(
+            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape"
+        )
+
+        val considerGenericity =
+            project.config.getBoolean(
+                "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity"
+            )
 
         /**
          * Returns the formal type parameters from the class' and outer classes' signature
@@ -203,24 +207,23 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         def handleTypeImmutability(state: State): Unit = {
             val objectType = field.fieldType.asFieldType
             if (objectType == ObjectType.Object) {
-                state.typeIsImmutable = false //handling generic fields
+                state.typeImmutability = Mutable //false //handling generic fields
             } else if (objectType.isBaseType || objectType == ObjectType.String) {
                 // base types are by design deep immutable
                 //state.typeImmutability = true // true is default
             } else if (objectType.isArrayType) {
                 // Because the entries of an array can be reassigned we state it as not being deep immutable
-                state.typeIsImmutable = false
+                state.typeImmutability = Mutable //false
             } else {
                 propertyStore(objectType, TypeImmutability.key) match {
 
-                    case FinalP(DeepImmutableType)      ⇒ // deep immutable type is set as default
-                    case FinalP(DependentImmutableType) ⇒ state.typeIsImmutable = false
-
-                    case EUBP(t, ShallowImmutableType | MutableType) ⇒
-                        state.typeIsImmutable = false
-                        if (t == field.fieldType && field.fieldType != ObjectType.Object)
-                            state.dependentImmutability = Dependent
-
+                    case LBP(DeepImmutableType) ⇒ // deep immutable type is set as default
+                    case FinalEP(t, DependentImmutableType) ⇒
+                        state.typeImmutability = DependentImmutable //false
+                        if (t == field.fieldType)
+                            state.fieldTypeIsDependentImmutable = true
+                    case UBP(MutableType | ShallowImmutableType) ⇒
+                        state.typeImmutability = Mutable
                     case epk ⇒ state.dependees += epk
                 }
             }
@@ -239,6 +242,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 case TypeVariableSignature(t) ⇒
                     noRelevantAttributesFound = false
                     onlyDeepImmutableTypesInGenericTypeFound = false
+                    state.fieldTypeIsDependentImmutable = true //generic type T is dependent immutable
                     if (!isInClassesGenericTypeParameters(t))
                         noShallowOrMutableTypesInGenericTypeFound = false
 
@@ -260,8 +264,10 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                 _
                                 )
                             ) ⇒
-                            val objectPath = outerPackageIdentifier.getOrElse("") + innerPackageIdentifier
-
+                            val objectPath = outerPackageIdentifier match {
+                                case Some(prepackageIdentifier) ⇒ prepackageIdentifier + innerPackageIdentifier
+                                case _                          ⇒ innerPackageIdentifier
+                            }
                             genericParameters ::= ObjectType(objectPath)
 
                         case _ ⇒
@@ -276,17 +282,12 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             genericParameters.foreach(objectType ⇒ {
                 propertyStore(objectType, TypeImmutability.key) match {
 
-                    case LBP(DeepImmutableType) ⇒ //nothing to do here: default value is deep immutable
+                    case FinalP(DeepImmutableType) ⇒ //nothing to do here: default value is deep immutable
 
-                    /* FinalP(DependentImmutableType) =>
-                    onlyDeepImmutableTypesInGenericTypeFound = false
-                    state.typeIsImmutable = false */
-                    //conservative overapproximation that allows no nested generic classes
-
+                    //no nested generic classes are allowed
                     case UBP(DependentImmutableType | ShallowImmutableType | MutableType) ⇒
                         noShallowOrMutableTypesInGenericTypeFound = false
                         onlyDeepImmutableTypesInGenericTypeFound = false
-                        state.typeIsImmutable = false
 
                     case ep ⇒
                         state.concreteGenericTypes += ep.e
@@ -300,13 +301,13 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 if (onlyDeepImmutableTypesInGenericTypeFound) {
                     //nothing to do...
                 } else if (noShallowOrMutableTypesInGenericTypeFound &&
-                    state.dependentImmutability != Dependent) {
+                    state.dependentImmutability != NotDependentImmutable) {
                     state.dependentImmutability = NotShallowOrMutable
                 } else {
-                    state.dependentImmutability = Dependent
+                    state.dependentImmutability = NotDependentImmutable
                 }
             } else {
-                state.dependentImmutability = Dependent
+                state.dependentImmutability = NotDependentImmutable
             }
         }
 
@@ -323,8 +324,11 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 case finalEP: FinalEP[Method, TACAI] ⇒ finalEP.ub.tac
 
                 case epk ⇒
-                    val (reads: IntTrieSet, writes: IntTrieSet) =
-                        state.tacDependees.getOrElse(method, (IntTrieSet.empty, IntTrieSet.empty))
+                    val (reads, writes) =
+                        if (state.tacDependees.contains(method))
+                            (state.tacDependees(method)._2._1, state.tacDependees(method)._2._2)
+                        else
+                            (IntTrieSet.empty, IntTrieSet.empty)
                     if (isRead) state.tacDependees += method -> ((epk, (reads ++ pcs, writes)))
                     if (!isRead) state.tacDependees += method -> ((epk, (reads, writes ++ pcs)))
                     None
@@ -370,19 +374,19 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 //has to be determined before the following foreach loop because in this the information is still needed
                 state.totalNumberOfFieldWrites = writes.foldLeft(0)(_ + _._2.size)
 
-                writes.foreach {
-                    case (method, pcs) ⇒
-                        val taCodeOption = getTACAI(method, pcs, isRead = false)
-                        if (taCodeOption.isDefined)
-                            determineEscapeViaFieldWritesWithKnownTAC(method, pcs, taCodeOption.get)
+                writes.foreach { write ⇒
+                    val (method, pcs) = write
+                    val taCodeOption = getTACAI(method, pcs, isRead = false)
+                    if (taCodeOption.isDefined)
+                        determineEscapeViaFieldWritesWithKnownTAC(method, pcs, taCodeOption.get)
                 }
 
                 if (state.noEscapePossibilityViaReference) {
-                    fieldAccessInformation.readAccesses(state.field).foreach {
-                        case (method, pcs) ⇒
-                            val taCodeOption = getTACAI(method, pcs, isRead = true)
-                            if (taCodeOption.isDefined)
-                                determineEscapeViaFieldReadsWithKnownTAC(method, pcs, taCodeOption.get)
+                    fieldAccessInformation.readAccesses(state.field).foreach { read ⇒
+                        val (method, pcs) = read
+                        val taCodeOption = getTACAI(method, pcs, isRead = true)
+                        if (taCodeOption.isDefined)
+                            determineEscapeViaFieldReadsWithKnownTAC(method, pcs, taCodeOption.get)
                     }
                 }
             }
@@ -429,9 +433,12 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                 false // nothing to do, because it can not be mutated
                                             } else if (innerArrayType.isArrayType) {
                                                 true // to be sound
+                                            } else if (innerArrayType == ObjectType.String) {
+                                                false
                                             } else if (innerArrayType.isObjectType) {
                                                 //If a deep immutable object escapes, it can not be mutated
-                                                propertyStore(innerArrayType, TypeImmutability.key) match {
+                                                val result = propertyStore(innerArrayType, TypeImmutability.key)
+                                                result match {
                                                     case LBP(DeepImmutableType) ⇒ false //nothing to do
                                                     case UBP(
                                                         DependentImmutableType | ShallowImmutableType | MutableType
@@ -496,13 +503,14 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
              */
             def handleKnownClassType(objectType: ObjectType): Unit = {
 
-                val result = propertyStore(objectType, ClassImmutability.key)
-                result match {
+                propertyStore(objectType, ClassImmutability.key) match {
+                    case LBP(DeepImmutableClass) ⇒ //nothing to do ; true ist default
 
-                    case FinalP(MutableClass | ShallowImmutableClass | DependentImmutableClass) ⇒
-                        state.classTypeIsImmutable = false
-
-                    case FinalP(DeepImmutableClass) ⇒ //nothing to do ; true ist default
+                    case FinalEP(t, DependentImmutableClass) ⇒
+                        state.classTypeImmutability = DependentImmutable
+                        if (t == field.fieldType)
+                            state.fieldTypeIsDependentImmutable = true
+                    case UBP(MutableClass | ShallowImmutableClass) ⇒ state.classTypeImmutability = Mutable
 
                     case eps ⇒
                         state.dependees += eps
@@ -539,8 +547,6 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                             case FinalP(DeepImmutableField) ⇒ false //nothing to do here
                                             case UBP(MutableField | ShallowImmutableField | DependentImmutableField) ⇒
                                                 true
-                                            case FinalP(_) ⇒ true
-
                                             case ep ⇒
                                                 state.dependees += ep
                                                 false
@@ -589,7 +595,8 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                         doesPutEnableEscape(stmt)
                                     } else false
                                 } else if (stmt.isArrayStore) {
-                                    true //TODO handling that case more precise
+                                    !stmt.asArrayStore.value.asVar.isConst
+                                    // true //TODO handling that case more precise
                                 } else { // other cases that the purity analysis can not handle
                                     doesEscapeViaMethod(propertyStore(definitionSitesOfParam, EscapeProperty.key))
                                 }
@@ -745,13 +752,13 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                 doesPutEnableEscape(useSiteStmt)
                                             } else false
                                         } else if (useSiteStmt.isAssignment) {
-                                            true //TODO
+                                            true //conservative handling to reduce complexity
                                         } else {
                                             true
                                         }
                                     }
                                 }
-                                //TODO handle all cases!!
+                                //TODO handle all cases
                             } else !definitionSiteAssignment.expr.isConst
                         } else true
                     }
@@ -776,10 +783,9 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          * If there are no dependencies left, this method can be called to create the result.
          */
         def createResult()(implicit state: State): ProperPropertyComputationResult = {
-
             if (state.hasDependees) {
                 val lowerBound =
-                    if (state.referenceIsImmutable.getOrElse(false))
+                    if (state.referenceIsImmutable.isDefined && state.referenceIsImmutable.get)
                         ShallowImmutableField
                     else
                         MutableField
@@ -792,28 +798,33 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                             case Some(true) | None ⇒
                                 if (state.tacDependees.isEmpty && !state.concreteClassTypeIsKnown) {
-                                    if (state.typeIsImmutable || state.noEscapePossibilityViaReference)
+                                    if (state.typeImmutability == DeepImmutable ||
+                                        state.noEscapePossibilityViaReference) {
                                         DeepImmutableField
-                                    else {
+                                    } else if (state.typeImmutability == Mutable &&
+                                        !state.fieldTypeIsDependentImmutable) {
+                                        ShallowImmutableField
+                                    } else {
                                         state.dependentImmutability match {
                                             case NotShallowOrMutable ⇒ DependentImmutableField
                                             case OnlyDeepImmutable   ⇒ DeepImmutableField
                                             case _                   ⇒ ShallowImmutableField
                                         }
                                     }
-
                                 } else
                                     DeepImmutableField
                         }
                     }
-
-                InterimResult(
-                    field,
-                    lowerBound,
-                    upperBound,
-                    state.getDependees,
-                    c
-                )
+                if (lowerBound == upperBound)
+                    Result(field, lowerBound)
+                else
+                    InterimResult(
+                        field,
+                        lowerBound,
+                        upperBound,
+                        state.getDependees,
+                        c
+                    )
             } else {
                 if (!state.escapesStillDetermined)
                     state.noEscapePossibilityViaReference = false
@@ -823,21 +834,36 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     case Some(false) | None ⇒ Result(field, MutableField)
 
                     case Some(true) ⇒
-                        if (!state.concreteClassTypeIsKnown && state.typeIsImmutable ||
-                            state.concreteClassTypeIsKnown && state.classTypeIsImmutable) {
+                        if (!state.concreteClassTypeIsKnown && state.typeImmutability == DeepImmutable ||
+                            state.concreteClassTypeIsKnown && state.classTypeImmutability == DeepImmutable) {
                             Result(field, DeepImmutableField)
                         } else {
                             if (state.noEscapePossibilityViaReference) {
                                 Result(field, DeepImmutableField)
                             } else {
-                                state.dependentImmutability match {
-                                    case OnlyDeepImmutable   ⇒ Result(field, DeepImmutableField)
-                                    case NotShallowOrMutable ⇒ Result(field, DependentImmutableField)
-                                    case Dependent           ⇒ Result(field, ShallowImmutableField)
+                                if (state.fieldTypeIsDependentImmutable && field.fieldType == ObjectType.Object ||
+                                    state.classTypeImmutability == DependentImmutable ||
+                                    state.typeImmutability == DependentImmutable) {
+                                    state.dependentImmutability match {
+                                        case OnlyDeepImmutable     ⇒ Result(field, DeepImmutableField)
+                                        case NotShallowOrMutable   ⇒ Result(field, DependentImmutableField)
+                                        case NotDependentImmutable ⇒ Result(field, ShallowImmutableField)
+                                    }
+                                } else {
+                                    Result(field, ShallowImmutableField)
                                 }
                             }
                         }
                 }
+            }
+        }
+
+        def handleMutableType(tpe: ObjectType)(implicit state: State): Unit = {
+            if (state.innerArrayTypes.contains(tpe))
+                state.noEscapePossibilityViaReference = false
+
+            if (state.concreteGenericTypes.contains(tpe)) {
+                state.dependentImmutability = NotDependentImmutable
             }
         }
 
@@ -848,38 +874,26 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             eps match {
                 case LBP(DeepImmutableType) ⇒ //nothing to do -> is default
 
-                case EUBP(t, MutableType | ShallowImmutableType) ⇒
-                    val tpe = t.asInstanceOf[ObjectType]
-                    if (state.innerArrayTypes.contains(tpe))
-                        state.noEscapePossibilityViaReference = false
-                    if (state.concreteGenericTypes.contains(tpe) ||
-                        t == state.field.fieldType && t != ObjectType.Object) {
-                        //TODO reasoning
-                        // if (t != ObjectType.Object) { // in case of generic fields
-                        state.dependentImmutability = Dependent
-                        // }
-                    }
-                    //  else if(t!=ObjectType.Object)
-                    //    state.dependentImmutability = Dependent
-
-                    state.typeIsImmutable = false
-
                 case FinalEP(t, DependentImmutableType) ⇒
+                    import org.opalj.br.FieldType
+                    if (t.asInstanceOf[FieldType] == state.field.fieldType) {
+                        state.fieldTypeIsDependentImmutable = true
+                        state.typeImmutability = DependentImmutable
+                    }
                     val tpe = t.asInstanceOf[ObjectType]
-                    if (state.innerArrayTypes.contains(tpe)) {
-                        state.noEscapePossibilityViaReference = false
-                    }
-                    if (state.concreteGenericTypes.contains(tpe)) {
-                        //TODO reasoning
-                        if (state.dependentImmutability == OnlyDeepImmutable)
-                            state.dependentImmutability = NotShallowOrMutable
-                    }
-                    state.typeIsImmutable = false
+                    handleMutableType(tpe)
+
+                case EUBP(t, MutableType | ShallowImmutableType) ⇒
+                    import org.opalj.br.FieldType
+                    if (t.asInstanceOf[FieldType] == state.field.fieldType)
+                        state.typeImmutability = Mutable
+
+                    val tpe = t.asInstanceOf[ObjectType]
+                    handleMutableType(tpe)
 
                 case UBP(MutableFieldReference | LazyInitializedNotThreadSafeFieldReference) ⇒
-                    //state.typeIsImmutable = false
                     state.referenceIsImmutable = Some(false)
-                    return Result(field, MutableField);
+                    return Result(state.field, MutableField);
 
                 case LBP(
                     ImmutableFieldReference | LazyInitializedThreadSafeFieldReference |
@@ -909,18 +923,15 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     if (doesEscapeViaMethod(eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]))
                         state.noEscapePossibilityViaReference = false
 
-                case FinalP(DeepImmutableClass) ⇒
-                case FinalEP(t, ShallowImmutableClass | DependentImmutableClass | MutableClass) ⇒
-                    state.classTypeIsImmutable = false
-                    val tpe = t.asInstanceOf[ObjectType]
-                    if (state.concreteGenericTypes.contains(tpe) || t != ObjectType.Object && t != field.fieldType)
-                        //TODO reasoning
-                        // if (t != ObjectType.Object) { // in case of generic fields
-                        state.dependentImmutability = Dependent
-                // }
+                case LBP(DeepImmutableClass)                   ⇒ //nothing to do
 
-                case FinalP(DependentImmutableClass) ⇒
-                    state.classTypeIsImmutable = false
+                case UBP(MutableClass | ShallowImmutableClass) ⇒ state.classTypeImmutability = Mutable
+
+                case FinalEP(t, DependentImmutableClass) ⇒
+                    import org.opalj.br.FieldType
+                    state.classTypeImmutability = DependentImmutable
+                    if (t.asInstanceOf[FieldType] == field.fieldType)
+                        state.fieldTypeIsDependentImmutable = true
 
                 case epk ⇒
                     state.dependees += epk
@@ -935,13 +946,13 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
         propertyStore(field, FieldReferenceImmutability.key) match {
 
-            case LBP(
+            case FinalP(
                 ImmutableFieldReference | LazyInitializedThreadSafeFieldReference |
                 LazyInitializedNotThreadSafeButDeterministicFieldReference
                 ) ⇒
                 state.referenceIsImmutable = Some(true)
 
-            case UBP(MutableFieldReference | LazyInitializedNotThreadSafeFieldReference) ⇒
+            case FinalP(MutableFieldReference | LazyInitializedNotThreadSafeFieldReference) ⇒
                 return Result(field, MutableField);
 
             case ep ⇒ state.dependees += ep
@@ -952,8 +963,9 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
         if (considerGenericity)
             handleGenericity()
-        else
-            state.dependentImmutability = Dependent
+        else {
+            state.dependentImmutability = NotDependentImmutable
+        }
 
         /**
          * Determines whether the reference object escapes or can be mutated if the flag [[considerEscape]] is set
@@ -973,8 +985,9 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
         if (!state.concreteClassTypeIsKnown)
             handleTypeImmutability(state)
-        else
-            state.typeIsImmutable = false
+        else {
+            state.typeImmutability = Mutable
+        }
 
         createResult()
     }
@@ -1008,7 +1021,7 @@ object EagerL3FieldImmutabilityAnalysis
 
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L3FieldImmutabilityAnalysis(p)
-        val fields = p.allFields // p.allProjectClassFiles.flatMap(classfile => classfile.fields) // p.allFields
+        val fields = p.allFields // p.allProjectClassFiles.flatMap(classfile ⇒ classfile.fields) //p.allFields
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
         analysis
     }
