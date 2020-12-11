@@ -60,25 +60,23 @@ import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
 import org.opalj.br.analyses.Project
-import org.opalj.log.DevNullLogger
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.ai.domain
 import org.opalj.log.LogContext
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.AbstractCallGraphKey
-import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.FieldReferenceImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.EPS
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
+import org.opalj.ai.domain
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
+import org.opalj.fpcf.OrderedProperty
 
 /**
  * Determines the immutability of field references, fields, classes and types and gives several setting options for the
@@ -112,9 +110,6 @@ object Immutability {
         withoutConsiderGenericity:         Boolean,
         withoutConsiderLazyInitialization: Boolean
     ): BasicReport = {
-        import org.opalj.fpcf.OrderedProperty
-
-        OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
         val classFiles = projectDir match {
             case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
@@ -143,27 +138,21 @@ object Immutability {
             )
         }
 
-        if (withoutConsiderEscape) {
-            config = config.withValue(
-                "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape",
-                ConfigValueFactory.fromAnyRef("false")
-            )
-        }
+        config = config.withValue(
+            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape",
+            ConfigValueFactory.fromAnyRef(!withoutConsiderEscape)
+        )
 
-        if (withoutConsiderGenericity) {
-            config = config.withValue(
-                "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity",
-                ConfigValueFactory.fromAnyRef("false")
-            )
-        }
+        config = config.withValue(
+            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity",
+            ConfigValueFactory.fromAnyRef(!withoutConsiderGenericity)
+        )
 
-        if (withoutConsiderLazyInitialization) {
-            config =
-                config.withValue(
-                    "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization",
-                    ConfigValueFactory.fromAnyRef("false")
-                )
-        }
+        config =
+            config.withValue(
+                "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization",
+                ConfigValueFactory.fromAnyRef(!withoutConsiderLazyInitialization)
+            )
 
         var projectTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
@@ -204,7 +193,7 @@ object Immutability {
             LazyFieldLocalityAnalysis
         )
 
-        val classDepencencies: List[FPCFAnalysisScheduler] = List(
+        val classDependencies: List[FPCFAnalysisScheduler] = List(
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             purityAnalysis,
             LazyL0FieldReferenceImmutabilityAnalysis,
@@ -250,29 +239,14 @@ object Immutability {
         val dependencies = analysis match {
             case FieldReferences ⇒ fieldReferenceDependencies
             case Fields          ⇒ fieldDependencies
-            case Classes         ⇒ classDepencencies
+            case Classes         ⇒ classDependencies
             case Types           ⇒ typeDependencies
             case All             ⇒ allImmAnalysisDependencies
         }
 
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
-        var propertyStore: PropertyStore = null
-
-        val analysesManager = project.get(FPCFAnalysesManagerKey)
-
-        time {
-            analysesManager.project.get(callGraphKey)
-        } { t ⇒ callGraphTime = t.toSeconds }
-
-        println(
-            s"""
-               | level: $level
-               | callgraph: $callGraphKey
-               |""".stripMargin
-        )
-
-        analysesManager.project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
             if (level == 0)
                 Set[Class[_ <: AnyRef]](classOf[domain.l0.BaseDomainWithDefUse[URL]])
             else if (level == 1)
@@ -290,12 +264,17 @@ object Immutability {
                 if (numThreads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = numThreads
-                    // FIXME: this property store is broken
+                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
             }
         )
+        println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        time { project.get(callGraphKey) } { t ⇒ callGraphTime = t.toSeconds }
+        println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        var propertyStore: PropertyStore = null
+
+        val analysesManager = project.get(FPCFAnalysesManagerKey)
 
         time {
             propertyStore = analysesManager.runAll(dependencies)._1
@@ -319,6 +298,8 @@ object Immutability {
             toTraversable.groupBy(_.asFinal.p)
 
         def unpackFieldEPS(eps: EPS[Entity, OrderedProperty]): String = {
+            if (!eps.e.isInstanceOf[Field])
+                throw new Exception(s"${eps.e} is not a field")
             val field = eps.e.asInstanceOf[Field]
             val fieldName = field.name
             val packageName = field.classFile.thisType.packageName.replace("/", ".")
@@ -350,31 +331,38 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Mutable References:
-                | ${mutableFieldReferences.mkString(" || Mutable Reference \n")}
+                | ${mutableFieldReferences.mkString(" | Mutable Reference \n")}
                 |
-                | Lazy Initalized Not Thread Safe And Not Deterministic References:
+                | Lazy Initialized Not Thread Safe And Not Deterministic Field References:
                 | ${
                     notThreadSafeLazyInitializedFieldReferences.
-                        mkString(" | Lazy Initialized Not Thread Safe And Not Deterministic Reference\n")
+                        mkString(" | Lazy Initialized Not Thread Safe And Not Deterministic Field Reference\n")
                 }
                 |
-                | Lazy Initialized Not Thread Safe But Deterministic References:
+                | Lazy Initialized Not Thread Safe But Deterministic Field References:
                 | ${
                     lazyInitializedReferencesNotThreadSafeButDeterministic.
-                        mkString(" || Lazy Initialized Not Thread Safe But Deterministic Reference\n")
+                        mkString(" | Lazy Initialized Not Thread Safe But Deterministic Field Reference\n")
                 }
                 |
                 | Lazy Initialized Thread Safe References:
                 | ${
                     threadSafeLazyInitializedFieldReferences.
-                        mkString(" || Lazy Initialized Thread Safe Reference\n")
+                        mkString(" | Lazy Initialized Thread Safe Field Reference\n")
                 }
                 |
                 | Immutable References:
-                | ${immutableReferences.mkString(" || immutable Reference\n")}
+                | ${immutableReferences.mkString(" | immutable field Reference\n")}
                 |
                 |""".stripMargin
             )
+        }
+
+        for (eps ← propertyStore.entities(FieldImmutability.key)) {
+            if (eps.e.asInstanceOf[Field].name == "resolverFields") {
+                println("eps: "+eps)
+                // throw new Exception("...")
+            }
         }
 
         val fieldGroupedResults = propertyStore.entities(FieldImmutability.key).
@@ -514,6 +502,7 @@ object Immutability {
                 |""".stripMargin
             )
         }
+
         if (analysis == Fields || analysis == All) {
             stringBuilderNumber.append(
                 s"""
@@ -574,8 +563,26 @@ object Immutability {
             | $numThreads Threads :: took $analysisTime seconds analysis time
             |
             | results folder: $resultsFolder
+            |
+            |  level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
+            |
+            |  consider escape: ${
+                project.config.atKey("org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape")
+            }
+            |  consider genericity: ${
+                project.config.atKey("org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity")
+            }
+            |  consider lazy initialization: ${
+                project.config.atKey(
+                    "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization"
+                )
+            }
+            |
+            |propertyStore: ${propertyStore.getClass}
+            |
             |""".stripMargin
         )
+
         val fileNameExtension = {
             {
                 if (withoutConsiderEscape) {
@@ -592,7 +599,16 @@ object Immutability {
                     println("withoutConsiderLazyInitialization")
                     "_withoutConsiderLazyInitialization"
                 } else ""
-            }
+            } + {
+                if (closedWorldAssumption) {
+                    println("closed world assumption")
+                    "_closedWorldAssumption_"
+                } else ""
+            } + {
+                if (numThreads == 0) ""
+                else s"_${numThreads}threads"
+            } + s"_l$level"
+
         }
 
         if (resultsFolder != null) {
@@ -600,7 +616,7 @@ object Immutability {
 
             val calender = Calendar.getInstance()
             calender.add(Calendar.ALL_STYLES, 1)
-            val date = calender.getTime();
+            val date = calender.getTime()
             val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
 
             val file = new File(
@@ -729,6 +745,7 @@ object Immutability {
                 case "-withoutConsiderGenericity"         ⇒ withoutConsiderGenericity = true
                 case "-withoutConsiderEscape"             ⇒ withoutConsiderEscape = true
                 case "-withoutConsiderLazyInitialization" ⇒ withoutConsiderLazyInitialization = true
+
                 case "-JDK" ⇒
                     cp = JRELibraryFolder
                     withoutJDK = true
@@ -751,24 +768,30 @@ object Immutability {
                 Console.println(usage)
                 return ;
         }
+        var nIndex = 0
+        val end = 0
+        while (nIndex <= end) {
+            println(s"start $nIndex")
+            nIndex = nIndex + 1
+            evaluate(
+                cp,
+                analysis,
+                numThreads,
+                projectDir,
+                libDir,
+                resultFolder,
+                withoutJDK,
+                isLibrary,
+                closedWorldAssumption,
+                callGraphKey,
+                level,
+                reImInferComparison,
+                withoutConsiderEscape,
+                withoutConsiderGenericity,
+                withoutConsiderLazyInitialization
+            )
+        }
 
-        evaluate(
-            cp,
-            analysis,
-            numThreads,
-            projectDir,
-            libDir,
-            resultFolder,
-            withoutJDK,
-            isLibrary,
-            closedWorldAssumption,
-            callGraphKey,
-            level,
-            reImInferComparison,
-            withoutConsiderEscape,
-            withoutConsiderGenericity,
-            withoutConsiderLazyInitialization
-        )
     }
 }
 
