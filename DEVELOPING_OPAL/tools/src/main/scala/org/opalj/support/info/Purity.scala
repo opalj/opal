@@ -79,6 +79,11 @@ import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.tac.fpcf.analyses.EagerL1FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.EagerL2FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 
 /**
  * Executes a purity analysis (L2 by default) along with necessary supporting analysis.
@@ -527,13 +532,14 @@ object Purity {
                 Console.println(usage)
                 return ;
         }
-
-        if (eager) {
-            support ::= EagerL0ClassImmutabilityAnalysis
-            support ::= EagerL0TypeImmutabilityAnalysis
-        } else {
-            support ::= LazyL0ClassImmutabilityAnalysis
-            support ::= LazyL0TypeImmutabilityAnalysis
+        if (!fieldMutabilityAnalysisName.contains("L3")) {
+            if (eager) {
+                support ::= EagerL0ClassImmutabilityAnalysis
+                support ::= EagerL0TypeImmutabilityAnalysis
+            } else {
+                support ::= LazyL0ClassImmutabilityAnalysis
+                support ::= LazyL0TypeImmutabilityAnalysis
+            }
         }
 
         escapeAnalysisName match {
@@ -567,6 +573,18 @@ object Purity {
             case Some("L2") ⇒
                 support ::= LazyL2FieldImmutabilityAnalysis
                 support ::= LazyUnsoundPrematurelyReadFieldsAnalysis
+
+            case Some("L3") ⇒
+                support ::= LazyL3FieldImmutabilityAnalysis
+                support ::= LazyUnsoundPrematurelyReadFieldsAnalysis
+
+                if (eager) {
+                    support ::= EagerL1ClassImmutabilityAnalysis
+                    support ::= EagerL1TypeImmutabilityAnalysis
+                } else {
+                    support ::= LazyL1ClassImmutabilityAnalysis
+                    support ::= LazyL1TypeImmutabilityAnalysis
+                }
 
             case Some("none") ⇒
 
