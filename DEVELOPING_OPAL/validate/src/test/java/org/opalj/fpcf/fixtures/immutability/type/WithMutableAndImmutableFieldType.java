@@ -62,4 +62,17 @@ class SimpleMutableClass{
                     L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
     @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
     public int n=0;
+    //com.sun.corba.se.impl.io.ObjectStreamClass.noArgsList
+    //sun.misc.UCDecoder.tmp
+    //com.sun.xml.internal.org.jvnet.mimepull.DataHead.consumedAt
+    //com.sun.xml.internal.bind.DatatypeConverterImpl.hexCode
+    //com.sun.xml.internal.ws.client.sei.BodyBuilder $Bare.methodPos
+    //com.sun.xml.internal.ws.client.sei.ValueSetter $Param.idx
+    //com.sun.xml.internal.ws.client.sei.CallbackMethodHandler
+    //jdk.internal.dynalink.beans.MaximallySpecific.DYNAMIC_METHOD_TYPE_GETTER
+    //java.time.format.DateTimeFormatterBuilder.FIELD_MAP
+    //java.time.format.DateTimeFormatter.resolverFields
+    //com.sun.crypto.provider.DESCrypt.initPermLeft0
+    //com.sun.beans.editors.FontEditor.styles
+    //java.time.format.DateTimeFormatter.resolverFields
 }

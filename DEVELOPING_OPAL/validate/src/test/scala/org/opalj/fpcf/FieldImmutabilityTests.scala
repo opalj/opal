@@ -31,92 +31,92 @@ import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
  */
 class FieldImmutabilityTests extends PropertiesTest {
 
-  override def withRT = true
+    override def withRT = true
 
-  override def fixtureProjectPackage: List[String] = {
-    List("org/opalj/fpcf/fixtures/immutability")
-  }
-
-  override def init(p: Project[URL]): Unit = {
-
-    p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ =>
-      Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/immutability")
     }
 
-    p.get(RTACallGraphKey)
-  }
+    override def init(p: Project[URL]): Unit = {
 
-  describe("no analysis is scheduled") {
+        p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+            Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+        }
 
-    val as = executeAnalyses(Set.empty)
+        p.get(RTACallGraphKey)
+    }
 
-    as.propertyStore.shutdown()
+    describe("no analysis is scheduled") {
 
-    validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
-  }
+        val as = executeAnalyses(Set.empty)
 
-  describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
+        as.propertyStore.shutdown()
 
-    val as = executeAnalyses(
-      Set(
-        EagerL0FieldImmutabilityAnalysis,
-        LazyUnsoundPrematurelyReadFieldsAnalysis
-      )
-    )
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
+    }
 
-    as.propertyStore.shutdown()
+    describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
 
-    validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
-  }
+        val as = executeAnalyses(
+            Set(
+                EagerL0FieldImmutabilityAnalysis,
+                LazyUnsoundPrematurelyReadFieldsAnalysis
+            )
+        )
 
-  describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
+        as.propertyStore.shutdown()
 
-    val as = executeAnalyses(
-      Set(
-        EagerL1FieldImmutabilityAnalysis,
-        LazyUnsoundPrematurelyReadFieldsAnalysis,
-        LazyInterProceduralEscapeAnalysis
-      )
-    )
-    as.propertyStore.shutdown()
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
+    }
 
-    validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
-  }
+    describe("the org.opalj.fpcf.analyses.L1FieldMutabilityAnalysis is executed") {
 
-  describe("the org.opalj.fpcf.analyses.L2FieldMutabilityAnalysis is executed") {
+        val as = executeAnalyses(
+            Set(
+                EagerL1FieldImmutabilityAnalysis,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyInterProceduralEscapeAnalysis
+            )
+        )
+        as.propertyStore.shutdown()
 
-    val as = executeAnalyses(
-      Set(
-        EagerL2FieldImmutabilityAnalysis,
-        LazyUnsoundPrematurelyReadFieldsAnalysis,
-        LazyL2PurityAnalysis,
-        LazyInterProceduralEscapeAnalysis
-      )
-    )
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
+    }
 
-    as.propertyStore.shutdown()
+    describe("the org.opalj.fpcf.analyses.L2FieldMutabilityAnalysis is executed") {
 
-    validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
-  }
+        val as = executeAnalyses(
+            Set(
+                EagerL2FieldImmutabilityAnalysis,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyL2PurityAnalysis,
+                LazyInterProceduralEscapeAnalysis
+            )
+        )
 
-  describe("the org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis is executed") {
-    val as = executeAnalyses(
-      Set(
-        LazyL0FieldReferenceImmutabilityAnalysis,
-        LazyUnsoundPrematurelyReadFieldsAnalysis,
-        LazyL2PurityAnalysis,
-        EagerL3FieldImmutabilityAnalysis,
-        LazyL1ClassImmutabilityAnalysis,
-        LazyL1TypeImmutabilityAnalysis,
-        LazyStaticDataUsageAnalysis,
-        LazyL0CompileTimeConstancyAnalysis,
-        LazyInterProceduralEscapeAnalysis,
-        LazyReturnValueFreshnessAnalysis,
-        LazyFieldLocalityAnalysis,
-        LazyVirtualCallAggregatingEscapeAnalysis
-      )
-    )
-    as.propertyStore.shutdown()
-    validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
-  }
+        as.propertyStore.shutdown()
+
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
+    }
+
+    describe("the org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis is executed") {
+        val as = executeAnalyses(
+            Set(
+                LazyL0FieldReferenceImmutabilityAnalysis,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyL2PurityAnalysis,
+                EagerL3FieldImmutabilityAnalysis,
+                LazyL1ClassImmutabilityAnalysis,
+                LazyL1TypeImmutabilityAnalysis,
+                LazyStaticDataUsageAnalysis,
+                LazyL0CompileTimeConstancyAnalysis,
+                LazyInterProceduralEscapeAnalysis,
+                LazyReturnValueFreshnessAnalysis,
+                LazyFieldLocalityAnalysis,
+                LazyVirtualCallAggregatingEscapeAnalysis
+            )
+        )
+        as.propertyStore.shutdown()
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
+    }
 }
