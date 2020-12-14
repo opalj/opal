@@ -34,6 +34,8 @@ import org.opalj.tac.fpcf.analyses.LazyL2FieldImmutabilityAnalysis
  */
 class ClassAndTypeImmutabilityTests extends PropertiesTest {
 
+    override def withRT = true
+
     override def fixtureProjectPackage: List[String] = {
         List("org/opalj/fpcf/fixtures/immutability")
     }
@@ -66,8 +68,17 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
             Set("TypeImmutability", "ClassImmutability")
         )
     }
-    /*
+
     describe("the 1 class and type immutability analysis are executed") {
+        import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+        import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+        import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+        import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+        import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+        import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
+        import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
+        import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+        import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
         val as = executeAnalyses(Set(
             LazyUnsoundPrematurelyReadFieldsAnalysis,
@@ -90,5 +101,5 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
             classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability", "ClassImmutability")
         )
-    }*/
+    }
 }

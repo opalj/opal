@@ -165,8 +165,8 @@ public class ArrayClasses {
         return p[2];
     }
 
-    @DeepImmutableField("The elements of the array can escape, but have a deep immutable reference.")
-    @LazyInitializedThreadSafeFieldReference("The array is thread safe lazily intialized.")
+    //TODO @DeepImmutableField("The elements of the array can escape, but have a deep immutable reference.")
+    //TODO @LazyInitializedThreadSafeFieldReference("The array is thread safe lazily intialized.")
     private Integer[] q;
     public synchronized Integer getQ(){
         if(q==null)

@@ -308,12 +308,12 @@ class Two<A,B> {
     }
 }
 
-@DependentImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
-@DependentImmutableClass(value = "class has only dependent immutable fields",
+@MutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
+@ShallowImmutableClass(value = "class has only dependent immutable fields",
         analyses = L1ClassImmutabilityAnalysis.class)
 class TwoVirgin<A, B, C> {
 
-    @DependentImmutableField(value="field has generic parameter", analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value="field has generic parameter", analyses = L3FieldImmutabilityAnalysis.class)
     @ImmutableFieldReference(value = "field is effective immutable",
             analyses = L0FieldReferenceImmutabilityAnalysis.class)
     private GenericBaseClass<GenericBaseClass<GenericBaseClass, A, A>, B, C> gc1;
