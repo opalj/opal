@@ -80,6 +80,8 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
                 isConstant = false
             )
         } else {
+            // IMPROVE can we get points to sets of local allocation sites here directly?
+            // If they are not yet set, could we still do better than registering a dependency?
             currentPointsTo(depender, toEntity(dependeeDefSite), typeFilter)
         }
     }
