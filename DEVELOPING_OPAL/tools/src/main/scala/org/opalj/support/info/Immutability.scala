@@ -269,9 +269,7 @@ object Immutability {
                 }
             }
         )
-        println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         time { project.get(callGraphKey) } { t ⇒ callGraphTime = t.toSeconds }
-        println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         var propertyStore: PropertyStore = null
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -288,7 +286,7 @@ object Immutability {
         val allFieldsInProjectClassFiles = {
             if (reImInferComparison) {
                 project.allProjectClassFiles.toIterator.flatMap { _.fields }.
-                    filter(f ⇒ !f.isTransient && !f.isSynthetic).toSet
+                    filter(f ⇒ !f.isSynthetic && !f.toString().contains("/*ENUM*/")).toSet
             } else
                 project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
         }
@@ -331,38 +329,38 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Mutable References:
-                | ${mutableFieldReferences.mkString(" | Mutable Reference \n")}
+                | ${mutableFieldReferences.map(_+" | Mutable Reference ").mkString("\n")}
                 |
                 | Lazy Initialized Not Thread Safe And Not Deterministic Field References:
                 | ${
                     notThreadSafeLazyInitializedFieldReferences.
-                        mkString(" | Lazy Initialized Not Thread Safe And Not Deterministic Field Reference\n")
+                        map(_+" | Lazy Initialized Not Thread Safe And Not Deterministic Field Reference")
+                        .mkString("\n")
                 }
                 |
                 | Lazy Initialized Not Thread Safe But Deterministic Field References:
                 | ${
-                    lazyInitializedReferencesNotThreadSafeButDeterministic.
-                        mkString(" | Lazy Initialized Not Thread Safe But Deterministic Field Reference\n")
+                    lazyInitializedReferencesNotThreadSafeButDeterministic
+                        .map(_+" | Lazy Initialized Not Thread Safe But Deterministic Field Reference")
+                        .mkString("\n")
                 }
                 |
                 | Lazy Initialized Thread Safe References:
                 | ${
-                    threadSafeLazyInitializedFieldReferences.
-                        mkString(" | Lazy Initialized Thread Safe Field Reference\n")
+                    threadSafeLazyInitializedFieldReferences
+                        .map(_+" | Lazy Initialized Thread Safe Field Reference")
+                        .mkString("\n")
                 }
                 |
                 | Immutable References:
-                | ${immutableReferences.mkString(" | immutable field Reference\n")}
+                | ${
+                    immutableReferences
+                        .map(_+" | immutable field Reference")
+                        .mkString("\n")
+                }
                 |
                 |""".stripMargin
             )
-        }
-
-        for (eps ← propertyStore.entities(FieldImmutability.key)) {
-            if (eps.e.asInstanceOf[Field].name == "resolverFields") {
-                println("eps: "+eps)
-                // throw new Exception("...")
-            }
         }
 
         val fieldGroupedResults = propertyStore.entities(FieldImmutability.key).
@@ -385,16 +383,16 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Mutable Fields:
-                | ${mutableFields.mkString(" | Mutable Field \n")}
+                | ${mutableFields.map(_+" | Mutable Field ").mkString("\n")}
                 |
                 | Shallow Immutable Fields:
-                | ${shallowImmutableFields.mkString(" | Shallow Immutable Field \n")}
+                | ${shallowImmutableFields.map(_+" | Shallow Immutable Field ").mkString("\n")}
                 |
                 | Dependent Immutable Fields:
-                | ${dependentImmutableFields.mkString(" | Dependent Immutable Field \n")}
+                | ${dependentImmutableFields.map(_+" | Dependent Immutable Field ").mkString("\n")}
                 |
                 | Deep Immutable Fields:
-                | ${deepImmutableFields.mkString(" | Deep Immutable Field \n")}
+                | ${deepImmutableFields.map(_+" | Deep Immutable Field ").mkString("\n")}
                 |
                 |""".stripMargin
             )
@@ -437,19 +435,19 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Mutable Classes:
-                | ${mutableClasses.mkString(" | Mutable Class \n")}
+                | ${mutableClasses.map(_+" | Mutable Class ").mkString("\n")}
                 |
                 | Shallow Immutable Classes:
-                | ${shallowImmutableClasses.mkString(" | Shallow Immutable Class \n")}
+                | ${shallowImmutableClasses.map(_+" | Shallow Immutable Class ").mkString("\n")}
                 |
                 | Dependent Immutable Classes:
-                | ${dependentImmutableClasses.mkString(" | Dependent Immutable Class \n")}
+                | ${dependentImmutableClasses.map(_+" | Dependent Immutable Class ").mkString("\n")}
                 |
                 | Deep Immutable Classes:
-                | ${deepImmutableClasses.mkString(" | Deep Immutable Classes \n")}
+                | ${deepImmutableClasses.map(_+" | Deep Immutable Classes ").mkString("\n")}
                 |
                 | Deep Immutable Interfaces:
-                | ${deepImmutableClassesInterfaces.mkString(" | Deep Immutable Interfaces \n")}
+                | ${deepImmutableClassesInterfaces.map(_+" | Deep Immutable Interfaces ").mkString("\n")}
                 |""".stripMargin
             )
         }
@@ -473,16 +471,16 @@ object Immutability {
             stringBuilderResults.append(
                 s"""
                 | Mutable Types:
-                | ${mutableTypes.mkString(" | Mutable Type \n")}
+                | ${mutableTypes.map(_+" | Mutable Type ").mkString("\n")}
                 |
                 | Shallow Immutable Types:
-                | ${shallowImmutableTypes.mkString(" | Shallow Immutable Types \n")}
+                | ${shallowImmutableTypes.map(_+" | Shallow Immutable Types ").mkString("\n")}
                 |
                 | Dependent Immutable Types:
-                | ${dependentImmutableTypes.mkString(" | Dependent Immutable Types \n")}
+                | ${dependentImmutableTypes.map(_+" | Dependent Immutable Types ").mkString("\n")}
                 |
                 | Deep Immutable Types:
-                | ${deepImmutableTypes.mkString(" | Deep Immutable Types \n")}
+                | ${deepImmutableTypes.map(_+" | Deep Immutable Types ").mkString("\n")}
                 |""".stripMargin
             )
         }
