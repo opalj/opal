@@ -57,7 +57,7 @@
                         </nav>
                         <hr/>
                         <div class="hide-at-medium">
-                            Please, report issues or problems in the documentation using <a href="https://bitbucket.org/delors/opal/issues?status=new&status=open">OPAL's issue tracker</a>, by going to the <a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link">OPAL gitter chat room</a> or by writing an email to <a href="mailto:opal_at_st.informatik.tu-darmstadt.de">opal(at)st.informatik.tu-darmstadt.de</a>.
+                            Please, report issues or problems in the documentation using <a href="https://github.com/stg-tud/opal/issues">OPAL's issue tracker</a>, by going to the <a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link">OPAL gitter chat room</a> or by writing an email to <a href="mailto:opal_at_st.informatik.tu-darmstadt.de">opal(at)st.informatik.tu-darmstadt.de</a>.
                         </div>
                     </div>
     				<div class="9u">
@@ -130,7 +130,7 @@
     			</div>
     			<ul class="copyright">
                     <li>&copy; The OPAL Project. All rights reserved.</li>
-                    <li><a href="https://bitbucket.org/delors/opal/raw/master/LICENSE">License (BSD 2 Clause)</a></li>
+                    <li><a href="https://raw.githubusercontent.com/stg-tud/opal/master/LICENSE">License (BSD 2 Clause)</a></li>
                     <li><img src="Athene.png" height="27" style="vertical-align:middle"></li>
     				<li>Design: <a href="http://templated.co">TEMPLATED</a></li>
     			</ul>
