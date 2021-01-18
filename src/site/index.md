@@ -10,7 +10,7 @@ If you want to use OPAL for the development of static analyses, you can either u
 
 # Using The Latest Development Snapshot
 
-Go to [BitBucket](https://bitbucket.org/delors/opal) to checkout OPAL and to read how to compile and deploy it.
+Go to [GitHub](https://github.com/stg-tud/opal) to checkout OPAL and to read how to compile and deploy it.
 
 
 # Using The Latest Release
@@ -51,19 +51,19 @@ The abstract interpretation framework is a highly-customizable framework for the
 
     libraryDependencies += "de.opal-project" % "abstract-interpretation-framework_2.12" % "3.0.0"
 
-Exploring the Abstract Interpretation Framework
+[comment]: # "Exploring the Abstract Interpretation Framework"
 
-
-To get a good, first idea what the abstract interpretation framework can do, you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries.
+[comment]: # "To get a good, first idea what the abstract interpretation framework can do, you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries."
 
 ## OPAL based Tools
 
-### BugPicker
-Find bugs in your Java project using [BugPicker](tools/bugpicker/index.php).
+[comment]: # "### BugPicker"
+
+[comment]: # "Find bugs in your Java project using [BugPicker](tools/bugpicker/index.php)."
 
 ### OPAL Java Bytecode Disassembler
 [Disassembles](DeveloperTools.html) your Java bytecode.
 
 ## Using OPAL
 
-OPAL comes with a huge number of code [snippets](https://bitbucket.org/snippets/delors/) and [small (i.e., one-class) analyses](https://bitbucket.org/delors/opal/src/HEAD/OPAL/demos/src/main/scala/org/opalj?at=develop) to demonstrate various features.
+OPAL comes with a huge number of code [snippets](https://bitbucket.org/snippets/delors/) and [small (i.e., one-class) analyses](https://github.com/stg-tud/opal/tree/develop/DEVELOPING_OPAL/demos/src/main/scala/org/opalj) to demonstrate various features.

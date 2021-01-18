@@ -1,3 +1,5 @@
+![](https://github.com/stg-tud/opal/workflows/Build%20and%20Execute%20Tests/badge.svg)
+
 # Overview
 OPAL is an extensible library for analyzing and engineering Java bytecode. OPAL is completely written in Scala and leverages Scala's
 advanced language features to provide a new and previously unseen level of flexibility and ease of use.

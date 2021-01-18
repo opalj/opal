@@ -21,6 +21,10 @@ class FieldLocalityTests extends PropertiesTest {
         LazyReturnValueFreshnessAnalysis
     )
 
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/field_locality")
+    }
+
     override def init(p: Project[URL]): Unit = {
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             _ ⇒ Set(classOf[DefaultDomainWithCFGAndDefUse[URL]])

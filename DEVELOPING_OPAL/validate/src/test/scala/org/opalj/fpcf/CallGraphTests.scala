@@ -42,6 +42,10 @@ class CallGraphTests extends PropertiesTest {
             )
     }
 
+    override def fixtureProjectPackage: List[String] = {
+        List("org/opalj/fpcf/fixtures/callgraph/")
+    }
+
     describe("the RTA call graph analysis is executed") {
         val as = executeAnalyses(
             Set(
