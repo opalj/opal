@@ -13,6 +13,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DefinedMethod
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 class CHAState(
@@ -35,6 +36,8 @@ class CHACallGraphAnalysis private[analyses] (
 ) extends AbstractCallGraphAnalysis {
     override type State = CHAState
 
+    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+
     override def doHandleImpreciseCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
@@ -50,6 +53,38 @@ class CHACallGraphAnalysis private[analyses] (
             handleCall(
                 caller, call.name, call.descriptor, call.declaringClass, pc, tgtR, calleesAndCallers
             )
+        }
+
+        // TODO: Document what happens here
+        if (specializedDeclaringClassType.isObjectType) {
+            val declType = specializedDeclaringClassType.asObjectType
+
+            val mResult = if (classHierarchy.isInterface(declType).isYes)
+                org.opalj.Result(project.resolveInterfaceMethodReference(
+                    declType, call.name, call.descriptor
+                ))
+            else
+                org.opalj.Result(project.resolveMethodReference(
+                    declType,
+                    call.name,
+                    call.descriptor,
+                    forceLookupInSuperinterfacesOnFailure = true
+                ))
+
+            if (mResult.isEmpty) {
+                unknownLibraryCall(
+                    caller,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
+                    declType,
+                    caller.definedMethod.classFile.thisType.packageName,
+                    pc,
+                    calleesAndCallers
+                )
+            } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
+                calleesAndCallers.addIncompleteCallSite(pc)
+            }
         }
     }
 
