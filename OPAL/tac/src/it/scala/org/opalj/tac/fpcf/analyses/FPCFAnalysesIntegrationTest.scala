@@ -12,6 +12,7 @@ import java.util.zip.GZIPInputStream
 
 import scala.io.Source
 
+import com.typesafe.config.ConfigValueFactory
 import org.junit.runner.RunWith
 import org.scalatest.FunSpec
 import org.scalatest.junit.JUnitRunner
@@ -27,6 +28,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePropertyKey
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
@@ -35,7 +37,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.ai.domain.l1
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.factory
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.p
 import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
@@ -64,6 +66,11 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                         factory = projectFactory
                         p = projectFactory()
 
+                        p = Project.recreate(p, p.config.withValue(
+                            "org.opalj.br.analyses.cg.InitialEntryPointsKey.analysis",
+                            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.LibraryEntryPointsFinder")
+                        ), true)
+
                         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
                             case None ⇒
                                 Set(classOf[l1.DefaultDomainWithCFGAndDefUse[_]])
@@ -74,7 +81,9 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
                         // Recreate project keeping all ProjectInformationKeys other than the
                         // PropertyStore as we are interested only in FPCF analysis results.
                         p = p.recreate { id ⇒
-                            id != PropertyStoreKey.uniqueId && id != FPCFAnalysesManagerKey.uniqueId
+                            id != PropertyStoreKey.uniqueId &&
+                                id != FPCFAnalysesManagerKey.uniqueId &&
+                                id != CHACallGraphKey.uniqueId
                         }
                     }
 
@@ -83,7 +92,7 @@ class FPCFAnalysesIntegrationTest extends FunSpec {
 
                     time {
                         // todo do not want to run this for every setting
-                        p.get(RTACallGraphKey)
+                        p.get(CHACallGraphKey)
                     } { t ⇒ info(s"call graph and tac analysis took ${t.toSeconds}") }
 
                     time { p.get(FPCFAnalysesManagerKey).runAll(analyses) }(reportAnalysisTime)
