@@ -23,6 +23,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -97,8 +98,10 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
         lessPreciseCG: CallGraph, morePreciseCG: CallGraph
     ): Unit = {
         var unexpectedCalls: List[UnexpectedCallTarget] = Nil
-        lessPreciseCG.reachableMethods().foreach { method ⇒
+        morePreciseCG.reachableMethods().foreach { method ⇒
             val allCalleesMPCG = morePreciseCG.calleesOf(method)
+            if(lessPreciseCG.callersOf(method) eq NoCallers)
+                unexpectedCalls ::= UnexpectedCallTarget(method, null, -1)
             for {
                 (pc, calleesMPCG) ← allCalleesMPCG
                 calleesLPCG = lessPreciseCG.calleesOf(method, pc).toSet
