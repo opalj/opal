@@ -757,9 +757,9 @@ class PKECPropertyStore(
 }
 
 case class EPKState(
-        var eOptP:           SomeEOptionP,
-        var c:               OnUpdateContinuation,
-        var dependees:       Set[SomeEOptionP],
+        var eOptP:     SomeEOptionP,
+        var c:         OnUpdateContinuation,
+        var dependees: Set[SomeEOptionP],
         // Use Java's HashSet here, this is internal implementiton only and they are *way* faster
         dependers:           java.util.HashSet[EPKState] = new java.util.HashSet(),
         suppressedDependers: java.util.HashSet[EPKState] = new java.util.HashSet()
@@ -937,7 +937,7 @@ case object PKECFIFOTaskManager extends PKECTaskManager {
 case object PKECLIFOTaskManager extends PKECTaskManager {
     val counter = new AtomicInteger(Int.MaxValue)
 
-    override def weight(depender: EPKState, dependee: EPKState): Int =  counter.getAndDecrement()
+    override def weight(depender: EPKState, dependee: EPKState): Int = counter.getAndDecrement()
 }
 
 case object PKECManyDependeesFirstTaskManager extends PKECTaskManager {
@@ -998,15 +998,15 @@ object PKECPropertyStore extends PropertyStoreFactory[PKECPropertyStore] {
             }
 
         val taskManager = config.getString(TaskManagerKey) match {
-            case "NoPriority" ⇒ PKECNoPriorityTaskManager
-            case "FIFO" ⇒ PKECFIFOTaskManager
-            case "LIFO" ⇒ PKECLIFOTaskManager
-            case "ManyDependeesFirst" ⇒ PKECManyDependeesFirstTaskManager
-            case "ManyDependeesLast" ⇒ PKECManyDependeesLastTaskManager
-            case "ManyDependersFirst" ⇒ PKECManyDependersFirstTaskManager
-            case "ManyDependersLast" ⇒ PKECManyDependersLastTaskManager
+            case "NoPriority"            ⇒ PKECNoPriorityTaskManager
+            case "FIFO"                  ⇒ PKECFIFOTaskManager
+            case "LIFO"                  ⇒ PKECLIFOTaskManager
+            case "ManyDependeesFirst"    ⇒ PKECManyDependeesFirstTaskManager
+            case "ManyDependeesLast"     ⇒ PKECManyDependeesLastTaskManager
+            case "ManyDependersFirst"    ⇒ PKECManyDependersFirstTaskManager
+            case "ManyDependersLast"     ⇒ PKECManyDependersLastTaskManager
             case "ManyDependenciesFirst" ⇒ PKECManyDependenciesFirstTaskManager
-            case "ManyDependenciesLast" ⇒ PKECManyDependenciesLastTaskManager
+            case "ManyDependenciesLast"  ⇒ PKECManyDependenciesLastTaskManager
         }
 
         val maxEvaluationDepth = config.getInt(MaxEvaluationDepthKey)
