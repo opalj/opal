@@ -221,8 +221,12 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
          * Handling a escape state twice, does not affect the escape state
          */
         val escapeState = propertyStore(fp, EscapeProperty.key)
-        if (!state.containsDependency(escapeState))
+        if (state.containsDependency(escapeState)) {
+            if( hasAssignment && !(state.hasReturnValueUseSites contains fp))
+                state.hasReturnValueUseSites += fp
+        } else {
             handleEscapeState(escapeState, hasAssignment)
+        }
     }
 
     private[this] def caseConditionalNoEscape(
