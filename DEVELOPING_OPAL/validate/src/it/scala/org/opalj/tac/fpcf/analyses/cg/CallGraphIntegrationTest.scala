@@ -99,7 +99,7 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
         var unexpectedCalls: List[UnexpectedCallTarget] = Nil
         morePreciseCG.reachableMethods().foreach { method ⇒
             val allCalleesMPCG = morePreciseCG.calleesOf(method)
-            if(lessPreciseCG.callersOf(method).isEmpty)
+            if (lessPreciseCG.callersOf(method).isEmpty)
                 unexpectedCalls ::= UnexpectedCallTarget(method, null, -1)
             for {
                 (pc, calleesMPCG) ← allCalleesMPCG
