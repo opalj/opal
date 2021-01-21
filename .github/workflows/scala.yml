@@ -34,3 +34,12 @@ jobs:
     steps:
       - name: Run Tests
         run: sbt -J-Xmx20G test
+
+  it-test:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run Integration Tests
+      run: sbt -J-Xmx40G cleanBuild it:test
