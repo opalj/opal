@@ -222,7 +222,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
          */
         val escapeState = propertyStore(fp, EscapeProperty.key)
         if (state.containsDependency(escapeState)) {
-            if( hasAssignment && !(state.hasReturnValueUseSites contains fp))
+            if (hasAssignment && !(state.hasReturnValueUseSites contains fp))
                 state.hasReturnValueUseSites += fp
         } else {
             handleEscapeState(escapeState, hasAssignment)
