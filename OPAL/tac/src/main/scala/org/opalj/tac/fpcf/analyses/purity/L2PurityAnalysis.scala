@@ -984,7 +984,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
-            // todo querying ps is quiet expensive
+            // todo querying ps is quite expensive
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
                 dm.asDefinedMethod
         }
