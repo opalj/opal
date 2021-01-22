@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package cg
 
+import com.typesafe.config.ConfigFactory
 import org.junit.runner.RunWith
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
@@ -20,6 +21,9 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.analyses.Project
+import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -27,16 +31,15 @@ import org.opalj.tac.cg.RTACallGraphKey
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
 class CallGraphIntegrationTest extends FlatSpec with Matchers {
 
-    /*allBIProjects() foreach { biProject ⇒
+    allBIProjects() foreach { biProject ⇒
         val (name, projectFactory) = biProject
         val project = projectFactory()
 
-        // FIXME: Loading the config does not work from here, which result in exceptions being thrown
         checkProject(
             name,
             Project.recreate(project, ConfigFactory.load("LibraryProject.conf"))
         )
-    }*/
+    }
 
     def checkProject(projectName: String, project: SomeProject): Unit = {
 
@@ -95,9 +98,9 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
     ): Unit = {
         var unexpectedCalls: List[UnexpectedCallTarget] = Nil
         morePreciseCG.reachableMethods().foreach { method ⇒
-            val allCalleesMPCG = morePreciseCG.calleesOf(method)
-            if (lessPreciseCG.callersOf(method).isEmpty)
+            if (lessPreciseCG.callersPropertyOf(method) eq NoCallers)
                 unexpectedCalls ::= UnexpectedCallTarget(method, null, -1)
+            val allCalleesMPCG = morePreciseCG.calleesOf(method)
             for {
                 (pc, calleesMPCG) ← allCalleesMPCG
                 calleesLPCG = lessPreciseCG.calleesOf(method, pc).toSet
@@ -109,7 +112,7 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
         }
 
         // todo: better output
-        assert(unexpectedCalls.isEmpty, s"found unexpected calls: ${unexpectedCalls.mkString("\n")}")
+        assert(unexpectedCalls.isEmpty, s"found unexpected calls:\n${unexpectedCalls.mkString("\n")}")
     }
 
     case class UnexpectedCallTarget(caller: DeclaredMethod, callee: DeclaredMethod, pc: Int)
