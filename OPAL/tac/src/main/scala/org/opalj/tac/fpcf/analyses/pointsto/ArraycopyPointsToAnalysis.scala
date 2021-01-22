@@ -35,7 +35,7 @@ import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
- * Handles the effect of [[java.lang.System.arraycopy*]] to points-to sets.
+ * Handles the effect of `java.lang.System.arraycopy*` to points-to sets.
  *
  * @author Dominik Helm
  */

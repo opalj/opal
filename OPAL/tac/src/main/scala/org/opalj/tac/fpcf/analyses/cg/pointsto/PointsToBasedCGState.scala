@@ -144,13 +144,13 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         hasPointsToDependees || super.hasOpenDependencies
     }
 
-    override def dependees: List[SomeEOptionP] = {
+    override def dependees: Set[SomeEOptionP] = {
         // IMPROVE: make it more efficient (maybe use immutable map and join traversables)
         var allDependees = super.dependees
 
         _pointsToDependees.valuesIterator.foreach { d ⇒
             assert(_dependeeToDependers.contains(d.e))
-            allDependees ::= d
+            allDependees += d
         }
 
         allDependees

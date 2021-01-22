@@ -7,9 +7,9 @@ package analyses
 import scala.collection.mutable
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -39,12 +39,12 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
 
     private[this] var temporary: FieldLocality = LocalField
 
-    def dependees: Traversable[EOptionP[Entity, Property]] = {
+    def dependees: Set[SomeEOptionP] = {
         // TODO This really looks very imperformant...
         (declaredMethodsDependees.iterator ++
             definitionSitesDependees.valuesIterator.map(_._1) ++
             tacDependees.valuesIterator ++
-            calleeDependees.valuesIterator.map(_._1).filter(_.isRefinable)).toTraversable
+            calleeDependees.valuesIterator.map(_._1).filter(_.isRefinable)).toSet
     }
 
     def hasNoDependees: Boolean = {

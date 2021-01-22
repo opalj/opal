@@ -52,7 +52,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
      * Subclasses that might have other dependencies must override this method and should call
      * `super.c(...)` for updates of other property kinds then the new one.
      *
-     * @see [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis.c*]] for an example.
+     * @see [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis.c]] for an example.
      */
     def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒

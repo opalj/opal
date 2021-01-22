@@ -103,7 +103,7 @@ class LoadedClassesAnalysis(
                     } else {
                         InterimPartialResult(
                             Nil,
-                            Some(tacaiEP),
+                            Set(tacaiEP),
                             continuationForTAC(declaredMethod)
                         )
                     }
@@ -120,7 +120,7 @@ class LoadedClassesAnalysis(
             case _ ⇒
                 InterimPartialResult(
                     Nil,
-                    Some(eps),
+                    Set(eps),
                     continuationForTAC(method)
                 )
         }
@@ -141,7 +141,7 @@ class LoadedClassesAnalysis(
                     Some(PartialResult(propertyStore, LoadedClasses.key, update(newLoadedClasses)))
                 else
                     None,
-                Some(tacaiEP),
+                Set(tacaiEP),
                 continuationForTAC(declaredMethod)
             )
         } else if (newLoadedClasses.nonEmpty) {

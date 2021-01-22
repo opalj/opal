@@ -368,7 +368,7 @@ class LBFieldValuesAnalysis private[analyses] (
                                 classHierarchy.isKnownToBeFinal(dv.leastUpperType.get)) {
                                 Result(FinalEP(f, vi))
                             } else {
-                                InterimResult.forLB(f, vi, newDependees, c)
+                                InterimResult.forLB(f, vi, newDependees.toSet, c)
                             }
                         }
 
@@ -378,7 +378,7 @@ class LBFieldValuesAnalysis private[analyses] (
                             Result(FinalEP(f, vi))
                         } else {
                             //   println(f.toJava+"======>>>>>>\n\t\t"+vi+"\n\t\t"+relevantDependees)
-                            InterimResult.forLB(f, vi, relevantDependees, c)
+                            InterimResult.forLB(f, vi, relevantDependees.toSet, c)
                         }
                     }
 

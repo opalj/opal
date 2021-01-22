@@ -68,11 +68,11 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
                 result
             else {
                 val continuationResult =
-                    InterimPartialResult(Some(tacEOptP), continueDirectCallWithTAC(caller, pc))
+                    InterimPartialResult(Set(tacEOptP), continueDirectCallWithTAC(caller, pc))
                 Results(result, continuationResult)
             }
 
-        case _ ⇒ InterimPartialResult(Some(tacEOptP), continueDirectCallWithTAC(caller, pc))
+        case _ ⇒ InterimPartialResult(Set(tacEOptP), continueDirectCallWithTAC(caller, pc))
     }
 
     private[this] def processNewCaller(
@@ -99,7 +99,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
         else {
             val continuationResult =
                 InterimPartialResult(
-                    Some(tacEPS),
+                    Set(tacEPS),
                     continueIndirectCallWithTACOrCallees(
                         caller, pc, tacEPS, calleesEPS
                     )
@@ -126,7 +126,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
 
         case _ ⇒
             InterimPartialResult(
-                List(tacEOptP, calleesEOptP),
+                Set(tacEOptP, calleesEOptP),
                 continueIndirectCallWithTACOrCallees(caller, pc, tacEOptP, calleesEOptP)
             )
     }
