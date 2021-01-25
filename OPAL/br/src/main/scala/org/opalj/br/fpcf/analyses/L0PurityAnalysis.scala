@@ -299,10 +299,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
             case FinalP(p)                ⇒ Result(dm, p)
-            case ep @ InterimLUBP(lb, ub) ⇒ InterimResult(dm, lb, ub, Seq(ep), c)
+            case ep @ InterimLUBP(lb, ub) ⇒ InterimResult(dm, lb, ub, Set(ep), c)
 
             case epk ⇒
-                InterimResult(dm, ImpureByAnalysis, CompileTimePure, Seq(epk), c)
+                InterimResult(dm, ImpureByAnalysis, CompileTimePure, Set(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), Purity.key))

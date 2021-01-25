@@ -18,21 +18,11 @@ jobs:
       - uses: actions/checkout@v1
       - name: Build Opal
         run: sbt -J-Xmx20G cleanBuild
-  
-  formatting:
-    runs-on: self-hosted
-    needs: build
-    
-    steps:
-      - name: Test Formatting
+      
+      - name: Check formatting
         run: git diff --exit-code
-
-  test:
-    runs-on: self-hosted
-    needs: build
-
-    steps:
-      - name: Run Tests
+        
+      - name: Run tests
         run: sbt -J-Xmx20G test
 
   it-test:

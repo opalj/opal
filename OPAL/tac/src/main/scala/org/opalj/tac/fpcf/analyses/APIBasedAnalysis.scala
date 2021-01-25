@@ -71,12 +71,10 @@ trait APIBasedAnalysis extends FPCFAnalysis {
                 }
 
                 if (callersEOptP.isRefinable)
-                    results ::= InterimPartialResult(
-                        Some(callersEOptP), c(newSeenCallers)
-                    )
+                    results ::= InterimPartialResult(Set(callersEOptP), c(newSeenCallers))
 
                 Results(results)
 
-            case _: EPK[_, _] ⇒ InterimPartialResult(Some(callersEOptP), c(seenCallers))
+            case _: EPK[_, _] ⇒ InterimPartialResult(Set(callersEOptP), c(seenCallers))
         }
 }

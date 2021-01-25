@@ -90,7 +90,7 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         val emptyResult = if (state.lcDependee.isDefined)
             Some(InterimPartialResult(
                 None,
-                state.lcDependee,
+                state.lcDependee.toSet,
                 continuation
             ))
         else

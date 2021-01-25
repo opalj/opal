@@ -72,12 +72,12 @@ class ReturnValueFreshnessState(val dm: DefinedMethod) {
     private[this] var upperBound: ReturnValueFreshness = FreshReturnValue
 
     // TODO: Use EOptionPSet
-    def dependees: Traversable[EOptionP[Entity, Property]] = {
+    def dependees: Set[SomeEOptionP] = {
         (returnValueDependees.valuesIterator ++
             fieldDependees.valuesIterator ++
             defSiteDependees.valuesIterator ++
             tacaiDependee.iterator ++
-            _calleesDependee.iterator.filter(_.isRefinable)).toTraversable
+            _calleesDependee.iterator.filter(_.isRefinable)).toSet
     }
 
     def hasDependees: Boolean = {

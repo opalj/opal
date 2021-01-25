@@ -177,7 +177,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             NoResult
         } else {
             InterimPartialResult(
-                Some(callersEOptP),
+                Set(callersEOptP),
                 continuation(declaredMethod, declaredType, newSeenSuperCallers)
             )
         }

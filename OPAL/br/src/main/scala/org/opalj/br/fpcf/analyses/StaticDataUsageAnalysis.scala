@@ -57,9 +57,9 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
         def c(eps: SomeEOptionP): ProperPropertyComputationResult = eps match {
             case FinalP(sdu) ⇒ Result(dm, sdu)
             case ep @ InterimLUBP(lb, ub) ⇒
-                InterimResult(dm, lb, ub, Seq(ep), c)
+                InterimResult(dm, lb, ub, Set(ep), c)
             case epk ⇒
-                InterimResult(dm, UsesVaryingData, UsesNoStaticData, Seq(epk), c)
+                InterimResult(dm, UsesVaryingData, UsesNoStaticData, Set(epk), c)
         }
 
         c(propertyStore(declaredMethods(dm.definedMethod), StaticDataUsage.key))
