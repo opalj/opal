@@ -36,7 +36,6 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
-import org.opalj.tac.cg.AllocationSiteBasedPointsToScalaCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -76,7 +75,7 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-algorithm=CHA|RTA|PointsTo|PointsToScala]"+
+        "[-algorithm=CHA|RTA|PointsTo]"+
             "[-domain=domain]"+
             "[-callers=method]"+
             "[-callees=method]"+
@@ -96,7 +95,7 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
     }
 
-    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo|PointsToScala)".r
+    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
@@ -145,11 +144,6 @@ object CallGraph extends ProjectAnalysisApplication {
                     org.opalj.fpcf.par.PKECPropertyStore.THREAD_COUNT = threads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
-                //org.opalj.fpcf.par.PKECPropertyStore(context: _*)
-                //org.opalj.fpcf.par.DHTPropertyStore(context: _*)
-                //org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                //org.opalj.fpcf.par.ParTasksManagerConfig.MaxThreads = 4
-                //org.opalj.fpcf.par.PKECPropertyStore(context: _*)
             }
         )
 
@@ -172,7 +166,6 @@ object CallGraph extends ProjectAnalysisApplication {
                 case "RTA"               ⇒ project.get(RTACallGraphKey)
                 case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
                 case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
-                case "PointsToScala"     ⇒ project.get(AllocationSiteBasedPointsToScalaCallGraphKey)
             }
         } { t ⇒ callGraphTime = t.toSeconds }
 

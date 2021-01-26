@@ -21,12 +21,10 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
-import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSetScala
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
-import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedScalaAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -213,23 +211,5 @@ object AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler extends CallGr
         p: SomeProject
     ): AllocationSiteBasedPointsToBasedCallGraphAnalysis = {
         new AllocationSiteBasedPointsToBasedCallGraphAnalysis(p)
-    }
-}
-
-class AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis private[pointsto] (
-        final val project: SomeProject
-) extends AbstractPointsToBasedCallGraphAnalysis[AllocationSitePointsToSetScala]
-    with AllocationSiteBasedScalaAnalysis
-
-object AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis extends CallGraphAnalysisScheduler {
-
-    override def uses: Set[PropertyBounds] = {
-        super.uses + PropertyBounds.ub(AllocationSitePointsToSetScala)
-    }
-
-    override def initializeAnalysis(
-        p: SomeProject
-    ): AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis = {
-        new AllocationSiteBasedPointsToBasedScalaCallGraphAnalysis(p)
     }
 }
