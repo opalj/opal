@@ -314,7 +314,7 @@ object TACAI {
                     pcToIndex(pc) = index
                     index += 1
                 } else {
-                    pcToIndex(pc) = index - 1
+                    pcToIndex(pc) = -1
                 }
             }
 
