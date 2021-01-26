@@ -58,8 +58,8 @@ object PropertyStoreKey
                 )
                 psFactory(context)
             case None ⇒
-                val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                //val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                //val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 ps
         }
     }
