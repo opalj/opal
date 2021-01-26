@@ -10,33 +10,10 @@ import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
 
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.br.fpcf.properties.AtMost
-import org.opalj.br.fpcf.properties.DeclaredFinalField
-import org.opalj.br.fpcf.properties.EffectivelyFinalField
-import org.opalj.br.fpcf.properties.EscapeInCallee
-import org.opalj.br.fpcf.properties.EscapeProperty
-import org.opalj.br.fpcf.properties.EscapeViaReturn
-import org.opalj.br.fpcf.properties.FieldMutability
-import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.FinalField
-import org.opalj.br.fpcf.properties.LazyInitializedField
-import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.NonFinalField
-import org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis
-import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
-import org.opalj.br.fpcf.properties.NotPrematurelyReadField
-import org.opalj.br.fpcf.properties.PrematurelyReadField
-import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
-import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
+import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.Entity
-import org.opalj.fpcf.Result
-import org.opalj.fpcf.Property
-import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.fpcf.InterimEP
 import org.opalj.fpcf.InterimResult
 import org.opalj.fpcf.InterimUBP
@@ -45,9 +22,23 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.value.ValueInformation
+import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.DeclaredFinalField
+import org.opalj.br.fpcf.properties.EffectivelyFinalField
+import org.opalj.br.fpcf.properties.EscapeInCallee
+import org.opalj.br.fpcf.properties.EscapeViaReturn
+import org.opalj.br.fpcf.properties.LazyInitializedField
+import org.opalj.br.fpcf.properties.NoEscape
+import org.opalj.br.fpcf.properties.NonFinalFieldByAnalysis
+import org.opalj.br.fpcf.properties.NonFinalFieldByLackOfInformation
+import org.opalj.br.fpcf.properties.NotPrematurelyReadField
+import org.opalj.br.fpcf.properties.PrematurelyReadField
+import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.ClassFile
 import org.opalj.br.ComputationalTypeFloat
 import org.opalj.br.ComputationalTypeInt
@@ -113,9 +104,9 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 escapeDependees.nonEmpty || tacDependees.nonEmpty
         }
 
-        def dependees: Traversable[EOptionP[Entity, Property]] = {
-            prematurelyReadDependee ++ purityDependees ++ calleesDependee ++
-                fieldMutabilityDependees ++ escapeDependees ++ tacDependees.valuesIterator.map(_._1)
+        def dependees: Set[SomeEOptionP] = {
+            (tacDependees.valuesIterator.map(_._1) ++ prematurelyReadDependee ++ purityDependees ++ calleesDependee ++
+                fieldMutabilityDependees ++ escapeDependees).toSet
         }
     }
 

@@ -9,6 +9,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Property
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.NoEscape
@@ -30,6 +31,7 @@ trait AbstractEscapeAnalysisState {
     // callees of declared methods, i.e. different entities for each property kind.
     // therefore using a map is safe!
     private[this] var _dependees = Map.empty[Entity, EOptionP[Entity, Property]]
+    private[this] var _dependeesSet = Set.empty[SomeEOptionP]
 
     private[this] var _mostRestrictiveProperty: EscapeProperty = NoEscape
 
@@ -56,6 +58,7 @@ trait AbstractEscapeAnalysisState {
     @inline private[escape] final def addDependency(eOptionP: EOptionP[Entity, Property]): Unit = {
         assert(!_dependees.contains(eOptionP.e))
         _dependees += eOptionP.e → eOptionP
+        _dependeesSet += eOptionP
     }
 
     /**
@@ -66,7 +69,9 @@ trait AbstractEscapeAnalysisState {
         ep: EOptionP[Entity, Property]
     ): Unit = {
         assert(_dependees.contains(ep.e))
+        val oldEOptionP = _dependees(ep.e)
         _dependees -= ep.e
+        _dependeesSet -= oldEOptionP
     }
 
     /**
@@ -85,8 +90,8 @@ trait AbstractEscapeAnalysisState {
     /**
      * The set of open dependees.
      */
-    private[escape] final def dependees: Traversable[EOptionP[Entity, Property]] = {
-        _dependees.values
+    private[escape] final def dependees: Set[SomeEOptionP] = {
+        _dependeesSet
     }
 
     /**

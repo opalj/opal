@@ -317,7 +317,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 }
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
-                        newDependees.values.map(_._1),
+                        newDependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtPutField(
                             knownPointsTo, rhsDefSitesEPS, fieldOpt, newDependees
                         )
@@ -358,7 +358,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 }
                 if (newDependees.nonEmpty) {
                     results ::= InterimPartialResult(
-                        newDependees.values.map(_._1),
+                        newDependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtArrayStore(
                             knownPointsTo, rhsDefSitesEPS, arrayType, newDependees
                         )
@@ -401,7 +401,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
                 if (newDependees.nonEmpty) {
                     results +:= InterimPartialResult(
-                        newDependees.values.map(_._1),
+                        newDependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtGetField(
                             defSiteObject, fieldOpt, filter, newDependees
                         )
@@ -445,7 +445,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
                 if (newDependees.nonEmpty) {
                     results +:= InterimPartialResult(
-                        newDependees.values.map(_._1),
+                        newDependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtArrayLoad(
                             defSiteObject, arrayType, filter, newDependees
                         )
@@ -496,7 +496,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
         if (newDependees.nonEmpty) {
             results +:= InterimPartialResult(
-                newDependees.values.map(_._1),
+                newDependees.valuesIterator.map(_._1).toSet,
                 continuationForShared(e, newDependees)
             )
         }
@@ -553,7 +553,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 val (defSite, fieldOpt, filter) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
                 results += InterimPartialResult(
-                    dependees.values.map(_._1),
+                    dependees.valuesIterator.map(_._1).toSet,
                     continuationForNewAllocationSitesAtGetField(
                         defSite, fieldOpt, filter, dependees
                     )
@@ -578,7 +578,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 val dependees = state.dependeesOf(fakeEntity)
                 if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
                     results += InterimPartialResult(
-                        dependees.values.map(_._1),
+                        dependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtPutField(
                             knownPointsTo, defSitesEPSs, fieldOpt, dependees
                         )
@@ -591,7 +591,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 val (defSite, arrayType, filter) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
                 results += InterimPartialResult(
-                    dependees.values.map(_._1),
+                    dependees.valuesIterator.map(_._1).toSet,
                     continuationForNewAllocationSitesAtArrayLoad(
                         defSite, arrayType, filter, dependees
                     )
@@ -616,7 +616,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 val dependees = state.dependeesOf(fakeEntity)
                 if (defSitesEPSs.nonEmpty || (knownPointsTo ne emptyPointsToSet))
                     results += InterimPartialResult(
-                        dependees.values.map(_._1),
+                        dependees.valuesIterator.map(_._1).toSet,
                         continuationForNewAllocationSitesAtArrayStore(
                             knownPointsTo, defSitesEPSs, arrayType, dependees
                         )

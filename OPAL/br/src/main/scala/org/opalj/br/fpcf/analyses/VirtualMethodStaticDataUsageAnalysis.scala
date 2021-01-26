@@ -13,6 +13,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.SomeProject
@@ -38,7 +39,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         if (!dm.hasSingleDefinedMethod && !dm.hasMultipleDefinedMethods)
             return Result(dm, VUsesVaryingData);
 
-        var dependees: Set[EOptionP[DeclaredMethod, StaticDataUsage]] = Set.empty
+        var dependees: Set[SomeEOptionP] = Set.empty
 
         var maxLevel: StaticDataUsage = UsesNoStaticData
 

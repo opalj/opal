@@ -141,7 +141,7 @@ object MultiResult { private[fpcf] final val id = 2 }
  */
 final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
-        val dependees: Traversable[SomeEOptionP], //IMPROVE: require sets or EOptionPSets
+        val dependees: Set[SomeEOptionP], //IMPROVE: require EOptionPSets?
         val c:         ProperOnUpdateContinuation
 ) extends ProperPropertyComputationResult { result ⇒
 
@@ -179,7 +179,7 @@ final class InterimResult[P >: Null <: Property] private (
             case that: InterimResult[_] if this.eps == that.eps ⇒
                 val dependees = this.dependees
                 dependees.size == that.dependees.size &&
-                    dependees.forall(thisDependee ⇒ that.dependees.exists(_ == thisDependee))
+                    dependees.forall(thisDependee ⇒ that.dependees.contains(thisDependee))
 
             case _ ⇒
                 false
@@ -190,13 +190,14 @@ final class InterimResult[P >: Null <: Property] private (
         s"InterimResult($eps,dependees=${dependees.mkString("[", ", ", "]")},c=$c)"
     }
 }
+
 object InterimResult {
 
     private[fpcf] final val id = 3
 
     def apply[P >: Null <: Property](
         eps:       InterimEP[Entity, P],
-        dependees: Traversable[SomeEOptionP],
+        dependees: Set[SomeEOptionP],
         c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
         new InterimResult[P](eps, dependees, c)
@@ -206,7 +207,7 @@ object InterimResult {
         e:         Entity,
         lb:        P,
         ub:        P,
-        dependees: Traversable[SomeEOptionP],
+        dependees: Set[SomeEOptionP],
         c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
         require(lb != null && ub != null)
@@ -217,7 +218,7 @@ object InterimResult {
         e:         Entity,
         lb:        P,
         ub:        P,
-        dependees: Traversable[EOptionP[DependeeE, DependeeP]],
+        dependees: Set[SomeEOptionP],
         c:         QualifiedOnUpdateContinuation[DependeeE, DependeeP]
     ): InterimResult[P] = {
         require(lb != null && ub != null)
@@ -237,7 +238,7 @@ object InterimResult {
     def forLB[P >: Null <: Property](
         e:         Entity,
         lb:        P,
-        dependees: Traversable[SomeEOptionP],
+        dependees: Set[SomeEOptionP],
         c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
         new InterimResult[P](InterimELBP(e, lb), dependees, c)
@@ -246,7 +247,7 @@ object InterimResult {
     def forUB[P >: Null <: Property](
         e:         Entity,
         ub:        P,
-        dependees: Traversable[SomeEOptionP],
+        dependees: Set[SomeEOptionP],
         c:         ProperOnUpdateContinuation
     ): InterimResult[P] = {
         new InterimResult[P](InterimEUBP(e, ub), dependees, c)
@@ -388,7 +389,7 @@ object PartialResult { private[fpcf] final val id = 6 }
  */
 case class InterimPartialResult[SE >: Null <: Property](
         us:        Traversable[SomePartialResult], // can be empty!
-        dependees: Traversable[SomeEOptionP], //IMPROVE: require sets or EOptionPSets
+        dependees: Set[SomeEOptionP], //IMPROVE: require EOptionPSets?
         c:         OnUpdateContinuation
 ) extends ProperPropertyComputationResult {
 
@@ -409,7 +410,7 @@ object InterimPartialResult {
      * a depending computation.
      */
     def apply[SE >: Null <: Property](
-        dependees: Traversable[SomeEOptionP],
+        dependees: Set[SomeEOptionP],
         c:         OnUpdateContinuation
     ): InterimPartialResult[SE] = {
         new InterimPartialResult[SE](Nil, dependees, c)
@@ -428,7 +429,7 @@ object InterimPartialResult {
         uE:        UE,
         uPK:       PropertyKey[UP],
         u:         UpdateComputation[UE, UP],
-        dependees: Traversable[SomeEOptionP],
+        dependees: Set[SomeEOptionP],
         c:         OnUpdateContinuation
     ): InterimPartialResult[SE] = {
         val pruc = PartialResult(uE, uPK, u)

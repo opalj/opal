@@ -13,7 +13,6 @@ import net.ceedubs.ficus.Ficus._
 
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
-import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimResult
@@ -134,7 +133,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         var tacai: Option[EOptionP[Method, TACAI]] = None
 
-        def dependees: Traversable[EOptionP[Entity, Property]] =
+        def dependees: Set[SomeEOptionP] =
             (fieldLocalityDependees.valuesIterator.map(_._1) ++
                 fieldMutabilityDependees.valuesIterator.map(_._1) ++
                 classImmutabilityDependees.valuesIterator.map(_._1) ++
@@ -143,7 +142,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 calleesDependee ++
                 rvfDependees.valuesIterator.map(_._1) ++
                 staticDataUsage ++
-                tacai).toTraversable
+                tacai).toSet
 
         def addFieldLocalityDependee(
             f:    Field,
@@ -985,7 +984,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
-            // todo querying ps is quiet expensive
+            // todo querying ps is quite expensive
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
                 dm.asDefinedMethod
         }

@@ -40,7 +40,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
- * Models the behavior for [[java.security.AccessController.doPrivileged*]].
+ * Models the behavior for `java.security.AccessController.doPrivileged*`.
  *
  * On each call of the concrete [[doPrivilegedMethod]] method it will call the
  * [[declaredRunMethod]] upon its first parameter and returns the result of this call.

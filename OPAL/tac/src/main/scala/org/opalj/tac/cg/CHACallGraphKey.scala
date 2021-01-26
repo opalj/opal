@@ -3,7 +3,9 @@ package org.opalj
 package tac
 package cg
 
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
 
@@ -15,6 +17,10 @@ import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
  * @author Florian Kuebler
  */
 object CHACallGraphKey extends AbstractCallGraphKey {
+
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
+        super.requirements(project) :+ IsOverridableMethodKey
+    }
 
     override protected def callGraphSchedulers(
         project: SomeProject

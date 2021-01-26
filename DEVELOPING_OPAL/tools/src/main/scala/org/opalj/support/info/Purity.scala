@@ -194,11 +194,10 @@ object Purity {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                val threads = numThreads // We chose the sequential store as default
-                if (threads == 0) {
+                if (numThreads == 0) { // We chose the sequential store as default
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    org.opalj.fpcf.par.PKECPropertyStore.THREAD_COUNT = threads
+                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = numThreads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
             }

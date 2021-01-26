@@ -75,7 +75,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                     m,
                     newLB,
                     newUB,
-                    List(currentAIResult),
+                    Set(currentAIResult),
                     c = c
                 )
 
@@ -86,7 +86,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                     m,
                     computeTheTACAI(m, aiResult, false),
                     NoTACAI,
-                    List(epk),
+                    Set(epk),
                     c = c
                 )
         }

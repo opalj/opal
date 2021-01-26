@@ -10,7 +10,9 @@ import java.net.URL
 import java.util.Calendar
 
 import scala.collection.JavaConverters._
+
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.log.LogContext
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -141,7 +143,7 @@ object CallGraph extends ProjectAnalysisApplication {
                 if (threads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {
-                    org.opalj.fpcf.par.PKECPropertyStore.THREAD_COUNT = threads
+                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = threads
                     org.opalj.fpcf.par.PKECPropertyStore(context: _*)
                 }
             }

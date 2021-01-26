@@ -3,8 +3,11 @@ package org.opalj
 package tac
 package cg
 
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.pointsto.AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.DoPrivilegedPointsToCGAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.pointsto.AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
@@ -22,6 +25,11 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToAna
  * @author Florian Kuebler
  */
 object AllocationSiteBasedPointsToCallGraphKey extends AbstractCallGraphKey {
+
+    override def requirements(project: SomeProject): ProjectInformationKeys = {
+        Seq(DefinitionSitesKey, VirtualFormalParametersKey) ++: super.requirements(project)
+    }
+
     override protected def callGraphSchedulers(
         project: SomeProject
     ): Traversable[FPCFAnalysisScheduler] = {
