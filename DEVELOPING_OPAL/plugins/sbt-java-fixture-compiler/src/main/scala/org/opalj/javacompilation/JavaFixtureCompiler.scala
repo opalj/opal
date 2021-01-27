@@ -196,7 +196,7 @@ object JavaFixtureCompiler extends AutoPlugin {
           }
 
         streams.log.info(s"Creating: ${targetJar.getPath}.")
-        IO.zip(classFiles, targetJar)
+        IO.zip(classFiles, targetJar, None)
       }
 
       JavaFixturePackagingResult(compilationResult, targetJar, !packagingNecessary)

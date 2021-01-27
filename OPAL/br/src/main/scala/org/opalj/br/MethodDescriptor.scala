@@ -120,7 +120,7 @@ sealed abstract class MethodDescriptor
             if (parameterTypes.isEmpty)
                 ""
             else
-                (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
+                parameterTypes.tail.foldLeft(parameterTypes.head.toJava)(_+", "+_.toJava)
         }+"): "+returnType.toJava
     }
 
