@@ -4,6 +4,7 @@ package br
 package fpcf
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus._
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
@@ -23,6 +24,8 @@ import org.opalj.br.analyses.SomeProject
  */
 object PropertyStoreKey
     extends ProjectInformationKey[PropertyStore, (List[PropertyStoreContext[AnyRef]]) ⇒ PropertyStore] {
+
+    final val configKey = "org.opalj.fpcf.PropertyStore.Default"
 
     /**
      * Used to specify the number of threads the property store should use. This
@@ -58,8 +61,19 @@ object PropertyStoreKey
                 )
                 psFactory(context)
             case None ⇒
-                //val ps = org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
-                val ps = org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                val ps = project.config.as[Option[String]](configKey) match {
+                    case Some("Sequential") ⇒
+                        org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                    case Some("Parallel") | None ⇒
+                        org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                    case Some(unknown) ⇒
+                        OPALLogger.error(
+                            "analysis configuration",
+                            s"unknown PropertyStore $unknown configured,"+
+                                " using PKECPropertyStore instead"
+                        )
+                        org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                }
                 ps
         }
     }
