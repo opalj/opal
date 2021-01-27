@@ -639,7 +639,14 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
             val oldBB = basicBlocks(startPC)
             val startIndex = pcToIndex(startPC)
             val endIndex = {
-                val endIndexCandidate = pcToIndex(oldBB.endPC)
+                val initialCandidate = pcToIndex(oldBB.endPC)
+                val endIndexCandidate =
+                    if (initialCandidate == -1) { // There may be dead instructions
+                        pcToIndex(
+                            ((oldBB.endPC - 1) to oldBB.startPC by -1).
+                                find(pcToIndex(_) > -0).getOrElse(0)
+                        )
+                    } else initialCandidate
                 if (startIndex == endIndexCandidate) {
                     singletonBBsExpander(startIndex)
                 } else {
