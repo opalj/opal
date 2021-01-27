@@ -296,7 +296,8 @@ object Purity {
                 outputWriter.println(
                     s"${configurationName.get};${projectTime.toString(false)};"+
                         s"${propertyStoreTime.toString(false)};"+
-                        s"${callGraphTime.toString(false)};${analysisTime.toString(false)};"+
+                        s"${callGraphTime.toString(false)};"+
+                        s"${analysisTime.toString(false)};"+
                         s"${totalTime.toString(false)};"+
                         s"${compileTimePure.size};${pure.size};${dPure.size};"+
                         s"${sideEffectFree.size};${dSideEffectFree.size};"+
@@ -312,21 +313,6 @@ object Purity {
                 if (outputWriter != null) outputWriter.close()
             }
 
-            // WRITE RUNTIME INFORMATION
-
-            val runtime = new File(projectEvalDir.get, "runtime.csv")
-            val runtimeNew = !runtime.exists()
-            val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
-            try {
-                if (runtimeNew) {
-                    runtime.createNewFile()
-                    runtimeWriter.println("analysisName;project time;propertyStore time;callGraph time;analysis time; total time;")
-                }
-                runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime;$analysisTime")
-            } finally {
-                if (runtimeWriter != null) runtimeWriter.close()
-            }
-
             // WRITE CONTENT INFORMATION
 
             val results = new File(projectEvalDir.get, "method-results.csv")
@@ -336,18 +322,19 @@ object Purity {
                 if (resultsNew) {
                     results.createNewFile()
                     if (!individual)
-                        resultsWriter.println("compile time pure;pure;domain-specific pure;"+
-                            "side-effect free;domain-specific side-effect free;"+
-                            "externally pure;domain-specific externally pure;"+
-                            "externally side-effect free; domain-specific externally side-effect "+
-                            "free;contextually pure;domain-specific contextually pure;"+
+                        resultsWriter.println("analysisName;compile time pure;pure;"+
+                            "domain-specific pure;side-effect free;"+
+                            "domain-specific side-effect free;externally pure;"+
+                            "domain-specific externally pure;externally side-effect free;"+
+                            "domain-specific externally side-effect free;"+
+                            "contextually pure;domain-specific contextually pure;"+
                             "contextually side-effect free;domain-specific contextually "+
                             "side-effect free;impure;count")
                 }
 
                 if (!individual) {
                     resultsWriter.println(
-                        s"${compileTimePure.size};${pure.size};${dPure.size};"+
+                        s"${configurationName.get};${compileTimePure.size};${pure.size};${dPure.size};"+
                             s"${sideEffectFree.size};${dSideEffectFree.size};"+
                             s"${externallyPure.size};${dExternallyPure.size};"+
                             s"${contextuallyPure.size};${dContextuallyPure.size};"+

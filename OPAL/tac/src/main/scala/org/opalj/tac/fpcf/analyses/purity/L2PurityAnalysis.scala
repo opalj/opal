@@ -305,8 +305,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (expr eq null) {
             // Expression is unknown due to an indirect call (e.g. reflection)
             atMost(otherwise)
-            return false
-        };
+            return false;
+        }
 
         if (expr.isConst)
             return true;
