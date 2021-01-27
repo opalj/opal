@@ -638,7 +638,6 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
         do {
             val oldBB = basicBlocks(startPC)
             val startIndex = pcToIndex(startPC)
-            assert(startIndex != -1) // Unsure if this can happen, but if it does, better break here
             val endIndex = {
                 val initialCandidate = pcToIndex(oldBB.endPC)
                 val endIndexCandidate =
