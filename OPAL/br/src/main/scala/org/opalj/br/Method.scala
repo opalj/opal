@@ -430,6 +430,8 @@ final class Method private[br] (
 
     def toJava: String = s"${classFile.thisType.toJava}{ ${signatureToJava(true)} }"
 
+    override def toString: String = toJava
+
     /**
      * Creates a method object based on this method where the body is replaced by the code
      * returned by `Code.invalidBytecode`. This method is NOT replaced in its declaring class file.
