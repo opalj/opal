@@ -115,6 +115,10 @@ object Purity {
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
 
+    val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
+        "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
+        "org/xml/sax")
+
     def evaluate(
         cp:                    File,
         projectDir:            Option[String],
@@ -224,15 +228,7 @@ object Purity {
         val projMethods = allMethods.filter { m ⇒
             val pn = m.definedMethod.classFile.thisType.packageName
             packages match {
-                case None ⇒
-                    isJDK || !pn.startsWith("java/") && !pn.startsWith("javax") &&
-                        !pn.startsWith("javafx") && !pn.startsWith("jdk") &&
-                        !pn.startsWith("sun") && !pn.startsWith("oracle") &&
-                        !pn.startsWith("com/sun") && !pn.startsWith("com/oracle") &&
-                        !pn.startsWith("netscape") && !pn.startsWith("org/ietf/jgss") &&
-                        !pn.startsWith("org/jcp/xml/dsig/internal") &&
-                        !pn.startsWith("org/omg") && !pn.startsWith("org/w3c/dom") &&
-                        !pn.startsWith("org/xml/sax")
+                case None ⇒ isJDK || !JDKPackages.exists(pn.startsWith)
                 case Some(ps) ⇒
                     ps.exists(pn.startsWith)
             }
@@ -274,17 +270,8 @@ object Purity {
         val projectEntitiesWithPurity = entitiesWithPurity.filter { ep ⇒
             val pn = ep.e.asInstanceOf[DeclaredMethod].declaringClassType.asObjectType.packageName
             packages match {
-                case None ⇒
-                    isJDK || !pn.startsWith("java/") && !pn.startsWith("javax") &&
-                        !pn.startsWith("javafx") && !pn.startsWith("jdk") &&
-                        !pn.startsWith("sun") && !pn.startsWith("oracle") &&
-                        !pn.startsWith("com/sun") && !pn.startsWith("com/oracle") &&
-                        !pn.startsWith("netscape") && !pn.startsWith("org/ietf/jgss") &&
-                        !pn.startsWith("org/jcp/xml/dsig/internal") &&
-                        !pn.startsWith("org/omg") && !pn.startsWith("org/w3c/dom") &&
-                        !pn.startsWith("org/xml/sax")
-                case Some(ps) ⇒
-                    ps.exists(pn.startsWith)
+                case None     ⇒ isJDK || !JDKPackages.exists(pn.startsWith)
+                case Some(ps) ⇒ ps.exists(pn.startsWith)
             }
         }.toSeq
 
