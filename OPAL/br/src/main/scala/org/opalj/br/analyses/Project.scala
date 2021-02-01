@@ -140,6 +140,7 @@ class Project[Source] private (
         final val libraryFieldsCount:                 Int,
         final val codeSize:                           Long,
         final val MethodHandleSubtypes:               Set[ObjectType],
+        final val VarHandleSubtypes:                  Set[ObjectType],
         final val classFilesCount:                    Int,
         final val methodsCount:                       Int,
         final val fieldsCount:                        Int,
@@ -205,6 +206,7 @@ class Project[Source] private (
             libraryFieldsCount,
             codeSize,
             MethodHandleSubtypes,
+            VarHandleSubtypes,
             classFilesCount,
             methodsCount,
             fieldsCount,
@@ -236,6 +238,8 @@ class Project[Source] private (
     final val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
 
     final val MethodHandleClassFile: Option[ClassFile] = classFile(ObjectType.MethodHandle)
+
+    final val VarHandleClassFile: Option[ClassFile] = classFile(ObjectType.VarHandle)
 
     final val allMethodsWithBody: ConstArray[Method] = ConstArray._UNSAFE_from(this.methodsWithBody)
 
@@ -2089,6 +2093,10 @@ object Project {
                 classHierarchy.allSubtypes(ObjectType.MethodHandle, reflexive = true)
             }
 
+            val VarHandleSubtypes = {
+                classHierarchy.allSubtypes(ObjectType.VarHandle, reflexive = true)
+            }
+
             val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
 
             val methodsCount: Int = projectMethodsCount + libraryMethodsCount
@@ -2137,6 +2145,7 @@ object Project {
                 libraryFieldsCount,
                 codeSize,
                 MethodHandleSubtypes,
+                VarHandleSubtypes,
                 classFilesCount,
                 methodsCount,
                 fieldsCount,

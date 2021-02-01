@@ -483,14 +483,24 @@ object MethodDescriptor {
     }
 
     /**
-     * The signature of a signature polymorphic method.
-     * Basically, the signature:
+     * The signatures of a signature polymorphic method.
+     * Basically, the signature is one of:
      * {{{
      *      (params: Object[]) : Object
+     *      (params: Object[]) : void
+     *      (params: Object[]) : boolean
      * }}}
      */
-    final val SignaturePolymorphicMethod: MethodDescriptor = {
+    final val SignaturePolymorphicMethodObject: MethodDescriptor = {
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+    }
+
+    final val SignaturePolymorphicMethodVoid: MethodDescriptor = {
+        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, VoidType)
+    }
+
+    final val SignaturePolymorphicMethodBoolean: MethodDescriptor = {
+        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, BooleanType)
     }
 
     final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)

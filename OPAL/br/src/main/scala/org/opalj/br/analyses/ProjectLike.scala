@@ -17,7 +17,9 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
 
 /**
  * Enables project wide lookups of methods and fields as required to determine the target(s) of an
@@ -135,10 +137,21 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     val MethodHandleClassFile: Option[ClassFile]
 
     /**
-     * The set of all subtypes of `java.lang.invoke.MethodHandle`; in particular required to
-     * resolve signature polymorphic method calls.
+     * The class file of `java.lang.invoke.VarHandle`, if available.
+     */
+    val VarHandleClassFile: Option[ClassFile]
+
+    /**
+     * The set of all subtypes of `java.lang.invoke.MethodHandle`; in particular required to resolve
+     * signature polymorphic method calls.
      */
     val MethodHandleSubtypes: SomeSet[ObjectType]
+
+    /**
+     * The set of all subtypes of `java.lang.invoke.VarHandle`; in particular required to resolve
+     * signature polymorphic method calls.
+     */
+    val VarHandleSubtypes: SomeSet[ObjectType]
 
     /**
      * Stores for each non-private, non-initializer method the set of methods which override
@@ -246,6 +259,20 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         name:               String,
         descriptor:         MethodDescriptor
     ): Result[MethodDeclarationContext] = {
+
+        def lookupSignaturePolymorphicMethod(descriptor: MethodDescriptor): Result[MethodDeclarationContext] = {
+            lookupVirtualMethod(
+                callingContextType,
+                if (MethodHandleSubtypes.contains(receiverType)) ObjectType.MethodHandle
+                else ObjectType.VarHandle,
+                name,
+                descriptor
+            ) match {
+                    case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
+                    case _                                                 ⇒ Empty
+                }
+        }
+
         val definedMethodsOption = instanceMethods.get(receiverType)
         if (definedMethodsOption.isEmpty) {
             return Empty;
@@ -255,24 +282,24 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         } match {
             case Some(mdc) ⇒ Success(mdc)
             case None ⇒
-                if (MethodHandleSubtypes.contains(receiverType) && (
-                    // we have to avoid endless recursion if we can't find the target method
-                    // TODO FIXME [Java9+] use "isSignaturePolymorphic" to support VarHandles
-                    receiverType != ObjectType.MethodHandle ||
-                    descriptor != SignaturePolymorphicMethodDescriptor
-                )) {
-                    // At least in Java 8 the signature polymorphic methods are not overloaded and
+                // we have to avoid endless recursion if we can't find the target method
+                if ((MethodHandleSubtypes.contains(receiverType) ||
+                    VarHandleSubtypes.contains(receiverType)) &&
+                    !isSignaturePolymorphic(receiverType, name, descriptor)) {
+                    // At least in Java 15 the signature polymorphic methods are not overloaded and
                     // it actually doesn't make sense to do so. Therefore we decided to only
                     // make this lookup if strictly required.
-                    lookupVirtualMethod(
-                        callingContextType,
-                        ObjectType.MethodHandle,
-                        name,
-                        SignaturePolymorphicMethodDescriptor
-                    ) match {
-                            case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
-                            case _                                                 ⇒ Empty
-                        }
+                    lookupSignaturePolymorphicMethod(SignaturePolymorphicMethodObject) match {
+                        case Empty if VarHandleSubtypes.contains(receiverType) ⇒
+                            lookupSignaturePolymorphicMethod(SignaturePolymorphicMethodVoid) match {
+                                case Empty ⇒
+                                    lookupSignaturePolymorphicMethod(
+                                        SignaturePolymorphicMethodBoolean
+                                    )
+                                case r ⇒ r
+                            }
+                        case r ⇒ r
+                    }
                 } else {
                     Empty // here, we don't know if the project is incomplete or inconsistent
                 }
@@ -538,17 +565,19 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 // A method is signature polymorphic if all of the following conditions hold :
                 // - It is declared in the java.lang.invoke.MethodHandle class.
                 // - It has a single formal parameter of type Object[].
-                // - It has a return type of Object.
                 // - It has the ACC_VARARGS and ACC_NATIVE flags set.
-                // TODO [Java9+] Document or fix if VarHandle needs/does not need support
-                val isPotentiallySignaturePolymorphicCall = receiverType eq ObjectType.MethodHandle
+                val isPotentiallySignaturePolymorphicCall =
+                    (receiverType eq ObjectType.MethodHandle) ||
+                        (receiverType eq ObjectType.VarHandle)
 
                 if (isPotentiallySignaturePolymorphicCall) {
                     val methods = classFile.findMethod(name)
                     if (methods.isSingletonList) {
                         val method = methods.head
                         if (method.isNativeAndVarargs &&
-                            method.descriptor == SignaturePolymorphicMethodDescriptor)
+                            (method.descriptor == SignaturePolymorphicMethodObject ||
+                                method.descriptor == SignaturePolymorphicMethodVoid ||
+                                method.descriptor == SignaturePolymorphicMethodBoolean))
                             Success(method) // the resolved method is signature polymorphic
                         else if (method.descriptor == descriptor)
                             Success(method) // "normal" resolution of a method
@@ -573,7 +602,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Returns true if the method defined by the given class type is a signature polymorphic
-     * method. (See JVM 8 Spec. for details.) //TODO JAVA 8+
+     * method. (See JVM 9 Spec. for details.)
      */
     //TODO add method that lookup the defining class type
     def isSignaturePolymorphic(definingClassType: ObjectType, method: Method): Boolean = {
@@ -582,7 +611,27 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             (definingClassType eq ObjectType.VarHandle)
         ) &&
             method.isNativeAndVarargs &&
-            method.descriptor == SignaturePolymorphicMethodDescriptor
+            (method.descriptor == SignaturePolymorphicMethodObject ||
+                method.descriptor == SignaturePolymorphicMethodVoid ||
+                method.descriptor == SignaturePolymorphicMethodBoolean)
+    }
+
+    /**
+     * Returns true if the descriptor is a signature polymorphic method for the given class type.
+     * (See JVM 9 Spec. for details.)
+     */
+    def isSignaturePolymorphic(
+        definingClassType: ObjectType,
+        name:              String,
+        descriptor:        MethodDescriptor
+    ): Boolean = {
+        (definingClassType eq ObjectType.MethodHandle) &&
+            descriptor == SignaturePolymorphicMethodObject &&
+            (name == "invoke" || name == "invokeExact") ||
+            (definingClassType eq ObjectType.VarHandle) &&
+            (descriptor == SignaturePolymorphicMethodObject ||
+                descriptor == SignaturePolymorphicMethodVoid ||
+                descriptor == SignaturePolymorphicMethodBoolean)
     }
 
     /**
@@ -891,15 +940,34 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // We just have to collect the methods in the subtypes... unless we have
         // a call to a signature polymorphic method!
 
-        if (MethodHandleClassFile.isDefined && MethodHandleSubtypes.contains(declaringClassType)) {
-            val mdcOption = find(instanceMethods(declaringClassType)) { mdc ⇒
-                mdc.compareAccessibilityAware(
-                    callerPackageName, name, SignaturePolymorphicMethodDescriptor
-                )
+        def findSignaturePolymorphicMethod(
+            descriptor: MethodDescriptor
+        ): Option[MethodDeclarationContext] = {
+            find(instanceMethods(declaringClassType)) { mdc ⇒
+                mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
             }
+        }
+
+        if (MethodHandleClassFile.isDefined && MethodHandleSubtypes.contains(declaringClassType)) {
+            val mdcOption = findSignaturePolymorphicMethod(SignaturePolymorphicMethodObject)
             if (mdcOption.isDefined) {
                 val method = mdcOption.get.method
                 if (method.isNativeAndVarargs && (method.classFile eq MethodHandleClassFile.get)) {
+                    return Set(method);
+                }
+            }
+        }
+
+        if (VarHandleClassFile.isDefined && VarHandleSubtypes.contains(declaringClassType)) {
+            val mdcOption =
+                findSignaturePolymorphicMethod(SignaturePolymorphicMethodObject).orElse(
+                    findSignaturePolymorphicMethod(SignaturePolymorphicMethodVoid).orElse(
+                        findSignaturePolymorphicMethod(SignaturePolymorphicMethodBoolean)
+                    )
+                )
+            if (mdcOption.isDefined) {
+                val method = mdcOption.get.method
+                if (method.isNativeAndVarargs && (method.classFile eq VarHandleClassFile.get)) {
                     return Set(method);
                 }
             }
