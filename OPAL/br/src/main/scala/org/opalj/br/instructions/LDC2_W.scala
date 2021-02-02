@@ -9,6 +9,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * Push long or double from runtime constant pool.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
 sealed abstract class LDC2_W[@specialized(Long, Double) T <: Any]
     extends LoadConstantInstruction[T]
@@ -67,6 +68,35 @@ final case class LoadDouble(value: Double) extends LDC2_W[Double] {
 
 }
 
+final case class LoadDynamic2_W(
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      FieldType
+) extends LDC2_W[Nothing] {
+    def value: Nothing = throw new UnsupportedOperationException("dynamic constant unknown")
+
+    def computationalType: ComputationalType = descriptor.computationalType
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || this == other
+    }
+}
+
+case object INCOMPLETE_LDC2_W extends LDC2_W[Any] {
+
+    private def error: Nothing = {
+        val message = "this ldc2_w is incomplete"
+        throw BytecodeProcessingFailedException(message)
+    }
+
+    final def computationalType = error
+
+    final def value: Any = error
+
+    final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = error
+}
+
 /**
  * Defines factory and extractor methods for LDC2_W instructions.
  *
@@ -81,7 +111,7 @@ object LDC2_W {
             case v: Long   ⇒ LoadLong(v)
             case d: Double ⇒ LoadDouble(d)
             case _ ⇒
-                throw new BytecodeProcessingFailedException(
+                throw BytecodeProcessingFailedException(
                     "unsupported LDC2_W constant value: "+constantValue
                 )
         }

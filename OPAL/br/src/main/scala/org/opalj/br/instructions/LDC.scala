@@ -9,6 +9,7 @@ import org.opalj.bytecode.BytecodeProcessingFailedException
  * Push item from runtime constant pool.
  *
  * @author Michael Eichberg
+ * @author Dominik Helm
  */
 sealed trait LDC[@specialized(Int, Float) T]
     extends LoadConstantInstruction[T]
@@ -105,6 +106,36 @@ final case class LoadString(value: String) extends PrimitiveLDC[String] {
     override def toString: String = "LoadString(\""+value+"\")"
 
 }
+
+final case class LoadDynamic(
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      FieldType
+) extends LDC[Nothing] {
+    def value: Nothing = throw new UnsupportedOperationException("dynamic constant unknown")
+
+    def computationalType: ComputationalType = descriptor.computationalType
+
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
+        val other = code.instructions(otherPC)
+        (this eq other) || this == other
+    }
+}
+
+case object INCOMPLETE_LDC extends LDC[Any] {
+
+    private def error: Nothing = {
+        val message = "this ldc is incomplete"
+        throw BytecodeProcessingFailedException(message)
+    }
+
+    final def computationalType = error
+
+    final def value: Any = error
+
+    final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = error
+}
+
 /**
  * Defines factory and extractor methods for LDC instructions.
  *
@@ -121,7 +152,7 @@ object LDC {
             case mh: MethodHandle     ⇒ LoadMethodHandle(mh)
             case md: MethodDescriptor ⇒ LoadMethodType(md)
             case _ ⇒
-                throw new BytecodeProcessingFailedException(
+                throw BytecodeProcessingFailedException(
                     "unsupported constant value: "+constantValue
                 )
         }
