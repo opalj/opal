@@ -463,6 +463,11 @@ package object ba { ba ⇒
 
                             case LoadMethodHandle_W(value) ⇒ CPEMethodHandle(value, false)
                             case LoadMethodType_W(value)   ⇒ CPEMethodType(value, false)
+
+                            case LoadDynamic_W(bootstrapMethod, name, descriptor) ⇒
+                                CPEDynamic(bootstrapMethod, name, descriptor, false)
+                            case INCOMPLETE_LDC_W ⇒
+                                throw ConstantPoolException("incomplete LDC_W")
                         }
                     )
 
@@ -470,6 +475,12 @@ package object ba { ba ⇒
                     i match {
                         case LoadLong(value)   ⇒ instructions.writeShort(CPELong(value))
                         case LoadDouble(value) ⇒ instructions.writeShort(CPEDouble(value))
+
+                        case LoadDynamic2_W(bootstrapMethod, name, descriptor) ⇒
+                            instructions.writeShort(
+                                CPEDynamic(bootstrapMethod, name, descriptor, false)
+                            )
+                        case INCOMPLETE_LDC2_W ⇒ throw ConstantPoolException("incomplete LDC2_W")
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
