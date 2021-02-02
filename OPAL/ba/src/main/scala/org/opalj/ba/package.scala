@@ -53,6 +53,7 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Module_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Package_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Dynamic_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ObjectType
@@ -1194,6 +1195,10 @@ package object ba { ba ⇒
                     case CONSTANT_Package_ID ⇒
                         val CONSTANT_Package_info(nameIndex) = cpEntry
                         da.CONSTANT_Package_info(nameIndex)
+
+                    case CONSTANT_Dynamic_ID ⇒
+                        val CONSTANT_Dynamic_info(bootstrapIndex, nameAndTypeIndex) = cpEntry
+                        da.CONSTANT_Dynamic_info(bootstrapIndex, nameAndTypeIndex)
 
                 }
             }

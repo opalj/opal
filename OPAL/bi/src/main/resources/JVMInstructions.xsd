@@ -407,7 +407,7 @@
         <annotation>
             <documentation>
             An index in the constant pool (an unsigned short value)
-            referring to a CONSTANT_InvokeDynamic_info structure. (Java 7)
+            referring to a CONSTANT_InvokeDynamic_info structure (Java 7).
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
@@ -474,7 +474,9 @@
 	 <simpleType name="FormatElement-ushort_cp_index-to-constant_value">
         <annotation>
             <documentation>An index in the constant pool referring to a constant
-            value (int, float, long, double, string, class) .</documentation>
+            value (int, float, long, double, string, class, method type, method handle) or a
+            dynamically loaded constant.
+            </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
             <enumeration value="ushort_cp_index→constant_value"/>

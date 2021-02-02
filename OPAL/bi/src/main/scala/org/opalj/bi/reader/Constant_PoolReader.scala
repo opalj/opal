@@ -38,6 +38,7 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     type CONSTANT_InvokeDynamic_info <: Constant_Pool_Entry
     type CONSTANT_Module_info <: Constant_Pool_Entry
     type CONSTANT_Package_info <: Constant_Pool_Entry
+    type CONSTANT_Dynamic_info <: Constant_Pool_Entry
 
     //
     // FACTORY METHODS
@@ -61,6 +62,8 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
     // JAVA 9 Constant Pool Entries
     protected def CONSTANT_Module_info(name_index: Int): CONSTANT_Module_info
     protected def CONSTANT_Package_info(name_index: Int): CONSTANT_Package_info
+    // JAVA 11 Constant Pool Entries
+    protected def CONSTANT_Dynamic_info(bootstrap_method_attr_index: Int, name_and_type_index: Int): CONSTANT_Dynamic_info
 
     /**
      * Creates a storage area for functions that will be called after the class file was
@@ -189,10 +192,14 @@ trait Constant_PoolReader extends Constant_PoolAbstractions {
                     i += 1
                     CONSTANT_Package_info(in.readUnsignedShort)
 
+                case CONSTANT_Dynamic_ID ⇒
+                    i += 1
+                    CONSTANT_Dynamic_info(in.readUnsignedShort, in.readUnsignedShort)
+
                 case _ ⇒
                     val header = s"wrong constant pool tag: $tag (entry: $i/$constant_pool_count); "
                     val message =
-                        constant_pool_entries.iterator.zipWithIndex.take(i).drop(1).map(_.swap).
+                        constant_pool_entries.iterator.zipWithIndex.slice(1, i).map(_.swap).
                             mkString(header+"previous entries:\n\t", "\n\t", "\n")
                     throw new BytecodeProcessingFailedException(message)
             }

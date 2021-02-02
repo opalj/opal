@@ -42,6 +42,13 @@ trait ConstantsPoolLike {
         descriptor:      MethodDescriptor
     ): Int
 
+    def CPEDynamic(
+        bootstrapMethod:    BootstrapMethod,
+        name:               String,
+        descriptor:         FieldType,
+        requiresUByteIndex: Boolean
+    ): Int
+
     def CPEUtf8OfCPEClass(referenceType: ReferenceType): Int = {
         val typeName =
             if (referenceType.isObjectType)

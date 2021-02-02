@@ -189,7 +189,7 @@ class ConstantsBuffer private (
         var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
-            CPEMethodHandle(bootstrapMethod.handle, false)
+            CPEMethodHandle(bootstrapMethod.handle, requiresUByteIndex = false)
             bootstrapMethod.arguments.foreach(CPEntryForBootstrapArgument)
             indexOfBootstrapMethod = bootstrapMethods.size - 1
         }
@@ -205,14 +205,46 @@ class ConstantsBuffer private (
     def CPEModule(name: String): Int = {
         val cpeUtf8 = CPEUtf8(name)
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Module_info(cpeUtf8), 1)
-        validateIndex(cpEntryIndex, false)
+        validateIndex(cpEntryIndex, requiresUByteIndex = false)
     }
 
     @throws[ConstantPoolException]
     def CPEPackage(name: String): Int = {
         val cpeUtf8 = CPEUtf8(name)
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Package_info(cpeUtf8), 1)
-        validateIndex(cpEntryIndex, false)
+        validateIndex(cpEntryIndex, requiresUByteIndex = false)
+    }
+
+    //
+    // Java11+ CPEntries
+    //
+
+    @throws[ConstantPoolException]
+    def CPEDynamic(
+        bootstrapMethod:    BootstrapMethod,
+        name:               String,
+        descriptor:         FieldType,
+        requiresUByteIndex: Boolean
+    ): Int = {
+        val jvmDescriptor = descriptor.toJVMTypeName
+
+        if (bootstrapMethodAttributeNameIndex == 0)
+            bootstrapMethodAttributeNameIndex = CPEUtf8(bi.BootstrapMethodsAttribute.Name)
+
+        //need to build up bootstrap_methods
+        var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
+        if (indexOfBootstrapMethod == -1) {
+            bootstrapMethods += bootstrapMethod
+            CPEMethodHandle(bootstrapMethod.handle, requiresUByteIndex = false)
+            bootstrapMethod.arguments.foreach(CPEntryForBootstrapArgument)
+            indexOfBootstrapMethod = bootstrapMethods.size - 1
+        }
+        val cpNameAndTypeIndex = CPENameAndType(name, jvmDescriptor)
+
+        validateIndex(
+            getOrElseUpdate(CONSTANT_Dynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex), 1),
+            requiresUByteIndex
+        )
     }
 
     /**
