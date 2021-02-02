@@ -10,7 +10,6 @@ import org.opalj.bi.ConstantPoolTag
 
 /**
  *
- * @author Michael Eichberg
  * @author Dominik Helm
  */
 case class CONSTANT_Dynamic_info(
