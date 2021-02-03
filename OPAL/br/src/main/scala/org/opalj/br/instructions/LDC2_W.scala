@@ -68,6 +68,10 @@ final case class LoadDouble(value: Double) extends LDC2_W[Double] {
 
 }
 
+/**
+ * @note To match [[LoadDynamic]], [[LoadDynamic_W]] and [[LoadDynamic2_W]] instructions you can use
+ *       [[LDCDynamic]].
+ */
 final case class LoadDynamic2_W(
         bootstrapMethod: BootstrapMethod,
         name:            String,

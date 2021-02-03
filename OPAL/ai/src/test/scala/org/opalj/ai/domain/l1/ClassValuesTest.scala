@@ -113,6 +113,7 @@ object PlainClassesTest {
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultClassValuesBinding {
 
         var returnedValue: Option[DomainValue] = _

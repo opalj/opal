@@ -51,6 +51,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with l0.TypeLevelLongValuesShiftOperators
         with RecordCFG // <=== the domain we are going to test!
 

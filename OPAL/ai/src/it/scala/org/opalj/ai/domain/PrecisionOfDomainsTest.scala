@@ -43,6 +43,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.DefaultTypeLevelDoubleValues
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
+                with l0.TypeLevelDynamicLoads
                 with TheProject
 
             class TypeLevelDomain(val method: Method, val project: Project[URL])
@@ -61,6 +62,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelFieldAccessInstructions
                 with l0.TypeLevelInvokeInstructions
+                with l0.TypeLevelDynamicLoads
                 with l0.TypeLevelLongValuesShiftOperators
 
             class L1RangesDomain[I](val method: Method, val project: Project[URL])
@@ -81,6 +83,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
+                with l0.TypeLevelDynamicLoads
 
             class L1SetsDomain[I](val method: Method, val project: Project[URL])
                 extends CorrelationalDomain
@@ -99,6 +102,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
+                with l0.TypeLevelDynamicLoads
 
             def checkAbstractsOver(r1: TheAIResult, r2: TheAIResult): Option[String] = {
                 var pc = -1

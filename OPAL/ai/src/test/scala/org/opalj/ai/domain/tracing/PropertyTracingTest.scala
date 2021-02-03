@@ -41,6 +41,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
         with l1.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with TheMethod {
 
         override def maxCardinalityOfIntegerRanges: Long = 16L

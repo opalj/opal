@@ -476,6 +476,13 @@ object TACAI {
                     case LoadLong(value) ⇒
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, LongConst(pc, value))
 
+                    case LDCDynamic(bootstrapMethod, name, descriptor) ⇒
+                        addInitLocalValStmt(
+                            pc,
+                            operandsArray(nextPC).head,
+                            DynamicConst(pc, bootstrapMethod, name, descriptor)
+                        )
+
                     case _ ⇒
                         val message = s"unexpected constant $instr"
                         throw BytecodeProcessingFailedException(message)

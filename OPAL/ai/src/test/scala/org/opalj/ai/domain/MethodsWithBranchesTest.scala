@@ -39,6 +39,7 @@ class MethodsWithBranchesTest extends FlatSpec with Matchers {
         with TypeLevelLongValuesShiftOperators
         with TypeLevelFieldAccessInstructions
         with SimpleTypeLevelInvokeInstructions
+        with TypeLevelDynamicLoads
         with ThrowAllPotentialExceptionsConfiguration
         with PredefinedClassHierarchy
         with IgnoreSynchronization

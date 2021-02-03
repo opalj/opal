@@ -17,6 +17,7 @@ import org.opalj.ai.domain.l0.DefaultTypeLevelIntegerValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelLongValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelFloatValues
 import org.opalj.ai.domain.l0.DefaultTypeLevelDoubleValues
+import org.opalj.ai.domain.l0.TypeLevelDynamicLoads
 
 /**
  * Tests the utility methods.
@@ -123,4 +124,5 @@ object SimpleCoordinatingTypeLevelDomain
     with DefaultTypeLevelLongValues
     with DefaultTypeLevelFloatValues
     with DefaultTypeLevelDoubleValues
+    with TypeLevelDynamicLoads
     with PredefinedClassHierarchy

@@ -186,3 +186,19 @@ object LDCMethodType {
         }
     }
 }
+
+object LDCDynamic {
+
+    def unapply(ldc: LoadConstantInstruction[_]): Option[(BootstrapMethod, String, FieldType)] = {
+        ldc match {
+            case LoadDynamic(bootstrapMethod, name, descriptor) ⇒
+                Some((bootstrapMethod, name, descriptor))
+            case LoadDynamic_W(bootstrapMethod, name, descriptor) ⇒
+                Some((bootstrapMethod, name, descriptor))
+            case LoadDynamic2_W(bootstrapMethod, name, descriptor) ⇒
+                Some((bootstrapMethod, name, descriptor))
+            case _ ⇒
+                None
+        }
+    }
+}

@@ -83,6 +83,10 @@ final case class LoadString_W(value: String) extends PrimitiveLDC_W[String] {
     final def computationalType = ComputationalTypeReference
 }
 
+/**
+ * @note To match [[LoadDynamic]], [[LoadDynamic_W]] and [[LoadDynamic2_W]] instructions you can use
+ *       [[LDCDynamic]].
+ */
 final case class LoadDynamic_W(
         bootstrapMethod: BootstrapMethod,
         name:            String,

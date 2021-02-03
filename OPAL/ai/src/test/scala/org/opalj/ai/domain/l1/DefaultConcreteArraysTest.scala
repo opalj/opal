@@ -593,6 +593,7 @@ class DefaultConcreteArraysTestDomain(
     with ThrowAllPotentialExceptionsConfiguration
     with l0.SimpleTypeLevelInvokeInstructions
     with l0.TypeLevelFieldAccessInstructions
+    with l0.TypeLevelDynamicLoads
     with l1.DefaultLongValues
     with l1.DefaultStringValuesBinding
     with l0.DefaultTypeLevelFloatValues

@@ -34,6 +34,7 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelPrimitiveValuesConversions
         with l1.DefaultReferenceValuesBinding
+        with l0.TypeLevelDynamicLoads
         with TheProject
 
     behavior of "instances of domains of type DomainReferenceValuesBinding"

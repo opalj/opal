@@ -30,6 +30,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
         with domain.l0.DefaultTypeLevelDoubleValues
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
+        with domain.l0.TypeLevelDynamicLoads
         // NOT NEEDED: with domain.l1.DefaultReferenceValuesBinding
         with domain.l1.DefaultStringValuesBinding
         with domain.DefaultHandlingOfMethodResults

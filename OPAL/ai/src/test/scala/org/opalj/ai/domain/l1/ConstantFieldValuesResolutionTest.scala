@@ -34,6 +34,7 @@ class ConstantFieldValuesResolutionTest extends FunSpec with Matchers {
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with RecordLastReturnedValues

@@ -3640,6 +3640,7 @@ class DefaultIntegerRangesTestDomain(
     with l1.DefaultArrayValuesBinding
     with l0.TypeLevelFieldAccessInstructions
     with l0.SimpleTypeLevelInvokeInstructions
+    with l0.TypeLevelDynamicLoads
     with l1.DefaultIntegerRangeValues // <----- The one we are going to test
     with l0.TypeLevelPrimitiveValuesConversions
     with l0.TypeLevelLongValuesShiftOperators
@@ -3660,6 +3661,7 @@ class JoinResultsIntegerRangesTestDomain(
     with l0.DefaultReferenceValuesBinding
     with l0.TypeLevelFieldAccessInstructions
     with l0.SimpleTypeLevelInvokeInstructions
+    with l0.TypeLevelDynamicLoads
     with l1.DefaultIntegerRangeValues // <----- The one we are going to test
     with l0.TypeLevelPrimitiveValuesConversions
     with l0.TypeLevelLongValuesShiftOperators

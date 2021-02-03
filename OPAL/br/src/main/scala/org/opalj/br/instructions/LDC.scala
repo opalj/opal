@@ -107,6 +107,10 @@ final case class LoadString(value: String) extends PrimitiveLDC[String] {
 
 }
 
+/**
+ * @note To match [[LoadDynamic]], [[LoadDynamic_W]] and [[LoadDynamic2_W]] instructions you can use
+ *       [[LDCDynamic]].
+ */
 final case class LoadDynamic(
         bootstrapMethod: BootstrapMethod,
         name:            String,

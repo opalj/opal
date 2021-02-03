@@ -61,6 +61,7 @@ class MethodsWithLoopsTest extends FlatSpec with Matchers {
             with l0.DefaultTypeLevelDoubleValues
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
+            with l0.TypeLevelDynamicLoads
             with PredefinedClassHierarchy
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization
