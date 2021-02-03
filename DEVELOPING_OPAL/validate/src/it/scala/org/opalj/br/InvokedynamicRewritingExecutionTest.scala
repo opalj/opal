@@ -15,6 +15,7 @@ import org.opalj.bytecode.RTJar
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.isCurrentJREAtLeastJava9
 import org.opalj.br.analyses.Project
+import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.bc.Assembler
 import org.opalj.io.JARsFileFilter
@@ -30,8 +31,12 @@ import org.opalj.util.InMemoryClassLoader
 class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
 
     def JavaFixtureProject(fixtureFiles: File): Project[URL] = {
+        implicit val config = InvokedynamicRewriting.defaultConfig(
+            rewrite = true,
+            logRewrites = false
+        )
 
-        val projectClassFiles = Project.JavaClassFileReader().ClassFiles(fixtureFiles)
+        val projectClassFiles = Project.JavaClassFileReader.ClassFiles(fixtureFiles)
         val libraryClassFiles = Project.JavaLibraryClassFileReader.ClassFiles(RTJar)
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
