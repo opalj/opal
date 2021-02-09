@@ -11,6 +11,8 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
 
+import com.typesafe.config.Config
+
 import org.opalj.bytecode.RTJar
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.isCurrentJREAtLeastJava9
@@ -31,7 +33,7 @@ import org.opalj.util.InMemoryClassLoader
 class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
 
     def JavaFixtureProject(fixtureFiles: File): Project[URL] = {
-        implicit val config = InvokedynamicRewriting.defaultConfig(
+        implicit val config: Config = InvokedynamicRewriting.defaultConfig(
             rewrite = true,
             logRewrites = false
         )
@@ -134,7 +136,7 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
             val p = JavaFixtureProject(r)
             val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
             val inMemoryClassLoader =
-                new InMemoryClassLoader(Map(testClassType.toJava -> Assembler(ba.toDA(cf))))
+                new InMemoryClassLoader(Map(testClassType.toJava → Assembler(ba.toDA(cf))))
 
             it("simpleConcat should concatenate strings correctly") {
                 val c = inMemoryClassLoader.loadClass(testClassType.toJava)
