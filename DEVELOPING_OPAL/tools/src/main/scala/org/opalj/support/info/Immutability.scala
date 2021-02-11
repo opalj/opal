@@ -104,7 +104,6 @@ object Immutability {
         closedWorldAssumption:             Boolean,
         callGraphKey:                      AbstractCallGraphKey,
         level:                             Int,
-        withoutConsiderEscape:             Boolean,
         withoutConsiderGenericity:         Boolean,
         withoutConsiderLazyInitialization: Boolean
     ): BasicReport = {
@@ -137,11 +136,6 @@ object Immutability {
                 ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
             )
         }
-
-        config = config.withValue(
-            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape",
-            ConfigValueFactory.fromAnyRef(!withoutConsiderEscape)
-        )
 
         config = config.withValue(
             "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity",
@@ -659,11 +653,6 @@ object Immutability {
 
         val fileNameExtension = {
             {
-                if (withoutConsiderEscape) {
-                    println("withoutConsiderEscape")
-                    "_withoutConsiderEscape"
-                } else ""
-            } + {
                 if (withoutConsiderGenericity) {
                     println("withoutConsiderGenericity")
                     "_withoutConsiderGenericity"
@@ -748,7 +737,6 @@ object Immutability {
             | [-level] <0|1|2> (domain level  Default: 2)
             | [-ReImInferComparison] (without transient fields and with eager L2 purity analysis)
             | [-withoutConsiderGenericity]
-            | [-withoutConsiderEscape]
             | [-withoutConsiderLazyInitialization]
             | [-times <0...n>] (times of execution. n is a natural number)
             |""".stripMargin
@@ -769,7 +757,6 @@ object Immutability {
         var level = 2
         var withoutConsiderLazyInitialization = false
         var withoutConsiderGenericity = false
-        var withoutConsiderEscape = false
         var times = 1
 
         def readNextArg(): String = {
@@ -818,7 +805,6 @@ object Immutability {
                 case "-level"                             ⇒ level = Integer.parseInt(readNextArg())
                 case "-times"                             ⇒ times = Integer.parseInt(readNextArg())
                 case "-withoutConsiderGenericity"         ⇒ withoutConsiderGenericity = true
-                case "-withoutConsiderEscape"             ⇒ withoutConsiderEscape = true
                 case "-withoutConsiderLazyInitialization" ⇒ withoutConsiderLazyInitialization = true
 
                 case "-JDK" ⇒
@@ -859,7 +845,6 @@ object Immutability {
                 closedWorldAssumption,
                 callGraphKey,
                 level,
-                withoutConsiderEscape,
                 withoutConsiderGenericity,
                 withoutConsiderLazyInitialization
             )
