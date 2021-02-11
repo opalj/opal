@@ -1292,6 +1292,9 @@ object ObjectType {
     final val ScalaStructuralCallSite = ObjectType("scala/runtime/StructuralCallSite")
     final val Method = ObjectType("java/lang/reflect/Method")
 
+    // Types related to dynamic constants
+    final val ConstantBootstraps = ObjectType("java/lang/invoke/ConstantBootstraps")
+
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these
     // exceptions may be created at runtime by the JVM)
     final val IndexOutOfBoundsException = ObjectType("java/lang/IndexOutOfBoundsException")

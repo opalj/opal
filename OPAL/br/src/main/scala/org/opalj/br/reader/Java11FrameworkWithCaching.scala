@@ -12,5 +12,4 @@ package reader
  */
 class Java11FrameworkWithCaching(
         cache: BytecodeInstructionsCache
-) extends Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
-    with DeferredDynamicConstantResolution //TODO Replace with DynamicConstantRewriting once that exists
+) extends Java9FrameworkWithInvokedynamicSupportAndCaching(cache) with DynamicConstantRewriting
