@@ -73,7 +73,6 @@ import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.FieldReferenceImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.EPS
-import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.OrderedProperty
@@ -105,7 +104,6 @@ object Immutability {
         closedWorldAssumption:             Boolean,
         callGraphKey:                      AbstractCallGraphKey,
         level:                             Int,
-        reImInferComparison:               Boolean,
         withoutConsiderEscape:             Boolean,
         withoutConsiderGenericity:         Boolean,
         withoutConsiderLazyInitialization: Boolean
@@ -121,14 +119,16 @@ object Immutability {
             case None      ⇒ Traversable.empty
         }
 
-        val JDKFiles = if (withoutJDK) Traversable.empty
-        else JavaClassFileReader().ClassFiles(JRELibraryFolder)
+        val JDKFiles =
+            if (withoutJDK) Traversable.empty
+            else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         // TODO: use variables for the constants
-        implicit var config: Config = if (isLibrary)
-            ConfigFactory.load("LibraryProject.conf")
-        else
-            ConfigFactory.load("ApplicationProject.conf")
+        implicit var config: Config =
+            if (isLibrary)
+                ConfigFactory.load("LibraryProject.conf")
+            else
+                ConfigFactory.load("CommandLineProject.conf")
 
         // TODO: in case of application this value is already set
         if (closedWorldAssumption) {
@@ -148,30 +148,30 @@ object Immutability {
             ConfigValueFactory.fromAnyRef(!withoutConsiderGenericity)
         )
 
-        config =
-            config.withValue(
-                "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization",
-                ConfigValueFactory.fromAnyRef(!withoutConsiderLazyInitialization)
-            )
+        config = config.withValue(
+            "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization",
+            ConfigValueFactory.fromAnyRef(!withoutConsiderLazyInitialization)
+        )
 
         var projectTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
         var callGraphTime: Seconds = Seconds.None
 
         val project = time {
-            Project(classFiles, libFiles ++ JDKFiles, libraryClassFilesAreInterfacesOnly = false, Traversable.empty)
-        } { t ⇒ projectTime = t.toSeconds }
-
-        val purityAnalysis =
-            if (reImInferComparison)
-                EagerL2PurityAnalysis
-            else
-                LazyL2PurityAnalysis
+            Project(
+                classFiles,
+                libFiles ++ JDKFiles,
+                libraryClassFilesAreInterfacesOnly = false,
+                Traversable.empty
+            )
+        } { t ⇒
+            projectTime = t.toSeconds
+        }
 
         val fieldReferenceDependencies: List[FPCFAnalysisScheduler] = List(
             EagerL0FieldReferenceImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            purityAnalysis,
+            LazyL2PurityAnalysis,
             LazyInterProceduralEscapeAnalysis,
             LazyStaticDataUsageAnalysis,
             LazyL0CompileTimeConstancyAnalysis,
@@ -182,7 +182,7 @@ object Immutability {
         val fieldDependencies: List[FPCFAnalysisScheduler] = List(
             LazyL0FieldReferenceImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            purityAnalysis,
+            LazyL2PurityAnalysis,
             EagerL3FieldImmutabilityAnalysis,
             LazyL1ClassImmutabilityAnalysis,
             LazyL1TypeImmutabilityAnalysis,
@@ -195,7 +195,7 @@ object Immutability {
 
         val classDependencies: List[FPCFAnalysisScheduler] = List(
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            purityAnalysis,
+            LazyL2PurityAnalysis,
             LazyL0FieldReferenceImmutabilityAnalysis,
             LazyL3FieldImmutabilityAnalysis,
             LazyL1TypeImmutabilityAnalysis,
@@ -209,7 +209,7 @@ object Immutability {
 
         val typeDependencies: List[FPCFAnalysisScheduler] = List(
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            purityAnalysis,
+            LazyL2PurityAnalysis,
             LazyL0FieldReferenceImmutabilityAnalysis,
             LazyL3FieldImmutabilityAnalysis,
             LazyL1ClassImmutabilityAnalysis,
@@ -224,7 +224,7 @@ object Immutability {
         val allImmAnalysisDependencies: List[FPCFAnalysisScheduler] =
             List(
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                purityAnalysis,
+                LazyL2PurityAnalysis,
                 EagerL0FieldReferenceImmutabilityAnalysis,
                 EagerL3FieldImmutabilityAnalysis,
                 EagerL1ClassImmutabilityAnalysis,
@@ -269,7 +269,9 @@ object Immutability {
                 }
             }
         )
-        time { project.get(callGraphKey) } { t ⇒ callGraphTime = t.toSeconds }
+        time { project.get(callGraphKey) } { t ⇒
+            callGraphTime = t.toSeconds
+        }
         var propertyStore: PropertyStore = null
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -277,23 +279,21 @@ object Immutability {
         time {
             propertyStore = analysesManager.runAll(dependencies)._1
             propertyStore.waitOnPhaseCompletion()
-        } { t ⇒ analysisTime = t.toSeconds }
+        } { t ⇒
+            analysisTime = t.toSeconds
+        }
 
         val stringBuilderResults: StringBuilder = new StringBuilder()
 
         val allProjectClassTypes = project.allProjectClassFiles.toIterator.map(_.thisType).toSet
 
-        val allFieldsInProjectClassFiles = {
-            if (reImInferComparison) {
-                project.allProjectClassFiles.toIterator.flatMap { _.fields }.
-                    filter(f ⇒ !f.isSynthetic && !f.toString().contains("/*ENUM*/")).toSet
-            } else
-                project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
-        }
+        val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
 
-        val fieldReferenceGroupedResults = propertyStore.entities(FieldReferenceImmutability.key).
-            filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field])).
-            toTraversable.groupBy(_.asFinal.p)
+        val fieldReferenceGroupedResults = propertyStore
+            .entities(FieldReferenceImmutability.key)
+            .filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
+            .toTraversable
+            .groupBy(_.asFinal.p)
 
         def unpackFieldEPS(eps: EPS[Entity, OrderedProperty]): String = {
             if (!eps.e.isInstanceOf[Field])
@@ -306,24 +306,38 @@ object Immutability {
         }
 
         val mutableFieldReferences =
-            fieldReferenceGroupedResults.getOrElse(MutableFieldReference, Iterator.empty).map(unpackFieldEPS).
-                toSeq.sortWith(_ < _)
+            fieldReferenceGroupedResults
+                .getOrElse(MutableFieldReference, Iterator.empty)
+                .map(unpackFieldEPS)
+                .toSeq
+                .sortWith(_ < _)
 
         val notThreadSafeLazyInitializedFieldReferences =
-            fieldReferenceGroupedResults.getOrElse(LazyInitializedNotThreadSafeFieldReference, Iterator.empty).toSeq.
-                map(unpackFieldEPS).sortWith(_ < _)
+            fieldReferenceGroupedResults
+                .getOrElse(LazyInitializedNotThreadSafeFieldReference, Iterator.empty)
+                .toSeq
+                .map(unpackFieldEPS)
+                .sortWith(_ < _)
 
         val lazyInitializedReferencesNotThreadSafeButDeterministic =
-            fieldReferenceGroupedResults.
-                getOrElse(LazyInitializedNotThreadSafeButDeterministicFieldReference, Iterator.empty).
-                toSeq.map(unpackFieldEPS).sortWith(_ < _)
+            fieldReferenceGroupedResults
+                .getOrElse(LazyInitializedNotThreadSafeButDeterministicFieldReference, Iterator.empty)
+                .toSeq
+                .map(unpackFieldEPS)
+                .sortWith(_ < _)
 
         val threadSafeLazyInitializedFieldReferences =
-            fieldReferenceGroupedResults.getOrElse(LazyInitializedThreadSafeFieldReference, Iterator.empty).
-                toSeq.map(unpackFieldEPS).sortWith(_ < _)
+            fieldReferenceGroupedResults
+                .getOrElse(LazyInitializedThreadSafeFieldReference, Iterator.empty)
+                .toSeq
+                .map(unpackFieldEPS)
+                .sortWith(_ < _)
 
-        val immutableReferences = fieldReferenceGroupedResults.getOrElse(ImmutableFieldReference, Iterator.empty).
-            toSeq.map(unpackFieldEPS).sortWith(_ < _)
+        val immutableReferences = fieldReferenceGroupedResults
+            .getOrElse(ImmutableFieldReference, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
         if (analysis == All || analysis == FieldReferences) {
             stringBuilderResults.append(
@@ -333,8 +347,8 @@ object Immutability {
                 |
                 | Lazy Initialized Not Thread Safe And Not Deterministic Field References:
                 | ${
-                    notThreadSafeLazyInitializedFieldReferences.
-                        map(_+" | Lazy Initialized Not Thread Safe And Not Deterministic Field Reference")
+                    notThreadSafeLazyInitializedFieldReferences
+                        .map(_+" | Lazy Initialized Not Thread Safe And Not Deterministic Field Reference")
                         .mkString("\n")
                 }
                 |
@@ -363,21 +377,35 @@ object Immutability {
             )
         }
 
-        val fieldGroupedResults = propertyStore.entities(FieldImmutability.key).
-            filter(eps ⇒ allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field])).
-            toTraversable.groupBy(_.asFinal.p)
+        val fieldGroupedResults = propertyStore
+            .entities(FieldImmutability.key)
+            .filter(eps ⇒ allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]))
+            .toTraversable
+            .groupBy(_.asFinal.p)
 
-        val mutableFields = fieldGroupedResults.getOrElse(MutableField, Iterator.empty).toSeq.map(unpackFieldEPS).
-            sortWith(_ < _)
+        val mutableFields = fieldGroupedResults
+            .getOrElse(MutableField, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
-        val shallowImmutableFields = fieldGroupedResults.getOrElse(ShallowImmutableField, Iterator.empty).toSeq.
-            map(unpackFieldEPS).sortWith(_ < _)
+        val shallowImmutableFields = fieldGroupedResults
+            .getOrElse(ShallowImmutableField, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
-        val dependentImmutableFields = fieldGroupedResults.getOrElse(DependentImmutableField, Iterator.empty).toSeq.
-            map(unpackFieldEPS).sortWith(_ < _)
+        val dependentImmutableFields = fieldGroupedResults
+            .getOrElse(DependentImmutableField, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
-        val deepImmutableFields = fieldGroupedResults.getOrElse(DeepImmutableField, Iterator.empty).toSeq.
-            map(unpackFieldEPS).sortWith(_ < _)
+        val deepImmutableFields = fieldGroupedResults
+            .getOrElse(DeepImmutableField, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
         if (analysis == All || analysis == Fields) {
             stringBuilderResults.append(
@@ -389,7 +417,11 @@ object Immutability {
                 | ${shallowImmutableFields.map(_+" | Shallow Immutable Field ").mkString("\n")}
                 |
                 | Dependent Immutable Fields:
-                | ${dependentImmutableFields.map(_+" | Dependent Immutable Field ").mkString("\n")}
+                | ${
+                    dependentImmutableFields
+                        .map(_+" | Dependent Immutable Field ")
+                        .mkString("\n")
+                }
                 |
                 | Deep Immutable Fields:
                 | ${deepImmutableFields.map(_+" | Deep Immutable Field ").mkString("\n")}
@@ -398,8 +430,11 @@ object Immutability {
             )
         }
 
-        val classGroupedResults = propertyStore.entities(ClassImmutability.key).
-            filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.asFinal.p)
+        val classGroupedResults = propertyStore
+            .entities(ClassImmutability.key)
+            .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
+            .toTraversable
+            .groupBy(_.asFinal.p)
 
         def unpackClass(eps: EPS[Entity, OrderedProperty]): String = {
             val classFile = eps.e.asInstanceOf[ObjectType]
@@ -408,15 +443,25 @@ object Immutability {
         }
 
         val mutableClasses =
-            classGroupedResults.getOrElse(MutableClass, Iterator.empty).toSeq.map(unpackClass).sortWith(_ < _)
+            classGroupedResults
+                .getOrElse(MutableClass, Iterator.empty)
+                .toSeq
+                .map(unpackClass)
+                .sortWith(_ < _)
 
         val shallowImmutableClasses =
-            classGroupedResults.getOrElse(ShallowImmutableClass, Iterator.empty).toSeq.
-                map(unpackClass).sortWith(_ < _)
+            classGroupedResults
+                .getOrElse(ShallowImmutableClass, Iterator.empty)
+                .toSeq
+                .map(unpackClass)
+                .sortWith(_ < _)
 
         val dependentImmutableClasses =
-            classGroupedResults.getOrElse(DependentImmutableClass, Iterator.empty).toSeq.
-                map(unpackClass).sortWith(_ < _)
+            classGroupedResults
+                .getOrElse(DependentImmutableClass, Iterator.empty)
+                .toSeq
+                .map(unpackClass)
+                .sortWith(_ < _)
 
         val deepImmutables = classGroupedResults.getOrElse(DeepImmutableClass, Iterator.empty)
 
@@ -424,12 +469,16 @@ object Immutability {
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val deepImmutableClassesInterfaces = deepImmutables
-            .filter(eps ⇒ allInterfaces.contains(eps.e.asInstanceOf[ObjectType])).toSeq.
-            map(unpackClass).sortWith(_ < _)
+            .filter(eps ⇒ allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
         val deepImmutableClasses = deepImmutables
-            .filter(eps ⇒ !allInterfaces.contains(eps.e.asInstanceOf[ObjectType])).toSeq.
-            map(unpackClass).sortWith(_ < _)
+            .filter(eps ⇒ !allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
         if (analysis == All || analysis == Classes) {
             stringBuilderResults.append(
@@ -441,31 +490,54 @@ object Immutability {
                 | ${shallowImmutableClasses.map(_+" | Shallow Immutable Class ").mkString("\n")}
                 |
                 | Dependent Immutable Classes:
-                | ${dependentImmutableClasses.map(_+" | Dependent Immutable Class ").mkString("\n")}
+                | ${
+                    dependentImmutableClasses
+                        .map(_+" | Dependent Immutable Class ")
+                        .mkString("\n")
+                }
                 |
                 | Deep Immutable Classes:
                 | ${deepImmutableClasses.map(_+" | Deep Immutable Classes ").mkString("\n")}
                 |
                 | Deep Immutable Interfaces:
-                | ${deepImmutableClassesInterfaces.map(_+" | Deep Immutable Interfaces ").mkString("\n")}
+                | ${
+                    deepImmutableClassesInterfaces
+                        .map(_+" | Deep Immutable Interfaces ")
+                        .mkString("\n")
+                }
                 |""".stripMargin
             )
         }
 
-        val typeGroupedResults = propertyStore.entities(TypeImmutability.key).
-            filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType])).toTraversable.groupBy(_.asFinal.p)
+        val typeGroupedResults = propertyStore
+            .entities(TypeImmutability.key)
+            .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
+            .toTraversable
+            .groupBy(_.asFinal.p)
 
-        val mutableTypes = typeGroupedResults.getOrElse(MutableType, Iterator.empty).toSeq.map(unpackClass).
-            sortWith(_ < _)
+        val mutableTypes = typeGroupedResults
+            .getOrElse(MutableType, Iterator.empty)
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
-        val shallowImmutableTypes = typeGroupedResults.getOrElse(ShallowImmutableType, Iterator.empty).toSeq.
-            map(unpackClass).sortWith(_ < _)
+        val shallowImmutableTypes = typeGroupedResults
+            .getOrElse(ShallowImmutableType, Iterator.empty)
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
-        val dependentImmutableTypes = typeGroupedResults.getOrElse(DependentImmutableType, Iterator.empty).toSeq.
-            map(unpackClass).sortWith(_ < _)
+        val dependentImmutableTypes = typeGroupedResults
+            .getOrElse(DependentImmutableType, Iterator.empty)
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
-        val deepImmutableTypes = typeGroupedResults.getOrElse(DeepImmutableType, Iterator.empty).toSeq.
-            map(unpackClass).sortWith(_ < _)
+        val deepImmutableTypes = typeGroupedResults
+            .getOrElse(DeepImmutableType, Iterator.empty)
+            .toSeq
+            .map(unpackClass)
+            .sortWith(_ < _)
 
         if (analysis == All || analysis == Types) {
             stringBuilderResults.append(
@@ -565,10 +637,14 @@ object Immutability {
             |  level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
             |
             |  consider escape: ${
-                project.config.atKey("org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape")
+                project.config.atKey(
+                    "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape"
+                )
             }
             |  consider genericity: ${
-                project.config.atKey("org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity")
+                project.config.atKey(
+                    "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity"
+                )
             }
             |  consider lazy initialization: ${
                 project.config.atKey(
@@ -674,6 +750,7 @@ object Immutability {
             | [-withoutConsiderGenericity]
             | [-withoutConsiderEscape]
             | [-withoutConsiderLazyInitialization]
+            | [-times <0...n>] (times of execution. n is a natural number)
             |""".stripMargin
         }
 
@@ -690,10 +767,10 @@ object Immutability {
         var isLibrary = false
         var callGraphName: Option[String] = None
         var level = 2
-        var reImInferComparison = false
         var withoutConsiderLazyInitialization = false
         var withoutConsiderGenericity = false
         var withoutConsiderEscape = false
+        var times = 1
 
         def readNextArg(): String = {
             i = i + 1
@@ -739,7 +816,7 @@ object Immutability {
                 case "-noJDK"                             ⇒ withoutJDK = true
                 case "-callGraph"                         ⇒ callGraphName = Some(readNextArg())
                 case "-level"                             ⇒ level = Integer.parseInt(readNextArg())
-                case "-ReImInferComparison"               ⇒ reImInferComparison = true
+                case "-times"                             ⇒ times = Integer.parseInt(readNextArg())
                 case "-withoutConsiderGenericity"         ⇒ withoutConsiderGenericity = true
                 case "-withoutConsiderEscape"             ⇒ withoutConsiderEscape = true
                 case "-withoutConsiderLazyInitialization" ⇒ withoutConsiderLazyInitialization = true
@@ -766,9 +843,8 @@ object Immutability {
                 Console.println(usage)
                 return ;
         }
-        var nIndex = 0
-        val end = 0
-        while (nIndex <= end) {
+        var nIndex = 1
+        while (nIndex <= times) {
             println(s"start $nIndex")
             nIndex = nIndex + 1
             evaluate(
@@ -783,13 +859,10 @@ object Immutability {
                 closedWorldAssumption,
                 callGraphKey,
                 level,
-                reImInferComparison,
                 withoutConsiderEscape,
                 withoutConsiderGenericity,
                 withoutConsiderLazyInitialization
             )
         }
-
     }
 }
-
