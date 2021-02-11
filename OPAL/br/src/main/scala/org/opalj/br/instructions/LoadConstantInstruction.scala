@@ -98,6 +98,13 @@ object LoadConstantInstruction {
             case ConstantClass(c)     ⇒ if (wide) LoadClass_W(c) else LoadClass(c)
             case md: MethodDescriptor ⇒ if (wide) LoadMethodType_W(md) else LoadMethodType(md)
             case mh: MethodHandle     ⇒ if (wide) LoadMethodHandle_W(mh) else LoadMethodHandle(mh)
+            case DynamicConstant(bootstrapMethod, name, descriptor) ⇒
+                if (descriptor.computationalType.isCategory2)
+                    LoadDynamic2_W(bootstrapMethod, name, descriptor)
+                else if (wide)
+                    LoadDynamic_W(bootstrapMethod, name, descriptor)
+                else
+                    LoadDynamic(bootstrapMethod, name, descriptor)
         }
 
     def unapply[T](ldc: LoadConstantInstruction[T]): Some[T] = Some(ldc.value)

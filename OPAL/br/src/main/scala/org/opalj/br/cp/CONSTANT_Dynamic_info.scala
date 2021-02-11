@@ -34,4 +34,11 @@ case class CONSTANT_Dynamic_info(
         cp(nameAndTypeIndex).asNameAndType.fieldType(cp)
     }
 
+    override def asConstantValue(cp: Constant_Pool): ConstantValue[_] = {
+        new DynamicConstant(name(cp), descriptor(cp), bootstrapMethodAttributeIndex)
+    }
+
+    override def asBootstrapArgument(cp: Constant_Pool): BootstrapArgument =
+        asConstantValue(cp)
+
 }

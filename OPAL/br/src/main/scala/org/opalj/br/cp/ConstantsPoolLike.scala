@@ -128,6 +128,8 @@ trait ConstantsPoolLike {
             case pfmh: PutFieldMethodHandle   ⇒ CPEMethodHandle(pfmh, requiresUByteIndex = false)
             case psmh: PutStaticMethodHandle  ⇒ CPEMethodHandle(psmh, requiresUByteIndex = false)
             case mcmh: MethodCallMethodHandle ⇒ CPEMethodHandle(mcmh, requiresUByteIndex = false)
+            case DynamicConstant(bootstrapMethod, name, descriptor) ⇒
+                CPEDynamic(bootstrapMethod, name, descriptor, requiresUByteIndex = false)
         }
     }
 }
