@@ -137,24 +137,24 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
             } else {
                 Set(field.classFile)
             }
-        val classesHavingAccess: Iterator[ClassFile] =
+        //val classesHavingAccess: Iterator[ClassFile] =
             if (field.isPublic) {
                 if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
                     return Result(field, MutableFieldReference);
                 }
-                project.allClassFiles.iterator
+              //  project.allClassFiles.iterator
             } else if (field.isProtected) {
                 if (typeExtensibility(thisType).isYesOrUnknown) {
                     return Result(field, MutableFieldReference);
                 }
-                val subclassesIterator: Iterator[ClassFile] =
+                /*val subclassesIterator: Iterator[ClassFile] =
                     classHierarchy.allSubclassTypes(thisType, reflexive = false).flatMap { ot ⇒
                         project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
                     }
-                initialClasses.iterator ++ subclassesIterator
-            } else {
-                initialClasses.iterator
-            }
+                initialClasses.iterator ++ subclassesIterator*/
+            } //else {
+                //initialClasses.iterator
+            //}
 
         // If there are native methods, we give up
         //if (classesHavingAccess.exists(_.methods.exists(_.isNative))) { //TODO flag for comparison...reim
