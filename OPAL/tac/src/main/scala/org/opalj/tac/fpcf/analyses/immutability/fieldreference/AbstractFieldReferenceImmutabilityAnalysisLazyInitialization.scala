@@ -11,13 +11,13 @@ import scala.collection.mutable
 
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
-import org.opalj.br.ComputationalTypeFloat
-import org.opalj.br.ComputationalTypeInt
+//import org.opalj.br.ComputationalTypeFloat
+//import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.Method
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference
+//import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference
 import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeFieldReference
 import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeFieldReference
 import org.opalj.br.fpcf.properties.MutableFieldReference
@@ -26,7 +26,7 @@ import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.ObjectType
 import scala.annotation.switch
 import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.Purity
+//import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.FieldType
 
 /**
@@ -189,21 +189,21 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
                 else
                     MutableFieldReference
             } else {
-                if (write.value.asVar.definedBy.forall { defSite ⇒
-                    defSite >= 0 && checkWriteIsDeterministic(
+                if (write.value.asVar.definedBy.forall { defSite ⇒ //TODO check time consumption
+                    defSite >= 0 /*&& checkWriteIsDeterministic(
                         code(defSite).asAssignment,
                         method,
                         code,
                         taCode
-                    )
+                    )*/
                 }
                     && noInterferingExceptions()) {
-                    val computationalFieldType = state.field.fieldType.computationalType
-                    if (computationalFieldType != ComputationalTypeInt &&
-                        computationalFieldType != ComputationalTypeFloat) {
-                        LazyInitializedNotThreadSafeFieldReference
-                    } else
-                        LazyInitializedNotThreadSafeButDeterministicFieldReference
+                    //val computationalFieldType = state.field.fieldType.computationalType
+                    //if (computationalFieldType != ComputationalTypeInt &&
+                    //    computationalFieldType != ComputationalTypeFloat) {
+                    LazyInitializedNotThreadSafeFieldReference
+                    //} /*else
+                    //LazyInitializedNotThreadSafeButDeterministicFieldReference
                 } else MutableFieldReference
             }
         }
@@ -495,7 +495,7 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
      * without non-constant parameters. Alternatively, if the initialization method itself is
      * deterministic and has no parameters, the value is also always the same.
      */
-    def checkWriteIsDeterministic(
+    /* def checkWriteIsDeterministic(
         origin: Assignment[V],
         method: Method,
         code:   Array[Stmt[V]],
@@ -585,7 +585,7 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
             }
         }
         value.isConst || isNonConstDeterministic(value, taCode)
-    }
+    } */
 
     /**
      * Checks if an expression is a field read of the currently analyzed field.

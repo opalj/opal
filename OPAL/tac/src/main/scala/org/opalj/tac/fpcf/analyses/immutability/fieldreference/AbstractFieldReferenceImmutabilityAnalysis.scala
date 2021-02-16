@@ -40,6 +40,7 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.value.ValueInformation
+import org.opalj.br.fpcf.properties.cg.Callers
 
 /**
  *
@@ -61,15 +62,16 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
 
     case class State(
             field:                              Field,
-            var referenceImmutability:          FieldReferenceImmutability                                         = ImmutableFieldReference,
-            var prematurelyReadDependee:        Option[EOptionP[Field, FieldPrematurelyRead]]                      = None,
-            var purityDependees:                Set[EOptionP[DeclaredMethod, Purity]]                              = Set.empty,
-            var lazyInitInvocation:             Option[(DeclaredMethod, PC)]                                       = None,
-            var calleesDependee:                Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], List[PC])] = Map.empty,
-            var referenceImmutabilityDependees: Set[EOptionP[Field, FieldReferenceImmutability]]                   = Set.empty,
-            var escapeDependees:                Set[EOptionP[DefinitionSite, EscapeProperty]]                      = Set.empty,
-            var tacDependees:                   Map[Method, (EOptionP[Method, TACAI], PCs)]                        = Map.empty,
-            var typeDependees:                  Set[EOptionP[ObjectType, TypeImmutability]]                        = Set.empty
+            var referenceImmutability:          FieldReferenceImmutability                                                     = ImmutableFieldReference,
+            var prematurelyReadDependee:        Option[EOptionP[Field, FieldPrematurelyRead]]                                  = None,
+            var purityDependees:                Set[EOptionP[DeclaredMethod, Purity]]                                          = Set.empty,
+            var lazyInitInvocation:             Option[(DeclaredMethod, PC)]                                                   = None,
+            var calleesDependee:                Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], List[PC])]             = Map.empty,
+            var referenceImmutabilityDependees: Set[EOptionP[Field, FieldReferenceImmutability]]                               = Set.empty,
+            var escapeDependees:                Set[EOptionP[DefinitionSite, EscapeProperty]]                                  = Set.empty,
+            var tacDependees:                   Map[Method, (EOptionP[Method, TACAI], PCs)]                                    = Map.empty,
+            var typeDependees:                  Set[EOptionP[ObjectType, TypeImmutability]]                                    = Set.empty,
+            var calledMethodsDependees:         Map[Method, (EOptionP[Method, Callers], (TACode[TACMethodParameter, V], PCs))] = Map.empty
     ) {
         def hasDependees: Boolean = {
             prematurelyReadDependee.isDefined || purityDependees.nonEmpty || prematurelyReadDependee.isDefined ||

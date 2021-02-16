@@ -117,8 +117,8 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
         if (field.isFinal)
             return Result(field, ImmutableFieldReference);
 
-        if (field.isPublic)
-            return Result(field, MutableFieldReference);
+        //if (field.isPublic)
+        //    return Result(field, MutableFieldReference);
 
         implicit val state: State = State(field)
 
@@ -126,7 +126,7 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
 
         // Fields are not final if they are read prematurely!
         if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key)))
-            return Result(field, MutableFieldReference)
+            return Result(field, MutableFieldReference);
 
         // Collect all classes that have access to the field, i.e. the declaring class and possibly
         // classes in the same package as well as subclasses
@@ -138,7 +138,12 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                 Set(field.classFile)
             }
         val classesHavingAccess: Iterator[ClassFile] =
-            if (field.isProtected) {
+            if (field.isPublic) {
+                if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
+                    return Result(field, MutableFieldReference);
+                }
+                project.allClassFiles.iterator
+            } else if (field.isProtected) {
                 if (typeExtensibility(thisType).isYesOrUnknown) {
                     return Result(field, MutableFieldReference);
                 }
@@ -150,18 +155,19 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
             } else {
                 initialClasses.iterator
             }
+
         // If there are native methods, we give up
-        if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
+        if (classesHavingAccess.exists(_.methods.exists(_.isNative))) { //TODO flag for comparison...reim
             if (!field.isFinal)
-                return Result(field, MutableFieldReference)
+                return Result(field, MutableFieldReference);
         }
+
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            taCode ← getTACAI(method, pcs)
+            taCode ← getTACAI(method, pcs) //TODO field accesses via this
         } {
-            if (methodUpdatesField(method, taCode, pcs)) {
+            if (methodUpdatesField(method, taCode, pcs))
                 return Result(field, MutableFieldReference);
-            }
         }
         if (state.lazyInitInvocation.isDefined) {
             val calleesEOP = propertyStore(state.lazyInitInvocation.get._1, Callees.key)
@@ -182,9 +188,9 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
             case LongType | ObjectType.Long       ⇒ 0L
             case CharType | ObjectType.Character  ⇒ '\u0000'
             case BooleanType | ObjectType.Boolean ⇒ false
-            case IntegerType | ObjectType.Integer |
-                ByteType | ObjectType.Byte |
-                ShortType | ObjectType.Short ⇒ 0
+            case IntegerType | ObjectType.Integer | ByteType | ObjectType.Byte | ShortType |
+                ObjectType.Short ⇒
+                0
             case _: ReferenceType ⇒ null
         }
     }
@@ -308,7 +314,9 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                                             } else
                                                 true
                                         }
+                                    //
 
+                                    //
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
                                     // println("reference has escaped")
                                     // note that here we assume real three address code (flat hierarchy)
@@ -362,7 +370,10 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                 // Must either be null or freshly allocated
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
-                else handleEscapeProperty(propertyStore(definitionSites(method, definition.pc), EscapeProperty.key))
+                else
+                    handleEscapeProperty(
+                        propertyStore(definitionSites(method, definition.pc), EscapeProperty.key)
+                    )
             }
         }
     }
@@ -379,14 +390,16 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
         val result = ep match {
             case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒ false
             case FinalP(AtMost(_))                                   ⇒ true
-            case _: FinalEP[DefinitionSite, EscapeProperty]          ⇒ true // Escape state is worse than via return
+            case _: FinalEP[DefinitionSite, EscapeProperty] ⇒
+                true // Escape state is worse than via return
 
             case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
                 state.escapeDependees += ep
                 false
 
-            case InterimUBP(AtMost(_))                        ⇒ true
-            case _: InterimEP[DefinitionSite, EscapeProperty] ⇒ true // Escape state is worse than via return
+            case InterimUBP(AtMost(_)) ⇒ true
+            case _: InterimEP[DefinitionSite, EscapeProperty] ⇒
+                true // Escape state is worse than via return
 
             case _ ⇒
                 state.escapeDependees += ep
@@ -416,7 +429,8 @@ trait L0FieldReferenceImmutabilityAnalysisScheduler extends FPCFAnalysisSchedule
 /**
  * Executor for the eager field reference immutability analysis.
  */
-object EagerL0FieldReferenceImmutabilityAnalysis extends L0FieldReferenceImmutabilityAnalysisScheduler
+object EagerL0FieldReferenceImmutabilityAnalysis
+    extends L0FieldReferenceImmutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -434,7 +448,8 @@ object EagerL0FieldReferenceImmutabilityAnalysis extends L0FieldReferenceImmutab
 /**
  * Executor for the lazy field reference immutability analysis.
  */
-object LazyL0FieldReferenceImmutabilityAnalysis extends L0FieldReferenceImmutabilityAnalysisScheduler
+object LazyL0FieldReferenceImmutabilityAnalysis
+    extends L0FieldReferenceImmutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
