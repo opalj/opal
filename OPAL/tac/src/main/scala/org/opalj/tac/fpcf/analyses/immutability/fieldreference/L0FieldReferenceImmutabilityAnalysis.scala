@@ -9,7 +9,7 @@ package fieldreference
 import scala.annotation.switch
 
 import org.opalj.br.BooleanType
-import org.opalj.br.ClassFile
+//import org.opalj.br.ClassFile
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
@@ -131,36 +131,36 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
         // Collect all classes that have access to the field, i.e. the declaring class and possibly
         // classes in the same package as well as subclasses
         // Give up if the set of classes having access to the field is not closed
-        val initialClasses =
-            if (field.isProtected || field.isPackagePrivate) {
-                project.classesPerPackage(thisType.packageName)
-            } else {
-                Set(field.classFile)
-            }
+        //val initialClasses =
+        //    if (field.isProtected || field.isPackagePrivate) {
+        //        project.classesPerPackage(thisType.packageName)
+        //    } else {
+        //        Set(field.classFile)
+        //    }
         //val classesHavingAccess: Iterator[ClassFile] =
-            if (field.isPublic) {
-                if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
-                    return Result(field, MutableFieldReference);
-                }
-              //  project.allClassFiles.iterator
-            } else if (field.isProtected) {
-                if (typeExtensibility(thisType).isYesOrUnknown) {
-                    return Result(field, MutableFieldReference);
-                }
-                /*val subclassesIterator: Iterator[ClassFile] =
+        if (field.isPublic) {
+            if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
+                return Result(field, MutableFieldReference);
+            }
+            //  project.allClassFiles.iterator
+        } else if (field.isProtected) {
+            if (typeExtensibility(thisType).isYesOrUnknown) {
+                return Result(field, MutableFieldReference);
+            }
+            /*val subclassesIterator: Iterator[ClassFile] =
                     classHierarchy.allSubclassTypes(thisType, reflexive = false).flatMap { ot ⇒
                         project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
                     }
                 initialClasses.iterator ++ subclassesIterator*/
-            } //else {
-                //initialClasses.iterator
-            //}
+        } //else {
+        //initialClasses.iterator
+        //}
 
         // If there are native methods, we give up
         //if (classesHavingAccess.exists(_.methods.exists(_.isNative))) { //TODO flag for comparison...reim
         //    if (!field.isFinal)
         //        return Result(field, MutableFieldReference);
-       // }
+        // }
 
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
