@@ -94,7 +94,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     call.descriptor,
                     call.declaringClass,
                     stmt.pc,
-                    call.resolveCallTarget,
+                    call.resolveCallTarget(state.method.declaringClassType),
                     calls
                 )
 
@@ -105,7 +105,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     call.descriptor,
                     call.declaringClass,
                     call.pc,
-                    call.resolveCallTarget,
+                    call.resolveCallTarget(state.method.declaringClassType),
                     calls
                 )
 
