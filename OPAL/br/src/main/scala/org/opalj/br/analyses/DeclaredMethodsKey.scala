@@ -123,7 +123,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 // all methods present in the current class file, excluding methods derived
                 // from any supertype that are not overridden by this type.
                 m ← cf.methods
-                if m.isStatic || m.isPrivate || m.isAbstract || m.isInitializer
+                if m.isStatic || m.isAbstract || m.isInitializer
             } {
                 if (m.isAbstract) {
                     // Abstract methods can be inherited, but will not appear as instance methods
@@ -174,6 +174,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
                                 val staticMethodResult = p.staticCall(
                                     subtype,
+                                    subtype,
                                     isInterface = false,
                                     m.name,
                                     m.descriptor
@@ -205,7 +206,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             }
 
             for {
-                // all non-private, non-abstract instance methods present in the current class file,
+                // all non-abstract instance methods present in the current class file,
                 // including methods derived from any supertype that are not overridden by this type
                 mc ← p.instanceMethods(classType)
             } {

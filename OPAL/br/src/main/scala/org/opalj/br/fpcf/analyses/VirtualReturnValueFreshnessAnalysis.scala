@@ -38,19 +38,28 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
     private[this] val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    def determineFreshness(m: DeclaredMethod): ProperPropertyComputationResult = {
-        if (m.descriptor.returnType.isBaseType || m.descriptor.returnType.isVoidType) {
-            return Result(m, VPrimitiveReturnValue)
+    def determineFreshness(dm: DeclaredMethod): ProperPropertyComputationResult = {
+        if (dm.descriptor.returnType.isBaseType || dm.descriptor.returnType.isVoidType) {
+            return Result(dm, VPrimitiveReturnValue)
         }
 
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
 
-        val methods = project.virtualCall(
-            m.declaringClassType.packageName,
-            m.declaringClassType,
-            m.name,
-            m.descriptor
-        )
+        val cfo = project.classFile(dm.declaringClassType)
+        val methods =
+            if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
+                project.interfaceCall(
+                    dm.declaringClassType,
+                    dm.declaringClassType,
+                    dm.name,
+                    dm.descriptor
+                )
+            else project.virtualCall(
+                dm.declaringClassType,
+                dm.declaringClassType,
+                dm.name,
+                dm.descriptor
+            )
 
         var temporary: VirtualMethodReturnValueFreshness = VFreshReturnValue
 
@@ -63,7 +72,7 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
             eOptionP: EOptionP[DeclaredMethod, ReturnValueFreshness]
         ): Option[ProperPropertyComputationResult] = eOptionP match {
             case FinalP(NoFreshReturnValue) ⇒
-                Some(Result(m, VNoFreshReturnValue))
+                Some(Result(dm, VNoFreshReturnValue))
 
             case FinalP(PrimitiveReturnValue) ⇒
                 throw new RuntimeException("unexpected property")
@@ -81,9 +90,9 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
         def returnResult(): ProperPropertyComputationResult = {
             if (dependees.isEmpty)
-                Result(m, temporary)
+                Result(dm, temporary)
             else
-                InterimResult(m, VNoFreshReturnValue, temporary, dependees, c)
+                InterimResult(dm, VNoFreshReturnValue, temporary, dependees, c)
         }
 
         def c(someEPS: SomeEPS): ProperPropertyComputationResult = {

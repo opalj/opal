@@ -465,6 +465,19 @@ final class Method private[br] (
     override def isMethod: Boolean = true
 
     override def asMethod: this.type = this
+
+    def isAccessibleBy(objectType: ObjectType)(implicit classHierarchy: ClassHierarchy): Boolean = {
+        visibilityModifier match {
+            case Some(ACC_PUBLIC) ⇒ true
+            case Some(ACC_PROTECTED) ⇒
+                declaringClassFile.thisType.packageName == objectType.packageName ||
+                    objectType.isASubtypeOf(declaringClassFile.thisType).isNotNo
+            case Some(ACC_PRIVATE) ⇒
+                // TODO Java 11+ allows access to private methods from nestmates
+                declaringClassFile.thisType == objectType
+            case None ⇒ declaringClassFile.thisType.packageName == objectType.packageName
+        }
+    }
 }
 
 /**

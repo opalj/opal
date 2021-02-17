@@ -970,8 +970,8 @@ case class StaticFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#staticCall] for further details.
      */
-    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
-        p.staticCall(declaringClass, isInterface, name, descriptor)
+    def resolveCallTarget(callingContext: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+        p.staticCall(callingContext, declaringClass, isInterface, name, descriptor)
     }
 
     final override def resolveCallTargets(
@@ -981,7 +981,7 @@ case class StaticFunctionCall[+V <: Var[V]](
         p:  ProjectLike,
         ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
-        resolveCallTarget(p).toSet
+        resolveCallTarget(callingContext).toSet
     }
 
     private[tac] override def remapIndexes(
