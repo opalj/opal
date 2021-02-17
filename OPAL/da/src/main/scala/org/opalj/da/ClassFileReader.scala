@@ -55,7 +55,10 @@ object ClassFileReader
     // JAVA 9
     with bi.reader.Module_attributeReader
     with bi.reader.ModuleMainClass_attributeReader
-    with bi.reader.ModulePackages_attributeReader {
+    with bi.reader.ModulePackages_attributeReader
+    // JAVA 11
+    with bi.reader.NestHost_attributeReader
+    with bi.reader.NestMembers_attributeReader {
 
     type ClassFile = da.ClassFile
 
