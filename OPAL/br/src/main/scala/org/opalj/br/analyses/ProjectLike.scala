@@ -49,7 +49,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     implicit val classHierarchy: ClassHierarchy
     implicit val config: Config
 
-    val allClassFiles: Iterable[ClassFile]
+    protected[this] val allClassFiles: Iterable[ClassFile]
 
     /**
      * Returns the minimum version number of the JVM required to run the code of the project, i.e.,
@@ -213,6 +213,13 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * `compareAccessibilityAware` method for further details.)
      */
     protected[this] val instanceMethods: SomeMap[ObjectType, ConstArray[MethodDeclarationContext]]
+
+    /**
+     * Returns the nest host (see JVM 11 Spec. 5.4.4) for the given type, if explicitly given. For
+     * classes without an explicit NestHost or NestMembers attribute, the type itself is the nest
+     * host, but this is NOT recorded in this map.
+     */
+    val nests: SomeMap[ObjectType, ObjectType]
 
     /**
      * Tests if the given method belongs to the interface of an '''object''' identified by

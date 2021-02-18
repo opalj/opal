@@ -3,6 +3,7 @@ package org.opalj
 package br
 
 import scala.math.Ordered
+
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.ACC_NATIVE
@@ -20,6 +21,7 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.Instruction
 import org.opalj.collection.immutable.RefArray
+import org.opalj.br.analyses.ProjectLike
 
 /**
  * Represents a single method.
@@ -466,15 +468,24 @@ final class Method private[br] (
 
     override def asMethod: this.type = this
 
-    def isAccessibleBy(objectType: ObjectType)(implicit classHierarchy: ClassHierarchy): Boolean = {
+    def isAccessibleBy(
+        objectType: ObjectType
+    )(
+        implicit
+        project:        ProjectLike,
+        classHierarchy: ClassHierarchy
+    ): Boolean = {
         visibilityModifier match {
+            // TODO Respect Java 9 modules
             case Some(ACC_PUBLIC) ⇒ true
             case Some(ACC_PROTECTED) ⇒
                 declaringClassFile.thisType.packageName == objectType.packageName ||
                     objectType.isASubtypeOf(declaringClassFile.thisType).isNotNo
             case Some(ACC_PRIVATE) ⇒
-                // TODO Java 11+ allows access to private methods from nestmates
-                declaringClassFile.thisType == objectType
+                val thisType = declaringClassFile.thisType
+                thisType == objectType ||
+                    project.nests.getOrElse(thisType, thisType) ==
+                    project.nests.getOrElse(objectType, objectType)
             case None ⇒ declaringClassFile.thisType.packageName == objectType.packageName
         }
     }
