@@ -154,6 +154,7 @@ class Project[Source] private (
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
+        final val nests:                              Map[ObjectType, ObjectType],
         // Note that the referenced array will never shrink!
         @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] = new AtomicReferenceArray[AnyRef](32)
 )(
@@ -220,6 +221,7 @@ class Project[Source] private (
             newClassHierarchy,
             instanceMethods,
             overridingMethods,
+            nests,
             newProjectInformation
         )(
             newLogContext,
@@ -1946,6 +1948,7 @@ object Project {
 
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
             val sources = OpenHashMap.empty[ObjectType, Source] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
+            val nests = OpenHashMap.empty[ObjectType, ObjectType] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
 
             def processModule(
                 classFile:        ClassFile,
@@ -1978,6 +1981,29 @@ object Project {
                 }
             }
 
+            def processNestInformation(classFile: ClassFile, classType: ObjectType): Unit = {
+                def putNestInfo(member: ObjectType, host: ObjectType): Unit = {
+                    val prevHost = nests.put(member, host)
+                    if (prevHost.isDefined && prevHost.get != host)
+                        handleInconsistentProject(
+                            logContext,
+                            InconsistentProjectException(
+                                s"inconsistent nesting information for class $member, "+
+                                    s"found in nests $host and ${prevHost.get}"+
+                                    "\n\tkeeping the first one."
+                            )
+                        )
+                }
+
+                classFile.attributes.foreach {
+                    case NestHost(hostClassType) ⇒ putNestInfo(classType, hostClassType)
+                    case NestMembers(classes) ⇒
+                        putNestInfo(classType, classType)
+                        classes.foreach(putNestInfo(_, classType))
+                    case _ ⇒
+                }
+            }
+
             def processProjectClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
                 val projectType = classFile.thisType
                 if (classFile.isModuleDeclaration) {
@@ -2002,7 +2028,8 @@ object Project {
                     }
                     projectFieldsCount += classFile.fields.size
                     objectTypeToClassFile(projectType) = classFile
-                    source.foreach(sources(classFile.thisType) = _)
+                    source.foreach(sources(projectType) = _)
+                    processNestInformation(classFile, projectType)
                 }
             }
 
@@ -2071,6 +2098,7 @@ object Project {
                     libraryFieldsCount += libClassFile.fields.size
                     objectTypeToClassFile(libraryType) = libClassFile
                     sources(libraryType) = source
+                    processNestInformation(libClassFile, libraryType)
                 }
             }
 
@@ -2176,7 +2204,8 @@ object Project {
                 virtualMethodsCount,
                 classHierarchy,
                 Await.result(instanceMethodsFuture, Duration.Inf),
-                Await.result(overridingMethodsFuture, Duration.Inf)
+                Await.result(overridingMethodsFuture, Duration.Inf),
+                nests
             )
 
             time {
