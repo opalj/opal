@@ -13,4 +13,3 @@ trait Java11LibraryFramework
     with NestHost_attributeBinding
     with NestMembers_attributeBinding
 
-

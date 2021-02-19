@@ -12,9 +12,9 @@ import org.opalj.bi.reader.NestMembers_attributeReader
  * @author Dominik Helm
  */
 trait NestMembers_attributeBinding
-        extends NestMembers_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+    extends NestMembers_attributeReader
+    with ConstantPoolBinding
+    with AttributeBinding {
 
     type NestMembers_attribute = NestMembers
 

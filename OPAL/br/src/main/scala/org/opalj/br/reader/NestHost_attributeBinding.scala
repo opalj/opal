@@ -11,9 +11,9 @@ import org.opalj.bi.reader.NestHost_attributeReader
  * @author Dominik Helm
  */
 trait NestHost_attributeBinding
-        extends NestHost_attributeReader
-        with ConstantPoolBinding
-        with AttributeBinding {
+    extends NestHost_attributeReader
+    with ConstantPoolBinding
+    with AttributeBinding {
 
     type NestHost_attribute = NestHost
 

@@ -884,4 +884,32 @@ object ClassFileReader
     ): ModuleMainClass_attribute = {
         new ModuleMainClass_attribute(attribute_name_index, main_class_index)
     }
+
+    // --------------------------------------------------------------------------------------------
+    // JAVA 9
+    // --------------------------------------------------------------------------------------------
+
+    type NestHost_attribute = da.NestHost_attribute
+    def NestHost_attribute(
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        host_class_index:     Constant_Pool_Index
+    ): NestHost_attribute = {
+        new NestHost_attribute(attribute_name_index, host_class_index)
+    }
+
+    type NestMembers_attribute = da.NestMembers_attribute
+    def NestMembers_attribute(
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        classes_array:        ClassesArray
+    ): NestMembers_attribute = {
+        new NestMembers_attribute(
+            attribute_name_index, IntArray._UNSAFE_from(classes_array)
+        )
+    }
 }
