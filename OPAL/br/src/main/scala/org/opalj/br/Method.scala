@@ -2,6 +2,7 @@
 package org.opalj
 package br
 
+import scala.collection.{Map ⇒ SomeMap}
 import scala.math.Ordered
 
 import org.opalj.bi.ACC_ABSTRACT
@@ -21,7 +22,6 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.RETURN
 import org.opalj.br.instructions.Instruction
 import org.opalj.collection.immutable.RefArray
-import org.opalj.br.analyses.ProjectLike
 
 /**
  * Represents a single method.
@@ -469,10 +469,10 @@ final class Method private[br] (
     override def asMethod: this.type = this
 
     def isAccessibleBy(
-        objectType: ObjectType
+        objectType: ObjectType,
+        nests:      SomeMap[ObjectType, ObjectType]
     )(
         implicit
-        project:        ProjectLike,
         classHierarchy: ClassHierarchy
     ): Boolean = {
         visibilityModifier match {
@@ -484,8 +484,7 @@ final class Method private[br] (
             case Some(ACC_PRIVATE) ⇒
                 val thisType = declaringClassFile.thisType
                 thisType == objectType ||
-                    project.nests.getOrElse(thisType, thisType) ==
-                    project.nests.getOrElse(objectType, objectType)
+                    nests.getOrElse(thisType, thisType) == nests.getOrElse(objectType, objectType)
             case None ⇒ declaringClassFile.thisType.packageName == objectType.packageName
         }
     }

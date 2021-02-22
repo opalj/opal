@@ -696,15 +696,18 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         if (isInterface) {
             classFile(declaringClassType) match {
                 case Some(cf) ⇒ cf.findMethod(name, descriptor) match {
-                    case Some(method) if method.isAccessibleBy(callerClassType) ⇒ Success(method)
+                    case Some(method) if method.isAccessibleBy(callerClassType, nests) ⇒
+                        Success(method)
                     case _ ⇒ Empty
                 }
                 case None ⇒ Empty
             }
         } else {
             resolveClassMethodReference(declaringClassType, name, descriptor) match {
-                case s @ Success(method) ⇒ if (method.isAccessibleBy(callerClassType)) s else Empty
-                case e                   ⇒ e
+                case s @ Success(method) ⇒
+                    if (method.isAccessibleBy(callerClassType, nests)) s else Empty
+                case e ⇒
+                    e
             }
         }
     }
@@ -776,7 +779,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 else {
                     classFile.findMethod(name, descriptor) match {
                         case Some(method) ⇒
-                            if (method.isAccessibleBy(callerClassType))
+                            if (method.isAccessibleBy(callerClassType, nests))
                                 Success(method)
                             else
                                 Empty
@@ -791,7 +794,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                                 definedMethod.compare(name, descriptor)
                             } match {
                                 case Some(mdc) ⇒
-                                    if (mdc.method.isAccessibleBy(callerClassType))
+                                    if (mdc.method.isAccessibleBy(callerClassType, nests))
                                         Success(mdc.method)
                                     else
                                         Empty
@@ -841,7 +844,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         val receiverClassType = receiverType.asObjectType
         val mdcResult = lookupVirtualMethod(callerClassType, receiverClassType, name, descriptor)
         mdcResult flatMap { mdc ⇒
-            if (mdc.method.isAccessibleBy(callerClassType))
+            if (mdc.method.isAccessibleBy(callerClassType, nests))
                 Success(mdc.method)
             else
                 Empty
@@ -924,7 +927,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 if (method.isPrivate && useJava11CallSemantics) {
                     // The method is private, thus it is selected (JVM 11 Spec Section 5.4.6)
                     // However, access control may still fail
-                    if (!method.isAccessibleBy(callerType))
+                    if (!method.isAccessibleBy(callerType, nests))
                         return Set.empty[Method];
                     return methods;
                 } else {
@@ -1012,7 +1015,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             if (method.isPrivate) {
                 // The concrete method is private, thus it is selected (JVM 11 Spec Section 5.4.6)
                 // However, access control may still fail
-                if (!method.isAccessibleBy(callerType))
+                if (!method.isAccessibleBy(callerType, nests))
                     return SomeSet.empty[Method];
                 return methods;
             } else if (method.classFile.thisType eq declaringClassType) {
