@@ -16,6 +16,7 @@ import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.ConstArray.find
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.Java11MajorVersion
+import org.opalj.bi.Java1MajorVersion
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -56,7 +57,8 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * the maximum class file major version number of any class file in the project.
      */
     def requiredJVMVersion: Int = {
-        allClassFiles.maxBy(_.version._2).version._2
+        if (allClassFiles.isEmpty) Java1MajorVersion
+        else allClassFiles.maxBy(_.version._2).version._2
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -834,7 +836,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         val receiverClassType = receiverType.asObjectType
         val mdcResult = lookupVirtualMethod(callerClassType, receiverClassType, name, descriptor)
         mdcResult flatMap { mdc ⇒
-            if (mdc.method.isAccessibleBy(callerClassType))
+            if (!mdc.method.isPrivate || mdc.method.isAccessibleBy(callerClassType))
                 Success(mdc.method)
             else
                 Empty
@@ -937,10 +939,11 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     // This is an overapproximation, if the inherited concrete method is
                     // always overridden by all concrete subtypes and subtypeCF
                     // is an abstract class in a closed package/module
-                    methods ++=
-                        overriddenBy(mdc.method).iterator.filter { m ⇒
-                            m.classFile.thisType isSubtypeOf subtype
-                        }
+                    if (!mdc.method.isPrivate)
+                        methods ++=
+                            overriddenBy(mdc.method).iterator.filter { m ⇒
+                                m.classFile.thisType isSubtypeOf subtype
+                            }
 
                     // for interfaces we have to continue, because we may have inherited a
                     // a concrete method from a class type which is not in the set of
@@ -1075,7 +1078,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
             }
             mdcOption match {
-                case Some(mdc) ⇒
+                case Some(mdc) if !mdc.method.isPrivate ⇒
                     if (methods.isEmpty) {
                         methods = overriddenBy(mdc.method)
                     } else {
