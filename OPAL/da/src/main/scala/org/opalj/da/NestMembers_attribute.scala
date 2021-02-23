@@ -12,16 +12,16 @@ import scala.xml.NodeBuffer
  */
 case class NestMembers_attribute(
         attribute_name_index: Constant_Pool_Index,
-        classes_aray:         ClassesArray // Array[Constant_Pool_Index]
+        classes_array:        ClassesArray // Array[Constant_Pool_Index]
 ) extends Attribute {
 
-    override def attribute_length: Int = 2 + classes_aray.size * 2
+    override def attribute_length: Int = 2 + classes_array.size * 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
             <summary>NestMembers</summary>
             {
-                classes_aray.map[String](p ⇒ cp(p).toString).sorted.map[NodeBuffer] { p ⇒
+                classes_array.map[String](p ⇒ cp(p).toString).sorted.map[NodeBuffer] { p ⇒
                     <span>{ p }</span><br/>
                 }
             }

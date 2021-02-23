@@ -1064,7 +1064,7 @@ package object ba { ba ⇒
                 Some(da.ModuleMainClass_attribute(attributeNameIndex, mainClassIndex))
 
             case br.ModulePackages.KindId ⇒
-                val br.ModulePackages(packages /*:IndexedSeq[Sgring]*/ ) = attribute
+                val br.ModulePackages(packages /*:IndexedSeq[String]*/ ) = attribute
                 val attributeNameIndex = CPEUtf8(bi.ModulePackagesAttribute.Name)
                 Some(da.ModulePackages_attribute(attributeNameIndex, packages.map(CPEPackage _)))
 
@@ -1102,6 +1102,18 @@ package object ba { ba ⇒
                                 CPEClass(withInterface, false)): IntArray
                         ))
                 ))
+
+            case br.NestHost.KindId ⇒
+                val br.NestHost(hostClassType /*:ObjectType*/ ) = attribute
+                val attributeNameIndex = CPEUtf8(bi.NestHostAttribute.Name)
+                val hostClassIndex = CPEClass(hostClassType, false)
+                Some(da.NestHost_attribute(attributeNameIndex, hostClassIndex))
+
+            case br.NestMembers.KindId ⇒
+                val br.NestMembers(classes /*:IndexedSeq[ObjectType]*/ ) = attribute
+                val attributeNameIndex = CPEUtf8(bi.NestMembersAttribute.Name)
+                val classIndices = classes.map(CPEClass(_, false))
+                Some(da.ModulePackages_attribute(attributeNameIndex, classIndices))
 
             //
             // OPAL'S OWN ATTRIBUTES
