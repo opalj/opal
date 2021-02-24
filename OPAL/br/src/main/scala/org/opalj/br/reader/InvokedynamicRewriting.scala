@@ -618,20 +618,22 @@ trait InvokedynamicRewriting
             info("rewriting invokedynamic", s"Scala: $invokedynamic ⇒ $newInvokestatic")
         }
 
-        val instructionsBuilder = new InstructionsBuilder(5)
+        val instructionsBuilder = new InstructionsBuilder(7)
         val maxStack = loadBootstrapArgument(
             bootstrapArguments.head.asInstanceOf[ConstantValue[_]], instructionsBuilder
         )
         instructionsBuilder ++= newInvokestatic
+        instructionsBuilder ++= ARETURN
 
         val newInstructions = instructionsBuilder.result()
 
-        if (newInstructions.length == 5) {
-            var i = 0
-            while (i < 5) {
-                instructions(pc + i) = newInstructions(i)
-                i += 1
+        val firstInstruction = newInstructions.head
+        if (newInstructions.length == 7 && firstInstruction.opcode == LDC_W.opcode) {
+            instructions(pc) = firstInstruction match {
+                case LoadString_W(s)                      ⇒ LoadString(s)
+                case LoadDynamic_W(bsm, name, descriptor) ⇒ LoadDynamic(bsm, name, descriptor)
             }
+            instructions(pc + 2) = newInvokestatic
         } else {
             val methodName = cp(methodNameIndex).asString
             val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
