@@ -285,7 +285,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 // we have to avoid endless recursion if we can't find the target method
                 if ((MethodHandleSubtypes.contains(receiverType) ||
                     VarHandleSubtypes.contains(receiverType)) &&
-                    !isSignaturePolymorphic(receiverType, name, descriptor)) {
+                    !isSignaturePolymorphic(receiverType, descriptor)) {
                     // At least in Java 15 the signature polymorphic methods are not overloaded and
                     // it actually doesn't make sense to do so. Therefore we decided to only
                     // make this lookup if strictly required.
@@ -610,14 +610,29 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             (definingClassType eq ObjectType.MethodHandle) ||
             (definingClassType eq ObjectType.VarHandle)
         ) &&
-            method.isNativeAndVarargs &&
-            (method.descriptor == SignaturePolymorphicMethodObject ||
-                method.descriptor == SignaturePolymorphicMethodVoid ||
-                method.descriptor == SignaturePolymorphicMethodBoolean)
+            method.descriptor.parametersCount == 1 &&
+            method.descriptor.parameterType(0) == ArrayType.ArrayOfObject &&
+            method.isNativeAndVarargs
     }
 
     /**
      * Returns true if the descriptor is a signature polymorphic method for the given class type.
+     * (See JVM 9 Spec. for details.)
+     */
+    def isSignaturePolymorphic(
+        definingClassType: ObjectType,
+        descriptor:        MethodDescriptor
+    ): Boolean = {
+        (definingClassType eq ObjectType.MethodHandle) &&
+            descriptor == SignaturePolymorphicMethodObject ||
+            (definingClassType eq ObjectType.VarHandle) &&
+            (descriptor == SignaturePolymorphicMethodObject ||
+                descriptor == SignaturePolymorphicMethodVoid ||
+                descriptor == SignaturePolymorphicMethodBoolean)
+    }
+
+    /**
+     * Returns true if the signature is a signature polymorphic method for the given class type.
      * (See JVM 9 Spec. for details.)
      */
     def isSignaturePolymorphic(
