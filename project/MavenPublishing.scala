@@ -22,8 +22,8 @@ object MavenPublishing {
 
   def pomNodeSeq(): NodeSeq = {
     <scm>
-        <url>git@bitbucket.org:delors/opal.git</url>
-        <connection>scm:git:git@bitbucket.org:delors/opal.git</connection>
+        <url>git@github.com:stg-tud/opal.git</url>
+        <connection>scm:git:git@github.com:stg-tud/opal.git</connection>
     </scm>
     <developers>
         <developer>
@@ -38,11 +38,15 @@ object MavenPublishing {
         <developer>
             <id>errt</id>
             <name>Dominik Helm</name>
-        </developer>        
+        </developer>
         <developer>
           <id>kuebler</id>
           <name>Florian Kübler</name>
-        </developer>                
+        </developer>
+        <developer>
+          <id>roth</id>
+          <name>Tobias Peter Roth</name>
+        </developer>
     </developers>
   }
 

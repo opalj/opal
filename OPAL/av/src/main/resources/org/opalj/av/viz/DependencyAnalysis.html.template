@@ -212,7 +212,7 @@
 			</div>
 			<div class="box">
 			    <h1>Resources</h1>
-				<a href="http://bitbucket.org/delors/opal">Sourcecode repository</a><br />		
+				<a href="https://github.com/stg-tud/opal">Sourcecode repository</a><br />		
 				<a href="http://opal-project.de/library/api/SNAPSHOT">API Documentation</a><br />	
 				<a href="http://opal-project.de/license.php">Sourcecode License</a> <br />	
 				<br />
@@ -221,8 +221,8 @@
 			<div class="box">
 				<h1>People</h1>
 			
-				<a href="mailto:eichberg@informatik.tu-darmstadt.de">Michael Eichberg (project lead)</a><br />
-				<a href="http://opal-project.de/members.php"> Further Members</a>
+				<a href="http://opal-project.de/members.php"> Project Members</a>
+				<a href="mailto:opal@st.informatik.tu-darmstadt.de"> Contact</a><br />
 			</div>
 		</div>
 	</body>

@@ -19,6 +19,7 @@
 ## Optional Steps
  1. update BugPicker
  1. update OPAL-Disassembler ATOM Plug-in 
+ 1. update OPAL-Integration IntelliJ Plug-in 
  
 # Preparing the next release 
  1. merge changes from master back to develop (in particular version information)
