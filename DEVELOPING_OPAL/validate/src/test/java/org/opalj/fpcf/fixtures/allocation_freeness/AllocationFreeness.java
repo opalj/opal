@@ -34,7 +34,7 @@ public class AllocationFreeness {
     @MethodWithAllocations("May throw null pointer exception")
     private void setField(AllocationFreeness other, int i){ other.field = i; }
 
-    //FIXME: Java11 issue @AllocationFreeMethod("Calls method without allocations")
+    @AllocationFreeMethod("Calls method without allocations")
     private void allocationFreeCall(){
         emptyMethod();
     }
