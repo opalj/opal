@@ -237,7 +237,7 @@ class PKECPropertyStore(
     //
     // --------------------------------------------------------------------------------------------
 
-    private[par] def scheduleTask(task: QualifiedTask): Unit = {
+    private[par] def scheduleTask(task: QualifiedTask): Unit = handleExceptions {
         val numTasks = scheduledTasks.incrementAndGet()
         if (idle) {
             initialQueues(numTasks % THREAD_COUNT).offer(task)
@@ -262,7 +262,7 @@ class PKECPropertyStore(
         scheduleTask(new ExecuteTask(f))
     }
 
-    override def handleResult(r: PropertyComputationResult): Unit = {
+    override def handleResult(r: PropertyComputationResult): Unit = handleExceptions {
         (r.id: @switch) match {
 
             case NoResult.id ⇒
@@ -482,12 +482,12 @@ class PKECPropertyStore(
         threads.foreach { _.start }
         threads.foreach { _.join }
         if (doTerminate) {
-            if (exception ne null) throw exception
+            if (exception ne null) throw exception;
             else throw new InterruptedException
         }
     }
 
-    override def waitOnPhaseCompletion(): Unit = {
+    override def waitOnPhaseCompletion(): Unit = handleExceptions {
         idle = false
 
         // If some values were explicitly set, we have to trigger corresponding triggered
@@ -606,7 +606,7 @@ class PKECPropertyStore(
                 case ct: ControlThrowable    ⇒ throw ct
                 case _: InterruptedException ⇒
                 case ex: Throwable ⇒
-                    exception = ex
+                    collectException(ex)
                     doTerminate = true
             } finally {
                 threads.foreach { t ⇒
@@ -619,7 +619,7 @@ class PKECPropertyStore(
 
     class FallbackThread(ownTId: Int) extends PKECThread(s"PropertyStoreFallbackThread-#$ownTId") {
 
-        override def run(): Unit = {
+        override def run(): Unit = handleExceptions {
             var pkId = 0
             while (pkId <= PropertyKey.maxId) {
                 if (propertyKindsComputedInThisPhase(pkId) && (lazyComputations(pkId) eq null)) {
@@ -643,7 +643,7 @@ class PKECPropertyStore(
 
     class CycleResolutionThread(ownTId: Int) extends PKECThread(s"PropertyStoreCycleResolutionThread-#$ownTId") {
 
-        override def run(): Unit = {
+        override def run(): Unit = handleExceptions {
             val localInterimStates = ArrayBuffer.empty[EPKState]
             var pkId = 0
             while (pkId <= PropertyKey.maxId) {
@@ -674,7 +674,7 @@ class PKECPropertyStore(
 
     class PartialPropertiesFinalizerThread(ownTId: Int) extends PKECThread(s"PropertyStorePartialPropertiesFinalizerThread-#$ownTId") {
 
-        override def run(): Unit = {
+        override def run(): Unit = handleExceptions {
             val pksToFinalize = subPhaseFinalizationOrder(subPhaseId).toSet
 
             pksToFinalize foreach { pk ⇒
@@ -697,7 +697,7 @@ class PKECPropertyStore(
     class ExecuteTask(f: ⇒ Unit) extends QualifiedTask {
         val priority = 0
 
-        override def apply(): Unit = {
+        override def apply(): Unit = handleExceptions {
             f
         }
     }
@@ -707,7 +707,7 @@ class PKECPropertyStore(
     ) extends QualifiedTask {
         val priority = 0
 
-        override def apply(): Unit = {
+        override def apply(): Unit = handleExceptions {
             handleFinalResult(finalEP)
         }
     }
