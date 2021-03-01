@@ -19,3 +19,4 @@
 
 // 6 →
 7:/*pc=24:*/ return {lv6}
+// ⚡️ <uncaught exception ⇒ abnormal return>
