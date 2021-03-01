@@ -12,7 +12,7 @@ OPAL consists of several projects:
 
 * **Static Analysis Infrastructure** (OPAL/si): Contains a generic lattices based framework for the implementation of modularized static analyses.
 
-* **Bytecode Infrastructure** (OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 11 bytecode.
+* **Bytecode Infrastructure** (OPAL/bi): The necessary infrastructure for parsing Java 1.0 - Java 15 bytecode.
 
 * **Bytecode Disassembler** (OPAL/da): A Java Bytecode Disassembler that provides a one-to-one representation of the class file and which can be used to create class filesbeautiful HTML representations of Java class files.
 
