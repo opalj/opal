@@ -51,7 +51,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
     describe("an AnalysisScenario") {
 
         // FIXME!
-        ignore("should be possible to create an empty schedule") {
+        it("should be possible to create an empty schedule") {
             val ps = new PropertyStoreConfigurationRecorder()
             val batches = AnalysisScenario(Set(), ps).computeSchedule(ps).batches
             batches should be('empty)
@@ -64,7 +64,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 val scenario = AnalysisScenario(Set.empty, ps)
                 val schedule = scenario.computeSchedule(ps)
                 /*smoke test: */ schedule(ps, trace = false)
-                schedule.batches.size should be(1)
+                schedule.batches should be('empty)
                 ps.phaseConfigurations.head should be((Set.empty, Set.empty, Map.empty))
             }
 
