@@ -14,7 +14,7 @@ public class AllocationFreeness {
     private int field;
 
     @AllocationFreeMethod("Empty method")
-    private void emptyMethod() { }
+    static void emptyMethod() { }
 
     @AllocationFreeMethod("Simple getter")
     private int getField() {
