@@ -50,7 +50,6 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
     describe("an AnalysisScenario") {
 
-        // FIXME!
         it("should be possible to create an empty schedule") {
             val ps = new PropertyStoreConfigurationRecorder()
             val batches = AnalysisScenario(Set(), ps).computeSchedule(ps).batches
