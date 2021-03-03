@@ -45,7 +45,7 @@ object MavenPublishing {
         </developer>
         <developer>
           <id>roth</id>
-          <name>Tobias Peter Roth</name>
+          <name>Tobias Roth</name>
         </developer>
     </developers>
   }
