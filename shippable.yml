@@ -29,4 +29,4 @@ after_script:
 
 notifications:
   email:
-    - eichberg@informatik.tu-darmstadt.de
+    - opal@st.informatik.tu-darmstadt.de

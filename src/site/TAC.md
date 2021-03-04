@@ -121,11 +121,11 @@ In this case the initial three-address code will be:
         7:/*pc=21:*/ goto 5
     }
 
-In the above example, the `static` method `endless` defines, e.g., a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by the first statement with index 0 (`useSites`); the parameter it not used any further - `useSites` for `param1` only contains one value. Def/use information is always directly available at a local-variable initialization ([`DVar`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.DVar)) or usage site ([`UVar`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.UVar)).
+In the above example, the `static` method `endless` defines, e.g., a [parameter](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) which is immediately used by the first statement with index 0 (`useSites`); the parameter it not used any further - `useSites` for `param1` only contains one value. Def/use information is always directly available at a local-variable initialization ([`DVar`](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.DVar)) or usage site ([`UVar`](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.UVar)).
 
-Parameters of methods always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5` independent of the method being static or not. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
+Parameters of methods always get origins in the range `[-2-method.parametersCount..-2]`. This way a trivial check (`-512 < origin < 0`) is sufficient to determine that a [parameter](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.TACMethodParameter) is used. Furthermore, the `origin -1` is reserved for `this`; if the method is an instance method. For example, a method with the parameters `(Object o, int i, double d, Float[] fs)` will have the origins: `o -> -2`, `i -> -3`, `d -> -4` and `fs -> -5` independent of the method being static or not. By mapping the explicitly declared parameters as described, an analysis can handle static and instance methods similarily.
 
-Furthermore, given that the def-use information is explicitly reified, the information that the receiver object of the `println` [call](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.MethodCall) (statement 6) is either `lv1` or `lv3`, i.e., `System.out` or `System.err`, is directly available.
+Furthermore, given that the def-use information is explicitly reified, the information that the receiver object of the `println` [call](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.MethodCall) (statement 6) is either `lv1` or `lv3`, i.e., `System.out` or `System.err`, is directly available.
 
 ---
 
@@ -170,7 +170,7 @@ The 3-address code of the above method is shown next:
 
 Given the method's three-address code, we can now get the definition sites and the upper type bound of the method's return values as follows:
 
-1) Get all return statements using the CFG (the implicit cast `_.asBasicBlock` is safe, because a [`CatchNode`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.br.cfg.CatchNode) cannot be a predecessor of an `ExitNode`):
+1) Get all return statements using the CFG (the implicit cast `_.asBasicBlock` is safe, because a [`CatchNode`](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.br.cfg.CatchNode) cannot be a predecessor of an `ExitNode`):
 
         val returnStmts = code.cfg.normalReturnNode.predecessors.iterator.map(bb => code.stmts(bb.asBasicBlock.endPC))
 
@@ -189,7 +189,7 @@ In this case, the def-site is 2 for the first return statement (index: 3) and `-
 
  - The definition sites of the (explicitly declared) parameters of a method have the ids `[-2...-2-#Parameters]`.
  - A use-site always references the statement where the variable is initialized. Hence, use-sites are always in the range `[0..index of the last instruction]`
- - The standard TAC AST as well as all standard optimizations/transformations keep the AST flat; i.e., nested expressions are always [`ValueExpr`](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.ValueExpr).
+ - The standard TAC AST as well as all standard optimizations/transformations keep the AST flat; i.e., nested expressions are always [`ValueExpr`](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.ValueExpr).
  - Code that was identified as dead by the underlying analysis is stripped away.
- - The initial transformation from bytecode to 3-address code inherently performs advanced dead-code removal; however, it does not perform changes which require structural changes of the CFG therefore, some [NOP](http://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.Nop) instructions may be found in the code. The `pc`s of those instructions are computed by negating the original `pc` and subtracting 1 (`-pc-1`).
+ - The initial transformation from bytecode to 3-address code inherently performs advanced dead-code removal; however, it does not perform changes which require structural changes of the CFG therefore, some [NOP](https://www.opal-project.de/library/api/SNAPSHOT/#org.opalj.tac.Nop) instructions may be found in the code. The `pc`s of those instructions are computed by negating the original `pc` and subtracting 1 (`-pc-1`).
  - `pc` directly references the program counter/index into the instruction array of the original bytecode instruction. The `pc` can generally be used to lookup line number etc. information in the original code attributes. (Recall that negative pcs have to be transformed first if necessary.)
