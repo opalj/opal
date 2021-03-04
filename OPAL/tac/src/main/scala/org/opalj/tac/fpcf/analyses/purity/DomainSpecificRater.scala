@@ -5,12 +5,14 @@ package fpcf
 package analyses
 package purity
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.value.ValueInformation
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DPure
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
+import org.opalj.br.MethodDescriptor
 
 /**
  * Rates, whether three address code statements perform actions that are domain-specific pure.
@@ -205,10 +207,11 @@ trait ExceptionRater extends DomainSpecificRater {
         val declClass = call.declaringClass
         if (declClass.isObjectType && call.name == "<init>" &&
             declClass.asObjectType.isSubtypeOf(ObjectType.Throwable) &&
-            !project.instanceMethods(declClass.asObjectType).exists { mdc ⇒
-                mdc.name == "fillInStackTrace" &&
-                    mdc.method.classFile.thisType != ObjectType.Throwable
-            })
+            !ConstArray.find(project.instanceMethods(declClass.asObjectType))(mdc ⇒
+                mdc.method.compare(
+                    "fillInStackTrace",
+                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                )).exists(_.method.classFile.thisType != ObjectType.Throwable))
             Some(DPure)
         else super.handleCall(call, receiver)
     }

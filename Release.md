@@ -5,8 +5,8 @@
  1. run tests and integration tests
  1. migrate everything to the master branch
  1. update version number in `build.sbt`
- 1. update version information in `src/index.md`
- 1. turn off assertions in `local.sbt`
+ 1. update version information in `src/site/index.md`
+ 1. turn off assertions in `scalac.options.local`
  1. run tests and integration tests (to ensure that everything works if we have no assertions)
  1. publish to maven (`sbt publishedSigned`)
  1. go to Sonatype to release the build
@@ -19,9 +19,10 @@
 ## Optional Steps
  1. update BugPicker
  1. update OPAL-Disassembler ATOM Plug-in 
+ 1. update OPAL-Integration IntelliJ Plug-in 
  
 # Preparing the next release 
  1. merge changes from master back to develop (in particular version information)
  1. update version information (`build.sbt`) (x.y.z-SNAPSHOT)
- 1. turn on assertions (`build.sbt`)
+ 1. turn on assertions (`scalac.options.local`)
  1. release a new snapshot build to ensure that the snapshot is always younger than the last release (`sbt publishSigned`)

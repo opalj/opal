@@ -57,8 +57,9 @@ scalacOptions in (ScalaUnidoc, unidoc) := {
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
   Opts.doc.sourceUrl(
-    "https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?" +
-      (if (isSnapshot.value) "at=develop" else "at=master")
+  	"https://raw.githubusercontent.com/stg-tud/opal/" +
+      (if (isSnapshot.value) "develop" else "master") +
+      "/€{FILE_PATH}.scala"
   )
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("The OPAL Framework")
