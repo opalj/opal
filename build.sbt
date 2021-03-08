@@ -413,7 +413,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
  * TASKS, etc
  *
  */
-// To run the task: OPAL/publish::generateSite or compile:generateSite
+// To run the task: compile:generateSite
 val generateSite = taskKey[File]("creates the OPAL website") in Compile
 generateSite := {
   lazy val disassemblerJar = (assembly in da).value
