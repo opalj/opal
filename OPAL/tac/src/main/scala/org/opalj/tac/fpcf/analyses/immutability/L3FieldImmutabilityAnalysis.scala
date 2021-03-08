@@ -54,7 +54,6 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.value.ASArrayValue
 import org.opalj.br.fpcf.properties.DeepImmutableClass
 import org.opalj.br.fpcf.properties.DependentImmutableClass
 import org.opalj.br.fpcf.properties.MutableClass
@@ -137,7 +136,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    var considerEscape = false /*project.config.getBoolean( //TODO due to unsoundness
+    var considerEscape = true /*project.config.getBoolean( //TODO due to unsoundness
         "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape"
     )*/
 
@@ -384,20 +383,21 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         determineEscapeViaFieldWritesWithKnownTAC(method, pcs, taCodeOption.get)
                 }
                 //TODO state.noEscapePossibilityViaReference = true
-                if (state.noEscapePossibilityViaReference) {
+                /*if (state.noEscapePossibilityViaReference) {
                     fieldAccessInformation.readAccesses(state.field).foreach { read ⇒
                         val (method, pcs) = read
                         val taCodeOption = getTACAI(method, pcs, isRead = true)
                         if (taCodeOption.isDefined)
                             determineEscapeViaFieldReadsWithKnownTAC(method, pcs, taCodeOption.get)
                     }
-                }
+                } */
             }
         }
 
         /**
          * Determine if the referenced object can escape via field reads.
          */
+        /*
         def determineEscapeViaFieldReadsWithKnownTAC(
             method: Method,
             pcs:    PCs,
@@ -471,7 +471,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             }) {
                 state.noEscapePossibilityViaReference = false
             }
-        }
+        } */ ////
 
         /**
          * Determine if the referenced object can escape via field writes
@@ -804,8 +804,8 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                             case Some(true) | None ⇒
                                 if (state.tacDependees.isEmpty && !state.concreteClassTypeIsKnown) {
-                                    if (state.typeImmutability == DeepImmutable ||
-                                        state.noEscapePossibilityViaReference) {
+                                    if (state.typeImmutability == DeepImmutable /*||
+                                        state.noEscapePossibilityViaReference*/ ) {
                                         DeepImmutableField
                                     } else if (state.typeImmutability == Mutable &&
                                         !state.fieldTypeIsDependentImmutable) {
@@ -844,9 +844,9 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             state.concreteClassTypeIsKnown && state.classTypeImmutability == DeepImmutable) {
                             Result(field, DeepImmutableField)
                         } else {
-                            if (state.noEscapePossibilityViaReference) {
+                            /*if (state.noEscapePossibilityViaReference) {
                                 Result(field, DeepImmutableField)
-                            } else {
+                            } else */ {
                                 if (state.fieldTypeIsDependentImmutable && field.fieldType == ObjectType.Object ||
                                     state.classTypeImmutability == DependentImmutable ||
                                     state.typeImmutability == DependentImmutable) {
@@ -920,7 +920,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     if (epk.isFinal) {
                         val tac = epk.asInstanceOf[FinalEP[Method, TACAI]].p.tac.get
                         determineEscapeViaFieldWritesWithKnownTAC(method, pcs._2, tac)(state)
-                        determineEscapeViaFieldReadsWithKnownTAC(method, pcs._1, tac)(state)
+                        //determineEscapeViaFieldReadsWithKnownTAC(method, pcs._1, tac)(state)
                     } else {
                         state.tacDependees += method -> ((newEP, pcs))
                     }
