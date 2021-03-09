@@ -43,7 +43,8 @@ trait HermesConfig {
             System.exit(2)
         }
         try {
-            val config = ConfigFactory.parseFile(configFile).withFallback(ConfigFactory.load())
+            val baseConfig = ConfigFactory.load("hermes.conf")
+            val config = ConfigFactory.parseFile(configFile).withFallback(baseConfig)
             setConfig(config)
         } catch {
             case t: Throwable ⇒
