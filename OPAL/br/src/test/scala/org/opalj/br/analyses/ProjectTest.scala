@@ -410,7 +410,7 @@ class ProjectTest extends FlatSpec with Matchers {
         it should "handle the case if an interface has no implementing class" in {
             val implementingMethods =
                 methodsProject.interfaceCall(
-                    superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid
+                    superI, superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid
                 )
             implementingMethods.size should be(0)
         }
@@ -419,13 +419,81 @@ class ProjectTest extends FlatSpec with Matchers {
             val classType = ObjectType("methods/b/B")
             val implementingMethods =
                 methodsProject.virtualCall(
-                    "methods/b", classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid
+                    classType, classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid
                 )
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
                 'name("publicMethod"),
-                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
+                'declaringClassFile(methodsProject.classFile(ObjectType("methods/b/DirectSub")).get)
+            )
+        }
+
+        it should "find private method for virtual calls" in {
+            val classType = ObjectType("methods/c/Super")
+            val implementingMethods =
+                methodsProject.virtualCall(
+                    classType,
+                    classType,
+                    "originallyPrivateMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(1)
+            implementingMethods.head should have(
+                'name("originallyPrivateMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
+                'declaringClassFile(methodsProject.classFile(classType).get)
+            )
+        }
+
+        it should "not find private method for virtual calls on subclasses" in {
+            val classType = ObjectType("methods/c/Sub1")
+            val implementingMethods =
+                methodsProject.virtualCall(
+                    classType,
+                    classType,
+                    "originallyPrivateMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(1)
+            implementingMethods.head should have(
+                'name("originallyPrivateMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
+                'declaringClassFile(methodsProject.classFile(classType).get)
+            )
+        }
+
+        it should "not find private method for virtual calls declared on subclasses" in {
+            val classType = ObjectType("methods/c/Sub2")
+            val implementingMethods =
+                methodsProject.virtualCall(
+                    classType,
+                    classType,
+                    "originallyPrivateMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(0)
+        }
+
+        it should "find private method for instance calls" in {
+            val classType = ObjectType("methods/c/Super")
+            val implementingMethods =
+                methodsProject.instanceCall(
+                    classType,
+                    classType,
+                    "originallyPrivateMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(true)
+            implementingMethods.value should have(
+                'name("originallyPrivateMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
+                'declaringClassFile(methodsProject.classFile(classType).get)
             )
         }
     }

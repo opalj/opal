@@ -181,9 +181,9 @@ class WrongDefault {
 
 class DeterministicCall {
 
-    //FIXME: Iusse with Java11 @LazyInitialized("Lazy initialization with call to deterministic method")
-    //FIXME: Issue with Java11 @NonFinal(value = "Analysis doesn't recognize lazy initialization",
-    //       analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
+    @LazyInitialized("Lazy initialization with call to deterministic method")
+    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -354,10 +354,10 @@ class ExceptionInInitialization {
      * @note As the field write is dead, this field is really 'effectively final' as it will never
      * be different from the default value.
      */
-    //FIXME: Issue with Java11 @EffectivelyFinal(value = "Field is never initialized, so it stays on its default value",
-    //        analyses = { L1FieldMutabilityAnalysis.class, L2FieldMutabilityAnalysis.class })
-    //FIXME: Issue with Java11 @NonFinal(value = "Instance field not considered by analysis",
-    //        analyses = L0FieldMutabilityAnalysis.class)
+    @EffectivelyFinal(value = "Field is never initialized, so it stays on its default value",
+            analyses = { L1FieldMutabilityAnalysis.class, L2FieldMutabilityAnalysis.class })
+    @NonFinal(value = "Instance field not considered by analysis",
+            analyses = L0FieldMutabilityAnalysis.class)
     private int x;
 
     private int getZero() {

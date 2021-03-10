@@ -94,7 +94,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     call.descriptor,
                     call.declaringClass,
                     stmt.pc,
-                    call.resolveCallTarget,
+                    call.resolveCallTarget(state.method.declaringClassType),
                     calls
                 )
 
@@ -105,7 +105,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     call.descriptor,
                     call.declaringClass,
                     call.pc,
-                    call.resolveCallTarget,
+                    call.resolveCallTarget(state.method.declaringClassType),
                     calls
                 )
 
@@ -249,7 +249,6 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: State): Unit = {
-        // TODO: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
         val callerType = caller.definedMethod.classFile.thisType
 
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues

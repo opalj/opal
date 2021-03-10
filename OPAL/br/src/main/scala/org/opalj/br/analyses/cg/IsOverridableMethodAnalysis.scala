@@ -53,6 +53,7 @@ private[analyses] class IsOverridableMethodAnalysis(
                 val cf = project.classFile(ot)
                 val subtypeMethod = cf.flatMap(_.findMethod(methodName, methodDescriptor))
                 if (subtypeMethod.isEmpty || !subtypeMethod.get.isFinal ||
+                    subtypeMethod.get.isPrivate || // private methods don't override
                     (
                         // let's test if this "final override", is for a different method...
                         method.isPackagePrivate &&
