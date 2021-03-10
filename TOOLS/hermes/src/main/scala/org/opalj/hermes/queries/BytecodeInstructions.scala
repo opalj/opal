@@ -20,7 +20,7 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
     private[this] final val OpcodesToOrdinalNumbers = new Array[Int](256)
 
     override val htmlDescription: Either[String, URL] = {
-        Right(new URL("http://www.opal-project.de/bi/JVMInstructions.xml"))
+        Right(new URL("https://www.opal-project.de/bi/JVMInstructions.xml"))
     }
 
     override def featureIDs: IndexedSeq[String] = {

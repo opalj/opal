@@ -128,6 +128,9 @@ object TACAI {
         optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue], AITACode[TACMethodParameter, aiResult.domain.DomainValue]]]
     ): AITACode[TACMethodParameter, aiResult.domain.DomainValue] = {
 
+        if (aiResult.wasAborted)
+            throw new IllegalArgumentException("cannot create TACAI from aborted AI result")
+
         val domain: aiResult.domain.type = aiResult.domain
         val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
         val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
