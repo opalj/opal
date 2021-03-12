@@ -148,8 +148,9 @@ object Purity {
             case None      ⇒ Traversable.empty
         }
 
-        val JDKFiles = if (withoutJDK) Traversable.empty
-        else JavaClassFileReader().ClassFiles(JRELibraryFolder)
+        val JDKFiles =
+            if (withoutJDK) Traversable.empty
+            else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         val dirName = if (cp eq JRELibraryFolder) "JDK" else cp.getName
         val projectEvalDir = evaluationDir.map(new File(_, dirName))
@@ -161,10 +162,11 @@ object Purity {
         var callGraphTime: Seconds = Seconds.None
 
         // TODO: use variables for the constants
-        implicit var config: Config = if (isLibrary)
-            ConfigFactory.load("LibraryProject.conf")
-        else
-            ConfigFactory.load("ApplicationProject.conf")
+        implicit var config: Config =
+            if (isLibrary)
+                ConfigFactory.load("LibraryProject.conf")
+            else
+                ConfigFactory.load("CommandLineProject.conf")
 
         // TODO: in case of application this value is already set
         if (closedWorldAssumption) {
@@ -188,7 +190,9 @@ object Purity {
                 libraryClassFilesAreInterfacesOnly = false,
                 Traversable.empty
             )
-        } { t ⇒ projectTime = t.toSeconds }
+        } { t ⇒
+            projectTime = t.toSeconds
+        }
 
         project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
             case None               ⇒ Set(domain)
@@ -209,7 +213,9 @@ object Purity {
         )
 
         PropertyStore.updateDebug(debug)
-        val ps = time { project.get(PropertyStoreKey) } { t ⇒ propertyStoreTime = t.toSeconds }
+        val ps = time { project.get(PropertyStoreKey) } { t ⇒
+            propertyStoreTime = t.toSeconds
+        }
 
         analysis match {
             case LazyL0PurityAnalysis ⇒
@@ -227,12 +233,16 @@ object Purity {
 
         time {
             project.get(callGraphKey)
-        } { t ⇒ callGraphTime = t.toSeconds }
+        } { t ⇒
+            callGraphTime = t.toSeconds
+        }
 
         val reachableMethods =
-            ps.entities(Callers.key).collect {
-                case FinalEP(e: DeclaredMethod, c: Callers) if c ne NoCallers ⇒ e
-            }.toSet
+            ps.entities(Callers.key)
+                .collect {
+                    case FinalEP(e: DeclaredMethod, c: Callers) if c ne NoCallers ⇒ e
+                }
+                .toSet
 
         val analyzedMethods = projMethods.filter(reachableMethods.contains)
 
@@ -240,15 +250,18 @@ object Purity {
             val analyses = analysis :: support
 
             manager.runAll(
-                analyses,
-                { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
-                    if (css.contains(analysis)) {
-                        analyzedMethods.foreach { dm ⇒ ps.force(dm, br.fpcf.properties.Purity.key) }
+                analyses, { css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                if (css.contains(analysis)) {
+                    analyzedMethods.foreach { dm ⇒
+                        ps.force(dm, br.fpcf.properties.Purity.key)
                     }
                 }
+            }
             )
 
-        } { t ⇒ analysisTime = t.toSeconds }
+        } { t ⇒
+            analysisTime = t.toSeconds
+        }
         ps.shutdown()
 
         val purityEs = ps(analyzedMethods, br.fpcf.properties.Purity.key).filter {
@@ -263,16 +276,32 @@ object Purity {
         val compileTimePure = purityEs.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
         val pure = purityEs.collect { case FinalEP(m: DefinedMethod, Pure) ⇒ m }
         val sideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, SideEffectFree) ⇒ m }
-        val externallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if isExternal(m, p) ⇒ m }
-        val externallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m }
-        val contextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p) }
-        val contextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val externallyPure = purityEs.collect {
+            case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if isExternal(m, p) ⇒ m
+        }
+        val externallySideEffectFree = purityEs.collect {
+            case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m
+        }
+        val contextuallyPure = purityEs.collect {
+            case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p)
+        }
+        val contextuallySideEffectFree = purityEs.collect {
+            case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p)
+        }
         val dPure = purityEs.collect { case FinalEP(m: DefinedMethod, DPure) ⇒ m }
         val dSideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DSideEffectFree) ⇒ m }
-        val dExternallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if isExternal(m, p) ⇒ m }
-        val dExternallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m }
-        val dContextuallyPure = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p) }
-        val dContextuallySideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val dExternallyPure = purityEs.collect {
+            case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if isExternal(m, p) ⇒ m
+        }
+        val dExternallySideEffectFree = purityEs.collect {
+            case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m
+        }
+        val dContextuallyPure = purityEs.collect {
+            case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p)
+        }
+        val dContextuallySideEffectFree = purityEs.collect {
+            case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p)
+        }
         val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, ImpureByAnalysis) ⇒ m }
 
         if (projectEvalDir.isDefined) {
@@ -325,7 +354,9 @@ object Purity {
             try {
                 if (runtimeNew) {
                     runtime.createNewFile()
-                    runtimeWriter.println("analysisName;project time;propertyStore time;callGraph time;analysis time; total time;")
+                    runtimeWriter.println(
+                        "analysisName;project time;propertyStore time;callGraph time;analysis time; total time;"
+                    )
                 }
                 runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime;$analysisTime")
             } finally {
@@ -341,13 +372,15 @@ object Purity {
                 if (resultsNew) {
                     results.createNewFile()
                     if (!individual)
-                        resultsWriter.println("compile time pure;pure;domain-specific pure;"+
-                            "side-effect free;domain-specific side-effect free;"+
-                            "externally pure;domain-specific externally pure;"+
-                            "externally side-effect free; domain-specific externally side-effect "+
-                            "free;contextually pure;domain-specific contextually pure;"+
-                            "contextually side-effect free;domain-specific contextually "+
-                            "side-effect free;impure;count")
+                        resultsWriter.println(
+                            "compile time pure;pure;domain-specific pure;"+
+                                "side-effect free;domain-specific side-effect free;"+
+                                "externally pure;domain-specific externally pure;"+
+                                "externally side-effect free; domain-specific externally side-effect "+
+                                "free;contextually pure;domain-specific contextually pure;"+
+                                "contextually side-effect free;domain-specific contextually "+
+                                "side-effect free;impure;count"
+                        )
                 }
 
                 if (!individual) {
@@ -388,19 +421,25 @@ object Purity {
                         resultsWriter.println(s"${m.definedMethod.toJava} => externally side-effect free")
                     }
                     for (m ← dExternallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific externally side-effect free")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific externally side-effect free"
+                        )
                     }
                     for ((m, p) ← contextuallyPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually pure: $p")
                     }
                     for ((m, p) ← dContextuallyPure) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific contextually pure: $p")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific contextually pure: $p"
+                        )
                     }
                     for ((m, p) ← contextuallySideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually side-effect free: $p")
                     }
                     for ((m, p) ← dContextuallySideEffectFree) {
-                        resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p")
+                        resultsWriter.println(
+                            s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p"
+                        )
                     }
                     for (m ← lbImpure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => impure")
@@ -550,7 +589,6 @@ object Purity {
                 support ::= LazyInterProceduralEscapeAnalysis
 
             case Some("none") ⇒
-
             case Some(a) ⇒
                 Console.println(s"unknown escape analysis: $a")
                 Console.println(usage)
@@ -587,12 +625,12 @@ object Purity {
                 }
 
             case Some("none") ⇒
-
-            case None ⇒ analysis match {
-                case LazyL0PurityAnalysis ⇒ LazyL0FieldImmutabilityAnalysis
-                case LazyL1PurityAnalysis ⇒ LazyL1FieldImmutabilityAnalysis
-                case LazyL2PurityAnalysis ⇒ LazyL1FieldImmutabilityAnalysis
-            }
+            case None ⇒
+                analysis match {
+                    case LazyL0PurityAnalysis ⇒ LazyL0FieldImmutabilityAnalysis
+                    case LazyL1PurityAnalysis ⇒ LazyL1FieldImmutabilityAnalysis
+                    case LazyL2PurityAnalysis ⇒ LazyL1FieldImmutabilityAnalysis
+                }
 
             case Some(a) ⇒
                 Console.println(s"unknown field mutability analysis: $a")
