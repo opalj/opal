@@ -136,8 +136,8 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
-    var considerEscape = true /*project.config.getBoolean( //TODO due to unsoundness
-        "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape"
+    var considerEscape = true; //TODO true /*project.config.getBoolean( //TODO due to unsoundness
+    /*    "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape"
     )*/
 
     val considerGenericity =
@@ -567,12 +567,12 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                 } else if (assignmentExpression.isNew) {
                                     val newStmt = assignmentExpression.asNew
                                     if (field.fieldType.isObjectType &&
-                                        newStmt.tpe.mostPreciseObjectType == field.fieldType.asObjectType &&
-                                        state.totalNumberOfFieldWrites == 1) {
+                                        newStmt.tpe.mostPreciseObjectType == field.fieldType.asObjectType /*&&
+                                        state.totalNumberOfFieldWrites == 1*/ ) {
                                         state.concreteClassTypeIsKnown = true
                                         handleKnownClassType(newStmt.tpe.mostPreciseObjectType)
                                     }
-
+                                    /*
                                     paramDefinitionStmt.asAssignment.targetVar.asVar.usedBy.exists { usedSiteIndex ⇒
                                         val stmt = taCode.stmts(usedSiteIndex)
                                         if (stmt.isNonVirtualMethodCall) {
@@ -581,7 +581,8 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                 doesNonVirtualMethodCallEnablesEscape(stmt.asNonVirtualMethodCall)
                                             } else false
                                         } else true
-                                    }
+                                    } */
+                                    true
                                 } else
                                     assignmentExpression.isConst
                             } else {
@@ -632,6 +633,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                     val arrayStmt = taCode.stmts(usedByIndex)
                                     if (arrayStmt != putStmt) {
                                         if (arrayStmt.isArrayStore) {
+
                                             val arrayStore = arrayStmt.asArrayStore
                                             val arrayStoreIndex = arrayStore.index
                                             val isArrayIndexConst =
@@ -679,7 +681,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                         handleKnownClassType(newStmt.tpe.mostPreciseObjectType)
                                                     }
 
-                                                    valueAssignment.targetVar.asVar.usedBy.exists { index ⇒
+                                                    /*valueAssignment.targetVar.asVar.usedBy.exists { index ⇒
                                                         val tmpStmt = taCode.stmts(index)
                                                         if (tmpStmt.isArrayStore) {
                                                             false // can be ingored
@@ -691,7 +693,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                                                             }
                                                             false //nothing to do in the else case. Stmt has still been handled
                                                         } else true
-                                                    }
+                                                    } */ true
                                                 } else true
                                             } else true
                                         } else true
@@ -724,8 +726,8 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
 
                                 val newStmt = definitionSiteAssignment.expr.asNew
                                 if (field.fieldType.isObjectType &&
-                                    newStmt.tpe.mostPreciseObjectType == field.fieldType.asObjectType &&
-                                    state.totalNumberOfFieldWrites == 1) {
+                                    newStmt.tpe.mostPreciseObjectType == field.fieldType.asObjectType /*&&
+                                    state.totalNumberOfFieldWrites == 1*/ ) {
                                     state.concreteClassTypeIsKnown = true
                                     handleKnownClassType(newStmt.tpe.mostPreciseObjectType)
                                 }
@@ -977,7 +979,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          * Determines whether the reference object escapes or can be mutated if the flag [[considerEscape]] is set
          */
         if (considerEscape) {
-            state.noEscapePossibilityViaReference = state.field.isPrivate
+            state.noEscapePossibilityViaReference = true //state.field.isPrivate
             if (state.referenceIsImmutable.isEmpty || state.referenceIsImmutable.get)
                 determineEscapeOfReferencedObjectOrValue()
             if (state.escapesStillDetermined && !state.field.isPrivate)
