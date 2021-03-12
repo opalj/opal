@@ -177,7 +177,7 @@ class DeterministicCallOnFinalField {
 
     private final class Inner {
 
-        @DeepImmutableField(value="immutable reference with base type")
+        @DeepImmutableField("immutable reference with base type")
         final int val;
 
         public Inner(int v) {
@@ -246,6 +246,7 @@ class NondeterministicCall {
 }
 
 class DoubleLocalAssignment {
+
     @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization with a local that is updated twice")
     private int x;
 
@@ -322,12 +323,10 @@ class ExceptionInInitialization {
 
 
 class CaughtExceptionInInitialization {
+
     //TODO reasoning
-    @MutableField(value = "Incorrect because lazy initialization is may not happen due to exception",
-    analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
-    L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-    @MutableFieldReference(value = "Incorrect because lazy initialization is may not happen due to exception",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @MutableField(value = "Incorrect because lazy initialization is may not happen due to exception")
+    @MutableFieldReference(value = "Incorrect because lazy initialization is may not happen due to exception")
     private int x;
 
     public int init(int i) {

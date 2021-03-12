@@ -5,10 +5,12 @@ package org.opalj.fpcf.fixtures.benchmark.generic;
 import org.opalj.fpcf.properties.immutability.classes.DependentImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
+@MutableType("")
 @DependentImmutableClass("")
-public final class Generic<T> {
+public class Generic<T> {
 
     @DependentImmutableField("")
     @ImmutableFieldReference("")

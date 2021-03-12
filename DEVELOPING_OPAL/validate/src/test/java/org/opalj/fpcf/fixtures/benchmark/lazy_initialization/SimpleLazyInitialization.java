@@ -1,26 +1,8 @@
-/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization;
 
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 
-/**
- * This class represents lazy initialization in the simplest way
- * with one guard and no synchronization
- *
- * @author Tobias Roth
- *
- */
-public class SimpleLazyInitialization {
-
-	@LazyInitializedNotThreadSafeFieldReference("the write to the object reference simpleLazyInitialization is not atomic")
-	private static SimpleLazyInitialization simpleLazyInitialization;
-	
-	public static SimpleLazyInitialization init() {
-		if(simpleLazyInitialization ==null)
-			simpleLazyInitialization = new SimpleLazyInitialization();
-		return simpleLazyInitialization;
-	}
-
+class SimpleLazyInitialization {
 	@LazyInitializedNotThreadSafeFieldReference("deterministic write due to guarded primitive type")
 	private int i = 0;
 	public int hashcode() {
@@ -28,6 +10,13 @@ public class SimpleLazyInitialization {
 			i = 5;
 		return i;
 	}
+	@LazyInitializedNotThreadSafeFieldReference("the write to the object reference simpleLazyInitialization is not atomic")
+	private static Object simpleLazyInitialization;
+
+	public static Object init() {
+		if (simpleLazyInitialization == null)
+			simpleLazyInitialization = new Object();
+		return simpleLazyInitialization;
+	}
+
 }
-
-

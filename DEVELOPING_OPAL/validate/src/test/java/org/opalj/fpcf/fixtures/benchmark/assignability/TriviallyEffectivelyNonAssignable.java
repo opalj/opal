@@ -2,28 +2,29 @@
 package org.opalj.fpcf.fixtures.benchmark.assignability;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
+import org.opalj.fpcf.properties.immutability.classes.ShallowImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
-import org.opalj.fpcf.properties.immutability.types.MutableType;
+import org.opalj.fpcf.properties.immutability.types.ShallowImmutableType;
 
 //@Immutable
-@MutableType("")
-@DeepImmutableClass("")
-public class TriviallyEffectivelyNonAssignable {
+@ShallowImmutableType("")
+@ShallowImmutableClass("")
+public final class TriviallyEffectivelyNonAssignable {
 
 
     @DeepImmutableField("")
     @ImmutableFieldReference("")
     private int n = 5;
 
-    @DeepImmutableField("")
+    @ShallowImmutableField("")
     @ImmutableFieldReference("")
-    private Object escapingViaConstructor = new Object();
+    private Object escapingViaConstructor;
 
     @DeepImmutableField("")
     @ImmutableFieldReference("")
-    private Object escapingViaGetter;
+    private Object escapingViaGetter = new Object();
 
 
     public TriviallyEffectivelyNonAssignable(Object o) {

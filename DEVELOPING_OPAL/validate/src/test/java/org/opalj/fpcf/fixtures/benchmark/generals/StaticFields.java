@@ -8,6 +8,7 @@ import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
+//@Immutable
 @MutableType("")
 @DeepImmutableClass("")
 public class StaticFields {
@@ -18,7 +19,6 @@ public class StaticFields {
     @ImmutableFieldReference("")
     private static Object[] shallowArray = new Object[5];
 
-    //@Immutable
     @DeepImmutableField("")
     @ImmutableFieldReference("")
     private static String deepImmutableString = "string";

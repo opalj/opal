@@ -1,11 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.benchmark.generals;
 
-//import edu.cmu.cs.glacier.qual.Immutable;
+import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
  * This testclass tests that different modifiers like transient, volatile or static
@@ -14,6 +15,8 @@ import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
  * @author Tobias Roth
  *
  */
+@MutableType("")
+@MutableClass("")
 public class DifferentModifier {
 
     @MutableField(value = "field has a mutable field reference")

@@ -9,7 +9,7 @@ import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSa
  */
 public class SimpleStringModel {
 
-    @ImmutableFieldReference(value = "final field")
+    @ImmutableFieldReference("final field")
     private final char value[];
 
     public char[] getValue(){
