@@ -20,19 +20,19 @@ import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceI
 
 @MutableType(value = "class is extensible",
         analyses = {L0TypeImmutabilityAnalysis.class, L1TypeImmutabilityAnalysis.class})
-@DeepImmutableClass(value = "class has only the deep immutable field tmc",
-        analyses = L1ClassImmutabilityAnalysis.class)
+//@DeepImmutableClass(value = "class has only the deep immutable field tmc",
+//        analyses = L1ClassImmutabilityAnalysis.class)
 @ShallowImmutableClass(value = "class has only the shallow immutable field tmc",
-        analyses = L0ClassImmutabilityAnalysis.class)
+        analyses = {L0ClassImmutabilityAnalysis.class, L1ClassImmutabilityAnalysis.class})
 public class ClassWithEffectiveDeepImmutableField {
 
     @MutableField(value="can not handle effective immutability",
     analyses = L0FieldImmutabilityAnalysis.class)
-    @DeepImmutableField(value = "immutable reference and mutable object that can not escape",
-    analyses = L3FieldImmutabilityAnalysis.class)
+   // @DeepImmutableField(value = "immutable reference and mutable object that can not escape",
+   // analyses = L3FieldImmutabilityAnalysis.class)
     @ShallowImmutableField(value = "can not handle transitive immutability",
             analyses = {L1FieldImmutabilityAnalysis.class,
-                    L2FieldImmutabilityAnalysis.class})
+                    L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
     @ImmutableFieldReference(value = "effectively immutable field reference",
             analyses = L0FieldReferenceImmutabilityAnalysis.class)
     private ClassWithPublicFields tmc = new ClassWithPublicFields();

@@ -51,7 +51,8 @@ import org.opalj.tac.common.DefinitionSitesKey
  */
 abstract class PropertiesTest extends FunSpec with Matchers {
 
-    final private[this] val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
+    final private[this] val testFilePath =
+        s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
     final private[this] val propertyPaths = List(
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/fpcf/properties",
         s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/org/opalj/br/analyses/properties"
@@ -116,18 +117,22 @@ abstract class PropertiesTest extends FunSpec with Matchers {
     def fixtureProjectPackage: List[String] = List.empty
 
     def createConfig(): Config = {
-        val configForEntryPoints = BaseConfig.withValue(
-            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
-        ).withValue(
+        val configForEntryPoints = BaseConfig
+            .withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+            )
+            .withValue(
                 InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
                 ConfigValueFactory.fromAnyRef(true)
             )
 
-        configForEntryPoints.withValue(
-            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
-            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
-        ).withValue(
+        configForEntryPoints
+            .withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+            )
+            .withValue(
                 InitialInstantiatedTypesKey.ConfigKeyPrefix+
                     "AllInstantiatedTypesFinder.projectClassesOnly",
                 ConfigValueFactory.fromAnyRef(true)
@@ -203,7 +208,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                     val nonFinalPSs = epss.filter(_.isRefinable)
                     assert(
                         nonFinalPSs.isEmpty,
-                        nonFinalPSs.mkString("some epss are not final:\n\t", "\n\t", "\n")
+                        nonFinalPSs.mkString("some eps are not final:\n\t", "\n\t", "\n")
                     )
                     val properties = epss.map(_.toFinalEP.p)
                     matcher.validateProperty(p, ats, e, annotation, properties) match {
@@ -303,8 +308,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
             val fp = formalParameters(dm)(i + 1)
             (
                 fp,
-                (a: String) ⇒ s"VirtualFormalParameter: (origin ${fp.origin} in "+
-                    s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
+                (a: String) ⇒
+                    s"VirtualFormalParameter: (origin ${fp.origin} in "+
+                        s"${dm.declaringClassType}#${m.toJava(s"@$a")}",
                 annotations
             )
         }
@@ -329,8 +335,9 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         } yield {
             (
                 as,
-                (a: String) ⇒ s"AllocationSite: (pc ${as.pc} in "+
-                    s"${m.toJava(s"@$a").substring(24)})",
+                (a: String) ⇒
+                    s"AllocationSite: (pc ${as.pc} in "+
+                        s"${m.toJava(s"@$a").substring(24)})",
                 annotations
             )
         }
@@ -364,7 +371,7 @@ abstract class PropertiesTest extends FunSpec with Matchers {
                     new RecordAllPropertyStoreTracer,
                     context.iterator.map(_.asTuple).toMap
                 )
-                */
+           */
                     val ps = PKESequentialPropertyStore(context: _*)
                     ps
                 }
@@ -392,8 +399,8 @@ abstract class PropertiesTest extends FunSpec with Matchers {
         val relevantPackages = fixtureProjectPackage
         if (fixtureProjectPackage.nonEmpty) {
             classFilePaths = classFilePaths ++ propertyPaths.map(new File(_))
-            classFilePaths = classFilePaths ++ relevantPackages.map {
-                path ⇒ new File({ s"$testFilePath$path" })
+            classFilePaths = classFilePaths ++ relevantPackages.map { path ⇒
+                new File({ s"$testFilePath$path" })
             }
         } else {
             classFilePaths = new File(testFilePath) :: classFilePaths

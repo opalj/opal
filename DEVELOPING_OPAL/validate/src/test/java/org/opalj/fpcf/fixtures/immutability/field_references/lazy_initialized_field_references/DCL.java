@@ -45,7 +45,7 @@ public class DCL {
         return initializedWithDCLRandomWrite;
     }
 
-    @MutableFieldReference(value = "The field is not thread safe and not deterministic written",
+    @LazyInitializedNotThreadSafeFieldReference(value = "The field is not thread safe and not deterministic written",
     analyses = L0FieldReferenceImmutabilityAnalysis.class)
     private int notThreadSafeRandomWrite;
 

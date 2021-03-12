@@ -12,8 +12,39 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.EagerFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigValueFactory
+//import org.opalj.br.analyses.cg.InitialEntryPointsKey
+//import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 
 class FieldLocalityTests extends PropertiesTest {
+
+    override def createConfig(): Config = {
+        val config = BaseConfig /*.withValue(
+            InitialEntryPointsKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllEntryPointsFinder")
+        ).withValue(
+                InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )
+        configForEntryPoints.withValue(
+            InitialInstantiatedTypesKey.ConfigKeyPrefix+"analysis",
+            ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.AllInstantiatedTypesFinder")
+        ).withValue(
+                InitialInstantiatedTypesKey.ConfigKeyPrefix+
+                    "AllInstantiatedTypesFinder.projectClassesOnly",
+                ConfigValueFactory.fromAnyRef(true)
+            )*/
+            .withValue(
+                "org.opalj.br.analyses.cg.ClosedPackagesKey",
+                fromAnyRef("org.opalj.br.analyses.cg.AllPackagesClosed")
+            )
+            .withValue("org.opalj.br.analyses.cg.ClassExtensibilityKey", ConfigValueFactory.fromAnyRef(
+                "org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible"
+            ))
+        config
+    }
 
     val analyses = Set[FPCFAnalysisScheduler](
         EagerFieldLocalityAnalysis,

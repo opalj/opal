@@ -339,18 +339,16 @@ final class MutableClassWithGenericField {
             new SimpleGenericClass<>(new FinalEmptyClass(), new FinalEmptyClass(), new FinalEmptyClass());
 }
 
-@DeepImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
-@DeepImmutableClass(value = "has only deep immutable fields", analyses = L1ClassImmutabilityAnalysis.class)
-@ShallowImmutableType(value = "class is not extensible", analyses = L0TypeImmutabilityAnalysis.class)
-@ShallowImmutableClass(value = "can not handle generics", analyses = L0ClassImmutabilityAnalysis.class)
+//@DeepImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
+//@DeepImmutableClass(value = "has only deep immutable fields", analyses = L1ClassImmutabilityAnalysis.class)
+@ShallowImmutableType(value = "class is not extensible", analyses = {L0TypeImmutabilityAnalysis.class, L1TypeImmutabilityAnalysis.class})
+@ShallowImmutableClass(value = "can not handle generics", analyses = {L0ClassImmutabilityAnalysis.class, L1ClassImmutabilityAnalysis.class})
 final class ClassWithGenericField_shallow {
 
     @MutableField(value="can not handle effective immutability", analyses = L0FieldImmutabilityAnalysis.class)
-    @ShallowImmutableField(value="can not handle generic types",
+    @ShallowImmutableField(value="the generic type is concretised with mutable types",
             analyses = {L1FieldImmutabilityAnalysis.class,
-            L2FieldImmutabilityAnalysis.class})
-    @DeepImmutableField(value = "the generic type is concretised with deep immutable types",
-            analyses = L3FieldImmutabilityAnalysis.class)
+            L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
     @ImmutableFieldReference(value = "field is effectively final",
             analyses = L0FieldReferenceImmutabilityAnalysis.class)
     private SimpleGenericClass<SimpleMutableClass,FinalEmptyClass,FinalEmptyClass> gc =

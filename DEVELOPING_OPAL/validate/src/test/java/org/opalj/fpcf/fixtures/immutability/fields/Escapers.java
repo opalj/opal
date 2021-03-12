@@ -52,7 +52,7 @@ class TransitiveEscape2 {
     }
 }
 class OneThatNotEscapesAndOneWithDCL {
-    @DeepImmutableField(value = "immutable field reference and the assigned object is known",
+    @ShallowImmutableField(value = "immutable field reference and mutable type",
             analyses = L3FieldImmutabilityAnalysis.class)
     @ImmutableFieldReference(value = "field is only written once",
             analyses = L0FieldReferenceImmutabilityAnalysis.class)
@@ -121,15 +121,15 @@ class GenericNotEscapesMutualEscapeDependencyNotAbleToResolve{
     }
 }
 
-class GenericNotEscapesMutualEscapeDependencyAbleToResolve{
+class GenericNotEscapesMutualEscapeDependencyAbleToResolve<T>{
 
     @DeepImmutableField("")
     @ImmutableFieldReference("")
     private FinalEmptyClass fec = new FinalEmptyClass();
 
-    @DeepImmutableField("")
+    @DependentImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
     @ImmutableFieldReference("")
-    private SimpleGenericClass sgc;
+    private SimpleGenericClass<T> sgc;
 
     public GenericNotEscapesMutualEscapeDependencyAbleToResolve() {
         this.sgc = new SimpleGenericClass(this.fec);
@@ -137,7 +137,7 @@ class GenericNotEscapesMutualEscapeDependencyAbleToResolve{
 }
 
 @DependentImmutableClass("")
-class SimpleGenericClass<T> {
+final class SimpleGenericClass<T> {
     @DependentImmutableField(value = "")
     private T t;
     SimpleGenericClass(T t){

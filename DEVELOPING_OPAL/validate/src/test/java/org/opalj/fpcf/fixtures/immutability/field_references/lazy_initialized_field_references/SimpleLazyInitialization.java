@@ -19,25 +19,24 @@ import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceI
  * @author Tobias Roth
  *
  */
-public class simpleLazyInitialization {
+public class SimpleLazyInitialization {
 	@LazyInitializedNotThreadSafeFieldReference(value = "the write to the object reference simpleLazyInitialization" +
 			" is not atomic",
 			analyses = L0FieldReferenceImmutabilityAnalysis.class)
-	private static simpleLazyInitialization simpleLazyInitialization;
+	private static SimpleLazyInitialization simpleLazyInitialization;
 	
-	public static simpleLazyInitialization init() {
+	public static SimpleLazyInitialization init() {
 		if(simpleLazyInitialization ==null)
-			simpleLazyInitialization = new simpleLazyInitialization();
+			simpleLazyInitialization = new SimpleLazyInitialization();
 		return simpleLazyInitialization;
 	}
 
-	@ShallowImmutableField(value = "can not handle transitive immutability",
+	/*@ShallowImmutableField(value = "can not handle transitive immutability",
 			analyses = L2FieldImmutabilityAnalysis.class)
 	@DeepImmutableField(value = "field has immutable field reference an primitive type",
-			analyses = L3FieldImmutabilityAnalysis.class)
-	@MutableField(value = "can not handle effective immutability and lazy initialization",
-			analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class})
-	@LazyInitializedNotThreadSafeButDeterministicReference(value = "deterministic write due to guarded primitive type",
+			analyses = L3FieldImmutabilityAnalysis.class) */
+	@MutableField(value = "can not handle effective immutability and lazy initialization")
+	@LazyInitializedNotThreadSafeFieldReference(value = "deterministic write due to guarded primitive type",
 			analyses = {L0FieldReferenceImmutabilityAnalysis.class})
 	private int i = 0;
 	public int hashcode() {

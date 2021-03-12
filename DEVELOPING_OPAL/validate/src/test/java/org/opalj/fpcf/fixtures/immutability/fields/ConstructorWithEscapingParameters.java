@@ -11,7 +11,7 @@ public class ConstructorWithEscapingParameters {
     @ImmutableFieldReference("The field is only assigned in the constructor.")
     private TrivialClass tc1;
 
-    @DeepImmutableField("The construtor pararameter of the assigned object not escape")
+   //TODO @DeepImmutableField("The construtor pararameter of the assigned object not escape")
     @ImmutableFieldReference("The field is only assigned in the constructor.")
     private TrivialClass tc2;
 

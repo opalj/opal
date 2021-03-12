@@ -10,7 +10,7 @@ import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSa
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 
 public class ArrayClasses {
-
+/*
     @DeepImmutableField("The elements of the array can not escape")
     @ImmutableFieldReference("Array is eager initialized")
     private Object[] zzz = new Object[]{1, 2, 3};
@@ -173,5 +173,5 @@ public class ArrayClasses {
             q = new Integer[]{new Integer(1), new Integer(2), new Integer(3)};
         return q[2];
     }
-
+*/
 }

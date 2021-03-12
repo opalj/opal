@@ -7,9 +7,11 @@ import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.DependentImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
+import org.opalj.fpcf.properties.immutability.classes.ShallowImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.DeepImmutableType;
@@ -22,10 +24,10 @@ import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
 
 @MutableType("Because of not final class")
-@DeepImmutableClass("has shallow immutable field")
-public class ShallowImmutableClass {
+@ShallowImmutableClass("has shallow immutable field")
+public class TrivialShallowImmutableClass {
 
-    @DeepImmutableField(value = "Because object can not escape", analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "Because object can not escape", analyses = L3FieldImmutabilityAnalysis.class)
     @ImmutableFieldReference("Because it is private")
     private TrivialMutableClass mutableClass = new TrivialMutableClass();
 }

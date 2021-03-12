@@ -7,6 +7,7 @@ import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.DependentImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
+import org.opalj.fpcf.properties.immutability.classes.ShallowImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
@@ -15,6 +16,7 @@ import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.DeepImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
+import org.opalj.fpcf.properties.immutability.types.ShallowImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
@@ -22,12 +24,12 @@ import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
 
-@DeepImmutableType(value = "has only deep immutable fields and is not extensible",
+@ShallowImmutableType(value = "has only deep immutable fields and is not extensible",
 analyses =  L1TypeImmutabilityAnalysis.class)
-@DeepImmutableClass(value = "has only deep immutable fields", analyses = L1ClassImmutabilityAnalysis.class)
+@ShallowImmutableClass(value = "has only deep immutable fields", analyses = L1ClassImmutabilityAnalysis.class)
 final class ClassWithGenericField {
 
-    @DeepImmutableField("")
+    @ShallowImmutableField("")
     @ImmutableFieldReference("")
     private SimpleGenericClass<SimpleMutableClass, FinalEmptyClass,FinalEmptyClass> gc =
             new SimpleGenericClass<SimpleMutableClass,FinalEmptyClass,FinalEmptyClass>

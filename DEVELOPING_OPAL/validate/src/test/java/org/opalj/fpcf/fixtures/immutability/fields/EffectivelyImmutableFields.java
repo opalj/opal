@@ -13,6 +13,7 @@ import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
@@ -21,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
 
 public class EffectivelyImmutableFields {
-
+/*
     @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",
     analyses = L3FieldImmutabilityAnalysis.class)
     @ShallowImmutableField(value = "can not handle transitive immutability",
@@ -59,7 +60,7 @@ public class EffectivelyImmutableFields {
 
     @MutableField(value = "due to mutable field reference",
             analyses = L3FieldImmutabilityAnalysis.class)
-    @MutableFieldReference(value = "write of reference objects is not atomic",
+    @LazyInitializedNotThreadSafeFieldReference(value = "write of reference objects is not atomic",
             analyses = L0FieldReferenceImmutabilityAnalysis.class)
     private Integer simpleLazyInitializedIntegerField;
 
@@ -504,5 +505,5 @@ public class EffectivelyImmutableFields {
             inTheGetterLazyInitializedHashMap = new HashMap<Object, Object>();
         return inTheGetterLazyInitializedHashMap;
     }
-
+*/
 }

@@ -4,7 +4,6 @@ package fpcf
 
 import java.net.URL
 
-import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
@@ -32,16 +31,24 @@ class FieldReferenceImmutabilityTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability")
+        List("org/opalj/fpcf/fixtures/immutability/sandbox50")
     }
 
     override def init(p: Project[URL]): Unit = {
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
-            Set[Class[_ <: AnyRef]](classOf[l2.DefaultPerformInvocationsDomainWithCFGAndDefUse[URL]])
+            import org.opalj.ai.domain.l1
+            Set[Class[_ <: AnyRef]](classOf[l1.DefaultDomainWithCFGAndDefUse[URL]])
         }
 
         p.get(RTACallGraphKey)
+        /*print("-----------------------------------------------------------------------------------")
+        print(p.config.getString(
+            "org.opalj.br.analyses.cg.ClosedPackagesKey.analysis"
+        ))
+        val e = 3
+        if (e % 3 == 0)
+            throw new Exception("------------------------------------------------------------------------") */
     }
 
     describe("no analysis is scheduled") {

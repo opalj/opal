@@ -19,10 +19,10 @@ public class Singleton {
     @MutableFieldReference("written by static initializer after the field becomes (indirectly) readable")
     private String name;
 
-    @DeepImmutableField(value ="referenced object can not escape", analyses = L3FieldImmutabilityAnalysis.class)
     @ShallowImmutableField(
             value = "only initialized once by the constructor",
-            analyses = { L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class }
+            analyses = { L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class ,
+                    L3FieldImmutabilityAnalysis.class}
     )
     @MutableField(value = "instance field not recognized by analysis",
             analyses = L0FieldImmutabilityAnalysis.class)

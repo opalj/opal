@@ -48,8 +48,8 @@ class SimpleLazyObjectsInstantiation{
 }
 
 class EscapingObjectDeep {
-
-    @DeepImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
+    //TODO
+    @ShallowImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
     private Object o;
 
     public synchronized Object getO(){
@@ -80,7 +80,7 @@ class EscapingObjectThatIsShallow {
 
 class ClassUsingEmptyClass {
 
-    @DeepImmutableField(value = "concrete object is known", analyses = L3FieldImmutabilityAnalysis.class)
+    //TODO   @DeepImmutableField(value = "concrete object is known", analyses = L3FieldImmutabilityAnalysis.class)
     private EmptyClass emptyClass = new EmptyClass();
 
     public EmptyClass getEmptyClass() {

@@ -70,7 +70,7 @@ public class MethodCalls {
         tm5.nop();
     }
 
-    @DeepImmutableField("")
+    @ShallowImmutableField("")
     @ImmutableFieldReference("")
     private TestMutable tm6 = new TestMutable();
 

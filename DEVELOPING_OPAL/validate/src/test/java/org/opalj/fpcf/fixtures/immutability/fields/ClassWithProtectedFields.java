@@ -6,6 +6,7 @@ import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
 import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
@@ -30,8 +31,7 @@ public class ClassWithProtectedFields {
             analyses = L0FieldReferenceImmutabilityAnalysis.class)
     protected ClassWithPublicFields cwpf1 = new ClassWithPublicFields();
 
-    @DeepImmutableField(value = "field has an immutable reference and the concrete known " +
-            "referenced object can not escape",
+    @ShallowImmutableField(value = "field has an immutable reference and mutable type",
             analyses = L3FieldImmutabilityAnalysis.class)
     @ImmutableFieldReference(value = "Declared final Field",
             analyses = L0FieldReferenceImmutabilityAnalysis.class)

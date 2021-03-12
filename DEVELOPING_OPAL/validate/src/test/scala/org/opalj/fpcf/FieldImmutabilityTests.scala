@@ -20,9 +20,9 @@ import org.opalj.ai.domain.l2
 import org.opalj.br.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
-import org.opalj.tac.fpcf.analyses.EagerL2FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL1FieldImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
+//import org.opalj.tac.fpcf.analyses.EagerL2FieldImmutabilityAnalysis
+//import org.opalj.tac.fpcf.analyses.EagerL1FieldImmutabilityAnalysis
+//import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
 
 /**
  * Tests the field immutability analyses
@@ -34,7 +34,7 @@ class FieldImmutabilityTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability")
+        List("org/opalj/fpcf/fixtures/benchmark/arrays")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -54,7 +54,7 @@ class FieldImmutabilityTests extends PropertiesTest {
 
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
     }
-
+    /*SimpleSimple
     describe("the org.opalj.fpcf.analyses.L0FieldMutabilityAnalysis is executed") {
 
         val as = executeAnalyses(
@@ -98,7 +98,7 @@ class FieldImmutabilityTests extends PropertiesTest {
 
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
     }
-
+*/
     describe("the org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis is executed") {
         val as = executeAnalyses(
             Set(

@@ -23,6 +23,15 @@ import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyL2FieldImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
+import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
+import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -37,7 +46,7 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability")
+        List("org/opalj/fpcf/fixtures/benchmark/h_classAndTypeImmutability")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -70,15 +79,6 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
     }
 
     describe("the 1 class and type immutability analysis are executed") {
-        import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-        import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
-        import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-        import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-        import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-        import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
-        import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
-        import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
-        import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
         val as = executeAnalyses(Set(
             LazyUnsoundPrematurelyReadFieldsAnalysis,
