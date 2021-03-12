@@ -191,14 +191,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def checkPurityOfStmt(stmt: Stmt[V])(implicit state: StateType): Boolean = {
         val isStmtNotImpure = (stmt.astID: @switch) match {
             // For method calls, purity will be checked later
-            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
+            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID |
+                InvokedynamicMethodCall.ASTID ⇒
                 true
-
-            // We don't handle unresolved Invokedynamics
-            // - either OPAL removes it or we forget about it
-            case InvokedynamicMethodCall.ASTID ⇒
-                atMost(ImpureByAnalysis)
-                false
 
             // Returning objects/arrays is pure, if the returned object/array is locally initialized
             // and non-escaping or the object is immutable

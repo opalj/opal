@@ -36,14 +36,18 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
         project.config.getBoolean(s"$configPrefix.mergeStringConstants")
     val mergeClassConstants: Boolean =
         project.config.getBoolean(s"$configPrefix.mergeClassConstants")
-    val mergeExceptions: Boolean = project.config.getBoolean(s"$configPrefix.mergeExceptions")
+    val mergeExceptions: Boolean =
+        project.config.getBoolean(s"$configPrefix.mergeExceptions")
 
     // TODO: Create merged pointsTo allocation site
-    val stringBuilderPointsToSet = AllocationSitePointsToSet1(StringBuilderId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.StringBuilder)
-    val stringBufferPointsToSet = AllocationSitePointsToSet1(StringBufferId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.StringBuffer)
-    val stringConstPointsToSet = AllocationSitePointsToSet1(StringId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.String)
-    val classConstPointsToSet = AllocationSitePointsToSet1(ClassId.toLong << 39 | 0x3FFFFFFFFFL, ObjectType.Class)
+    val stringBuilderPointsToSet = mergedPointsToSetForType(ObjectType.StringBuilder)
+    val stringBufferPointsToSet = mergedPointsToSetForType(ObjectType.StringBuffer)
+    val stringConstPointsToSet = mergedPointsToSetForType(ObjectType.String)
+    val classConstPointsToSet = mergedPointsToSetForType(ObjectType.Class)
     var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
+
+    private def mergedPointsToSetForType(r: ReferenceType): AllocationSitePointsToSet =
+        AllocationSitePointsToSet1(r.id.toLong << 39 | 0x3FFFFFFFFFL, r)
 
     override protected[this] def createPointsToSet(
         pc:             Int,
@@ -54,7 +58,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
     ): AllocationSitePointsToSet = {
         @inline def createNewPointsToSet(): AllocationSitePointsToSet = {
             val as = allocationSiteToLong(declaredMethod, pc, allocatedType, isEmptyArray)
-            new AllocationSitePointsToSet1(as, allocatedType)
+            AllocationSitePointsToSet1(as, allocatedType)
         }
 
         (allocatedType.id: @switch) match {
@@ -85,7 +89,7 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
                     if (ptsO.isDefined)
                         ptsO.get
                     else {
-                        val newPts = new AllocationSitePointsToSet1(allocatedType.id.toLong << 39 | 0x3FFFFFFFFFL, allocatedType)
+                        val newPts = mergedPointsToSetForType(allocatedType)
                         exceptionPointsToSets += allocatedType.id → newPts
                         newPts
                     }

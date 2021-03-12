@@ -9,9 +9,9 @@ import org.opalj.bi.ACC_PROTECTED
 import org.opalj.bi.ACC_PRIVATE
 
 /**
- * Encapsulates the information about a '''non-abstract''', '''non-private''', '''non-static'''
- * method which is '''not an initializer''' (`<(cl)init>`) and which is required when determining
- * potential call targets.
+ * Encapsulates the information about a '''non-abstract''', '''non-static''' method which is
+ * '''not an initializer''' (`<(cl)init>`) and which is required when determining potential call
+ * targets.
  *
  * @note    A class may have -- w.r.t. a given package name -- at most one package
  *          visible method which has a specific name and descriptor combination.
@@ -25,7 +25,6 @@ import org.opalj.bi.ACC_PRIVATE
  */
 final class MethodDeclarationContext(val method: Method) extends Ordered[MethodDeclarationContext] {
 
-    assert(!method.isPrivate)
     assert(!method.isStatic)
     assert(!method.isInitializer)
 

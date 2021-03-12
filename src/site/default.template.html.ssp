@@ -11,9 +11,9 @@
         <script src="js/skel.min.js"></script>
         <script src="js/skel-layers.min.js"></script>
         <script src="js/init.js"></script>
-        <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/highlight.min.js"></script>
-        <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/languages/scala.min.js"></script>
-        <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/styles/default.min.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/languages/scala.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/styles/default.min.css" />
         <noscript>
             <link rel="stylesheet" href="css/skel.css" />
         	<link rel="stylesheet" href="css/style.css" />
@@ -22,11 +22,11 @@
     </head>
     <body id="top">
         <header id="header" class="skel-layers-fixed">
-            <h1><a href="http://www.opal-project.de"><img src="OPALLogo.png" width="13", height="13">&nbsp;OPAL Project</a></h1>
+            <h1><a href="https://www.opal-project.de"><img src="OPALLogo.png" width="13", height="13">&nbsp;OPAL Project</a></h1>
             <nav id="nav">
                 <ul>
                     <li><a href="index.html">Getting Started</a></li>
-                    <li><a href="http://www.opal-project.de/library/api/SNAPSHOT/org/opalj/index.html">ScalaDoc</a></li>
+                    <li><a href="https://www.opal-project.de/library/api/SNAPSHOT/org/opalj/index.html">ScalaDoc</a></li>
                     <li><a href="https://github.com/stg-tud/opal">Repository</a></li>
                     <li><a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22de.opal-project%22">Maven Central</a></li>
                 </ul>
@@ -57,7 +57,7 @@
                         </nav>
                         <hr/>
                         <div class="hide-at-medium">
-                            Please, report issues or problems in the documentation using <a href="https://bitbucket.org/delors/opal/issues?status=new&status=open">OPAL's issue tracker</a>, by going to the <a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link">OPAL gitter chat room</a> or by writing an email to <a href="mailto:opal_at_st.informatik.tu-darmstadt.de">opal(at)st.informatik.tu-darmstadt.de</a>.
+                            Please, report issues or problems in the documentation using <a href="https://github.com/stg-tud/opal/issues">OPAL's issue tracker</a>, by going to the <a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link">OPAL gitter chat room</a> or by writing an email to <a href="mailto:opal_at_st.informatik.tu-darmstadt.de">opal(at)st.informatik.tu-darmstadt.de</a>.
                         </div>
                     </div>
     				<div class="9u">
@@ -78,7 +78,7 @@
                                     <li><a href="https://twitter.com/intent/follow?original_referer=http%3A%2F%2Fwww.opal-project.de%2F&ref_src=twsrc%5Etfw&region=follow_link&screen_name=TheOpalProject&tw_p=followbutton" class="icon fa-twitter"><span class="label">Twitter</span></a></li>
                                     <li><a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link" class="icon fa-users"><span class="label">Gitter</span></a></li>
                                     <li><a href="https://trello.com/theopalproject" class="icon fa-trello"><span class="label">Trello</span></a></li>
-                                    <li><a href="http://stackoverflow.com/questions/tagged/opal-framework" class="icon fa-stack-overflow"><span class="label">Stackoverflow</span></a></li>
+                                    <li><a href="https://stackoverflow.com/questions/tagged/opal-framework" class="icon fa-stack-overflow"><span class="label">Stackoverflow</span></a></li>
                                     <li><a href="https://hub.docker.com/r/opalj/sbt_scala_javafx/" class="icon fa-cloud"><span class="label">Docker</span></a></li>
                                 </ul>
                                 <h3>Related</h3>
@@ -97,11 +97,13 @@
                             <div class="6u">
                                 <h3>Core Papers</h3>
                                 <ul class="alt">
-                                    <li><a href="http://ase2018.com">A Unified Lattice Model and Framework for Purity Analyses</a></li>
+                                    <li><a href="https://2020.esec-fse.org/details/fse-2020-papers/191">Modular Collaborative Program Analysis in OPAL</a></li>
+                                    <li><a href="https://conf.researchr.org/details/issta-2020/issta-2020-papers/18/A-Programming-Model-for-Semi-implicit-Parallelization-of-Static-Analyses">A Programming Model for Semi-implicit Parallelization of Static Analyses</a></li>
+                                    <li><a href="https://pldi20.sigplan.org/details/SOAP-2020-papers/1">TACAI: An Intermediate Representation based on Abstract Interpretation</a></li>
                                     <li><a href="https://conf.researchr.org/track/ecoop-issta-2018/SOAP-2018-papers#program">Lattice Based Modularization of Static Analyses</a></li>
                                     <li><a href="articles/Hermes@SOAP18.pdf">Assessment and Creation of Effective Test Corpora</a></li>
-                                    <li><a href="http://doi.acm.org/10.1145/2950290.2950312">Call Graph Construction for Java Libraries</a></li>
-                                    <li><a href="http://doi.acm.org/10.1145/2614628.2614630">A software product line for static analyses: the OPAL framework</a></li>
+                                    <li><a href="https://doi.acm.org/10.1145/2950290.2950312">Call Graph Construction for Java Libraries</a></li>
+                                    <li><a href="https://doi.acm.org/10.1145/2614628.2614630">A software product line for static analyses: the OPAL framework</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -110,10 +112,14 @@
                         <h3>Research Using OPAL</h3>
                         <emph>The following papers give you an idea what you can do with OPAL.</emph>
                         <ul class="alt">
+                            <li><a href="https://dl.acm.org/doi/10.1145/3320269.3384745">Hidden in Plain Sight: Obfuscated Strings Threatening Your Privacy</a></li>
+                            <li><a href="https://conf.researchr.org/details/issta-2019/issta-2019-Technical-Papers/24/Judge-Identifying-Understanding-and-Evaluating-Sources-of-Unsoundness-in-Call-Grap">Judge: Identifying, Understanding, and Evaluating Sources of Unsoundness in Call Graphs</a></li>
                             <li><a href="https://2018.splashcon.org/event/splash-2018-oopsla-algebraic-effects-for-the-masses">Algebraic Effects for the Masses</a></li>
                             <li><a href="http://michael-reif.name/publications/JCG.pdf">Systematic Evaluation of the Unsoundness of Call Graph Construction Algorithms for Java</a></li>
-                            <li><a href="http://doi.acm.org/10.1145/2786805.2786865">Hidden Truths in Dead Software Paths</a></li>
-                            <li><a href="http://doi.acm.org/10.1145/2786805.2786829">Getting to know you. . . Towards a Capability Model for Java</a></li>
+                            <li><a href="https://ieeexplore.ieee.org/abstract/document/9000061">A Unified Lattice Model and Framework for Purity Analyses</a></li>
+                            <li><a href="http://www.st.informatik.tu-darmstadt.de/artifacts/codematch/">CodeMatch: Obfuscation won't Conceal your Repackaged App</a></li>
+                            <li><a href="https://doi.acm.org/10.1145/2786805.2786865">Hidden Truths in Dead Software Paths</a></li>
+                            <li><a href="https://doi.acm.org/10.1145/2786805.2786829">Getting to know you. . . Towards a Capability Model for Java</a></li>
                         </ul>
                         <h3>Related Presentations</h3>
                         <ul class="alt">
@@ -124,14 +130,15 @@
     			</div>
     			<ul class="copyright">
                     <li>&copy; The OPAL Project. All rights reserved.</li>
-                    <li><a href="https://bitbucket.org/delors/opal/raw/master/LICENSE">License (BSD 2 Clause)</a></li>
+                    <li><a href="https://raw.githubusercontent.com/stg-tud/opal/master/LICENSE">License (BSD 2 Clause)</a></li>
                     <li><img src="Athene.png" height="27" style="vertical-align:middle"></li>
-    				<li>Design: <a href="http://templated.co">TEMPLATED</a></li>
+    				<li>Design: <a href="https://templated.co">TEMPLATED</a></li>
     			</ul>
     		</div>
     	</footer>
 
     </body>
+<%--
     <script type="text/javascript">
         var _gaq = _gaq || [];
         _gaq.push(['_setAccount', 'UA-49499962-1']);
@@ -143,6 +150,7 @@
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
         })();
     </script>
+--%>
     <script>
         hljs.configure({
           tabReplace: '    ', // 4 spaces

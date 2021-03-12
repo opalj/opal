@@ -113,11 +113,16 @@ object Purity {
             "[-debug] (enable debug output from PropertyStore)\n"+
             "[-multi] (analyzes multiple projects in the subdirectories of -cp)\n"+
             "[-eval <path to evaluation directory>]\n"+
+            "[-packages <colon separated list of packages, e.g. java/util:javax>]\n"+
             "[-j <number of threads to be used> (0 for the sequential implementation)]\n"+
             "[-analysisName <analysisName which defines the analysis within the results file>]\n"+
             "[-schedulingStrategy <schedulingStrategy which defines the analysis within the results file>]\n"+
             "Example:\n\tjava …PurityAnalysisEvaluation -JDK -individual -closedWorld"
     }
+
+    val JDKPackages = List("java/", "javax", "javafx", "jdk", "sun", "oracle", "com/sun",
+        "netscape", "org/ietf/jgss", "org/jcp/xml/dsig/internal", "org/omg", "org/w3c/dom",
+        "org/xml/sax")
 
     def evaluate(
         cp:                    File,
@@ -136,7 +141,8 @@ object Purity {
         closedWorldAssumption: Boolean,
         isLibrary:             Boolean,
         debug:                 Boolean,
-        evaluationDir:         Option[File]
+        evaluationDir:         Option[File],
+        packages:              Option[Array[String]]
     ): Unit = {
         val classFiles = projectDir match {
             case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
@@ -152,7 +158,8 @@ object Purity {
             if (withoutJDK) Traversable.empty
             else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
-        val dirName = if (cp eq JRELibraryFolder) "JDK" else cp.getName
+        val isJDK: Boolean = cp eq JRELibraryFolder
+        val dirName = if (isJDK) "JDK" else cp.getName
         val projectEvalDir = evaluationDir.map(new File(_, dirName))
         if (projectEvalDir.isDefined && !projectEvalDir.get.exists()) projectEvalDir.get.mkdir()
 
@@ -225,9 +232,18 @@ object Purity {
 
         val declaredMethods = project.get(DeclaredMethodsKey)
 
-        val projMethods: Seq[DefinedMethod] =
+        val allMethods: Traversable[DefinedMethod] =
             for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
                 yield declaredMethods(m)
+
+        val projMethods = allMethods.filter { m ⇒
+            val pn = m.definedMethod.classFile.thisType.packageName
+            packages match {
+                case None ⇒ isJDK || !JDKPackages.exists(pn.startsWith)
+                case Some(ps) ⇒
+                    ps.exists(pn.startsWith)
+            }
+        }
 
         val manager = project.get(FPCFAnalysesManagerKey)
 
@@ -264,45 +280,37 @@ object Purity {
         }
         ps.shutdown()
 
-        val purityEs = ps(analyzedMethods, br.fpcf.properties.Purity.key).filter {
+        val entitiesWithPurity = ps(analyzedMethods, br.fpcf.properties.Purity.key).filter {
             case FinalP(p) ⇒ p ne ImpureByLackOfInformation
             case ep        ⇒ throw new RuntimeException(s"non final purity result $ep")
         }
+
+        val projectEntitiesWithPurity = entitiesWithPurity.filter { ep ⇒
+            val pn = ep.e.asInstanceOf[DeclaredMethod].declaringClassType.asObjectType.packageName
+            packages match {
+                case None     ⇒ isJDK || !JDKPackages.exists(pn.startsWith)
+                case Some(ps) ⇒ ps.exists(pn.startsWith)
+            }
+        }.toSeq
 
         def isExternal(dm: DefinedMethod, p: IntTrieSet): Boolean = {
             !dm.definedMethod.isStatic && p.size == 1 && p.head == 0
         }
 
-        val compileTimePure = purityEs.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
-        val pure = purityEs.collect { case FinalEP(m: DefinedMethod, Pure) ⇒ m }
-        val sideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, SideEffectFree) ⇒ m }
-        val externallyPure = purityEs.collect {
-            case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if isExternal(m, p) ⇒ m
-        }
-        val externallySideEffectFree = purityEs.collect {
-            case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m
-        }
-        val contextuallyPure = purityEs.collect {
-            case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p)
-        }
-        val contextuallySideEffectFree = purityEs.collect {
-            case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p)
-        }
-        val dPure = purityEs.collect { case FinalEP(m: DefinedMethod, DPure) ⇒ m }
-        val dSideEffectFree = purityEs.collect { case FinalEP(m: DefinedMethod, DSideEffectFree) ⇒ m }
-        val dExternallyPure = purityEs.collect {
-            case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if isExternal(m, p) ⇒ m
-        }
-        val dExternallySideEffectFree = purityEs.collect {
-            case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m
-        }
-        val dContextuallyPure = purityEs.collect {
-            case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p)
-        }
-        val dContextuallySideEffectFree = purityEs.collect {
-            case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p)
-        }
-        val lbImpure = purityEs.collect { case FinalEP(m: DefinedMethod, ImpureByAnalysis) ⇒ m }
+        val compileTimePure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, CompileTimePure) ⇒ m }
+        val pure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, Pure) ⇒ m }
+        val sideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, SideEffectFree) ⇒ m }
+        val externallyPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if isExternal(m, p) ⇒ m }
+        val externallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m }
+        val contextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val contextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val dPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DPure) ⇒ m }
+        val dSideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DSideEffectFree) ⇒ m }
+        val dExternallyPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if isExternal(m, p) ⇒ m }
+        val dExternallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if isExternal(m, p) ⇒ m }
+        val dContextuallyPure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DContextuallyPure(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val dContextuallySideEffectFree = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, DContextuallySideEffectFree(p)) if !isExternal(m, p) ⇒ (m, p) }
+        val lbImpure = projectEntitiesWithPurity.collect { case FinalEP(m: DefinedMethod, ImpureByAnalysis) ⇒ m }
 
         if (projectEvalDir.isDefined) {
 
@@ -330,7 +338,8 @@ object Purity {
                 outputWriter.println(
                     s"${configurationName.get};${projectTime.toString(false)};"+
                         s"${propertyStoreTime.toString(false)};"+
-                        s"${callGraphTime.toString(false)};${analysisTime.toString(false)};"+
+                        s"${callGraphTime.toString(false)};"+
+                        s"${analysisTime.toString(false)};"+
                         s"${totalTime.toString(false)};"+
                         s"${compileTimePure.size};${pure.size};${dPure.size};"+
                         s"${sideEffectFree.size};${dSideEffectFree.size};"+
@@ -340,27 +349,10 @@ object Purity {
                         s"${dExternallySideEffectFree.size};"+
                         s"${contextuallySideEffectFree.size};"+
                         s"${dContextuallySideEffectFree.size};"+
-                        s"${lbImpure.size};${purityEs.size}"
+                        s"${lbImpure.size};${projectEntitiesWithPurity.size}"
                 )
             } finally {
                 if (outputWriter != null) outputWriter.close()
-            }
-
-            // WRITE RUNTIME INFORMATION
-
-            val runtime = new File(projectEvalDir.get, "runtime.csv")
-            val runtimeNew = !runtime.exists()
-            val runtimeWriter = new PrintWriter(new FileOutputStream(runtime, true))
-            try {
-                if (runtimeNew) {
-                    runtime.createNewFile()
-                    runtimeWriter.println(
-                        "analysisName;project time;propertyStore time;callGraph time;analysis time; total time;"
-                    )
-                }
-                runtimeWriter.println(s"$projectTime;$propertyStoreTime;$callGraphTime;$analysisTime")
-            } finally {
-                if (runtimeWriter != null) runtimeWriter.close()
             }
 
             // WRITE CONTENT INFORMATION
@@ -372,20 +364,19 @@ object Purity {
                 if (resultsNew) {
                     results.createNewFile()
                     if (!individual)
-                        resultsWriter.println(
-                            "compile time pure;pure;domain-specific pure;"+
-                                "side-effect free;domain-specific side-effect free;"+
-                                "externally pure;domain-specific externally pure;"+
-                                "externally side-effect free; domain-specific externally side-effect "+
-                                "free;contextually pure;domain-specific contextually pure;"+
-                                "contextually side-effect free;domain-specific contextually "+
-                                "side-effect free;impure;count"
-                        )
+                        resultsWriter.println("analysisName;compile time pure;pure;"+
+                            "domain-specific pure;side-effect free;"+
+                            "domain-specific side-effect free;externally pure;"+
+                            "domain-specific externally pure;externally side-effect free;"+
+                            "domain-specific externally side-effect free;"+
+                            "contextually pure;domain-specific contextually pure;"+
+                            "contextually side-effect free;domain-specific contextually "+
+                            "side-effect free;impure;count")
                 }
 
                 if (!individual) {
                     resultsWriter.println(
-                        s"${compileTimePure.size};${pure.size};${dPure.size};"+
+                        s"${configurationName.get};${compileTimePure.size};${pure.size};${dPure.size};"+
                             s"${sideEffectFree.size};${dSideEffectFree.size};"+
                             s"${externallyPure.size};${dExternallyPure.size};"+
                             s"${contextuallyPure.size};${dContextuallyPure.size};"+
@@ -393,7 +384,7 @@ object Purity {
                             s"${dExternallySideEffectFree.size};"+
                             s"${contextuallySideEffectFree.size};"+
                             s"${dContextuallySideEffectFree.size};"+
-                            s"${lbImpure.size};${purityEs.size}"
+                            s"${lbImpure.size};${projectEntitiesWithPurity.size}"
                     )
                 } else {
                     for (m ← compileTimePure) {
@@ -465,7 +456,7 @@ object Purity {
                     "\nAt least contextually side-effect free:"+contextuallySideEffectFree.size+
                     "\nAt least d-s cont. side-effect free:   "+dContextuallySideEffectFree.size+
                     "\nImpure:                                "+lbImpure.size+
-                    "\nTotal:                                 "+purityEs.size
+                    "\nTotal:                                 "+projectEntitiesWithPurity.size
             Console.println(result)
             Console.println(s"Call-graph time: $callGraphTime")
             Console.println(s"Analysis time: $analysisTime")
@@ -494,6 +485,7 @@ object Purity {
         var multiProjects = false
         var eager = false
         var evaluationDir: Option[File] = None
+        var packages: Option[Array[String]] = None
         var numThreads = PropertyStoreKey.parallelismLevel
 
         // PARSING PARAMETERS
@@ -529,6 +521,7 @@ object Purity {
                 case "-debug"              ⇒ debug = true
                 case "-multi"              ⇒ multiProjects = true
                 case "-eval"               ⇒ evaluationDir = Some(new File(readNextArg()))
+                case "-packages"           ⇒ packages = Some(readNextArg().split(':'))
                 case "-j"                  ⇒ numThreads = readNextArg().toInt
                 case "-noJDK"              ⇒ withoutJDK = true
                 case "-JDK" ⇒
@@ -542,7 +535,7 @@ object Purity {
         }
 
         if (configurationName.isEmpty) {
-            configurationName = Some(s"RUN-${Calendar.getInstance().getTime().toString}")
+            configurationName = Some(s"RUN-${Calendar.getInstance().getTime.toString}")
         }
 
         if (cp eq null) {
@@ -690,7 +683,8 @@ object Purity {
                         cwa,
                         isLibrary || (subp eq JRELibraryFolder),
                         debug,
-                        evaluationDir
+                        evaluationDir,
+                        packages
                     )
                 }
             } else {
@@ -711,7 +705,8 @@ object Purity {
                     cwa,
                     isLibrary || (cp eq JRELibraryFolder),
                     debug,
-                    evaluationDir
+                    evaluationDir,
+                    packages
                 )
             }
         }(t ⇒ println("evaluation time: "+t.toSeconds))

@@ -33,7 +33,7 @@ object JavaFixtureCompiler extends AutoPlugin {
 
     // tasks of the plugin
     val javaFixtureCompile = taskKey[Seq[JavaFixtureCompilationResult]](
-      "Compilation of Java fixture projects against Eclipse 4.6.1 JDT compiler."
+      "Compilation of Java fixture projects against Eclipse JDT 3.24.0 compiler."
     )
 
     val javaFixturePackage =
@@ -196,7 +196,7 @@ object JavaFixtureCompiler extends AutoPlugin {
           }
 
         streams.log.info(s"Creating: ${targetJar.getPath}.")
-        IO.zip(classFiles, targetJar)
+        IO.zip(classFiles, targetJar, None)
       }
 
       JavaFixturePackagingResult(compilationResult, targetJar, !packagingNecessary)

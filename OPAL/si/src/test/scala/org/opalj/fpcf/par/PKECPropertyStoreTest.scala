@@ -15,7 +15,7 @@ class PKECPropertyStoreTestWithDebugging
     extends AbstractPKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 8, 32)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 8, 32)
         ps.suppressError = true
         ps
     }
@@ -26,7 +26,7 @@ class PKECPropertyStoreTestWithDebuggingSingleThreaded
     extends AbstractPKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 1, 32)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 1, 32)
         ps.suppressError = true
         ps
     }
@@ -37,7 +37,7 @@ class PKECPropertyStoreTestWithDebuggingNoLocalEvaluation
     extends AbstractPKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 8, 0)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 8, 0)
         ps.suppressError = true
         ps
     }
@@ -48,7 +48,7 @@ class PKECPropertyStoreTestWithDebuggingSingleThreadedNoLocalEvaluation
     extends AbstractPKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 1, 0)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 1, 0)
         ps.suppressError = true
         ps
     }
@@ -59,7 +59,7 @@ class PKECPropertyStoreTestWithDebugging128Threads
     extends AbstractPKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 128, 32)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 128, 32)
         ps.suppressError = true
         ps
     }
@@ -70,7 +70,7 @@ class PKECPropertyStoreTestWithDebugging128ThreadsNoLocalEvaluation
     extends AbstractPKECPropertyStoreTestWithDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 128, 0)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 128, 0)
         ps.suppressError = true
         ps
     }
@@ -88,7 +88,7 @@ class PKECPropertyStoreTestWithoutDebugging
     extends AbstractPKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 8, 32)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 8, 32)
         ps.suppressError = true
         ps
     }
@@ -99,7 +99,7 @@ class PKECPropertyStoreTestWithoutDebuggingSingleThreaded
     extends AbstractPKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 1, 32)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 1, 32)
         ps.suppressError = true
         ps
     }
@@ -110,7 +110,7 @@ class PKECPropertyStoreTestWithoutDebuggingNoLocalEvaluation
     extends AbstractPKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 8, 0)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 8, 0)
         ps.suppressError = true
         ps
     }
@@ -121,7 +121,7 @@ class PKECPropertyStoreTestWithoutDebuggingSingleThreadedNoLocalEvaluation
     extends AbstractPKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 1, 0)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 1, 0)
         ps.suppressError = true
         ps
     }
@@ -132,7 +132,7 @@ class PKECPropertyStoreTestWithoutDebugging128Threads
     extends AbstractPKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 128, 32)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 128, 32)
         ps.suppressError = true
         ps
     }
@@ -143,7 +143,7 @@ class PKECPropertyStoreTestWithoutDebugging128ThreadsNoLocalEvaluation
     extends AbstractPKECPropertyStoreTestWithoutDebugging {
 
     def createPropertyStore(): PKECPropertyStore = {
-        val ps = new PKECPropertyStore(Map.empty, 128, 0)
+        val ps = new PKECPropertyStore(Map.empty, PKECNoPriorityTaskManager, 128, 0)
         ps.suppressError = true
         ps
     }

@@ -45,6 +45,7 @@ temp
 /OPAL/bi/src/test/fixtures-java/rt-jar-stubs-1.8.0-works.jar
 .bloop/
 .metals/
+.bsp
 
 # Exclude .jvmopts as this specifies custom sbt launching options
 .jvmopts

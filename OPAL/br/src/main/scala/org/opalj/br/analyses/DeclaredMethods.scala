@@ -6,8 +6,11 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
+import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
-import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.br.analyses.DeclaredMethodsKey.MethodContext
@@ -43,19 +46,34 @@ class DeclaredMethods(
         var method = dmSet.get(context)
         if (method != null) return method;
 
-        if (((runtimeType eq MethodHandle) && (name == "invoke" || name == "invokeExact")) ||
-            ((runtimeType eq VarHandle) &&
-                (name.startsWith("compare") ||
-                    name.startsWith("get") ||
-                    name.startsWith("set") ||
-                    name.startsWith("weak")))) {
+        if (p.isSignaturePolymorphic(runtimeType, name, descriptor)) {
+            val signaturePolymorphicMethodDescriptor =
+                if (runtimeType eq VarHandle) {
+                    if (name == "compareAndSet" || name.startsWith("weak"))
+                        SignaturePolymorphicMethodBoolean
+                    else if (name.startsWith("set"))
+                        SignaturePolymorphicMethodVoid
+                    else if (name.startsWith("get") || name.startsWith("compare"))
+                        SignaturePolymorphicMethodObject
+                    else
+                        throw new IllegalArgumentException(
+                            s"Unexpected signature polymorphic method $name"
+                        )
+                } else if ((runtimeType eq MethodHandle) &&
+                    (name == "invoke" || name == "invokeExact")) {
+                    SignaturePolymorphicMethodObject
+                } else
+                    throw new IllegalArgumentException(
+                        s"Unexpected signature polymorphic method $name"
+                    )
+
             method = dmSet.get(
                 new MethodContextQuery(
                     p,
                     declaredType,
                     packageName,
                     name,
-                    SignaturePolymorphicMethod
+                    signaturePolymorphicMethodDescriptor
                 )
             )
             if (method != null) return method;
@@ -70,8 +88,11 @@ class DeclaredMethods(
                     idCounter += 1
                     dmSet.put(new MethodContext(name, descriptor), vm)
                     if (id2method.size <= vm.id) {
-                        implicit val logContext = p.logContext
-                        info("project", "too many virtual declared methods; extended the underlying array")
+                        implicit val logContext: LogContext = p.logContext
+                        info(
+                            "project",
+                            "too many virtual declared methods; extended the underlying array"
+                        )
                         //IMPROVE use variable increment
                         val id2methodExt = new Array[DeclaredMethod](id2method.length + 1000)
                         Array.copy(id2method, 0, id2methodExt, 0, id2method.length)

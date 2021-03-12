@@ -5,7 +5,7 @@ package analyses
 package cg
 
 /**
- * '''Key'' to get the function that determines whether a type (i.e., we abstrat over a class/
+ * '''Key'' to get the function that determines whether a type (i.e., we abstract over a class/
  * interface and all its subtypes) is extensible or not.
  * A type is extensible if a developer could define a sub(*)type that is not part of the given
  * application/library.

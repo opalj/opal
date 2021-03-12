@@ -7,10 +7,12 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.{Function ⇒ JFunction}
 
-import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethod
 import org.opalj.br.ObjectType.MethodHandle
 import org.opalj.br.ObjectType.VarHandle
 import org.opalj.collection.immutable.ConstArray
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
 
 /**
  * The ''key'' object to get information about all declared methods.
@@ -88,7 +90,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         def insertDeclaredMethod(
             dms:                   ConcurrentHashMap[MethodContext, DeclaredMethod],
             context:               MethodContext,
-            computeDeclaredMethod: (Int) ⇒ DeclaredMethod
+            computeDeclaredMethod: Int ⇒ DeclaredMethod
         ): Unit = {
             val oldDm = dms.computeIfAbsent(context, _ ⇒ computeDeclaredMethod(
                 idCounter.getAndIncrement()
@@ -121,7 +123,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 // all methods present in the current class file, excluding methods derived
                 // from any supertype that are not overridden by this type.
                 m ← cf.methods
-                if m.isStatic || m.isPrivate || m.isAbstract || m.isInitializer
+                if m.isStatic || m.isAbstract || m.isInitializer
             } {
                 if (m.isAbstract) {
                     // Abstract methods can be inherited, but will not appear as instance methods
@@ -172,6 +174,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
                                 val staticMethodResult = p.staticCall(
                                     subtype,
+                                    subtype,
                                     isInterface = false,
                                     m.name,
                                     m.descriptor
@@ -203,7 +206,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             }
 
             for {
-                // all non-private, non-abstract instance methods present in the current class file,
+                // all non-abstract instance methods present in the current class file,
                 // including methods derived from any supertype that are not overridden by this type
                 mc ← p.instanceMethods(classType)
             } {
@@ -213,21 +216,31 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
         }
 
         // Special handling for signature-polymorphic methods
-        if (p.classFile(MethodHandle).isEmpty) {
+        if (p.MethodHandleClassFile.isEmpty) {
             val dms = result.computeIfAbsent(MethodHandle, _ ⇒ new ConcurrentHashMap)
             for (name ← methodHandleSignaturePolymorphicMethods) {
-                val context = new MethodContext(name, SignaturePolymorphicMethod)
+                val context = new MethodContext(name, SignaturePolymorphicMethodObject)
                 insertDeclaredMethod(dms, context, id ⇒ new VirtualDeclaredMethod(
-                    MethodHandle, name, SignaturePolymorphicMethod, id
+                    MethodHandle, name, SignaturePolymorphicMethodObject, id
                 ))
             }
         }
-        if (p.classFile(VarHandle).isEmpty) {
+        if (p.VarHandleClassFile.isEmpty) {
             val dms = result.computeIfAbsent(VarHandle, _ ⇒ new ConcurrentHashMap)
             for (name ← varHandleSignaturePolymorphicMethods) {
-                val context = new MethodContext(name, SignaturePolymorphicMethod)
+                val descriptor = if (name == "compareAndSet" || name.startsWith("weak"))
+                    SignaturePolymorphicMethodBoolean
+                else if (name.startsWith("set"))
+                    SignaturePolymorphicMethodVoid
+                else if (name.startsWith("get") || name.startsWith("compare"))
+                    SignaturePolymorphicMethodObject
+                else
+                    throw new IllegalArgumentException(
+                        s"Unexpected signature polymorphic method $name"
+                    )
+                val context = new MethodContext(name, descriptor)
                 insertDeclaredMethod(dms, context, id ⇒ new VirtualDeclaredMethod(
-                    VarHandle, name, SignaturePolymorphicMethod, id
+                    VarHandle, name, descriptor, id
                 ))
             }
         }
@@ -353,17 +366,17 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 packageName == that.packageName &&
                     methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    !hasAccessibleMethod()
+                    !hasAccessibleMethod
             case that: ShadowsPackagePrivateMethodContext ⇒
                 methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    hasAccessibleMethod()
+                    hasAccessibleMethod
             case that: MethodContext ⇒
                 methodName == that.methodName && descriptor == that.descriptor
             case _ ⇒ false
         }
 
-        private def hasAccessibleMethod(): Boolean = {
+        private def hasAccessibleMethod: Boolean = {
             if (project.classHierarchy.isInterface(receiverType).isYes) {
                 val method =
                     project.resolveInterfaceMethodReference(receiverType, methodName, descriptor)

@@ -6,9 +6,12 @@ package analyses
 package purity
 
 import scala.annotation.switch
+
 import scala.collection.immutable.IntMap
+
 import net.ceedubs.ficus.Ficus._
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
@@ -68,6 +71,7 @@ import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.MethodDescriptor
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -117,17 +121,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var fieldMutabilityDependees: Map[Field, (EOptionP[Field, FieldImmutability], Set[Option[Expr[V]]])] = Map.empty
 
         var classImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, ClassImmutability], Set[Expr[V]])] = Map.empty
-
         var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] = Map.empty
 
         var purityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
 
         var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
-
         var callees: Option[Callees] = None
 
         var rvfDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
-
         var rvfCallSites: IntMap[(Option[Expr[V]], Purity)] = IntMap.empty
 
         var staticDataUsage: Option[EOptionP[DeclaredMethod, StaticDataUsage]] = None
@@ -306,8 +307,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (expr eq null) {
             // Expression is unknown due to an indirect call (e.g. reflection)
             atMost(otherwise)
-            return false
-        };
+            return false;
+        }
 
         if (expr.isConst)
             return true;
@@ -647,7 +648,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         var newFieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
-
         for ((dependee, (eop, data)) ← state.fieldLocalityDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
             if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, (eop, newData)))
@@ -661,7 +661,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         state.rvfCallSites = newRVFCallsites
 
         var newRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
-
         for ((dependee, (eop, data)) ← state.rvfDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
             if (newData.nonEmpty) newRVFDependees += ((dependee, (eop, newData)))
@@ -669,7 +668,6 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         state.rvfDependees = newRVFDependees
 
         var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
-
         for ((dependee, eAndD) ← state.purityDependees) {
             if (eAndD._1.isEPK || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
                 newPurityDependees += ((dependee, eAndD))
@@ -826,20 +824,22 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
-            project.instanceMethods(state.declClass).foreach { mdc ⇒
-                if (mdc.name == "fillInStackTrace" &&
-                    mdc.method.classFile.thisType != ObjectType.Throwable) {
-                    // "The value" is actually not used at all - hence, we can use "null"
-                    // over here.
-                    val selfReference = UVar(null, SelfReferenceParameter)
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
+            val candidate = ConstArray.find(project.instanceMethods(state.declClass)) { mdc ⇒
+                mdc.method.compare(
+                    "fillInStackTrace",
+                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                )
+            }
+            candidate foreach { mdc ⇒
+                if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
-                    if (!checkMethodPurity(fISTPurity, Seq(selfReference))) {
+                    if (!checkMethodPurity(fISTPurity, Seq.empty))
                         // Early return for impure fillInStackTrace
                         return Result(state.definedMethod, state.ubPurity);
-                    }
                 }
             }
+        }
 
         // Synchronized methods have a visible side effect on the receiver
         // Static synchronized methods lock the class which is potentially globally visible
@@ -988,7 +988,7 @@ object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
-            // todo querying ps is quiet expensive
+            // todo querying ps is quite expensive
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined &&
                 !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
                 dm.asDefinedMethod

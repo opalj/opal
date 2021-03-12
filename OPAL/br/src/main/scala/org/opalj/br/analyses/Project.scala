@@ -140,6 +140,7 @@ class Project[Source] private (
         final val libraryFieldsCount:                 Int,
         final val codeSize:                           Long,
         final val MethodHandleSubtypes:               Set[ObjectType],
+        final val VarHandleSubtypes:                  Set[ObjectType],
         final val classFilesCount:                    Int,
         final val methodsCount:                       Int,
         final val fieldsCount:                        Int,
@@ -205,6 +206,7 @@ class Project[Source] private (
             libraryFieldsCount,
             codeSize,
             MethodHandleSubtypes,
+            VarHandleSubtypes,
             classFilesCount,
             methodsCount,
             fieldsCount,
@@ -236,6 +238,8 @@ class Project[Source] private (
     final val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
 
     final val MethodHandleClassFile: Option[ClassFile] = classFile(ObjectType.MethodHandle)
+
+    final val VarHandleClassFile: Option[ClassFile] = classFile(ObjectType.VarHandle)
 
     final val allMethodsWithBody: ConstArray[Method] = ConstArray._UNSAFE_from(this.methodsWithBody)
 
@@ -1177,7 +1181,7 @@ object Project {
                             case INVOKESTATIC.opcode ⇒
                                 val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
                                 if (validateReceiverTypeKind(invokestatic)) {
-                                    project.staticCall(invokestatic) match {
+                                    project.staticCall(cf.thisType, invokestatic) match {
                                         case _: Success[_] ⇒ /*OK*/
                                         case Empty         ⇒ /*OK - partial project*/
                                         case Failure ⇒
@@ -1430,8 +1434,11 @@ object Project {
                             val declaredMethodContext = MethodDeclarationContext(declaredMethod)
                             // We have to filter multiple methods when we inherit (w.r.t. the
                             // visibility) multiple conflicting methods!
-                            definedMethods =
-                                definedMethods.filterNot(declaredMethodContext.directlyOverrides)
+                            definedMethods = definedMethods.filterNot { mdc ⇒
+                                declaredMethodContext.directlyOverrides(mdc) ||
+                                    mdc.method.isPrivate &&
+                                    declaredMethodContext.method.compare(mdc.method) == 0
+                            }
 
                             // Recall that it is possible to make a method "abstract" again...
                             if (declaredMethod.isNotAbstract) {
@@ -1453,6 +1460,21 @@ object Project {
                                 // first have to propagate it.
                                 staticallyOverriddenInstanceMethods ::=
                                     ((objectType, declaredMethodName, declaredMethodDescriptor))
+                            }
+                        } else if (!declaredMethod.isInitializer) {
+                            // Private methods can be invoked by invokevirtual instructions (and
+                            // invokeinterface for Java 11+). If a call is resolved to a private
+                            // method, it is performed non-virtually, thus private methods
+                            // effectively shadow inherited methods (only possible in code evolution
+                            // scenarios)
+                            val declaredMethodContext = MethodDeclarationContext(declaredMethod)
+                            definedMethods = definedMethods.filter { mdc ⇒
+                                declaredMethodContext.method.compare(mdc.method) != 0
+                            }
+
+                            // Recall that it is possible to make a method "abstract" again...
+                            if (declaredMethod.isNotAbstract) {
+                                definedMethods :&:= declaredMethodContext
                             }
                         }
                     }
@@ -1509,7 +1531,7 @@ object Project {
 
     /**
      * Returns for a given virtual method the set of all non-abstract virtual methods which
-     * overrides it.
+     * override it.
      *
      * This method takes the visibility of the methods and the defining context into consideration.
      *
@@ -1541,14 +1563,14 @@ object Project {
         //
         // 1.   After that the direct superclass is scheduled to be analyzed if all subclasses
         //      are analyzed. The superclass then tests for each overridable method if it is
-        //      overridden in the sublcasses and, if so, looks up the respective sets of overriding
+        //      overridden in the subclasses and, if so, looks up the respective sets of overriding
         //      methods and joins them.
         //      A method is overridden by a subclass if the set of instance methods of the
         //      subclass does not contain the super class' method.
         //
         // 2.   Continue with 1.
 
-        // Stores foreach type the number of subtypes that still need to be processed.
+        // Stores for each type the number of subtypes that still need to be processed.
         val subtypesToProcessCounts = new Array[Int](ObjectType.objectTypesCount)
         classHierarchy.foreachKnownType { objectType ⇒
             val oid = objectType.id
@@ -2089,6 +2111,10 @@ object Project {
                 classHierarchy.allSubtypes(ObjectType.MethodHandle, reflexive = true)
             }
 
+            val VarHandleSubtypes = {
+                classHierarchy.allSubtypes(ObjectType.VarHandle, reflexive = true)
+            }
+
             val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
 
             val methodsCount: Int = projectMethodsCount + libraryMethodsCount
@@ -2137,6 +2163,7 @@ object Project {
                 libraryFieldsCount,
                 codeSize,
                 MethodHandleSubtypes,
+                VarHandleSubtypes,
                 classFilesCount,
                 methodsCount,
                 fieldsCount,

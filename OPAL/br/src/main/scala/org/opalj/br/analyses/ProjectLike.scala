@@ -6,18 +6,26 @@ package analyses
 import scala.collection.{Map ⇒ SomeMap}
 import scala.collection.{Set ⇒ SomeSet}
 
+import com.typesafe.config.Config
+
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
+import org.opalj.log.OPALLogger.error
+import org.opalj.log.OPALLogger.info
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.ConstArray.find
 import org.opalj.collection.immutable.UIDSet
+import org.opalj.bi.Java11MajorVersion
+import org.opalj.bi.Java1MajorVersion
 import org.opalj.br.instructions.FieldAccess
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.MethodDescriptor.{SignaturePolymorphicMethod ⇒ SignaturePolymorphicMethodDescriptor}
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodBoolean
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodObject
+import org.opalj.br.MethodDescriptor.SignaturePolymorphicMethodVoid
 
 /**
  * Enables project wide lookups of methods and fields as required to determine the target(s) of an
@@ -40,6 +48,18 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     private[this] final implicit val thisProjectLike: this.type = this
 
     implicit val classHierarchy: ClassHierarchy
+    implicit val config: Config
+
+    val allClassFiles: Iterable[ClassFile]
+
+    /**
+     * Returns the minimum version number of the JVM required to run the code of the project, i.e.,
+     * the maximum class file major version number of any class file in the project.
+     */
+    def requiredJVMVersion: Int = {
+        if (allClassFiles.isEmpty) Java1MajorVersion
+        else allClassFiles.maxBy(_.version._2).version._2
+    }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //
@@ -135,10 +155,21 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     val MethodHandleClassFile: Option[ClassFile]
 
     /**
-     * The set of all subtypes of `java.lang.invoke.MethodHandle`; in particular required to
-     * resolve signature polymorphic method calls.
+     * The class file of `java.lang.invoke.VarHandle`, if available.
+     */
+    val VarHandleClassFile: Option[ClassFile]
+
+    /**
+     * The set of all subtypes of `java.lang.invoke.MethodHandle`; in particular required to resolve
+     * signature polymorphic method calls.
      */
     val MethodHandleSubtypes: SomeSet[ObjectType]
+
+    /**
+     * The set of all subtypes of `java.lang.invoke.VarHandle`; in particular required to resolve
+     * signature polymorphic method calls.
+     */
+    val VarHandleSubtypes: SomeSet[ObjectType]
 
     /**
      * Stores for each non-private, non-initializer method the set of methods which override
@@ -213,11 +244,20 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 0
             else {
                 val methodComparison = definedMethod compare method
-                if (methodComparison == 0)
-                    // We may have multiple methods with the same signature, but which belong
-                    // to different packages!
-                    definedMethodContext.packageName compare declaringPackageName
-                else
+                if (methodComparison == 0) {
+                    if (definedMethod.isPrivate) {
+                        // If there is a matching private method, the given method could still be
+                        // invoked by a virtual call for a supertype
+                        return hasVirtualMethod(
+                            classFile(objectType).get.superclassType.get,
+                            method
+                        );
+                    } else {
+                        // We may have multiple methods with the same signature, but which belong
+                        // to different packages!
+                        definedMethodContext.packageName compare declaringPackageName
+                    }
+                } else
                     methodComparison
             }
         }
@@ -246,6 +286,20 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         name:               String,
         descriptor:         MethodDescriptor
     ): Result[MethodDeclarationContext] = {
+
+        def lookupSignaturePolymorphicMethod(descriptor: MethodDescriptor): Result[MethodDeclarationContext] = {
+            lookupVirtualMethod(
+                callingContextType,
+                if (MethodHandleSubtypes.contains(receiverType)) ObjectType.MethodHandle
+                else ObjectType.VarHandle,
+                name,
+                descriptor
+            ) match {
+                    case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
+                    case _                                                 ⇒ Empty
+                }
+        }
+
         val definedMethodsOption = instanceMethods.get(receiverType)
         if (definedMethodsOption.isEmpty) {
             return Empty;
@@ -255,24 +309,24 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         } match {
             case Some(mdc) ⇒ Success(mdc)
             case None ⇒
-                if (MethodHandleSubtypes.contains(receiverType) && (
-                    // we have to avoid endless recursion if we can't find the target method
-                    // TODO FIXME [Java9+] use "isSignaturePolymorphic" to support VarHandles
-                    receiverType != ObjectType.MethodHandle ||
-                    descriptor != SignaturePolymorphicMethodDescriptor
-                )) {
-                    // At least in Java 8 the signature polymorphic methods are not overloaded and
+                // we have to avoid endless recursion if we can't find the target method
+                if ((MethodHandleSubtypes.contains(receiverType) ||
+                    VarHandleSubtypes.contains(receiverType)) &&
+                    !isSignaturePolymorphic(receiverType, descriptor)) {
+                    // At least in Java 15 the signature polymorphic methods are not overloaded and
                     // it actually doesn't make sense to do so. Therefore we decided to only
                     // make this lookup if strictly required.
-                    lookupVirtualMethod(
-                        callingContextType,
-                        ObjectType.MethodHandle,
-                        name,
-                        SignaturePolymorphicMethodDescriptor
-                    ) match {
-                            case r @ Success(mdc) if mdc.method.isNativeAndVarargs ⇒ r
-                            case _                                                 ⇒ Empty
-                        }
+                    lookupSignaturePolymorphicMethod(SignaturePolymorphicMethodObject) match {
+                        case Empty if VarHandleSubtypes.contains(receiverType) ⇒
+                            lookupSignaturePolymorphicMethod(SignaturePolymorphicMethodVoid) match {
+                                case Empty ⇒
+                                    lookupSignaturePolymorphicMethod(
+                                        SignaturePolymorphicMethodBoolean
+                                    )
+                                case r ⇒ r
+                            }
+                        case r ⇒ r
+                    }
                 } else {
                     Empty // here, we don't know if the project is incomplete or inconsistent
                 }
@@ -538,17 +592,19 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 // A method is signature polymorphic if all of the following conditions hold :
                 // - It is declared in the java.lang.invoke.MethodHandle class.
                 // - It has a single formal parameter of type Object[].
-                // - It has a return type of Object.
                 // - It has the ACC_VARARGS and ACC_NATIVE flags set.
-                // TODO [Java9+] Document or fix if VarHandle needs/does not need support
-                val isPotentiallySignaturePolymorphicCall = receiverType eq ObjectType.MethodHandle
+                val isPotentiallySignaturePolymorphicCall =
+                    (receiverType eq ObjectType.MethodHandle) ||
+                        (receiverType eq ObjectType.VarHandle)
 
                 if (isPotentiallySignaturePolymorphicCall) {
                     val methods = classFile.findMethod(name)
                     if (methods.isSingletonList) {
                         val method = methods.head
                         if (method.isNativeAndVarargs &&
-                            method.descriptor == SignaturePolymorphicMethodDescriptor)
+                            (method.descriptor == SignaturePolymorphicMethodObject ||
+                                method.descriptor == SignaturePolymorphicMethodVoid ||
+                                method.descriptor == SignaturePolymorphicMethodBoolean))
                             Success(method) // the resolved method is signature polymorphic
                         else if (method.descriptor == descriptor)
                             Success(method) // "normal" resolution of a method
@@ -573,7 +629,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
     /**
      * Returns true if the method defined by the given class type is a signature polymorphic
-     * method. (See JVM 8 Spec. for details.) //TODO JAVA 8+
+     * method. (See JVM 9 Spec. for details.)
      */
     //TODO add method that lookup the defining class type
     def isSignaturePolymorphic(definingClassType: ObjectType, method: Method): Boolean = {
@@ -581,21 +637,55 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             (definingClassType eq ObjectType.MethodHandle) ||
             (definingClassType eq ObjectType.VarHandle)
         ) &&
-            method.isNativeAndVarargs &&
-            method.descriptor == SignaturePolymorphicMethodDescriptor
+            method.descriptor.parametersCount == 1 &&
+            method.descriptor.parameterType(0) == ArrayType.ArrayOfObject &&
+            method.isNativeAndVarargs
+    }
+
+    /**
+     * Returns true if the descriptor is a signature polymorphic method for the given class type.
+     * (See JVM 9 Spec. for details.)
+     */
+    def isSignaturePolymorphic(
+        definingClassType: ObjectType,
+        descriptor:        MethodDescriptor
+    ): Boolean = {
+        (definingClassType eq ObjectType.MethodHandle) &&
+            descriptor == SignaturePolymorphicMethodObject ||
+            (definingClassType eq ObjectType.VarHandle) &&
+            (descriptor == SignaturePolymorphicMethodObject ||
+                descriptor == SignaturePolymorphicMethodVoid ||
+                descriptor == SignaturePolymorphicMethodBoolean)
+    }
+
+    /**
+     * Returns true if the signature is a signature polymorphic method for the given class type.
+     * (See JVM 9 Spec. for details.)
+     */
+    def isSignaturePolymorphic(
+        definingClassType: ObjectType,
+        name:              String,
+        descriptor:        MethodDescriptor
+    ): Boolean = {
+        (definingClassType eq ObjectType.MethodHandle) &&
+            descriptor == SignaturePolymorphicMethodObject &&
+            (name == "invoke" || name == "invokeExact") ||
+            (definingClassType eq ObjectType.VarHandle) &&
+            (descriptor == SignaturePolymorphicMethodObject ||
+                descriptor == SignaturePolymorphicMethodVoid ||
+                descriptor == SignaturePolymorphicMethodBoolean)
     }
 
     /**
      * Returns the method which will be called by the respective
      * [[org.opalj.br.instructions.INVOKESTATIC]] instruction.
      */
-    def staticCall(i: INVOKESTATIC): Result[Method] = {
-        staticCall(i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
+    def staticCall(callerClassType: ObjectType, i: INVOKESTATIC): Result[Method] = {
+        staticCall(callerClassType, i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
     }
 
     /**
      * Returns the method that will be called by the respective invokestatic call.
-     * (The client may require to perform additional checks such as validating the visibility!)
      *
      * @return  [[org.opalj.Success]] `(method)` if the method was found;
      *          `Failure` if the project is inconsistent.
@@ -603,6 +693,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *          project is incomplete).
      */
     def staticCall(
+        callerClassType:    ObjectType,
         declaringClassType: ObjectType,
         isInterface:        Boolean,
         name:               String,
@@ -614,11 +705,17 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // However, in case of interfaces no lookup in superclasses is done!
         if (isInterface) {
             classFile(declaringClassType) match {
-                case Some(cf) ⇒ Result.successOrFailure(cf.findMethod(name, descriptor))
-                case None     ⇒ Empty
+                case Some(cf) ⇒ cf.findMethod(name, descriptor) match {
+                    case Some(method) if method.isAccessibleBy(callerClassType) ⇒ Success(method)
+                    case _ ⇒ Empty
+                }
+                case None ⇒ Empty
             }
         } else {
-            resolveClassMethodReference(declaringClassType, name, descriptor)
+            resolveClassMethodReference(declaringClassType, name, descriptor) match {
+                case s @ Success(method) ⇒ if (method.isAccessibleBy(callerClassType)) s else Empty
+                case e                   ⇒ e
+            }
         }
     }
 
@@ -626,11 +723,14 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         specialCall(callerClassType, i.declaringClass, i.isInterface, i.name, i.methodDescriptor)
     }
 
-    def nonVirtualCall(callerClassType: ObjectType, i: NonVirtualMethodInvocationInstruction): Result[Method] = {
+    def nonVirtualCall(
+        callerClassType: ObjectType,
+        i:               NonVirtualMethodInvocationInstruction
+    ): Result[Method] = {
         if (i.opcode == INVOKESPECIAL.opcode) {
             specialCall(callerClassType, i.asINVOKESPECIAL)
         } else { // i.opcode == INVOKESTATIC.opcode
-            staticCall(i.asINVOKESTATIC)
+            staticCall(callerClassType, i.asINVOKESTATIC)
         }
     }
 
@@ -638,8 +738,8 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * Returns the instance method/initializer which is called by an invokespecial instruction.
      *
      * @note    Virtual method call resolution is not necessary; the call target is
-     *          either a constructor, a private method or a super method/constructor. However, in
-     *          the first and last case it may be possible that we can't find the method
+     *          either a constructor, a method in the given class or a super method/constructor.
+     *          However, in the first and last case it may be possible that we can't find the method
      *          because of an inconsistent or incomplete project.
      *
      * @return  One of the following three values:
@@ -685,20 +785,28 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     Failure
                 else {
                     classFile.findMethod(name, descriptor) match {
-                        case Some(method)             ⇒ Success(method)
+                        case Some(method) ⇒
+                            if (method.isAccessibleBy(callerClassType))
+                                Success(method)
+                            else
+                                Empty
+
                         case None if name == "<init>" ⇒ Failure // initializer not found...
+
                         case _ ⇒
                             // We have to find the (maximally specific) super method, which is,
-                            // unless we have an inconsistent code base, unique (compared to
-                            // an invokevirtual based call, we don't have to care about the
-                            // visiblity of the target method; a corresponding check has to be done
-                            // by the caller, if necessary)
-                            Result(
-                                find(instanceMethods(declaringClassType)) { definedMethodContext ⇒
-                                    val definedMethod = definedMethodContext.method
-                                    definedMethod.compare(name, descriptor)
-                                } map { mdc ⇒ mdc.method }
-                            )
+                            // unless we have an inconsistent code base, unique.
+                            find(instanceMethods(declaringClassType)) { definedMethodContext ⇒
+                                val definedMethod = definedMethodContext.method
+                                definedMethod.compare(name, descriptor)
+                            } match {
+                                case Some(mdc) ⇒
+                                    if (mdc.method.isAccessibleBy(callerClassType))
+                                        Success(mdc.method)
+                                    else
+                                        Empty
+                                case None ⇒ Empty
+                            }
                     }
                 }
             case None ⇒ Empty
@@ -742,11 +850,39 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
         val receiverClassType = receiverType.asObjectType
         val mdcResult = lookupVirtualMethod(callerClassType, receiverClassType, name, descriptor)
-        mdcResult map { mdc ⇒ mdc.method }
+        mdcResult flatMap { mdc ⇒
+            if (!mdc.method.isPrivate || mdc.method.isAccessibleBy(callerClassType))
+                Success(mdc.method)
+            else
+                Empty
+        }
     }
 
-    def interfaceCall(i: INVOKEINTERFACE): Set[Method] = {
-        interfaceCall(i.declaringClass, i.name, i.methodDescriptor)
+    def interfaceCall(callerType: ObjectType, i: INVOKEINTERFACE): Set[Method] = {
+        interfaceCall(callerType, i.declaringClass, i.name, i.methodDescriptor)
+    }
+
+    private val useJava11CallSemantics: Boolean = {
+        val key = ProjectLike.EnforceJava11CallSemanticsConfigKey
+        val forceJ11semantics: Boolean =
+            try {
+                config.getBoolean(key)
+            } catch {
+                case t: Throwable ⇒
+                    error("project configuration", s"couldn't read: $key", t)
+                    false
+            }
+        val (useJ11semantics, reason) = if (forceJ11semantics) {
+            (true, "(enforced by config)")
+        } else {
+            val requiredVersion = requiredJVMVersion
+            (requiredVersion >= Java11MajorVersion, s"(required JVM version is $requiredVersion)")
+        }
+        info(
+            "project configuration",
+            s"${if (useJ11semantics) "" else "not "}using Java 11+ call semantics "+reason
+        )
+        useJ11semantics
     }
 
     /**
@@ -774,6 +910,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *          is not defined as part of the analyzed code base.
      */
     def interfaceCall(
+        callerType:     ObjectType,
         declaringClass: ObjectType, // an interface or class type to be precise
         name:           String,
         descriptor:     MethodDescriptor
@@ -791,20 +928,37 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             mdc.method.compare(name, descriptor)
         } foreach (mdc ⇒ methods += mdc.method)
 
+        if (methods.nonEmpty) {
+            val method = methods.head
+            if (!method.isPublic) {
+                if (method.isPrivate && useJava11CallSemantics) {
+                    // The method is private, thus it is selected (JVM 11 Spec Section 5.4.6)
+                    // However, access control may still fail
+                    if (!method.isAccessibleBy(callerType))
+                        return Set.empty[Method];
+                    return methods;
+                } else {
+                    methods = Set.empty[Method]
+                }
+            }
+        }
+
         // (2) methods of strict subtypes (always necessary, because we have an interface)
         classHierarchy.foreachSubtypeCF(declaringClass, reflexive = false) { subtypeCF ⇒
             val subtype = subtypeCF.thisType
             val mdc = find(instanceMethods(subtype)) { mdc ⇒ mdc.method.compare(name, descriptor) }
             mdc match {
                 case Some(mdc) ⇒
-                    methods += mdc.method
+                    if (mdc.isPublic)
+                        methods += mdc.method
                     // This is an overapproximation, if the inherited concrete method is
                     // always overridden by all concrete subtypes and subtypeCF
                     // is an abstract class in a closed package/module
-                    methods ++=
-                        overriddenBy(mdc.method).iterator.filter { m ⇒
-                            m.classFile.thisType isSubtypeOf subtype
-                        }
+                    if (!mdc.method.isPrivate)
+                        methods ++=
+                            overriddenBy(mdc.method).iterator.filter { m ⇒
+                                m.classFile.thisType isSubtypeOf subtype
+                            }
 
                     // for interfaces we have to continue, because we may have inherited a
                     // a concrete method from a class type which is not in the set of
@@ -818,11 +972,11 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     }
 
     /**
-     * Convience method; see `virtualCall(callerPackageName:String,declaringType:ReferenceType*`
+     * Convenience method; see `virtualCall(callerPackageName:String,declaringType:ReferenceType*`
      * for details.
      */
-    def virtualCall(callerPackageName: String, i: INVOKEVIRTUAL): SomeSet[Method] = {
-        virtualCall(callerPackageName, i.declaringClass, i.name, i.methodDescriptor)
+    def virtualCall(callerType: ObjectType, i: INVOKEVIRTUAL): SomeSet[Method] = {
+        virtualCall(callerType, i.declaringClass, i.name, i.methodDescriptor)
     }
 
     /**
@@ -834,10 +988,10 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      *          descriptor if we have a signature polymorphic call!
      */
     def virtualCall(
-        callerPackageName: String,
-        declaringType:     ReferenceType, // an interface, class or array type to be precise
-        name:              String,
-        descriptor:        MethodDescriptor
+        callerType:    ObjectType,
+        declaringType: ReferenceType, // an interface, class or array type to be precise
+        name:          String,
+        descriptor:    MethodDescriptor
     ): SomeSet[Method] = {
         if (declaringType.isArrayType) {
             return instanceCall(ObjectType.Object, ObjectType.Object, name, descriptor).toSet
@@ -855,6 +1009,8 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         if (initialMethodsOption.isEmpty)
             return methods;
 
+        val callerPackageName = callerType.packageName
+
         // Let's find the (concrete) method defined by this type or a supertype if it exists.
         // We have to check the declaring package if the method has package visibility to ensure
         // that we find the correct method!
@@ -864,8 +1020,14 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
 
         if (methods.nonEmpty) {
             val method = methods.head
-            if (method.classFile.thisType eq declaringClassType) {
-                // The (concret) method belongs to this class... hence, we just need to
+            if (method.isPrivate) {
+                // The concrete method is private, thus it is selected (JVM 11 Spec Section 5.4.6)
+                // However, access control may still fail
+                if (!method.isAccessibleBy(callerType))
+                    return SomeSet.empty[Method];
+                return methods;
+            } else if (method.classFile.thisType eq declaringClassType) {
+                // The (concrete) method belongs to this class... hence, we just need to
                 // get all methods which override (reflexive) this method and are done.
                 return overriddenBy(method);
             } else {
@@ -877,7 +1039,8 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                     val mdcOption = find(instanceMethods(subtype)) { mdc ⇒
                         mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
                     }
-                    if (mdcOption.nonEmpty && (mdcOption.get.method ne method)) {
+                    if (mdcOption.nonEmpty && (mdcOption.get.method ne method)
+                        && !mdcOption.get.method.isPrivate) {
                         methods ++= overriddenBy(mdcOption.get.method)
                         false // we don't have to look into furthersubtypes
                     } else {
@@ -891,15 +1054,34 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         // We just have to collect the methods in the subtypes... unless we have
         // a call to a signature polymorphic method!
 
-        if (MethodHandleClassFile.isDefined && MethodHandleSubtypes.contains(declaringClassType)) {
-            val mdcOption = find(instanceMethods(declaringClassType)) { mdc ⇒
-                mdc.compareAccessibilityAware(
-                    callerPackageName, name, SignaturePolymorphicMethodDescriptor
-                )
+        def findSignaturePolymorphicMethod(
+            descriptor: MethodDescriptor
+        ): Option[MethodDeclarationContext] = {
+            find(instanceMethods(declaringClassType)) { mdc ⇒
+                mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
             }
+        }
+
+        if (MethodHandleClassFile.isDefined && MethodHandleSubtypes.contains(declaringClassType)) {
+            val mdcOption = findSignaturePolymorphicMethod(SignaturePolymorphicMethodObject)
             if (mdcOption.isDefined) {
                 val method = mdcOption.get.method
                 if (method.isNativeAndVarargs && (method.classFile eq MethodHandleClassFile.get)) {
+                    return Set(method);
+                }
+            }
+        }
+
+        if (VarHandleClassFile.isDefined && VarHandleSubtypes.contains(declaringClassType)) {
+            val mdcOption =
+                findSignaturePolymorphicMethod(SignaturePolymorphicMethodObject).orElse(
+                    findSignaturePolymorphicMethod(SignaturePolymorphicMethodVoid).orElse(
+                        findSignaturePolymorphicMethod(SignaturePolymorphicMethodBoolean)
+                    )
+                )
+            if (mdcOption.isDefined) {
+                val method = mdcOption.get.method
+                if (method.isNativeAndVarargs && (method.classFile eq VarHandleClassFile.get)) {
                     return Set(method);
                 }
             }
@@ -911,7 +1093,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 mdc.compareAccessibilityAware(callerPackageName, name, descriptor)
             }
             mdcOption match {
-                case Some(mdc) ⇒
+                case Some(mdc) if !mdc.method.isPrivate ⇒
                     if (methods.isEmpty) {
                         methods = overriddenBy(mdc.method)
                     } else {
@@ -935,7 +1117,7 @@ object ProjectLike {
      * given name and descriptor.
      *
      * @note    This method requires that the class hierarchy is already computed.
-     *          It does not required `instanceMethods`.
+     *          It does not require `instanceMethods`.
      * @note    '''This method does not consider methods defined by `java.lang.Object`'''!
      *          Those methods have precedence over respective methods defined by
      *          superinterfaces! A corresponding check needs to be done before calling
@@ -1082,4 +1264,7 @@ object ProjectLike {
             }
         }
     }
+
+    private val EnforceJava11CallSemanticsConfigKey =
+        "org.opalj.br.Project.enforceJava11CallSemantics"
 }
