@@ -65,7 +65,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
-        analysesManager.project.get(RTACallGraphKey)
+        project.get(RTACallGraphKey)
 
         time {
             propertyStore = analysesManager

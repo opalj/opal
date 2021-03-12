@@ -34,6 +34,8 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.ai.domain
+import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 
 /**
  * Runs the EagerL0FieldImmutabilityAnalysis including all analyses needed for improving the result.
@@ -61,7 +63,12 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         var propertyStore: PropertyStore = null
         var analysisTime: Seconds = Seconds.None
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-        analysesManager.project.get(RTACallGraphKey)
+        project.get(RTACallGraphKey)
+
+        project.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) { _ ⇒
+            Set[Class[_ <: AnyRef]](classOf[domain.l2.DefaultPerformInvocationsDomainWithCFG[URL]])
+        }
+
         time {
             propertyStore = analysesManager
                 .runAll(
@@ -85,19 +92,24 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
 
-        val groupedResults = propertyStore.entities(FieldImmutability.key).
-            filter(field ⇒ allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field])).
-            toTraversable.groupBy(_.toFinalEP.p)
+        val groupedResults = propertyStore
+            .entities(FieldImmutability.key)
+            .filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
+            .toTraversable
+            .groupBy(_.toFinalEP.p)
 
         val order = (eps1: EPS[Entity, FieldImmutability], eps2: EPS[Entity, FieldImmutability]) ⇒
             eps1.e.toString < eps2.e.toString
-        val mutableFields = groupedResults(MutableField).toSeq.sortWith(order)
-        val shallowImmutableFields = groupedResults(ShallowImmutableField).toSeq.sortWith(order)
-        val dependentImmutableFields = groupedResults(DependentImmutableField).toSeq.sortWith(order)
-        val deepImmutableFields = groupedResults(DeepImmutableField).toSeq.sortWith(order)
+        val mutableFields = groupedResults.getOrElse(MutableField, Seq.empty).toSeq.sortWith(order)
+        val shallowImmutableFields =
+            groupedResults.getOrElse(ShallowImmutableField, Seq.empty).toSeq.sortWith(order)
+        val dependentImmutableFields =
+            groupedResults.getOrElse(DependentImmutableField, Seq.empty).toSeq.sortWith(order)
+        val deepImmutableFields =
+            groupedResults.getOrElse(DeepImmutableField, Seq.empty).toSeq.sortWith(order)
 
         val output =
-            s"""
+            /*
              | Mutable Fields:
              | ${mutableFields.mkString(" | Mutable Field \n")}
              |
@@ -109,8 +121,8 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
              |
              | Deep Immutable Fields:
              | ${deepImmutableFields.mkString(" | Deep Immutable Field\n")}
-             |
-             |
+             |*/
+            s""" |
              | Mutable Fields: ${mutableFields.size}
              | Shallow Immutable Fields: ${shallowImmutableFields.size}
              | Dependent Immutable Fields: ${dependentImmutableFields.size}
@@ -122,21 +134,35 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             }
              |
              | took : $analysisTime seconds
+             |
+             | level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
+             |propertyStore: ${propertyStore.getClass}
              |""".stripMargin
 
-        val file = new File(s"${Calendar.getInstance().formatted("dd_MM_yyyy_hh_mm_ss")}.txt")
+        import java.text.SimpleDateFormat
 
+        val calender = Calendar.getInstance()
+        calender.add(Calendar.ALL_STYLES, 1)
+        val date = calender.getTime()
+        val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
+
+        val file = new File(
+            s"demo_${analysis.toString}_${simpleDateFormat.format(date)}.txt"
+        )
+
+        println(s"filepath: ${file.getAbsolutePath}")
         val bw = new BufferedWriter(new FileWriter(file))
 
         try {
             bw.write(output)
             bw.close()
         } catch {
-            case e: IOException ⇒ println(
-                s""" Could not write file: ${file.getName}
+            case e: IOException ⇒
+                println(
+                    s""" Could not write file: ${file.getName}
                | ${e.getMessage}
                |""".stripMargin
-            )
+                )
         } finally {
             bw.close()
         }
