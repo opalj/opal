@@ -29,10 +29,13 @@
 package org.opalj.fpcf.fixtures.field_mutability;
 
 import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns.
@@ -179,9 +182,11 @@ class WrongDefault {
 
 class DeterministicCall {
 
-    @LazyInitialized("Lazy initialization with call to deterministic method")
-    @NonFinal(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
+    @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization with call to deterministic method",
+            analyses = L3FieldImmutabilityAnalysis.class)
+    //@NotThreadSafeLazyInitialized("Lazy initialization with call to deterministic method")
+    @MutableField(value = "Analysis doesn't recognize lazy initialization",
+            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -352,10 +357,11 @@ class ExceptionInInitialization {
      * @note As the field write is dead, this field is really 'effectively final' as it will never
      * be different from the default value.
      */
-    @EffectivelyFinal(value = "Field is never initialized, so it stays on its default value",
-            analyses = { L1FieldMutabilityAnalysis.class, L2FieldMutabilityAnalysis.class })
-    @NonFinal(value = "Instance field not considered by analysis",
-            analyses = L0FieldMutabilityAnalysis.class)
+    @DeepImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
+    @ShallowImmutableField(value = "Field is never initialized, so it stays on its default value",
+            analyses = { L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class })
+    @MutableField(value = "Instance field not considered by analysis",
+            analyses = L0FieldImmutabilityAnalysis.class)
     private int x;
 
     private int getZero() {
