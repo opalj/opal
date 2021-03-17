@@ -105,7 +105,9 @@ object Immutability {
         callGraphKey:                      AbstractCallGraphKey,
         level:                             Int,
         withoutConsiderGenericity:         Boolean,
-        withoutConsiderLazyInitialization: Boolean
+        withoutConsiderLazyInitialization: Boolean,
+        configurationName:                 Option[String],
+        times:                             Int
     ): BasicReport = {
 
         val classFiles = projectDir match {
@@ -628,6 +630,8 @@ object Immutability {
             |
             | results folder: $resultsFolder
             |
+            | CofigurationName: $configurationName
+            |
             |  level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
             |
             |  consider escape: ${
@@ -683,7 +687,8 @@ object Immutability {
             val simpleDateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm_ss")
 
             val file = new File(
-                s"$resultsFolder/${analysis.toString}_${simpleDateFormat.format(date)}_$fileNameExtension.txt"
+                s"$resultsFolder/${configurationName.getOrElse("")}_${times}_"+
+                    s"${analysis.toString}_${simpleDateFormat.format(date)}_$fileNameExtension.txt"
             )
 
             println(s"filepath: ${file.getAbsolutePath}")
@@ -722,7 +727,7 @@ object Immutability {
 
         def usage: String = {
             s"""
-            | Usage: java …ImmutabilityAnalysisEvaluation
+            | Usage: Immutability
             | -cp <JAR file/Folder containing class files> OR -JDK
             | -projectDir <project directory>
             | -libDir <library directory>
@@ -735,10 +740,9 @@ object Immutability {
             | [-noJDK] (running without the JDK)
             | [-callGraph <CHA|RTA|PointsTo> (Default: RTA)
             | [-level] <0|1|2> (domain level  Default: 2)
-            | [-ReImInferComparison] (without transient fields and with eager L2 purity analysis)
             | [-withoutConsiderGenericity]
             | [-withoutConsiderLazyInitialization]
-            | [-times <0...n>] (times of execution. n is a natural number)
+            | [-times <1...n>] (times of execution. n is a natural number)
             |""".stripMargin
         }
 
@@ -758,6 +762,8 @@ object Immutability {
         var withoutConsiderLazyInitialization = false
         var withoutConsiderGenericity = false
         var times = 1
+        var multiProjects = false
+        var configurationName: Option[String] = None
 
         def readNextArg(): String = {
             i = i + 1
@@ -806,7 +812,8 @@ object Immutability {
                 case "-times"                             ⇒ times = Integer.parseInt(readNextArg())
                 case "-withoutConsiderGenericity"         ⇒ withoutConsiderGenericity = true
                 case "-withoutConsiderLazyInitialization" ⇒ withoutConsiderLazyInitialization = true
-
+                case "-multi"                             ⇒ multiProjects = true
+                case "-analysisName"                      ⇒ configurationName = Some(readNextArg())
                 case "-JDK" ⇒
                     cp = JRELibraryFolder
                     withoutJDK = true
@@ -831,23 +838,47 @@ object Immutability {
         }
         var nIndex = 1
         while (nIndex <= times) {
-            println(s"start $nIndex")
             nIndex = nIndex + 1
-            evaluate(
-                cp,
-                analysis,
-                numThreads,
-                projectDir,
-                libDir,
-                resultFolder,
-                withoutJDK,
-                isLibrary,
-                closedWorldAssumption,
-                callGraphKey,
-                level,
-                withoutConsiderGenericity,
-                withoutConsiderLazyInitialization
-            )
+            if (multiProjects) {
+                for (subp ← cp.listFiles().filter(_.isDirectory)) {
+                    evaluate(
+                        subp,
+                        analysis,
+                        numThreads,
+                        projectDir,
+                        libDir,
+                        resultFolder,
+                        withoutJDK,
+                        isLibrary || (subp eq JRELibraryFolder),
+                        closedWorldAssumption,
+                        callGraphKey,
+                        level,
+                        withoutConsiderGenericity,
+                        withoutConsiderLazyInitialization,
+                        configurationName,
+                        nIndex
+                    )
+                }
+            } else {
+                println(s"start $nIndex")
+                evaluate(
+                    cp,
+                    analysis,
+                    numThreads,
+                    projectDir,
+                    libDir,
+                    resultFolder,
+                    withoutJDK,
+                    isLibrary,
+                    closedWorldAssumption,
+                    callGraphKey,
+                    level,
+                    withoutConsiderGenericity,
+                    withoutConsiderLazyInitialization,
+                    configurationName,
+                    nIndex
+                )
+            }
         }
     }
 }
