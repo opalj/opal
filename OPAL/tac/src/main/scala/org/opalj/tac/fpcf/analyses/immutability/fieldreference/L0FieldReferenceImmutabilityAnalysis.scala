@@ -159,8 +159,8 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
 
         // If there are native methods, we give up
         if (classesHavingAccess.exists(_.methods.exists(_.isNative))) { //TODO flag for comparison...reim
-            if (!field.isFinal)
-                return Result(field, MutableFieldReference);
+           // if (!field.isFinal)
+           //     return Result(field, MutableFieldReference);
         }
 
         for {
