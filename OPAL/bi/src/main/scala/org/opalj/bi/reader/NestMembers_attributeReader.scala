@@ -2,6 +2,7 @@
 package org.opalj
 package bi
 package reader
+
 import java.io.DataInputStream
 
 import org.opalj.control.fillArrayOfInt
@@ -39,6 +40,16 @@ trait NestMembers_attributeReader extends AttributeReader {
     // IMPLEMENTATION
     //
 
+    /**
+     * <pre>
+     * NestMembers_attribute {
+     *      u2 attribute_name_index;
+     *      u4 attribute_length;
+     *      u2 number_of_classes;
+     *      u2 classes[number_of_classes];
+     * }
+     * </pre>
+     */
     private[this] def parserFactory() = (
         cp: Constant_Pool,
         ap: AttributeParent,

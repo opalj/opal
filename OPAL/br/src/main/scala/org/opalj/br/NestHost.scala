@@ -1,5 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.br
+package org.opalj
+package br
 
 /**
  * Definition of a Java 11 nest host.
