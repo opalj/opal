@@ -838,9 +838,9 @@ object Immutability {
         }
         var nIndex = 1
         while (nIndex <= times) {
-            nIndex = nIndex + 1
             if (multiProjects) {
-                for (subp ← cp.listFiles().filter(_.isDirectory)) {
+                // println("xxxxxxxxxx: "+cp.listFiles().map(_.isDirectory).mkString(", ")) //.filter(_.isDirectory))
+                for (subp ← cp.listFiles()) { //.filter(_.isDirectory)) {
                     evaluate(
                         subp,
                         analysis,
@@ -879,6 +879,7 @@ object Immutability {
                     nIndex
                 )
             }
+            nIndex = nIndex + 1
         }
     }
 }
