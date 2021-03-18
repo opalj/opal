@@ -661,6 +661,15 @@ object Assembler {
                     writeShort(a.classes_array.length)
                     a.classes_array.foreach(writeShort)
 
+                case a: Record_attribute ⇒
+                    writeShort(a.components.length)
+                    a.components foreach { c ⇒
+                        writeShort(c.name_index)
+                        writeShort(c.descriptor_index)
+                        writeShort(c.attributes.length)
+                        c.attributes foreach RichAttribute.write
+                    }
+
                 case a: Unknown_attribute ⇒ out.write(a.info, 0, a.info.length)
             }
         }

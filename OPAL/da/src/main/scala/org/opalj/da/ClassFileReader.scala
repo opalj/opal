@@ -58,7 +58,9 @@ object ClassFileReader
     with bi.reader.ModulePackages_attributeReader
     // JAVA 11
     with bi.reader.NestHost_attributeReader
-    with bi.reader.NestMembers_attributeReader {
+    with bi.reader.NestMembers_attributeReader
+    // JAVA 16
+    with bi.reader.Record_attributeReader {
 
     type ClassFile = da.ClassFile
 
@@ -911,5 +913,30 @@ object ClassFileReader
         new NestMembers_attribute(
             attribute_name_index, IntArray._UNSAFE_from(classes_array)
         )
+    }
+
+    // --------------------------------------------------------------------------------------------
+    // JAVA 16
+    // --------------------------------------------------------------------------------------------
+
+    type Record_attribute = da.Record_attribute
+    def Record_attribute(
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        components:           RecordComponents
+    ): Record_attribute = {
+        new Record_attribute(attribute_name_index, components)
+    }
+
+    type RecordComponent = da.RecordComponent
+    def RecordComponent(
+        cp:               Constant_Pool,
+        name_index:       Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
+        attributes:       Attributes
+    ): RecordComponent = {
+        new RecordComponent(name_index, descriptor_index, attributes)
     }
 }
