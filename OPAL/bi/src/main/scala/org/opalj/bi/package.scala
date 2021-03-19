@@ -120,6 +120,8 @@ package object bi {
 
     final lazy val isCurrentJREAtLeastJava15: Boolean = isCurrentJREAtLeastJavaX(15)
 
+    final lazy val isCurrentJREAtLeastJava16: Boolean = isCurrentJREAtLeastJavaX(16)
+
     // only works for Java 8 and above
     private[this] def isCurrentJREAtLeastJavaX(x: Int): Boolean = {
         require(x >= 8)
