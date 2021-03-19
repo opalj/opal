@@ -7,6 +7,7 @@ package purity
 
 import net.ceedubs.ficus.Ficus._
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
@@ -52,6 +53,7 @@ import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.MethodDescriptor
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -312,16 +314,22 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
-            project.instanceMethods(state.declClass).foreach { mdc ⇒
-                if (mdc.name == "fillInStackTrace" &&
-                    mdc.method.classFile.thisType != ObjectType.Throwable) {
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
+            val candidate = ConstArray.find(project.instanceMethods(state.declClass)) { mdc ⇒
+                mdc.method.compare(
+                    "fillInStackTrace",
+                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                )
+            }
+            candidate foreach { mdc ⇒
+                if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq.empty))
                         // Early return for impure fillInStackTrace
                         return Result(state.definedMethod, state.ubPurity);
                 }
             }
+        }
 
         val stmtCount = state.code.length
         var s = 0

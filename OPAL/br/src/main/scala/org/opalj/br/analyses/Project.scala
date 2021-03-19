@@ -1465,7 +1465,7 @@ object Project {
                             }
                         } else if (!declaredMethod.isInitializer) {
                             // Private methods can be invoked by invokevirtual instructions (and
-                            // invokeinterface for Java 11+). If a call is resoved to a private
+                            // invokeinterface for Java 11+). If a call is resolved to a private
                             // method, it is performed non-virtually, thus private methods
                             // effectively shadow inherited methods (only possible in code evolution
                             // scenarios)
