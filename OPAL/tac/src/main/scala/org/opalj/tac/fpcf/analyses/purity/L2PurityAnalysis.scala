@@ -27,6 +27,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.value.ASObjectValue
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -834,7 +835,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             candidate foreach { mdc ⇒
                 if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
-                    if (!checkMethodPurity(fISTPurity, Seq.empty))
+                    val self = UVar(
+                        ASObjectValue(isNull = No, isPrecise = false, state.declClass),
+                        SelfReferenceParameter
+                    )
+                    if (!checkMethodPurity(fISTPurity, Seq(self)))
                         // Early return for impure fillInStackTrace
                         return Result(state.definedMethod, state.ubPurity);
                 }
