@@ -25,10 +25,8 @@ import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.EagerL0FieldReferenceImmutabilityAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.br.ObjectType
-import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.br.Field
 import org.opalj.br.fpcf.properties.DeepImmutableField
@@ -55,9 +53,6 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.immutability.EagerL3FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
@@ -76,10 +71,11 @@ import org.opalj.fpcf.EPS
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.OrderedProperty
+import org.opalj.fpcf.PropertyStore
 
 /**
- * Determines the immutability of field references, fields, classes and types and gives several setting options for the
- * evaluation.
+ * Determines the immutability of field references, fields, classes and types and provides several setting
+ * options for the evaluation.
  *
  * @author Tobias Roth
  */
@@ -164,81 +160,24 @@ object Immutability {
             projectTime = t.toSeconds
         }
 
-        val fieldReferenceDependencies: List[FPCFAnalysisScheduler] = List(
-            EagerL0FieldReferenceImmutabilityAnalysis,
-            LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2PurityAnalysis,
-            LazyInterProceduralEscapeAnalysis,
-            LazyStaticDataUsageAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
-            LazyReturnValueFreshnessAnalysis,
-            LazyFieldLocalityAnalysis
-        )
+        val allProjectClassTypes = project.allProjectClassFiles.toIterator.map(_.thisType).toSet
 
-        val fieldDependencies: List[FPCFAnalysisScheduler] = List(
-            LazyL0FieldReferenceImmutabilityAnalysis,
-            LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2PurityAnalysis,
-            EagerL3FieldImmutabilityAnalysis,
-            LazyL1ClassImmutabilityAnalysis,
-            LazyL1TypeImmutabilityAnalysis,
-            LazyStaticDataUsageAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
-            LazyInterProceduralEscapeAnalysis,
-            LazyReturnValueFreshnessAnalysis,
-            LazyFieldLocalityAnalysis
-        )
+        val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
 
-        val classDependencies: List[FPCFAnalysisScheduler] = List(
-            LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2PurityAnalysis,
-            LazyL0FieldReferenceImmutabilityAnalysis,
-            LazyL3FieldImmutabilityAnalysis,
-            LazyL1TypeImmutabilityAnalysis,
-            EagerL1ClassImmutabilityAnalysis,
-            LazyStaticDataUsageAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
-            LazyInterProceduralEscapeAnalysis,
-            LazyReturnValueFreshnessAnalysis,
-            LazyFieldLocalityAnalysis
-        )
-
-        val typeDependencies: List[FPCFAnalysisScheduler] = List(
-            LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2PurityAnalysis,
-            LazyL0FieldReferenceImmutabilityAnalysis,
-            LazyL3FieldImmutabilityAnalysis,
-            LazyL1ClassImmutabilityAnalysis,
-            EagerL1TypeImmutabilityAnalysis,
-            LazyStaticDataUsageAnalysis,
-            LazyL0CompileTimeConstancyAnalysis,
-            LazyInterProceduralEscapeAnalysis,
-            LazyReturnValueFreshnessAnalysis,
-            LazyFieldLocalityAnalysis
-        )
-
-        val allImmAnalysisDependencies: List[FPCFAnalysisScheduler] =
+        val dependencies: List[FPCFAnalysisScheduler] =
             List(
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
-                EagerL0FieldReferenceImmutabilityAnalysis,
-                EagerL3FieldImmutabilityAnalysis,
-                EagerL1ClassImmutabilityAnalysis,
-                EagerL1TypeImmutabilityAnalysis,
+                LazyL0FieldReferenceImmutabilityAnalysis,
+                LazyL3FieldImmutabilityAnalysis,
+                LazyL1ClassImmutabilityAnalysis,
+                LazyL1TypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
                 LazyInterProceduralEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis
             )
-
-        val dependencies = analysis match {
-            case FieldReferences ⇒ fieldReferenceDependencies
-            case Fields          ⇒ fieldDependencies
-            case Classes         ⇒ classDependencies
-            case Types           ⇒ typeDependencies
-            case All             ⇒ allImmAnalysisDependencies
-        }
 
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
@@ -274,16 +213,39 @@ object Immutability {
 
         time {
             propertyStore = analysesManager.runAll(dependencies)._1
+            analysis match {
+                case FieldReferences ⇒
+                    allFieldsInProjectClassFiles.foreach(
+                        f ⇒ propertyStore.force(f, br.fpcf.properties.FieldReferenceImmutability.key)
+                    )
+                case Fields ⇒
+                    allFieldsInProjectClassFiles.foreach(
+                        f ⇒ propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
+                    )
+                case Classes ⇒
+                    allProjectClassTypes.foreach(
+                        c ⇒ propertyStore.force(c, br.fpcf.properties.ClassImmutability.key)
+                    )
+                case Types ⇒
+                    allProjectClassTypes.foreach(
+                        c ⇒ propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
+                    )
+                case All ⇒
+                    allFieldsInProjectClassFiles.foreach(f ⇒ {
+                        propertyStore.force(f, br.fpcf.properties.FieldReferenceImmutability.key)
+                        propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
+                    })
+                    allProjectClassTypes.foreach(c ⇒ {
+                        propertyStore.force(c, br.fpcf.properties.ClassImmutability.key)
+                        propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
+                    })
+            }
             propertyStore.waitOnPhaseCompletion()
         } { t ⇒
             analysisTime = t.toSeconds
         }
 
         val stringBuilderResults: StringBuilder = new StringBuilder()
-
-        val allProjectClassTypes = project.allProjectClassFiles.toIterator.map(_.thisType).toSet
-
-        val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
 
         val fieldReferenceGroupedResults = propertyStore
             .entities(FieldReferenceImmutability.key)
@@ -375,6 +337,7 @@ object Immutability {
 
         val fieldGroupedResults = propertyStore
             .entities(FieldImmutability.key)
+            .filter(_.isFinal)
             .filter(eps ⇒ allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]))
             .toTraversable
             .groupBy(_.asFinal.p)
@@ -428,6 +391,7 @@ object Immutability {
 
         val classGroupedResults = propertyStore
             .entities(ClassImmutability.key)
+            .filter(_.isFinal)
             .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
             .groupBy(_.asFinal.p)
@@ -507,6 +471,7 @@ object Immutability {
 
         val typeGroupedResults = propertyStore
             .entities(TypeImmutability.key)
+            .filter(_.isFinal)
             .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
             .groupBy(_.asFinal.p)
@@ -588,8 +553,9 @@ object Immutability {
                 | Shallow Immutable Classes: ${shallowImmutableClasses.size}
                 | Dependent Immutable Classes: ${dependentImmutableClasses.size}
                 | Deep Immutable Classes: ${deepImmutableClasses.size}
+                | Classes: ${allProjectClassTypes.size - deepImmutableClassesInterfaces.size}
+                |
                 | Deep Immutable Interfaces: ${deepImmutableClassesInterfaces.size}
-                | Classes: ${allProjectClassTypes.size}
                 |
                 |""".stripMargin
             )
