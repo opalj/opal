@@ -4,9 +4,13 @@ package br
 package reader
 
 import org.opalj.collection.immutable.RefArray
+import org.opalj.bi.ACC_PRIVATE
+import org.opalj.bi.ACC_STATIC
+import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.br.collection.mutable.InstructionsBuilder
 import org.opalj.br.instructions.AASTORE
 import org.opalj.br.instructions.ACONST_NULL
+import org.opalj.br.instructions.ALOAD_1
 import org.opalj.br.instructions.ANEWARRAY
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.br.instructions.DUP
@@ -14,6 +18,7 @@ import org.opalj.br.instructions.GETSTATIC
 import org.opalj.br.instructions.IAND
 import org.opalj.br.instructions.ICONST_0
 import org.opalj.br.instructions.ICONST_1
+import org.opalj.br.instructions.IFNE
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.instructions.LoadClass_W
@@ -23,6 +28,18 @@ import org.opalj.br.instructions.LoadDynamic_W
 import org.opalj.br.instructions.LoadMethodHandle_W
 import org.opalj.br.instructions.LoadString_W
 import org.opalj.br.instructions.TypeConversionInstructions
+import org.opalj.br.MethodDescriptor.JustReturnsString
+import org.opalj.br.cp.Constant_Pool
+import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.BIPUSH
+import org.opalj.br.instructions.IADD
+import org.opalj.br.instructions.IMUL
+import org.opalj.br.instructions.INSTANCEOF
+import org.opalj.br.instructions.INVOKESPECIAL
+import org.opalj.br.instructions.IRETURN
+import org.opalj.br.instructions.LoadInt_W
+import org.opalj.br.instructions.NEW
 
 /**
  * Provides functionality to produce bytecode that loads a bootstrap argument. Loading of dynamic
@@ -37,23 +54,28 @@ trait BootstrapArgumentLoading {
      *
      * @param argument The argument to be loaded
      * @param instructions The instruction builder the instructions are appended to
+     * @param classFile The class file the constant is in
      * @param boxed If true, ensures the argument is of a reference type, boxing it if necessary
      *
-     * @return The maximum stack height the generated instructions require
+     * @return The maximum stack height the generated instructions require and the (potentially
+     *         new!) class file
      */
     def loadBootstrapArgument(
         argument:     ConstantValue[_],
         instructions: InstructionsBuilder,
+        classFile:    ClassFile,
         boxed:        Boolean             = false
-    ): Int = {
+    ): (Int, ClassFile) = {
         argument match {
             case DynamicConstant(bootstrapMethod, name, descriptor) ⇒
-                loadDynamicConstant(bootstrapMethod, name, descriptor, instructions, boxed)
+                loadDynamicConstant(
+                    bootstrapMethod, name, descriptor, instructions, classFile, boxed
+                )
             case _ ⇒
                 instructions ++= LoadConstantInstruction(argument, wide = true)
                 if (boxed && argument.runtimeValueType.isBaseType)
                     instructions ++= argument.runtimeValueType.asBaseType.boxValue
-                argument.runtimeValueType.computationalType.operandSize
+                (argument.runtimeValueType.computationalType.operandSize, classFile)
         }
     }
 
@@ -64,17 +86,20 @@ trait BootstrapArgumentLoading {
      * @param name The constant's name information, passed as the bootstrap method's 2. argument
      * @param descriptor The constant's type, passed as the bootstrap method's 3. argument
      * @param instructions The instruction builder the instructions are appended to
+     * @param classFile The class file the constant is in
      * @param boxed If true, ensures the constant is of a reference type, boxing it if necessary
      *
-     * @return The maximum stack height the generated instructions require
+     * @return The maximum stack height the generated instructions require and the (potentially
+     *         new!) class file
      */
     def loadDynamicConstant(
         bootstrapMethod: BootstrapMethod,
         name:            String,
         descriptor:      FieldType,
         instructions:    InstructionsBuilder,
+        classFile:       ClassFile,
         boxed:           Boolean             = false
-    ): Int = {
+    ): (Int, ClassFile) = {
 
         def dynamicLoad(): LoadConstantInstruction[_] = {
             if (descriptor.computationalType.isCategory2) LoadDynamic2_W(bootstrapMethod, name, descriptor)
@@ -86,7 +111,7 @@ trait BootstrapArgumentLoading {
 
                 methodName match {
                     case "arrayVarHandle" ⇒
-                        val maxStack = loadClassType(args.head, instructions)
+                        val maxStackAndClassFile = loadClassType(args.head, instructions, classFile)
 
                         instructions ++= INVOKESTATIC(
                             ObjectType.MethodHandles,
@@ -95,18 +120,19 @@ trait BootstrapArgumentLoading {
                             MethodDescriptor(ObjectType.Class, ObjectType.VarHandle)
                         )
 
-                        maxStack
+                        maxStackAndClassFile
 
                     case "enumConstant" ⇒
                         instructions ++= GETSTATIC(descriptor.asObjectType, name, descriptor)
-                        1
+                        (1, classFile)
 
                     case "explicitCast" ⇒
                         val argument = args.head
                         val argType = argument.runtimeValueType
-                        val bsaStack = loadBootstrapArgument(argument, instructions)
+                        val (bsaStack, updatedClassFile) =
+                            loadBootstrapArgument(argument, instructions, classFile)
 
-                        descriptor match {
+                        val maxStack = descriptor match {
                             case ObjectType.Object ⇒ // Nothing to do here, but box if required
                                 if (boxed && argType.isBaseType)
                                     instructions ++= argType.asBaseType.boxValue
@@ -142,13 +168,16 @@ trait BootstrapArgumentLoading {
                                 bsaStack + (if (isBool) 1 else 0)
                         }
 
+                        (maxStack, updatedClassFile)
+
                     case "fieldVarHandle" ⇒
                         fieldVarHandle(
                             name,
                             args.head,
-                            loadClassType(args(1), instructions),
+                            cf ⇒ loadClassType(args(1), instructions, cf),
                             isStaticField = false,
-                            instructions
+                            instructions,
+                            classFile
                         )
 
                     case "getStaticFinal" ⇒
@@ -158,50 +187,70 @@ trait BootstrapArgumentLoading {
                             instructions ++= GETSTATIC(declClass, name, descriptor)
                             if (boxed && descriptor.isBaseType)
                                 instructions ++= descriptor.asBaseType.boxValue
-                            descriptor.computationalType.operandSize
+                            (descriptor.computationalType.operandSize, classFile)
                         } else args.head match {
                             case ConstantClass(ct) ⇒
                                 instructions ++= GETSTATIC(ct.asObjectType, name, descriptor)
                                 if (boxed && descriptor.isBaseType)
                                     instructions ++= descriptor.asBaseType.boxValue
-                                descriptor.computationalType.operandSize
+                                (descriptor.computationalType.operandSize, classFile)
                             case dc: DynamicConstant ⇒
-                                doGetStatic(dc, name, descriptor, instructions, boxed)
+                                doGetStatic(dc, name, descriptor, instructions, classFile, boxed)
                         }
 
                     case "invoke" ⇒
                         val methodHandle = args.head
                         val arguments = args.tail
-                        invokeMethodHandle(methodHandle, arguments, descriptor, instructions, boxed)
+                        invokeMethodHandle(
+                            methodHandle, arguments, descriptor, instructions, classFile, boxed
+                        )
 
                     case "nullConstant" ⇒
                         instructions ++= ACONST_NULL
-                        1
+                        (1, classFile)
 
                     case "primitiveClass" ⇒
                         val classType = FieldType(name).asBaseType.WrapperType
                         instructions ++= GETSTATIC(classType, "TYPE", ObjectType.Class)
-                        1
+                        (1, classFile)
 
                     case "staticFieldVarHandle" ⇒
                         fieldVarHandle(
                             name,
                             args.head,
-                            loadClassType(args(1), instructions),
+                            cf ⇒ loadClassType(args(1), instructions, cf),
                             isStaticField = true,
-                            instructions
+                            instructions,
+                            classFile
                         )
 
                     case _ ⇒
                         instructions ++= dynamicLoad()
-                        descriptor.computationalType.operandSize
+                        (descriptor.computationalType.operandSize, classFile)
                 }
+
+            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ObjectMethods, false, _, _), _) ⇒
+                val newMethodName = s"$$object_methods$$${classFile.thisType.simpleName}:pc"
+                val (updatedClassFile, newMethodDescriptor) = createObjectMethodsTarget(
+                    bootstrapMethod.arguments, name, newMethodName, classFile
+                ).getOrElse {
+                        instructions ++= dynamicLoad()
+                        return (descriptor.computationalType.operandSize, classFile);
+                    }
+
+                instructions ++= LoadMethodHandle_W(InvokeStaticMethodHandle(
+                    classFile.thisType,
+                    classFile.isInterfaceDeclaration,
+                    newMethodName,
+                    newMethodDescriptor
+                ))
+
+                (1, updatedClassFile)
 
             case _ ⇒
                 instructions ++= dynamicLoad()
-                descriptor.computationalType.operandSize
+                (descriptor.computationalType.operandSize, classFile)
         }
-
     }
 
     /**
@@ -210,10 +259,11 @@ trait BootstrapArgumentLoading {
     private def fieldVarHandle(
         fieldName:      String,
         declaringClass: BootstrapArgument,
-        loadFieldType:  ⇒ Int,
+        loadFieldType:  ClassFile ⇒ (Int, ClassFile),
         isStaticField:  Boolean,
-        instructions:   InstructionsBuilder
-    ): Int = {
+        instructions:   InstructionsBuilder,
+        classFile:      ClassFile
+    ): (Int, ClassFile) = {
         instructions ++= INVOKESTATIC( // Get suitable MethodHandles$Lookup object
             ObjectType.MethodHandles,
             isInterface = false,
@@ -221,11 +271,12 @@ trait BootstrapArgumentLoading {
             MethodDescriptor.withNoArgs(ObjectType.MethodHandles$Lookup)
         )
 
-        val loadDeclClassStack = loadClassType(declaringClass, instructions)
+        val (loadDeclClassStack, updatedClassFile1) =
+            loadClassType(declaringClass, instructions, classFile)
 
         instructions ++= LoadString_W(fieldName)
 
-        val loadFieldTypeStack = loadFieldType
+        val (loadFieldTypeStack, updatedClassFile2) = loadFieldType(updatedClassFile1)
 
         instructions ++= INVOKEVIRTUAL(
             ObjectType.MethodHandles$Lookup,
@@ -233,7 +284,7 @@ trait BootstrapArgumentLoading {
             MethodDescriptor.FindVarHandleDescriptor
         )
 
-        Math.max(1 + loadDeclClassStack, 3 + loadFieldTypeStack)
+        (Math.max(1 + loadDeclClassStack, 3 + loadFieldTypeStack), updatedClassFile2)
     }
 
     /**
@@ -241,15 +292,16 @@ trait BootstrapArgumentLoading {
      */
     private def loadClassType(
         classType:    BootstrapArgument,
-        instructions: InstructionsBuilder
-    ): Int = classType match {
+        instructions: InstructionsBuilder,
+        classFile:    ClassFile
+    ): (Int, ClassFile) = classType match {
         case ConstantClass(tpe) ⇒
             instructions ++= LoadClass_W(tpe)
-            1
+            (1, classFile)
 
         case DynamicConstant(constantBSM, constantName, constantDescriptor) ⇒
             loadDynamicConstant(
-                constantBSM, constantName, constantDescriptor, instructions
+                constantBSM, constantName, constantDescriptor, instructions, classFile
             )
     }
 
@@ -273,14 +325,16 @@ trait BootstrapArgumentLoading {
         name:          String,
         fieldType:     FieldType,
         instructions:  InstructionsBuilder,
+        classFile:     ClassFile,
         boxed:         Boolean
-    ): Int = {
-        val varHandleStack = fieldVarHandle( // Get a suitable Varhandle
+    ): (Int, ClassFile) = {
+        val (varHandleStack, updatedClassFile) = fieldVarHandle( // Get a suitable Varhandle
             name,
             classConstant,
-            loadFieldType(fieldType, instructions),
+            cf ⇒ (loadFieldType(fieldType, instructions), cf),
             isStaticField = true,
-            instructions
+            instructions,
+            classFile
         )
         instructions ++= ICONST_0 // The get method for a static VarHandle takes empty varargs
         instructions ++= ANEWARRAY(ObjectType.Object)
@@ -292,7 +346,7 @@ trait BootstrapArgumentLoading {
 
         adaptReturnType(fieldType, boxed, instructions)
 
-        Math.max(varHandleStack, 2)
+        (Math.max(varHandleStack, 2), updatedClassFile)
     }
 
     /**
@@ -303,28 +357,31 @@ trait BootstrapArgumentLoading {
         arguments:    RefArray[ConstantValue[_]],
         returnType:   FieldType,
         instructions: InstructionsBuilder,
+        classFile:    ClassFile,
         boxed:        Boolean
-    ): Int = {
+    ): (Int, ClassFile) = {
         // Load the MethodHandle and keep track of its return type if we know it
-        val (actualReturnType, mhStack) = methodHandle match {
+        val (actualReturnType, mhStack, newClassFile) = methodHandle match {
             case mh: MethodCallMethodHandle ⇒
                 instructions ++= LoadMethodHandle_W(mh)
-                (Some(mh.methodDescriptor.returnType), 1)
+                (Some(mh.methodDescriptor.returnType), 1, classFile)
 
             case mh: FieldReadAccessMethodHandle ⇒
                 instructions ++= LoadMethodHandle_W(mh)
-                (Some(mh.fieldType), 1)
+                (Some(mh.fieldType), 1, classFile)
 
             case mh: FieldWriteAccessMethodHandle ⇒
                 instructions ++= LoadMethodHandle_W(mh)
-                (Some(VoidType), 1)
+                (Some(VoidType), 1, classFile)
 
             case DynamicConstant(constantBSM, constantName, constantDescriptor) ⇒
-                val loadConstantStack = loadDynamicConstant(
-                    constantBSM, constantName, constantDescriptor, instructions
+                val (loadConstantStack, newClassFile) = loadDynamicConstant(
+                    constantBSM, constantName, constantDescriptor, instructions, classFile
                 )
-                (None, loadConstantStack)
+                (None, loadConstantStack, newClassFile)
         }
+
+        var updatedClassFile = newClassFile
 
         // If the return type is unknown or doesn't match the required, adapt it
         val returnTypeStack = if (actualReturnType.isEmpty || actualReturnType.get != returnType) {
@@ -363,7 +420,9 @@ trait BootstrapArgumentLoading {
             case (argument, index) ⇒
                 instructions ++= DUP
                 instructions ++= LoadConstantInstruction(index)
-                val bsaStack = loadBootstrapArgument(argument, instructions, boxed = true)
+                val (bsaStack, newClassFile) =
+                    loadBootstrapArgument(argument, instructions, updatedClassFile, boxed = true)
+                updatedClassFile = newClassFile
                 instructions ++= AASTORE
                 argumentStack = Math.max(argumentStack, 2 + bsaStack)
         }
@@ -376,7 +435,7 @@ trait BootstrapArgumentLoading {
 
         adaptReturnType(returnType, boxed, instructions)
 
-        Iterator(mhStack, 1 + returnTypeStack, 2 + argumentStack).max
+        (Iterator(mhStack, 1 + returnTypeStack, 2 + argumentStack).max, updatedClassFile)
     }
 
     private def adaptReturnType(
@@ -391,5 +450,232 @@ trait BootstrapArgumentLoading {
                 instructions ++= ObjectType.unboxValue(wrapper)
         } else
             instructions ++= CHECKCAST(returnType.asReferenceType)
+    }
+
+    /**
+     * Creates the code required to perform the action of a method created by
+     * java.lang.runtime.ObjectMethods.bootstrap.
+     *
+     * @param bootstrapArgs The arguments to the bootstrap method
+     * @param methodName Name of the represented method (either equals, toString or hashCode)
+     * @param newMethodName The name for the newly created method
+     * @return Either a tuple of the updated class file and the descriptor of the new method or None
+     */
+    protected[this] def createObjectMethodsTarget(
+        bootstrapArgs: BootstrapArguments,
+        methodName:    String,
+        newMethodName: String,
+        classFile:     ClassFile
+    ): Option[(ClassFile, MethodDescriptor)] = {
+        val recordType = bootstrapArgs.head match {
+            case ConstantClass(rt) ⇒ rt.asObjectType
+            case _                 ⇒ return None;
+        }
+
+        val getters = bootstrapArgs.drop(2) map {
+            case mh: GetFieldMethodHandle ⇒ mh
+            case _                        ⇒ return None;
+        }
+
+        // Loads a component (boxed), maxStack = 5
+        def loadComponent(
+            getter:          MethodHandle,
+            instructions:    InstructionsBuilder,
+            forSecondRecord: Boolean             = false
+        ): Unit = {
+            instructions ++= LoadConstantInstruction(getter, wide = true)
+
+            instructions ++= ICONST_1
+            instructions ++= ANEWARRAY(ObjectType.Object)
+            instructions ++= DUP
+            instructions ++= ICONST_0
+            instructions ++= (if (forSecondRecord) ALOAD_1 else ALOAD_0)
+            instructions ++= AASTORE
+
+            instructions ++= INVOKEVIRTUAL(
+                ObjectType.MethodHandle,
+                "invokeWithArguments",
+                MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+            )
+        }
+
+        val body = new InstructionsBuilder(0)
+
+        val targetDescriptor = methodName match {
+            case "equals" ⇒
+                body ++= ALOAD_1 // if(!other instanceof recordType) return false;
+                body ++= INSTANCEOF(recordType)
+                body ++= IFNE(5)
+                body ++= ICONST_0
+                body ++= IRETURN
+
+                getters foreach { getter ⇒
+                    loadComponent(getter, body)
+                    loadComponent(getter, body, forSecondRecord = true)
+
+                    body ++= INVOKESTATIC(
+                        ObjectType.Objects,
+                        isInterface = false,
+                        "equals",
+                        MethodDescriptor(
+                            RefArray(ObjectType.Object, ObjectType.Object),
+                            BooleanType
+                        )
+                    )
+                    body ++= IFNE(5) // if(!this.component().equals(other.component()) return false;
+                    body ++= ICONST_0
+                    body ++= IRETURN
+                }
+
+                body ++= ICONST_1 // return true;
+                body ++= IRETURN
+
+                MethodDescriptor(RefArray(recordType, ObjectType.Object), BooleanType)
+
+            case "toString" ⇒
+                val components = bootstrapArgs(1) match {
+                    case ConstantString(cs) ⇒ cs.split(';')
+                    case _                  ⇒ return None;
+                }
+
+                def appendChar(c: Char): Unit = {
+                    body ++= LoadInt_W(c.toInt)
+                    body ++= INVOKEVIRTUAL(
+                        ObjectType.StringBuilder,
+                        "append",
+                        MethodDescriptor(CharType, ObjectType.StringBuilder)
+                    )
+                }
+
+                def appendString(s: String): Unit = {
+                    body ++= LoadString_W(s)
+                    body ++= INVOKEVIRTUAL(
+                        ObjectType.StringBuilder,
+                        "append",
+                        MethodDescriptor(ObjectType.String, ObjectType.StringBuilder)
+                    )
+                }
+
+                body ++= NEW(ObjectType.StringBuilder)
+                body ++= DUP
+                body ++= INVOKESPECIAL(
+                    ObjectType.StringBuilder,
+                    isInterface = false,
+                    "<init>",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+                appendString(recordType.simpleName)
+                appendChar('[')
+
+                var first = true
+                components.zip(getters) foreach {
+                    case (component, getter) ⇒
+                        if (first) first = false
+                        else appendString(", ")
+
+                        appendString(component)
+
+                        appendChar('=')
+
+                        loadComponent(getter, body)
+                        body ++= INVOKEVIRTUAL(
+                            ObjectType.StringBuilder,
+                            "append",
+                            MethodDescriptor(ObjectType.Object, ObjectType.StringBuilder)
+                        )
+                }
+
+                appendChar(']')
+
+                body ++= INVOKEVIRTUAL(ObjectType.StringBuilder, "toString", JustReturnsString)
+                body ++= ARETURN
+
+                MethodDescriptor(recordType, ObjectType.String)
+
+            case "hashCode" ⇒
+                body ++= ICONST_0 // int hashCode = 0;
+
+                getters foreach { getter ⇒
+                    body ++= BIPUSH(31) // hashCode = hashCode * 31 + component.hashCode();
+                    body ++= IMUL
+
+                    loadComponent(getter, body)
+
+                    body ++= INVOKESTATIC(
+                        ObjectType.Objects,
+                        isInterface = false,
+                        "hashCode",
+                        MethodDescriptor.apply(ObjectType.Object, IntegerType)
+                    )
+                    body ++= IADD
+                }
+
+                body ++= IRETURN // return hashCode;
+
+                MethodDescriptor(recordType, IntegerType)
+
+            case _ ⇒
+                return None;
+        }
+
+        val maxStack = 6 // in all methods, the max stack is 1 value the maxStack of loadComponent
+        val maxLocals = targetDescriptor.requiredRegisters
+
+        val attributes = if ("equals" == methodName) {
+            val stackMapTable = Array.fill[AnyRef](getters.size + 1)(SameFrame(35))
+            stackMapTable(0) = SameFrame(9)
+            RefArray(StackMapTable(RefArray._UNSAFE_from(stackMapTable)))
+        } else {
+            RefArray.empty
+        }
+
+        val code = Code(maxStack, maxLocals, body.result(), NoExceptionHandlers, attributes)
+
+        // Access flags for the target method are `/* SYNTHETIC */ private static`
+        val accessFlags = ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask
+
+        val targetMethod = Method(accessFlags, newMethodName, targetDescriptor, RefArray(code))
+
+        val updatedClassFile = classFile._UNSAFE_addMethod(targetMethod)
+
+        Some((updatedClassFile, targetDescriptor))
+    }
+
+    /**
+     * Replaces each of several characters in a String with a given corresponding character.
+     */
+    protected[this] def replaceChars(in: String, oldChars: String, newChars: String): String = {
+        var result = in
+        for ((oldC, newC) ← oldChars.zip(newChars)) {
+            result = result.replace(oldC, newC)
+        }
+        result
+    }
+
+    /**
+     * Generates a new, internal name for a method to be inserted.
+     *
+     * It follows the pattern:
+     * `$targetMethodName${surroundingMethodName}{surroundingMethodDescriptor}:pc`, where
+     * surroundingMethodDescriptor is the JVM descriptor of the method sanitized to not contain
+     * characters illegal in method names (replacing /, [, ;, < and > by $, ], :, _ and _
+     * respectively) and where pc is the pc of the invokedynamic that is rewritten.
+     */
+    protected[this] def newTargetMethodName(
+        cp:                               Constant_Pool,
+        surroundingMethodNameIndex:       Int,
+        surroundingMethodDescriptorIndex: Int,
+        pc:                               Int,
+        targetMethodName:                 String
+    ): String = {
+        val methodName = cp(surroundingMethodNameIndex).asString match {
+            case "<init>"   ⇒ "$constructor$"
+            case "<clinit>" ⇒ "$static_initializer"
+            case name       ⇒ name
+        }
+        val descriptor = cp(surroundingMethodDescriptorIndex).asMethodDescriptor.toJVMDescriptor
+        val sanitizedDescriptor = replaceChars(descriptor, "/[;<>", "$]:__")
+        s"$$$targetMethodName$$$methodName$sanitizedDescriptor:$pc"
     }
 }

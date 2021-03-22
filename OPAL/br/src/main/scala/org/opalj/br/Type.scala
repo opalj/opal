@@ -1284,6 +1284,8 @@ object ObjectType {
     final val MethodType = ObjectType("java/lang/invoke/MethodType")
     final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
     final val StringConcatFactory = ObjectType("java/lang/invoke/StringConcatFactory")
+    final val ObjectMethods = ObjectType("java/lang/runtime/ObjectMethods")
+    final val Objects = ObjectType("java/util/Objects")
     final val CallSite = ObjectType("java/lang/invoke/CallSite")
     final val ScalaLambdaDeserialize = ObjectType("scala/runtime/LambdaDeserialize")
     final val SerializedLambda = ObjectType("java/lang/invoke/SerializedLambda")
