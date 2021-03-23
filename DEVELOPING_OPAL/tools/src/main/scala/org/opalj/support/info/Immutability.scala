@@ -71,7 +71,9 @@ import org.opalj.fpcf.EPS
 import org.opalj.ai.domain
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.fpcf.OrderedProperty
-import org.opalj.fpcf.PropertyStore
+import org.opalj.br.fpcf.FPCFAnalysis
+import org.opalj.collection.immutable.Chain
+import org.opalj.fpcf.ComputationSpecification
 
 /**
  * Determines the immutability of field references, fields, classes and types and provides several setting
@@ -207,40 +209,57 @@ object Immutability {
         time { project.get(callGraphKey) } { t ⇒
             callGraphTime = t.toSeconds
         }
-        var propertyStore: PropertyStore = null
+        val propertyStore = project.get(PropertyStoreKey)
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
 
         time {
-            propertyStore = analysesManager.runAll(dependencies)._1
-            analysis match {
-                case FieldReferences ⇒
-                    allFieldsInProjectClassFiles.foreach(
-                        f ⇒ propertyStore.force(f, br.fpcf.properties.FieldReferenceImmutability.key)
-                    )
-                case Fields ⇒
-                    allFieldsInProjectClassFiles.foreach(
-                        f ⇒ propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
-                    )
-                case Classes ⇒
-                    allProjectClassTypes.foreach(
-                        c ⇒ propertyStore.force(c, br.fpcf.properties.ClassImmutability.key)
-                    )
-                case Types ⇒
-                    allProjectClassTypes.foreach(
-                        c ⇒ propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
-                    )
-                case All ⇒
-                    allFieldsInProjectClassFiles.foreach(f ⇒ {
-                        propertyStore.force(f, br.fpcf.properties.FieldReferenceImmutability.key)
-                        propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
-                    })
-                    allProjectClassTypes.foreach(c ⇒ {
-                        propertyStore.force(c, br.fpcf.properties.ClassImmutability.key)
-                        propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
-                    })
+            analysesManager.runAll(
+                dependencies, {
+
+                css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
+                    analysis match {
+                        case FieldReferences ⇒
+                            if (css.contains(LazyL0FieldReferenceImmutabilityAnalysis))
+                                allFieldsInProjectClassFiles.foreach(
+                                    f ⇒ propertyStore.force(f, br.fpcf.properties.FieldReferenceImmutability.key)
+                                )
+                        case Fields ⇒
+                            if (css.contains(LazyL3FieldImmutabilityAnalysis))
+                                allFieldsInProjectClassFiles.foreach(
+                                    f ⇒ propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
+                                )
+                        case Classes ⇒
+                            if (css.contains(LazyL1ClassImmutabilityAnalysis))
+                                allProjectClassTypes.foreach(
+                                    c ⇒ propertyStore.force(c, br.fpcf.properties.ClassImmutability.key)
+                                )
+                        case Types ⇒
+                            if (css.contains(LazyL1TypeImmutabilityAnalysis))
+                                allProjectClassTypes.foreach(
+                                    c ⇒ propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
+                                )
+                        case All ⇒
+                            if (css.contains(LazyL0FieldReferenceImmutabilityAnalysis))
+                                allFieldsInProjectClassFiles.foreach(f ⇒ {
+                                    propertyStore.force(f, br.fpcf.properties.FieldReferenceImmutability.key)
+                                })
+                            if (css.contains(LazyL3FieldImmutabilityAnalysis))
+                                allFieldsInProjectClassFiles.foreach(
+                                    f ⇒ propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
+                                )
+                            if (css.contains(LazyL1ClassImmutabilityAnalysis))
+                                allProjectClassTypes.foreach(c ⇒ {
+                                    propertyStore.force(c, br.fpcf.properties.ClassImmutability.key)
+                                })
+                            if (css.contains(LazyL1TypeImmutabilityAnalysis))
+                                allProjectClassTypes.foreach(
+                                    c ⇒ propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
+                                )
+                    }
             }
-            propertyStore.waitOnPhaseCompletion()
+            )
+
         } { t ⇒
             analysisTime = t.toSeconds
         }
@@ -337,7 +356,6 @@ object Immutability {
 
         val fieldGroupedResults = propertyStore
             .entities(FieldImmutability.key)
-            .filter(_.isFinal)
             .filter(eps ⇒ allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]))
             .toTraversable
             .groupBy(_.asFinal.p)
@@ -391,7 +409,6 @@ object Immutability {
 
         val classGroupedResults = propertyStore
             .entities(ClassImmutability.key)
-            .filter(_.isFinal)
             .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
             .groupBy(_.asFinal.p)
@@ -471,7 +488,6 @@ object Immutability {
 
         val typeGroupedResults = propertyStore
             .entities(TypeImmutability.key)
-            .filter(_.isFinal)
             .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
             .groupBy(_.asFinal.p)
