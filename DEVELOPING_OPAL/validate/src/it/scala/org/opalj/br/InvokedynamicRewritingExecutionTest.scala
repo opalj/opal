@@ -21,7 +21,9 @@ import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.bc.Assembler
 import org.opalj.io.JARsFileFilter
+
 import org.opalj.util.InMemoryClassLoader
+import org.opalj.bi.isCurrentJREAtLeastJava15
 
 /**
  * Tests if OPAL is able to rewrite invokedynamics and checks if the rewritten bytecode is
@@ -196,6 +198,58 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
                 val res = m.invoke(null, "ab")
 
                 assert(res.asInstanceOf[String] == "ab\u0001\u0002")
+            }
+        }
+    }
+
+    if (isCurrentJREAtLeastJava15) {
+
+        describe("behavior of rewritten java16records fixture") {
+            val testClassType = ObjectType("java16records/RecordClass")
+            val r = locateTestResources("java16records-g-15--enable-preview-parameters-genericsignature.jar", "bi")
+            val p = JavaFixtureProject(r)
+            val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
+            val inMemoryClassLoader =
+                new InMemoryClassLoader(Map(testClassType.toJava → Assembler(ba.toDA(cf))))
+
+            it("should provide toString as expected") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val constructor = c.getConstructor(classOf[Int], classOf[Object])
+                val testRecord = constructor.newInstance(42.asInstanceOf[AnyRef], "foo")
+
+                val m = c.getMethod("toString")
+                val res = m.invoke(testRecord)
+                assert(res.asInstanceOf[String] == "RecordClass[component1=42, component2=foo]")
+            }
+
+            it("should provide equals as expected") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val constructor = c.getConstructor(classOf[Int], classOf[Object])
+                val testRecord = constructor.newInstance(42.asInstanceOf[AnyRef], "foo")
+                val equalRecord = constructor.newInstance(42.asInstanceOf[AnyRef], "foo")
+                val differentRecord1 = constructor.newInstance(21.asInstanceOf[AnyRef], "foo")
+                val differentRecord2 = constructor.newInstance(42.asInstanceOf[AnyRef], "bar")
+
+                val m = c.getMethod("equals", classOf[Object])
+
+                val res1 = m.invoke(testRecord, equalRecord.asInstanceOf[AnyRef])
+                assert(res1.asInstanceOf[Boolean])
+
+                val res2 = m.invoke(testRecord, differentRecord1.asInstanceOf[AnyRef])
+                assert(!res2.asInstanceOf[Boolean])
+
+                val res3 = m.invoke(testRecord, differentRecord2.asInstanceOf[AnyRef])
+                assert(!res3.asInstanceOf[Boolean])
+            }
+
+            it("should provide hashCode as expected") {
+                val c = inMemoryClassLoader.loadClass(testClassType.toJava)
+                val constructor = c.getConstructor(classOf[Int], classOf[Object])
+                val testRecord = constructor.newInstance(42.asInstanceOf[AnyRef], "foo")
+
+                val m = c.getMethod("hashCode")
+                val res = m.invoke(testRecord)
+                assert(res.asInstanceOf[Int] == Integer.hashCode(42) * 31 + "foo".hashCode)
             }
         }
     }
