@@ -46,6 +46,8 @@ object ToTxt {
             case StringConst(_, value)         ⇒ s""""${value.replace("\\", "\\\\")}""""
             case MethodHandleConst(_, value)   ⇒ s"""MethodHandle("${value.toJava}")"""
             case MethodTypeConst(_, value)     ⇒ s"""MethodType("${value.toJava}")"""
+            case DynamicConst(_, bootstrapMethod, name, _) ⇒
+                s"DynamicConstant[${bootstrapMethod.toJava}]($name"
             case NullExpr(_)                   ⇒ "null"
 
             case PrefixExpr(_, _, op, operand) ⇒ op.toString+" "+toTxtExpr[V](operand)
