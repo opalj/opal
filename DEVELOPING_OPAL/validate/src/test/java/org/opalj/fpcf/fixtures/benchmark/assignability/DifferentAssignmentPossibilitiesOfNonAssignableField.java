@@ -12,8 +12,8 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 @MutableType("")
 @DeepImmutableClass("")
 public class DifferentAssignmentPossibilitiesOfNonAssignableField {
-    
 
+    //@Immutable
     @DeepImmutableField("")
     @ImmutableFieldReference("")
     private final Object o;

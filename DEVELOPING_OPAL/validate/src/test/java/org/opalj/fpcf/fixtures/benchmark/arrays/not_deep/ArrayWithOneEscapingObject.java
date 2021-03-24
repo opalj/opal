@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.arrays;
+package org.opalj.fpcf.fixtures.benchmark.arrays.not_deep;
 
+//import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
@@ -9,14 +10,17 @@ import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSa
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
+//@Immutable
 @MutableType("It has a mutable state")
 @MutableClass("It has a mutable state")
 public class ArrayWithOneEscapingObject {
 
+    //@Immutable
     @MutableField("Reference of the field is mutable")
     @MutableFieldReference("Field is public")
     public Object o = new Object();
 
+    //@Immutable
     @ShallowImmutableField("Field is initialized with an Shallow immutable field")
     @ImmutableFieldReference("Field is only initialized once.")
     private Object[] array2;
@@ -25,6 +29,7 @@ public class ArrayWithOneEscapingObject {
         array2 = new Object[]{o};
     }
 
+    //@Immutable
     @ShallowImmutableField("Field is initialized with a shallow immutable field.")
     @LazyInitializedThreadSafeFieldReference("Synchronized method with a guard-statement around the write")
     private Object[] array3;
@@ -34,6 +39,7 @@ public class ArrayWithOneEscapingObject {
             array3 = new Object[]{o};
     }
 
+    //@Immutable
     @ShallowImmutableField("An array element escapes")
     @LazyInitializedThreadSafeFieldReference("Synchronized method, with guarding if-statement.")
     private Object[] array4;

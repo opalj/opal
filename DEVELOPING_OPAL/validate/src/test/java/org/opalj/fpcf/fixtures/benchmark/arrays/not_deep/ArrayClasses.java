@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.arrays;
+package org.opalj.fpcf.fixtures.benchmark.arrays.not_deep;
 
+//import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
@@ -10,10 +11,12 @@ import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSa
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
+//@Immutable
 @MutableType("")
 @MutableClass("")
 public class ArrayClasses<T> {
 
+    //@Immutable
     @ShallowImmutableField("The elements of the array are manipulated after initialization and can escape.")
     @ImmutableFieldReference("The array is eager initialized.")
     private Object[] b = new Object[]{1, 2, 3, 4, 5};
@@ -23,6 +26,7 @@ public class ArrayClasses<T> {
         return b;
     }
 
+    //@Immutable
     @MutableField("Array has a mutable reference.")
     @MutableFieldReference("The array is initalized always when the InitC function is called")
     private Object[] c;
@@ -31,6 +35,7 @@ public class ArrayClasses<T> {
         c = new Object[]{1, 2, 3};
     }
 
+    //@Immutable
     @ShallowImmutableField("The elements of the array can escape.")
     @ImmutableFieldReference("The array is eager initialized.")
     private Object[] d = new Object[]{1, 2, 3, 4, 5,};
@@ -39,6 +44,7 @@ public class ArrayClasses<T> {
         return d;
     }
 
+    //@Immutable
     @ShallowImmutableField("The elements of the array can escape.")
     @LazyInitializedThreadSafeFieldReference("The array is initialized lazily.")
     private Object[] e;
@@ -54,6 +60,7 @@ public class ArrayClasses<T> {
         return this.e;
     }
 
+    //@Immutable
     @MutableField("The reference is seen as mutable.")
     @LazyInitializedNotThreadSafeFieldReference("The array is initialized lazily but not thread safe.")
     private Object[] f;
@@ -64,7 +71,7 @@ public class ArrayClasses<T> {
         }
     }
 
-
+    //@Immutable
     @ShallowImmutableField("One element of the array is written after initialization.")
     @LazyInitializedThreadSafeFieldReference("The array is initialized lazily and thread safe.")
     private Object[] g;
@@ -75,6 +82,13 @@ public class ArrayClasses<T> {
         g[2] = 2;
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+    }
+
+    //@Immutable
+    @MutableField("")
     @LazyInitializedNotThreadSafeFieldReference("The array is not thread-safe lazily initialized.")
     private int[] m;
 
@@ -84,7 +98,8 @@ public class ArrayClasses<T> {
         return m;
     }
 
-
+    //@Immutable
+    @MutableField("")
     @LazyInitializedNotThreadSafeFieldReference("The array is not thread-safe lazily initialized.")
     private Object[] n;
 
@@ -95,6 +110,7 @@ public class ArrayClasses<T> {
          return n;
     }
 
+    //@Immutable
     @ShallowImmutableField("The elements of the array can escape.")
     @LazyInitializedThreadSafeFieldReference("The array is initialized thread safe and lazily.")
     private Object[] o;
@@ -106,6 +122,7 @@ public class ArrayClasses<T> {
         return o;
     }
 
+    //@Immutable
     @ShallowImmutableField("One element of the array can escape")
     @LazyInitializedThreadSafeFieldReference("The array is thread safe lazily intialized.")
     private Object[] p;
@@ -115,16 +132,19 @@ public class ArrayClasses<T> {
         return p[2];
     }
 
-
+    //@Immutable
     @ShallowImmutableField("escaping")
     private String[] stringArray;
 
+    //@Immutable
     @ShallowImmutableField("escaping")
     private int[] intArray;
 
+    //@Immutable
     @ShallowImmutableField("escaping")
     private Object[] oArr;
 
+    //@Immutable
     @ShallowImmutableField("escaping")
     private T[] tArray;
 

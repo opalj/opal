@@ -1,15 +1,18 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.arrays;
+package org.opalj.fpcf.fixtures.benchmark.arrays.not_deep;
 
+//import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
+//@Immutable
 @MutableType("")
 @MutableClass("")
 public class ArrayInitialization {
 
+    //@Immutable
     @MutableField("")
     @MutableFieldReference("")
     private Object[] array;
@@ -21,6 +24,7 @@ public class ArrayInitialization {
         return array;
     }
 
+    //@Immutable
     @MutableField("")
     @MutableFieldReference("")
     private Object[] b;

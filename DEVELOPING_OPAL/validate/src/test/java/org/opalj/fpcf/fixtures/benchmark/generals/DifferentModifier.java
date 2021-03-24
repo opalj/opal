@@ -1,6 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.benchmark.generals;
 
+//import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
@@ -28,6 +29,7 @@ public class DifferentModifier {
     @ImmutableFieldReference("")
     private int immutableInt = 3;
 
+    //@Immutable
     @MutableField(value = "field has a mutable field reference")
     @MutableFieldReference(value = "field is public")
     public transient int mutableTransientInt = 5;
@@ -37,6 +39,7 @@ public class DifferentModifier {
     @ImmutableFieldReference("")
     private transient int immutableTransientInt = 5;
 
+    //@Immutable
     @MutableField(value = "field has a mutable field reference")
     @MutableFieldReference(value = "field is public")
     public volatile int mutableVolatileInt = 5;
@@ -46,6 +49,7 @@ public class DifferentModifier {
     @ImmutableFieldReference("")
     private volatile int immutableVolatileInt = 5;
 
+    //@Immutable
     @MutableField(value = "field has a mutable field reference")
     @MutableFieldReference(value = "field is public")
     public volatile long mutableVolatileLong;

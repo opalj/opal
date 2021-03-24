@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.lazy_initialization;
+package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;

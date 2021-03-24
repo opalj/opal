@@ -12,8 +12,10 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 @DependentImmutableClass("")
 public class Generic<T> {
 
+    //@Immutable
     @DependentImmutableField("")
     @ImmutableFieldReference("")
     T t;
+
     public Generic(T t){this.t = t;}
 }

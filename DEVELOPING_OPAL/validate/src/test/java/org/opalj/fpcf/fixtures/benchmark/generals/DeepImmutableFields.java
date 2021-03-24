@@ -12,6 +12,7 @@ import org.opalj.fpcf.properties.immutability.types.DeepImmutableType;
 @DeepImmutableClass("")
 public final class DeepImmutableFields {
 
+    //@Immutable
     @DeepImmutableField("Immutable Reference and Immutable Field Type")
     @ImmutableFieldReference("declared final field")
     private final FinalEmptyClass fec = new FinalEmptyClass();
@@ -20,10 +21,12 @@ public final class DeepImmutableFields {
         return fec;
     }
 
+    //@Immutable
     @DeepImmutableField("Immutable Reference and Immutable Field Type")
     @ImmutableFieldReference("effective immutable field")
     private FinalEmptyClass name = new FinalEmptyClass();
 
+    //@Immutable
     @DeepImmutableField("immutable reference and deep immutable field type")
     @ImmutableFieldReference(value = "declared final field reference")
     private final FinalEmptyClass fec1;

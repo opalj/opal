@@ -13,19 +13,20 @@ import org.opalj.fpcf.properties.immutability.types.ShallowImmutableType;
 @ShallowImmutableClass("")
 public final class TriviallyEffectivelyNonAssignable {
 
-
+    //@Immutable
     @DeepImmutableField("")
     @ImmutableFieldReference("")
     private int n = 5;
 
+    //@Immutable
     @ShallowImmutableField("")
     @ImmutableFieldReference("")
     private Object escapingViaConstructor;
 
+    //@Immutable
     @DeepImmutableField("")
     @ImmutableFieldReference("")
     private Object escapingViaGetter = new Object();
-
 
     public TriviallyEffectivelyNonAssignable(Object o) {
         this.escapingViaConstructor = o;

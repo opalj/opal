@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.lazy_initialization;
+package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.fixtures.benchmark.generals.Mutability;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
@@ -81,13 +81,6 @@ public class MethodCalls {
     public void foo(){
         tm7.nop();
     }
-
-
-
-
-
-
-
 
 }
 

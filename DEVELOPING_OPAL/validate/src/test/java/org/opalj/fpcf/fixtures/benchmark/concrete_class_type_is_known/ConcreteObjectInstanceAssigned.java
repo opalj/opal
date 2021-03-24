@@ -12,6 +12,7 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 @DeepImmutableClass("")
 class ConcreteObjectInstanceAssigned {
 
+    //@Immutable
     @DeepImmutableField(value = "concrete object is known")
     @ImmutableFieldReference("")
     private Object object = new Object();

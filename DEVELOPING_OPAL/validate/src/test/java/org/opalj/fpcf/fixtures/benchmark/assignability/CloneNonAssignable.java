@@ -12,6 +12,7 @@ import org.opalj.fpcf.properties.immutability.types.DeepImmutableType;
 @DeepImmutableClass("")
 public final class CloneNonAssignable {
 
+    //@Immutable
     @DeepImmutableField("")
     @ImmutableFieldReference("")
     int i;

@@ -7,5 +7,7 @@ import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
 //@Immutable
 @DeepImmutableClass("")
 class GenericCounterExampleDeep<T> {
+
+    //@Immutable
     private int n = 5;
 }
