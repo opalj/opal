@@ -114,7 +114,7 @@ package object bi {
      */
     final lazy val isCurrentJREAtLeastJava8: Boolean = isCurrentJREAtLeastJavaX(8)
 
-    final lazy val isCurrentJREAtLeastJava9: Boolean = isCurrentJREAtLeastJavaX(9)
+    final lazy val isCurrentJREAtLeastJava10: Boolean = isCurrentJREAtLeastJavaX(10)
 
     final lazy val isCurrentJREAtLeastJava11: Boolean = isCurrentJREAtLeastJavaX(11)
 
