@@ -304,6 +304,18 @@ trait IntegerSetValues
                 else
                     Unknown
 
+            case (IntegerSet(vs), btbs: BaseTypesBasedSet) ⇒
+                if (vs forall { v ⇒ v < btbs.lowerBound || v > btbs.upperBound })
+                    No
+                else
+                    Unknown
+
+            case (btbs: BaseTypesBasedSet, IntegerSet(vs)) ⇒
+                if (vs forall { v ⇒ v < btbs.lowerBound || v > btbs.upperBound })
+                    No
+                else
+                    Unknown
+
             case _ ⇒
                 Unknown
         }
