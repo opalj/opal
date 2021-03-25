@@ -31,9 +31,13 @@ import org.opalj.br.instructions.TypeConversionInstructions
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.cp.Constant_Pool
 import org.opalj.br.instructions.ALOAD_0
+import org.opalj.br.instructions.ALOAD_2
 import org.opalj.br.instructions.ARETURN
+import org.opalj.br.instructions.ASTORE_1
+import org.opalj.br.instructions.ASTORE_2
 import org.opalj.br.instructions.BIPUSH
 import org.opalj.br.instructions.IADD
+import org.opalj.br.instructions.IFEQ
 import org.opalj.br.instructions.IMUL
 import org.opalj.br.instructions.INSTANCEOF
 import org.opalj.br.instructions.INVOKESPECIAL
@@ -477,29 +481,40 @@ trait BootstrapArgumentLoading {
             case _                        ⇒ return None;
         }
 
+        /*
+        Make enough space for any of the methods. Exact sizes are (-5 if there is no getter):
+        - equals:   16 + getters.size * 28
+        - toString: 25 + getters.size * 20 + (getters.size - 1) * 6
+        - hashCode:  7 + getters.size * 18
+         */
+        val body = new InstructionsBuilder(20 + getters.size * 28)
+
+        def prepareArgumentArray(hasTwoParameters: Boolean = false): Unit = {
+            body ++= ICONST_1
+            body ++= ANEWARRAY(ObjectType.Object)
+            body ++= (if (hasTwoParameters) ASTORE_2 else ASTORE_1)
+        }
+
         // Loads a component (boxed), maxStack = 5
         def loadComponent(
-            getter:          MethodHandle,
-            instructions:    InstructionsBuilder,
-            forSecondRecord: Boolean             = false
+            getter:           MethodHandle,
+            hasTwoParameters: Boolean      = false,
+            forSecondRecord:  Boolean      = false
         ): Unit = {
-            instructions ++= LoadConstantInstruction(getter, wide = true)
+            body ++= LoadConstantInstruction(getter, wide = true)
 
-            instructions ++= ICONST_1
-            instructions ++= ANEWARRAY(ObjectType.Object)
-            instructions ++= DUP
-            instructions ++= ICONST_0
-            instructions ++= (if (forSecondRecord) ALOAD_1 else ALOAD_0)
-            instructions ++= AASTORE
+            body ++= (if (hasTwoParameters) ALOAD_2 else ALOAD_1)
+            body ++= DUP
+            body ++= ICONST_0
+            body ++= (if (forSecondRecord) ALOAD_1 else ALOAD_0)
+            body ++= AASTORE
 
-            instructions ++= INVOKEVIRTUAL(
+            body ++= INVOKEVIRTUAL(
                 ObjectType.MethodHandle,
                 "invokeWithArguments",
                 MethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
             )
         }
-
-        val body = new InstructionsBuilder(0)
 
         val targetDescriptor = methodName match {
             case "equals" ⇒
@@ -509,22 +524,25 @@ trait BootstrapArgumentLoading {
                 body ++= ICONST_0
                 body ++= IRETURN
 
-                getters foreach { getter ⇒
-                    loadComponent(getter, body)
-                    loadComponent(getter, body, forSecondRecord = true)
+                if (getters.nonEmpty)
+                    prepareArgumentArray(hasTwoParameters = true)
 
-                    body ++= INVOKESTATIC(
-                        ObjectType.Objects,
-                        isInterface = false,
-                        "equals",
-                        MethodDescriptor(
-                            RefArray(ObjectType.Object, ObjectType.Object),
-                            BooleanType
+                getters.iterator.zipWithIndex foreach {
+                    case (getter, index) ⇒
+                        loadComponent(getter, hasTwoParameters = true)
+                        loadComponent(getter, hasTwoParameters = true, forSecondRecord = true)
+
+                        body ++= INVOKESTATIC(
+                            ObjectType.Objects,
+                            isInterface = false,
+                            "equals",
+                            MethodDescriptor(
+                                RefArray(ObjectType.Object, ObjectType.Object),
+                                BooleanType
+                            )
                         )
-                    )
-                    body ++= IFNE(5) // if(!this.component().equals(other.component()) return false;
-                    body ++= ICONST_0
-                    body ++= IRETURN
+                        // if(!this.component().equals(other.component()) return false;
+                        body ++= IFEQ(-32 - index * 28)
                 }
 
                 body ++= ICONST_1 // return true;
@@ -538,15 +556,6 @@ trait BootstrapArgumentLoading {
                     case _                  ⇒ return None;
                 }
 
-                def appendChar(c: Char): Unit = {
-                    body ++= LoadInt_W(c.toInt)
-                    body ++= INVOKEVIRTUAL(
-                        ObjectType.StringBuilder,
-                        "append",
-                        MethodDescriptor(CharType, ObjectType.StringBuilder)
-                    )
-                }
-
                 def appendString(s: String): Unit = {
                     body ++= LoadString_W(s)
                     body ++= INVOKEVIRTUAL(
@@ -558,15 +567,17 @@ trait BootstrapArgumentLoading {
 
                 body ++= NEW(ObjectType.StringBuilder)
                 body ++= DUP
+
+                body ++= LoadString_W(recordType.simpleName + '[')
                 body ++= INVOKESPECIAL(
                     ObjectType.StringBuilder,
                     isInterface = false,
                     "<init>",
-                    MethodDescriptor.NoArgsAndReturnVoid
+                    MethodDescriptor.JustTakes(ObjectType.String)
                 )
 
-                appendString(recordType.simpleName)
-                appendChar('[')
+                if (getters.nonEmpty)
+                    prepareArgumentArray()
 
                 var first = true
                 components.zip(getters) foreach {
@@ -574,11 +585,9 @@ trait BootstrapArgumentLoading {
                         if (first) first = false
                         else appendString(", ")
 
-                        appendString(component)
+                        appendString(component + '=')
 
-                        appendChar('=')
-
-                        loadComponent(getter, body)
+                        loadComponent(getter)
                         body ++= INVOKEVIRTUAL(
                             ObjectType.StringBuilder,
                             "append",
@@ -586,7 +595,12 @@ trait BootstrapArgumentLoading {
                         )
                 }
 
-                appendChar(']')
+                body ++= LoadInt_W(']')
+                body ++= INVOKEVIRTUAL(
+                    ObjectType.StringBuilder,
+                    "append",
+                    MethodDescriptor(CharType, ObjectType.StringBuilder)
+                )
 
                 body ++= INVOKEVIRTUAL(ObjectType.StringBuilder, "toString", JustReturnsString)
                 body ++= ARETURN
@@ -596,11 +610,14 @@ trait BootstrapArgumentLoading {
             case "hashCode" ⇒
                 body ++= ICONST_0 // int hashCode = 0;
 
+                if (getters.nonEmpty)
+                    prepareArgumentArray()
+
                 getters foreach { getter ⇒
                     body ++= BIPUSH(31) // hashCode = hashCode * 31 + component.hashCode();
                     body ++= IMUL
 
-                    loadComponent(getter, body)
+                    loadComponent(getter)
 
                     body ++= INVOKESTATIC(
                         ObjectType.Objects,
@@ -619,13 +636,11 @@ trait BootstrapArgumentLoading {
                 return None;
         }
 
-        val maxStack = 6 // in all methods, the max stack is 1 value the maxStack of loadComponent
-        val maxLocals = targetDescriptor.requiredRegisters
+        val maxStack = 6 // in all methods, the max stack is 1 value + the maxStack of loadComponent
+        val maxLocals = targetDescriptor.requiredRegisters + (if (getters.isEmpty) 0 else 1)
 
         val attributes = if ("equals" == methodName) {
-            val stackMapTable = Array.fill[AnyRef](getters.size + 1)(SameFrame(35))
-            stackMapTable(0) = SameFrame(9)
-            RefArray(StackMapTable(RefArray._UNSAFE_from(stackMapTable)))
+            RefArray(StackMapTable(RefArray(SameFrame(7), SameFrame(1))))
         } else {
             RefArray.empty
         }
