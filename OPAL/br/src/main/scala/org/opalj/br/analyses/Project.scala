@@ -1334,7 +1334,10 @@ object Project {
             //      the subclass resolves the conflict by defining the method.
             var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
 
-            val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(objectType)
+            // Note that we must NOT process interfaces again that were already implemented by the
+            // supertype because the supertype can make a default method "abstract" again
+            val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(objectType) --
+                superclassType.map(classHierarchy.allSuperinterfacetypes(_)).getOrElse(UIDSet.empty)
 
             // We have to filter (remove) those interfaces that are directly and indirectly
             // inherited. In this case the potentially(!) correct method is defined by the interface
