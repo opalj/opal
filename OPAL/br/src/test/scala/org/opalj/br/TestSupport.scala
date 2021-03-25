@@ -4,6 +4,8 @@ package br
 
 import java.net.URL
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.util.gc
 import org.opalj.bytecode.RTJar
 import org.opalj.bytecode.JRELibraryFolder
@@ -18,6 +20,8 @@ import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.TestResources.allBITestProjectFolders
 import org.opalj.bi.TestResources.allBITestJARs
 import org.opalj.bi.TestResources.allManagedBITestJARs
+import org.opalj.br.analyses.cg.AllEntryPointsFinder
+import org.opalj.br.analyses.cg.InitialEntryPointsKey
 
 /**
  * Common helper and factory methods required by tests.
@@ -81,7 +85,21 @@ object TestSupport {
                 val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
                 (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProject ⇒
                     val projectClassFiles = projectReader.ClassFiles(biProject)
-                    val readerFactory = () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly)
+                    // Test fixtures don't contain main methods, but tests may rely on a reasonable
+                    // call graph and thus entry points
+                    // NOTE: There are some project in the "classfiles" directory without a main
+                    // method as well, but we ignore them for now
+                    implicit val config =
+                        if (biProject.getParentFile.getName == "classfiles") BaseConfig
+                        else BaseConfig.withValue(
+                            InitialEntryPointsKey.ConfigKey, ConfigValueFactory.fromAnyRef(
+                                "org.opalj.br.analyses.cg.AllEntryPointsFinder"
+                            )
+                        ).withValue(
+                                AllEntryPointsFinder.ConfigKey, ConfigValueFactory.fromAnyRef(true)
+                            )
+                    val readerFactory =
+                        () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly, Traversable.empty)
                     (biProject.getName, readerFactory)
                 }
             case None ⇒
