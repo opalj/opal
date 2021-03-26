@@ -304,13 +304,13 @@ trait IntegerSetValues
                 else
                     Unknown
 
-            case (IntegerSet(vs), btbs: BaseTypesBasedSet) ⇒
+            case (IntegerSet(vs), DomainBaseTypesBasedSet(btbs)) ⇒
                 if (vs forall { v ⇒ v < btbs.lowerBound || v > btbs.upperBound })
                     No
                 else
                     Unknown
 
-            case (btbs: BaseTypesBasedSet, IntegerSet(vs)) ⇒
+            case (DomainBaseTypesBasedSet(btbs), IntegerSet(vs)) ⇒
                 if (vs forall { v ⇒ v < btbs.lowerBound || v > btbs.upperBound })
                     No
                 else
@@ -520,6 +520,22 @@ trait IntegerSetValues
                             updateMemoryLayout(value1, newValue, operands, locals)
                         updateMemoryLayout(value2, newValue, operands1, locals1)
 
+                    case DomainBaseTypesBasedSet(value2) ⇒
+                        // all matching values from value1
+                        val filtered = leftValues.filter { v ⇒
+                            v >= value2.lowerBound && v <= value2.upperBound
+                        }
+                        val newValue =
+                            if (filtered.size == leftValues.size) value1 else IntegerSet(filtered)
+                        val (newOperands, newLocals) =
+                            updateMemoryLayout(oldValue = value2, newValue, operands, locals)
+
+                        // If there were value removed from value 2, update it too
+                        if (newValue ne value1)
+                            updateMemoryLayout(oldValue = value1, newValue, newOperands, newLocals)
+                        else
+                            (newOperands, newLocals)
+
                     case _ ⇒
                         // value1 is unchanged (an IntegerSet value is always more precise)
                         updateMemoryLayout(oldValue = value2, value1, operands, locals)
@@ -531,9 +547,21 @@ trait IntegerSetValues
                         val (os1, ls1) = updateMemoryLayout(value1, newValue, operands, locals)
                         updateMemoryLayout(value2, newValue, os1, ls1)
 
-                    case _: IntegerSet ⇒
-                        // value2 is unchanged
-                        updateMemoryLayout(oldValue = value1, value2, operands, locals)
+                    case IntegerSet(rightValues) ⇒
+                        // all matching values from value2
+                        val filtered = rightValues.filter { v ⇒
+                            v >= value1.lowerBound && v <= value1.upperBound
+                        }
+                        val newValue =
+                            if (filtered.size == rightValues.size) value2 else IntegerSet(filtered)
+                        val (newOperands, newLocals) =
+                            updateMemoryLayout(oldValue = value1, newValue, operands, locals)
+
+                        // If there were value removed from value 2, update it too
+                        if (newValue ne value2)
+                            updateMemoryLayout(oldValue = value2, newValue, newOperands, newLocals)
+                        else
+                            (newOperands, newLocals)
 
                     case _ /*AnIntegerValue*/ ⇒
                         // value1 is unchanged (an IntegerSet value is always more precise)
