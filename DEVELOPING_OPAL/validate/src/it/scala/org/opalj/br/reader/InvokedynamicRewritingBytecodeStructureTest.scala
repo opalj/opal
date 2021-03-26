@@ -147,7 +147,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends FunSpec with Matchers 
         }
 
         describe("testing the rewritten methods of the java16records test project") {
-            val recordsJarName = "java16records-g-15--enable-preview-parameters-genericsignature.jar"
+            val recordsJarName = "java16records-g-16-parameters-genericsignature.jar"
             val recordsJar = locateTestResources(recordsJarName, "bi")
             val config = InvokedynamicRewriting.defaultConfig(
                 rewrite = true,

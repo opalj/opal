@@ -288,7 +288,7 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
 
         describe("behavior of rewritten java16records fixture") {
             val testClassType = ObjectType("java16records/RecordClass")
-            val r = locateTestResources("java16records-g-15--enable-preview-parameters-genericsignature.jar", "bi")
+            val r = locateTestResources("java16records-g-16-parameters-genericsignature.jar", "bi")
             val p = JavaFixtureProject(r)
             val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
             val inMemoryClassLoader =
