@@ -239,18 +239,23 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         val minor_version = in.readUnsignedShort
         val major_version = in.readUnsignedShort
 
-        // let's make sure that we support this class file's version
-        if (!(
-            major_version >= 45 && // at least JDK 1.1
-            (major_version < LatestSupportedJavaMajorVersion || (
-                major_version == LatestSupportedJavaMajorVersion
-                && minor_version <= LatestSupportedJavaVersion.minor
-            ))
-        )) throw BytecodeProcessingFailedException(
+        def unsupportedVersion =
             s"unsupported class file version: $major_version.$minor_version"+
                 " (Supported: 45(Java 1.1) <= version <= "+
                 s"$LatestSupportedJavaMajorVersion(${jdkVersion(LatestSupportedJavaMajorVersion)}))"
-        )
+
+        // let's make sure that we support this class file's version
+        if (major_version < 45) // at least JDK 1.1 or we back out
+            throw BytecodeProcessingFailedException(unsupportedVersion)
+
+        if (major_version > LatestSupportedJavaMajorVersion || (
+            major_version == LatestSupportedJavaMajorVersion
+            && minor_version > LatestSupportedJavaVersion.minor
+        )) {
+            // Just log an error message for newer version, we might still be able to handle the
+            // class if it doesn't use any features introduced in an unsupported version
+            error("class file reader", unsupportedVersion)
+        }
 
         val cp = Constant_Pool(in)
         val access_flags = in.readUnsignedShort

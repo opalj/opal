@@ -292,7 +292,9 @@ object ToTxt {
                     }
 
                 var head = (" " * (if (indented) 6 else 0))+"// "
-                if (stmts(index).astID != Throw.ASTID && bb.successors.forall(!_.isBasicBlock))
+                if (stmts(index).astID != Throw.ASTID && bb.successors.forall(successor ⇒ {
+                    !successor.isBasicBlock && !successor.isNormalReturnExitNode
+                }))
                     head += "⚠️ ALWAYS THROWS EXCEPTION – "
                 if (successors.nonEmpty)
                     javaLikeCode +=
