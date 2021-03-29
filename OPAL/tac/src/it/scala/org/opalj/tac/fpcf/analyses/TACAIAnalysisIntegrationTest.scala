@@ -7,9 +7,9 @@ package analyses
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.concurrent.ConcurrentExceptions
@@ -28,7 +28,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TACAIAnalysisIntegrationTest extends FunSpec with Matchers {
+class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
 
     def analyzeProject(
         theProject: SomeProject

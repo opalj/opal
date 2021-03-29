@@ -10,9 +10,10 @@ import sbt._
 object Dependencies {
 
   object version {
-    val junit = "4.12"
-    val scalatest = "3.0.8"
-    val scalacheck = "1.14.0"
+    val junit = "4.13.2"
+    val scalatest = "3.2.6"
+    val scalatestjunit = "3.2.5.0"
+    val scalacheck = "1.15.2"
 
     val scalaxml = "1.2.0"
     val scalaparsercombinators = "1.1.2"
@@ -51,14 +52,15 @@ object Dependencies {
 
     // --- test related dependencies
 
-    val junit = "junit"               % "junit"       % version.junit      % "test,it"
-    val scalatest = "org.scalatest"   %% "scalatest"  % version.scalatest  % "test,it"
-    val scalacheck = "org.scalacheck" %% "scalacheck" % version.scalacheck % "test,it"
+    val junit =          "junit"              % "junit"      % version.junit          % "test,it"
+    val scalatest =      "org.scalatest"     %% "scalatest"  % version.scalatest      % "test,it"
+    val scalatestjunit = "org.scalatestplus" %% "junit-4-13" % version.scalatestjunit % "test,it"
+    val scalacheck =     "org.scalacheck"    %% "scalacheck" % version.scalacheck     % "test,it"
   }
 
   import library._
 
-  val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalacheck)
+  val testlibs: Seq[ModuleID] = Seq(junit, scalatest, scalatestjunit, scalacheck)
 
   def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus, fastutil)
 

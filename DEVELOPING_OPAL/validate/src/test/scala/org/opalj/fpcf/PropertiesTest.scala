@@ -8,8 +8,8 @@ import java.net.URL
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 import org.opalj.bi.reader.ClassFileReader
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.opalj.log.LogContext
 import org.opalj.util.ScalaMajorVersion
 import org.opalj.fpcf.properties.PropertyMatcher
@@ -49,7 +49,7 @@ import org.opalj.tac.common.DefinitionSitesKey
  *
  * @author Michael Eichberg
  */
-abstract class PropertiesTest extends FunSpec with Matchers {
+abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     final private[this] val testFilePath = s"DEVELOPING_OPAL/validate/target/scala-$ScalaMajorVersion/test-classes/"
     final private[this] val propertyPaths = List(

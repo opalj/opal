@@ -5,8 +5,8 @@ package ba
 import scala.language.postfixOps
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.bc.Assembler
 import org.opalj.br.instructions.ALOAD_0
@@ -20,7 +20,7 @@ import org.opalj.util.InMemoryClassLoader
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class AnnotatedInstructionsTest extends FlatSpec {
+class AnnotatedInstructionsTest extends AnyFlatSpec {
 
     {
         behavior of "Instructions annotated with Strings"
