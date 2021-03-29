@@ -15,16 +15,16 @@ object Dependencies {
     val scalatestjunit = "3.2.5.0"
     val scalacheck = "1.15.2"
 
-    val scalaxml = "1.2.0"
+    val scalaxml = "1.3.0"
     val scalaparsercombinators = "1.1.2"
-    val playjson = "2.7.4"
-    val ficus = "1.4.7"
-    val commonstext = "1.7"
+    val playjson = "2.9.2"
+    val ficus = "1.5.0"
+    val commonstext = "1.9"
     val txtmark = "0.16"
-    val jacksonDF = "2.9.9"
-    val fastutil = "8.3.0"
+    val jacksonDF = "2.12.2"
+    val fastutil = "8.5.4"
 
-    val openjfx = "12.0.2"
+    val openjfx = "16"
   }
 
   object library {
