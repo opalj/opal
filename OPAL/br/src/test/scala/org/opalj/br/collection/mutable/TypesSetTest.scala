@@ -5,9 +5,9 @@ package collection
 package mutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.opalj.log.GlobalLogContext
 import org.opalj.br.analyses.Project
 
@@ -17,7 +17,7 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TypesSetTest extends FlatSpec with Matchers {
+class TypesSetTest extends AnyFlatSpec with Matchers {
 
     //
     // Setup

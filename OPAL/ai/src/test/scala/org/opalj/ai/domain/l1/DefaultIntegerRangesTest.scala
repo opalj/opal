@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.br.ObjectType
 import org.opalj.br.ArrayType
@@ -22,7 +22,7 @@ import org.opalj.ai.domain.l1.IntegerRangeValues.AbsoluteMaxCardinalityOfInteger
  * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultIntegerRangesTest extends FunSpec with Matchers {
+class DefaultIntegerRangesTest extends AnyFunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
     final val SomePC = 100000

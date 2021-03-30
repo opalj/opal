@@ -3,10 +3,10 @@ package org.opalj
 package br
 package instructions
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests for [[LoadConstantInstruction]].
@@ -14,7 +14,7 @@ import org.scalatest.junit.JUnitRunner
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class LoadConstantInstructionTest extends FunSpec with Matchers {
+class LoadConstantInstructionTest extends AnyFunSpec with Matchers {
 
     describe("putting constant integer values on the stack") {
 
