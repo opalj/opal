@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.br.ObjectType
 import org.opalj.collection.immutable.UIDSet
@@ -19,7 +19,7 @@ import org.opalj.collection.immutable.UIDSet2
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class StringValuesTest extends FlatSpec with Matchers {
+class StringValuesTest extends AnyFlatSpec with Matchers {
 
     object AnalysisDomain
         extends CorrelationalDomain

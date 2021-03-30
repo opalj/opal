@@ -3,9 +3,9 @@ package org.opalj
 package issues
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 import play.api.libs.json.JsString
 import play.api.libs.json.Json
 
@@ -15,7 +15,7 @@ import play.api.libs.json.Json
  * @author Lukas Berg
  */
 @RunWith(classOf[JUnitRunner])
-class IssueIDLTest extends FlatSpec with Matchers {
+class IssueIDLTest extends AnyFlatSpec with Matchers {
 
     import IDLTestsFixtures._
 

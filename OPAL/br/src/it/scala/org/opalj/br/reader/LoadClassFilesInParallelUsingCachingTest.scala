@@ -3,13 +3,13 @@ package org.opalj
 package br
 package reader
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bi.TestResources.allBITestJARs
 
-class LoadClassFilesInParallelUsingCachingTest extends FlatSpec with Matchers {
+class LoadClassFilesInParallelUsingCachingTest extends AnyFlatSpec with Matchers {
 
     behavior of "OPAL when reading class files using caching"
 

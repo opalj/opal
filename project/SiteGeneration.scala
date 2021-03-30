@@ -59,10 +59,10 @@ object SiteGeneration {
       import scala.collection.JavaConverters._
       import scala.io.Source.fromFile
       import com.typesafe.config.ConfigFactory
-      import com.vladsch.flexmark.ast.Node
+      import com.vladsch.flexmark.util.ast.Node
       import com.vladsch.flexmark.html.HtmlRenderer
       import com.vladsch.flexmark.parser.Parser
-      import com.vladsch.flexmark.util.options.MutableDataSet
+      import com.vladsch.flexmark.util.data.MutableDataSet
       import org.fusesource.scalate.TemplateEngine
 
       import java.util.Arrays;

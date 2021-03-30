@@ -2,8 +2,8 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import java.net.URL
 import java.net.URLClassLoader
 import java.io.File
@@ -30,7 +30,7 @@ import org.opalj.util.InMemoryClassLoader
  * @author Andreas Muttscheller
  * @author Dominik Helm
  */
-class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
+class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
 
     def JavaFixtureProject(fixtureFiles: File): Project[URL] = {
         implicit val config: Config = InvokedynamicRewriting.defaultConfig(

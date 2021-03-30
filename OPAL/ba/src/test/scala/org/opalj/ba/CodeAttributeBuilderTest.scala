@@ -3,8 +3,8 @@ package org.opalj
 package ba
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.collection.immutable.RefArray
 import org.opalj.util.InMemoryClassLoader
@@ -26,7 +26,7 @@ import org.opalj.br.MethodDescriptor.JustTakes
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class CodeAttributeBuilderTest extends FlatSpec {
+class CodeAttributeBuilderTest extends AnyFlatSpec {
 
     final val FakeObjectType = ObjectType("<FAKE_TYPE>") // this type name is NOT valid
 

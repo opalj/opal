@@ -2,10 +2,10 @@
 package org.opalj
 package tac
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
@@ -27,7 +27,7 @@ import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACAIIntegrationTest extends FunSpec with Matchers {
+class TACAIIntegrationTest extends AnyFunSpec with Matchers {
 
     def checkProject(
         project:               SomeProject,
