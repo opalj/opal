@@ -5,10 +5,10 @@ package fixtures
 package dynamicConstants
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.ACC_FINAL
@@ -44,7 +44,7 @@ import org.opalj.bc.Assembler
  * @author Dominik Helm
  */
 @RunWith(classOf[JUnitRunner])
-class DynamicConstantsCreationTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class DynamicConstantsCreationTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "the Bytecode Infrastructure for dynamic constants"
 
