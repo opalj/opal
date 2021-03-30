@@ -7,8 +7,8 @@ import java.math.RoundingMode
 import java.net.URL
 
 import com.typesafe.config.Config
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bytecode.RTJar
 import org.opalj.bi.TestResources.locateTestResources
@@ -24,7 +24,7 @@ import org.opalj.ba.ProjectBasedInMemoryClassLoader
  *
  * @author Dominik Helm
  */
-class DynamicConstantsRewritingExecutionTest extends FunSpec with Matchers {
+class DynamicConstantsRewritingExecutionTest extends AnyFunSpec with Matchers {
 
     def JavaFixtureProject(fixtureFiles: File): Project[URL] = {
         implicit val config: Config = DynamicConstantRewriting.defaultConfig(
