@@ -2,9 +2,9 @@
 package org.opalj
 package ai
 
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import org.opalj.collection.immutable.Chain
@@ -25,7 +25,7 @@ import org.opalj.ai.domain.l0.TypeLevelDynamicLoads
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PackageTest extends FlatSpec with Matchers {
+class PackageTest extends AnyFlatSpec with Matchers {
 
     behavior of "the mapOperands method"
 

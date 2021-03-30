@@ -6,9 +6,9 @@ package domain
 import java.net.URL
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.br.Method
@@ -24,7 +24,7 @@ import org.opalj.br.TestSupport.createJREProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PrecisionOfDomainsTest extends FunSpec with Matchers {
+class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
 
     describe("a more precise domain") {
 

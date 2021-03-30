@@ -6,9 +6,9 @@ package domain
 import scala.collection.immutable.LongMap
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br._
@@ -20,7 +20,7 @@ import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultPerInstructionPostProcessingTest extends FlatSpec with Matchers {
+class DefaultPerInstructionPostProcessingTest extends AnyFlatSpec with Matchers {
 
     import MethodsWithExceptionsTest._
 

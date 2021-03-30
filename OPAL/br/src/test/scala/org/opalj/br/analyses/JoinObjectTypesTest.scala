@@ -6,9 +6,9 @@ package analyses
 import scala.language.implicitConversions
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.GlobalLogContext
@@ -17,7 +17,7 @@ import org.opalj.log.GlobalLogContext
  * @author Tobias Becker
  */
 @RunWith(classOf[JUnitRunner])
-class JoinObjectTypesTest extends FunSpec with Matchers {
+class JoinObjectTypesTest extends AnyFunSpec with Matchers {
 
     final val classhierachy = {
         //val thisClass = classOf[org.opalj.br.analyses.JoinObjectTypesTest]

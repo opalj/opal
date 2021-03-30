@@ -6,9 +6,9 @@ package l1
 
 import org.junit.runner.RunWith
 
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.{ObjectType, ArrayType}
@@ -26,7 +26,7 @@ import org.opalj.io.OpeningFileFailedException
  * @author Christos Votskos
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultConcreteArraysTest extends FunSpec with Matchers {
+class DefaultConcreteArraysTest extends AnyFunSpec with Matchers {
 
     import DefaultArraysTest._
 

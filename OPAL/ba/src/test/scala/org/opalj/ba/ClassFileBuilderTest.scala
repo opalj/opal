@@ -5,8 +5,8 @@ package ba
 import scala.language.postfixOps
 import java.io.ByteArrayInputStream
 
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
 import org.junit.runner.RunWith
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
@@ -27,7 +27,7 @@ import org.opalj.collection.immutable.RefArray
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class ClassFileBuilderTest extends FlatSpec {
+class ClassFileBuilderTest extends AnyFlatSpec {
 
     behavior of "the ClassFileBuilder"
 

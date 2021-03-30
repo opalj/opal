@@ -3,10 +3,10 @@ package org.opalj
 package de
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.opalj.av.checking._
 import org.opalj.br.reader.InvokedynamicRewriting
 
@@ -18,7 +18,7 @@ import org.opalj.br.reader.InvokedynamicRewriting
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DEArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class DEArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "the Dependency Extraction Library's implemented architecture"
 

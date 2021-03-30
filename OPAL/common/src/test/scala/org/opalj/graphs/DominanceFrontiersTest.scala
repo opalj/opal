@@ -3,9 +3,9 @@ package org.opalj
 package graphs
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.io.writeAndOpen
 import org.opalj.collection.immutable.EmptyIntArraySet
@@ -26,7 +26,7 @@ import org.opalj.collection.immutable.IntArraySetBuilder
  * @author Michael Reif
  */
 @RunWith(classOf[JUnitRunner])
-class DominanceFrontiersTest extends FlatSpec with Matchers {
+class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
 
     private def setUpDominanceFrontiers(
         startNode:                Int,

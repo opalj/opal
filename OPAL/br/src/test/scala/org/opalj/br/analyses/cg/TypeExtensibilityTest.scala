@@ -6,8 +6,8 @@ package cg
 
 import com.typesafe.config.ConfigFactory
 import org.opalj.br.TestSupport.biProject
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * This tests the basic functionality of the [[TypeExtensibilityKey]] and determines whether the
@@ -17,8 +17,8 @@ import org.scalatest.Matchers
  *
  * @author Michael Reif
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class TypeExtensibilityTest extends FunSpec with Matchers {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class TypeExtensibilityTest extends AnyFunSpec with Matchers {
 
     val testProject = biProject("extensible_classes.jar")
 
