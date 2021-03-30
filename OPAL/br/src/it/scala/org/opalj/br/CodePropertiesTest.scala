@@ -28,7 +28,7 @@
  */
 package org.opalj.br
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import java.util.concurrent.atomic.AtomicInteger
 import java.lang.{Boolean ⇒ JBoolean}
 
@@ -52,7 +52,7 @@ import org.opalj.concurrent.ConcurrentExceptions
  *
  * @author Michael Eichberg
  */
-class CodePropertiesTest extends FunSuite {
+class CodePropertiesTest extends AnyFunSuite {
 
     def analyzeMaxStackAndLocals(project: SomeProject): String = {
         try {

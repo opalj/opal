@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.util.control.ControlThrowable
 import scala.xml.NodeSeq
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.io.writeAndOpen
@@ -37,7 +37,7 @@ import org.opalj.ai.util.XHTML
  *
  * @author  Michael Eichberg
  */
-abstract class DomainTestInfrastructure(domainName: String) extends FlatSpec with Matchers {
+abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec with Matchers {
 
     private[this] implicit val logContext: LogContext = GlobalLogContext
 

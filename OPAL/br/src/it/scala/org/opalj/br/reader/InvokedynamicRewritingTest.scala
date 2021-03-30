@@ -7,7 +7,7 @@ import scala.language.existentials
 
 import scala.collection.JavaConverters._
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import java.util.concurrent.ConcurrentLinkedQueue
 
 import org.opalj.log.StandardLogContext
@@ -23,7 +23,7 @@ import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
  * @author Arne Lottmann
  * @author Dominik Helm
  */
-abstract class InvokedynamicRewritingTest extends FunSuite {
+abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
     protected def isProxyFactoryCall(instruction: INVOKESTATIC): Boolean = {
         isProxyFactoryCall(instruction.declaringClass.fqn)

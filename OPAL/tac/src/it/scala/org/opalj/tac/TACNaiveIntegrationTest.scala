@@ -2,10 +2,10 @@
 package org.opalj
 package tac
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bytecode.JRELibraryFolder
 import java.io.File
@@ -21,7 +21,7 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Roberts Kolosovs
  */
 @RunWith(classOf[JUnitRunner])
-class TACNaiveIntegrationTest extends FunSpec with Matchers {
+class TACNaiveIntegrationTest extends AnyFunSpec with Matchers {
 
     val jreLibFolder: File = JRELibraryFolder
     val biClassfilesFolder: File = locateTestResources("classfiles", "bi")

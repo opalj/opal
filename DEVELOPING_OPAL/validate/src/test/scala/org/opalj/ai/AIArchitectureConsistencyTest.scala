@@ -4,10 +4,10 @@ package ai
 
 import org.junit.runner.RunWith
 
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.av.checking.Specification
 
@@ -19,7 +19,7 @@ import org.opalj.av.checking.Specification
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class AIArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class AIArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "the Abstract Interpretation Framework's implemented architecture"
 
