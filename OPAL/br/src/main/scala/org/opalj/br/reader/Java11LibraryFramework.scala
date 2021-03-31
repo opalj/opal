@@ -6,12 +6,12 @@ package reader
 /**
  * This configuration can be used to read in Java 11 (version 55) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
- * is represented. Instructions will be cached.
+ * is represented except of method implementations.
  *
  * @author Dominik Helm
  */
-class Java11FrameworkWithCaching(
-        cache: BytecodeInstructionsCache
-) extends Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
-    with Java11LibraryFramework
-    with DynamicConstantRewriting
+trait Java11LibraryFramework
+    extends Java9LibraryFramework
+    with NestHost_attributeBinding
+    with NestMembers_attributeBinding
+

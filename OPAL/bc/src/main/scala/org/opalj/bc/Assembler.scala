@@ -654,6 +654,13 @@ object Assembler {
                     writeShort(a.package_index_table.length)
                     a.package_index_table.foreach(writeShort)
 
+                case a: NestHost_attribute ⇒
+                    writeShort(a.host_class_index)
+
+                case a: NestMembers_attribute ⇒
+                    writeShort(a.classes_array.length)
+                    a.classes_array.foreach(writeShort)
+
                 case a: Unknown_attribute ⇒ out.write(a.info, 0, a.info.length)
             }
         }

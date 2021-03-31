@@ -6,12 +6,14 @@ package reader
 /**
  * This configuration can be used to read in Java 11 (version 55) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
- * is represented. Instructions will be cached.
+ * is represented.
  *
  * @author Dominik Helm
  */
-class Java11FrameworkWithCaching(
-        cache: BytecodeInstructionsCache
-) extends Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
-    with Java11LibraryFramework
-    with DynamicConstantRewriting
+trait Java11Framework extends Java9Framework with Java11LibraryFramework
+
+object Java11Framework extends Java11Framework {
+
+    final override def loadsInterfacesOnly: Boolean = false
+
+}
