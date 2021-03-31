@@ -92,21 +92,25 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             context:               MethodContext,
             computeDeclaredMethod: Int ⇒ DeclaredMethod
         ): Unit = {
-            val oldDm = dms.computeIfAbsent(context, _ ⇒ computeDeclaredMethod(
-                idCounter.getAndIncrement()
-            ))
+            var computedDM: DeclaredMethod = null
+            val oldDm = dms.computeIfAbsent(context, _ ⇒ {
+                computedDM = computeDeclaredMethod(idCounter.getAndIncrement())
+                computedDM
+            })
 
-            val computedDM = computeDeclaredMethod(0)
             assert(
-                oldDm match {
-                    case dm: DefinedMethod ⇒
-                        computedDM.hasSingleDefinedMethod &&
-                            (dm.definedMethod eq computedDM.definedMethod)
-                    case mdm: MultipleDefinedMethods ⇒
-                        mdm.hasMultipleDefinedMethods &&
-                            mdm.definedMethods.size == computedDM.definedMethods.size &&
-                            mdm.definedMethods.forall(computedDM.definedMethods.contains)
-                    case _: VirtualDeclaredMethod ⇒ true
+                (computedDM ne null) || {
+                    computedDM = computeDeclaredMethod(0)
+                    oldDm match {
+                        case dm: DefinedMethod ⇒
+                            computedDM.hasSingleDefinedMethod &&
+                                (dm.definedMethod eq computedDM.definedMethod)
+                        case mdm: MultipleDefinedMethods ⇒
+                            mdm.hasMultipleDefinedMethods &&
+                                mdm.definedMethods.size == computedDM.definedMethods.size &&
+                                mdm.definedMethods.forall(computedDM.definedMethods.contains)
+                        case _: VirtualDeclaredMethod ⇒ true
+                    }
                 },
                 "creation of declared methods failed:\n\t"+
                     s"$oldDm\n\t\tvs.(new)\n\t$computedDM}"
