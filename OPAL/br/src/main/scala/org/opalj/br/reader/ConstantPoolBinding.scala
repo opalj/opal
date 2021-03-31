@@ -4,8 +4,8 @@ package br
 package reader
 
 import scala.language.implicitConversions
-
 import scala.reflect.ClassTag
+
 import scala.collection.mutable
 
 import org.opalj.bi.reader.Constant_PoolReader
@@ -56,6 +56,8 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     type CONSTANT_Module_info = cp.CONSTANT_Module_info
     type CONSTANT_Package_info = cp.CONSTANT_Package_info
+
+    type CONSTANT_Dynamic_info = cp.CONSTANT_Dynamic_info
 
     //
     // IMPLEMENTATION OF THE CONSTANT POOL READER'S FACTORY METHODS
@@ -131,6 +133,13 @@ trait ConstantPoolBinding extends Constant_PoolReader {
 
     def CONSTANT_Package_info(name_index: Constant_Pool_Index): CONSTANT_Package_info = {
         new CONSTANT_Package_info(name_index)
+    }
+
+    def CONSTANT_Dynamic_info(
+        bootstrap_method_attr_index: Constant_Pool_Index,
+        name_and_type_index:         Constant_Pool_Index
+    ): CONSTANT_Dynamic_info = {
+        new CONSTANT_Dynamic_info(bootstrap_method_attr_index, name_and_type_index)
     }
 
     protected[this] def createDeferredActionsStore(): DeferredActionsStore = {

@@ -26,6 +26,7 @@ trait TypeLevelDomain
     with DefaultTypeLevelFloatValues
     with DefaultTypeLevelDoubleValues
     with TypeLevelFieldAccessInstructions
-    with TypeLevelInvokeInstructions {
+    with TypeLevelInvokeInstructions
+    with TypeLevelDynamicLoads {
     this: Configuration with TheCode ⇒
 }

@@ -277,9 +277,60 @@ trait CachedBytecodeReaderAndBinding extends InstructionsDeserializer {
                 case 148 ⇒ LCMP
                 case 9   ⇒ LCONST_0
                 case 10  ⇒ LCONST_1
-                case 18  ⇒ LDC(cp(in.readUnsignedByte).asConstantValue(cp))
-                case 19  ⇒ LDC_W(cp(in.readUnsignedShort).asConstantValue(cp))
-                case 20  ⇒ LDC2_W(cp(in.readUnsignedShort).asConstantValue(cp))
+                case 18 ⇒
+                    val constant = cp(in.readUnsignedByte())
+                    if (constant.isDynamic) {
+                        registerDeferredAction(cp) { classFile ⇒
+                            deferredDynamicConstantResolution(
+                                classFile,
+                                cp,
+                                ap_name_index,
+                                ap_descriptor_index,
+                                constant.asDynamic,
+                                instructions,
+                                index /* <=> pc */
+                            )
+                        }
+                        INCOMPLETE_LDC
+                    } else {
+                        LDC(constant.asConstantValue(cp))
+                    }
+                case 19 ⇒
+                    val constant = cp(in.readUnsignedShort())
+                    if (constant.isDynamic) {
+                        registerDeferredAction(cp) { classFile ⇒
+                            deferredDynamicConstantResolution(
+                                classFile,
+                                cp,
+                                ap_name_index,
+                                ap_descriptor_index,
+                                constant.asDynamic,
+                                instructions,
+                                index /* <=> pc */
+                            )
+                        }
+                        INCOMPLETE_LDC_W
+                    } else {
+                        LDC_W(constant.asConstantValue(cp))
+                    }
+                case 20 ⇒
+                    val constant = cp(in.readUnsignedShort())
+                    if (constant.isDynamic) {
+                        registerDeferredAction(cp) { classFile ⇒
+                            deferredDynamicConstantResolution(
+                                classFile,
+                                cp,
+                                ap_name_index,
+                                ap_descriptor_index,
+                                constant.asDynamic,
+                                instructions,
+                                index /* <=> pc */
+                            )
+                        }
+                        INCOMPLETE_LDC2_W
+                    } else {
+                        LDC2_W(constant.asConstantValue(cp))
+                    }
                 case 109 ⇒ LDIV
                 case 22  ⇒ cache.LLOAD(lvIndex())
                 case 30  ⇒ LLOAD_0

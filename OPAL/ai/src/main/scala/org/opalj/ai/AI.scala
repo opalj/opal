@@ -2699,6 +2699,11 @@ abstract class AI[D <: Domain](
                             fallThrough(theDomain.MethodHandle(pc, v) :&: operands)
                         case LoadMethodType(v) ⇒
                             fallThrough(theDomain.MethodType(pc, v) :&: operands)
+                        case LoadDynamic(bootstrapMethod, name, descriptor) ⇒
+                            computationWithReturnValue(
+                                theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
+                                operands
+                            )
 
                     }
                     case 19 /*ldc_w*/ ⇒ instruction match {
@@ -2714,12 +2719,22 @@ abstract class AI[D <: Domain](
                             fallThrough(theDomain.MethodHandle(pc, v) :&: operands)
                         case LoadMethodType_W(v) ⇒
                             fallThrough(theDomain.MethodType(pc, v) :&: operands)
+                        case LoadDynamic_W(bootstrapMethod, name, descriptor) ⇒
+                            computationWithReturnValue(
+                                theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
+                                operands
+                            )
                     }
                     case 20 /*ldc2_w*/ ⇒ instruction match {
                         case LoadLong(v) ⇒
                             fallThrough(theDomain.LongValue(pc, v) :&: operands)
                         case LoadDouble(v) ⇒
                             fallThrough(theDomain.DoubleValue(pc, v) :&: operands)
+                        case LoadDynamic2_W(bootstrapMethod, name, descriptor) ⇒
+                            computationWithReturnValue(
+                                theDomain.loadDynamic(pc, bootstrapMethod, name, descriptor),
+                                operands
+                            )
                     }
 
                     case 17 /*sipush*/ ⇒

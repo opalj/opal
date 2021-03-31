@@ -1081,6 +1081,7 @@ private object MethodsPlainTest {
         with TypeLevelLongValuesShiftOperators
         with TypeLevelFieldAccessInstructions
         with SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with ThrowAllPotentialExceptionsConfiguration
         with IgnoreSynchronization
         with DefaultHandlingForThrownExceptions
