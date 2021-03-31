@@ -5,9 +5,9 @@ package concurrent
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.control.ControlThrowable
 
@@ -17,7 +17,7 @@ import scala.util.control.ControlThrowable
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ParForeachArrayElementTest extends FunSpec with Matchers {
+class ParForeachArrayElementTest extends AnyFunSpec with Matchers {
 
     describe("parForeachArrayElement") {
 

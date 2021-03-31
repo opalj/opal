@@ -4,9 +4,9 @@ package br
 package reader
 
 import org.junit.runner.RunWith
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatestplus.junit.JUnitRunner
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigValueFactory
@@ -32,7 +32,7 @@ import org.opalj.br.reader.InvokedynamicRewriting.StringConcatNameRegEx
  * @author Dominik Helm
  */
 @RunWith(classOf[JUnitRunner])
-class InvokedynamicRewritingBytecodeStructureTest extends FunSpec with Matchers {
+class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matchers {
 
     def verifyMethod(
         testProject:   SomeProject,

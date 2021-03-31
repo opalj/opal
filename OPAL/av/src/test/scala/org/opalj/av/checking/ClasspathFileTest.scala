@@ -4,8 +4,10 @@ package checking
 
 import org.junit.runner.RunWith
 
-import org.scalatest._
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.BeforeAndAfterAll
+import org.scalatestplus.junit.JUnitRunner
 
 import scala.util.matching.Regex
 
@@ -19,7 +21,7 @@ import org.opalj.av.checking.Specification._
  * @author Marco Torsello
  */
 @RunWith(classOf[JUnitRunner])
-class ClasspathFileTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class ClasspathFileTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
     behavior of "the Architecture Validation Library when processing classpath files"
 

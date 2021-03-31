@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable._
@@ -26,7 +26,7 @@ import org.opalj.br.ClassHierarchy
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultReferenceValuesTest extends FunSpec with Matchers {
+class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
 
     class TheDomain
         extends CorrelationalDomain

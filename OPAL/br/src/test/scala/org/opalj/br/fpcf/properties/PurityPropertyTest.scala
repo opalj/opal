@@ -4,8 +4,8 @@ package br
 package fpcf
 package properties
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.collection.immutable.IntTrieSet
 
@@ -14,7 +14,7 @@ import org.opalj.collection.immutable.IntTrieSet
  *
  * @author Dominik Helm
  */
-class PurityPropertyTest extends FlatSpec with Matchers {
+class PurityPropertyTest extends AnyFlatSpec with Matchers {
 
     val contextuallyPure = ContextuallyPure(IntTrieSet(1))
     val contextuallySideEffectFree = ContextuallySideEffectFree(IntTrieSet(1))

@@ -3,9 +3,9 @@ package org.opalj
 package graphs
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.util.PerformanceEvaluation.time
 
@@ -16,7 +16,7 @@ import org.opalj.util.PerformanceEvaluation.time
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DominatorTreeTest extends FlatSpec with Matchers {
+class DominatorTreeTest extends AnyFlatSpec with Matchers {
 
     "a graph with just one node" should "result in a dominator tree with a single node" in {
         val g = Graph.empty[Int] += 0

@@ -7,9 +7,10 @@ import org.junit.runner.RunWith
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.{BooleanValue, StringValue}
 import org.opalj.br.reader.Java8Framework.ClassFiles
-
-import org.scalatest._
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.BeforeAndAfterAll
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests for architectural Specifications.
@@ -20,7 +21,7 @@ import org.scalatest.junit.JUnitRunner
  * @author Marco Torsello
  */
 @RunWith(classOf[JUnitRunner])
-class ArchitectureConsistencyTest extends FlatSpec with Matchers with BeforeAndAfterAll {
+class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
     val project = ClassFiles(locateTestResources("classfiles/mathematics.jar", "av"))
 

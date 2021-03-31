@@ -2,9 +2,9 @@
 package org.opalj.issues
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the `toIDL` method of [[Relevance]].
@@ -12,7 +12,7 @@ import org.scalatest.junit.JUnitRunner
  * @author Lukas Berg
  */
 @RunWith(classOf[JUnitRunner])
-class RelevanceIDLTest extends FlatSpec with Matchers {
+class RelevanceIDLTest extends AnyFlatSpec with Matchers {
 
     import IDLTestsFixtures._
 
