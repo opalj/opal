@@ -34,6 +34,7 @@ class DefaultLongSetsTest extends AnyFunSpec with Matchers {
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultLongSetValues // <----- Test target
         with l1.LongSetValuesShiftOperators // <----- Test target
         with l0.TypeLevelPrimitiveValuesConversions

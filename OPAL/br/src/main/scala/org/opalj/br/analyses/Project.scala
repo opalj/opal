@@ -51,7 +51,7 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
+import org.opalj.br.reader.Java11FrameworkWithCaching
 import org.opalj.br.reader.Java9LibraryFramework
 
 /**
@@ -1096,12 +1096,12 @@ object Project {
         implicit
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
-    ): Java9FrameworkWithInvokedynamicSupportAndCaching = {
+    ): Java11FrameworkWithCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig
-        } with Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
+        } with Java11FrameworkWithCaching(cache)
         new ConfiguredFramework
     }
 

@@ -41,6 +41,7 @@ class DefaultReferenceValuesTest extends AnyFunSpec with Matchers {
         with l0.DefaultTypeLevelLongValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultReferenceValuesBinding // <- PRIMARY TEST GOAL
         with l0.DefaultTypeLevelIntegerValues
         with l0.TypeLevelPrimitiveValuesConversions
