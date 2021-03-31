@@ -4,9 +4,9 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
@@ -20,7 +20,7 @@ import org.opalj.ai.domain.l0._
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsWithArraysTest extends FlatSpec with Matchers {
+class MethodsWithArraysTest extends AnyFlatSpec with Matchers {
 
     import MethodsWithArraysTest._
 

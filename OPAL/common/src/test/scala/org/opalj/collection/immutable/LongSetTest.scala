@@ -3,11 +3,11 @@ package org.opalj.collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
 
 @RunWith(classOf[JUnitRunner])
-abstract class LongSetTest extends FunSpec {
+abstract class LongSetTest extends AnyFunSpec {
 
     def empty(): LongSet
 

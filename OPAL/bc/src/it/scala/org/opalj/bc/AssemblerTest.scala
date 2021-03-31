@@ -4,9 +4,9 @@ package bc
 
 import org.junit.runner.RunWith
 
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.io.DataInputStream
 import java.io.BufferedInputStream
@@ -32,7 +32,7 @@ import org.opalj.da.ClassFileReader.{ClassFile ⇒ LoadClassFile}
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class AssemberTest extends FlatSpec with Matchers {
+class AssemberTest extends AnyFlatSpec with Matchers {
 
     behavior of "the Assembler"
 

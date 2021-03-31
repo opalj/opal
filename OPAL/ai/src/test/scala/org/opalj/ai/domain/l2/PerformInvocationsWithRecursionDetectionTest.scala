@@ -7,9 +7,9 @@ package l2
 import scala.language.reflectiveCalls
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.collection.immutable.Chain
 import org.opalj.br._
@@ -22,7 +22,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PerformInvocationsWithRecursionDetectionTest extends FlatSpec with Matchers {
+class PerformInvocationsWithRecursionDetectionTest extends AnyFlatSpec with Matchers {
 
     import PerformInvocationsWithRecursionDetectionTestFixture._
 

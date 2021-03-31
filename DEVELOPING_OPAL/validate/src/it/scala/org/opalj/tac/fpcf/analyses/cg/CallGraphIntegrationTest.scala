@@ -6,9 +6,9 @@ package analyses
 package cg
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -25,7 +25,7 @@ import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
-class CallGraphIntegrationTest extends FlatSpec with Matchers {
+class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
     /*allBIProjects() foreach { biProject ⇒
         val (name, projectFactory) = biProject

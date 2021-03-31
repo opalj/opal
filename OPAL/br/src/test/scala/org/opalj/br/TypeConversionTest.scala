@@ -2,9 +2,9 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
 import org.opalj.br.instructions._
 
@@ -14,7 +14,7 @@ import org.opalj.br.instructions._
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class TypeConversionTest extends FunSpec with Matchers {
+class TypeConversionTest extends AnyFunSpec with Matchers {
 
     describe("NumericType.convertTo") {
 

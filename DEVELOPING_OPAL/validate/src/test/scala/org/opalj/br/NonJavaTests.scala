@@ -4,7 +4,7 @@ package br
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 /**
  * A test for testing behavior that is valid bytecode but can not be generated from valid Java code.
@@ -12,7 +12,7 @@ import org.scalatest.FunSpec
  * @author Dominik Helm
  * @author Michael Eichberg
  */
-class NonJavaTests extends FunSpec {
+class NonJavaTests extends AnyFunSpec {
 
     describe("Project.instanceMethods") {
 
