@@ -33,6 +33,7 @@ class StringValuesTest extends AnyFlatSpec with Matchers {
         with l0.DefaultTypeLevelLongValues
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultStringValuesBinding
         with l1.DefaultIntegerRangeValues
         with l0.TypeLevelPrimitiveValuesConversions

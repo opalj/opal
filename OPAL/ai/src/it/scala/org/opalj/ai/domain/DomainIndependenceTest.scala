@@ -40,6 +40,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelDynamicLoads
         with PredefinedClassHierarchy
 
     //
@@ -62,6 +63,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with PredefinedClassHierarchy
         with TheCode
 
@@ -72,6 +74,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
         with ThrowAllPotentialExceptionsConfiguration
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with PredefinedClassHierarchy
         with DefaultSpecialDomainValuesBinding
         with l0.DefaultTypeLevelDoubleValues
@@ -93,6 +96,7 @@ class DomainIndependenceTest extends AnyFlatSpec with Matchers {
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with l0.TypeLevelLongValuesShiftOperators
         with PredefinedClassHierarchy
         with IgnoreSynchronization

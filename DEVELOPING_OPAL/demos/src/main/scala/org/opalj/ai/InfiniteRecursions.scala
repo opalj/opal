@@ -194,6 +194,7 @@ class InfiniteRecursionsDomain(val project: SomeProject, val method: Method)
     with domain.l0.DefaultTypeLevelDoubleValues
     with domain.l0.TypeLevelFieldAccessInstructions
     with domain.l0.TypeLevelInvokeInstructions
+    with domain.l0.TypeLevelDynamicLoads
     with domain.l1.DefaultReferenceValuesBinding
     with domain.l1.DefaultIntegerRangeValues
     with domain.l1.MaxArrayLengthRefinement

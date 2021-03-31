@@ -45,5 +45,19 @@ trait BootstrapMethods_attributeBinding
     ): BootstrapArgument = {
         cp(constantPoolIndex).asBootstrapArgument(cp)
     }
+
+    registerAttributesPostProcessor { attributes ⇒
+        val bsmO = attributes collectFirst { case BootstrapMethodTable(bms) ⇒ bms }
+        if (bsmO.isDefined) {
+            val bootstrapMethods = bsmO.get
+            bootstrapMethods foreach { bsm ⇒
+                bsm.arguments foreach {
+                    case dc: DynamicConstant ⇒ dc.fillInBootstrapMethod(bootstrapMethods)
+                    case _                   ⇒
+                }
+            }
+        }
+        attributes
+    }
 }
 

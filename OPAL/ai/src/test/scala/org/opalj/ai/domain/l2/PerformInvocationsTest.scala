@@ -196,6 +196,7 @@ object PerformInvocationsTestFixture {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with TheMethod
 
     trait LiDomain
@@ -210,6 +211,7 @@ object PerformInvocationsTestFixture {
         with l1.ConcretePrimitiveValuesConversions
         with l1.LongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with TheMethod
 
     abstract class InvocationDomain(

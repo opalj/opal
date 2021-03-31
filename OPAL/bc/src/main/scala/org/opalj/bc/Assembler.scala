@@ -226,6 +226,21 @@ object Assembler {
         }
     }
 
+    implicit object RichCONSTANT_Dynamic_info extends ClassFileElement[CONSTANT_Dynamic_info] {
+        def write(
+            ci: CONSTANT_Dynamic_info
+        )(
+            implicit
+            out: DataOutputStream, segmentInformation: (String, Int) ⇒ Unit
+        ): Unit = {
+            import ci._
+            import out._
+            writeByte(tag)
+            writeShort(bootstrap_method_attr_index)
+            writeShort(name_and_type_index)
+        }
+    }
+
     implicit object RichConstant_Pool_Entry extends ClassFileElement[Constant_Pool_Entry] {
         def write(
             cpe: Constant_Pool_Entry
@@ -257,6 +272,9 @@ object Assembler {
                 // JAVA 9
                 case CPTags.CONSTANT_Module_ID  ⇒ serializeAs[CONSTANT_Module_info](cpe)
                 case CPTags.CONSTANT_Package_ID ⇒ serializeAs[CONSTANT_Package_info](cpe)
+
+                // JAVA 11
+                case CPTags.CONSTANT_Dynamic_ID ⇒ serializeAs[CONSTANT_Dynamic_info](cpe)
             }
         }
     }

@@ -13,8 +13,8 @@ import org.opalj.br.reader.readJREClassFiles
 import org.opalj.br.reader.readRTJarClassFiles
 import org.opalj.br.reader.{ClassFileBinding ⇒ ClassFileReader}
 import org.opalj.br.analyses.Project
-import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.br.reader.Java9LibraryFramework
+import org.opalj.br.reader.Java11FrameworkWithCaching
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.TestResources.allBITestProjectFolders
@@ -30,8 +30,8 @@ import org.opalj.br.analyses.cg.InitialEntryPointsKey
  */
 object TestSupport {
 
-    final val DefaultJava9Reader: Java9FrameworkWithInvokedynamicSupportAndCaching = {
-        new Java9FrameworkWithInvokedynamicSupportAndCaching(new BytecodeInstructionsCache)
+    final val DefaultJava11Reader: Java11FrameworkWithCaching = {
+        new Java11FrameworkWithCaching(new BytecodeInstructionsCache)
     }
 
     def createJREProject(): Project[URL] = Project(readJREClassFiles(), Traversable.empty, true)
@@ -40,7 +40,7 @@ object TestSupport {
 
     def biProjectWithJDK(projectJARName: String, jdkAPIOnly: Boolean = false): Project[URL] = {
         val resources = locateTestResources(projectJARName, "bi")
-        val projectClassFiles: Seq[(ClassFile, URL)] = DefaultJava9Reader.ClassFiles(resources)
+        val projectClassFiles: Seq[(ClassFile, URL)] = DefaultJava11Reader.ClassFiles(resources)
         val jreClassFiles: Seq[(ClassFile, URL)] =
             if (jdkAPIOnly)
                 Java9LibraryFramework.ClassFiles(JRELibraryFolder)
@@ -76,7 +76,7 @@ object TestSupport {
      * }}}
      */
     def allBIProjects(
-        projectReader: ClassFileReader         = DefaultJava9Reader,
+        projectReader: ClassFileReader         = DefaultJava11Reader,
         jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
     ): Iterator[(String, () ⇒ Project[URL])] = {
         jreReader match {
@@ -111,7 +111,7 @@ object TestSupport {
     }
 
     def allManagedBITestProjects(
-        projectReader: ClassFileReader = DefaultJava9Reader,
+        projectReader: ClassFileReader = DefaultJava11Reader,
         jreReader:     ClassFileReader = Java9LibraryFramework
     ): Iterator[(String, () ⇒ Project[URL])] = {
         val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
@@ -129,7 +129,7 @@ object TestSupport {
      *           the entire test has completed!
      */
     def foreachBIProject(
-        projectReader: ClassFileReader         = DefaultJava9Reader,
+        projectReader: ClassFileReader         = DefaultJava11Reader,
         jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
     )(
         f: (String, Project[URL]) ⇒ Unit

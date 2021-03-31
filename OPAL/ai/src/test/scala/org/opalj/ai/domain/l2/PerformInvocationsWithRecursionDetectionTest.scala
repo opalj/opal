@@ -100,6 +100,7 @@ object PerformInvocationsWithRecursionDetectionTestFixture {
         with l0.DefaultTypeLevelLongValues
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultReferenceValuesBinding
         with l1.DefaultIntegerRangeValues {
         domain: Configuration ⇒
