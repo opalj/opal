@@ -118,17 +118,6 @@ trait DynamicConstantRewriting
         logUnresolved
     }
 
-    /**
-     * Replaces each of several characters in a String with a given corresponding character.
-     */
-    private def replaceChars(in: String, oldChars: String, newChars: String): String = {
-        var result = in
-        for ((oldC, newC) ← oldChars.zip(newChars)) {
-            result = result.replace(oldC, newC)
-        }
-        result
-    }
-
     override def deferredDynamicConstantResolution(
         classFile:             ClassFile,
         cp:                    Constant_Pool,
@@ -157,20 +146,11 @@ trait DynamicConstantRewriting
         val LDCDynamic(bootstrapMethod, name, descriptor) = load
         val instructionLength = if (load.opcode == LDC.opcode) 2 else 3
 
-        def loadConstantMethodName(): String = {
-            val methodName = cp(methodNameIndex).asString match {
-                case "<init>"   ⇒ "$constructor$"
-                case "<clinit>" ⇒ "$static_initializer$"
-                case name       ⇒ name
-            }
-            val descriptor = cp(methodDescriptorIndex).asMethodDescriptor.toJVMDescriptor
-            val sanitizedDescriptor = replaceChars(descriptor, "/[;<>", "$]:__")
-            s"$$load_dynamic_constant$$$methodName$sanitizedDescriptor:$pc"
-        }
-
         // Generate instructions to load the constant and add matching return
         val instructionsBuilder = new InstructionsBuilder(3)
-        val maxStack = loadDynamicConstant(bootstrapMethod, name, descriptor, instructionsBuilder)
+        val (maxStack, newClassFile) =
+            loadDynamicConstant(bootstrapMethod, name, descriptor, instructionsBuilder, classFile)
+        updatedClassFile = newClassFile
         instructionsBuilder ++= ReturnInstruction(descriptor)
 
         val newInstructions = instructionsBuilder.result()
@@ -195,7 +175,9 @@ trait DynamicConstantRewriting
             if (logRewrites)
                 info("rewriting dynamic constant", s"Java: $load ⇒ $head")
         } else if (instructionLength == 3) { // Replace ldc(2)_w with invocation
-            val newMethodName = loadConstantMethodName()
+            val newMethodName = newTargetMethodName(
+                cp, methodNameIndex, methodDescriptorIndex, pc, "load_dynamic_contstant"
+            )
             val newMethod = Method(
                 ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
                 newMethodName,

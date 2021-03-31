@@ -4,18 +4,17 @@ package br
 package reader
 
 /**
- * This configuration can be used to read in Java 11 (version 55) class files. All
+ * This configuration can be used to read in Java 16 (version 60) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
  * is represented except of method implementations.
  *
  * @author Dominik Helm
  */
-trait Java11LibraryFramework
-    extends Java9LibraryFramework
-    with NestHost_attributeBinding
-    with NestMembers_attributeBinding
+trait Java16LibraryFramework
+    extends Java11LibraryFramework
+    with Record_attributeBinding
 
-object Java11LibraryFramework extends Java11LibraryFramework {
+object Java16LibraryFramework extends Java16LibraryFramework {
 
     final override def loadsInterfacesOnly: Boolean = true
 

@@ -96,6 +96,10 @@ trait AttributesReader
      * <li>NestHost_attribute</li>
      * <li>NestMembers_attribute</li>
      * </ul>
+     * <b>Java 16</b>Attributes:<br />
+     * <ul>
+     * <li>Record_attribute</li>
+     * </ul>
      *
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.

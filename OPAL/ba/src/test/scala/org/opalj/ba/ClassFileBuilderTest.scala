@@ -3,11 +3,13 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
+
 import java.io.ByteArrayInputStream
 
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.junit.runner.RunWith
+
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
 import org.opalj.bi.ACC_FINAL
@@ -15,9 +17,11 @@ import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java16Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.bc.Assembler
 import org.opalj.collection.immutable.RefArray
+import org.opalj.bi.isCurrentJREAtLeastJava16
+import org.opalj.br.IntegerType
 
 /**
  * Tests general properties of a classes build with the BytecodeAssembler DSL by loading and
@@ -53,17 +57,32 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             attributes = RefArray(br.SourceFile("ClassFileBuilderTest.scala"), br.Synthetic)
         ).toDA()
 
+    val recordAttribute = br.Record(RefArray(
+        br.RecordComponent("component", IntegerType, RefArray.empty)
+    ))
+    val (recordClass, _) =
+        CLASS[Nothing](
+            version = UShortPair(0, 60),
+            accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
+            thisType = "RecordClass",
+            superclassType = Some("java/lang/Record"),
+            attributes = RefArray(recordAttribute, br.Synthetic)
+        ).toDA()
+
     val abstractAsm = Assembler(abstractClass)
     val concreteAsm = Assembler(simpleConcreteClass)
+    val recordAsm = Assembler(recordClass)
     val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
     val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
+    val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
             "MarkerInterface1" → Assembler(markerInterface1),
             "MarkerInterface2" → Assembler(markerInterface2),
             "org.opalj.bc.AbstractClass" → abstractAsm,
-            "ConcreteClass" → concreteAsm
+            "ConcreteClass" → concreteAsm,
+            "RecordClass" → recordAsm
         ),
         this.getClass.getClassLoader
     )
@@ -74,6 +93,17 @@ class ClassFileBuilderTest extends AnyFlatSpec {
         assert("MarkerInterface2" == loadClass("MarkerInterface2").getSimpleName)
         assert("org.opalj.bc.AbstractClass" == loadClass("org.opalj.bc.AbstractClass").getName)
         assert("ConcreteClass" == loadClass("ConcreteClass").getSimpleName)
+        if (isCurrentJREAtLeastJava16)
+            assert("RecordClass" == loadClass("RecordClass").getSimpleName)
+    }
+
+    "the generated classes" should "have they're attributes preserved" in {
+        assert(concreteBRClassFile.attributes.length == 2)
+        assert(concreteBRClassFile.attributes.contains(br.SourceFile("ClassFileBuilderTest.scala")))
+        assert(concreteBRClassFile.attributes.contains(br.Synthetic))
+        assert(recordBRClassFile.attributes.length == 2)
+        assert(recordBRClassFile.attributes.contains(recordAttribute))
+        assert(recordBRClassFile.attributes.contains(br.Synthetic))
     }
 
     "the generated class 'ConcreteClass'" should "have only the generated default Constructor" in {

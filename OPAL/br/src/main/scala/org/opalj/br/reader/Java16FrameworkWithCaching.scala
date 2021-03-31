@@ -4,12 +4,12 @@ package br
 package reader
 
 /**
- * This configuration can be used to read in Java 11 (version 55) class files. All
+ * This configuration can be used to read in Java 16 (version 60) class files. All
  * standard information (as defined in the Java Virtual Machine Specification)
  * is represented. Instructions will be cached.
  *
  * @author Dominik Helm
  */
-class Java11FrameworkWithCaching(
+class Java16FrameworkWithCaching(
         cache: BytecodeInstructionsCache
-) extends Java9FrameworkWithCaching(cache) with Java11LibraryFramework
+) extends Java11FrameworkWithCaching(cache) with Java16LibraryFramework

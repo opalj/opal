@@ -58,7 +58,8 @@ package object bi {
      * class file.
      */
     def jdkVersion(majorVersion: Int): String = {
-        // 59 == 15, 58 == 14, 57 == 13, 56 == 12, 55 == 11, 54 == 10, 53 == 9, 52 == 8; ... 50 == 6
+        // 60 == 16, 59 == 15, 58 == 14, 57 == 13, 56 == 12, 55 == 11, 54 == 10, 53 == 9,
+        // 52 == 8, 51 == 7, 50 == 6, 49 == 5.0, 48 == 1.4, 47 == 1.3, 46 == 1.2, 45 == 1.1/1.0.2
         if (majorVersion >= 49) {
             "Java "+(majorVersion - 44)
         } else if (majorVersion > 45) {
@@ -92,17 +93,19 @@ package object bi {
     final val Java14Version = UShortPair(0, Java14MajorVersion)
     final val Java15MajorVersion = 59
     final val Java15Version = UShortPair(0, Java15MajorVersion)
+    final val Java16MajorVersion = 60
+    final val Java16Version = UShortPair(0, Java16MajorVersion)
 
     /**
      * The latest major version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaMajorVersion = Java15MajorVersion
+    final val LatestSupportedJavaMajorVersion = Java16MajorVersion
     /**
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaVersion = Java15Version
+    final val LatestSupportedJavaVersion = Java16Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.
@@ -111,11 +114,13 @@ package object bi {
      */
     final lazy val isCurrentJREAtLeastJava8: Boolean = isCurrentJREAtLeastJavaX(8)
 
-    final lazy val isCurrentJREAtLeastJava9: Boolean = isCurrentJREAtLeastJavaX(9)
+    final lazy val isCurrentJREAtLeastJava10: Boolean = isCurrentJREAtLeastJavaX(10)
 
     final lazy val isCurrentJREAtLeastJava11: Boolean = isCurrentJREAtLeastJavaX(11)
 
     final lazy val isCurrentJREAtLeastJava15: Boolean = isCurrentJREAtLeastJavaX(15)
+
+    final lazy val isCurrentJREAtLeastJava16: Boolean = isCurrentJREAtLeastJavaX(16)
 
     // only works for Java 8 and above
     private[this] def isCurrentJREAtLeastJavaX(x: Int): Boolean = {
