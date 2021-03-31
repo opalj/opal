@@ -14,8 +14,8 @@ import scala.io.Source
 
 import com.typesafe.config.ConfigValueFactory
 import org.junit.runner.RunWith
-import org.scalatest.FunSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation.time
@@ -49,7 +49,7 @@ import org.opalj.tac.fpcf.analyses.FPCFAnalysesIntegrationTest.ps
  * @author Dominik Helm
  */
 @RunWith(classOf[JUnitRunner])
-class FPCFAnalysesIntegrationTest extends FunSpec {
+class FPCFAnalysesIntegrationTest extends AnyFunSpec {
 
     private[this] val analysisConfigurations = getConfig
 

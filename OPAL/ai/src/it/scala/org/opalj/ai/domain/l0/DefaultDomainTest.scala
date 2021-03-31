@@ -5,7 +5,7 @@ package domain
 package l0
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 
 import java.net.URL
 

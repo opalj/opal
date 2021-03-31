@@ -2,15 +2,15 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.opalj.bi.TestResources.locateTestResources
 
 /**
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class AttributesTest extends FunSuite {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class AttributesTest extends AnyFunSuite {
 
     val attributesJARFile = locateTestResources("deprecated.jar", "bi")
 

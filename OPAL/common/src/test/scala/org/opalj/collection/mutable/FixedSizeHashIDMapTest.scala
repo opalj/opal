@@ -3,9 +3,9 @@ package org.opalj
 package collection
 package mutable
 
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 /**
@@ -14,7 +14,7 @@ import org.junit.runner.RunWith
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class FixedSizeHashIDMapTest extends FlatSpec with Matchers {
+class FixedSizeHashIDMapTest extends AnyFlatSpec with Matchers {
 
     case class Node(id: Int) {
         override def hashCode(): Int = id

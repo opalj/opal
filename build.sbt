@@ -111,7 +111,13 @@ lazy val buildSettings =
     // We don't want the build to be aborted by inter-project links that are reported by
     // scaladoc as errors using the standard compiler setting. (This case is only true, when
     // we publish the projects.)
-    Seq(scalacOptions in (Compile, doc) := Opts.doc.version(version.value))
+    Seq(scalacOptions in (Compile, doc) := Opts.doc.version(version.value)) ++
+    // Discard module-info files when assembling fat jars
+    // see https://github.com/sbt/sbt-assembly/issues/391
+    Seq(assemblyMergeStrategy in assembly := {
+      case "module-info.class" => MergeStrategy.discard
+      case other => (assemblyMergeStrategy in assembly).value(other)
+    })
 
 lazy val scalariformSettings = scalariformItSettings ++
   Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)

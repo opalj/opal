@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.Iterable
 import scala.collection.immutable.SortedSet
@@ -30,7 +30,7 @@ import org.opalj.ai.domain.ThrowAllPotentialExceptionsConfiguration
  * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultIntegerSetsTest extends FunSpec with Matchers {
+class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
     final val SomePC = 100000
