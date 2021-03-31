@@ -26,6 +26,7 @@ class DefaultDomain[Source](
     with l0.DefaultTypeLevelDoubleValues
     with l0.TypeLevelFieldAccessInstructions
     with l0.TypeLevelInvokeInstructions
+    with l0.TypeLevelDynamicLoads
     with SpecialMethodsHandling
     // [NEEDED IF WE DON'T MIXIN CLASS AND STRING VALUES BINDING] with l1.DefaultReferenceValuesBinding
     // [NEEDED IF WE DON'T MIXIN CLASS VALUES BINDING] with l1.DefaultStringValuesBinding

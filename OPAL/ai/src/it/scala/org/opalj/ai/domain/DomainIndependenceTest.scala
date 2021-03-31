@@ -4,9 +4,9 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
@@ -27,7 +27,7 @@ import org.opalj.br.Code
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DomainIndependenceTest extends FlatSpec with Matchers {
+class DomainIndependenceTest extends AnyFlatSpec with Matchers {
 
     private[this] implicit val logContext: LogContext = GlobalLogContext
 
@@ -40,6 +40,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelFloatValues
         with l0.DefaultTypeLevelDoubleValues
         with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelDynamicLoads
         with PredefinedClassHierarchy
 
     //
@@ -62,6 +63,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with PredefinedClassHierarchy
         with TheCode
 
@@ -72,6 +74,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with ThrowAllPotentialExceptionsConfiguration
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with PredefinedClassHierarchy
         with DefaultSpecialDomainValuesBinding
         with l0.DefaultTypeLevelDoubleValues
@@ -93,6 +96,7 @@ class DomainIndependenceTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with l0.TypeLevelLongValuesShiftOperators
         with PredefinedClassHierarchy
         with IgnoreSynchronization

@@ -11,6 +11,7 @@ import scala.collection.immutable.IntMap
 
 import net.ceedubs.ficus.Ficus._
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
@@ -26,6 +27,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.value.ASObjectValue
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.DefinedMethod
@@ -70,6 +72,7 @@ import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.MethodDescriptor
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -305,8 +308,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (expr eq null) {
             // Expression is unknown due to an indirect call (e.g. reflection)
             atMost(otherwise)
-            return false
-        };
+            return false;
+        }
 
         if (expr.isConst)
             return true;
@@ -822,20 +825,26 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
-            project.instanceMethods(state.declClass).foreach { mdc ⇒
-                if (mdc.name == "fillInStackTrace" &&
-                    mdc.method.classFile.thisType != ObjectType.Throwable) {
-                    // "The value" is actually not used at all - hence, we can use "null"
-                    // over here.
-                    val selfReference = UVar(null, SelfReferenceParameter)
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
+            val candidate = ConstArray.find(project.instanceMethods(state.declClass)) { mdc ⇒
+                mdc.method.compare(
+                    "fillInStackTrace",
+                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                )
+            }
+            candidate foreach { mdc ⇒
+                if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
-                    if (!checkMethodPurity(fISTPurity, Seq(selfReference))) {
+                    val self = UVar(
+                        ASObjectValue(isNull = No, isPrecise = false, state.declClass),
+                        SelfReferenceParameter
+                    )
+                    if (!checkMethodPurity(fISTPurity, Seq(self)))
                         // Early return for impure fillInStackTrace
                         return Result(state.definedMethod, state.ubPurity);
-                    }
                 }
             }
+        }
 
         // Synchronized methods have a visible side effect on the receiver
         // Static synchronized methods lock the class which is potentially globally visible

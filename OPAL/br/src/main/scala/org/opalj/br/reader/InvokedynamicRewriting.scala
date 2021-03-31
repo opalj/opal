@@ -50,7 +50,9 @@ import org.opalj.br.instructions.ClassFileFactory.DefaultFactoryMethodName
  * @author Andreas Muttscheller
  * @author Dominik Helm
  */
-trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
+trait InvokedynamicRewriting
+    extends DeferredInvokedynamicResolution
+    with BootstrapArgumentLoading {
     this: ClassFileBinding ⇒
 
     import InvokedynamicRewriting._
@@ -145,7 +147,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         logUnknownInvokeDynamics
     }
 
-    val ScalaRuntimeObject = ObjectType("scala/runtime/ScalaRunTime$")
+    val ScalaRuntimeObject: ObjectType = ObjectType("scala/runtime/ScalaRunTime$")
 
     /**
      * Generates a new, internal name for the proxy class for a rewritten invokedynamic.
@@ -193,6 +195,29 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         val descriptor = surroundingMethodDescriptor.toJVMDescriptor
         val sanitizedDescriptor = replaceChars(descriptor, "/[;<>", "$]:__")
         s"$$string_concat$$$methodName$sanitizedDescriptor:$pc"
+    }
+
+    /**
+     * Generates a new, internal name for a method loading a Scala symbol.
+     *
+     * It follows the pattern:
+     * `$scala_symbol${surroundingMethodName}{surroundingMethodDescriptor}:pc`, where
+     * surroundingMethodDescriptor is the JVM descriptor of the method sanitized to not contain
+     * characters illegal in method names (replacing /, [, ;, < and > by $, ], :, _ and _
+     * respectively) and where pc is the pc of the invokedynamic that is rewritten.
+     */
+    private def newScalaSymbolMethodName(
+        surroundingMethodName:       String,
+        surroundingMethodDescriptor: MethodDescriptor,
+        pc:                          Int
+    ): String = {
+        val methodName =
+            if (surroundingMethodName == "<init>") "$constructor$"
+            else if (surroundingMethodName == "<clinit>") "$static_initializer$"
+            else surroundingMethodName
+        val descriptor = surroundingMethodDescriptor.toJVMDescriptor
+        val sanitizedDescriptor = replaceChars(descriptor, "/[;<>", "$]:__")
+        s"$$scala_symbol$$$methodName$sanitizedDescriptor:$pc"
     }
 
     /**
@@ -263,7 +288,15 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                 invokedynamic
             )
         } else if (isScalaSymbolExpression(invokedynamic)) {
-            scalaSymbolResolution(updatedClassFile, instructions, pc, invokedynamic)
+            scalaSymbolResolution(
+                updatedClassFile,
+                instructions,
+                pc,
+                invokedynamic,
+                cp,
+                methodNameIndex,
+                methodDescriptorIndex
+            )
         } else if (isScalaStructuralCallSite(invokedynamic, instructions, pc)) {
             scalaStructuralCallSiteResolution(
                 updatedClassFile,
@@ -334,11 +367,23 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                     None,
                     RefIndexedView.empty
                 )
-            else
-                (
-                    args.headOption.asInstanceOf[Option[ConstantString]],
-                    args.slicedView(from = 1).asInstanceOf[RefIndexedView[ConstantValue[_]]]
-                )
+            else args.head match {
+                case recipe: ConstantString ⇒
+                    (
+                        Some(recipe),
+                        args.slicedView(from = 1).asInstanceOf[RefIndexedView[ConstantValue[_]]]
+                    )
+                case _ ⇒
+                    if (logUnknownInvokeDynamics) {
+                        val t = classFile.thisType.toJava
+                        info(
+                            "load-time transformation",
+                            s"$t - unresolvable INVOKEDYNAMIC (unknown string recipe): "+
+                                invokedynamic
+                        )
+                    }
+                    return classFile;
+            }
 
         // Creates concat method
         def createConcatMethod(
@@ -383,11 +428,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             }
 
             // Generate instructions to append a static constant to the StringBuilder
-            def appendConstant(constant: ConstantValue[_]): Unit = {
-                // Load the constant using _W variant of load instruction to ensure that we can
-                // create a valid constant pool if the rest of the code in the class already uses up
-                // “all” constant pool entries in the range [1..255]
-                body ++= LoadConstantInstruction(constant, wide = true)
+            def appendConstant(constant: ConstantValue[_]): Int = {
+                val constantStack = loadBootstrapArgument(constant, body)
 
                 body ++= INVOKEVIRTUAL(
                     ObjectType.StringBuilder,
@@ -397,6 +439,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                         ObjectType.StringBuilder
                     )
                 )
+
+                constantStack
             }
 
             // Generate code to append a substring of the recipe verbatim to the StringBuilder
@@ -473,9 +517,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
                         } else {
                             assert(recipe.charAt(nextInsert) == '\u0002')
                             val constant = constants(constantIndex)
-                            appendConstant(constant)
-                            val opSize = constant.runtimeValueType.computationalType.operandSize
-                            if (maxStack == 2 && opSize == 2) maxStack = 3
+                            val constantStack = appendConstant(constant)
+                            maxStack = Math.max(maxStack, constantStack + 1)
                             constantIndex += 1
                             nextConstant = recipe.indexOf('\u0002', nextConstant + 1)
                         }
@@ -513,8 +556,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         val concatMethod =
             createConcatMethod(concatName, factoryDescriptor, recipe, staticArgs)
 
-        val updatedClassFile =
-            classFile._UNSAFE_addMethod(concatMethod)
+        val updatedClassFile = classFile._UNSAFE_addMethod(concatMethod)
 
         val newInvokestatic = INVOKESTATIC(
             classFile.thisType,
@@ -546,11 +588,16 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
      * @return A classfile which has the INVOKEDYNAMIC instruction replaced
      */
     private def scalaSymbolResolution(
-        classFile:     ClassFile,
-        instructions:  Array[Instruction],
-        pc:            PC,
-        invokedynamic: INVOKEDYNAMIC
+        classFile:             ClassFile,
+        instructions:          Array[Instruction],
+        pc:                    PC,
+        invokedynamic:         INVOKEDYNAMIC,
+        cp:                    Constant_Pool,
+        methodNameIndex:       Constant_Pool_Index,
+        methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
+        var updatedClassFile = classFile
+
         // IMPROVE Rewrite to avoid that we have to use a constant pool entry in the range [0..255]
         val INVOKEDYNAMIC(
             bootstrapMethod, _, _ // functionalInterfaceMethodName, factoryDescriptor
@@ -571,10 +618,46 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             info("rewriting invokedynamic", s"Scala: $invokedynamic ⇒ $newInvokestatic")
         }
 
-        instructions(pc) = LDC(bootstrapArguments.head.asInstanceOf[ConstantString])
-        instructions(pc + 2) = newInvokestatic
+        val instructionsBuilder = new InstructionsBuilder(7)
+        val maxStack = loadBootstrapArgument(
+            bootstrapArguments.head.asInstanceOf[ConstantValue[_]], instructionsBuilder
+        )
+        instructionsBuilder ++= newInvokestatic
+        instructionsBuilder ++= ARETURN
 
-        classFile
+        val newInstructions = instructionsBuilder.result()
+
+        val firstInstruction = newInstructions.head
+        if (newInstructions.length == 7 && firstInstruction.opcode == LDC_W.opcode) {
+            instructions(pc) = firstInstruction match {
+                case LoadString_W(s)                      ⇒ LoadString(s)
+                case LoadDynamic_W(bsm, name, descriptor) ⇒ LoadDynamic(bsm, name, descriptor)
+            }
+            instructions(pc + 2) = newInvokestatic
+        } else {
+            val methodName = cp(methodNameIndex).asString
+            val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
+            val newMethodName = newScalaSymbolMethodName(methodName, methodDescriptor, pc)
+            val newMethod = Method(
+                ACC_SYNTHETIC.mask | ACC_PRIVATE.mask | ACC_STATIC.mask,
+                newMethodName,
+                MethodDescriptor.withNoArgs(ObjectType.ScalaSymbol),
+                RefArray(Code(maxStack, 0, newInstructions, NoExceptionHandlers, NoAttributes))
+            )
+            updatedClassFile = updatedClassFile._UNSAFE_addMethod(newMethod)
+
+            val newInvoke = INVOKESTATIC(
+                classFile.thisType,
+                isInterface = classFile.isInterfaceDeclaration,
+                newMethodName,
+                MethodDescriptor.withNoArgs(ObjectType.ScalaSymbol)
+            )
+            instructions(pc) = newInvoke
+            instructions(pc + 3) = NOP
+            instructions(pc + 4) = NOP
+        }
+
+        updatedClassFile
     }
 
     /**
@@ -596,7 +679,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         methodNameIndex:       Constant_Pool_Index,
         methodDescriptorIndex: Constant_Pool_Index
     ): ClassFile = {
-        val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[MethodDescriptor]
+        val methodType = invokedynamic.bootstrapMethod.arguments.head.asInstanceOf[ConstantValue[_]]
 
         val body = new InstructionsBuilder(18)
 
@@ -606,10 +689,8 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
 
         body ++= instructions(22).asInstanceOf[LoadString]
 
-        // Using `LoadMethodType` instead of `LoadMethodType_W` is safe, as the removal of the
-        // bootstrapMethod will free one index in the constant pool where the method type can be
-        // moved on serialization of the class
-        body ++= LoadMethodType(methodType)
+        val methodTypeStack = loadBootstrapArgument(methodType, body)
+
         body ++= INVOKEVIRTUAL(
             ObjectType.MethodType,
             "parameterArray",
@@ -626,12 +707,14 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             info("rewriting invokedynamic", s"Scala: Removed $invokedynamic")
         }
 
+        val maxStack = 3 + methodTypeStack
+
         val methodName = cp(methodNameIndex).asString
         val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
 
         val methodToRewrite = classFile.findMethod(methodName, methodDescriptor).get
 
-        val code = Code(4, 1, body.result(), NoExceptionHandlers, NoAttributes)
+        val code = Code(maxStack, 1, body.result(), NoExceptionHandlers, NoAttributes)
 
         val rewrittenMethod =
             Method(methodToRewrite.accessFlags, methodName, methodDescriptor, RefArray(code))
@@ -677,11 +760,21 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
     ): ClassFile = {
         val bootstrapArguments = invokedynamic.bootstrapMethod.arguments
 
-        assert(
-            bootstrapArguments.isEmpty || bootstrapArguments.head
-                .isInstanceOf[InvokeStaticMethodHandle],
-            "ensures that the test isScalaLambdaDeserialize was executed"
-        )
+        if (bootstrapArguments.nonEmpty) {
+            if (bootstrapArguments exists {
+                case _: InvokeStaticMethodHandle ⇒ false // As expected, static method handle
+                case _                           ⇒ true // Unknown (dynamic) argument
+            }) {
+                if (logUnknownInvokeDynamics) {
+                    val t = classFile.thisType.toJava
+                    info(
+                        "load-time transformation",
+                        s"$t - unresolvable INVOKEDYNAMIC (unknown method handle): $invokedynamic"
+                    )
+                }
+                return classFile;
+            }
+        }
 
         val methodName = cp(methodNameIndex).asString
         val methodDescriptor = cp(methodDescriptorIndex).asMethodDescriptor
@@ -750,15 +843,30 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
             bootstrapMethod, functionalInterfaceMethodName, factoryDescriptor
             ) = invokedynamic
         val bootstrapArguments = bootstrapMethod.arguments
+
         // Extract the arguments of the lambda factory.
-        val Seq(
-            samMethodType: MethodDescriptor, // describing the implemented method type
-            tempImplMethod: MethodCallMethodHandle, // the MethodHandle providing the implementation
-            instantiatedMethodType: MethodDescriptor, // allowing restrictions on invocation
+        val (
+            samMethodType, // describing the implemented method type
+            tempImplMethod, // the MethodHandle providing the implementation
+            instantiatedMethodType, // allowing restrictions on invocation
             // The available information depends on the metafactory:
             // (e.g., about bridges or markers)
-            altMetafactoryArgs @ _*
-            ) = bootstrapArguments
+            altMetafactoryArgs
+            ) = bootstrapArguments match {
+            case Seq(smt: MethodDescriptor, tim: MethodCallMethodHandle, imt: MethodDescriptor, ama @ _*) ⇒
+                (smt, tim, imt, ama)
+            case _ ⇒
+                if (logUnknownInvokeDynamics) {
+                    val t = classFile.thisType.toJava
+                    info(
+                        "load-time transformation",
+                        s"$t - unresolvable INVOKEDYNAMIC (unknown lambda factory argument): "+
+                            invokedynamic
+                    )
+                }
+                return classFile;
+        }
+
         var implMethod = tempImplMethod
 
         val thisType = classFile.thisType
@@ -1042,7 +1150,7 @@ trait InvokedynamicRewriting extends DeferredInvokedynamicResolution {
         if (needsBridgeMethod) {
             bridgeMethodDescriptorBuilder += samMethodType
         }
-        // If the bridge has the same method descriptor like the instantiatedMethodType or
+        // If the bridge has the same method descriptor as the instantiatedMethodType or
         // samMethodType, they are already present in the proxy class. Do not add them again.
         // This happens in scala patternmatching for example.
         bridgeMethodDescriptorBuilder ++= bridges

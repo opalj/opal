@@ -23,7 +23,7 @@ A marker interface is an empty interface. For example, `java.io.Serializable` or
 
 Such interfaces are particularly used in combination with lambda expressions.
 
-[Functional Interfaces Demo Code](https://bitbucket.org/delors/opal/src/HEAD/OPAL/bi/src/test/fixtures-java/projects/jvm_features/class_types/SAMInterface.java)
+[Functional Interfaces Demo Code](https://github.com/stg-tud/opal/blob/develop/OPAL/bi/src/test/fixtures-java/projects/jvm_features/class_types/SAMInterface.java)
 
 
 ## Interface with default methods (*Java >8*)

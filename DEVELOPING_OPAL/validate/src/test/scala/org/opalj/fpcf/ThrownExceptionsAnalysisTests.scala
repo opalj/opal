@@ -1,8 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf
+package org.opalj
+package fpcf
 
 import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
-import org.opalj.br.fpcf.analyses.EagerVirtualMethodAllocationFreenessAnalysis
+import org.opalj.br.fpcf.analyses.EagerVirtualMethodThrownExceptionsAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -29,9 +30,9 @@ class ThrownExceptionsAnalysisTests extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/thrown_exceptions")
     }
 
-    describe("L1ThrownExceptionsAnalysis and EagerVirtualMethodAllocationFreenessAnalysis are executed") {
+    describe("L1ThrownExceptionsAnalysis and VirtualMethodThrownExceptionsAnalysis are executed") {
         val as = executeAnalyses(Set(
-            EagerVirtualMethodAllocationFreenessAnalysis,
+            EagerVirtualMethodThrownExceptionsAnalysis,
             EagerL1ThrownExceptionsAnalysis
         ))
         val TestContext(_, ps, _) = as

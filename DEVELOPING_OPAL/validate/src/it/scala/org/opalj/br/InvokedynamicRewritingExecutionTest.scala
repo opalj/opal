@@ -2,8 +2,8 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import java.net.URL
 import java.net.URLClassLoader
 import java.io.File
@@ -11,10 +11,13 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
 
+import com.typesafe.config.Config
+
 import org.opalj.bytecode.RTJar
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.bi.isCurrentJREAtLeastJava9
 import org.opalj.br.analyses.Project
+import org.opalj.br.reader.InvokedynamicRewriting
 import org.opalj.ba.ProjectBasedInMemoryClassLoader
 import org.opalj.bc.Assembler
 import org.opalj.io.JARsFileFilter
@@ -27,11 +30,15 @@ import org.opalj.util.InMemoryClassLoader
  * @author Andreas Muttscheller
  * @author Dominik Helm
  */
-class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
+class InvokedynamicRewritingExecutionTest extends AnyFunSpec with Matchers {
 
     def JavaFixtureProject(fixtureFiles: File): Project[URL] = {
+        implicit val config: Config = InvokedynamicRewriting.defaultConfig(
+            rewrite = true,
+            logRewrites = false
+        )
 
-        val projectClassFiles = Project.JavaClassFileReader().ClassFiles(fixtureFiles)
+        val projectClassFiles = Project.JavaClassFileReader.ClassFiles(fixtureFiles)
         val libraryClassFiles = Project.JavaLibraryClassFileReader.ClassFiles(RTJar)
 
         info(s"the test fixture project consists of ${projectClassFiles.size} class files")
@@ -129,7 +136,7 @@ class InvokedynamicRewritingExecutionTest extends FunSpec with Matchers {
             val p = JavaFixtureProject(r)
             val cf = p.classFile(testClassType).get.copy(version = bi.Java8Version)
             val inMemoryClassLoader =
-                new InMemoryClassLoader(Map(testClassType.toJava -> Assembler(ba.toDA(cf))))
+                new InMemoryClassLoader(Map(testClassType.toJava → Assembler(ba.toDA(cf))))
 
             it("simpleConcat should concatenate strings correctly") {
                 val c = inMemoryClassLoader.loadClass(testClassType.toJava)

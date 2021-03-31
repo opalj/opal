@@ -120,7 +120,7 @@ sealed abstract class MethodDescriptor
             if (parameterTypes.isEmpty)
                 ""
             else
-                (parameterTypes.head.toJava /: parameterTypes.tail)(_+", "+_.toJava)
+                parameterTypes.tail.foldLeft(parameterTypes.head.toJava)(_+", "+_.toJava)
         }+"): "+returnType.toJava
     }
 
@@ -483,14 +483,24 @@ object MethodDescriptor {
     }
 
     /**
-     * The signature of a signature polymorphic method.
-     * Basically, the signature:
+     * The signatures of a signature polymorphic method.
+     * Basically, the signature is one of:
      * {{{
      *      (params: Object[]) : Object
+     *      (params: Object[]) : void
+     *      (params: Object[]) : boolean
      * }}}
      */
-    final val SignaturePolymorphicMethod: MethodDescriptor = {
+    final val SignaturePolymorphicMethodObject: MethodDescriptor = {
         new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, ObjectType.Object)
+    }
+
+    final val SignaturePolymorphicMethodVoid: MethodDescriptor = {
+        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, VoidType)
+    }
+
+    final val SignaturePolymorphicMethodBoolean: MethodDescriptor = {
+        new SingleArgumentMethodDescriptor(ArrayType.ArrayOfObject, BooleanType)
     }
 
     final val JustReturnsBoolean: MethodDescriptor = new NoArgumentMethodDescriptor(BooleanType)
@@ -617,6 +627,35 @@ object MethodDescriptor {
                 ObjectType.MethodType
             ),
             ObjectType.CallSite
+        )
+    }
+
+    /**
+     * Descriptor of the method `java.lang.invoke.ConstantBootstraps.primitiveClass`.
+     */
+    final val ConstantBootstrapsPrimitiveClassDescriptor = {
+        MethodDescriptor(
+            RefArray(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.Class
+            ),
+            ObjectType.Class
+        )
+    }
+
+    /**
+     * Descriptor of the methods `java.lang.invoke.MethodHandles$Lookup.findVarHandle` and
+     * `java.lang.invoke.MethodHandles$Lookup.findStaticVarHandle`.
+     */
+    final val FindVarHandleDescriptor = {
+        MethodDescriptor(
+            RefArray(
+                ObjectType.Class,
+                ObjectType.String,
+                ObjectType.Class
+            ),
+            ObjectType.VarHandle
         )
     }
 

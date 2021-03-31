@@ -25,7 +25,7 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("https://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion in ThisBuild := "2.12.9"
+scalaVersion in ThisBuild := "2.12.13"
 
 ScalacConfiguration.globalScalacOptions
 
@@ -57,8 +57,9 @@ scalacOptions in (ScalaUnidoc, unidoc) := {
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=
   Opts.doc.sourceUrl(
-    "https://bitbucket.org/delors/opal/src/HEAD€{FILE_PATH}.scala?" +
-      (if (isSnapshot.value) "at=develop" else "at=master")
+  	"https://raw.githubusercontent.com/stg-tud/opal/" +
+      (if (isSnapshot.value) "develop" else "master") +
+      "/€{FILE_PATH}.scala"
   )
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
 scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("The OPAL Framework")
@@ -110,7 +111,13 @@ lazy val buildSettings =
     // We don't want the build to be aborted by inter-project links that are reported by
     // scaladoc as errors using the standard compiler setting. (This case is only true, when
     // we publish the projects.)
-    Seq(scalacOptions in (Compile, doc) := Opts.doc.version(version.value))
+    Seq(scalacOptions in (Compile, doc) := Opts.doc.version(version.value)) ++
+    // Discard module-info files when assembling fat jars
+    // see https://github.com/sbt/sbt-assembly/issues/391
+    Seq(assemblyMergeStrategy in assembly := {
+      case "module-info.class" => MergeStrategy.discard
+      case other => (assemblyMergeStrategy in assembly).value(other)
+    })
 
 lazy val scalariformSettings = scalariformItSettings ++
   Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
@@ -412,7 +419,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
  * TASKS, etc
  *
  */
-// To run the task: OPAL/publish::generateSite or compile:generateSite
+// To run the task: compile:generateSite
 val generateSite = taskKey[File]("creates the OPAL website") in Compile
 generateSite := {
   lazy val disassemblerJar = (assembly in da).value

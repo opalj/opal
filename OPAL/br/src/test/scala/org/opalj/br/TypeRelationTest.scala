@@ -4,9 +4,9 @@ package br
 
 import org.junit.runner.RunWith
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests the methods that test the relation between numeric values.
@@ -14,7 +14,7 @@ import org.scalatest.junit.JUnitRunner
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class TypeRelationTest extends FunSpec with Matchers {
+class TypeRelationTest extends AnyFunSpec with Matchers {
 
     describe("NumericType.isWiderThan") {
 

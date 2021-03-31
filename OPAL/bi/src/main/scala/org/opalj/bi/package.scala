@@ -58,7 +58,7 @@ package object bi {
      * class file.
      */
     def jdkVersion(majorVersion: Int): String = {
-        // 56==12, 55 == 11, 54 == 10, 53 == 9, 52 == 8; ... 50 == 6
+        // 59 == 15, 58 == 14, 57 == 13, 56 == 12, 55 == 11, 54 == 10, 53 == 9, 52 == 8; ... 50 == 6
         if (majorVersion >= 49) {
             "Java "+(majorVersion - 44)
         } else if (majorVersion > 45) {
@@ -86,17 +86,23 @@ package object bi {
     final val Java11Version = UShortPair(0, Java11MajorVersion)
     final val Java12MajorVersion = 56
     final val Java12Version = UShortPair(0, Java12MajorVersion)
+    final val Java13MajorVersion = 57
+    final val Java13Version = UShortPair(0, Java13MajorVersion)
+    final val Java14MajorVersion = 58
+    final val Java14Version = UShortPair(0, Java14MajorVersion)
+    final val Java15MajorVersion = 59
+    final val Java15Version = UShortPair(0, Java15MajorVersion)
 
     /**
      * The latest major version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaMajorVersion = Java12MajorVersion
+    final val LatestSupportedJavaMajorVersion = Java15MajorVersion
     /**
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaVersion = Java12Version
+    final val LatestSupportedJavaVersion = Java15Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.
@@ -106,6 +112,10 @@ package object bi {
     final lazy val isCurrentJREAtLeastJava8: Boolean = isCurrentJREAtLeastJavaX(8)
 
     final lazy val isCurrentJREAtLeastJava9: Boolean = isCurrentJREAtLeastJavaX(9)
+
+    final lazy val isCurrentJREAtLeastJava11: Boolean = isCurrentJREAtLeastJavaX(11)
+
+    final lazy val isCurrentJREAtLeastJava15: Boolean = isCurrentJREAtLeastJavaX(15)
 
     // only works for Java 8 and above
     private[this] def isCurrentJREAtLeastJavaX(x: Int): Boolean = {

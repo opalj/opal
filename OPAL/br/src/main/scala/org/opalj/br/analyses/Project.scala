@@ -51,7 +51,7 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
+import org.opalj.br.reader.Java11FrameworkWithCaching
 import org.opalj.br.reader.Java9LibraryFramework
 
 /**
@@ -140,6 +140,7 @@ class Project[Source] private (
         final val libraryFieldsCount:                 Int,
         final val codeSize:                           Long,
         final val MethodHandleSubtypes:               Set[ObjectType],
+        final val VarHandleSubtypes:                  Set[ObjectType],
         final val classFilesCount:                    Int,
         final val methodsCount:                       Int,
         final val fieldsCount:                        Int,
@@ -153,6 +154,7 @@ class Project[Source] private (
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
+        final val nests:                              Map[ObjectType, ObjectType],
         // Note that the referenced array will never shrink!
         @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] = new AtomicReferenceArray[AnyRef](32)
 )(
@@ -205,6 +207,7 @@ class Project[Source] private (
             libraryFieldsCount,
             codeSize,
             MethodHandleSubtypes,
+            VarHandleSubtypes,
             classFilesCount,
             methodsCount,
             fieldsCount,
@@ -218,6 +221,7 @@ class Project[Source] private (
             newClassHierarchy,
             instanceMethods,
             overridingMethods,
+            nests,
             newProjectInformation
         )(
             newLogContext,
@@ -236,6 +240,8 @@ class Project[Source] private (
     final val ObjectClassFile: Option[ClassFile] = classFile(ObjectType.Object)
 
     final val MethodHandleClassFile: Option[ClassFile] = classFile(ObjectType.MethodHandle)
+
+    final val VarHandleClassFile: Option[ClassFile] = classFile(ObjectType.VarHandle)
 
     final val allMethodsWithBody: ConstArray[Method] = ConstArray._UNSAFE_from(this.methodsWithBody)
 
@@ -1092,12 +1098,12 @@ object Project {
         implicit
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
-    ): Java9FrameworkWithInvokedynamicSupportAndCaching = {
+    ): Java11FrameworkWithCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig
-        } with Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
+        } with Java11FrameworkWithCaching(cache)
         new ConfiguredFramework
     }
 
@@ -1177,7 +1183,7 @@ object Project {
                             case INVOKESTATIC.opcode ⇒
                                 val invokestatic = instruction.asInstanceOf[INVOKESTATIC]
                                 if (validateReceiverTypeKind(invokestatic)) {
-                                    project.staticCall(invokestatic) match {
+                                    project.staticCall(cf.thisType, invokestatic) match {
                                         case _: Success[_] ⇒ /*OK*/
                                         case Empty         ⇒ /*OK - partial project*/
                                         case Failure ⇒
@@ -1330,7 +1336,10 @@ object Project {
             //      the subclass resolves the conflict by defining the method.
             var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
 
-            val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(objectType)
+            // Note that we must NOT process interfaces again that were already implemented by the
+            // supertype because the supertype can make a default method "abstract" again
+            val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(objectType) --
+                superclassType.map(classHierarchy.allSuperinterfacetypes(_)).getOrElse(UIDSet.empty)
 
             // We have to filter (remove) those interfaces that are directly and indirectly
             // inherited. In this case the potentially(!) correct method is defined by the interface
@@ -1430,8 +1439,11 @@ object Project {
                             val declaredMethodContext = MethodDeclarationContext(declaredMethod)
                             // We have to filter multiple methods when we inherit (w.r.t. the
                             // visibility) multiple conflicting methods!
-                            definedMethods =
-                                definedMethods.filterNot(declaredMethodContext.directlyOverrides)
+                            definedMethods = definedMethods.filterNot { mdc ⇒
+                                declaredMethodContext.directlyOverrides(mdc) ||
+                                    mdc.method.isPrivate &&
+                                    declaredMethodContext.method.compare(mdc.method) == 0
+                            }
 
                             // Recall that it is possible to make a method "abstract" again...
                             if (declaredMethod.isNotAbstract) {
@@ -1453,6 +1465,21 @@ object Project {
                                 // first have to propagate it.
                                 staticallyOverriddenInstanceMethods ::=
                                     ((objectType, declaredMethodName, declaredMethodDescriptor))
+                            }
+                        } else if (!declaredMethod.isInitializer) {
+                            // Private methods can be invoked by invokevirtual instructions (and
+                            // invokeinterface for Java 11+). If a call is resolved to a private
+                            // method, it is performed non-virtually, thus private methods
+                            // effectively shadow inherited methods (only possible in code evolution
+                            // scenarios)
+                            val declaredMethodContext = MethodDeclarationContext(declaredMethod)
+                            definedMethods = definedMethods.filter { mdc ⇒
+                                declaredMethodContext.method.compare(mdc.method) != 0
+                            }
+
+                            // Recall that it is possible to make a method "abstract" again...
+                            if (declaredMethod.isNotAbstract) {
+                                definedMethods :&:= declaredMethodContext
                             }
                         }
                     }
@@ -1509,7 +1536,7 @@ object Project {
 
     /**
      * Returns for a given virtual method the set of all non-abstract virtual methods which
-     * overrides it.
+     * override it.
      *
      * This method takes the visibility of the methods and the defining context into consideration.
      *
@@ -1541,14 +1568,14 @@ object Project {
         //
         // 1.   After that the direct superclass is scheduled to be analyzed if all subclasses
         //      are analyzed. The superclass then tests for each overridable method if it is
-        //      overridden in the sublcasses and, if so, looks up the respective sets of overriding
+        //      overridden in the subclasses and, if so, looks up the respective sets of overriding
         //      methods and joins them.
         //      A method is overridden by a subclass if the set of instance methods of the
         //      subclass does not contain the super class' method.
         //
         // 2.   Continue with 1.
 
-        // Stores foreach type the number of subtypes that still need to be processed.
+        // Stores for each type the number of subtypes that still need to be processed.
         val subtypesToProcessCounts = new Array[Int](ObjectType.objectTypesCount)
         classHierarchy.foreachKnownType { objectType ⇒
             val oid = objectType.id
@@ -1924,6 +1951,7 @@ object Project {
 
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
             val sources = OpenHashMap.empty[ObjectType, Source] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
+            val nests = OpenHashMap.empty[ObjectType, ObjectType] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
 
             def processModule(
                 classFile:        ClassFile,
@@ -1956,6 +1984,29 @@ object Project {
                 }
             }
 
+            def processNestInformation(classFile: ClassFile, classType: ObjectType): Unit = {
+                def putNestInfo(member: ObjectType, host: ObjectType): Unit = {
+                    val prevHost = nests.put(member, host)
+                    if (prevHost.isDefined && prevHost.get != host)
+                        handleInconsistentProject(
+                            logContext,
+                            InconsistentProjectException(
+                                s"inconsistent nesting information for class $member, "+
+                                    s"found in nests $host and ${prevHost.get}"+
+                                    "\n\tkeeping the first one."
+                            )
+                        )
+                }
+
+                classFile.attributes.foreach {
+                    case NestHost(hostClassType) ⇒ putNestInfo(classType, hostClassType)
+                    case NestMembers(classes) ⇒
+                        putNestInfo(classType, classType)
+                        classes.foreach(putNestInfo(_, classType))
+                    case _ ⇒
+                }
+            }
+
             def processProjectClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
                 val projectType = classFile.thisType
                 if (classFile.isModuleDeclaration) {
@@ -1980,7 +2031,8 @@ object Project {
                     }
                     projectFieldsCount += classFile.fields.size
                     objectTypeToClassFile(projectType) = classFile
-                    source.foreach(sources(classFile.thisType) = _)
+                    source.foreach(sources(projectType) = _)
+                    processNestInformation(classFile, projectType)
                 }
             }
 
@@ -2049,6 +2101,7 @@ object Project {
                     libraryFieldsCount += libClassFile.fields.size
                     objectTypeToClassFile(libraryType) = libClassFile
                     sources(libraryType) = source
+                    processNestInformation(libClassFile, libraryType)
                 }
             }
 
@@ -2087,6 +2140,10 @@ object Project {
 
             val MethodHandleSubtypes = {
                 classHierarchy.allSubtypes(ObjectType.MethodHandle, reflexive = true)
+            }
+
+            val VarHandleSubtypes = {
+                classHierarchy.allSubtypes(ObjectType.VarHandle, reflexive = true)
             }
 
             val classFilesCount: Int = projectClassFilesCount + libraryClassFilesCount
@@ -2137,6 +2194,7 @@ object Project {
                 libraryFieldsCount,
                 codeSize,
                 MethodHandleSubtypes,
+                VarHandleSubtypes,
                 classFilesCount,
                 methodsCount,
                 fieldsCount,
@@ -2149,7 +2207,8 @@ object Project {
                 virtualMethodsCount,
                 classHierarchy,
                 Await.result(instanceMethodsFuture, Duration.Inf),
-                Await.result(overridingMethodsFuture, Duration.Inf)
+                Await.result(overridingMethodsFuture, Duration.Inf),
+                nests
             )
 
             time {

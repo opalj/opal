@@ -42,16 +42,14 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
         val cfo = project.classFile(dm.declaringClassType)
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(dm.declaringClassType, dm.name, dm.descriptor)
-            else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
-                project.virtualCall(
-                    dm.definedMethod.classFile.thisType.packageName,
+                project.interfaceCall(
+                    dm.declaringClassType,
                     dm.declaringClassType,
                     dm.name,
                     dm.descriptor
                 )
             else project.virtualCall(
-                "" /* package is irrelevant, must be public interface methods */ ,
+                dm.declaringClassType,
                 dm.declaringClassType,
                 dm.name,
                 dm.descriptor

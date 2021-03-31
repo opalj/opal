@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.opalj.fpcf.fixtures.NilProperty
 import org.opalj.fpcf.fixtures.Palindromes.NoPalindrome
 import org.opalj.fpcf.fixtures.Palindromes.Palindrome
 
-class PropertyComputationResultsTest extends FunSuite {
+class PropertyComputationResultsTest extends AnyFunSuite {
 
     test("the ids of the different types of results are different") {
         val resultTypeIds =
@@ -27,7 +27,7 @@ class PropertyComputationResultsTest extends FunSuite {
 
 }
 
-class NoResultTest extends FunSuite {
+class NoResultTest extends AnyFunSuite {
 
     test("a NoResult is not a proper result") {
         val r: PropertyComputationResult = NoResult
@@ -44,7 +44,7 @@ class NoResultTest extends FunSuite {
 
 }
 
-class ResultTest extends FunSuite {
+class ResultTest extends AnyFunSuite {
 
     test("a Result is a proper result") {
         val r: PropertyComputationResult = Result(new Object, NilProperty)
@@ -64,7 +64,7 @@ class ResultTest extends FunSuite {
 
 }
 
-class MultiResultTest extends FunSuite {
+class MultiResultTest extends AnyFunSuite {
 
     test("a MultiResult is a proper result") {
         val r: PropertyComputationResult = MultiResult(List(FinalEP(new Object, NilProperty)))
@@ -84,7 +84,7 @@ class MultiResultTest extends FunSuite {
 
 }
 
-class InterimResultTest extends FunSuite {
+class InterimResultTest extends AnyFunSuite {
 
     test("an InterimResult with an upper bound is a proper result") {
         val r: PropertyComputationResult =
@@ -169,7 +169,7 @@ class InterimResultTest extends FunSuite {
     // TODO test the Debug functionality...
 }
 
-class PartialResultTest extends FunSuite {
+class PartialResultTest extends AnyFunSuite {
     test("a PartialResult is a proper result") {
         val r: PropertyComputationResult = PartialResult(new Object, NilProperty.key, null)
         assert(r.isInstanceOf[ProperPropertyComputationResult])
@@ -192,7 +192,7 @@ class PartialResultTest extends FunSuite {
     }
 }
 
-class InterimPartialResultTest extends FunSuite {
+class InterimPartialResultTest extends AnyFunSuite {
     test("an InterimPartialResult is a proper result") {
         val dependees: Set[SomeEOptionP] = Set(EPK(new Object, NilProperty.key))
         val r: PropertyComputationResult = InterimPartialResult(dependees, _ ⇒ ???)

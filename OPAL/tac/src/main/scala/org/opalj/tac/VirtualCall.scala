@@ -41,9 +41,9 @@ trait VirtualCall[+V <: Var[V]] { this: Call[V] ⇒
             import p.classHierarchy.joinReferenceTypesUntilSingleUpperBound
             val receiverType = joinReferenceTypesUntilSingleUpperBound(receiverValue.upperTypeBound)
             if (isInterface) {
-                p.interfaceCall(receiverType.asObjectType, name, descriptor)
+                p.interfaceCall(callingContext, receiverType.asObjectType, name, descriptor)
             } else {
-                p.virtualCall(callingContext.packageName, receiverType, name, descriptor)
+                p.virtualCall(callingContext, receiverType, name, descriptor)
             }
         }
     }

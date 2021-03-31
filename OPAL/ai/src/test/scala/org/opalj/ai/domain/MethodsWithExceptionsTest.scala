@@ -4,9 +4,9 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.collection.immutable.LongMap
 
@@ -24,7 +24,7 @@ import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
  * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsWithExceptionsTest extends FlatSpec with Matchers {
+class MethodsWithExceptionsTest extends AnyFlatSpec with Matchers {
 
     import MethodsWithExceptionsTest._
 
@@ -43,6 +43,7 @@ class MethodsWithExceptionsTest extends FlatSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultReferenceValuesBinding
         /* => */ with RecordLastReturnedValues
         /* => */ with RecordAllThrownExceptions

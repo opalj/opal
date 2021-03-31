@@ -3,8 +3,8 @@ package org.opalj
 package br
 package analyses
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -14,7 +14,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  *
  * @author Michael Eichberg
  */
-class StringConstantsInformationKeyTest extends FlatSpec with Matchers {
+class StringConstantsInformationKeyTest extends AnyFlatSpec with Matchers {
 
     val stringsArchive = locateTestResources("strings.jar", "bi")
     val stringsProject = Project(ClassFiles(stringsArchive))

@@ -226,7 +226,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
         override def violations(): ASet[SpecificationViolation] = {
             val sourceEnsembleElements =
-                (Set[VirtualSourceElement]() /: sourceEnsembles)(_ ++ ensembles(_)._2)
+                sourceEnsembles.foldLeft(Set[VirtualSourceElement]())(_ ++ ensembles(_)._2)
             val (_, targetEnsembleElements) = ensembles(targetEnsemble)
             for {
                 targetEnsembleElement ← targetEnsembleElements
@@ -285,7 +285,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
             val (_ /*ensembleName*/ , sourceEnsembleElements) = ensembles(sourceEnsemble)
             val notAllowedTargetSourceElements =
-                (Set.empty[VirtualSourceElement] /: targetEnsembles)(_ ++ ensembles(_)._2)
+                targetEnsembles.foldLeft(Set.empty[VirtualSourceElement])(_ ++ ensembles(_)._2)
 
             for {
                 sourceElement ← sourceEnsembleElements
@@ -354,7 +354,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             val allAllowedLocalTargetSourceElements =
                 // self references are allowed as well as references to source elements belonging
                 // to a target ensemble
-                (sourceEnsembleElements /: targetEnsembles)(_ ++ ensembles(_)._2)
+                targetEnsembles.foldLeft(sourceEnsembleElements)(_ ++ ensembles(_)._2)
 
             for {
                 sourceElement ← sourceEnsembleElements
@@ -556,7 +556,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             val allLocalTargetSourceElements =
                 // self references are allowed as well as references to source elements belonging
                 // to a target ensemble
-                (sourceEnsembleElements /: targetEnsembles)(_ ++ spec.ensembles(_)._2)
+                targetEnsembles.foldLeft(sourceEnsembleElements)(_ ++ spec.ensembles(_)._2)
 
             for {
                 sourceElement ← sourceEnsembleElements
@@ -703,7 +703,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 if (extension.isEmpty)
                     "/* NO ELEMENTS */ "
                 else {
-                    (("\n\t//"+extension.head.toString+"\n") /: extension.tail)((s, vse) ⇒ s+"\t//"+vse.toJava+"\n")
+                    extension.tail.foldLeft("\n\t//"+extension.head.toString+"\n")((s, vse) ⇒ s+"\t//"+vse.toJava+"\n")
                 }
             }+"}"
     }

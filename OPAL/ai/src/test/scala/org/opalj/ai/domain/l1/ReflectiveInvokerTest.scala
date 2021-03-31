@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 import br._
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
@@ -20,7 +20,7 @@ import org.opalj.collection.immutable.RefArray
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ReflectiveInvokerTest extends FlatSpec with Matchers {
+class ReflectiveInvokerTest extends AnyFlatSpec with Matchers {
 
     private[this] val IrrelevantPC = Int.MinValue
 
@@ -36,6 +36,7 @@ class ReflectiveInvokerTest extends FlatSpec with Matchers {
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         //    with DefaultStringValuesBinding
         with l1.DefaultClassValuesBinding
         with l1.DefaultArrayValuesBinding

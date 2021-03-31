@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.collection.mutable
 
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 /**
@@ -12,7 +12,7 @@ import org.junit.runner.RunWith
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class RefAccumulatorTest extends FlatSpec with Matchers {
+class RefAccumulatorTest extends AnyFlatSpec with Matchers {
 
     behavior of "the RefAccumulator data structure"
 

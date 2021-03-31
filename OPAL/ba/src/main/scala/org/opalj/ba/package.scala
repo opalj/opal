@@ -53,6 +53,7 @@ import org.opalj.bi.ConstantPoolTags.CONSTANT_MethodType_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_InvokeDynamic_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Module_ID
 import org.opalj.bi.ConstantPoolTags.CONSTANT_Package_ID
+import org.opalj.bi.ConstantPoolTags.CONSTANT_Dynamic_ID
 import org.opalj.br.Attribute
 import org.opalj.br.Code
 import org.opalj.br.ObjectType
@@ -462,6 +463,11 @@ package object ba { ba ⇒
 
                             case LoadMethodHandle_W(value) ⇒ CPEMethodHandle(value, false)
                             case LoadMethodType_W(value)   ⇒ CPEMethodType(value, false)
+
+                            case LoadDynamic_W(bootstrapMethod, name, descriptor) ⇒
+                                CPEDynamic(bootstrapMethod, name, descriptor, false)
+                            case INCOMPLETE_LDC_W ⇒
+                                throw ConstantPoolException("incomplete LDC_W")
                         }
                     )
 
@@ -469,6 +475,12 @@ package object ba { ba ⇒
                     i match {
                         case LoadLong(value)   ⇒ instructions.writeShort(CPELong(value))
                         case LoadDouble(value) ⇒ instructions.writeShort(CPEDouble(value))
+
+                        case LoadDynamic2_W(bootstrapMethod, name, descriptor) ⇒
+                            instructions.writeShort(
+                                CPEDynamic(bootstrapMethod, name, descriptor, false)
+                            )
+                        case INCOMPLETE_LDC2_W ⇒ throw ConstantPoolException("incomplete LDC2_W")
                     }
 
                 case INVOKEDYNAMIC.opcode ⇒
@@ -1052,7 +1064,7 @@ package object ba { ba ⇒
                 Some(da.ModuleMainClass_attribute(attributeNameIndex, mainClassIndex))
 
             case br.ModulePackages.KindId ⇒
-                val br.ModulePackages(packages /*:IndexedSeq[Sgring]*/ ) = attribute
+                val br.ModulePackages(packages /*:IndexedSeq[String]*/ ) = attribute
                 val attributeNameIndex = CPEUtf8(bi.ModulePackagesAttribute.Name)
                 Some(da.ModulePackages_attribute(attributeNameIndex, packages.map(CPEPackage _)))
 
@@ -1090,6 +1102,18 @@ package object ba { ba ⇒
                                 CPEClass(withInterface, false)): IntArray
                         ))
                 ))
+
+            case br.NestHost.KindId ⇒
+                val br.NestHost(hostClassType /*:ObjectType*/ ) = attribute
+                val attributeNameIndex = CPEUtf8(bi.NestHostAttribute.Name)
+                val hostClassIndex = CPEClass(hostClassType, false)
+                Some(da.NestHost_attribute(attributeNameIndex, hostClassIndex))
+
+            case br.NestMembers.KindId ⇒
+                val br.NestMembers(classes /*:IndexedSeq[ObjectType]*/ ) = attribute
+                val attributeNameIndex = CPEUtf8(bi.NestMembersAttribute.Name)
+                val classIndices = classes.map(CPEClass(_, false))
+                Some(da.ModulePackages_attribute(attributeNameIndex, classIndices))
 
             //
             // OPAL'S OWN ATTRIBUTES
@@ -1194,6 +1218,10 @@ package object ba { ba ⇒
                     case CONSTANT_Package_ID ⇒
                         val CONSTANT_Package_info(nameIndex) = cpEntry
                         da.CONSTANT_Package_info(nameIndex)
+
+                    case CONSTANT_Dynamic_ID ⇒
+                        val CONSTANT_Dynamic_info(bootstrapIndex, nameAndTypeIndex) = cpEntry
+                        da.CONSTANT_Dynamic_info(bootstrapIndex, nameAndTypeIndex)
 
                 }
             }
