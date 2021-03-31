@@ -337,10 +337,11 @@ object MetaEntryPointsFinder
  * @author Dominik Helm
  */
 object AllEntryPointsFinder extends EntryPointFinder {
+    final val ConfigKey =
+        InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
+
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
-        val projectMethodsOnlyConfigKey =
-            InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
-        if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
+        if (project.config.as[Boolean](ConfigKey))
             project.allProjectClassFiles.flatMap(_.methodsWithBody)
         else project.allMethodsWithBody
     }
