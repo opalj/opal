@@ -10,6 +10,7 @@ import org.scalatestplus.junit.JUnitRunner
 import java.util.concurrent.atomic.AtomicInteger
 
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.log.GlobalLogContext
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.Project
@@ -22,7 +23,7 @@ import org.opalj.ai.Domain
 import org.opalj.ai.domain.l0.BaseDomain
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.instructions.WIDE
-import org.opalj.br.reader.InvokedynamicRewriting.StringConcatNameRegEx
+import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
 
 /**
  * Test that code with rewritten `invokedynamic` instructions is still valid bytecode.
@@ -88,7 +89,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             if instructions.exists {
                 case i: INVOKESTATIC ⇒
                     i.declaringClass.fqn.matches(LambdaNameRegEx) ||
-                        i.name.matches(StringConcatNameRegEx)
+                        i.name.matches(TargetMethodNameRegEx)
                 case _ ⇒ false
             }
         } {
@@ -141,6 +142,25 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                 val verifiedMethodsCount =
                     testProject(stringConcat, (p, m) ⇒ BaseDomain(p, m)) +
                         testProject(stringConcat, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                info(s"interpreted ${verifiedMethodsCount / 2} methods")
+            }
+        }
+
+        describe("testing the rewritten methods of the java16records test project") {
+            val recordsJarName = "java16records-g-16-parameters-genericsignature.jar"
+            val recordsJar = locateTestResources(recordsJarName, "bi")
+            val config = InvokedynamicRewriting.defaultConfig(
+                rewrite = true,
+                logRewrites = false
+            ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
+            val records = Project(recordsJar, GlobalLogContext, config)
+            info(records.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
+
+            it("should be able to perform abstract interpretation of rewritten Java 16 record"+
+                " methods in the java16records test project") {
+                val verifiedMethodsCount =
+                    testProject(records, (p, m) ⇒ BaseDomain(p, m)) +
+                        testProject(records, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
                 info(s"interpreted ${verifiedMethodsCount / 2} methods")
             }
         }

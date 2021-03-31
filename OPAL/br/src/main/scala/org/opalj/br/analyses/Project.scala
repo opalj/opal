@@ -51,8 +51,8 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java11FrameworkWithCaching
-import org.opalj.br.reader.Java9LibraryFramework
+import org.opalj.br.reader.Java16FrameworkWithDynamicRewritingAndCaching
+import org.opalj.br.reader.Java16LibraryFramework
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -1075,7 +1075,7 @@ class Project[Source] private (
  */
 object Project {
 
-    lazy val JavaLibraryClassFileReader: Java9LibraryFramework.type = Java9LibraryFramework
+    lazy val JavaLibraryClassFileReader: Java16LibraryFramework.type = Java16LibraryFramework
 
     @volatile private[this] var theCache: SoftReference[BytecodeInstructionsCache] = {
         new SoftReference(new BytecodeInstructionsCache)
@@ -1098,12 +1098,12 @@ object Project {
         implicit
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
-    ): Java11FrameworkWithCaching = {
+    ): Java16FrameworkWithDynamicRewritingAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig
-        } with Java11FrameworkWithCaching(cache)
+        } with Java16FrameworkWithDynamicRewritingAndCaching(cache)
         new ConfiguredFramework
     }
 

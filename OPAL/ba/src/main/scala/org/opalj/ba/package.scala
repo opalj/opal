@@ -1115,6 +1115,20 @@ package object ba { ba ⇒
                 val classIndices = classes.map(CPEClass(_, false))
                 Some(da.ModulePackages_attribute(attributeNameIndex, classIndices))
 
+            case br.Record.KindId ⇒
+                val br.Record(components) = attribute
+                val attributeNameIndex = CPEUtf8(bi.RecordAttribute.Name)
+                Some(da.Record_attribute(
+                    attributeNameIndex,
+                    components.map[da.RecordComponent] { c ⇒
+                        da.RecordComponent(
+                            CPEUtf8(c.name),
+                            CPEUtf8(c.componentType.toJVMTypeName),
+                            c.attributes.map { a ⇒ toDA(a).get }
+                        )
+                    }
+                ))
+
             //
             // OPAL'S OWN ATTRIBUTES
             //
