@@ -223,7 +223,7 @@ class FieldLocalityAnalysis private[analyses] (
         val field = state.field
         val fieldName = field.name
         val fieldType = field.fieldType
-        val index = tacai.pcToIndex(pc)
+        val index = tacai.properStmtIndexForPC(pc)
 
         if (index < 0)
             return true; // access is dead
@@ -710,13 +710,13 @@ final case class DefinitionSiteWithoutPutField(
     override def usedBy[V <: ValueInformation](
         tacode: TACode[TACMethodParameter, DUVar[V]]
     ): IntTrieSet = {
-        val defSite = tacode.pcToIndex(pc)
+        val defSite = tacode.properStmtIndexForPC(pc)
         if (defSite == -1) {
             // the code is dead
             IntTrieSet.empty
         } else {
             val Assignment(_, dvar, _) = tacode.stmts(defSite)
-            dvar.usedBy - tacode.pcToIndex(putFieldPC)
+            dvar.usedBy - tacode.properStmtIndexForPC(putFieldPC)
         }
     }
 }

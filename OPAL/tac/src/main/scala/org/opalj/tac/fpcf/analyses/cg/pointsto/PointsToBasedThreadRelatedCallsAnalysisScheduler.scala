@@ -69,10 +69,13 @@ trait PointsToBasedThreadStartAnalysis
     ): ProperPropertyComputationResult = {
         val indirectCalls = new IndirectCalls()
 
-        implicit val state: State = new PointsToBasedCGState[PointsToSet](caller, FinalEP(caller.definedMethod, TheTACAI(tac)))
+        implicit val state: State = new PointsToBasedCGState[PointsToSet](
+            caller, FinalEP(caller.definedMethod, TheTACAI(tac))
+        )
 
         if (isDirect) {
-            val receiver = tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
+            val receiver =
+                tac.stmts(state.tac.properStmtIndexForPC(pc)).asInstanceMethodCall.receiver
             handleStart(caller, receiver, pc, indirectCalls)
         } else
             indirectCalls.addIncompleteCallSite(pc)
@@ -108,8 +111,9 @@ trait PointsToBasedThreadStartAnalysis
 
                 for (cs ← relevantCallSites) {
                     val pc = cs._1
-                    val receiver =
-                        state.tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
+                    val receiver = state.tac.stmts(
+                        state.tac.properStmtIndexForPC(pc)
+                    ).asInstanceMethodCall.receiver
                     ub.forNewestNTypes(ub.numTypes - seenTypes) { newType ⇒
                         val theType = newType.asObjectType
                         handleType(
@@ -172,7 +176,7 @@ trait PointsToBasedThreadStartAnalysis
             pc,
             "start",
             MethodDescriptor.NoArgsAndReturnVoid,
-            state.tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.declaringClass
+            state.tac.stmts(state.tac.properStmtIndexForPC(pc)).asInstanceMethodCall.declaringClass
         )
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
