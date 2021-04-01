@@ -112,10 +112,9 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val method:        Method,
             val definedMethod: DeclaredMethod,
             val declClass:     ObjectType,
-            var pcToIndex:     Array[Int]     = Array.empty,
-            var code:          Array[Stmt[V]] = Array.empty,
-            var lbPurity:      Purity         = CompileTimePure,
-            var ubPurity:      Purity         = CompileTimePure
+            var tac:           TACode[TACMethodParameter, V] = null,
+            var lbPurity:      Purity                        = CompileTimePure,
+            var ubPurity:      Purity                        = CompileTimePure
     ) extends AnalysisState {
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
 
@@ -247,9 +246,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             if (eps.isFinal) tacai = None
             else tacai = Some(eps)
             if (eps.hasUBP && eps.ub.tac.isDefined) {
-                val tac = eps.ub.tac.get
-                pcToIndex = tac.pcToIndex
-                code = tac.stmts
+                tac = eps.ub.tac.get
             }
         }
     }
@@ -382,7 +379,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             return treatParamsAsFresh;
         }
 
-        val stmt = state.code(defSite)
+        val stmt = state.tac.stmts(defSite)
         assert(stmt.astID == Assignment.ASTID, "defSite should be assignment")
 
         val rhs = stmt.asAssignment.expr
@@ -852,10 +849,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             if (state.method.isStatic) return Result(state.definedMethod, ImpureByAnalysis);
             else atMost(ContextuallyPure(IntTrieSet(0)))
 
-        val stmtCount = state.code.length
+        val stmtCount = state.tac.stmts.length
         var s = 0
         while (s < stmtCount) {
-            if (!checkPurityOfStmt(state.code(s))) { // Early return for impure statements
+            if (!checkPurityOfStmt(state.tac.stmts(s))) { // Early return for impure statements
                 assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
                 return Result(state.definedMethod, state.ubPurity);
             }
@@ -882,7 +879,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         } {
             val pc = bb.asBasicBlock.endPC
             if (isSourceOfImmediateException(pc)) {
-                val throwingStmt = state.code(pc)
+                val throwingStmt = state.tac.stmts(pc)
                 val ratedResult = rater.handleException(throwingStmt)
                 if (ratedResult.isDefined) atMost(ratedResult.get)
                 else atMost(SideEffectFree)

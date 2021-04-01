@@ -274,10 +274,10 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         while (writesIterator.hasNext && allInitializeConstant) {
             val (method, pc) = writesIterator.next()
             constructors -= method
-            val code = tacai(method).stmts
+            val tac = tacai(method)
 
-            val index = pcToIndex(pc)
-            val stmt = code(index)
+            val index = tac.properInstructionIndexForPC(pc)
+            val stmt = tac.stmts(index)
             if (stmt.astID == PutStatic.ASTID ||
                 stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter) {
                 val write = stmt.asFieldWriteAccessStmt
@@ -393,10 +393,11 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         writeIndex:   Int,
         defaultValue: Any,
         method:       Method,
-        code:         Array[Stmt[V]],
-        cfg:          CFG[Stmt[V], TACStmts[V]],
-        pcToIndex:    Array[Int]
+        tac:          TACode[TACMethodParameter, V]
     )(implicit state: State): Boolean = {
+        val code = tac.stmts
+        val cfg = tac.cfg
+
         val write = code(writeIndex).asFieldWriteAccessStmt
 
         if (state.field.fieldType.computationalType != ComputationalTypeInt &&
@@ -431,7 +432,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
         // Field reads (except for the guard) may only be executed if the field's value is not the
         // default value
-        if (!checkReads(reads, readIndex, guardedIndex, writeIndex, cfg, pcToIndex))
+        if (!checkReads(reads, readIndex, guardedIndex, writeIndex, tac))
             return false;
 
         true
@@ -525,7 +526,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         val field = state.field
         val stmts = taCode.stmts
         for (pc ← pcs) {
-            val index = taCode.pcToIndex(pc)
+            val index = taCode.properStmtIndexForPC(pc)
             if (index >= 0) {
                 val stmt = stmts(index)
                 if (stmt.pc == pc) {
@@ -564,9 +565,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                                         index,
                                         defaultValue.get,
                                         method,
-                                        taCode.stmts,
-                                        taCode.cfg,
-                                        taCode.pcToIndex
+                                        taCode
                                     ))
                                         return true;
 
@@ -805,14 +804,13 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         readIndex:    Int,
         guardedIndex: Int,
         writeIndex:   Int,
-        cfg:          CFG[Stmt[V], TACStmts[V]],
-        pcToIndex:    Array[Int]
+        tac:          TACode[TACMethodParameter, V]
     ): Boolean = {
         // There is only a single method with reads aside from initializers (checked by
         // isLazilyInitialized), so we have to check only reads from that one method.
         reads.filter(!_._1.isInitializer).head._2 forall { readPC ⇒
-            val index = pcToIndex(readPC)
-            index != -1 || index == readIndex || checkRead(index, guardedIndex, writeIndex, cfg)
+            val index = tac.properStmtIndexForPC(readPC)
+            index != -1 || index == readIndex || checkRead(index, guardedIndex, writeIndex, tac.cfg)
         }
     }
 

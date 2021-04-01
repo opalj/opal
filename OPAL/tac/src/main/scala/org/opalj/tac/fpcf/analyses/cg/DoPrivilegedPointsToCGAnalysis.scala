@@ -82,7 +82,7 @@ abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
             caller, FinalEP(caller.definedMethod, TheTACAI(tac))
         )
 
-        val StaticFunctionCallStatement(call) = tac.stmts(tac.pcToIndex(pc))
+        val StaticFunctionCallStatement(call) = tac.stmts(tac.properStmtIndexForPC(pc))
 
         val actualParamDefSites = call.params.head.asVar.definedBy
 
