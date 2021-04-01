@@ -98,8 +98,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val method:        Method,
             val definedMethod: DeclaredMethod,
             val declClass:     ObjectType,
-            var pcToIndex:     Array[Int]                      = Array.empty,
-            var code:          Array[Stmt[V]]                  = Array.empty,
+            var tac:           TACode[TACMethodParameter, V]   = null,
             var lbPurity:      Purity                          = Pure,
             var ubPurity:      Purity                          = Pure
     ) extends AnalysisState
@@ -129,7 +128,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val defSites = expr.asVar.definedBy -- excludedDefSites
             if (defSites.forall { defSite ⇒
                 if (defSite >= 0) {
-                    val rhs = state.code(defSite).asAssignment.expr
+                    val rhs = state.tac.stmts(defSite).asAssignment.expr
                     if (rhs.isConst)
                         true
                     else {
@@ -236,9 +235,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (ep.isRefinable)
             state.dependees += ep
         if (ep.hasUBP && ep.ub.tac.isDefined) {
-            val tac = ep.ub.tac.get
-            state.pcToIndex = tac.pcToIndex
-            state.code = tac.stmts
+            state.tac = ep.ub.tac.get
         }
     }
 
@@ -331,10 +328,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
         }
 
-        val stmtCount = state.code.length
+        val stmtCount = state.tac.stmts.length
         var s = 0
         while (s < stmtCount) {
-            if (!checkPurityOfStmt(state.code(s))) // Early return for impure statements
+            if (!checkPurityOfStmt(state.tac.stmts(s))) // Early return for impure statements
                 return Result(state.definedMethod, state.ubPurity)
             s += 1
         }
@@ -351,7 +348,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             pc = bb.asBasicBlock.endPC
             if isSourceOfImmediateException(pc)
         } {
-            val throwingStmt = state.code(pc)
+            val throwingStmt = state.tac.stmts(pc)
             val ratedResult = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(SideEffectFree)

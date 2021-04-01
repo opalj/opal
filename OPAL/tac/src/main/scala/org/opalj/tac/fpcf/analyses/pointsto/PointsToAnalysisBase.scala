@@ -98,7 +98,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     )(implicit state: State): ReferenceType ⇒ Boolean = {
         if (checkForCast) {
             val tac = state.tac
-            val index = tac.pcToIndex(pc)
+            val index = tac.properStmtIndexForPC(pc)
             val nextStmt = tac.stmts(index + 1)
             nextStmt match {
                 case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒

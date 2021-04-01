@@ -133,7 +133,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             // that case should not happen
             case Assignment(pc, DVar(_: IsReferenceValue, _), UVar(_, defSites)) ⇒
                 val defSiteObject = definitionSites(method, pc)
-                val index = tac.pcToIndex(pc)
+                val index = tac.properStmtIndexForPC(pc)
                 val nextStmt = tac.stmts(index + 1)
                 val filter = nextStmt match {
                     case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒ t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
@@ -175,7 +175,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 val defSiteObject = definitionSites(method, pc)
 
                 if (call.descriptor.returnType.isReferenceType) {
-                    val index = tac.pcToIndex(pc)
+                    val index = tac.properStmtIndexForPC(pc)
                     val nextStmt = tac.stmts(index + 1)
                     val filter = nextStmt match {
                         case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
@@ -418,7 +418,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     handleCallReceiver(receiverDefSites, target, isNonVirtualCall = false)
                 } else if (target.name == "<init>") {
                     handleCallReceiver(
-                        IntTrieSet(tac.pcToIndex(pc)), target, isNonVirtualCall = false
+                        IntTrieSet(tac.properStmtIndexForPC(pc)),
+                        target,
+                        isNonVirtualCall = false
                     )
                 } else {
                     // TODO distinguish between static methods and unavailable info
@@ -528,14 +530,15 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     target ← targets
                 } {
                     if (!oldCallees.containsDirectCall(pc, target)) {
-                        val call = tac.stmts(tac.pcToIndex(pc)) match {
+                        val call = tac.stmts(tac.properStmtIndexForPC(pc)) match {
                             case call: Call[DUVar[ValueInformation]] @unchecked ⇒
                                 call
                             case Assignment(_, _, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
                                 call
                             case ExprStmt(_, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
                                 call
-                            case e ⇒ throw new IllegalArgumentException(s"unexpected stmt $e")
+                            case e ⇒
+                                throw new IllegalArgumentException(s"unexpected stmt $e")
                         }
                         handleDirectCall(call, pc, target)(state)
                     }

@@ -83,6 +83,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def isNonVirtualMethodCall: Boolean = false
     def isVirtualMethodCall: Boolean = false
     def isStaticMethodCall: Boolean = false
+    def isCaughtException: Boolean = false
 
 }
 
@@ -1106,6 +1107,7 @@ case class CaughtException[+V <: Var[V]](
         private var throwingStmts: IntTrieSet
 ) extends Stmt[V] {
 
+    final override def isCaughtException: Boolean = true
     final override def asCaughtException: CaughtException[V] = this
     final override def astID: Int = CaughtException.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true
