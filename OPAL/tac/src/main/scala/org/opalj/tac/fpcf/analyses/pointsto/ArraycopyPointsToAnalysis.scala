@@ -73,7 +73,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] ( final val project: 
         val targetArr = params(2)
 
         if (sourceArr.isDefined && targetArr.isDefined) {
-            val index = tac.pcToIndex(pc)
+            val index = tac.properStmtIndexForPC(pc)
 
             handleArrayLoad(
                 ArrayType.ArrayOfObject, pc, sourceArr.get.asVar.definedBy, checkForCast = false

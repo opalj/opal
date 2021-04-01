@@ -1060,8 +1060,8 @@ object ObjectType {
     @volatile private[this] var objectTypes: Array[ObjectType] = new Array[ObjectType](0)
 
     private[this] def updateObjectTypes(): Unit = {
-        if (nextId.get >= objectTypes.length) {
-            val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get + 1)
+        if (nextId.get > objectTypes.length) {
+            val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get)
             cacheRWLock.readLock().lock()
             try {
                 cache.values.forEach { wot ⇒
