@@ -299,10 +299,12 @@ sealed class ConcreteCallees(
             _incompleteCallSites ++ incompleteCallSites,
             _indirectCallReceivers.unionWith(
                 indirectCallReceivers,
-                (_, r, l) ⇒ {
+                (_, l, r) ⇒ {
                     r.unionWith(
                         l,
-                        (_, _, _) ⇒ throw new UnknownError("Indirect callee derived by two analyses")
+                        (_, vl, vr) ⇒
+                            if (vl == vr) vl
+                            else throw new UnknownError("Incompatible receivers for indirect call")
                     )
                 }
             ),
@@ -311,7 +313,9 @@ sealed class ConcreteCallees(
                 (_, r, l) ⇒ {
                     r.unionWith(
                         l,
-                        (_, _, _) ⇒ throw new UnknownError("Indirect callee derived by two analyses")
+                        (_, vl, vr) ⇒
+                            if (vl == vr) vl
+                            else throw new UnknownError("Incompatible parameters for indirect call")
                     )
                 }
             )

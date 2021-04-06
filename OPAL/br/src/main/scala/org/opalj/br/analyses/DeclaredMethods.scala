@@ -86,7 +86,7 @@ class DeclaredMethods(
                 if (!dmSet.contains(context)) {
                     val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter)
                     idCounter += 1
-                    dmSet.put(new MethodContext(name, descriptor), vm)
+                    dmSet.put(MethodContext(p, runtimeType, "", name, descriptor, false), vm)
                     if (id2method.size <= vm.id) {
                         implicit val logContext: LogContext = p.logContext
                         info(

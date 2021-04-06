@@ -139,7 +139,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case i @ INVOKESTATIC(ClassT, false, "forName", ForName1MD | ForName3MD) ⇒ i
             }
         } {
-            val TACode(_, stmts, pcToIndex, _, _) = try {
+            val tac = try {
                 tacai(method)
             } catch {
                 case e: Exception ⇒
@@ -151,11 +151,11 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             val l = InstructionLocation(methodLocation, pc)
 
             if (pcAndInstruction.value.isMethodInvocationInstruction) {
-                implicit val body: Array[Stmt[V]] = stmts
+                implicit val body: Array[Stmt[V]] = tac.stmts
 
-                val index = pcToIndex(pc)
+                val index = tac.properStmtIndexForPC(pc)
                 if (index != -1) {
-                    val stmt = stmts(index)
+                    val stmt = tac.stmts(index)
 
                     val call =
                         if (stmt.astID == Assignment.ASTID) stmt.asAssignment.expr.asFunctionCall
@@ -482,9 +482,10 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             if (invokes.isEmpty) {
                 false
             } else {
-                val TACode(_, stmts, pcToIndex, _, _) = tacai(method)
+                val tac = tacai(method)
+                val stmts = tac.stmts
                 invokes.exists { pcAndInvocation ⇒
-                    val stmt = stmts(pcToIndex(pcAndInvocation.pc))
+                    val stmt = stmts(tac.properStmtIndexForPC(pcAndInvocation.pc))
                     val call =
                         if (stmt.astID == Assignment.ASTID)
                             stmt.asAssignment.expr.asVirtualFunctionCall

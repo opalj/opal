@@ -5,6 +5,9 @@ package fpcf
 package analyses
 package cg
 
+import java.net.URL
+
+import com.typesafe.config.ConfigFactory
 import org.junit.runner.RunWith
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -16,13 +19,17 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.TestSupport.allBIProjects
+import org.opalj.br.analyses.cg.ClassExtensibilityKey
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.fpcf.PropertyStoreKey
+import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraph
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -30,88 +37,104 @@ import org.opalj.tac.cg.RTACallGraphKey
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
 class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
-    /*allBIProjects() foreach { biProject ⇒
-        val (name, projectFactory) = biProject
-        val project = projectFactory()
+    // These projects have millions of CG edges, ignore them to keep test times reasonable
+    val ignoredProjects = List(
+        "lecturedoc_2.10-0.0.0-one-jar.jar",
+        "OPAL-MultiJar-SNAPSHOT-01-04-2018-dependencies",
+        "scala-2.12.4"
+    )
 
-        checkProject(
-            name,
-            Project.recreate(project, ConfigFactory.load("LibraryProject.conf"))
-        )
-    }*/
-
-    def checkProject(projectName: String, project: SomeProject): Unit = {
-
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-
-        val chaProject = project.recreate {
-            case DeclaredMethodsKey.uniqueId ⇒ true
-            case _                           ⇒ false
-        }
-        val chaPS = chaProject.get(PropertyStoreKey)
-
-        val rtaProject = project.recreate {
-            case DeclaredMethodsKey.uniqueId ⇒ true
-            case _                           ⇒ false
-        }
-        val rtaPS = rtaProject.get(PropertyStoreKey)
-
-        /*val pointsToProject = project.recreate {
-            case DeclaredMethodsKey.uniqueId ⇒ true
-            case _                           ⇒ false
-        }
-        val pointsToPS = pointsToProject.get(PropertyStoreKey)
-*/
-        val cha = chaProject.get(CHACallGraphKey)
-        val rta = rtaProject.get(RTACallGraphKey)
-        //val pointsTo = pointsToProject.get(PointsToCallGraphKey)
-
-        behavior of s"the CHA call graph analysis on $projectName"
-        it should s"have matching callers and callees" in {
-            checkBidirectionCallerCallee(chaPS)
+    allBIProjects(
+        config = ConfigFactory.load("LibraryProject.conf")
+    ) foreach { biProject ⇒
+            val (name, projectFactory) = biProject
+            if (!ignoredProjects.contains(name))
+                checkProject(name, projectFactory)
         }
 
-        behavior of s"the RTA call graph analysis on $projectName"
-        it should s"have matching callers and callees" in {
-            checkBidirectionCallerCallee(rtaPS)
-        }
-        it should s"be more precise than the CHA" in {
-            checkMorePrecise(cha, rta)
+    def checkProject(projectName: String, projectFactory: () ⇒ Project[URL]): Unit = {
+
+        behavior of s"the call graph analyses on $projectName"
+
+        var project: Project[URL] = null
+        var declaredMethods: DeclaredMethods = null
+        var cha: CallGraph = null
+        var chaPS: PropertyStore = null
+        var rta: CallGraph = null
+        var rtaPS: PropertyStore = null
+        var pointsTo: CallGraph = null
+
+        it should s"have matching callers and callees for CHA" in {
+            project = projectFactory()
+            declaredMethods = project.get(DeclaredMethodsKey)
+            chaPS = project.get(PropertyStoreKey)
+            cha = project.get(CHACallGraphKey)
+
+            checkBidirectionCallerCallee(chaPS)(declaredMethods)
         }
 
-        /*behavior of s"the points-to call graph analysis on $projectName"
-        it should s"have matching callers and callees" in {
-            checkBidirectionCallerCallee(pointsToPS)
-        }
-        it should s"be more precise than the CHA" in {
-            checkMorePrecise(cha, pointsTo)
-        }
-        it should s"be more precise than the RTA" in {
-            checkMorePrecise(rta, pointsTo)
-        }*/
+        it should s"have matching callers and callees for RTA" in {
+            val rtaProject = project.recreate {
+                case DeclaredMethodsKey.uniqueId | IsOverridableMethodKey.uniqueId |
+                    TypeExtensibilityKey.uniqueId | ClosedPackagesKey.uniqueId |
+                    ClassExtensibilityKey.uniqueId ⇒ true
+                case _ ⇒ false
+            }
+            rtaPS = rtaProject.get(PropertyStoreKey)
+            rta = rtaProject.get(RTACallGraphKey)
 
+            checkBidirectionCallerCallee(rtaPS)(declaredMethods)
+        }
+        it should s"have RTA more precise than CHA" in {
+            checkMorePrecise(cha, rta, chaPS, declaredMethods)
+        }
+
+        it should s"have matching callers and callees for PointsTo" in {
+            val pointsToProject = project.recreate {
+                case DeclaredMethodsKey.uniqueId | IsOverridableMethodKey.uniqueId |
+                    TypeExtensibilityKey.uniqueId | ClosedPackagesKey.uniqueId |
+                    ClassExtensibilityKey.uniqueId ⇒ true
+                case _ ⇒ false
+            }
+            val pointsToPS = pointsToProject.get(PropertyStoreKey)
+            pointsTo = pointsToProject.get(AllocationSiteBasedPointsToCallGraphKey)
+
+            checkBidirectionCallerCallee(pointsToPS)(declaredMethods)
+        }
+        // FIXME This is currently not the case, e.g. we don't have a non-pointsTo DoPrivileged analysis
+        ignore should s"have PointsTo more precise than RTA" in {
+            checkMorePrecise(rta, pointsTo, rtaPS, declaredMethods)
+        }
     }
 
     def checkMorePrecise(
-        lessPreciseCG: CallGraph, morePreciseCG: CallGraph
+        lessPreciseCG:   CallGraph,
+        morePreciseCG:   CallGraph,
+        lessPreciseCGPS: PropertyStore,
+        declaredMethods: DeclaredMethods
     ): Unit = {
         var unexpectedCalls: List[UnexpectedCallTarget] = Nil
         morePreciseCG.reachableMethods().foreach { method ⇒
-            if (lessPreciseCG.callersPropertyOf(method) eq NoCallers)
+            val callersLPCG = lessPreciseCG.callersPropertyOf(method)
+            val callersMPCG = morePreciseCG.callersPropertyOf(method)
+            if ((callersLPCG eq NoCallers) ||
+                callersMPCG.hasVMLevelCallers && !callersLPCG.hasVMLevelCallers)
                 unexpectedCalls ::= UnexpectedCallTarget(method, null, -1)
             val allCalleesMPCG = morePreciseCG.calleesOf(method)
             for {
                 (pc, calleesMPCG) ← allCalleesMPCG
-                calleesLPCG = lessPreciseCG.calleesOf(method, pc).toSet
+                calleesLPCG = lessPreciseCG.calleesPropertyOf(method)
+                if !calleesLPCG.isIncompleteCallSite(pc)(lessPreciseCGPS)
+                allCalleesLPCG = calleesLPCG.callees(pc)(lessPreciseCGPS, declaredMethods).toSet
                 calleeMPCG ← calleesMPCG
-                if !calleesLPCG.contains(calleeMPCG)
+                if !allCalleesLPCG(calleeMPCG)
             } {
                 unexpectedCalls ::= UnexpectedCallTarget(method, calleeMPCG, pc)
             }
         }
 
-        // todo: better output
-        assert(unexpectedCalls.isEmpty, s"found unexpected calls:\n${unexpectedCalls.mkString("\n")}")
+        val hasUnexpectedCalls = unexpectedCalls.nonEmpty
+        assert(!hasUnexpectedCalls, s"found unexpected calls:\n${unexpectedCalls.mkString("\n")}")
     }
 
     case class UnexpectedCallTarget(caller: DeclaredMethod, callee: DeclaredMethod, pc: Int)
@@ -119,7 +142,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
     def checkBidirectionCallerCallee(
         propertyStore: PropertyStore
     )(implicit declaredMethods: DeclaredMethods): Unit = {
-        implicit val ps = propertyStore
+        implicit val ps: PropertyStore = propertyStore
         for {
             FinalEP(dm: DeclaredMethod, callees) ← propertyStore.entities(Callees.key).map(_.asFinal)
             (pc, tgts) ← callees.callSites()

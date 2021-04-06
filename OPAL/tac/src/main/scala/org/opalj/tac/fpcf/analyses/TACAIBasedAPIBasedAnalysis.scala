@@ -48,7 +48,7 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
     )(tacEOptP: SomeEOptionP): ProperPropertyComputationResult = tacEOptP match {
         case UBPS(tac: TheTACAI, isFinal) ⇒
             val theTAC = tac.theTAC
-            val callStmt = theTAC.stmts(theTAC.pcToIndex(pc))
+            val callStmt = theTAC.stmts(theTAC.properStmtIndexForPC(pc))
             val call = retrieveCall(callStmt)
             val tgtVarOpt =
                 if (callStmt.isAssignment)
@@ -83,10 +83,12 @@ trait TACAIBasedAPIBasedAnalysis extends APIBasedAnalysis {
     ): ProperPropertyComputationResult = {
         val tac = tacEPS.ub.tac.get
         val callees = calleesEPS.ub
-        val receiverOption = callees.indirectCallReceiver(pc, apiMethod).map(uVarForDefSites(_, tac.pcToIndex))
-        val params = callees.indirectCallParameters(pc, apiMethod).map(_.map(uVarForDefSites(_, tac.pcToIndex)))
+        val receiverOption =
+            callees.indirectCallReceiver(pc, apiMethod).map(uVarForDefSites(_, tac.pcToIndex))
+        val params =
+            callees.indirectCallParameters(pc, apiMethod).map(_.map(uVarForDefSites(_, tac.pcToIndex)))
 
-        val callStmt = tac.stmts(tac.pcToIndex(pc))
+        val callStmt = tac.stmts(tac.properStmtIndexForPC(pc))
         val tgtVarOpt =
             if (callStmt.isAssignment)
                 Some(callStmt.asAssignment.targetVar)

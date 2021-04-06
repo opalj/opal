@@ -49,7 +49,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             registeredAnalyses(project).flatMap(_.requiredProjectInformation)
     }
 
-    private[this] def registeredAnalyses(project: SomeProject): Seq[FPCFAnalysisScheduler] = {
+    protected[this] def registeredAnalyses(project: SomeProject): Seq[FPCFAnalysisScheduler] = {
         implicit val logContext = project.logContext
         val config = project.config
 
