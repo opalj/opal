@@ -42,15 +42,15 @@ class ThreadStartAnalysis private[analyses] (
         targetVarOption: Option[V],
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
-        val vmReachableMethods = new VMReachableMethods()
+        val indirectCalls = new IndirectCalls()
         implicit val stmts: Array[Stmt[V]] = tac.stmts
 
         if (receiverOption.isDefined)
-            handleStart(caller, stmts, receiverOption.get, pc, vmReachableMethods)
+            handleStart(caller, stmts, receiverOption.get, pc, indirectCalls)
         else
-            vmReachableMethods.addIncompleteCallSite(pc)
+            indirectCalls.addIncompleteCallSite(pc)
 
-        Results(vmReachableMethods.partialResults(caller))
+        Results(indirectCalls.partialResults(caller))
     }
 
     /**
@@ -63,11 +63,11 @@ class ThreadStartAnalysis private[analyses] (
      * updated set.
      */
     private[this] def handleStart(
-        definedMethod:      DefinedMethod,
-        stmts:              Array[Stmt[V]],
-        receiver:           Expr[V],
-        pc:                 Int,
-        vmReachableMethods: VMReachableMethods
+        definedMethod: DefinedMethod,
+        stmts:         Array[Stmt[V]],
+        receiver:      Expr[V],
+        pc:            Int,
+        indirectCalls: IndirectCalls
     ): Unit = {
         // a call to Thread.start will trigger the JVM to later on call Thread.exit()
         val exitMethod = project.specialCall(
@@ -80,12 +80,14 @@ class ThreadStartAnalysis private[analyses] (
 
         addMethod(
             definedMethod,
+            receiver.asVar,
+            stmts,
             exitMethod,
             ObjectType.Thread,
             "exit",
             MethodDescriptor.NoArgsAndReturnVoid,
             pc,
-            vmReachableMethods
+            indirectCalls
         )
 
         // a call to Thread.start will trigger a call to the underlying run method
@@ -102,12 +104,14 @@ class ThreadStartAnalysis private[analyses] (
 
                 addMethod(
                     definedMethod,
+                    receiver.asVar,
+                    stmts,
                     runMethod,
                     receiverType,
                     "run",
                     MethodDescriptor.NoArgsAndReturnVoid,
                     pc,
-                    vmReachableMethods
+                    indirectCalls
                 )
 
                 if (rv.leastUpperType.get == ObjectType.Thread || (
@@ -118,11 +122,11 @@ class ThreadStartAnalysis private[analyses] (
                         stmts,
                         receiver,
                         pc,
-                        vmReachableMethods
+                        indirectCalls
                     )
                 }
             } else {
-                vmReachableMethods.addIncompleteCallSite(pc)
+                indirectCalls.addIncompleteCallSite(pc)
             }
         }
     }
@@ -154,18 +158,18 @@ class ThreadStartAnalysis private[analyses] (
      * updated set.
      */
     private[this] def handleThreadWithRunnable(
-        definedMethod:      DefinedMethod,
-        stmts:              Array[Stmt[V]],
-        receiver:           Expr[V],
-        pc:                 Int,
-        vmReachableMethods: VMReachableMethods
+        definedMethod: DefinedMethod,
+        stmts:         Array[Stmt[V]],
+        receiver:      Expr[V],
+        pc:            Int,
+        indirectCalls: IndirectCalls
     ): Unit = {
         for {
             threadDefSite ← receiver.asVar.definedBy
         } {
             if (threadDefSite < 0) {
                 // the thread is given as a parameter
-                vmReachableMethods.addIncompleteCallSite(pc)
+                indirectCalls.addIncompleteCallSite(pc)
             } else {
                 stmts(threadDefSite) match {
                     case Assignment(_, thread, New(_, _)) ⇒
@@ -178,36 +182,41 @@ class ThreadStartAnalysis private[analyses] (
 
                             // if there is no runnable passed as parameter, we are sound
                             if (indexOfRunnableParameter != -1) {
-                                for (runnableValue ← params(indexOfRunnableParameter).asVar.value.asReferenceValue.allValues) {
+                                val theReceiver = params(indexOfRunnableParameter).asVar
+                                for (runnableValue ← theReceiver.value.asReferenceValue.allValues) {
                                     if (runnableValue.isPrecise) {
                                         addMethod(
                                             definedMethod,
                                             runnableValue,
+                                            theReceiver,
+                                            stmts,
                                             pc,
-                                            vmReachableMethods
+                                            indirectCalls
                                         )
                                     } else {
-                                        vmReachableMethods.addIncompleteCallSite(pc)
+                                        indirectCalls.addIncompleteCallSite(pc)
                                     }
                                 }
                             }
                         }
                     case _ ⇒
                         // the thread object is not newly allocated
-                        vmReachableMethods.addIncompleteCallSite(pc)
+                        indirectCalls.addIncompleteCallSite(pc)
                 }
             }
         }
     }
 
     private[this] def addMethod(
-        definedMethod:      DefinedMethod,
-        receiver:           IsReferenceValue,
-        pc:                 Int,
-        vmReachableMethods: VMReachableMethods
+        definedMethod: DefinedMethod,
+        receiverValue: IsReferenceValue,
+        receiver:      V,
+        stmts:         Array[Stmt[V]],
+        pc:            Int,
+        indirectCalls: IndirectCalls
     ): Unit = {
         val thisType = definedMethod.declaringClassType
-        val preciseType = receiver.leastUpperType.get.asObjectType
+        val preciseType = receiverValue.leastUpperType.get.asObjectType
         val tgt = project.instanceCall(
             thisType,
             preciseType,
@@ -217,12 +226,14 @@ class ThreadStartAnalysis private[analyses] (
 
         addMethod(
             definedMethod,
+            receiver,
+            stmts,
             tgt,
             preciseType,
             "run",
             MethodDescriptor.NoArgsAndReturnVoid,
             pc,
-            vmReachableMethods
+            indirectCalls
         )
     }
 
@@ -236,16 +247,22 @@ class ThreadStartAnalysis private[analyses] (
      * updated set.
      */
     private[this] def addMethod(
-        definedMethod:      DefinedMethod,
-        target:             org.opalj.Result[Method],
-        preciseType:        ObjectType,
-        name:               String,
-        descriptor:         MethodDescriptor,
-        pc:                 Int,
-        vmReachableMethods: VMReachableMethods
+        definedMethod: DefinedMethod,
+        receiver:      V,
+        stmts:         Array[Stmt[V]],
+        target:        org.opalj.Result[Method],
+        preciseType:   ObjectType,
+        name:          String,
+        descriptor:    MethodDescriptor,
+        pc:            Int,
+        indirectCalls: IndirectCalls
     ): Unit = {
+        val persistentReceiver = persistentUVar(receiver)(stmts)
+
         if (target.hasValue) {
-            vmReachableMethods.addVMReachableMethod(declaredMethods(target.value))
+            indirectCalls.addCall(
+                definedMethod, declaredMethods(target.value), pc, Seq.empty, persistentReceiver
+            )
         } else {
             val declTgt = declaredMethods(
                 preciseType,
@@ -257,8 +274,8 @@ class ThreadStartAnalysis private[analyses] (
 
             // also add calls to virtual declared methods (unpresent library methods)
             if (!declTgt.hasSingleDefinedMethod && !declTgt.hasMultipleDefinedMethods) {
-                vmReachableMethods.addIncompleteCallSite(pc)
-                vmReachableMethods.addVMReachableMethod(declTgt)
+                indirectCalls.addIncompleteCallSite(pc)
+                indirectCalls.addCall(definedMethod, declTgt, pc, Seq.empty, persistentReceiver)
             }
         }
     }
@@ -325,7 +342,6 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
         name:               String,
         pc:                 Int,
         vmReachableMethods: VMReachableMethods
-
     ): Unit = {
         val thisType = definedMethod.declaringClassType
         val preciseType = receiver.leastUpperType.get.asObjectType
