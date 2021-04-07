@@ -40,6 +40,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
  * Determines the immutability of a specific type by checking if all subtypes of a specific
@@ -257,6 +258,8 @@ trait L1TypeImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] =
         PropertyBounds.lubs(ClassImmutability, TypeImmutability)
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
 
 }
 

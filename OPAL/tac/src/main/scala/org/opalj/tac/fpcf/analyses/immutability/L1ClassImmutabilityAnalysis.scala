@@ -52,6 +52,7 @@ import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.InterimE
+import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
  *
@@ -408,6 +409,8 @@ trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] =
         PropertyBounds.lubs(ClassImmutability, FieldImmutability) //TypeImmutability, //XXX
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq()
 
     override type InitializationData = TraversableOnce[ClassFile]
 

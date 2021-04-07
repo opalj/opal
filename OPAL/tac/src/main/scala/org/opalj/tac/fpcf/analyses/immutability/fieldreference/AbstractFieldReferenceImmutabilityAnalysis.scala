@@ -74,13 +74,13 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
             var calledMethodsDependees:         Map[Method, (EOptionP[Method, Callers], (TACode[TACMethodParameter, V], PCs))] = Map.empty
     ) {
         def hasDependees: Boolean = {
-            prematurelyReadDependee.isDefined || purityDependees.nonEmpty || prematurelyReadDependee.isDefined ||
-                purityDependees.nonEmpty || calleesDependee.nonEmpty || referenceImmutabilityDependees.nonEmpty ||
+            prematurelyReadDependee.isDefined || prematurelyReadDependee.isDefined || purityDependees.nonEmpty ||
+                calleesDependee.nonEmpty || referenceImmutabilityDependees.nonEmpty ||
                 escapeDependees.nonEmpty || tacDependees.nonEmpty || typeDependees.nonEmpty
         }
 
         def dependees: Set[EOptionP[Entity, Property]] = {
-            (prematurelyReadDependee ++ purityDependees ++ referenceImmutabilityDependees ++ escapeDependees ++
+            (prematurelyReadDependee ++ referenceImmutabilityDependees ++ escapeDependees ++ purityDependees ++
                 calleesDependee.valuesIterator.map(_._1) ++ tacDependees.valuesIterator.map(_._1) ++ typeDependees).toSet
         }
     }

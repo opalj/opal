@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package immutability
 
+import org.opalj.br.FieldType
 /*
 import org.opalj.br.ClassFile
 import org.opalj.br.FormalTypeParameter
@@ -78,6 +79,7 @@ import scala.collection.mutable
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.LBP
 import org.opalj.fpcf.EUBP
+import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
  * Analysis that determines the immutability of org.opalj.br.Field
@@ -883,7 +885,7 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 case LBP(DeepImmutableType) ⇒ //nothing to do -> is default
 
                 case FinalEP(t, DependentImmutableType) ⇒
-                    import org.opalj.br.FieldType
+
                     if (t.asInstanceOf[FieldType] == state.field.fieldType) {
                         state.fieldTypeIsDependentImmutable = true
                         state.typeImmutability = DependentImmutable
@@ -1012,6 +1014,14 @@ trait L3FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.ub(FieldReferenceImmutability),
         PropertyBounds.lub(TypeImmutability),
         PropertyBounds.lub(FieldImmutability)
+    )
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        DeclaredMethodsKey,
+        FieldAccessInformationKey,
+        ClosedPackagesKey,
+        TypeExtensibilityKey,
+        DefinitionSitesKey
     )
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)

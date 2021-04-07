@@ -56,6 +56,13 @@ import org.opalj.br.IntegerType
 import org.opalj.br.LongType
 import org.opalj.br.ObjectType
 import org.opalj.br.ShortType
+import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.analyses.cg.ClosedPackagesKey
+import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.tac.common.DefinitionSitesKey
 
 /**
  *
@@ -113,7 +120,6 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
     private[analyses] def determineFieldReferenceImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
-        import org.opalj.br.ClassFile
 
         if (field.isFinal)
             return Result(field, ImmutableFieldReference);
@@ -139,36 +145,36 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                 Set(field.classFile)
             } */
         //val classesHavingAccess: Iterator[ClassFile] =
-            if (field.isPublic) {
-                if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
-                    return Result(field, MutableFieldReference);
-                }
-                //project.allClassFiles.iterator
-            } else if (field.isProtected) {
-                if (typeExtensibility(thisType).isYesOrUnknown ) {
-                    return Result(field, MutableFieldReference);
-                }
-                if(!closedPackages(thisType.packageName)){
-                    return Result(field, MutableFieldReference);
-                }
-                /*val subclassesIterator: Iterator[ClassFile] =
+        if (field.isPublic) {
+            if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
+                return Result(field, MutableFieldReference);
+            }
+            //project.allClassFiles.iterator
+        } else if (field.isProtected) {
+            if (typeExtensibility(thisType).isYesOrUnknown) {
+                return Result(field, MutableFieldReference);
+            }
+            if (!closedPackages(thisType.packageName)) {
+                return Result(field, MutableFieldReference);
+            }
+            /*val subclassesIterator: Iterator[ClassFile] =
                     classHierarchy.allSubclassTypes(thisType, reflexive = false).flatMap { ot ⇒
                         project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
                     } */
-               // initialClasses.iterator ++ subclassesIterator
-            } /*else {
+            // initialClasses.iterator ++ subclassesIterator
+        } /*else {
                 initialClasses.iterator
             }*/
-            if(field.isPackagePrivate){
-              if(!closedPackages(thisType.packageName)){
-                  return Result(field, MutableFieldReference);
-              }
+        if (field.isPackagePrivate) {
+            if (!closedPackages(thisType.packageName)) {
+                return Result(field, MutableFieldReference);
             }
+        }
 
         // If there are native methods, we give up
         //if (classesHavingAccess.exists(_.methods.exists(_.isNative))) { //TODO flag for comparison...reim
-            // if (!field.isFinal)
-            //     return Result(field, MutableFieldReference);
+        // if (!field.isFinal)
+        //     return Result(field, MutableFieldReference);
         //}
 
         for {
@@ -225,7 +231,7 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
 
     /**
      * Continuation function handling updates to the FieldPrematurelyRead property or to the purity
-     * property of the method that initializes a (potentially) lazy initialized field.
+     * property of the method that initializes a (potentially) lazy initialized field. //TODO change comment
      */
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
 
@@ -421,7 +427,13 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
 
 trait L0FieldReferenceImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-    import org.opalj.br.fpcf.properties.FieldImmutability
+  override def requiredProjectInformation: ProjectInformationKeys = Seq(
+      DeclaredMethodsKey,
+      FieldAccessInformationKey,
+      ClosedPackagesKey,
+      TypeExtensibilityKey,
+      DefinitionSitesKey
+  )
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(Purity),
