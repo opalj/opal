@@ -16,6 +16,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StaticDataUsage
 import org.opalj.br.fpcf.properties.UsesConstantDataOnly
@@ -115,6 +116,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 }
 
 trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
 

@@ -15,6 +15,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.AllocationFreeMethod
 import org.opalj.br.fpcf.properties.AllocationFreeness
@@ -99,6 +100,8 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] (
 }
 
 trait VirtualMethodAllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
 

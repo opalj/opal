@@ -9,6 +9,7 @@ package xta
 import org.opalj.br.ArrayType
 import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -24,7 +25,6 @@ import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.tac.fpcf.properties.TACAI
-
 import scala.collection.mutable
 
 /**
@@ -115,6 +115,8 @@ final class ArrayInstantiationsAnalysis(
 class ArrayInstantiationsAnalysisScheduler(
         selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis = new ArrayInstantiationsAnalysis(project, selectSetEntity)

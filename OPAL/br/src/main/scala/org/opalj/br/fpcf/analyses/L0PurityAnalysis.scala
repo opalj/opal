@@ -24,6 +24,7 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimePure
 import org.opalj.br.fpcf.properties.FieldMutability
@@ -332,6 +333,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 }
 
 trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = {
         Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldMutability))
