@@ -35,7 +35,7 @@ import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
- * Handles the effect of [[java.lang.System.arraycopy*]] to points-to sets.
+ * Handles the effect of `java.lang.System.arraycopy*` to points-to sets.
  *
  * @author Dominik Helm
  */
@@ -73,7 +73,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] ( final val project: 
         val targetArr = params(2)
 
         if (sourceArr.isDefined && targetArr.isDefined) {
-            val index = tac.pcToIndex(pc)
+            val index = tac.properStmtIndexForPC(pc)
 
             handleArrayLoad(
                 ArrayType.ArrayOfObject, pc, sourceArr.get.asVar.definedBy, checkForCast = false

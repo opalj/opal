@@ -4,9 +4,9 @@ package br
 package instructions
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.bi.ACC_BRIDGE
 import org.opalj.bi.TestResources.locateTestResources
@@ -23,7 +23,7 @@ import org.opalj.collection.immutable.RefArray
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class ClassFileFactoryTest extends FunSpec with Matchers {
+class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
     /**
      * ********************************************************************************************

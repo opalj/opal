@@ -5,8 +5,10 @@ package checking
 
 import org.junit.runner.RunWith
 
-import org.scalatest._
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.BeforeAndAfterAll
+import org.scalatestplus.junit.JUnitRunner
 
 import scala.collection.IndexedSeq
 
@@ -30,7 +32,7 @@ import org.opalj.br.NoElementValuePairs
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class MatcherTest extends FunSuite with Matchers with BeforeAndAfterAll {
+class MatcherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
     val project = Project(ClassFiles(locateTestResources("classfiles/entity.jar", "av")))
 

@@ -63,7 +63,7 @@ object DUVar {
  *
  * This extractor may fail (i.e., throw an exception), when the expr is not a [[DVar]] or
  * a [[Const]]; this decision was made to capture programming failures as early as possible
- * ([[http://www.opal-project.de/TAC.html flat]]).
+ * ([[https://www.opal-project.de/TAC.html flat]]).
  *
  * @example
  *          To get a return value's definition sites (unless the value is constant).

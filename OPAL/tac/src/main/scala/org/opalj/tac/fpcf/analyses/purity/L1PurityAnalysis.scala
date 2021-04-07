@@ -7,6 +7,7 @@ package purity
 
 import net.ceedubs.ficus.Ficus._
 
+import org.opalj.collection.immutable.ConstArray
 import org.opalj.collection.immutable.EmptyIntTrieSet
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
@@ -52,6 +53,7 @@ import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.br.MethodDescriptor
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
 
@@ -96,8 +98,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val method:        Method,
             val definedMethod: DeclaredMethod,
             val declClass:     ObjectType,
-            var pcToIndex:     Array[Int]                      = Array.empty,
-            var code:          Array[Stmt[V]]                  = Array.empty,
+            var tac:           TACode[TACMethodParameter, V]   = null,
             var lbPurity:      Purity                          = Pure,
             var ubPurity:      Purity                          = Pure
     ) extends AnalysisState
@@ -127,7 +128,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             val defSites = expr.asVar.definedBy -- excludedDefSites
             if (defSites.forall { defSite ⇒
                 if (defSite >= 0) {
-                    val rhs = state.code(defSite).asAssignment.expr
+                    val rhs = state.tac.stmts(defSite).asAssignment.expr
                     if (rhs.isConst)
                         true
                     else {
@@ -234,9 +235,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         if (ep.isRefinable)
             state.dependees += ep
         if (ep.hasUBP && ep.ub.tac.isDefined) {
-            val tac = ep.ub.tac.get
-            state.pcToIndex = tac.pcToIndex
-            state.code = tac.stmts
+            state.tac = ep.ub.tac.get
         }
     }
 
@@ -312,21 +311,27 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     )(implicit state: State): ProperPropertyComputationResult = {
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
-        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable))
-            project.instanceMethods(state.declClass).foreach { mdc ⇒
-                if (mdc.name == "fillInStackTrace" &&
-                    mdc.method.classFile.thisType != ObjectType.Throwable) {
+        if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
+            val candidate = ConstArray.find(project.instanceMethods(state.declClass)) { mdc ⇒
+                mdc.method.compare(
+                    "fillInStackTrace",
+                    MethodDescriptor.withNoArgs(ObjectType.Throwable)
+                )
+            }
+            candidate foreach { mdc ⇒
+                if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq.empty))
                         // Early return for impure fillInStackTrace
                         return Result(state.definedMethod, state.ubPurity);
                 }
             }
+        }
 
-        val stmtCount = state.code.length
+        val stmtCount = state.tac.stmts.length
         var s = 0
         while (s < stmtCount) {
-            if (!checkPurityOfStmt(state.code(s))) // Early return for impure statements
+            if (!checkPurityOfStmt(state.tac.stmts(s))) // Early return for impure statements
                 return Result(state.definedMethod, state.ubPurity)
             s += 1
         }
@@ -343,7 +348,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             pc = bb.asBasicBlock.endPC
             if isSourceOfImmediateException(pc)
         } {
-            val throwingStmt = state.code(pc)
+            val throwingStmt = state.tac.stmts(pc)
             val ratedResult = rater.handleException(throwingStmt)
             if (ratedResult.isDefined) atMost(ratedResult.get)
             else atMost(SideEffectFree)

@@ -122,6 +122,10 @@ package object br {
 
     type Packages = RefArray[String]
 
+    type Classes = RefArray[ObjectType]
+
+    type RecordComponents = RefArray[RecordComponent]
+
     final type SourceElementID = Int
 
     final type Opcode = Int

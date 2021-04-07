@@ -5,11 +5,10 @@ package fpcf
 package analyses
 package cg
 
-import com.typesafe.config.ConfigFactory
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.FinalP
@@ -17,8 +16,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.TestSupport.allBIProjects
-import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -28,9 +25,9 @@ import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 
 @RunWith(classOf[JUnitRunner]) // TODO: We should use JCG for some basic tests
-class CallGraphIntegrationTest extends FlatSpec with Matchers {
+class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
-    allBIProjects() foreach { biProject ⇒
+    /*allBIProjects() foreach { biProject ⇒
         val (name, projectFactory) = biProject
         val project = projectFactory()
 
@@ -39,7 +36,7 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
             name,
             Project.recreate(project, ConfigFactory.load("LibraryProject.conf"))
         )
-    }
+    }*/
 
     def checkProject(projectName: String, project: SomeProject): Unit = {
 
@@ -97,8 +94,10 @@ class CallGraphIntegrationTest extends FlatSpec with Matchers {
         lessPreciseCG: CallGraph, morePreciseCG: CallGraph
     ): Unit = {
         var unexpectedCalls: List[UnexpectedCallTarget] = Nil
-        lessPreciseCG.reachableMethods().foreach { method ⇒
+        morePreciseCG.reachableMethods().foreach { method ⇒
             val allCalleesMPCG = morePreciseCG.calleesOf(method)
+            if (lessPreciseCG.callersOf(method).isEmpty)
+                unexpectedCalls ::= UnexpectedCallTarget(method, null, -1)
             for {
                 (pc, calleesMPCG) ← allCalleesMPCG
                 calleesLPCG = lessPreciseCG.calleesOf(method, pc).toSet

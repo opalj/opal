@@ -91,6 +91,15 @@ trait AttributesReader
      * <li>MainClass_attribute</li>
      * <li>ModulePackages_attribute</li>
      * </ul>
+     * <b>Java 11</b>Attributes:<br />
+     * <ul>
+     * <li>NestHost_attribute</li>
+     * <li>NestMembers_attribute</li>
+     * </ul>
+     * <b>Java 16</b>Attributes:<br />
+     * <ul>
+     * <li>Record_attribute</li>
+     * </ul>
      *
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.

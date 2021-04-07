@@ -176,7 +176,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     ): Boolean = {
         val stmts = taCode.stmts
         for (pc ← pcs) {
-            val index = taCode.pcToIndex(pc)
+            val index = taCode.properStmtIndexForPC(pc)
             if (index >= 0) {
                 val stmtCandidate = stmts(index)
                 if (stmtCandidate.pc == pc) {

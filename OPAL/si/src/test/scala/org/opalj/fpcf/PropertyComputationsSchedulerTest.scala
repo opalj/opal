@@ -3,9 +3,9 @@ package org.opalj
 package fpcf
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.BeforeAndAfterEach
 
 import org.opalj.log.GlobalLogContext
@@ -17,7 +17,7 @@ import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyComputationsSchedulerTest extends FunSpec with Matchers with BeforeAndAfterEach {
+class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with BeforeAndAfterEach {
 
     implicit val logContext: GlobalLogContext.type = GlobalLogContext
 
@@ -50,8 +50,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
 
     describe("an AnalysisScenario") {
 
-        // FIXME!
-        ignore("should be possible to create an empty schedule") {
+        it("should be possible to create an empty schedule") {
             val ps = new PropertyStoreConfigurationRecorder()
             val batches = AnalysisScenario(Set(), ps).computeSchedule(ps).batches
             batches should be('empty)
@@ -64,7 +63,7 @@ class PropertyComputationsSchedulerTest extends FunSpec with Matchers with Befor
                 val scenario = AnalysisScenario(Set.empty, ps)
                 val schedule = scenario.computeSchedule(ps)
                 /*smoke test: */ schedule(ps, trace = false)
-                schedule.batches.size should be(1)
+                schedule.batches should be('empty)
                 ps.phaseConfigurations.head should be((Set.empty, Set.empty, Map.empty))
             }
 

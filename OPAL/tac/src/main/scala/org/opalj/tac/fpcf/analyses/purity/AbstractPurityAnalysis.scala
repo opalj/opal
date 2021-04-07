@@ -80,8 +80,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         val method: Method
         val definedMethod: DeclaredMethod
         val declClass: ObjectType
-        var pcToIndex: Array[Int]
-        var code: Array[Stmt[V]]
+        var tac: TACode[TACMethodParameter, V]
     }
 
     type StateType <: AnalysisState
@@ -147,7 +146,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             }
         }
 
-        val stmt = state.code(origin)
+        val stmt = state.tac.stmts(origin)
         (stmt.astID: @switch) match {
             case StaticMethodCall.ASTID ⇒ false // We are looking for implicit exceptions only
 
@@ -175,7 +174,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         call:     Call[V],
         receiver: Option[Expr[V]]
     )(implicit state: StateType): Boolean = {
-        implicit val code: Array[Stmt[V]] = state.code
+        implicit val code: Array[Stmt[V]] = state.tac.stmts
         val ratedResult = rater.handleCall(call, receiver)
         if (ratedResult.isDefined)
             atMost(ratedResult.get)
@@ -189,14 +188,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
     def checkPurityOfStmt(stmt: Stmt[V])(implicit state: StateType): Boolean = {
         val isStmtNotImpure = (stmt.astID: @switch) match {
             // For method calls, purity will be checked later
-            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID ⇒
+            case StaticMethodCall.ASTID | NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID |
+                InvokedynamicMethodCall.ASTID ⇒
                 true
-
-            // We don't handle unresolved Invokedynamics
-            // - either OPAL removes it or we forget about it
-            case InvokedynamicMethodCall.ASTID ⇒
-                atMost(ImpureByAnalysis)
-                false
 
             // Returning objects/arrays is pure, if the returned object/array is locally initialized
             // and non-escaping or the object is immutable
@@ -236,7 +230,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
                     origin ← stmt.asCaughtException.origins
                     if isImmediateVMException(origin)
                 } {
-                    val baseOrigin = state.code(ai.underlyingPC(origin))
+                    val baseOrigin = state.tac.stmts(ai.underlyingPC(origin))
                     val ratedResult = rater.handleException(baseOrigin)
                     if (ratedResult.isDefined) atMost(ratedResult.get)
                     else atMost(SideEffectFree)
@@ -274,7 +268,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // Field/array loads are pure if the field is (effectively) final or the object/array is
             // local and non-escaping
             case GetStatic.ASTID ⇒
-                implicit val code: Array[Stmt[V]] = state.code
+                implicit val code: Array[Stmt[V]] = state.tac.stmts
                 val ratedResult = rater.handleGetStatic(expr.asGetStatic)
                 if (ratedResult.isDefined) atMost(ratedResult.get)
                 else checkPurityOfFieldRef(expr.asGetStatic)
@@ -319,32 +313,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         }
     }
 
-    def getCall(stmt: Stmt[V])(implicit state: StateType): Call[V] = stmt.astID match {
+    def getCall(stmt: Stmt[V]): Call[V] = stmt.astID match {
         case StaticMethodCall.ASTID     ⇒ stmt.asStaticMethodCall
         case NonVirtualMethodCall.ASTID ⇒ stmt.asNonVirtualMethodCall
         case VirtualMethodCall.ASTID    ⇒ stmt.asVirtualMethodCall
         case Assignment.ASTID           ⇒ stmt.asAssignment.expr.asFunctionCall
         case ExprStmt.ASTID             ⇒ stmt.asExprStmt.expr.asFunctionCall
-        case CaughtException.ASTID ⇒
-            /*
-             * There is no caught exception instruction in bytecode, so it might be the case, that
-             * in the three-address code, there is a CaughtException stmt right before the call
-             * with the same pc. Therefore, we have to get the call stmt after the current stmt.
-             *
-             * Example:
-             * void foo() {
-             *     try {
-             *         ...
-             *     } catch (Exception e) {
-             *         e.printStackTrace();
-             *     }
-             * }
-             *
-             * In TAC:
-             * 12: pc=52 caught java.lang.Exception ...
-             * 13: pc=52 java.lang.Exception.printStackTrace()
-             */
-            getCall(state.code(state.pcToIndex(stmt.pc) + 1))
         case _ ⇒
             throw new IllegalStateException(s"unexpected stmt $stmt")
     }
@@ -516,11 +490,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 val hasIncompleteCallSites =
                     p.incompleteCallSites.exists { pc ⇒
-                        val index = state.pcToIndex(pc)
+                        val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
                             false // call will not be executed
                         else {
-                            val call = getCall(state.code(state.pcToIndex(pc)))
+                            val call = getCall(state.tac.stmts(index))
                             !isDomainSpecificCall(call, call.receiverOption)
                         }
                     }
@@ -532,11 +506,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 val noDirectCalleeIsImpure = p.directCallSites().forall {
                     case (pc, callees) ⇒
-                        val index = state.pcToIndex(pc)
+                        val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
                             true // call will not be executed
                         else {
-                            val call = getCall(state.code(index))
+                            val call = getCall(state.tac.stmts(index))
                             isDomainSpecificCall(call, call.receiverOption) ||
                                 callees.forall { callee ⇒
                                     checkPurityOfMethod(
@@ -552,19 +526,21 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
 
                 val noIndirectCalleeIsImpure = p.indirectCallSites().forall {
                     case (pc, callees) ⇒
-                        val index = state.pcToIndex(pc)
+                        val index = state.tac.properStmtIndexForPC(pc)
                         if (index < 0)
                             true // call will not be executed
                         else {
-                            val call = getCall(state.code(index))
+                            val call = getCall(state.tac.stmts(index))
                             isDomainSpecificCall(call, call.receiverOption) ||
                                 callees.forall { callee ⇒
                                     checkPurityOfMethod(
                                         callee,
                                         p.indirectCallReceiver(pc, callee).map(receiver ⇒
-                                            uVarForDefSites(receiver, state.pcToIndex)).orNull +:
-                                            p.indirectCallParameters(pc, callee).map { paramO ⇒
-                                                paramO.map(uVarForDefSites(_, state.pcToIndex)).orNull
+                                            uVarForDefSites(receiver, state.tac.pcToIndex)).orNull
+                                            +: p.indirectCallParameters(pc, callee).map { paramO ⇒
+                                                paramO.map(
+                                                    uVarForDefSites(_, state.tac.pcToIndex)
+                                                ).orNull
                                             }
                                     )
                                 }

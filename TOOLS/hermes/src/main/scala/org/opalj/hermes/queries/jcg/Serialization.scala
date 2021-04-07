@@ -22,7 +22,6 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.br.MethodDescriptor.ReadObjectDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.tac.LazyTACUsingAIKey
-import org.opalj.tac.TACode
 import org.opalj.tac.VirtualMethodCall
 import org.opalj.tac.DUVar
 import org.opalj.tac.Assignment
@@ -108,19 +107,19 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                 case i @ INVOKEVIRTUAL(declClass, "readObject", JustReturnsObject) if classHierarchy.isSubtypeOf(declClass, OIS)             ⇒ i
                 case i @ INVOKEVIRTUAL(declClass, "registerValidation", OISregisterValidation) if classHierarchy.isSubtypeOf(declClass, OIS) ⇒ i
             }
-            TACode(_, stmts, pcToIndex, _, _) = tacai(method)
+            tac = tacai(method)
         } {
             val pc = pcAndInvocation.pc
             val l = InstructionLocation(methodLocation, pc)
 
-            val invocation = stmts(pcToIndex(pc))
+            val invocation = tac.stmts(tac.properStmtIndexForPC(pc))
 
             if (invocation.astID == VirtualMethodCall.ASTID) {
                 if (invocation.asVirtualMethodCall.name == "writeObject")
                     handleWriteObject(
                         invocation.asVirtualMethodCall,
                         l,
-                        stmts,
+                        tac.stmts,
                         serializableTypes,
                         externalizableTypes,
                         notExternalizableTypes
@@ -133,7 +132,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
                         handleReadObject(
                             invocation.asAssignment,
                             l,
-                            stmts,
+                            tac.stmts,
                             serializableTypes,
                             externalizableTypes,
                             notExternalizableTypes

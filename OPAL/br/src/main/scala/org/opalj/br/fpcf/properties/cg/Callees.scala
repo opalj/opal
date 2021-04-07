@@ -137,7 +137,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
 
     /**
      * Returns for a given call site pc and indirect target method the receiver information.
-     * If the receiver can not be determined, the [[scala.Option]] will be empty, otherwise it will
+     * If the receiver can not be determined, the `scala.Option` will be empty, otherwise it will
      * contain all [[PCs]] and the the negative indices of parameters that may define the value of
      * the receiver.
      * The parameter at index 0 always corresponds to the *this* local and is `null` for static
@@ -147,7 +147,7 @@ sealed trait Callees extends Property with CalleesPropertyMetaInformation {
 
     /**
      * Returns for a given call site pc and indirect target method the sequence of parameter
-     * sources. If a parameter source can not be determined, the [[scala.Option]] will be empty,
+     * sources. If a parameter source can not be determined, the `scala.Option` will be empty,
      * otherwise it will contain all PCs and the negative indices of parameters that may define the
      * value of the corresponding actual parameter.
      * The parameter at index 0 always corresponds to the *this* local and is `null` for static
@@ -299,10 +299,12 @@ sealed class ConcreteCallees(
             _incompleteCallSites ++ incompleteCallSites,
             _indirectCallReceivers.unionWith(
                 indirectCallReceivers,
-                (_, r, l) ⇒ {
+                (_, l, r) ⇒ {
                     r.unionWith(
                         l,
-                        (_, _, _) ⇒ throw new UnknownError("Indirect callee derived by two analyses")
+                        (_, vl, vr) ⇒
+                            if (vl == vr) vl
+                            else throw new UnknownError("Incompatible receivers for indirect call")
                     )
                 }
             ),
@@ -311,7 +313,9 @@ sealed class ConcreteCallees(
                 (_, r, l) ⇒ {
                     r.unionWith(
                         l,
-                        (_, _, _) ⇒ throw new UnknownError("Indirect callee derived by two analyses")
+                        (_, vl, vr) ⇒
+                            if (vl == vr) vl
+                            else throw new UnknownError("Incompatible parameters for indirect call")
                     )
                 }
             )

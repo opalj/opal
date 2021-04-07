@@ -1,5 +1,5 @@
 #Overview
-The folder `projects` contains Java projects (to be precise: the root packages of the projects) that serve as ***test fixtures*** for tests and therefore have to have a very specific bytecode layout! _The java files are compiled with the bundled Eclipse 4.6.1 compiler automatically by the build script._
+The folder `projects` contains Java projects (to be precise: the root packages of the projects) that serve as ***test fixtures*** for tests and therefore have to have a very specific bytecode layout! _The java files are compiled with the bundled Eclipse JDT 3.26.0 compiler automatically by the build script._
 
 The fixtures are compiled by a sbt plugin that is part of the developer tools of OPAL. It resides in `DEVELOPING_OPAL/plugins/sbt-java-fixture-compiler`. The
 (fixed) Eclipse JDT compiler version is configured over there. For more information, please refer to `DEVELOPING_OPAL/plugins/sbt-java-fixture-compiler/Readme.md`.

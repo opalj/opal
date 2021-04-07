@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -18,7 +18,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class ClassValuesTest extends FlatSpec with Matchers {
+class ClassValuesTest extends AnyFlatSpec with Matchers {
 
     import PlainClassesTest._
 
@@ -113,6 +113,7 @@ object PlainClassesTest {
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultClassValuesBinding {
 
         var returnedValue: Option[DomainValue] = _

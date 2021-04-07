@@ -130,7 +130,7 @@
 - we now have complete support for converting a class file using the standard bytecode representation to the native representation; the latter can then be serialized to a valid class file
 - fixed a very, very rare concurrency related issue that resulted in OPAL making no progress at all due to insufficient resources (out of threads)
 - fixed a null pointer exception in case of "uninitialized" `...ai.StringValues`
-- we have created a new [webpage](http://www.opal-project.de) along with this release which has more documentation on how to use specific parts of OPAL
+- we have created a new [webpage](https://www.opal-project.de) along with this release which has more documentation on how to use specific parts of OPAL
 
 ## 0.8.12
 

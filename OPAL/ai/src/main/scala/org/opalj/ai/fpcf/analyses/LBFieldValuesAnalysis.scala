@@ -156,6 +156,7 @@ class LBFieldValuesAnalysis private[analyses] (
         with domain.l0.TypeLevelLongValuesShiftOperators
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
+        with domain.l0.TypeLevelDynamicLoads
         // IT HAST TO BE L0 - we can't deal with "null" values!
         with domain.l0.DefaultReferenceValuesBinding
         with domain.DefaultHandlingOfMethodResults

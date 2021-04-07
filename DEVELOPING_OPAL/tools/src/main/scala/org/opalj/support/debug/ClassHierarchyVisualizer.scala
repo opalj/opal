@@ -31,7 +31,7 @@ object ClassHierarchyVisualizer {
                 ClassHierarchy.PreInitializedClassHierarchy
             } else {
                 val classFiles =
-                    (List.empty[ClassFile] /: args) { (classFiles, filename) ⇒
+                    args.foldLeft(List.empty[ClassFile]) { (classFiles, filename) ⇒
                         classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
                     }
                 if (classFiles.forall(cf ⇒ cf.thisType != ObjectType.Object))

@@ -34,7 +34,6 @@ import org.opalj.br.VirtualDeclaredMethod
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.fpcf.par.PKECPropertyStore
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.DevNullLogger
 import org.opalj.log.GlobalLogContext
@@ -142,9 +141,13 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                val threads = numThreads.getOrElse(1) // We chose the sequential store as default
-                PKECPropertyStore.MaxThreads = threads
-                org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                val threads = numThreads.getOrElse(0) // We chose the sequential store as default
+                if (threads == 0) {
+                    org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
+                } else {
+                    org.opalj.fpcf.par.PKECPropertyStore.MaxThreads = threads
+                    org.opalj.fpcf.par.PKECPropertyStore(context: _*)
+                }
             }
         )
 

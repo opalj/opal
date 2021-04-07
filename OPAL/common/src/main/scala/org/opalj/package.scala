@@ -88,7 +88,7 @@ package object opalj {
     /**
      * The URL of the webpage of the opal project.
      */
-    final val WEBPAGE = "http://www.opal-project.de"
+    final val WEBPAGE = "https://www.opal-project.de"
 
     /**
      * The type of the predefined relational operators.

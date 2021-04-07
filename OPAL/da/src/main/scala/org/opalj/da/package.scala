@@ -69,6 +69,10 @@ package object da {
     type Provides = RefArray[ProvidesEntry]
     type ProvidesWithIndexTable = IntArray // Array[CONSTANT_Class_Index]
 
+    type ClassesArray = IntArray // Array[Constant_Pool_Index]
+
+    type RecordComponents = RefArray[RecordComponent]
+
     /**
      * A node representing the context's access flags and a string that can be used
      * for filtering purposes and can be attached to the member's node.

@@ -5,11 +5,13 @@ description := "compiles Java projects using a fixed version of the Eclipse comp
 organization := "de.opal-project"
 licenses += ("BSC 2-clause", url("https://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.13"
 
 sbtPlugin := true
 
 publishMavenStyle := false
+
+resolvers in ThisBuild += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
 
 scalacOptions in ThisBuild ++= Seq(
   "-deprecation",
@@ -29,8 +31,4 @@ scalacOptions in ThisBuild ++= Seq(
 )
 
 // The version of Eclipse JDT compiler library needs to stay fixed for use within OPAL!
-// The version 4.6.1 which we use contains a bug when compiling
-// certain method references that return a value; however, even new(er) versions
-// still contain the bug (the stack is not empty, when the method returns.)
-// [still buggy] libraryDependencies ++= Seq("com.reubenpeeris" % "org.eclipse.jdt.core.compiler.ecj" % "4.7-201706120950")
-libraryDependencies ++= Seq("org.eclipse.jdt.core.compiler" % "ecj" % "4.6.1")
+libraryDependencies ++= Seq("org.eclipse.jdt" % "ecj" % "3.26.0.v20210317-0507")

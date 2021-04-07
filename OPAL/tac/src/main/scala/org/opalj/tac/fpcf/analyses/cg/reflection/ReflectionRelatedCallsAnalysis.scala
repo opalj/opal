@@ -475,7 +475,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
     ): ProperPropertyComputationResult = {
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         val descriptorOpt = if (isDirect && apiMethod.name == "invokeExact") {
-            tac.stmts(tac.pcToIndex(pc)) match {
+            tac.stmts(tac.properStmtIndexForPC(pc)) match {
                 case vmc: VirtualMethodCall[V]          ⇒ Some(vmc.descriptor)
                 case VirtualFunctionCallStatement(call) ⇒ Some(call.descriptor)
             }

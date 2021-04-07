@@ -112,7 +112,7 @@ trait AbstractEscapeAnalysisState {
 
         context.entity match {
             case ds: DefinitionSiteLike ⇒
-                _defSite = tacai.pcToIndex(ds.pc)
+                _defSite = tacai.properStmtIndexForPC(ds.pc)
                 _uses = ds.usedBy(tacai)
 
             case fp: VirtualFormalParameter ⇒

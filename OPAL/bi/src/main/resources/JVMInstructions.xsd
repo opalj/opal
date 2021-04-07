@@ -34,10 +34,10 @@
 -->
 <schema xmlns="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:opal="http://www.opal-project.de/bi/JVMInstructions"
+    xmlns:opal="https://www.opal-project.de/bi/JVMInstructions"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     xsi:schemaLocation="http://www.w3.org/2001/XMLSchema http://www.w3.org/2001/XMLSchema.xsd"
-    targetNamespace="http://www.opal-project.de/bi/JVMInstructions"
+    targetNamespace="https://www.opal-project.de/bi/JVMInstructions"
 	elementFormDefault="qualified"  attributeFormDefault="unqualified" >
 
     <annotation>
@@ -407,7 +407,7 @@
         <annotation>
             <documentation>
             An index in the constant pool (an unsigned short value)
-            referring to a CONSTANT_InvokeDynamic_info structure. (Java 7)
+            referring to a CONSTANT_InvokeDynamic_info structure (Java 7).
             </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
@@ -474,7 +474,9 @@
 	 <simpleType name="FormatElement-ushort_cp_index-to-constant_value">
         <annotation>
             <documentation>An index in the constant pool referring to a constant
-            value (int, float, long, double, string, class) .</documentation>
+            value (int, float, long, double, string, class, method type, method handle) or a
+            dynamically loaded constant.
+            </documentation>
         </annotation>
         <restriction base="opal:AbstractFormatElement">
             <enumeration value="ushort_cp_index→constant_value"/>

@@ -3,8 +3,8 @@ package org.opalj
 package br
 package reader
 
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
 import org.opalj.bi.TestResources.locateTestResources
 
@@ -13,8 +13,8 @@ import org.opalj.bi.TestResources.locateTestResources
  *
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ClassFileReaderTest extends FlatSpec with Matchers {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class ClassFileReaderTest extends AnyFlatSpec with Matchers {
 
     import Java8Framework.ClassFiles
 

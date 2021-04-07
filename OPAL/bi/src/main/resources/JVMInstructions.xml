@@ -33,8 +33,8 @@
   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   POSSIBILITY OF SUCH DAMAGE.
 -->
-<instructions xsi:schemaLocation="http://www.opal-project.de/bi/JVMInstructions JVMInstructions.xsd"
-	xmlns="http://www.opal-project.de/bi/JVMInstructions" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<instructions xsi:schemaLocation="https://www.opal-project.de/bi/JVMInstructions JVMInstructions.xsd"
+	xmlns="https://www.opal-project.de/bi/JVMInstructions" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
 	<documentation>
@@ -1987,7 +1987,9 @@
 					The index must be a valid index into the runtime constant pool of the current
 					class. The runtime constant pool entry at the index either must be a  runtime
 					constant of type int or float, or must be a symbolic reference to a class
-					(§5.4.3.1)or a string literal(§5.1).
+					(§5.4.3.1) or a string literal (§5.1) or a method type or method handle
+					($5.4.3.5) or a dynamically computed constant ($5.4.3.6) whose field descriptor
+					is neither J (long) or D (double).
 				--></el>
 			</std>
 		</format>
@@ -2002,7 +2004,9 @@
 					The index must be a valid index into the runtime constant pool of the current
 					class. The runtime constant pool entry at the index either must be a  runtime
 					constant of type int or float, or must be a symbolic reference to a class
-					(§5.4.3.1)or a string literal(§5.1).
+					(§5.4.3.1) or a string literal (§5.1) or a method type or method handle
+					($5.4.3.5) or a dynamically computed constant ($5.4.3.6) whose field descriptor
+					is neither J (long) or D (double).
 				--></el>
 			</std>
 		</format>
@@ -2015,8 +2019,9 @@
 				<el type="mnemonic"/>
 				<el type="ushort_cp_index→constant_value" id="constantValue"><!--
 					The runtime constant pool entry at the index must be a runtime constant of type
-					long or double(§5.1). The numeric value of that runtime constant
-					is pushed onto the operand stack as a long or double, respectively.
+					long or double (§5.1) or a dynamically computed constant ($5.4.3.6) whose field
+					descriptor is either J (long) or D (doubler). The numeric value of that runtime
+					constant is pushed onto the operand stack as a long or double, respectively.
 				--></el>
 			</std>
 		</format>

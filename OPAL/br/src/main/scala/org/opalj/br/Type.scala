@@ -1060,8 +1060,8 @@ object ObjectType {
     @volatile private[this] var objectTypes: Array[ObjectType] = new Array[ObjectType](0)
 
     private[this] def updateObjectTypes(): Unit = {
-        if (nextId.get >= objectTypes.length) {
-            val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get + 1)
+        if (nextId.get > objectTypes.length) {
+            val newObjectTypes = JArrays.copyOf(this.objectTypes, nextId.get)
             cacheRWLock.readLock().lock()
             try {
                 cache.values.forEach { wot ⇒
@@ -1284,6 +1284,8 @@ object ObjectType {
     final val MethodType = ObjectType("java/lang/invoke/MethodType")
     final val LambdaMetafactory = ObjectType("java/lang/invoke/LambdaMetafactory")
     final val StringConcatFactory = ObjectType("java/lang/invoke/StringConcatFactory")
+    final val ObjectMethods = ObjectType("java/lang/runtime/ObjectMethods")
+    final val Objects = ObjectType("java/util/Objects")
     final val CallSite = ObjectType("java/lang/invoke/CallSite")
     final val ScalaLambdaDeserialize = ObjectType("scala/runtime/LambdaDeserialize")
     final val SerializedLambda = ObjectType("java/lang/invoke/SerializedLambda")
@@ -1291,6 +1293,9 @@ object ObjectType {
     final val ScalaSymbol = ObjectType("scala/Symbol")
     final val ScalaStructuralCallSite = ObjectType("scala/runtime/StructuralCallSite")
     final val Method = ObjectType("java/lang/reflect/Method")
+
+    // Types related to dynamic constants
+    final val ConstantBootstraps = ObjectType("java/lang/invoke/ConstantBootstraps")
 
     // Exceptions and errors that may be thrown by the JVM (i.e., instances of these
     // exceptions may be created at runtime by the JVM)

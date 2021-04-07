@@ -253,7 +253,21 @@ trait PerformInvocations extends MethodCallsHandling {
                 }
 
             case _ ⇒
-                fallback()
+                val resolvedMethod =
+                    if (isInterface)
+                        if (declaringClass.isObjectType)
+                            project.resolveInterfaceMethodReference(
+                                declaringClass.asObjectType, name, descriptor
+                            )
+                        else None
+                    else
+                        project.resolveMethodReference(declaringClass, name, descriptor)
+
+                resolvedMethod match {
+                    case Some(method) if method.isPrivate ⇒
+                        testAndDoInvoke(pc, method, operands, fallback)
+                    case _ ⇒ fallback()
+                }
         }
 
     }

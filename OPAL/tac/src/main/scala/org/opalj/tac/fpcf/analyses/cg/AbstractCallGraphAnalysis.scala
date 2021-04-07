@@ -60,7 +60,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
      * Subclasses that might have other dependencies must override this method and should call
      * `super.c(...)` for updates of other property kinds then the new one.
      *
-     * @see [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis.c*]] for an example.
+     * @see [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis.c]] for an example.
      */
     def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
@@ -166,7 +166,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     call.descriptor,
                     call.declaringClass,
                     stmt.pc,
-                    call.resolveCallTarget,
+                    call.resolveCallTarget(state.method.declaringClassType),
                     calls
                 )
 
@@ -177,7 +177,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     call.descriptor,
                     call.declaringClass,
                     call.pc,
-                    call.resolveCallTarget,
+                    call.resolveCallTarget(state.method.declaringClassType),
                     calls
                 )
 
@@ -321,7 +321,6 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: State): Unit = {
-        // TODO: Since Java 11, invokevirtual does also work for private methods, this must be fixed!
         val callerType = caller.definedMethod.classFile.thisType
 
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues

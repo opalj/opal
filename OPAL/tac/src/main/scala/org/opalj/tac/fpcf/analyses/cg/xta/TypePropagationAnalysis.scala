@@ -304,7 +304,7 @@ final class TypePropagationAnalysis private[analyses] (
         partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
         val returnValueIsUsed = {
-            val tacIndex = state.tac.pcToIndex(pc)
+            val tacIndex = state.tac.properStmtIndexForPC(pc)
             val tacInstr = state.tac.instructions(tacIndex)
             tacInstr.isAssignment
         }

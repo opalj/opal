@@ -4,9 +4,9 @@ package control
 
 import org.junit.runner.RunWith
 import org.opalj.collection.immutable.IntArray
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the implemented control abstractions.
@@ -14,7 +14,7 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ControlAbstractionsTest extends FlatSpec with Matchers {
+class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
 
     //
     // foreachNonNullValueOf

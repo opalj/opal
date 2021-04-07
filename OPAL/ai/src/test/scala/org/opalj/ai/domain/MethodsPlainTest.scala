@@ -4,9 +4,9 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
@@ -21,7 +21,7 @@ import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
  * @author Dennis Siebert
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsPlainTest extends FlatSpec with Matchers {
+class MethodsPlainTest extends AnyFlatSpec with Matchers {
 
     private[this] val IrrelevantPC = Int.MinValue
 
@@ -1081,6 +1081,7 @@ private object MethodsPlainTest {
         with TypeLevelLongValuesShiftOperators
         with TypeLevelFieldAccessInstructions
         with SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with ThrowAllPotentialExceptionsConfiguration
         with IgnoreSynchronization
         with DefaultHandlingForThrownExceptions

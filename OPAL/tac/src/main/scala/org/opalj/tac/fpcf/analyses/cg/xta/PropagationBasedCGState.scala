@@ -125,6 +125,6 @@ class PropagationBasedCGState(
     }
 
     override def dependees: Set[SomeEOptionP] = {
-        super.dependees ++ _instantiatedTypesDependeeMap.values().asScala.toSet
+        super.dependees ++ _instantiatedTypesDependeeMap.values().asScala
     }
 }

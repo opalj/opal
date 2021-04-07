@@ -6,6 +6,7 @@ package cg
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
@@ -33,7 +34,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPoin
 object RTACallGraphKey extends AbstractCallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        super.requirements(project) :+ InitialInstantiatedTypesKey
+        Seq(InitialInstantiatedTypesKey, IsOverridableMethodKey) ++: super.requirements(project)
     }
 
     override def callGraphSchedulers(

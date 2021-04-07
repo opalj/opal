@@ -128,6 +128,9 @@ object TACAI {
         optimizations: List[TACOptimization[TACMethodParameter, DUVar[aiResult.domain.DomainValue], AITACode[TACMethodParameter, aiResult.domain.DomainValue]]]
     ): AITACode[TACMethodParameter, aiResult.domain.DomainValue] = {
 
+        if (aiResult.wasAborted)
+            throw new IllegalArgumentException("cannot create TACAI from aborted AI result")
+
         val domain: aiResult.domain.type = aiResult.domain
         val operandsArray: aiResult.domain.OperandsArray = aiResult.operandsArray
         val localsArray: aiResult.domain.LocalsArray = aiResult.localsArray
@@ -314,7 +317,7 @@ object TACAI {
                     pcToIndex(pc) = index
                     index += 1
                 } else {
-                    pcToIndex(pc) = index - 1
+                    pcToIndex(pc) = -1
                 }
             }
 
@@ -475,6 +478,13 @@ object TACAI {
 
                     case LoadLong(value) ⇒
                         addInitLocalValStmt(pc, operandsArray(nextPC).head, LongConst(pc, value))
+
+                    case LDCDynamic(bootstrapMethod, name, descriptor) ⇒
+                        addInitLocalValStmt(
+                            pc,
+                            operandsArray(nextPC).head,
+                            DynamicConst(pc, bootstrapMethod, name, descriptor)
+                        )
 
                     case _ ⇒
                         val message = s"unexpected constant $instr"
