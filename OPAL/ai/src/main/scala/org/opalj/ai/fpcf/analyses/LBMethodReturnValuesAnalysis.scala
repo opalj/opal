@@ -18,10 +18,10 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SinglePropertiesBoundType
 import org.opalj.fpcf.SomeEPS
 import org.opalj.value.ValueInformation
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.PC
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
@@ -30,7 +30,6 @@ import org.opalj.ai.fpcf.domain.RefinedTypeLevelInvokeInstructions
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.MethodReturnValue
 import org.opalj.ai.fpcf.properties.TheMethodReturnValue
-import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
  * Computes for each method that returns object typed values general information about the

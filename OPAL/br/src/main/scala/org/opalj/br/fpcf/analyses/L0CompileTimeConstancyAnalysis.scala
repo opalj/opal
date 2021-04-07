@@ -4,7 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP

@@ -4,7 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.log.OPALLogger.{debug ⇒ trace}
 import org.opalj.fpcf.ELBP
 import org.opalj.fpcf.ELUBP

@@ -27,8 +27,6 @@ import org.opalj.fpcf.Results
 import org.opalj.tac.fpcf.properties.TACAI
 import scala.collection.mutable
 
-import org.opalj.br.analyses.ProjectInformationKeys
-
 /**
  * Updates InstantiatedTypes attached to a method's set for each array allocation
  * occurring within that method.

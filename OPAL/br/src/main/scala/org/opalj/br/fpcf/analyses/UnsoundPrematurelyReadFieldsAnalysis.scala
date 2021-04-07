@@ -4,7 +4,6 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore

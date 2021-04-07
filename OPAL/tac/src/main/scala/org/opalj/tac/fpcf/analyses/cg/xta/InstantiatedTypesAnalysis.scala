@@ -9,11 +9,11 @@ package xta
 import org.opalj.br._
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers

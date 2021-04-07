@@ -7,9 +7,6 @@ package analyses
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.Result
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
-import org.opalj.br.ObjectType
-import org.opalj.br.Method
-import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.Instruction
@@ -69,9 +66,6 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-import org.opalj.br.analyses.ProjectInformationKeys
-import org.opalj.br.fpcf.properties.ThrownExceptions
-import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 
 /**
  * Analysis of thrown exceptions; computes the [[org.opalj.br.fpcf.properties.ThrownExceptions]]

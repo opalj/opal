@@ -11,7 +11,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
@@ -45,17 +44,16 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.cfg.ExitNode
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.ai.PCs
 import org.opalj.ai.ValueOrigin
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.tac.common.DefinitionSiteLike
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
