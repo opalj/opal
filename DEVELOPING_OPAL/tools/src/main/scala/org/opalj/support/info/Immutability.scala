@@ -107,7 +107,6 @@ object Immutability {
         configurationName:                 Option[String],
         times:                             Int
     ): BasicReport = {
-        import org.opalj.br.analyses.cg.TypeExtensibilityKey
 
         val classFiles = projectDir match {
             case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
@@ -124,7 +123,11 @@ object Immutability {
             else JavaClassFileReader().ClassFiles(JRELibraryFolder)
 
         // TODO: use variables for the constants
-        implicit var config: Config = ConfigFactory.load("OpenWorldEvaluation.conf")
+        implicit var config: Config =
+            if (isLibrary)
+                ConfigFactory.load("LibraryProject.conf")
+            else
+                ConfigFactory.load("CommandLineProject.conf")
 
         // TODO: in case of application this value is already set
         if (closedWorldAssumption) {
@@ -209,10 +212,7 @@ object Immutability {
         val propertyStore = project.get(PropertyStoreKey)
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
-        println("uuuuuuuuuuuuuuuuuuuuuuuuu")
-        println("===================================================================================================")
-        println(project.config.atKey("org.opalj.br.analyses.cg.ClosedPackagesKey"))
-        println(project.get(TypeExtensibilityKey)(ObjectType.Object))
+
         time {
             analysesManager.runAll(
                 dependencies, {
@@ -394,7 +394,11 @@ object Immutability {
                 | ${shallowImmutableFields.map(_+" | Shallow Immutable Field ").mkString("\n")}
                 |
                 | Dependent Immutable Fields:
-                | ${dependentImmutableFields.map(_+" | Dependent Immutable Field ").mkString("\n")}
+                | ${
+                    dependentImmutableFields
+                        .map(_+" | Dependent Immutable Field ")
+                        .mkString("\n")
+                }
                 |
                 | Deep Immutable Fields:
                 | ${deepImmutableFields.map(_+" | Deep Immutable Field ").mkString("\n")}
@@ -403,12 +407,9 @@ object Immutability {
             )
         }
 
-        val allInterfaces =
-            project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
-
         val classGroupedResults = propertyStore
             .entities(ClassImmutability.key)
-            .filter(eps ⇒ !allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
+            .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
             .groupBy(_.asFinal.p)
 
@@ -440,6 +441,9 @@ object Immutability {
                 .sortWith(_ < _)
 
         val deepImmutables = classGroupedResults.getOrElse(DeepImmutableClass, Iterator.empty)
+
+        val allInterfaces =
+            project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
         val deepImmutableClassesInterfaces = deepImmutables
             .filter(eps ⇒ allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
