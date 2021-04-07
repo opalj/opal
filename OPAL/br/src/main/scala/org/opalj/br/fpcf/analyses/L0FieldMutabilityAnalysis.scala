@@ -97,6 +97,8 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
 trait L0FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
+
     final override def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = {
@@ -112,8 +114,6 @@ trait L0FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -137,8 +137,6 @@ object EagerL0FieldMutabilityAnalysis
 object LazyL0FieldMutabilityAnalysis
     extends L0FieldMutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

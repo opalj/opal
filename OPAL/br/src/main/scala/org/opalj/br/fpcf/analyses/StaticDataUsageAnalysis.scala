@@ -228,6 +228,8 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
 
 trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     final def derivedProperty: PropertyBounds = {
         // FIXME Just seems to derive the upper bound...
         PropertyBounds.lub(StaticDataUsage)
@@ -243,8 +245,6 @@ trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -263,8 +263,6 @@ object EagerStaticDataUsageAnalysis
 object LazyStaticDataUsageAnalysis
     extends StaticDataUsageAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

@@ -112,6 +112,11 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 
 sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        VirtualFormalParametersKey,
+        DeclaredMethodsKey
+    )
+
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(EscapeProperty))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodEscapeProperty)
@@ -121,11 +126,6 @@ sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends FPCFAnalysisS
 object EagerVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        VirtualFormalParametersKey,
-        DeclaredMethodsKey
-    )
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -142,11 +142,6 @@ object EagerVirtualCallAggregatingEscapeAnalysis
 object LazyVirtualCallAggregatingEscapeAnalysis
     extends VirtualCallAggregatingEscapeAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        VirtualFormalParametersKey,
-        DeclaredMethodsKey
-    )
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

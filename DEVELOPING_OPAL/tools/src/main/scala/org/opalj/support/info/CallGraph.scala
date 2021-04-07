@@ -35,9 +35,6 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
-import org.opalj.log.DevNullLogger
-import org.opalj.log.GlobalLogContext
-import org.opalj.log.OPALLogger
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
@@ -59,8 +56,9 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  *  -algorithm=PointsTo for a points-to based call graph
  * The default algorithm is RTA.
  *
- * Please also specify whether the target (-cp=) is an application or a library using "-projectConf=".
- * Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf` can be used here.
+ * Please also specify whether the target (-cp=) is an application or a library using
+ * "-projectConfig=". Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf`
+ * can be used here.
  *
  * Furthermore, it can be used to print the callees or callers of specific methods.
  * To do so, add -callers=m, where m is the method name/signature using Java notation, as parameter
@@ -70,7 +68,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  */
 object CallGraph extends ProjectAnalysisApplication {
 
-    OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
+    //OPALLogger.updateLogger(GlobalLogContext, DevNullLogger)
 
     override def title: String = "Call Graph Analysis"
 

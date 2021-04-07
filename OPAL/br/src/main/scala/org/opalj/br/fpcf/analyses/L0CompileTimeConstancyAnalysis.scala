@@ -16,6 +16,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
 import org.opalj.br.fpcf.properties.CompileTimeConstantField
@@ -91,6 +92,8 @@ class L0CompileTimeConstancyAnalysis private[analyses] ( final val project: Some
 
 trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(FieldMutability)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(CompileTimeConstancy)
@@ -100,8 +103,6 @@ trait L0CompileTimeConstancyAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -117,8 +118,6 @@ object EagerL0CompileTimeConstancyAnalysis
 object LazyL0CompileTimeConstancyAnalysis
     extends L0CompileTimeConstancyAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

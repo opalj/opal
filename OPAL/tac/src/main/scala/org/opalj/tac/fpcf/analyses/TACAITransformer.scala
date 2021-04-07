@@ -9,6 +9,7 @@ import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTransformerScheduler
 import org.opalj.br.fpcf.DefaultFPCFAnalysis
@@ -25,9 +26,9 @@ import org.opalj.tac.fpcf.properties.TACAI
  */
 object TACAITransformer extends BasicFPCFTransformerScheduler with TACAIInitializer {
 
-    def derivedProperty: PropertyBounds = PropertyBounds.finalP(TACAI)
-
     override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
+    def derivedProperty: PropertyBounds = PropertyBounds.finalP(TACAI)
 
     override def uses: Set[PropertyBounds] = Set(PropertyBounds.finalP(BaseAIResult))
 

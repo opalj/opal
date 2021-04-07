@@ -9,6 +9,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.NotPrematurelyReadField
@@ -29,6 +30,8 @@ class UnsoundPrematurelyReadFieldsAnalysis private[analyses] (val project: SomeP
 
 trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     final override def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.finalP(FieldPrematurelyRead)
@@ -40,8 +43,6 @@ trait UnsoundPrematurelyReadFieldsAnalysisScheduler extends FPCFAnalysisSchedule
 object EagerUnsoundPrematurelyReadFieldsAnalysis
     extends UnsoundPrematurelyReadFieldsAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     def start(project: SomeProject, propertyStore: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new UnsoundPrematurelyReadFieldsAnalysis(project)
@@ -60,8 +61,6 @@ object EagerUnsoundPrematurelyReadFieldsAnalysis
 object LazyUnsoundPrematurelyReadFieldsAnalysis
     extends UnsoundPrematurelyReadFieldsAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     def register(
         project:       SomeProject,

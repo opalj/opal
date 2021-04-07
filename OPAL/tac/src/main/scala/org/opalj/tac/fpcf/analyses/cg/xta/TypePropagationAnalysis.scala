@@ -490,6 +490,9 @@ final class TypePropagationAnalysis private[analyses] (
 final class TypePropagationAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     override type InitializationData = Null
 
     override def triggeredBy: PropertyKind = Callers.key
@@ -501,8 +504,6 @@ final class TypePropagationAnalysisScheduler(
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes, Callees, TACAI)
 

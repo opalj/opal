@@ -21,6 +21,7 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
@@ -180,6 +181,8 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 
 object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     override def init(p: SomeProject, ps: PropertyStore): Null = {
         // To ensure that subsequent analyses are able to pick-up the results of this
         // analysis, we state that the domain that has to be used when computing
@@ -189,8 +192,6 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         )
         null
     }
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def uses: Set[PropertyBounds] = Set.empty
 

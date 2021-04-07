@@ -69,6 +69,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
 
@@ -393,6 +394,8 @@ class L1ThrownExceptionsAnalysis private[analyses] (
 
 abstract class ThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     final override def uses: Set[PropertyBounds] = {
         Set(PropertyBounds.lub(ThrownExceptionsByOverridingMethods))
     }
@@ -410,8 +413,6 @@ abstract class ThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerL1ThrownExceptionsAnalysis
     extends ThrownExceptionsAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -438,8 +439,6 @@ object EagerL1ThrownExceptionsAnalysis
 object LazyL1ThrownExceptionsAnalysis
     extends ThrownExceptionsAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

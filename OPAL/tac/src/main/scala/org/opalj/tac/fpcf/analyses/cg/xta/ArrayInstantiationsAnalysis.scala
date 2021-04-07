@@ -25,8 +25,9 @@ import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.tac.fpcf.properties.TACAI
-
 import scala.collection.mutable
+
+import org.opalj.br.analyses.ProjectInformationKeys
 
 /**
  * Updates InstantiatedTypes attached to a method's set for each array allocation
@@ -117,13 +118,14 @@ class ArrayInstantiationsAnalysisScheduler(
         selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis = new ArrayInstantiationsAnalysis(project, selectSetEntity)
         propertyStore.registerTriggeredComputation(Callers.key, analysis.analyze)
         analysis
     }
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(TACAI)
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes)

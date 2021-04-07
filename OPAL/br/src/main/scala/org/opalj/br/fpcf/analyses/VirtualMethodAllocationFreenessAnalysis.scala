@@ -101,6 +101,8 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] (
 
 trait VirtualMethodAllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(AllocationFreeness))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodAllocationFreeness)
@@ -110,8 +112,6 @@ trait VirtualMethodAllocationFreenessAnalysisScheduler extends FPCFAnalysisSched
 object EagerVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -128,8 +128,6 @@ object EagerVirtualMethodAllocationFreenessAnalysis
 object LazyVirtualMethodAllocationFreenessAnalysis
     extends VirtualMethodAllocationFreenessAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

@@ -226,6 +226,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 
 trait TypeImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
+
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(TypeImmutability)
 
     final override def uses: Set[PropertyBounds] =
@@ -241,8 +243,6 @@ trait TypeImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -266,8 +266,6 @@ object EagerTypeImmutabilityAnalysis
 object LazyTypeImmutabilityAnalysis
     extends TypeImmutabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
     /**

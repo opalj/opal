@@ -194,13 +194,13 @@ private class CallGraphDeserializer private[analyses] (
 
 class CallGraphDeserializerScheduler(serializedCG: File) extends BasicFPCFEagerAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis = new CallGraphDeserializer(serializedCG, p)
         ps.scheduleEagerComputationForEntity(p)(analysis.analyze)
         analysis
     }
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = Set.empty
 

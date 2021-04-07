@@ -48,6 +48,7 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.cfg.ExitNode
@@ -631,6 +632,14 @@ class FieldLocalityAnalysis private[analyses] (
 
 sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        FieldAccessInformationKey,
+        DeclaredMethodsKey,
+        DefinitionSitesKey,
+        TypeExtensibilityKey,
+        ClosedPackagesKey
+    )
+
     final override def uses: Set[PropertyBounds] = {
         Set(
             PropertyBounds.ub(TACAI),
@@ -648,14 +657,6 @@ object EagerFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        FieldAccessInformationKey,
-        DeclaredMethodsKey,
-        DefinitionSitesKey,
-        TypeExtensibilityKey,
-        ClosedPackagesKey
-    )
-
     final override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val allFields = p.allFields
         val analysis = new FieldLocalityAnalysis(p)
@@ -671,14 +672,6 @@ object EagerFieldLocalityAnalysis
 object LazyFieldLocalityAnalysis
     extends FieldLocalityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(
-        FieldAccessInformationKey,
-        DeclaredMethodsKey,
-        DefinitionSitesKey,
-        TypeExtensibilityKey,
-        ClosedPackagesKey
-    )
 
     final override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new FieldLocalityAnalysis(p)

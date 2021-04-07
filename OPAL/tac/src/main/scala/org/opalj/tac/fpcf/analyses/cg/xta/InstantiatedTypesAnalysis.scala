@@ -247,9 +247,9 @@ class InstantiatedTypesAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override type InitializationData = Null
-
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
+    override type InitializationData = Null
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(InstantiatedTypes, Callers)
 

@@ -257,6 +257,6 @@ final class TypePropagationState(
         if (types.size <= 1)
             return types;
 
-        types.filter(t1 ⇒ !types.iterator.exists(t2 ⇒ t1 != t2 && classHierarchy.isSubtypeOf(t1, t2)))
+        types.filter(t1 ⇒ !types.exists(t2 ⇒ t1 != t2 && classHierarchy.isSubtypeOf(t1, t2)))
     }
 }

@@ -117,6 +117,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 
 trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodStaticDataUsage)
@@ -126,8 +128,6 @@ trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisSchedule
 object EagerVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -144,8 +144,6 @@ object EagerVirtualMethodStaticDataUsageAnalysis
 object LazyVirtualMethodStaticDataUsageAnalysis
     extends VirtualMethodStaticDataUsageAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

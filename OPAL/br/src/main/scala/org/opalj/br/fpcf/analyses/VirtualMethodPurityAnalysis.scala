@@ -104,6 +104,8 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
 
 trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(VirtualMethodPurity)
@@ -113,8 +115,6 @@ trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerVirtualMethodPurityAnalysis
     extends VirtualMethodPurityAnalysisScheduler
     with FPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -155,8 +155,6 @@ object EagerVirtualMethodPurityAnalysis
 object LazyVirtualMethodPurityAnalysis
     extends VirtualMethodPurityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

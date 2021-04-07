@@ -250,6 +250,8 @@ class L0AllocationFreenessAnalysis private[analyses] (
 
 trait L0AllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     final override def uses: Set[PropertyBounds] = Set.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(AllocationFreeness)
@@ -272,15 +274,11 @@ object EagerL0AllocationFreenessAnalysis
         ps.scheduleEagerComputationsForEntities(declaredMethods)(analysis.determineAllocationFreeness)
         analysis
     }
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 }
 
 object LazyL0AllocationFreenessAnalysis
     extends L0AllocationFreenessAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

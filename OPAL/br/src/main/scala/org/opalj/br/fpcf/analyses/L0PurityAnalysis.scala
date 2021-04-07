@@ -333,6 +333,8 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
 trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     final override def uses: Set[PropertyBounds] = {
         Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldMutability))
     }
@@ -344,8 +346,6 @@ trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 object EagerL0PurityAnalysis
     extends L0PurityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -366,8 +366,6 @@ object EagerL0PurityAnalysis
 object LazyL0PurityAnalysis
     extends L0PurityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

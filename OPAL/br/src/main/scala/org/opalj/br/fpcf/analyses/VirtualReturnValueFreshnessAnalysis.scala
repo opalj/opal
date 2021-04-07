@@ -115,6 +115,8 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
 sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
+
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(VirtualMethodReturnValueFreshness)
     }
@@ -126,8 +128,6 @@ sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisSc
 object EagerVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
@@ -146,8 +146,6 @@ object EagerVirtualReturnValueFreshnessAnalysis
 object LazyVirtualReturnValueFreshnessAnalysis
     extends VirtualReturnValueFreshnessAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 

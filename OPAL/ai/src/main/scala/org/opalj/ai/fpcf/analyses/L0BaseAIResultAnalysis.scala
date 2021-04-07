@@ -12,6 +12,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
@@ -74,6 +75,8 @@ object L0BaseAIResultAnalysis {
 
 sealed trait L0BaseAIResultAnalysisScheduler extends DomainBasedFPCFAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
+
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(BaseAIResult)
 
 }
@@ -81,8 +84,6 @@ sealed trait L0BaseAIResultAnalysisScheduler extends DomainBasedFPCFAnalysisSche
 object EagerL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
@@ -99,8 +100,6 @@ object EagerL0BaseAIAnalysis
 object LazyL0BaseAIAnalysis
     extends L0BaseAIResultAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
-
-    def requiredProjectInformation: ProjectInformationKeys = Seq(AIDomainFactoryKey)
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
