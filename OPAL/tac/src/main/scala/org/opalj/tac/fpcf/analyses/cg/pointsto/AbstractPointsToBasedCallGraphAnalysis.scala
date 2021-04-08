@@ -181,6 +181,21 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
             pointsToUB(p2s)
         }
     }
+
+    @inline override protected[this] def canResolveCall(
+        implicit
+        state: State
+    ): ObjectType ⇒ Boolean = {
+        throw new UnsupportedOperationException()
+    }
+
+    @inline protected[this] def handleUnresolvedCall(
+        possibleTgtType: ObjectType,
+        call:            Call[V] with VirtualCall[V],
+        pc:              Int
+    )(implicit state: State): Unit = {
+        throw new UnsupportedOperationException()
+    }
 }
 
 class TypeBasedPointsToBasedCallGraphAnalysis private[pointsto] (

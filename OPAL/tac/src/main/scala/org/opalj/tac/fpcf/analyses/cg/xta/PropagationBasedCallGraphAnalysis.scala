@@ -8,7 +8,6 @@ package xta
 
 import scala.language.existentials
 
-import org.opalj.collection.ForeachRefIterator
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -19,7 +18,6 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
@@ -41,8 +39,6 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
 ) extends AbstractCallGraphAnalysis {
 
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
-
-    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     override type State = PropagationBasedCGState
 
@@ -80,72 +76,6 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         val typeSources = Iterable(perMethodInstantiatedTypes, perProjectInstantiatedTypes)
 
         new PropagationBasedCGState(definedMethod, tacEP, typeSources)
-    }
-
-    override def doHandleImpreciseCall(
-        caller:                        DefinedMethod,
-        call:                          Call[V] with VirtualCall[V],
-        pc:                            Int,
-        specializedDeclaringClassType: ReferenceType,
-        potentialTargets:              ForeachRefIterator[ObjectType],
-        calleesAndCallers:             DirectCalls
-    )(implicit state: PropagationBasedCGState): Unit = {
-        for (possibleTgtType ← potentialTargets) {
-            if (state.instantiatedTypesContains(possibleTgtType)) {
-                val tgtR = project.instanceCall(
-                    caller.declaringClassType.asObjectType,
-                    possibleTgtType,
-                    call.name,
-                    call.descriptor
-                )
-
-                handleCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    pc,
-                    tgtR,
-                    calleesAndCallers
-                )
-            } else {
-                state.addVirtualCallSite(
-                    possibleTgtType, (pc, call.name, call.descriptor, call.declaringClass)
-                )
-            }
-        }
-
-        // TODO: Document what happens here
-        if (specializedDeclaringClassType.isObjectType) {
-            val declType = specializedDeclaringClassType.asObjectType
-
-            val mResult = if (classHierarchy.isInterface(declType).isYes)
-                org.opalj.Result(project.resolveInterfaceMethodReference(
-                    declType, call.name, call.descriptor
-                ))
-            else
-                org.opalj.Result(project.resolveMethodReference(
-                    declType,
-                    call.name,
-                    call.descriptor,
-                    forceLookupInSuperinterfacesOnFailure = true
-                ))
-
-            if (mResult.isEmpty) {
-                unknownLibraryCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    declType,
-                    caller.definedMethod.classFile.thisType.packageName,
-                    pc,
-                    calleesAndCallers
-                )
-            } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
-                calleesAndCallers.addIncompleteCallSite(pc)
-            }
-        }
     }
 
     /**
@@ -188,6 +118,23 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
 
             state.removeCallSite(instantiatedType.asObjectType)
         }
+    }
+
+    @inline override protected[this] def canResolveCall(
+        implicit
+        state: PropagationBasedCGState
+    ): ObjectType ⇒ Boolean = {
+        state.instantiatedTypesContains(_)
+    }
+
+    @inline protected[this] def handleUnresolvedCall(
+        possibleTgtType: ObjectType,
+        call:            Call[V] with VirtualCall[V],
+        pc:              Int
+    )(implicit state: PropagationBasedCGState): Unit = {
+        state.addVirtualCallSite(
+            possibleTgtType, (pc, call.name, call.descriptor, call.declaringClass)
+        )
     }
 }
 
