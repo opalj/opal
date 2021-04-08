@@ -9,6 +9,7 @@ package xta
 import org.opalj.br._
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
@@ -36,7 +37,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -247,6 +247,8 @@ class InstantiatedTypesAnalysis private[analyses] (
 class InstantiatedTypesAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override type InitializationData = Null
 
