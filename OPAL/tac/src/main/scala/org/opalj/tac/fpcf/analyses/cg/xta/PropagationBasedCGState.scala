@@ -6,8 +6,6 @@ package analyses
 package cg
 package xta
 
-import scala.collection.mutable
-
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
@@ -17,6 +15,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
+
+import scala.collection.mutable
+
+import scala.collection.JavaConverters._
 
 /**
  * Manages the state of each method analyzed by [[PropagationBasedCallGraphAnalysis]].
@@ -29,10 +31,10 @@ class PropagationBasedCGState(
         _instantiatedTypesDependees:               Iterable[EOptionP[TypeSetEntity, InstantiatedTypes]]
 ) extends CGState {
 
-    private[this] val _instantiatedTypesDependeeMap: mutable.Map[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]] = mutable.Map.empty
+    private[this] val _instantiatedTypesDependeeMap = new java.util.HashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]]()
 
     for (dependee ← _instantiatedTypesDependees) {
-        _instantiatedTypesDependeeMap.update(dependee.e, dependee)
+        _instantiatedTypesDependeeMap.put(dependee.e, dependee)
     }
 
     private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSiteT]] = mutable.LongMap.empty
@@ -46,11 +48,11 @@ class PropagationBasedCGState(
     def updateInstantiatedTypesDependee(
         instantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes]
     ): Unit = {
-        _instantiatedTypesDependeeMap.update(instantiatedTypesDependee.e, instantiatedTypesDependee)
+        _instantiatedTypesDependeeMap.put(instantiatedTypesDependee.e, instantiatedTypesDependee)
     }
 
     def instantiatedTypes(typeSetEntity: TypeSetEntity): UIDSet[ReferenceType] = {
-        val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
+        val typeDependee = _instantiatedTypesDependeeMap.get(typeSetEntity)
         if (typeDependee.hasUBP)
             typeDependee.ub.types
         else
@@ -58,11 +60,13 @@ class PropagationBasedCGState(
     }
 
     def instantiatedTypesContains(tpe: ReferenceType): Boolean = {
-        _instantiatedTypesDependeeMap.keys.exists(instantiatedTypes(_).contains(tpe))
+        _instantiatedTypesDependeeMap.values().iterator().asScala.exists { eOptP ⇒
+            instantiatedTypes(eOptP.e).contains(tpe)
+        }
     }
 
     def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
-        val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
+        val typeDependee = _instantiatedTypesDependeeMap.get(typeSetEntity)
         if (typeDependee.hasUBP) {
             typeDependee.ub.dropOldest(seenTypes)
         } else {
@@ -92,7 +96,7 @@ class PropagationBasedCGState(
     }
 
     def removeCallSite(instantiatedType: ObjectType): Unit = {
-        _virtualCallSites -= instantiatedType.id.toLong
+        _virtualCallSites.remove(instantiatedType.id.toLong)
     }
 
     /////////////////////////////////////////////
@@ -102,10 +106,11 @@ class PropagationBasedCGState(
     /////////////////////////////////////////////
 
     override def hasOpenDependencies: Boolean = {
-        _instantiatedTypesDependeeMap.exists(_._2.isRefinable) || super.hasOpenDependencies
+        super.hasOpenDependencies ||
+            _instantiatedTypesDependeeMap.values().iterator().asScala.exists(_.isRefinable)
     }
 
     override def dependees: Set[SomeEOptionP] = {
-        super.dependees ++ _instantiatedTypesDependeeMap.valuesIterator
+        super.dependees ++ _instantiatedTypesDependeeMap.values().asScala
     }
 }
