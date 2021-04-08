@@ -36,7 +36,7 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
         if (Thread.currentThread().isInterrupted) return ;
 
         time { //  Test lazy analysis...
-            val p = theProject.recreate()
+            val p = theProject
             val counter = new AtomicInteger()
             val ps = p.get(PropertyStoreKey)
 
