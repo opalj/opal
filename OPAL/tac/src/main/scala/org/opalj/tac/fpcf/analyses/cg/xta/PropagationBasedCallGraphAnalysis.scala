@@ -97,7 +97,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         newTypes.filter(_.isObjectType).foreach { instantiatedType ⇒
             val callSites = state.getVirtualCallSites(instantiatedType.asObjectType)
             callSites.foreach { callSite ⇒
-                val (pc, name, descr, declaringClass) = callSite
+                val CallSite(pc, name, descr, declaringClass) = callSite
                 val tgtR = project.instanceCall(
                     state.method.definedMethod.classFile.thisType,
                     instantiatedType,
@@ -133,7 +133,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         pc:              Int
     )(implicit state: PropagationBasedCGState): Unit = {
         state.addVirtualCallSite(
-            possibleTgtType, (pc, call.name, call.descriptor, call.declaringClass)
+            possibleTgtType, CallSite(pc, call.name, call.descriptor, call.declaringClass)
         )
     }
 }

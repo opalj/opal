@@ -29,7 +29,7 @@ class RTAState(
         override protected[this] var _tacDependee:    EOptionP[Method, TACAI],
         private[this] var _instantiatedTypesDependee: EOptionP[SomeProject, InstantiatedTypes]
 ) extends CGState {
-    private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSiteT]] = mutable.LongMap.empty
+    private[this] val _virtualCallSites: mutable.LongMap[mutable.Set[CallSite]] = mutable.LongMap.empty
 
     /////////////////////////////////////////////
     //                                         //
@@ -73,7 +73,7 @@ class RTAState(
 
     override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty
 
-    def addVirtualCallSite(objectType: ObjectType, callSite: CallSiteT): Unit = {
+    def addVirtualCallSite(objectType: ObjectType, callSite: CallSite): Unit = {
         val oldValOpt = _virtualCallSites.get(objectType.id.toLong)
         if (oldValOpt.isDefined)
             oldValOpt.get += callSite
@@ -82,7 +82,7 @@ class RTAState(
         }
     }
 
-    def getVirtualCallSites(objectType: ObjectType): scala.collection.Set[CallSiteT] = {
+    def getVirtualCallSites(objectType: ObjectType): scala.collection.Set[CallSite] = {
         _virtualCallSites.getOrElse(objectType.id.toLong, scala.collection.Set.empty)
     }
 
