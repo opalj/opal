@@ -32,6 +32,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.Field
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
@@ -427,6 +428,8 @@ object FieldValuesAnalysis {
 }
 
 object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
         // To ensure that subsequent analyses are able to pick-up the results of this

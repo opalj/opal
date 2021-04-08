@@ -17,6 +17,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.NoFreshReturnValue
 import org.opalj.br.fpcf.properties.PrimitiveReturnValue
@@ -113,6 +114,8 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 }
 
 sealed trait VirtualReturnValueFreshnessAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final def derivedProperty: PropertyBounds = {
         PropertyBounds.lub(VirtualMethodReturnValueFreshness)
