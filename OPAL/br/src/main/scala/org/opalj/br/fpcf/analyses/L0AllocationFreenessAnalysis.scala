@@ -21,6 +21,7 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomeInterimEP
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.AllocationFreeMethod
 import org.opalj.br.fpcf.properties.AllocationFreeness
@@ -249,6 +250,8 @@ class L0AllocationFreenessAnalysis private[analyses] (
 }
 
 trait L0AllocationFreenessAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set.empty
 

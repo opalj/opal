@@ -15,6 +15,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
@@ -110,6 +111,11 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 }
 
 sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        VirtualFormalParametersKey,
+        DeclaredMethodsKey
+    )
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(EscapeProperty))
 

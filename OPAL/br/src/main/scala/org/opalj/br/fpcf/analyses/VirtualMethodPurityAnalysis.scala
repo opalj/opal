@@ -16,6 +16,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.CompileTimePure
@@ -102,6 +103,8 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
 }
 
 trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
 
