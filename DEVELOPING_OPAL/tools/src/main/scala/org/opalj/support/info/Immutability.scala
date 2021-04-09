@@ -23,8 +23,8 @@ import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
@@ -176,7 +176,7 @@ object Immutability {
                 LazyL1TypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazyInterProceduralEscapeAnalysis,
+                LazySimpleEscapeAnalysis,
                 LazyReturnValueFreshnessAnalysis,
                 LazyFieldLocalityAnalysis
             )
