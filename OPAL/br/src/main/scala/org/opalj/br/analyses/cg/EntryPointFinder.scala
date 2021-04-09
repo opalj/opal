@@ -111,7 +111,9 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
                                 // but it soundly overapproximates
                                 subtypeCFOption.forall(_.constructors.exists { c ⇒
                                     c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
-                                }))
+                                }) || classFile.methods.exists {
+                                    m ⇒ m.isStatic && m.isPublic && m.returnType == ot
+                                })
                     }
                 } else if (method.isProtected) {
                     isExtensible(ot).isYesOrUnknown &&
