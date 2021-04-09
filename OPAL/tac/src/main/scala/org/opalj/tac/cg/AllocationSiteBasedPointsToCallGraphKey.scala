@@ -30,6 +30,9 @@ object AllocationSiteBasedPointsToCallGraphKey extends AbstractCallGraphKey {
         Seq(DefinitionSitesKey, VirtualFormalParametersKey) ++: super.requirements(project)
     }
 
+    // FIXME This is just a hack as long as modules are not compatible with the pointsto call graph
+    override def registeredAnalyses(project: SomeProject): Seq[FPCFAnalysisScheduler] = Seq.empty
+
     override protected def callGraphSchedulers(
         project: SomeProject
     ): Traversable[FPCFAnalysisScheduler] = {
