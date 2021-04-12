@@ -15,7 +15,7 @@ class GenericFieldsDeep<T> {
     private Generic<Generic<FinalEmptyClass>> nestedDeep = new Generic<>(new Generic<>(new FinalEmptyClass()));
 
     @DeepImmutableField("")
-    Generic<FinalEmptyClass> fecG = new Generic<>(new FinalEmptyClass());
+    private Generic<FinalEmptyClass> fecG = new Generic<>(new FinalEmptyClass());
 
 }
 

@@ -4,6 +4,7 @@ package org.opalj.fpcf.fixtures.benchmark.arrays.not_deep;
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
@@ -14,7 +15,7 @@ public class ArrayInitialization {
 
     //@Immutable
     @MutableField("")
-    @MutableFieldReference("")
+    @LazyInitializedNotThreadSafeFieldReference("")
     private Object[] array;
 
     public Object[] getArray(int n) {

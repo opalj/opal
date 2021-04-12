@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.benchmark.generals;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
@@ -23,6 +24,11 @@ public class Mutability {
     //@Immutable
     @MutableField("")
     @MutableFieldReference("The field can be incremented")
+    private int iCompound;
+
+    @Immutable
+    @MutableField("")
+    @MutableFieldReference("The field can be set")
     private int i;
 
     //@Immutable
@@ -39,7 +45,13 @@ public class Mutability {
 
     public static void updateI(Mutability s) {
         if (s != null) {
-            s.i += 1;
+            s.iCompound += 1;
+        }
+    }
+
+    public static void setI(Mutability s, int n){
+        if(s!=null){
+            s.i = n;
         }
     }
 }

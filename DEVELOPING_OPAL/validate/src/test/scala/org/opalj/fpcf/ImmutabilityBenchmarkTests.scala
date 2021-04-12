@@ -31,7 +31,7 @@ class ImmutabilityBenchmarkTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/benchmark")
+        List("org/opalj/fpcf/fixtures/benchmark/lazy_initialization/primitive_types")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -61,9 +61,9 @@ class ImmutabilityBenchmarkTests extends PropertiesTest {
 
         as.propertyStore.shutdown()
 
-        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldReferenceImmutability"))
+        //validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldReferenceImmutability"))
         validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldImmutability"))
-        validateProperties(
+        /*validateProperties(
             as,
             classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
             Set("ClassImmutability")
@@ -72,6 +72,6 @@ class ImmutabilityBenchmarkTests extends PropertiesTest {
             as,
             classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability")
-        )
+        ) */
     }
 }

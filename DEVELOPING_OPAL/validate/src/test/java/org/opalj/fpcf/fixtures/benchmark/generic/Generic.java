@@ -15,7 +15,7 @@ public class Generic<T> {
     //@Immutable
     @DependentImmutableField("")
     @ImmutableFieldReference("")
-    T t;
+    private T t;
 
     public Generic(T t){this.t = t;}
 }

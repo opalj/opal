@@ -15,7 +15,7 @@ public final class CloneNonAssignable {
     //@Immutable
     @DeepImmutableField("")
     @ImmutableFieldReference("")
-    int i;
+    private int i;
 
     public CloneNonAssignable clone(){
         CloneNonAssignable c = new CloneNonAssignable();

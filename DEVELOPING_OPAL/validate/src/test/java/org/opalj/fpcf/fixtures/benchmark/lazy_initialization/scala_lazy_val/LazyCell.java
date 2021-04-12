@@ -5,7 +5,9 @@ import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSa
 
 public class LazyCell {
 
-    volatile boolean bitmap_0 = false;
+    @DeepImmutableField("")
+    @LazyInitializedThreadSafeFieldReference("Scala lazy val pattern")
+    private volatile boolean bitmap_0 = false;
 
     @DeepImmutableField("")
     @LazyInitializedThreadSafeFieldReference("Scala lazy val pattern")
