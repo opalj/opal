@@ -10,7 +10,7 @@ If you want to use OPAL for the development of static analyses, you can either u
 
 # Using The Latest Development Snapshot
 
-Go to [GitHub](https://github.com/stg-tud/opal) to checkout OPAL and to read how to compile and deploy it.
+Go to [GitHub](https://github.com/opalj/OPAL) to checkout OPAL and to read how to compile and deploy it.
 
 
 # Using The Latest Release
@@ -66,4 +66,4 @@ The abstract interpretation framework is a highly-customizable framework for the
 
 ## Using OPAL
 
-OPAL comes with a huge number of code [snippets](https://bitbucket.org/snippets/delors/) and [small (i.e., one-class) analyses](https://github.com/stg-tud/opal/tree/develop/DEVELOPING_OPAL/demos/src/main/scala/org/opalj) to demonstrate various features.
+OPAL comes with a huge number of code [snippets](https://bitbucket.org/snippets/delors/) and [small (i.e., one-class) analyses](https://github.com/opalj/OPAL/tree/develop/DEVELOPING_OPAL/demos/src/main/scala/org/opalj) to demonstrate various features.
