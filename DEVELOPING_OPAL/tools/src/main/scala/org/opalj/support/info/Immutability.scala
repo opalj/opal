@@ -206,9 +206,9 @@ object Immutability {
                 }
             }
         )
-        time { project.get(callGraphKey) } { t ⇒
-            callGraphTime = t.toSeconds
-        }
+        //time { project.get(callGraphKey) } { t ⇒
+        //    callGraphTime = t.toSeconds
+        //}
         val propertyStore = project.get(PropertyStoreKey)
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
