@@ -25,7 +25,7 @@ import org.opalj.br.fpcf.properties.FieldReferenceImmutability
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.ObjectType
 import scala.annotation.switch
-import org.opalj.br.fpcf.properties.cg.Callees
+////import org.opalj.br.fpcf.properties.cg.Callees
 //import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.FieldType
 
@@ -691,9 +691,9 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
                     if (isStaticFunctionCall || isVirtualFunctionCall) {
                         //in case of Integer etc.... .initValue()
 
-                        val calleesResult = propertyStore(declaredMethods(method), Callees.key)
-                        if (doCallsIntroduceNonDeterminism(calleesResult, code(index).asAssignment.pc))
-                            return false;
+                        ///val calleesResult = propertyStore(declaredMethods(method), Callees.key)
+                        ///if (doCallsIntroduceNonDeterminism(calleesResult, code(index).asAssignment.pc))
+                        ///    return false;
 
                         if (isVirtualFunctionCall) {
                             val virtualFunctionCall = code(index).asAssignment.expr.asVirtualFunctionCall

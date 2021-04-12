@@ -31,7 +31,7 @@ import org.opalj.br.fpcf.properties.MutableFieldReference
 import org.opalj.br.fpcf.properties.NoEscape
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.FieldReferenceImmutability
-import org.opalj.br.fpcf.properties.cg.Callees
+//import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
@@ -184,10 +184,10 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
             if (methodUpdatesField(method, taCode, pcs))
                 return Result(field, MutableFieldReference);
         }
-        if (state.lazyInitInvocation.isDefined) {
-            val calleesEOP = propertyStore(state.lazyInitInvocation.get._1, Callees.key)
-            doCallsIntroduceNonDeterminism(calleesEOP, state.lazyInitInvocation.get._2)
-        }
+        //if (state.lazyInitInvocation.isDefined) {
+        //    val calleesEOP = propertyStore(state.lazyInitInvocation.get._1, Callees.key)
+        //    doCallsIntroduceNonDeterminism(calleesEOP, state.lazyInitInvocation.get._2)
+        //}
         createResult()
     }
 
@@ -253,10 +253,10 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
                     state.tacDependees += method -> ((newEP, pcs))
                 isNotFinal = methodUpdatesField(method, newEP.ub.tac.get, pcs)
 
-            case Callees.key ⇒
-                val newEPS = eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
-                val pcs = state.calleesDependee(newEPS.e)._2
-                isNotFinal = pcs.forall(pc ⇒ doCallsIntroduceNonDeterminism(newEPS, pc))
+            ///case Callees.key ⇒
+            ///    val newEPS = eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
+            ///    val pcs = state.calleesDependee(newEPS.e)._2
+            ///    isNotFinal = pcs.forall(pc ⇒ doCallsIntroduceNonDeterminism(newEPS, pc))
 
             case FieldPrematurelyRead.key ⇒
                 isNotFinal = isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
@@ -427,13 +427,13 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
 
 trait L0FieldReferenceImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
-  override def requiredProjectInformation: ProjectInformationKeys = Seq(
-      DeclaredMethodsKey,
-      FieldAccessInformationKey,
-      ClosedPackagesKey,
-      TypeExtensibilityKey,
-      DefinitionSitesKey
-  )
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        DeclaredMethodsKey,
+        FieldAccessInformationKey,
+        ClosedPackagesKey,
+        TypeExtensibilityKey,
+        DefinitionSitesKey
+    )
 
     final override def uses: Set[PropertyBounds] = Set(
         PropertyBounds.lub(Purity),

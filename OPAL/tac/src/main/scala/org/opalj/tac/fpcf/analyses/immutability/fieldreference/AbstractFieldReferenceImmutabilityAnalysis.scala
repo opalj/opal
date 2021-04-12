@@ -6,13 +6,13 @@ package analyses
 package immutability
 package fieldreference
 
-import org.opalj.fpcf.FinalP
-import org.opalj.fpcf.InterimUBP
+////import org.opalj.fpcf.FinalP
+////import org.opalj.fpcf.InterimUBP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
-import org.opalj.br.PC
+////import org.opalj.br.PC
 import org.opalj.br.PCs
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -29,7 +29,7 @@ import org.opalj.br.fpcf.properties.PrematurelyReadField
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.FieldReferenceImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
-import org.opalj.br.fpcf.properties.cg.Callees
+//import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
@@ -61,12 +61,12 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     case class State(
-            field:                              Field,
-            var referenceImmutability:          FieldReferenceImmutability                                                     = ImmutableFieldReference,
-            var prematurelyReadDependee:        Option[EOptionP[Field, FieldPrematurelyRead]]                                  = None,
-            var purityDependees:                Set[EOptionP[DeclaredMethod, Purity]]                                          = Set.empty,
-            var lazyInitInvocation:             Option[(DeclaredMethod, PC)]                                                   = None,
-            var calleesDependee:                Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], List[PC])]             = Map.empty,
+            field:                       Field,
+            var referenceImmutability:   FieldReferenceImmutability                    = ImmutableFieldReference,
+            var prematurelyReadDependee: Option[EOptionP[Field, FieldPrematurelyRead]] = None,
+            var purityDependees:         Set[EOptionP[DeclaredMethod, Purity]]         = Set.empty,
+            //var lazyInitInvocation:             Option[(DeclaredMethod, PC)]                                                   = None,
+            //var calleesDependee:                Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], List[PC])]             = Map.empty,
             var referenceImmutabilityDependees: Set[EOptionP[Field, FieldReferenceImmutability]]                               = Set.empty,
             var escapeDependees:                Set[EOptionP[DefinitionSite, EscapeProperty]]                                  = Set.empty,
             var tacDependees:                   Map[Method, (EOptionP[Method, TACAI], PCs)]                                    = Map.empty,
@@ -75,13 +75,13 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     ) {
         def hasDependees: Boolean = {
             prematurelyReadDependee.isDefined || prematurelyReadDependee.isDefined || purityDependees.nonEmpty ||
-                calleesDependee.nonEmpty || referenceImmutabilityDependees.nonEmpty ||
+                referenceImmutabilityDependees.nonEmpty || //calleesDependee.nonEmpty ||
                 escapeDependees.nonEmpty || tacDependees.nonEmpty || typeDependees.nonEmpty
         }
 
         def dependees: Set[EOptionP[Entity, Property]] = {
             (prematurelyReadDependee ++ referenceImmutabilityDependees ++ escapeDependees ++ purityDependees ++
-                calleesDependee.valuesIterator.map(_._1) ++ tacDependees.valuesIterator.map(_._1) ++ typeDependees).toSet
+                tacDependees.valuesIterator.map(_._1) ++ typeDependees).toSet //calleesDependee.valuesIterator.map(_._1) ++
         }
     }
 
@@ -166,7 +166,7 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
     /**
      * Checks whether the calls at a given pc within a given method introduce non determinism.
      * @return if the calls introduce nondeterminism
-     */
+     */ /*
     def doCallsIntroduceNonDeterminism(
         calleesEOP: EOptionP[DeclaredMethod, Callees],
         pc:         PC
@@ -180,14 +180,14 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
                 state.calleesDependee += calleesEOP.e → ((calleesEOP, pc :: state.calleesDependee(calleesEOP.e)._2))
                 false
         }
-    }
+    }*/
 
     /**
      * Checks whether a callee is nondeterministic and sets the [[State.referenceImmutability]] to
      * MutableFieldReference if it is not deterministic
      * @return if the callee is nondeterministic
      */
-    def isNonDeterministicCallee(callees: Callees, pc: PC)(implicit state: State): Boolean = {
+    /*def isNonDeterministicCallee(callees: Callees, pc: PC)(implicit state: State): Boolean = {
         if (callees.isIncompleteCallSite(pc)) {
             state.referenceImmutability = MutableFieldReference
             true
@@ -199,5 +199,5 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
             } else
                 false
         }
-    }
+    } */
 }
