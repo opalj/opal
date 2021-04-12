@@ -149,7 +149,7 @@ object Immutability {
 
         var projectTime: Seconds = Seconds.None
         var analysisTime: Seconds = Seconds.None
-        var callGraphTime: Seconds = Seconds.None
+        val callGraphTime: Seconds = Seconds.None
 
         val project = time {
             Project(
