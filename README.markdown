@@ -1,4 +1,4 @@
-![](https://github.com/stg-tud/opal/workflows/Build%20and%20Execute%20Tests/badge.svg)
+![](https://github.com/opalj/OPAL/workflows/Build%20and%20Execute%20Tests/badge.svg)
 
 # Overview
 OPAL is an extensible library for analyzing and engineering Java bytecode.
