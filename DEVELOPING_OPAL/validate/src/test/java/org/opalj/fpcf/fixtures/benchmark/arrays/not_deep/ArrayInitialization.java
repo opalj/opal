@@ -15,7 +15,7 @@ public class ArrayInitialization {
 
     //@Immutable
     @MutableField("")
-    @LazyInitializedNotThreadSafeFieldReference("")
+    @MutableFieldReference("Multiple assignments possible")
     private Object[] array;
 
     public Object[] getArray(int n) {

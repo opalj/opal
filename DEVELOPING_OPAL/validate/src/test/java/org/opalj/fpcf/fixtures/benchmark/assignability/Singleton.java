@@ -20,19 +20,8 @@ public class Singleton {
     @MutableFieldReference("written by static initializer after the field becomes (indirectly) readable")
     private String name;
 
-    //@Immutable
-    @DeepImmutableField("")
-    @ImmutableFieldReference("only initialized once by the constructor")
-    private Object mutex = new Object();
-
     private Singleton() {
         this.name = "";
-    }
-
-    public String getName() {
-        synchronized (mutex) {
-            return name;
-        }
     }
 
     // STATIC FUNCTIONALITY

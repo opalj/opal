@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.concrete_class_type_is_known;
+package org.opalj.fpcf.fixtures.benchmark.concrete_type_is_known.singleObjects;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;

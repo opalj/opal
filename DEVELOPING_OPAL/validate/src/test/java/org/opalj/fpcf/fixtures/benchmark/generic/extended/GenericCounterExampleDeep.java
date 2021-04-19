@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.generic;
+package org.opalj.fpcf.fixtures.benchmark.generic.extended;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
@@ -11,5 +11,5 @@ class GenericCounterExampleDeep<T> {
 
     //@Immutable
     @DeepImmutableField("")
-    private int n = 5;
+    private final int n = 5;
 }

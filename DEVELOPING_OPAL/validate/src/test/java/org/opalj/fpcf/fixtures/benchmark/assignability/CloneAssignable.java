@@ -7,8 +7,8 @@ import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
-@MutableType("")
-@MutableClass("")
+@MutableType("Class is extensible")
+@MutableClass("Class has mutable field")
 public class CloneAssignable {
 
     //@Immutable
@@ -24,9 +24,7 @@ public class CloneAssignable {
     public CloneAssignable clone(){
         CloneAssignable c = new CloneAssignable();
         c.i = 5;
-        c.i = i;
         instance = c;
-        c.i = 6;
         return c;
     }
 }

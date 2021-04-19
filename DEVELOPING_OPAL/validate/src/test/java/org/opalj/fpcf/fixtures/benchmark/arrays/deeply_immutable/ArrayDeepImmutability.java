@@ -15,7 +15,7 @@ public class ArrayDeepImmutability {
     //@Immutable
     @DeepImmutableField("The elements of the array can not escape")
     @ImmutableFieldReference("Array is eager initialized")
-    private Object[] zzz = new Object[]{1, 2, 3};
+    private Object[] array1 = new Object[]{1, 2, 3};
 
     //@Immutable
     @DeepImmutableField("")
@@ -31,50 +31,15 @@ public class ArrayDeepImmutability {
     }
 
     //@Immutable
-    @DeepImmutableField("The elements of the array can not escape.")
-    @LazyInitializedThreadSafeFieldReference("The array is initialized thread safen and eagerly.")
-    private Object[] j;
-
-    public synchronized void getJ(){
-        if(j==null)
-            j = new Object[]{new Object(), new Object(), new Object()};
-    }
-
-    //@Immutable
     @DeepImmutableField("The elements of the array can not escape")
     @ImmutableFieldReference("The array is not initialized.")
     private Object[] k;
 
-    //@Immutable
-    @DeepImmutableField("The elements of the array can not escape.")
-    @ImmutableFieldReference("The array is initialized eagerly.")
-    private Object[] h = new Object[]{new Object(), new Object(), new Object()};
 
-    //@Immutable
-    @DeepImmutableField("The elements of the array can escape, but have a deep immutable reference.")
-    @LazyInitializedThreadSafeFieldReference("The array is thread safe lazily intialized.")
-    private Integer[] q;
-    public synchronized Integer getQ(){
-        if(q==null)
-            q = new Integer[]{new Integer(1), new Integer(2), new Integer(3)};
-        return q[2];
-    }
 
-    //@Immutable
-    @DeepImmutableField("The elements of the array can escape.")
-    @LazyInitializedThreadSafeFieldReference("The array is thread-safely lazily initialized")
-    private Object[] arr;
 
-    public synchronized Object[] getI(){
-        if(arr==null)
-            arr = new Object[]{new Object(), new Object(), new Object()};
-        return arr;
-    }
 
-    //@Immutable
-    @DeepImmutableField("")
-    @ImmutableFieldReference("Reference is only initialized once")
-    private Object[] array1 = new Object[]{new Object(), new Object(), new Object()}; //TODO
+
 
     //@Immutable
     @DeepImmutableField("")

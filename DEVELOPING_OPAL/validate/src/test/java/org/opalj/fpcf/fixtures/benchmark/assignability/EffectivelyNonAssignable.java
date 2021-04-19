@@ -11,7 +11,7 @@ import org.opalj.fpcf.properties.immutability.types.ShallowImmutableType;
 //@Immutable
 @ShallowImmutableType("")
 @ShallowImmutableClass("")
-public final class TriviallyEffectivelyNonAssignable {
+public final class EffectivelyNonAssignable {
 
     //@Immutable
     @DeepImmutableField("")
@@ -25,10 +25,20 @@ public final class TriviallyEffectivelyNonAssignable {
 
     //@Immutable
     @DeepImmutableField("")
+    @ImmutableFieldReference("field is only assigned once")
+    private static int staticInt = 5;
+
+    //@Immutable
+    @DeepImmutableField("")
+    @ImmutableFieldReference("field is only assigned once")
+    private static Object staticObject = new Object();
+
+    //@Immutable
+    @DeepImmutableField("")
     @ImmutableFieldReference("")
     private Object escapingViaGetter = new Object();
 
-    public TriviallyEffectivelyNonAssignable(Object o) {
+    public EffectivelyNonAssignable(Object o) {
         this.escapingViaConstructor = o;
     }
 

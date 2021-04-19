@@ -34,10 +34,5 @@ public class ClassWithNotDeepImmutableFields {
     //@Immutable
     @MutableField(value = "field is public")
     @MutableFieldReference(value = "field is public")
-    public int n = 0;
-
-    //@Immutable
-    @MutableField(value = "field is public")
-    @MutableFieldReference(value = "field is public")
     public String name = "name";
 }

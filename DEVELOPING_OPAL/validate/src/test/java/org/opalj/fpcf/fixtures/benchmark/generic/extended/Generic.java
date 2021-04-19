@@ -1,5 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.generic;
+package org.opalj.fpcf.fixtures.benchmark.generic.extended;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.DependentImmutableClass;
@@ -15,7 +15,7 @@ public class Generic<T> {
     //@Immutable
     @DependentImmutableField("")
     @ImmutableFieldReference("")
-    private T t;
+    private final T t;
 
     public Generic(T t){this.t = t;}
 }
