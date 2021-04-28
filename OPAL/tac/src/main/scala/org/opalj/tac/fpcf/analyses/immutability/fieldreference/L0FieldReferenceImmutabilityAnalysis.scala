@@ -124,8 +124,8 @@ class L0FieldReferenceImmutabilityAnalysis private[analyses] (val project: SomeP
         if (field.isFinal)
             return Result(field, ImmutableFieldReference);
 
-        //if (field.isPublic)
-        //    return Result(field, MutableFieldReference);
+        if (field.isPublic)
+            return Result(field, MutableFieldReference);
 
         implicit val state: State = State(field)
 
