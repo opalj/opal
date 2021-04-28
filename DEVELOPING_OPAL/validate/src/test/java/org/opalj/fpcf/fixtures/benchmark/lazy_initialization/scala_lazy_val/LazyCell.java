@@ -1,16 +1,25 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.scala_lazy_val;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.classes.TransitiveImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitiveImmutableField;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.types.MutableType;
 
+/**
+ *  This class represents the implementation of Scala lazy val from Scala 2.12.
+ *  https://docs.scala-lang.org/sips/improved-lazy-val-initialization.html
+ *
+ */
+@MutableType("non final class")
+@TransitiveImmutableClass("Class has only transitive immutable fields.")
 public class LazyCell {
 
-    @DeepImmutableField("")
-    @LazyInitializedThreadSafeFieldReference("Scala lazy val pattern")
+    @TransitiveImmutableField("Lazy initialized field with primitive type")
+    @LazyInitializedThreadSafeFieldReference("The field is only set once in a synchronized way.")
     private volatile boolean bitmap_0 = false;
 
-    @DeepImmutableField("")
-    @LazyInitializedThreadSafeFieldReference("Scala lazy val pattern")
+    @TransitiveImmutableField("Lazy initialized field with primitive type")
+    @LazyInitializedThreadSafeFieldReference("The field is only set once in a synchronized way.")
     Integer value_0;
 
     private Integer value_lzycompute() {
