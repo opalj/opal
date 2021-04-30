@@ -59,6 +59,14 @@ class InstantiatedTypesAnalysis private[analyses] (
         if (declaredMethod.name != "<init>")
             return NoResult;
 
+        val declaredType = declaredMethod.declaringClassType
+
+        val cfOpt = project.classFile(declaredType)
+
+        // abstract classes can never be instantiated
+        if(cfOpt.isDefined && cfOpt.get.isAbstract)
+            return NoResult;
+
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
 
         val callersUB: Callers = (callersEOptP: @unchecked) match {
@@ -81,19 +89,9 @@ class InstantiatedTypesAnalysis private[analyses] (
         val instantiatedTypesEOptP = propertyStore(project, InstantiatedTypes.key)
         val instantiatedTypesUB: UIDSet[ReferenceType] = getInstantiatedTypesUB(instantiatedTypesEOptP)
 
-        val declaredType = declaredMethod.declaringClassType
-
         // if the current type is already instantiated, no work is left
         if (instantiatedTypesUB.contains(declaredType))
             return NoResult;
-
-        val cfOpt = project.classFile(declaredType)
-
-        // abstract classes can never be instantiated
-        cfOpt.foreach { cf ⇒
-            if (cf.isAbstract)
-                return NoResult;
-        }
 
         processCallers(declaredMethod, declaredType, callersEOptP, callersUB, Set.empty)
     }
@@ -117,6 +115,11 @@ class InstantiatedTypesAnalysis private[analyses] (
                 return partialResult(declaredType);
             }
 
+            // if the caller is not available, we have to assume that it was no super call
+            if (!caller.hasSingleDefinedMethod) {
+                return partialResult(declaredType);
+            }
+
             // the constructor is called from another constructor. it is only an new instantiated
             // type if it was no super call. Thus the caller must be a subtype
             if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType))
@@ -128,11 +131,6 @@ class InstantiatedTypesAnalysis private[analyses] (
                     if (supertype != declaredType)
                         return partialResult(declaredType);
                 }
-            }
-
-            // if the caller is not available, we have to assume that it was no super call
-            if (!caller.hasSingleDefinedMethod) {
-                return partialResult(declaredType);
             }
 
             val callerMethod = caller.definedMethod
