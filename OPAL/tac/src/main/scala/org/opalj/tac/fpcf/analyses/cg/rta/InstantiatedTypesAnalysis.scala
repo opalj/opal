@@ -47,6 +47,7 @@ import org.opalj.br.ReferenceType
  * The analysis does not just looks for "new" instructions, in order to support reflection.
  *
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 class InstantiatedTypesAnalysis private[analyses] (
         final val project: SomeProject
@@ -97,19 +98,33 @@ class InstantiatedTypesAnalysis private[analyses] (
     }
 
     private[this] def processCallers(
-        declaredMethod:   DeclaredMethod,
-        declaredType:     ObjectType,
-        callersEOptP:     EOptionP[DeclaredMethod, Callers],
-        callersUB:        Callers,
-        seenSuperCallers: Set[DeclaredMethod]
+        declaredMethod: DeclaredMethod,
+        declaredType:   ObjectType,
+        callersEOptP:   EOptionP[DeclaredMethod, Callers],
+        callersUB:      Callers,
+        seenCallers:    Set[DeclaredMethod]
     ): PropertyComputationResult = {
-        var newSeenSuperCallers = seenSuperCallers
+        var newSeenCallers = seenCallers
+
+        // unknown or VM level calls always have to be treated as instantiations
+        if(callersUB.hasCallersWithUnknownContext || callersUB.hasVMLevelCallers) {
+            return partialResult(declaredType);
+        }
+
         for {
-            (caller, _, _) ← callersUB.callers
+            (caller, _, isDirect) ← callersUB.callers
             // if we already analyzed the caller, we do not need to do it twice
             // note, that this is only needed for the continuation
-            if !newSeenSuperCallers.contains(caller)
+            if !newSeenCallers.contains(caller)
         } {
+            // remember the call, in order to not evaluate it again, if there are new callers!
+            newSeenCallers += caller
+
+            // indirect calls, e.g. via reflection, are to be treated as instantiations as well
+            if(!isDirect) {
+                return partialResult(declaredType);
+            }
+
             // a constructor is called by a non-constructor method, there will be an initialization.
             if (caller.name != "<init>") {
                 return partialResult(declaredType);
@@ -121,11 +136,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             }
 
             // the constructor is called from another constructor. it is only an new instantiated
-            // type if it was no super call. Thus the caller must be a subtype
-            if (!classHierarchy.isSubtypeOf(caller.declaringClassType, declaredType))
-                return partialResult(declaredType);
-
-            // actually it must be the direct subtype! -- we did the first check to return early
+            // type if it was no super call. Thus the caller must be a direct subtype
             project.classFile(caller.declaringClassType).foreach { cf ⇒
                 cf.superclassType.foreach { supertype ⇒
                     if (supertype != declaredType)
@@ -133,42 +144,16 @@ class InstantiatedTypesAnalysis private[analyses] (
                 }
             }
 
-            val callerMethod = caller.definedMethod
+            val body = caller.definedMethod.body.get
 
-            // if the caller has no body, we have to assume that it was no super call
-            if (callerMethod.body.isEmpty)
-                return partialResult(declaredType);
-
-            val supercall = INVOKESPECIAL(
-                declaredType,
-                isInterface = false,
-                "<init>",
-                declaredMethod.descriptor
-            )
-
-            val pcsOfSuperCalls = callerMethod.body.get.collectInstructionsWithPC {
-                case pcAndInstr @ PCAndInstruction(_, `supercall`) ⇒ pcAndInstr
-            }
-
-            assert(pcsOfSuperCalls.nonEmpty)
-
-            // there can be only one super call, so there must be an explicit call
-            if (pcsOfSuperCalls.size > 1)
-                return partialResult(declaredType);
-
-            // there is exactly the current call as potential super call, it still might no super
-            // call if the class has another constructor that calls the super. In that case
             // there must either be a new of the `declaredType` or it is a super call.
+            // check if there is an explicit NEW that instantiates the type
             val newInstr = NEW(declaredType)
-            val hasNew = callerMethod.body.get.exists {
+            val hasNew = body.exists {
                 case (_, i) ⇒ i == newInstr
             }
             if (hasNew)
                 return partialResult(declaredType);
-
-            // to call is a super call, we should remember the call, in order to not evaluate it
-            // again, if there are new callers!
-            newSeenSuperCallers += caller
         }
 
         if (callersEOptP.isFinal) {
@@ -176,19 +161,18 @@ class InstantiatedTypesAnalysis private[analyses] (
         } else {
             InterimPartialResult(
                 Set(callersEOptP),
-                continuation(declaredMethod, declaredType, newSeenSuperCallers)
+                continuation(declaredMethod, declaredType, newSeenCallers)
             )
         }
     }
 
     private[this] def continuation(
-        declaredMethod:   DeclaredMethod,
-        declaredType:     ObjectType,
-        seenSuperCallers: Set[DeclaredMethod]
+        declaredMethod: DeclaredMethod,
+        declaredType:   ObjectType,
+        seenCallers:    Set[DeclaredMethod]
     )(someEPS: SomeEPS): PropertyComputationResult = {
         val eps = someEPS.asInstanceOf[EPS[DeclaredMethod, Callers]]
-        processCallers(declaredMethod, declaredType, eps, eps.ub, seenSuperCallers)
-
+        processCallers(declaredMethod, declaredType, eps, eps.ub, seenCallers)
     }
 
     private[this] def partialResult(
