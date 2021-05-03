@@ -15,10 +15,10 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableType
 import org.opalj.br.fpcf.properties.MutableType
-import org.opalj.br.fpcf.properties.ShallowImmutableType
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.fpcf.PropertyStore
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -29,7 +29,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import java.io.IOException
 import org.opalj.br.fpcf.properties.TypeImmutability
@@ -72,7 +72,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                 .runAll(
                     LazyUnsoundPrematurelyReadFieldsAnalysis,
                     LazyL2PurityAnalysis,
-                    LazyL0FieldReferenceImmutabilityAnalysis,
+                    LazyL3FieldAssignabilityAnalysis,
                     LazyL3FieldImmutabilityAnalysis,
                     LazyL1ClassImmutabilityAnalysis,
                     EagerL1TypeImmutabilityAnalysis,
@@ -100,11 +100,11 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val mutableTypes = groupedResults(MutableType).toSeq.sortWith(order)
 
-        val shallowImmutableTypes = groupedResults(ShallowImmutableType).toSeq.sortWith(order)
+        val shallowImmutableTypes = groupedResults(NonTransitivelyImmutableType).toSeq.sortWith(order)
 
         val dependentImmutableTypes = groupedResults(DependentImmutableType).toSeq.sortWith(order)
 
-        val deepImmutableTypes = groupedResults(DeepImmutableType).toSeq.sortWith(order)
+        val deepImmutableTypes = groupedResults(TransitivelyImmutableType).toSeq.sortWith(order)
 
         val output =
             s"""

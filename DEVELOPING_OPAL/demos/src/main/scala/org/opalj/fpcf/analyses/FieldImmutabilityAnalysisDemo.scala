@@ -18,10 +18,10 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
@@ -29,7 +29,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL3FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
@@ -72,7 +72,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         time {
             propertyStore = analysesManager
                 .runAll(
-                    LazyL0FieldReferenceImmutabilityAnalysis,
+                    LazyL3FieldAssignabilityAnalysis,
                     LazyUnsoundPrematurelyReadFieldsAnalysis,
                     LazyL2PurityAnalysis,
                     EagerL3FieldImmutabilityAnalysis,
@@ -102,11 +102,11 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             eps1.e.toString < eps2.e.toString
         val mutableFields = groupedResults.getOrElse(MutableField, Seq.empty).toSeq.sortWith(order)
         val shallowImmutableFields =
-            groupedResults.getOrElse(ShallowImmutableField, Seq.empty).toSeq.sortWith(order)
+            groupedResults.getOrElse(NonTransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
         val dependentImmutableFields =
             groupedResults.getOrElse(DependentImmutableField, Seq.empty).toSeq.sortWith(order)
         val deepImmutableFields =
-            groupedResults.getOrElse(DeepImmutableField, Seq.empty).toSeq.sortWith(order)
+            groupedResults.getOrElse(TransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
 
         val output =
             /*

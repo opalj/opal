@@ -18,16 +18,16 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.br.fpcf.properties.DeepImmutableClass
+import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.DependentImmutableClass
 import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.br.fpcf.properties.ShallowImmutableClass
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import java.io.IOException
@@ -67,7 +67,7 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
                 .runAll(
                     LazyUnsoundPrematurelyReadFieldsAnalysis,
                     LazyL2PurityAnalysis,
-                    LazyL0FieldReferenceImmutabilityAnalysis,
+                    LazyL3FieldAssignabilityAnalysis,
                     LazyL3FieldImmutabilityAnalysis,
                     LazyL1TypeImmutabilityAnalysis,
                     EagerL1ClassImmutabilityAnalysis,
@@ -97,12 +97,12 @@ object ClassImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             groupedResults(MutableClass).toSeq.sortWith(order)
 
         val shallowImmutableClasses =
-            groupedResults(ShallowImmutableClass).toSeq.sortWith(order)
+            groupedResults(NonTransitivelyImmutableClass).toSeq.sortWith(order)
 
         val dependentImmutableClasses =
             groupedResults(DependentImmutableClass).toSeq.sortWith(order)
 
-        val deepImmutables = groupedResults(DeepImmutableClass).toSeq.sortWith(order)
+        val deepImmutables = groupedResults(TransitivelyImmutableClass).toSeq.sortWith(order)
 
         val allInterfaces =
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet

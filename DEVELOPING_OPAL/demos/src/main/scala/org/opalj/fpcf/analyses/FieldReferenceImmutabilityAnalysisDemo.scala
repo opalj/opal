@@ -22,18 +22,17 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.EagerL0FieldReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.EagerL3FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import java.io.IOException
 import java.io.BufferedWriter
 import java.io.FileWriter
 import java.io.File
-import org.opalj.br.fpcf.properties.FieldReferenceImmutability
-import org.opalj.br.fpcf.properties.ImmutableFieldReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeFieldReference
-import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeFieldReference
-import org.opalj.br.fpcf.properties.MutableFieldReference
+import org.opalj.br.fpcf.properties.FieldAssignability
+import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
+import org.opalj.br.fpcf.properties.LazilyInitialized
+import org.opalj.br.fpcf.properties.Assignable
 
 /**
  * Runs the EagerL0FieldReferenceImmutabilityAnalysis including all analysis needed for improving the result.
@@ -66,7 +65,7 @@ object FieldReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication
         time {
             propertyStore = analysesManager
                 .runAll(
-                    EagerL0FieldReferenceImmutabilityAnalysis,
+                    EagerL3FieldAssignabilityAnalysis,
                     LazyL3FieldImmutabilityAnalysis,
                     LazyL1ClassImmutabilityAnalysis,
                     LazyL1TypeImmutabilityAnalysis,
@@ -88,20 +87,20 @@ object FieldReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication
 
         val allFieldsInProjectClassFiles = project.allProjectClassFiles.toIterator.flatMap { _.fields }.toSet
 
-        val groupedResults = propertyStore.entities(FieldReferenceImmutability.key).
+        val groupedResults = propertyStore.entities(FieldAssignability.key).
             filter(field ⇒ allFieldsInProjectClassFiles.contains(field.asInstanceOf[Field])).
             toTraversable.groupBy(_.toFinalEP.p)
 
-        val order = (eps1: EPS[Entity, FieldReferenceImmutability], eps2: EPS[Entity, FieldReferenceImmutability]) ⇒
+        val order = (eps1: EPS[Entity, FieldAssignability], eps2: EPS[Entity, FieldAssignability]) ⇒
             eps1.e.toString < eps2.e.toString
-        val mutableReferences = groupedResults(MutableFieldReference).toSeq.sortWith(order)
-        val notThreadSafeLazyInitializedFieldReferences = groupedResults(LazyInitializedNotThreadSafeFieldReference).
+        val mutableReferences = groupedResults(Assignable).toSeq.sortWith(order)
+        val notThreadSafeLazyInitializedFieldReferences = groupedResults(UnsafelyLazilyInitialized).
             toSeq.sortWith(order)
-        val lazyInitializedReferencesNotThreadSafeButDeterministic =
-            groupedResults(LazyInitializedNotThreadSafeButDeterministicFieldReference).toSeq.sortWith(order)
-        val threadSafeLazyInitializedFieldReferences = groupedResults(LazyInitializedThreadSafeFieldReference).toSeq.
+        /* val lazyInitializedReferencesNotThreadSafeButDeterministic =
+            groupedResults(LazyInitializedNotThreadSafeButDeterministicFieldReference).toSeq.sortWith(order)*/
+        val threadSafeLazyInitializedFieldReferences = groupedResults(LazilyInitialized).toSeq.
             sortWith(order)
-        val immutableReferences = groupedResults(ImmutableFieldReference).toSeq.sortWith(order)
+        val immutableReferences = groupedResults(EffectivelyNonAssignable).toSeq.sortWith(order)
         val output =
             s"""
           | Mutable Field References:
@@ -109,12 +108,6 @@ object FieldReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication
           |
           |  Lazy Initialized Not Thread Safe Field References:
           | ${notThreadSafeLazyInitializedFieldReferences.mkString(" | Not Thread Safe Lazy Initialization \n")}
-          |
-          | Lazy Initialized Not Thread Safe But Deterministic References:
-          | ${
-                lazyInitializedReferencesNotThreadSafeButDeterministic.
-                    mkString(" | Lazy Initialized Not Thread Safe But Deterministic Field Reference \n")
-            }
           |
           | lazy Initialized Thread Safe References:
           | ${threadSafeLazyInitializedFieldReferences.mkString(" | Lazy initialized thread safe field reference \n")}
@@ -125,15 +118,12 @@ object FieldReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication
           |
           | Mutable References: ${mutableReferences.size}
            Lazy Initialized References Not Thread : ${notThreadSafeLazyInitializedFieldReferences.size}
-          | Lazy Initialized References Not Thread Safe But Deterministic: ${
-                lazyInitializedReferencesNotThreadSafeButDeterministic.size
-            }
           | Lazy Initialized Thread Safe References: ${threadSafeLazyInitializedFieldReferences.size}
           | Immutable References: ${immutableReferences.size}
           |
           | sum: ${
                 mutableReferences.size + notThreadSafeLazyInitializedFieldReferences.size +
-                    lazyInitializedReferencesNotThreadSafeButDeterministic.size + threadSafeLazyInitializedFieldReferences.size +
+                    threadSafeLazyInitializedFieldReferences.size +
                     immutableReferences.size
             }
           | took : $analysisTime seconds
