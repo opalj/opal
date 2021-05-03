@@ -33,11 +33,11 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.instructions._
 import org.opalj.br.fpcf.properties.DependentImmutableType
 import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.ShallowImmutableType
-import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
+import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableField
-import org.opalj.br.fpcf.properties.ShallowImmutableField
-import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
 
@@ -110,7 +110,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             }
                             if (!fieldType.isBaseType) {
                                 propertyStore(fieldType, TypeImmutability.key) match {
-                                    case FinalP(DeepImmutableType) ⇒
+                                    case FinalP(TransitivelyImmutableType) ⇒
                                     case _: FinalEP[_, TypeImmutability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
@@ -120,7 +120,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             if (field.isNotFinal) {
 
                                 propertyStore(field, FieldImmutability.key) match {
-                                    case FinalP(ShallowImmutableField | DependentImmutableField | DeepImmutableField) ⇒
+                                    case FinalP(NonTransitivelyImmutableField | DependentImmutableField | TransitivelyImmutableField) ⇒
                                     case _: FinalEP[Field, FieldImmutability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
@@ -229,7 +229,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     dependees += eps
                     InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalP(DeepImmutableField | DependentImmutableField | ShallowImmutableField | DeepImmutableType) ⇒
+                case FinalP(TransitivelyImmutableField | DependentImmutableField | NonTransitivelyImmutableField | TransitivelyImmutableType) ⇒
                     if (dependees.isEmpty) {
                         Result(definedMethod, Pure)
                     } else {
@@ -238,7 +238,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
-                case FinalP(ShallowImmutableType | DependentImmutableType) ⇒ //ImmutableContainerType) ⇒
+                case FinalP(NonTransitivelyImmutableType | DependentImmutableType) ⇒ //ImmutableContainerType) ⇒
                     Result(definedMethod, ImpureByAnalysis)
 
                 // The type is at most conditionally immutable.
@@ -283,10 +283,10 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         var dependees: Set[EOptionP[Entity, Property]] = Set.empty
         referenceTypedParameters foreach { e ⇒
             propertyStore(e, TypeImmutability.key) match {
-                case FinalP(DeepImmutableType) ⇒ /*everything is Ok*/
+                case FinalP(TransitivelyImmutableType) ⇒ /*everything is Ok*/
                 case _: FinalEP[_, _] ⇒
                     return Result(definedMethod, ImpureByAnalysis);
-                case InterimUBP(ub) if ub ne DeepImmutableType ⇒
+                case InterimUBP(ub) if ub ne TransitivelyImmutableType ⇒
                     return Result(definedMethod, ImpureByAnalysis);
                 case epk ⇒ dependees += epk
             }

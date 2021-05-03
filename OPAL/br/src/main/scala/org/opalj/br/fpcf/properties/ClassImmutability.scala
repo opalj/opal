@@ -20,13 +20,13 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
  *
  * [[MutableClass]] A class with a mutable state.
  *
- * [[ShallowImmutableClass]] A class which transitive state is not immutable but the values or objects representing
+ * [[NonTransitivelyImmutableClass]] A class which transitive state is not immutable but the values or objects representing
  * this transitive state (are not / can not be) exchanged.
  *
  * [[DependentImmutableClass]] A class that is at least shallow immutable.
  * Whether it is shallow or deep immutable depends on generic parameters.
  *
- * [[DeepImmutableClass]] A class with a transitive immutable state.
+ * [[TransitivelyImmutableClass]] A class with a transitive immutable state.
  *
  * @author Tobias Roth
  */
@@ -48,9 +48,9 @@ object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
     )
 }
 
-case object DeepImmutableClass extends ClassImmutability {
+case object TransitivelyImmutableClass extends ClassImmutability {
 
-    override def correspondingTypeImmutability: TypeImmutability = DeepImmutableType
+    override def correspondingTypeImmutability: TypeImmutability = TransitivelyImmutableType
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
@@ -61,20 +61,20 @@ case object DependentImmutableClass extends ClassImmutability {
     override def correspondingTypeImmutability: TypeImmutability = DependentImmutableType
 
     def meet(that: ClassImmutability): ClassImmutability =
-        if (that == MutableClass || that == ShallowImmutableClass)
+        if (that == MutableClass || that == NonTransitivelyImmutableClass)
             that
         else
             this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == DeepImmutableClass) {
+        if (other == TransitivelyImmutableClass) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }
 }
 
-case object ShallowImmutableClass extends ClassImmutability {
-    override def correspondingTypeImmutability: TypeImmutability = ShallowImmutableType
+case object NonTransitivelyImmutableClass extends ClassImmutability {
+    override def correspondingTypeImmutability: TypeImmutability = NonTransitivelyImmutableType
 
     def meet(that: ClassImmutability): ClassImmutability = {
         if (that == MutableClass)
@@ -84,7 +84,7 @@ case object ShallowImmutableClass extends ClassImmutability {
     }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == DeepImmutableClass || other == DependentImmutableClass) {
+        if (other == TransitivelyImmutableClass || other == DependentImmutableClass) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }

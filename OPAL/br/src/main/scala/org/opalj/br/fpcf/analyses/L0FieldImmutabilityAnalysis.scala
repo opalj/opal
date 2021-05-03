@@ -14,7 +14,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 
 /**
  * Determines if a private, static, non-final field is always initialized at most once or
@@ -55,7 +55,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     def determineFieldImmutability(field: Field): ProperPropertyComputationResult = {
 
         if (field.isFinal)
-            return Result(field, ShallowImmutableField);
+            return Result(field, NonTransitivelyImmutableField);
 
         if (!field.isPrivate)
             return Result(field, MutableField);
@@ -89,7 +89,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             }
         }
 
-        Result(field, ShallowImmutableField)
+        Result(field, NonTransitivelyImmutableField)
     }
 }
 

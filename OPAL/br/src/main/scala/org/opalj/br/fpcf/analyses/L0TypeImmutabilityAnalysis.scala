@@ -26,12 +26,12 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.MutableType
-import org.opalj.br.fpcf.properties.DeepImmutableClass
+import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.MutableClass
-import org.opalj.br.fpcf.properties.ShallowImmutableClass
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.TypeImmutability
-import org.opalj.br.fpcf.properties.ShallowImmutableType
-import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
+import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 
 /**
  * Determines the mutability of a specific type by checking if all subtypes of a specific
@@ -92,22 +92,22 @@ class L0TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                     val thisLB = lb.correspondingTypeImmutability
                     InterimResult(t, thisLB, thisUB, Set(eps), c)
                 case epk ⇒
-                    InterimResult(t, MutableType, DeepImmutableType, Set(epk), c)
+                    InterimResult(t, MutableType, TransitivelyImmutableType, Set(epk), c)
             }
         } else {
             var dependencies = Map.empty[Entity, EOptionP[Entity, Property]]
-            var joinedImmutability: TypeImmutability = DeepImmutableType // this may become "Mutable..."
-            var maxImmutability: TypeImmutability = DeepImmutableType
+            var joinedImmutability: TypeImmutability = TransitivelyImmutableType // this may become "Mutable..."
+            var maxImmutability: TypeImmutability = TransitivelyImmutableType
 
             ps(t, ClassImmutability.key) match {
-                case FinalP(DeepImmutableClass) ⇒
+                case FinalP(TransitivelyImmutableClass) ⇒
 
                 case FinalP(MutableClass) ⇒
                     return Result(t, MutableType);
 
-                case FinalP(ShallowImmutableClass) ⇒
-                    joinedImmutability = ShallowImmutableType
-                    maxImmutability = ShallowImmutableType
+                case FinalP(NonTransitivelyImmutableClass) ⇒
+                    joinedImmutability = NonTransitivelyImmutableType
+                    maxImmutability = NonTransitivelyImmutableType
 
                 case eps @ InterimLUBP(lb, ub) ⇒
                     joinedImmutability = lb.correspondingTypeImmutability
@@ -121,14 +121,14 @@ class L0TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
 
             directSubtypes foreach { subtype ⇒
                 ps(subtype, TypeImmutability.key) match {
-                    case FinalP(DeepImmutableType) ⇒
+                    case FinalP(TransitivelyImmutableType) ⇒
 
                     case UBP(MutableType) ⇒
                         return Result(t, MutableType);
 
-                    case FinalP(ShallowImmutableType) ⇒
-                        joinedImmutability = joinedImmutability.meet(ShallowImmutableType)
-                        maxImmutability = ShallowImmutableType
+                    case FinalP(NonTransitivelyImmutableType) ⇒
+                        joinedImmutability = joinedImmutability.meet(NonTransitivelyImmutableType)
+                        maxImmutability = NonTransitivelyImmutableType
 
                     case eps @ InterimLUBP(subtypeLB, subtypeUB) ⇒
                         joinedImmutability = joinedImmutability.meet(subtypeLB)
@@ -180,7 +180,7 @@ class L0TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                                 }
                             }
                             if (joinedImmutability == maxImmutability) {
-                                assert(maxImmutability == ShallowImmutableType)
+                                assert(maxImmutability == NonTransitivelyImmutableType)
                                 Result(t, maxImmutability)
                             } else {
                                 InterimResult(
@@ -192,16 +192,16 @@ class L0TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                     }
 
                     (eps: @unchecked) match {
-                        case FinalEP(e, DeepImmutableType | DeepImmutableClass) ⇒
+                        case FinalEP(e, TransitivelyImmutableType | TransitivelyImmutableClass) ⇒
                             dependencies = dependencies - e
                             nextResult()
 
                         case UBP(MutableType | MutableClass) ⇒
                             Result(t, MutableType)
 
-                        case FinalEP(e, ShallowImmutableType | ShallowImmutableClass) ⇒
+                        case FinalEP(e, NonTransitivelyImmutableType | NonTransitivelyImmutableClass) ⇒
 
-                            maxImmutability = ShallowImmutableType
+                            maxImmutability = NonTransitivelyImmutableType
                             dependencies = dependencies - e
                             nextResult()
 

@@ -41,10 +41,7 @@ sealed trait TypeImmutability
     def isDeepImmutable: Boolean
     def isShallowImmutable: Boolean
     def isDependentImmutable: Boolean
-
-    /** `true` if the immutability is unknown or if the type is mutable.*/
-    def isMutable: Boolean
-
+    def isMutable: Boolean = true
     def meet(other: TypeImmutability): TypeImmutability
 }
 
@@ -63,7 +60,7 @@ object TypeImmutability extends TypeImmutabilityPropertyMetaInformation {
  * An instance of the respective class is effectively immutable. I.e., after creation it is not
  * possible for a client to set a field or to call a method that updates the internal state
  */
-case object DeepImmutableType extends TypeImmutability {
+case object TransitivelyImmutableType extends TypeImmutability {
 
     override def isDeepImmutable: Boolean = true
     override def isShallowImmutable: Boolean = false
@@ -82,19 +79,19 @@ case object DependentImmutableType extends TypeImmutability {
     override def isDependentImmutable: Boolean = true
 
     def meet(that: TypeImmutability): TypeImmutability =
-        if (that == MutableType || that == ShallowImmutableType)
+        if (that == MutableType || that == NonTransitivelyImmutableType)
             that
         else
             this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == DeepImmutableType) {
+        if (other == TransitivelyImmutableType) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }
 }
 
-case object ShallowImmutableType extends TypeImmutability {
+case object NonTransitivelyImmutableType extends TypeImmutability {
 
     override def isDeepImmutable: Boolean = false
     override def isShallowImmutable: Boolean = true
@@ -108,7 +105,7 @@ case object ShallowImmutableType extends TypeImmutability {
             this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == DeepImmutableType || other == DependentImmutableType) {
+        if (other == TransitivelyImmutableType || other == DependentImmutableType) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
         }
     }

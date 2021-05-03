@@ -29,31 +29,30 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.br.Field
-import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableField
-import org.opalj.br.fpcf.properties.ImmutableFieldReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeFieldReference
-import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeFieldReference
+import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
+import org.opalj.br.fpcf.properties.LazilyInitialized
 import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.MutableFieldReference
-import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.Assignable
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.fpcf.Entity
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
-import org.opalj.br.fpcf.properties.DeepImmutableClass
-import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableClass
 import org.opalj.br.fpcf.properties.DependentImmutableType
 import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableType
-import org.opalj.br.fpcf.properties.ShallowImmutableClass
-import org.opalj.br.fpcf.properties.ShallowImmutableType
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreContext
@@ -65,7 +64,7 @@ import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.AbstractCallGraphKey
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.FieldReferenceImmutability
+import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.fpcf.EPS
 import org.opalj.ai.domain
@@ -170,7 +169,7 @@ object Immutability {
             List(
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
-                LazyL0FieldReferenceImmutabilityAnalysis,
+                LazyL3FieldAssignabilityAnalysis,
                 LazyL3FieldImmutabilityAnalysis,
                 LazyL1ClassImmutabilityAnalysis,
                 LazyL1TypeImmutabilityAnalysis,
@@ -220,9 +219,9 @@ object Immutability {
                 css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
                     analysis match {
                         case FieldReferences ⇒
-                            if (css.contains(LazyL0FieldReferenceImmutabilityAnalysis))
+                            if (css.contains(LazyL3FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
-                                    f ⇒ propertyStore.force(f, br.fpcf.properties.FieldReferenceImmutability.key)
+                                    f ⇒ propertyStore.force(f, br.fpcf.properties.FieldAssignability.key)
                                 )
                         case Fields ⇒
                             if (css.contains(LazyL3FieldImmutabilityAnalysis))
@@ -240,9 +239,9 @@ object Immutability {
                                     c ⇒ propertyStore.force(c, br.fpcf.properties.TypeImmutability.key)
                                 )
                         case All ⇒
-                            if (css.contains(LazyL0FieldReferenceImmutabilityAnalysis))
+                            if (css.contains(LazyL3FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(f ⇒ {
-                                    propertyStore.force(f, br.fpcf.properties.FieldReferenceImmutability.key)
+                                    propertyStore.force(f, br.fpcf.properties.FieldAssignability.key)
                                 })
                             if (css.contains(LazyL3FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
@@ -267,7 +266,7 @@ object Immutability {
         val stringBuilderResults: StringBuilder = new StringBuilder()
 
         val fieldReferenceGroupedResults = propertyStore
-            .entities(FieldReferenceImmutability.key)
+            .entities(FieldAssignability.key)
             .filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
             .toTraversable
             .groupBy(_.asFinal.p)
@@ -284,34 +283,34 @@ object Immutability {
 
         val mutableFieldReferences =
             fieldReferenceGroupedResults
-                .getOrElse(MutableFieldReference, Iterator.empty)
+                .getOrElse(Assignable, Iterator.empty)
                 .map(unpackFieldEPS)
                 .toSeq
                 .sortWith(_ < _)
 
         val notThreadSafeLazyInitializedFieldReferences =
             fieldReferenceGroupedResults
-                .getOrElse(LazyInitializedNotThreadSafeFieldReference, Iterator.empty)
+                .getOrElse(UnsafelyLazilyInitialized, Iterator.empty)
                 .toSeq
                 .map(unpackFieldEPS)
                 .sortWith(_ < _)
 
-        val lazyInitializedReferencesNotThreadSafeButDeterministic =
+        /*val lazyInitializedReferencesNotThreadSafeButDeterministic =
             fieldReferenceGroupedResults
                 .getOrElse(LazyInitializedNotThreadSafeButDeterministicFieldReference, Iterator.empty)
                 .toSeq
                 .map(unpackFieldEPS)
-                .sortWith(_ < _)
+                .sortWith(_ < _) */
 
         val threadSafeLazyInitializedFieldReferences =
             fieldReferenceGroupedResults
-                .getOrElse(LazyInitializedThreadSafeFieldReference, Iterator.empty)
+                .getOrElse(LazilyInitialized, Iterator.empty)
                 .toSeq
                 .map(unpackFieldEPS)
                 .sortWith(_ < _)
 
         val immutableReferences = fieldReferenceGroupedResults
-            .getOrElse(ImmutableFieldReference, Iterator.empty)
+            .getOrElse(EffectivelyNonAssignable, Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
             .sortWith(_ < _)
@@ -326,13 +325,6 @@ object Immutability {
                 | ${
                     notThreadSafeLazyInitializedFieldReferences
                         .map(_+" | Lazy Initialized Not Thread Safe And Not Deterministic Field Reference")
-                        .mkString("\n")
-                }
-                |
-                | Lazy Initialized Not Thread Safe But Deterministic Field References:
-                | ${
-                    lazyInitializedReferencesNotThreadSafeButDeterministic
-                        .map(_+" | Lazy Initialized Not Thread Safe But Deterministic Field Reference")
                         .mkString("\n")
                 }
                 |
@@ -367,7 +359,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val shallowImmutableFields = fieldGroupedResults
-            .getOrElse(ShallowImmutableField, Iterator.empty)
+            .getOrElse(NonTransitivelyImmutableField, Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
             .sortWith(_ < _)
@@ -379,7 +371,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val deepImmutableFields = fieldGroupedResults
-            .getOrElse(DeepImmutableField, Iterator.empty)
+            .getOrElse(TransitivelyImmutableField, Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
             .sortWith(_ < _)
@@ -428,7 +420,7 @@ object Immutability {
 
         val shallowImmutableClasses =
             classGroupedResults
-                .getOrElse(ShallowImmutableClass, Iterator.empty)
+                .getOrElse(NonTransitivelyImmutableClass, Iterator.empty)
                 .toSeq
                 .map(unpackClass)
                 .sortWith(_ < _)
@@ -440,7 +432,7 @@ object Immutability {
                 .map(unpackClass)
                 .sortWith(_ < _)
 
-        val deepImmutables = classGroupedResults.getOrElse(DeepImmutableClass, Iterator.empty)
+        val deepImmutables = classGroupedResults.getOrElse(TransitivelyImmutableClass, Iterator.empty)
 
         val allInterfaces =
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
@@ -499,7 +491,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val shallowImmutableTypes = typeGroupedResults
-            .getOrElse(ShallowImmutableType, Iterator.empty)
+            .getOrElse(NonTransitivelyImmutableType, Iterator.empty)
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
@@ -511,7 +503,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val deepImmutableTypes = typeGroupedResults
-            .getOrElse(DeepImmutableType, Iterator.empty)
+            .getOrElse(TransitivelyImmutableType, Iterator.empty)
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
@@ -541,8 +533,6 @@ object Immutability {
                 s"""
                 | Mutable References: ${mutableFieldReferences.size}
                 | Lazy Initialized Not Thread Safe Field References: ${notThreadSafeLazyInitializedFieldReferences.size}
-                | Lazy Initialized Not Thread Safe But Deterministic Field References:
-                ${lazyInitializedReferencesNotThreadSafeButDeterministic.size}
                 | Lazy Initialized Thread Safe Field Reference: ${threadSafeLazyInitializedFieldReferences.size}
                 | Immutable Field References: ${immutableReferences.size}
                 | Field References: ${allFieldsInProjectClassFiles.size}

@@ -18,12 +18,12 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
  *
  * [[MutableField]] A field with a mutable field reference
  *
- * [[ShallowImmutableField]] A field with an immutable field reference and a shallow immutable or mutable data type
+ * [[NonTransitivelyImmutableField]] A field with an immutable field reference and a shallow immutable or mutable data type
  *
  * [[DependentImmutableField]] A field with an immutable field reference and a generic type and parts of it are no
  * substantiated in an shallow or mutable way.
  *
- * [[DeepImmutableField]] A field with an immutable field reference and a deep immutable field type or with an
+ * [[TransitivelyImmutableField]] A field with an immutable field reference and a deep immutable field type or with an
  * immutable field reference and a referenced object that can not escape or its state be mutated.
  *
  * @author Tobias Roth
@@ -43,7 +43,7 @@ object FieldImmutability extends FieldImmutabilityPropertyMetaInformation {
     }
 }
 
-case object DeepImmutableField extends FieldImmutability {
+case object TransitivelyImmutableField extends FieldImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
@@ -53,20 +53,20 @@ case object DeepImmutableField extends FieldImmutability {
 case object DependentImmutableField extends FieldImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == DeepImmutableField) {
+        if (other == TransitivelyImmutableField) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         }
     }
 
     def meet(that: FieldImmutability): FieldImmutability = {
-        if (that == MutableField || that == ShallowImmutableField)
+        if (that == MutableField || that == NonTransitivelyImmutableField)
             that
         else
             this
     }
 }
 
-case object ShallowImmutableField extends FieldImmutability {
+case object NonTransitivelyImmutableField extends FieldImmutability {
 
     def meet(that: FieldImmutability): FieldImmutability = {
         if (that == MutableField)
@@ -76,7 +76,7 @@ case object ShallowImmutableField extends FieldImmutability {
     }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == DeepImmutableField || other == DependentImmutableField) {
+        if (other == TransitivelyImmutableField || other == DependentImmutableField) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         }
     }
