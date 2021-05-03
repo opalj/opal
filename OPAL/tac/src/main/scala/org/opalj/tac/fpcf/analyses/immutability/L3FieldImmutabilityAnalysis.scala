@@ -63,7 +63,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.br.fpcf.properties.ClassImmutability
-import scala.collection.mutable
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.LBP
 import org.opalj.fpcf.EUBP
@@ -461,10 +460,10 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 val index = taCode.pcToIndex(pc)
                 if (index >= 0) {
                     val stmt = taCode.stmts(index)
-                   /// if (!seen.contains(stmt)) {
-                   ///     seen += stmt
-                        analyzePutForConcreteObject(stmt)
-                   /// }
+                    /// if (!seen.contains(stmt)) {
+                    ///     seen += stmt
+                    analyzePutForConcreteObject(stmt)
+                    /// }
                 }
             }
         }
