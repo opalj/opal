@@ -26,15 +26,13 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.ObjectType
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
-import org.opalj.br.instructions.INVOKESPECIAL
-import org.opalj.br.PCAndInstruction
-import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -218,10 +216,8 @@ object InstantiatedTypesAnalysis {
     }
 }
 
-object InstantiatedTypesAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
-
-    override type InitializationData = Null
-
+object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
+    
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
@@ -251,14 +247,4 @@ object InstantiatedTypesAnalysisScheduler extends FPCFTriggeredAnalysisScheduler
 
         null
     }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
-
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
 }
