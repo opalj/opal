@@ -8,7 +8,7 @@ import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 /*import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis */
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project
@@ -65,7 +65,7 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
             EagerL0TypeImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL2FieldImmutabilityAnalysis,
-            LazyL0FieldReferenceImmutabilityAnalysis,
+            LazyL3FieldAssignabilityAnalysis,
             LazyL0BaseAIAnalysis
         ))
 
@@ -83,7 +83,7 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
         val as = executeAnalyses(Set(
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL2PurityAnalysis,
-            LazyL0FieldReferenceImmutabilityAnalysis,
+            LazyL3FieldAssignabilityAnalysis,
             LazyL3FieldImmutabilityAnalysis,
             EagerL1TypeImmutabilityAnalysis,
             EagerL1ClassImmutabilityAnalysis,

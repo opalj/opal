@@ -53,9 +53,9 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
     }
 }
 
-class ShallowImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.ShallowImmutableField)
+class NonTransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.NonTransitivelyImmutableField)
 
 class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DependentImmutableField)
 
-class DeepImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DeepImmutableField)
+class TransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.TransitivelyImmutableField)
 

@@ -47,14 +47,14 @@ class AbstractClassImmutabilityMatcher(val property: properties.ClassImmutabilit
     }
 }
 
-class DeepImmutableClassMatcher
-    extends AbstractClassImmutabilityMatcher(properties.DeepImmutableClass)
+class TransitiveImmutableClassMatcher
+    extends AbstractClassImmutabilityMatcher(properties.TransitivelyImmutableClass)
 
 class DependentImmutableClassMatcher
     extends AbstractClassImmutabilityMatcher(properties.DependentImmutableClass)
 
-class ShallowImmutableClassMatcher
-    extends AbstractClassImmutabilityMatcher(properties.ShallowImmutableClass)
+class NonTransitiveImmutableClassMatcher
+    extends AbstractClassImmutabilityMatcher(properties.NonTransitivelyImmutableClass)
 
 class MutableClassMatcher extends AbstractPropertyMatcher {
     override def validateProperty(

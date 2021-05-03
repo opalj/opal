@@ -15,7 +15,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL3FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
 import org.opalj.ai.domain.l2
 import org.opalj.br.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
@@ -34,7 +34,7 @@ class FieldImmutabilityTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/benchmark/arrays/not_deep")
+        List("org/opalj/fpcf/fixtures/benchmark/arrays/not_transitively_immutable")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -102,7 +102,7 @@ class FieldImmutabilityTests extends PropertiesTest {
     describe("the org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis is executed") {
         val as = executeAnalyses(
             Set(
-                LazyL0FieldReferenceImmutabilityAnalysis,
+                LazyL3FieldAssignabilityAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
                 EagerL3FieldImmutabilityAnalysis,

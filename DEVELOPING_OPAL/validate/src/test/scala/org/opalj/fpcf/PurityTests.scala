@@ -26,7 +26,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL0FieldReferenceImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 
 /**
@@ -112,7 +112,7 @@ class PurityTests extends PropertiesTest {
             val as = executeAnalyses(Set(
                 EagerL2PurityAnalysis,
                 LazyL3FieldImmutabilityAnalysis,
-                LazyL0FieldReferenceImmutabilityAnalysis,
+                LazyL3FieldAssignabilityAnalysis,
                 LazyL1ClassImmutabilityAnalysis,
                 LazyL1TypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,

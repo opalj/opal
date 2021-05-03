@@ -6,20 +6,16 @@ package immutability
 package references
 
 import org.opalj.br.AnnotationLike
-import org.opalj.br.BooleanValue
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.PrematurelyReadField
+import org.opalj.br.fpcf.properties.FieldAssignability
 
 /**
- * Matches mutable field references
- * @author Tobias Peter Roth
+ * This is the basis for the matchers that match the immutability of a field reference
+ * @author Tobias Roth
  */
-class MutableFieldReferenceMatcher extends AbstractPropertyMatcher {
-
-    val property = br.fpcf.properties.MutableFieldReference
+class FieldAssignabilityMatcher(val property: FieldAssignability)
+    extends AbstractPropertyMatcher {
 
     final private val PropertyReasonID = 0
 
@@ -29,29 +25,13 @@ class MutableFieldReferenceMatcher extends AbstractPropertyMatcher {
         entity: Object,
         a:      AnnotationLike
     ): Boolean = {
-
         val annotationType = a.annotationType.asObjectType
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-
         val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
 
-        if (!analyses.exists(as.contains)) return false;
-
-        val prematurelyRead = getValue(p, annotationType, a.elementValuePairs, "prematurelyRead")
-            .asInstanceOf[BooleanValue]
-            .value
-
-        if (prematurelyRead) {
-            val propertyStore = p.get(PropertyStoreKey)
-            propertyStore(entity, FieldPrematurelyRead.key) match {
-                case FinalP(PrematurelyReadField) ⇒ true
-                case _                            ⇒ false
-            }
-        } else {
-            true
-        }
+        analyses.exists(as.contains)
     }
 
     def validateProperty(
@@ -69,3 +49,11 @@ class MutableFieldReferenceMatcher extends AbstractPropertyMatcher {
         }
     }
 }
+
+class LazyInitializedThreadSafeFieldReferenceMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.LazilyInitialized)
+
+class LazyInitializedNotThreadSafeFieldReferenceMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.UnsafelyLazilyInitialized)
+
+class NonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.NonAssignable)
+
+class EffectivelyNonAssignableFieldMatcher extends FieldAssignabilityMatcher(br.fpcf.properties.EffectivelyNonAssignable)

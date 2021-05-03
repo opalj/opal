@@ -47,12 +47,12 @@ class AbstractTypeImmutabilityMatcher(
     }
 }
 
-class DeepImmutableTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.DeepImmutableType)
+class TransitiveImmutableTypeMatcher
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.TransitivelyImmutableType)
 class DependentImmutableTypeMatcher
     extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.DependentImmutableType)
-class ShallowImmutableTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.ShallowImmutableType)
+class NonTransitiveImmutableTypeMatcher
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.NonTransitivelyImmutableType)
 class MutableTypeMatcher
     extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.MutableType)
 
