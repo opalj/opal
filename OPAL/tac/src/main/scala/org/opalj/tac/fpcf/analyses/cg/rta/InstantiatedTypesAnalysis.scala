@@ -63,7 +63,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         val cfOpt = project.classFile(declaredType)
 
         // abstract classes can never be instantiated
-        if(cfOpt.isDefined && cfOpt.get.isAbstract)
+        if (cfOpt.isDefined && cfOpt.get.isAbstract)
             return NoResult;
 
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
@@ -105,7 +105,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         var newSeenCallers = seenCallers
 
         // unknown or VM level calls always have to be treated as instantiations
-        if(callersUB.hasCallersWithUnknownContext || callersUB.hasVMLevelCallers) {
+        if (callersUB.hasCallersWithUnknownContext || callersUB.hasVMLevelCallers) {
             return partialResult(declaredType);
         }
 
@@ -119,7 +119,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             newSeenCallers += caller
 
             // indirect calls, e.g. via reflection, are to be treated as instantiations as well
-            if(!isDirect) {
+            if (!isDirect) {
                 return partialResult(declaredType);
             }
 
@@ -217,7 +217,7 @@ object InstantiatedTypesAnalysis {
 }
 
 object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
-    
+
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
