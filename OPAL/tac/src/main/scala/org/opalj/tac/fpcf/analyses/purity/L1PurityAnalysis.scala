@@ -50,10 +50,10 @@ import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.MethodDescriptor
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.br.fpcf.properties.DeepImmutableField
-import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.TransitivelyImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableField
-import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
@@ -280,11 +280,11 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalP(ShallowImmutableField |
+            case FinalP(NonTransitivelyImmutableField |
                 DependentImmutableField |
-                DeepImmutableField) ⇒ // Reading eff. final fields
-            case FinalP(DeepImmutableType |
-                DeepImmutableType) ⇒ // Returning immutable reference
+                TransitivelyImmutableField) ⇒ // Reading eff. final fields
+            case FinalP(TransitivelyImmutableType |
+                TransitivelyImmutableType) ⇒ // Returning immutable reference
 
             // Cases resulting in side-effect freeness
             case FinalP(_: FieldImmutability | // Reading non-final field

@@ -47,12 +47,12 @@ import org.opalj.ai.ValueOrigin
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.br.fpcf.properties.DeepImmutableClass
-import org.opalj.br.fpcf.properties.DeepImmutableField
-import org.opalj.br.fpcf.properties.DeepImmutableType
+import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.TransitivelyImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
 
@@ -387,9 +387,9 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         ep:     EOptionP[Field, FieldImmutability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
-        case LBP(ShallowImmutableField |
+        case LBP(NonTransitivelyImmutableField |
             DependentImmutableField |
-            DeepImmutableField) ⇒ // Immutable fields don't impede purity
+            TransitivelyImmutableField) ⇒ // Immutable fields don't impede purity
         case _: FinalEP[Field, FieldImmutability] ⇒ // Mutable field
             if (objRef.isDefined) {
                 if (state.ubPurity.isDeterministic)
@@ -477,7 +477,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         returnValue: Expr[V]
     )(implicit state: StateType): Boolean = ep match {
         // Returning immutable object is pure
-        case LBP(DeepImmutableType | DeepImmutableClass) ⇒ true
+        case LBP(TransitivelyImmutableType | TransitivelyImmutableClass) ⇒ true
         case _: FinalEP[ObjectType, Property] ⇒
             atMost(Pure) // Can not be compile time pure if mutable object is returned
             if (state.ubPurity.isDeterministic)

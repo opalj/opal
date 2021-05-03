@@ -18,10 +18,10 @@ import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
 //import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference
-import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeFieldReference
-import org.opalj.br.fpcf.properties.LazyInitializedThreadSafeFieldReference
-import org.opalj.br.fpcf.properties.MutableFieldReference
-import org.opalj.br.fpcf.properties.FieldReferenceImmutability
+import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
+import org.opalj.br.fpcf.properties.LazilyInitialized
+import org.opalj.br.fpcf.properties.Assignable
+import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.ObjectType
 import scala.annotation.switch
@@ -39,7 +39,7 @@ import org.opalj.br.FieldType
  * @author Michael Eichberg
  *
  */
-trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
+trait AbstractFieldAssignabilityAnalysisLazyInitialization
     extends AbstractFieldReferenceImmutabilityAnalysis
     with FPCFAnalysis {
 
@@ -54,11 +54,11 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
         method:       Method,
         taCode:       TACode[TACMethodParameter, V]
     )(implicit state: State): Boolean = {
-        val lazyInitializationResult: FieldReferenceImmutability =
+        val lazyInitializationResult: FieldAssignability =
             determineLazyInitialization(writeIndex, defaultValue, method, taCode)
 
         state.referenceImmutability = lazyInitializationResult
-        lazyInitializationResult == MutableFieldReference
+        lazyInitializationResult == Assignable
     }
 
     /**
@@ -87,7 +87,7 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
         defaultValue: Any,
         method:       Method,
         taCode:       TACode[TACMethodParameter, V]
-    )(implicit state: State): FieldReferenceImmutability = {
+    )(implicit state: State): FieldAssignability = {
         val code = taCode.stmts
         val cfg = taCode.cfg
 
@@ -120,21 +120,21 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
                     findGuardResult.head._4
                 )
             else
-                return MutableFieldReference;
+                return Assignable;
 
         if (!dominates(defaultCaseIndex, writeIndex, taCode))
-            return MutableFieldReference;
+            return Assignable;
 
         val elseBB = cfg.bb(elseCaseIndex)
 
         // prevents wrong control flow
         if (isTransitivePredecessor(elseBB, writeBB))
-            return MutableFieldReference;
+            return Assignable;
 
         if (method.returnType == state.field.fieldType) {
             // prevents that another value than the field value is returned with the same type
             if (!isFieldValueReturned(write, writeIndex, readIndex, taCode, findGuardResult))
-                return MutableFieldReference;
+                return Assignable;
             //prevents that the field is seen with another value
             if ( // potentially unsound with method.returnType == state.field.fieldType
             // TODO comment it out and look at appearing cases
@@ -150,14 +150,14 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
                                 )
                         }
             ))
-                return MutableFieldReference;
+                return Assignable;
         }
 
         val reads = fieldAccessInformation.readAccesses(state.field)
 
         // prevents reads outside the method
         if (reads.exists(_._1 ne method))
-            return MutableFieldReference;
+            return Assignable;
 
         val writes = fieldAccessInformation.writeAccesses(state.field)
 
@@ -168,14 +168,14 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
                 methodAndPCs._2.size > 1 ||
                     ((methodAndPCs._1 ne method) && !methodAndPCs._1.isInitializer)
         ))
-            return MutableFieldReference;
+            return Assignable;
 
         // if the method is synchronized the monitor within the method doesn't have to be searched
         if (method.isSynchronized) {
             if (dominates(defaultCaseIndex, writeIndex, taCode) && noInterferingExceptions())
-                LazyInitializedThreadSafeFieldReference
+                LazilyInitialized
             else
-                MutableFieldReference
+                Assignable
         } else {
 
             val (indexMonitorEnter, indexMonitorExit) = findMonitors(writeIndex, taCode)
@@ -185,9 +185,9 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
             if (monitorResultsDefined && //dominates(indexMonitorEnter.get, trueCaseIndex) &&
                 dominates(indexMonitorEnter.get, readIndex, taCode)) {
                 if (noInterferingExceptions())
-                    LazyInitializedThreadSafeFieldReference
+                    LazilyInitialized
                 else
-                    MutableFieldReference
+                    Assignable
             } else {
                 if (write.value.asVar.definedBy.forall { defSite ⇒ //TODO check time consumption
                     defSite >= 0 /*&& checkWriteIsDeterministic(
@@ -201,10 +201,10 @@ trait AbstractFieldReferenceImmutabilityAnalysisLazyInitialization
                     //val computationalFieldType = state.field.fieldType.computationalType
                     //if (computationalFieldType != ComputationalTypeInt &&
                     //    computationalFieldType != ComputationalTypeFloat) {
-                    LazyInitializedNotThreadSafeFieldReference
+                    UnsafelyLazilyInitialized
                     //} /*else
                     //LazyInitializedNotThreadSafeButDeterministicFieldReference
-                } else MutableFieldReference
+                } else Assignable
             }
         }
     }

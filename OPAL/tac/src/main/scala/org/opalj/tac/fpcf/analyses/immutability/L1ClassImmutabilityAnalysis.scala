@@ -17,15 +17,15 @@ import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.FPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.DeepImmutableClass
-import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableClass
 import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.ShallowImmutableClass
-import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.fpcf.ELBP
 import org.opalj.fpcf.EOptionP
 
@@ -237,11 +237,11 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 else
                     return createResultForAllSubtypes(t, MutableClass);
 
-            case FinalP(ShallowImmutableField)   ⇒ hasShallowImmutableFields = true
+            case FinalP(NonTransitivelyImmutableField) ⇒ hasShallowImmutableFields = true
 
-            case FinalP(DependentImmutableField) ⇒ hasDependentImmutableFields = true
+            case FinalP(DependentImmutableField)       ⇒ hasDependentImmutableFields = true
 
-            case FinalP(DeepImmutableField)      ⇒
+            case FinalP(TransitivelyImmutableField)    ⇒
 
             case ep @ InterimE(e) ⇒
                 hasFieldsWithUnknownMutability = true
@@ -263,17 +263,17 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
 
         // NOTE: maxLocalImmutability does not take the super classes' mutability into account!
         var maxLocalImmutability: ClassImmutability = superClassInformation match {
-            case UBP(MutableClass)            ⇒ MutableClass
-            case UBP(ShallowImmutableClass)   ⇒ ShallowImmutableClass
-            case UBP(DependentImmutableClass) ⇒ DependentImmutableClass
-            case _                            ⇒ DeepImmutableClass
+            case UBP(MutableClass)                  ⇒ MutableClass
+            case UBP(NonTransitivelyImmutableClass) ⇒ NonTransitivelyImmutableClass
+            case UBP(DependentImmutableClass)       ⇒ DependentImmutableClass
+            case _                                  ⇒ TransitivelyImmutableClass
         }
         if (hasShallowImmutableFields) {
-            maxLocalImmutability = ShallowImmutableClass
+            maxLocalImmutability = NonTransitivelyImmutableClass
         }
 
         if (hasDependentImmutableFields &&
-            maxLocalImmutability != ShallowImmutableClass && maxLocalImmutability != MutableClass) {
+            maxLocalImmutability != NonTransitivelyImmutableClass && maxLocalImmutability != MutableClass) {
             maxLocalImmutability = DependentImmutableClass
         }
 
@@ -281,7 +281,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
             // IMPROVE We could analyze if the array is effectively final.
             // I.e., it is only initialized once (at construction time) and no reference to it
             // is passed to another object.
-            maxLocalImmutability = ShallowImmutableClass
+            maxLocalImmutability = NonTransitivelyImmutableClass
         }
 
         if (dependees.isEmpty || minLocalImmutability == maxLocalImmutability) {
@@ -311,41 +311,41 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 case UBP(MutableClass) ⇒
                     return Result(t, MutableClass);
 
-                case LBP(DeepImmutableClass) ⇒ // the super class
+                case LBP(TransitivelyImmutableClass) ⇒ // the super class
                     dependees -= SuperClassKey
 
-                case UBP(ShallowImmutableClass) ⇒ // super class is at most immutable container
+                case UBP(NonTransitivelyImmutableClass) ⇒ // super class is at most immutable container
                     if (someEPS.isFinal) dependees -= SuperClassKey
-                    maxLocalImmutability = ShallowImmutableClass
+                    maxLocalImmutability = NonTransitivelyImmutableClass
 
                 case UBP(DependentImmutableClass) ⇒
                     if (someEPS.isFinal) dependees -= SuperClassKey
-                    if (maxLocalImmutability != ShallowImmutableClass)
+                    if (maxLocalImmutability != NonTransitivelyImmutableClass)
                         maxLocalImmutability = DependentImmutableClass
 
-                case LBP(ShallowImmutableClass) ⇒ // super class is a least shallow immutable
-                    if (minLocalImmutability != ShallowImmutableClass &&
+                case LBP(NonTransitivelyImmutableClass) ⇒ // super class is a least shallow immutable
+                    if (minLocalImmutability != NonTransitivelyImmutableClass &&
                         !dependees.valuesIterator.exists(_.pk == FieldImmutability.key))
-                        minLocalImmutability = ShallowImmutableClass // Lift lower bound when possible
+                        minLocalImmutability = NonTransitivelyImmutableClass // Lift lower bound when possible
 
-                case LUBP(MutableClass, DeepImmutableClass) ⇒ // No information about superclass
+                case LUBP(MutableClass, TransitivelyImmutableClass) ⇒ // No information about superclass
 
                 case FinalP(DependentImmutableField) ⇒
                     if (hasShallowImmutableFields) {
-                        maxLocalImmutability = ShallowImmutableClass
-                    } else if (maxLocalImmutability != MutableClass && maxLocalImmutability != ShallowImmutableClass) {
+                        maxLocalImmutability = NonTransitivelyImmutableClass
+                    } else if (maxLocalImmutability != MutableClass && maxLocalImmutability != NonTransitivelyImmutableClass) {
                         maxLocalImmutability = DependentImmutableClass
                     }
 
                 // Field Immutability related dependencies:
-                case FinalP(DeepImmutableField)                          ⇒
-                case FinalP(ShallowImmutableField)                       ⇒ maxLocalImmutability = ShallowImmutableClass
-                case FinalP(MutableField)                                ⇒ return Result(t, MutableClass);
-                case UBP(MutableField)                                   ⇒ return Result(t, MutableClass);
-                case ELBP(e, ShallowImmutableField | DeepImmutableField) ⇒ dependees -= e
-                case UBP(DeepImmutableField)                             ⇒ // no information about field mutability
-                case UBP(ShallowImmutableField)                          ⇒ maxLocalImmutability = ShallowImmutableClass
-                case UBP(DependentImmutableField) if maxLocalImmutability != ShallowImmutableClass ⇒
+                case FinalP(TransitivelyImmutableField)                                  ⇒
+                case FinalP(NonTransitivelyImmutableField)                               ⇒ maxLocalImmutability = NonTransitivelyImmutableClass
+                case FinalP(MutableField)                                                ⇒ return Result(t, MutableClass);
+                case UBP(MutableField)                                                   ⇒ return Result(t, MutableClass);
+                case ELBP(e, NonTransitivelyImmutableField | TransitivelyImmutableField) ⇒ dependees -= e
+                case UBP(TransitivelyImmutableField)                                     ⇒ // no information about field mutability
+                case UBP(NonTransitivelyImmutableField)                                  ⇒ maxLocalImmutability = NonTransitivelyImmutableClass
+                case UBP(DependentImmutableField) if maxLocalImmutability != NonTransitivelyImmutableClass ⇒
                     maxLocalImmutability = DependentImmutableClass
                 case _ ⇒ Result(t, MutableClass) //TODO check
             }
@@ -426,12 +426,12 @@ trait L1ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
         // 1.1
         // java.lang.Object is by definition deep immutable.
-        set(ObjectType.Object, DeepImmutableClass) //ImmutableObject)
+        set(ObjectType.Object, TransitivelyImmutableClass) //ImmutableObject)
 
         // 1.2
         // All (instances of) interfaces are (by their very definition) also immutable.
         val allInterfaces = project.allClassFiles.filter(cf ⇒ cf.isInterfaceDeclaration)
-        allInterfaces.foreach(cf ⇒ set(cf.thisType, DeepImmutableClass))
+        allInterfaces.foreach(cf ⇒ set(cf.thisType, TransitivelyImmutableClass))
 
         // 2.
         // All classes that do not have complete superclass information are mutable
@@ -507,7 +507,7 @@ object EagerL1ClassImmutabilityAnalysis extends L1ClassImmutabilityAnalysisSched
         ps.scheduleEagerComputationsForEntities(cfs)(
             analysis.determineL1ClassImmutability(
                 superClassType = null,
-                FinalEP(ObjectType.Object, DeepImmutableClass),
+                FinalEP(ObjectType.Object, TransitivelyImmutableClass),
                 superClassMutabilityIsFinal = true,
                 lazyComputation = false
             )

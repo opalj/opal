@@ -41,7 +41,7 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
 
 /**
@@ -90,7 +90,7 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         field: Field
     ): ProperPropertyComputationResult = {
         if (field.isFinal) {
-            return Result(field, ShallowImmutableField)
+            return Result(field, NonTransitivelyImmutableField)
         }
 
         val thisType = field.classFile.thisType
@@ -234,12 +234,12 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
 
     def returnResult()(implicit state: State): ProperPropertyComputationResult = {
         if (state.tacDependees.isEmpty && state.escapeDependees.isEmpty)
-            Result(state.field, ShallowImmutableField)
+            Result(state.field, NonTransitivelyImmutableField)
         else
             InterimResult(
                 state.field,
                 MutableField,
-                ShallowImmutableField,
+                NonTransitivelyImmutableField,
                 state.escapeDependees ++ state.tacDependees.valuesIterator.map(_._1),
                 c
             )

@@ -22,12 +22,12 @@ import org.opalj.br.analyses.cg.TypeExtensibilityKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-import org.opalj.br.fpcf.properties.ImmutableFieldReference
-import org.opalj.br.fpcf.properties.MutableFieldReference
+import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.Assignable
 import org.opalj.br.fpcf.properties.NotPrematurelyReadField
 import org.opalj.br.fpcf.properties.PrematurelyReadField
 import org.opalj.br.fpcf.properties.Purity
-import org.opalj.br.fpcf.properties.FieldReferenceImmutability
+import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.br.fpcf.properties.TypeImmutability
 //import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.EOptionP
@@ -62,12 +62,12 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
 
     case class State(
             field:                       Field,
-            var referenceImmutability:   FieldReferenceImmutability                    = ImmutableFieldReference,
+            var referenceImmutability:   FieldAssignability                            = EffectivelyNonAssignable,
             var prematurelyReadDependee: Option[EOptionP[Field, FieldPrematurelyRead]] = None,
             var purityDependees:         Set[EOptionP[DeclaredMethod, Purity]]         = Set.empty,
             //var lazyInitInvocation:             Option[(DeclaredMethod, PC)]                                                   = None,
             //var calleesDependee:                Map[DeclaredMethod, (EOptionP[DeclaredMethod, Callees], List[PC])]             = Map.empty,
-            var referenceImmutabilityDependees: Set[EOptionP[Field, FieldReferenceImmutability]]                               = Set.empty,
+            var referenceImmutabilityDependees: Set[EOptionP[Field, FieldAssignability]]                                       = Set.empty,
             var escapeDependees:                Set[EOptionP[DefinitionSite, EscapeProperty]]                                  = Set.empty,
             var tacDependees:                   Map[Method, (EOptionP[Method, TACAI], PCs)]                                    = Map.empty,
             var typeDependees:                  Set[EOptionP[ObjectType, TypeImmutability]]                                    = Set.empty,
@@ -129,11 +129,11 @@ trait AbstractFieldReferenceImmutabilityAnalysis extends FPCFAnalysis {
      * Checks whether the field the value assigned to a (potentially) lazily initialized field is final,
      * ensuring that the same value is written even for concurrent executions.
      */
-    def isImmutableReference(eop: EOptionP[Field, FieldReferenceImmutability])(implicit state: State): Boolean =
+    def isImmutableReference(eop: EOptionP[Field, FieldAssignability])(implicit state: State): Boolean =
         eop match {
 
-            case LBP(ImmutableFieldReference) ⇒ true
-            case UBP(MutableFieldReference)   ⇒ false
+            case LBP(EffectivelyNonAssignable) ⇒ true
+            case UBP(Assignable)               ⇒ false
 
             case _ ⇒
                 state.referenceImmutabilityDependees += eop

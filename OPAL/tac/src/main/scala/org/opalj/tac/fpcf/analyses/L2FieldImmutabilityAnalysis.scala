@@ -64,10 +64,10 @@ import org.opalj.ai.pcOfMethodExternalException
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.br.fpcf.properties.DeepImmutableField
+import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.ShallowImmutableField
+import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.MutableField
 
 /**
@@ -85,7 +85,7 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
 
     case class State(
             field:                          Field,
-            var fieldImmutability:          FieldImmutability                             = ShallowImmutableField, //DeclaredFinalField,
+            var fieldImmutability:          FieldImmutability                             = NonTransitivelyImmutableField, //DeclaredFinalField,
             var prematurelyReadDependee:    Option[EOptionP[Field, FieldPrematurelyRead]] = None,
             var purityDependees:            Set[EOptionP[DeclaredMethod, Purity]]         = Set.empty,
             var lazyInitInvocation:         Option[(DeclaredMethod, PC)]                  = None,
@@ -145,7 +145,7 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         if (field.isFinal)
             return createResult();
 
-        state.fieldImmutability = ShallowImmutableField
+        state.fieldImmutability = NonTransitivelyImmutableField
 
         val thisType = field.classFile.thisType
 
@@ -576,7 +576,7 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
                                         return true
                                     };
 
-                                    state.fieldImmutability = ShallowImmutableField
+                                    state.fieldImmutability = NonTransitivelyImmutableField
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
                                     // note that here we assume real three address code (flat hierarchy)
 
@@ -1054,7 +1054,7 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     def isFinalField(
         eop: EOptionP[Field, FieldImmutability]
     )(implicit state: State): Boolean = eop match {
-        case LBP(DeepImmutableField | DependentImmutableField | ShallowImmutableField) ⇒
+        case LBP(TransitivelyImmutableField | DependentImmutableField | NonTransitivelyImmutableField) ⇒
             true
         case UBP(MutableField) ⇒ false
         case _ ⇒
