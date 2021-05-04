@@ -135,7 +135,7 @@ object SiteGeneration {
               /* the title */ pageConfig.get("title").toString,
               /* the content */ htmlContent.toString,
               /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false),
-              /* show in TOC */ Option(pageConfig.get("inTOC")).getOrElse(true)
+              /* show in TOC */ Option(pageConfig.get("inTOC").asInstanceOf[Boolean]).getOrElse(true)
             )
 
           case sectionTitle: String ⇒
@@ -162,7 +162,7 @@ object SiteGeneration {
       val engine = new TemplateEngine
       val defaultTemplate = sourceFolder / "default.template.html.ssp"
       for {
-        (baseFileName, sourceFile, title, html, useBanner) ← pages
+        (baseFileName, sourceFile, title, html, useBanner, _) ← pages
         if baseFileName ne null
       } {
         val htmlFile = targetFolder / (baseFileName + ".html")
