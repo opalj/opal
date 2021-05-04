@@ -134,7 +134,8 @@ object SiteGeneration {
               /* the file object */ sourceFile,
               /* the title */ pageConfig.get("title").toString,
               /* the content */ htmlContent.toString,
-              /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false)
+              /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false),
+              /* show in TOC */ Option(pageConfig.get("inTOC")).getOrElse(true)
             )
 
           case sectionTitle: String ⇒
@@ -144,15 +145,16 @@ object SiteGeneration {
               null,
               sectionTitle,
               null,
-              false
+              false,
+              true
             )
 
           case _ ⇒
             throw new RuntimeException("unsupported page configuration: " + page)
         }
       }
-      val toc /*Traversable[(String,String)]*/ = pages.map { page ⇒
-        val (baseFileName, _, title, _, _) = page
+      val toc /*Traversable[(String,String)]*/ = pages.filter(_._6).map { page ⇒
+        val (baseFileName, _, title, _, _, _) = page
         (baseFileName, title)
       }
 
