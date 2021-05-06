@@ -34,7 +34,14 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
 }
 
 sealed trait ClassImmutability extends ClassImmutabilityPropertyMetaInformation with OrderedProperty {
-    def meet(other: ClassImmutability): ClassImmutability
+    def meet(other: ClassImmutability): ClassImmutability = {
+        (this, other) match {
+            case (TransitivelyImmutableClass, _)       ⇒ other
+            case (_, TransitivelyImmutableClass)       ⇒ this
+            case (MutableClass, _) | (_, MutableClass) ⇒ MutableClass
+            case (_, _)                                ⇒ this
+        }
+    }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: ClassImmutability): Unit = {
         if (meet(other) != other) {
@@ -45,26 +52,17 @@ sealed trait ClassImmutability extends ClassImmutabilityPropertyMetaInformation 
     final def key: PropertyKey[ClassImmutability] = ClassImmutability.key
 }
 
+case object TransitivelyImmutableClass extends ClassImmutability
+
+case object NonTransitivelyImmutableClass extends ClassImmutability
+
+case object MutableClass extends ClassImmutability
+
 object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
     final val key: PropertyKey[ClassImmutability] = PropertyKey.create(
         "ClassImmutability",
         MutableClass
     )
-}
-
-case object TransitivelyImmutableClass extends ClassImmutability {
-    override def meet(other: ClassImmutability): ClassImmutability = other
-}
-
-case object NonTransitivelyImmutableClass extends ClassImmutability {
-    override def meet(other: ClassImmutability): ClassImmutability = {
-        if (other == TransitivelyImmutableClass) this
-        else other
-    }
-}
-
-case object MutableClass extends ClassImmutability {
-    override def meet(other: ClassImmutability): ClassImmutability = MutableClass
 }
 
 /* ANALYSIS */
@@ -196,8 +194,14 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
 }
 
 sealed trait FieldImmutability extends FieldImmutabilityPropertyMetaInformation with OrderedProperty {
-
-    def meet(other: FieldImmutability): FieldImmutability
+    def meet(other: FieldImmutability): FieldImmutability = {
+        (this, other) match {
+            case (TransitivelyImmutableField, _)       ⇒ other
+            case (_, TransitivelyImmutableField)       ⇒ this
+            case (MutableField, _) | (_, MutableField) ⇒ MutableField
+            case (_, _)                                ⇒ this
+        }
+    }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: FieldImmutability): Unit = {
         if (meet(other) != other) {
@@ -207,6 +211,13 @@ sealed trait FieldImmutability extends FieldImmutabilityPropertyMetaInformation 
 
     final def key: PropertyKey[FieldImmutability] = FieldImmutability.key
 }
+
+case object TransitivelyImmutableField extends FieldImmutability
+
+case object NonTransitivelyImmutableField extends FieldImmutability
+
+case object MutableField extends FieldImmutability
+
 object FieldImmutability extends FieldImmutabilityPropertyMetaInformation {
     final val key: PropertyKey[FieldImmutability] = PropertyKey.create(
         "FieldImmutability",
@@ -219,21 +230,6 @@ object FieldImmutability extends FieldImmutabilityPropertyMetaInformation {
             }
         }
     )
-}
-
-case object TransitivelyImmutableField extends FieldImmutability {
-    override def meet(other: FieldImmutability): FieldImmutability = other
-}
-
-case object NonTransitivelyImmutableField extends FieldImmutability {
-    override def meet(other: FieldImmutability): FieldImmutability = {
-        if (other == TransitivelyImmutableField) this
-        else other
-    }
-}
-
-case object MutableField extends FieldImmutability {
-    override def meet(other: FieldImmutability): FieldImmutability = MutableField
 }
 
 class FieldImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {

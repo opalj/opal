@@ -16,13 +16,13 @@ override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(FieldImmutability
 ```
 This consists of two parts:
 
-First, `requiredProjectInformation` gives the [ProjectInformationKeys](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectInformationKey.html) that your analysis uses.  
+First, `requiredProjectInformation` gives the [`ProjectInformationKey`s](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectInformationKey.html) that your analysis uses.  
 ProjectInformationKeys provide aggregated information about a project, such as a call graph or the set of methods that access each field.  
-Here, we specified the [FieldAccessInformationKey](/library/api/SNAPSHOT/org/opalj/br/analyses/FieldAccessInformationKey$.html) that you can use with [Project.get()](/library/api/SNAPSHOT/org/opalj/br/analyses/Project.html#get[T%3C:AnyRef](pik:org.opalj.br.analyses.ProjectInformationKey[T,_]):T) to get [FieldAccessInformation](/library/api/SNAPSHOT/org/opalj/br/analyses/FieldAccessInformation.html), i.e., information about where each field is read or written.
+Here, we specified the [`FieldAccessInformationKey`](/library/api/SNAPSHOT/org/opalj/br/analyses/FieldAccessInformationKey$.html) that you can use with [`Project.get()`](/library/api/SNAPSHOT/org/opalj/br/analyses/Project.html#get[T%3C:AnyRef](pik:org.opalj.br.analyses.ProjectInformationKey[T,_]):T) to get [`FieldAccessInformation`](/library/api/SNAPSHOT/org/opalj/br/analyses/FieldAccessInformation.html), i.e., information about where each field is read or written.
 
 Second, `uses` gives the results of fixed-point analyses that your analysis requires.  
 Here, our analysis uses upper bounds for both `FieldImmutability` and `ClassImmutability`.  
-You can specify other bounds using other methods from [PropertyBounds](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyBounds$.html).  
+You can specify other bounds using other methods from [`PropertyBounds`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyBounds$.html).  
 Remember to always include the type(s) of results produced by your own analysis as well if you use them!
 
 In general, every scheduler also has to provide information on what type(s) of results your analysis produces, but this is specified differently for different schedulers. 
@@ -30,7 +30,7 @@ Let's take a look at the individual scheduler types now.
 
 ## Eager Scheduling
 
-The [FPCFEagerAnalysisScheduler](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFEagerAnalysisScheduler.html) is for simple analyses that compute some properties for a number of entities that you know in advance.  
+The [`FPCFEagerAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFEagerAnalysisScheduler.html) is for simple analyses that compute some properties for a number of entities that you know in advance.  
 For example, you could compute the immutability for all fields of all classes in your analyzed program like this:
 ```scala
 object EagerFieldImmutabilityAnalysis extends BasicFPCFEagerAnalysisScheduler {
@@ -52,17 +52,17 @@ Note that you can specify more than just one type of result if your analysis com
 [Collaborative Analyses](/tutorial/CollaborativeAnalyses.html) use the `derivesCollaboratively` instead and you can combine both if necessary.  
 
 The eager scheduler's entry point is the `start` method.  
-You are given the [Project](/library/api/SNAPSHOT/org/opalj/br/analyses/Project.html), i.e., your analyzed program and the [PropertyStore](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyStore.html) that will execute your analyses.  
+You are given the [`Project`](/library/api/SNAPSHOT/org/opalj/br/analyses/Project.html), i.e., your analyzed program and the [`PropertyStore`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyStore.html) that will execute your analyses.  
 You can also get some initialization data if you need it, see [Advanced Scheduling](#advanced-scheduling) below for more information.
 
 After creating your analysis, you use `scheduleEagerComputation` to schedule it.  
 The first argument gives the entities for which you want to compute properties. Your analysis function will be called once for each entity.  
-The second argument is the analysis function. It must take a single argument of the type of your entities and produce a [PropertyComputationResult](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyComputationResult.html).
+The second argument is the analysis function. It must take a single argument of the type of your entities and produce a [`PropertyComputationResult`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyComputationResult.html).
 In the end, you return your analysis object.
 
 ## Lazy Scheduling
 
-The [FPCFLazyAnalysisScheduler](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFEagerAnalysisScheduler.html) lets you compute properties only for entities that need them, i.e., properties that are queried by other analyses<a title="You can also manually tell the PropertyStore to compute the property for some entity using the force method."><sup>[note]</sup></a>.
+The [`FPCFLazyAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFEagerAnalysisScheduler.html) lets you compute properties only for entities that need them, i.e., properties that are queried by other analyses<sup title="You can also manually tell the PropertyStore to compute the property for some entity using the force method.">[note]</sup>.
 Let's again implement a scheduler for a field immutability analysis:
 ```scala
 object LazyFieldImmutabilityAnalysis extends BasicFPCFLazyAnalysisScheduler {
@@ -87,7 +87,7 @@ As before, the analysis function must return a PropertyComputationResult.
 
 ## Transformers
 
-The [FPCFTransformerScheduler](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFTransformerScheduler.html) is a special kind of lazy scheduler.  
+The [`FPCFTransformerScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFTransformerScheduler.html) is a special kind of lazy scheduler.  
 As with a lazy scheduler, properties are only computed for entities that are queried.
 However, in contrast to the lazy scheduler, the analysis function is only called once some other property for the same entity has a final result.
 
@@ -108,7 +108,7 @@ object TACAITransformer extends BasicFPCFTransformerScheduler {
     }
 }
 ```
-It computes the [TACAI](/library/api/SNAPSHOT/org/opalj/tac/fpcf/properties/TACAI.html), a three address code intermediate representation of your methods based on the result of an abstract interpretation.  
+It computes the [`TACAI`](/library/api/SNAPSHOT/org/opalj/tac/fpcf/properties/TACAI.html), a three address code intermediate representation of your methods based on the result of an abstract interpretation.  
 As that abstract interpretation has to be performed first, there is no need to call the analysis function before this has completed, thus a transformer is more convenient and more performant here than a lazy scheduler.
 
 As you can see, it is almost identical to he lazy scheduler, but it uses `registerTransformer` to register the analysis function.  
@@ -118,7 +118,7 @@ The analysis function here takes two arguments: the entity (as with lazy schedul
 
 ## Triggered Scheduling
 
-The [FPCFTriggeredAnalysisScheduler](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFTriggeredAnalysisScheduler.html) lets you start a computation for an entity only once you know that this entity does have some other property.  
+The [`FPCFTriggeredAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFTriggeredAnalysisScheduler.html) lets you start a computation for an entity only once you know that this entity does have some other property.  
 Different to a transformer, that other property does not have to have a final result yet, though.  
 Let's see an example of how to use this for a call graph module:
 ```scala

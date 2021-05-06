@@ -6,7 +6,7 @@ You should have read the tutorial on [Writing Fixed-Point Analyses](FixedPointAn
 ## Defining a Lattice
 
 As is always the case for fixed-point analyses in OPAL, we need a suitable lattice to represent our analysis' results.  
-In order to represent the set of all classes potentially instantiated, we thus create a lattice of set<a title="OPAL's UIDSet is an optimized set for several kinds of entities in OPAL, including, e.g., ObjectType which represents the type of a class."><sup>[note]</sup></a> values:
+In order to represent the set of all classes potentially instantiated, we thus create a lattice of set<sup title="OPAL's UIDSet is an optimized set for several kinds of entities in OPAL, including, e.g., ObjectType which represents the type of a class.">[note]</sup> values:
 ```scala
 sealed trait InstantiatedTypesPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = InstantiatedTypes
@@ -32,7 +32,7 @@ object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     )
 }
 ```
-We use a case class here to provide a container for an arbitrary set of [ObjectType](/library/api/SNAPSHOT/org/opalj/br/ObjectType.html)s.  
+We use a case class here to provide a container for an arbitrary set of [`ObjectType`](/library/api/SNAPSHOT/org/opalj/br/ObjectType.html)s.  
 
 Note that for the `key`, we didn't just provide a fallback value, but a small function that is called whenever `InstantiatedTypes` are needed, but have not been computed.  
 This is to distinguish between two cases:  
@@ -42,7 +42,7 @@ On the other hand, it may be that our analysis has not been executed.
 In this case, a sound over-approximation (namely that *any* class could be instantiated) would be possible, but probably not what the user of our lattice expects.
 Thus, we raise an error here to point the user to the fact that he may want to run our analysis to get the information that he requires.
 
-## Writing the Analysis
+## Implementing the Analysis
 
 Now, let's implement the (simplified) analysis.  
 As usual, we start by creating an analysis class with an analysis function:
@@ -53,8 +53,8 @@ class InstantiatedTypesAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def analyzeMethod(method: DeclaredMethod): PropertyComputationResult = { [...] }
 }
 ```
-We need a [ProjectInformationKey](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectInformationKey.html) here, namely the `DeclaredMethodsKey`, as this will later be needed implicitly to resolve calls with the call graph.  
-The analysis function takes a [DeclaredMethod](/library/api/SNAPSHOT/org/opalj/br/DeclaredMethod.html) (a representation of a method in the context of its class) as the entity to be analyzed as we want to find all classes instantiated by methods that potentially called (i.e., that are not *dead*).  
+We need a [`ProjectInformationKey`](/library/api/SNAPSHOT/org/opalj/br/analyses/ProjectInformationKey.html) here, namely the `DeclaredMethodsKey`, as this will later be needed implicitly to resolve calls with the call graph.  
+The analysis function takes a [`DeclaredMethod`](/library/api/SNAPSHOT/org/opalj/br/DeclaredMethod.html) (a representation of a method in the context of its class) as the entity to be analyzed as we want to find all classes instantiated by methods that potentially called (i.e., that are not *dead*).  
 Note that unlike most analyses, we will however *not* compute a result just for this entity, we just use it to compute its effect on the set of instantiated classes *anywhere* in the analyzed program.
 
 We will later configure our analysis function to be called once for every method that is potentially called, but classes are instantiated only by constructors (named `<init>` in the Java Virtual Machine), thus we first check whether the analyzed method actually is a constructor:
@@ -66,7 +66,7 @@ def analyzeMethod(method: DeclaredMethod): PropertyComputationResult = {
     [...]
 }
 ```
-We use [NoResult](/library/api/SNAPSHOT/org/opalj/fpcf/NoResult.html) to signal that we won't compute any result for methods that are not constructors.
+We use [`NoResult`](/library/api/SNAPSHOT/org/opalj/fpcf/NoResult.html) to signal that we won't compute any result for methods that are not constructors.
 
 Next, we get the type of the class that is instantiated, which is the class that declares the analyzed constructor.
 ```scala
@@ -106,12 +106,12 @@ def analyzeMethod(method: DeclaredMethod): PropertyComputationResult = {
     [...]
 }
 ```
-We use a [PartialResult](/library/api/SNAPSHOT/org/opalj/fpcf/NoResult.html) here that allows us to contribute to a collaboratively computed property.  
+We use a [`PartialResult`](/library/api/SNAPSHOT/org/opalj/fpcf/NoResult.html) here that allows us to contribute to a collaboratively computed property.  
 The partial result takes the entity (we use `project` here, since the set of instantiated classes is global to the whole program that is analyzed) and the key of the property that we compute.  
 Finally, it takes a function that will get the current value of that property and computes an update to it.  
 To do so, we check whether there already is a property present and extract its upper bound.  
-If that upper bound already contains our class, we return `None` to signal that no update is necessary, otherwise we create an updated result, which is an [InterimEUBP](/library/api/SNAPSHOT/org/opalj/fpcf/InterimEUBP.html), i.e., a not yet final result consisting of an entity (`project`) and its property, which is the old set of instantiated classes extended by the class type of the analyzed constructor.  
-If, on the other hand, no property has been computed so far, the update function will be called with an [EPK](/library/api/SNAPSHOT/org/opalj/fpcf/EPK.html), i.e., a tuple of the entity and the key of the property.
+If that upper bound already contains our class, we return `None` to signal that no update is necessary, otherwise we create an updated result, which is an [`InterimEUBP`](/library/api/SNAPSHOT/org/opalj/fpcf/InterimEUBP.html), i.e., a not yet final result consisting of an entity (`project`) and its property, which is the old set of instantiated classes extended by the class type of the analyzed constructor.  
+If, on the other hand, no property has been computed so far, the update function will be called with an [`EPK`](/library/api/SNAPSHOT/org/opalj/fpcf/EPK.html), i.e., a tuple of the entity and the key of the property.
 In that case, we return property that contains just the class type of the analyzed constructor.
 
 Next, we should check whether the analyzed constructor was explicitly called to instantiate an object of the respective class, not implicitly during instantiation of a subclass.  
@@ -249,7 +249,7 @@ It just calls `checkCallers` again with the updated value.
 
 Did you notice that the continuation's return type is `PropertyComputationResult` instead of `ProperPropertyComputationResult`?  
 Indeed, it invokes `checkCallers` and that can return `NoResult`.  
-However, this is not a problem here, because we use this continuation not for an `InterimResult`, but for an [InterimPartialResult](/library/api/SNAPSHOT/org/opalj/fpcf/IncrementalResult.html).  
+However, this is not a problem here, because we use this continuation not for an `InterimResult`, but for an [`InterimPartialResult`](/library/api/SNAPSHOT/org/opalj/fpcf/IncrementalResult.html).  
 This allows us to register dependencies and a continuation function without binding them to a specific entity/property pair.
 Let's see it in use by completing the `checkCallers` function:
 ```scala
@@ -275,7 +275,7 @@ This completes our analysis, now we have to provide a scheduler for it.
 
 ## Scheduling the Analysis
 
-We use an [FPCFTriggeredAnalysisScheduler](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFTriggeredAnalysisScheduler.html)<a title="The BasicFPCFTriggeredAnalysisScheduler provides an empty implementation for some rarely used methods."><sup>[note]</sup></a> that allows us to trigger our analysis whenever a method is found to be reachable in the call graph.
+We use an [`FPCFTriggeredAnalysisScheduler`](/library/api/SNAPSHOT/org/opalj/br/fpcf/FPCFTriggeredAnalysisScheduler.html)<sup title="The BasicFPCFTriggeredAnalysisScheduler provides an empty implementation for some rarely used methods.">[note]</sup> that allows us to trigger our analysis whenever a method is found to be reachable in the call graph.
 ```scala
 object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)

@@ -11,7 +11,7 @@ Before discussing each of them individually, let's have a look at what they have
 ## Lattices Basics
 
 A lattice in OPAL consists of three parts.  
-The first one is the [PropertyMetaInformation](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyMetaInformation.html):
+The first one is the [`PropertyMetaInformation`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyMetaInformation.html):
 ```scala
 sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = ClassImmutability
@@ -86,7 +86,7 @@ However, always take care that what you implement really has the semantics of a 
 
 There are two additional classes that you might want to consider when implementing your lattice.
 
-The first one is [OrderedProperty](/library/api/SNAPSHOT/org/opalj/fpcf/OrderedProperty.html).  
+The first one is [`OrderedProperty`](/library/api/SNAPSHOT/org/opalj/fpcf/OrderedProperty.html).  
 If your lattice values extend this trait, you get additional checks in the PropertyStore whether your analyses refine their results monotonically with respect to your lattice's partial order.  
 `OrderedProperty` requires that you implement a method `checkIsEqualOrBetterThan(e: Entity, other: Self)` that should throw an exception if `other` is greater than the current value with respect to the lattice's partial order.  
 If you defined a `meet` method, you can simply implement it like this:
@@ -99,7 +99,7 @@ override def checkIsEqualOrBetterThan(e: Entity, other: ClassImmutability): Unit
 ```
 However, it may be better to provide optimized implementations for your individual lattice values if the `meet` operation is not trivial.
 
-The second option to consider is [AggregatedProperty](/library/api/SNAPSHOT/org/opalj/br/fpcf/properties/AggregatedProperty.html).  
+The second option to consider is [`AggregatedProperty`](/library/api/SNAPSHOT/org/opalj/br/fpcf/properties/AggregatedProperty.html).  
 Some properties really represent an aggregation of another property, e.g., `ClassImmutability` aggregates the `FieldImmutability` of a class' instance fields.  
 In such cases, one often needs to convert between corresponding values of the two lattices.  
 Also, the partial order and thus `meet` operator are equivalent and need to be defined only once.
@@ -111,7 +111,7 @@ The `meet` method on the aggregate lattice is provided for you based on the `mee
 
 ## Property Keys
 
-The [PropertyKey](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyKey.html) makes your lattice known to OPAL and gives it a unique identifier.  
+The [`PropertyKey`](/library/api/SNAPSHOT/org/opalj/fpcf/PropertyKey.html) makes your lattice known to OPAL and gives it a unique identifier.  
 You create it using one of two methods:
 ```scala
 final val classImmutabilityKey: PropertyKey[ClassImmutability] = PropertyKey.create(
@@ -134,6 +134,6 @@ It should be your lattice's bottom element in order to be sound.
 
 Or you can provide a function to compute the fallback value on demand.  
 This has two benefits: First, you can use some information about your entity to compute a sound but more precise fallback value.  
-Additionally, as shown above, this function gets a [FallbackReason](/library/api/SNAPSHOT/org/opalj/fpcf/FallbackReason.html).  
+Additionally, as shown above, this function gets a [`FallbackReason`](/library/api/SNAPSHOT/org/opalj/fpcf/FallbackReason.html).  
 This tells you whether no analysis was executed to compute any values of your lattice at all (`PropertyIsNotComputedByAnyAnalysis`), in which case you should provide a sound over-approximation as before.  
 Or it tells you that an analysis was executed, but it did not provide a result for the respective entity (`PropertyIsNotDerivedByPreviouslyExecutedAnalysis`), in which case you may be able to provide a precise result, because you know that, e.g., the entity belongs to dead code.
