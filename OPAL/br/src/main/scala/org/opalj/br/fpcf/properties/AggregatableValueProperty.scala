@@ -25,14 +25,14 @@ trait IndividualProperty[S <: IndividualProperty[S, T], T <: AggregatedProperty[
     extends AggregatableValueProperty[S, T] {
     override type self = S
 
-    val aggregatedProperty: T
+    def aggregatedProperty: T
 }
 
 trait AggregatedProperty[S <: IndividualProperty[S, T], T <: AggregatedProperty[S, T]]
     extends AggregatableValueProperty[S, T] {
     override type self = T
 
-    val individualProperty: S
+    def individualProperty: S
 
     override def meet(other: T): T =
         other.individualProperty.meet(this.individualProperty).aggregatedProperty
