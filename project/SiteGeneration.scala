@@ -62,6 +62,7 @@ object SiteGeneration {
       import com.vladsch.flexmark.util.ast.Node
       import com.vladsch.flexmark.html.HtmlRenderer
       import com.vladsch.flexmark.parser.Parser
+      import com.vladsch.flexmark.util.data.DataKey
       import com.vladsch.flexmark.util.data.MutableDataSet
       import org.fusesource.scalate.TemplateEngine
 
@@ -86,7 +87,7 @@ object SiteGeneration {
       }
 
       // 2.3 pre-process pages
-      val mdParserOptions = new MutableDataSet()
+      val mdParserOptions = new MutableDataSet().set[java.lang.Boolean](HtmlRenderer.RENDER_HEADER_ID, true).set[java.lang.Boolean](HtmlRenderer.GENERATE_HEADER_ID, true)
       val mdParser = Parser.builder(mdParserOptions).build()
       val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build()
       val pages = for (page ← config.getAnyRefList("pages").asScala) yield {
