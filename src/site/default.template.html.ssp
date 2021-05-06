@@ -22,7 +22,7 @@
     </head>
     <body id="top">
         <header id="header" class="skel-layers-fixed">
-            <h1><a href="https://www.opal-project.de"><img src="/OPALLogo.png" width="13" height="13">&nbsp;OPAL Project</a></h1>
+            <h2><a href="/"><img src="/OPALLogo.png" width="13" height="13">&nbsp;OPAL Project</a></h2>
             <nav id="nav">
                 <ul>
                     <li><a href="/Publications.html">Publications</a></li>
