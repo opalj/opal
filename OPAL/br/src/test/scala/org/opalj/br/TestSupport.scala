@@ -2,10 +2,13 @@
 package org.opalj
 package br
 
+import java.io.File
 import java.net.URL
 
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
 
+import org.opalj.log.GlobalLogContext
 import org.opalj.util.gc
 import org.opalj.bytecode.RTJar
 import org.opalj.bytecode.JRELibraryFolder
@@ -77,34 +80,41 @@ object TestSupport {
      */
     def allBIProjects(
         projectReader: ClassFileReader         = DefaultJava11Reader,
-        jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework)
+        jreReader:     Option[ClassFileReader] = Some(Java9LibraryFramework),
+        config:        Config                  = BaseConfig
     ): Iterator[(String, () ⇒ Project[URL])] = {
+
+        // Test fixtures don't contain main methods, but tests may rely on a reasonable
+        // call graph and thus entry points
+        // NOTE: There are some project in the "classfiles" directory without a main
+        // method as well, but we ignore them for now
+        def configForProject(project: File): Config = {
+            if (config ne BaseConfig) config
+            else if (project.getParentFile.getName == "classfiles") BaseConfig
+            else BaseConfig.withValue(
+                InitialEntryPointsKey.ConfigKey, ConfigValueFactory.fromAnyRef(
+                    "org.opalj.br.analyses.cg.AllEntryPointsFinder"
+                )
+            ).withValue(
+                    AllEntryPointsFinder.ConfigKey, ConfigValueFactory.fromAnyRef(true)
+                )
+        }
+
         jreReader match {
             case Some(jreReader) ⇒
                 val jreCFs = jreReader.ClassFiles(RTJar) // we share the loaded JRE!
                 val jrePublicAPIOnly = jreReader.loadsInterfacesOnly
                 (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProject ⇒
                     val projectClassFiles = projectReader.ClassFiles(biProject)
-                    // Test fixtures don't contain main methods, but tests may rely on a reasonable
-                    // call graph and thus entry points
-                    // NOTE: There are some project in the "classfiles" directory without a main
-                    // method as well, but we ignore them for now
-                    implicit val config =
-                        if (biProject.getParentFile.getName == "classfiles") BaseConfig
-                        else BaseConfig.withValue(
-                            InitialEntryPointsKey.ConfigKey, ConfigValueFactory.fromAnyRef(
-                                "org.opalj.br.analyses.cg.AllEntryPointsFinder"
-                            )
-                        ).withValue(
-                                AllEntryPointsFinder.ConfigKey, ConfigValueFactory.fromAnyRef(true)
-                            )
+                    implicit val actualConfig: Config = configForProject(biProject)
                     val readerFactory =
                         () ⇒ Project(projectClassFiles, jreCFs, jrePublicAPIOnly, Traversable.empty)
                     (biProject.getName, readerFactory)
                 }
             case None ⇒
                 (allBITestJARs().toIterator ++ allBITestProjectFolders().toIterator) map { biProjectJAR ⇒
-                    val readerFactory = () ⇒ Project(biProjectJAR)
+                    val readerFactory =
+                        () ⇒ Project(biProjectJAR, GlobalLogContext, configForProject(biProjectJAR))
                     (biProjectJAR.getName, readerFactory)
                 }
         }

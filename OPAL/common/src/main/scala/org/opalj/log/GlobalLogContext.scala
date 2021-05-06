@@ -16,4 +16,6 @@ case object GlobalLogContext extends LogContext {
 
     def newInstance: LogContext = throw new UnsupportedOperationException
 
+    override def successor: LogContext = this
+
 }

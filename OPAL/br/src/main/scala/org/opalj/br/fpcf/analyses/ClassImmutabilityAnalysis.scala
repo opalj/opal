@@ -28,6 +28,7 @@ import org.opalj.fpcf.PropertyComputation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldMutability
@@ -401,6 +402,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 }
 
 trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(ClassImmutability)
 

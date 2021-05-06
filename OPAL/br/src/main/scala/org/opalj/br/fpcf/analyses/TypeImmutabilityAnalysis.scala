@@ -24,6 +24,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.ImmutableContainer
 import org.opalj.br.fpcf.properties.ImmutableContainerType
@@ -224,6 +225,8 @@ class TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnal
 }
 
 trait TypeImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeExtensibilityKey)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(TypeImmutability)
 
