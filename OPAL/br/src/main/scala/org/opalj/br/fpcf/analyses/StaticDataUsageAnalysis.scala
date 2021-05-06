@@ -23,6 +23,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
 import org.opalj.br.fpcf.properties.CompileTimeConstantField
@@ -227,6 +228,8 @@ class StaticDataUsageAnalysis private[analyses] ( final val project: SomeProject
 }
 
 trait StaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final def derivedProperty: PropertyBounds = {
         // FIXME Just seems to derive the upper bound...

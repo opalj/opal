@@ -11,7 +11,6 @@ import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.InterimUBP
 import org.opalj.fpcf.InterimResult
-import org.opalj.fpcf.Result
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
@@ -45,6 +44,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
@@ -629,6 +629,14 @@ class FieldLocalityAnalysis private[analyses] (
 }
 
 sealed trait FieldLocalityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        FieldAccessInformationKey,
+        DeclaredMethodsKey,
+        DefinitionSitesKey,
+        TypeExtensibilityKey,
+        ClosedPackagesKey
+    )
 
     final override def uses: Set[PropertyBounds] = {
         Set(

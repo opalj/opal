@@ -290,16 +290,35 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
          * whether the given method is package-private or not.
          */
         def apply(project: SomeProject, objectType: ObjectType, method: Method): MethodContext = {
-            if (method.isPackagePrivate)
-                new PackagePrivateMethodContext(
-                    method.classFile.thisType.packageName,
-                    method.name,
-                    method.descriptor
-                )
-            else if (project.hasInstanceMethod(objectType, method.name, method.descriptor, true))
-                new ShadowsPackagePrivateMethodContext(method.name, method.descriptor)
+            MethodContext(
+                project,
+                objectType,
+                method.classFile.thisType.packageName,
+                method.name,
+                method.descriptor,
+                method.isPackagePrivate
+            )
+        }
+
+        /**
+         * Factory method for [[MethodContext]]/[[PackagePrivateMethodContext]] depending on
+         * whether the given method is package-private or not.
+         */
+        def apply(
+            project:          SomeProject,
+            objectType:       ObjectType,
+            declaringPackage: String,
+            methodName:       String,
+            descriptor:       MethodDescriptor,
+            isPackagePrivate: Boolean
+        ): MethodContext = {
+            if (isPackagePrivate)
+                new PackagePrivateMethodContext(declaringPackage, methodName, descriptor)
+            else if (project.classFile(objectType).isDefined &&
+                project.hasInstanceMethod(objectType, methodName, descriptor, true))
+                new ShadowsPackagePrivateMethodContext(methodName, descriptor)
             else
-                new MethodContext(method.name, method.descriptor)
+                new MethodContext(methodName, descriptor)
         }
     }
 
@@ -370,28 +389,27 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 packageName == that.packageName &&
                     methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    !hasAccessibleMethod
+                    isPackagePrivateMethod
             case that: ShadowsPackagePrivateMethodContext ⇒
                 methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    hasAccessibleMethod
+                    !isPackagePrivateMethod
             case that: MethodContext ⇒
                 methodName == that.methodName && descriptor == that.descriptor
             case _ ⇒ false
         }
 
-        private def hasAccessibleMethod: Boolean = {
+        private def isPackagePrivateMethod: Boolean = {
             if (project.classHierarchy.isInterface(receiverType).isYes) {
-                val method =
-                    project.resolveInterfaceMethodReference(receiverType, methodName, descriptor)
-                method.exists(m ⇒ m.isPublic || m.isProtected)
+                false
             } else {
                 val method = project.resolveClassMethodReference(
                     receiverType,
                     methodName,
                     descriptor
                 )
-                method.hasValue && (method.value.isPublic || method.value.isProtected)
+                method.hasValue && method.value.isPackagePrivate &&
+                    method.value.declaringClassFile.thisType.packageName == packageName
             }
         }
     }

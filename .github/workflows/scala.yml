@@ -24,3 +24,14 @@ jobs:
         
       - name: Run tests
         run: sbt -J-Xmx20G test
+
+  it-test:
+    runs-on: self-hosted
+    needs: build
+
+    if: github.event_name == 'push' || github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run Integration Tests
+      run: sbt -J-Xmx40G cleanBuild it:test
