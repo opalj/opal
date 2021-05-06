@@ -3,6 +3,8 @@ This tutorial will guide you through the implementation of a simple analysis mod
 The module developed in this tutorial will compute all classes that are possibly instantiated during program execution as is necessary to perform rapid type analysis (RTA).
 You should have read the tutorial on [Writing Fixed-Point Analyses](FixedPointAnalyses.html) first that introduces the basic concepts of OPAL's fixed-point analyses.
 
+We will develop the implementation in small steps, but you can get the complete, runnable source code for this analysis [here](InstantiatedTypesAnalysis.scala).
+
 ## Defining a Lattice
 
 As is always the case for fixed-point analyses in OPAL, we need a suitable lattice to represent our analysis' results.  
@@ -350,7 +352,6 @@ Remember to specify the program that you want to analyze with the "-cp=<some pat
 
 ## What next?
 
-This concludes our tutorial on the implementation a simple, yet complete collaborative fixed-point analysis in OPAL.  
-You can get the complete, runnable source code for this analysis [here](InstantiatedTypesAnalysis.scala).
+This concludes our tutorial on the implementation a simple, yet complete collaborative fixed-point analysis in OPAL.
 
 If you want to implement more complex analyses, we suggest you read on what else you can do with [Lattices](Lattices.html), [Schedulers](Schedulers.html) and [Results](Results.html) in OPAL.
