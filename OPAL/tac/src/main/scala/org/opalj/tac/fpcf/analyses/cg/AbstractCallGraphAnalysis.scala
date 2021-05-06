@@ -23,6 +23,7 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 trait CGState extends TACAIBasedAnalysisState {
@@ -44,6 +45,8 @@ trait CGState extends TACAIBasedAnalysisState {
  */
 trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     type State <: CGState
+
+    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
 
     def createInitialState(definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]): State
 
@@ -79,7 +82,61 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         specializedDeclaringClassType: ReferenceType,
         potentialTargets:              ForeachRefIterator[ObjectType],
         calleesAndCallers:             DirectCalls
-    )(implicit state: State): Unit
+    )(implicit state: State): Unit = {
+
+        for (possibleTgtType ← potentialTargets) {
+            if (canResolveCall(state)(possibleTgtType)) {
+                val tgtR = project.instanceCall(
+                    caller.declaringClassType, possibleTgtType, call.name, call.descriptor
+                )
+
+                handleCall(
+                    caller,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
+                    pc,
+                    tgtR,
+                    calleesAndCallers
+                )
+            } else {
+                handleUnresolvedCall(possibleTgtType, call, pc)
+            }
+        }
+
+        // Deal with the fact that there may be unknown subtypes of the receiver type that might
+        // override the method
+        if (specializedDeclaringClassType.isObjectType) {
+            val declType = specializedDeclaringClassType.asObjectType
+
+            val mResult = if (classHierarchy.isInterface(declType).isYes)
+                org.opalj.Result(project.resolveInterfaceMethodReference(
+                    declType, call.name, call.descriptor
+                ))
+            else
+                org.opalj.Result(project.resolveMethodReference(
+                    declType,
+                    call.name,
+                    call.descriptor,
+                    forceLookupInSuperinterfacesOnFailure = true
+                ))
+
+            if (mResult.isEmpty) {
+                unknownLibraryCall(
+                    caller,
+                    call.name,
+                    call.descriptor,
+                    call.declaringClass,
+                    declType,
+                    caller.definedMethod.classFile.thisType.packageName,
+                    pc,
+                    calleesAndCallers
+                )
+            } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
+                calleesAndCallers.addIncompleteCallSite(pc)
+            }
+        }
+    }
 
     protected final def processMethod(
         state: State, calls: DirectCalls
@@ -351,4 +408,18 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
             calleesAndCallers
         )
     }
+
+    /**
+     * Decides whether this call graph implementation can resolve this call immediately.
+     */
+    @inline protected[this] def canResolveCall(implicit state: State): ObjectType ⇒ Boolean
+
+    /**
+     * Handles a call that is not immediately resolved by this call graph implementation.
+     */
+    @inline protected[this] def handleUnresolvedCall(
+        possibleTgtType: ObjectType,
+        call:            Call[V] with VirtualCall[V],
+        pc:              Int
+    )(implicit state: State): Unit
 }
