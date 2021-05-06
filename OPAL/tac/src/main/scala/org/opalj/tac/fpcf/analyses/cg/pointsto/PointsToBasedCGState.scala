@@ -40,15 +40,15 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     // efficiently perform updates here.
     // If we get an update for a dependee, we have to update all points-to sets for the
     // its dependers (_dependeeToDependers(dependee).
-    private[this] val _dependeeToDependers: mutable.Map[Entity, mutable.Set[CallSiteT]] = {
+    private[this] val _dependeeToDependers: mutable.Map[Entity, mutable.Set[CallSite]] = {
         mutable.Map.empty
     }
-    private[this] val _dependerToDependees: mutable.Map[CallSiteT, mutable.Set[Entity]] = {
+    private[this] val _dependerToDependees: mutable.Map[CallSite, mutable.Set[Entity]] = {
         mutable.Map.empty
     }
 
     final def addPointsToDependency(
-        depender: CallSiteT,
+        depender: CallSite,
         dependee: EOptionP[Entity, PointsToSet]
     ): Unit = {
         assert(
@@ -90,7 +90,7 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
             throw new RuntimeException(s"failed to remove dependee: $dependee")
     }
 
-    final def removePointsToDepender(depender: CallSiteT): Unit = {
+    final def removePointsToDepender(depender: CallSite): Unit = {
         // for every dependee of the given depender:
         // we have to remove the depender from the set of their dependers
         for (dependee ← _dependerToDependees(depender)) {
@@ -111,7 +111,7 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         }
     }
 
-    final def removeTypeForCallSite(callSite: CallSiteT, instantiatedType: ObjectType): Unit = {
+    final def removeTypeForCallSite(callSite: CallSite, instantiatedType: ObjectType): Unit = {
         if (!_virtualCallSites.contains(callSite))
             assert(_virtualCallSites(callSite).contains(instantiatedType.id))
         val typesLeft = _virtualCallSites(callSite) - instantiatedType.id
@@ -128,7 +128,7 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         _pointsToDependees.contains(dependee)
     }
 
-    final def hasPointsToDependency(depender: CallSiteT, dependee: Entity): Boolean = {
+    final def hasPointsToDependency(depender: CallSite, dependee: Entity): Boolean = {
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
     }
 
@@ -168,19 +168,19 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     // IMPROVE: In order to be thread-safe, we return an immutable copy of the set.
     // However, this is very inefficient!
     // The size of the sets is typically 1 or 2, but there are outliers with up to 100 elements.
-    final def dependersOf(dependee: Entity): Set[CallSiteT] = {
+    final def dependersOf(dependee: Entity): Set[CallSite] = {
         _dependeeToDependers(dependee).toSet
     }
 
     // maps a definition site to the ids of the potential (not yet resolved) objecttypes
-    private[this] val _virtualCallSites: mutable.Map[CallSiteT, IntTrieSet] = mutable.Map.empty
+    private[this] val _virtualCallSites: mutable.Map[CallSite, IntTrieSet] = mutable.Map.empty
 
-    def typesForCallSite(callSite: CallSiteT): IntTrieSet = {
+    def typesForCallSite(callSite: CallSite): IntTrieSet = {
         _virtualCallSites(callSite)
     }
 
     def addPotentialTypesOfCallSite(
-        callSite: CallSiteT, potentialTypes: IntTrieSet
+        callSite: CallSite, potentialTypes: IntTrieSet
     ): Unit = {
         _virtualCallSites(callSite) =
             _virtualCallSites.getOrElse(callSite, IntTrieSet.empty) ++ potentialTypes
