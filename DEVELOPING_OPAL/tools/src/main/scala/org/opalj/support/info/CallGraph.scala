@@ -40,8 +40,12 @@ import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
 import org.opalj.tac.cg.CHACallGraphKey
+import org.opalj.tac.cg.CTACallGraphKey
+import org.opalj.tac.cg.FTACallGraphKey
+import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
+import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
@@ -57,8 +61,9 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  *  -algorithm=PointsTo for a points-to based call graph
  * The default algorithm is RTA.
  *
- * Please also specify whether the target (-cp=) is an application or a library using "-projectConfig=".
- * Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf` can be used here.
+ * Please also specify whether the target (-cp=) is an application or a library using
+ * "-projectConfig=". Predefined configurations `ApplicationProject.conf` or `LibraryProject.conf`
+ * can be used here.
  *
  * Furthermore, it can be used to print the callees or callers of specific methods.
  * To do so, add -callers=m, where m is the method name/signature using Java notation, as parameter
@@ -77,7 +82,7 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-algorithm=CHA|RTA|PointsTo]"+
+        "[-algorithm=CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo]"+
             "[-domain=domain]"+
             "[-callers=method]"+
             "[-callees=method]"+
@@ -97,7 +102,7 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
     }
 
-    private val algorithmRegex = "-algorithm=(CHA|RTA|PointsTo)".r
+    private val algorithmRegex = "-algorithm=(CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo)".r
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
@@ -166,6 +171,10 @@ object CallGraph extends ProjectAnalysisApplication {
             cgAlgorithm match {
                 case "CHA"               ⇒ project.get(CHACallGraphKey)
                 case "RTA"               ⇒ project.get(RTACallGraphKey)
+                case "MTA"               ⇒ project.get(MTACallGraphKey)
+                case "FTA"               ⇒ project.get(FTACallGraphKey)
+                case "CTA"               ⇒ project.get(CTACallGraphKey)
+                case "XTA"               ⇒ project.get(XTACallGraphKey)
                 case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
                 case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
             }
