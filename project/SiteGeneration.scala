@@ -135,7 +135,7 @@ object SiteGeneration {
               /* the title */ pageConfig.get("title").toString,
               /* the content */ htmlContent.toString,
               /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false),
-              /* show in TOC */ Option(pageConfig.get("inTOC").asInstanceOf[Boolean]).getOrElse(true)
+              /* show in TOC */ Option(pageConfig.get("inTOC")).getOrElse(true).asInstanceOf[Boolean]
             )
 
           case sectionTitle: String ⇒
