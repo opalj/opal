@@ -4,6 +4,8 @@ package tac
 
 import java.io.File
 
+import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.io.writeAndOpen
 import org.opalj.br.analyses.Project
 import org.opalj.ai.domain
@@ -16,6 +18,9 @@ import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.OPALLogger
 import org.opalj.log.{Error ⇒ ErrorLogLevel}
 import org.opalj.bytecode.JRELibraryFolder
+import org.opalj.br.BaseConfig
+import org.opalj.br.reader.InvokedynamicRewriting
+import org.opalj.br.reader.DynamicConstantRewriting
 
 /**
  * Creates the three-address representation for some method(s) and prints it to `std out` or writes
@@ -68,6 +73,9 @@ object TAC {
             "[-open] (the generated representations will be written to disk and opened)\n"+
             "[-toString] (uses the \"toString\" method to print the object graph)\n"+
             "[-performConstantPropagation] (performs constant propagation)\n"+
+            "[-rewriteInvokeDynamic] (rewrites InvokeDynamic bytecode instructions)\n"+
+            "[-rewriteDynamicConstants] (rewrites dynamic constants)\n+"+
+            "[-rewriteAll] (rewrites InvokeDynamicInstructions and dynamic constants)"+
             "Example:\n\tjava …TAC -cp /Library/jre/lib/rt.jar -class java.util.ArrayList -method toString"
     }
 
@@ -84,6 +92,8 @@ object TAC {
         var domainName: Option[String] = None
         var printCFG: Boolean = false
         var performConstantPropagation: Boolean = false
+        var rewriteInvokeDynamic = false
+        var rewriteDynamicConstants = false
 
         // PARSING PARAMETERS
         var i = 0
@@ -117,7 +127,13 @@ object TAC {
                 case "-method"                     ⇒ methodSignature = Some(readNextArg())
                 case "-toString"                   ⇒ toString = true
                 case "-performConstantPropagation" ⇒ performConstantPropagation = true
-                case unknown                       ⇒ handleError(s"unknown parameter: $unknown")
+                case "-rewriteInvokeDynamic"       ⇒ rewriteInvokeDynamic = true
+                case "-rewriteDynamicConstants"    ⇒ rewriteDynamicConstants = true
+                case "-rewriteAll" ⇒
+                    rewriteInvokeDynamic = true
+                    rewriteDynamicConstants = true
+
+                case unknown ⇒ handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
@@ -126,9 +142,17 @@ object TAC {
             handleError("missing parameters")
         }
 
+        val config = BaseConfig.withValue(
+            InvokedynamicRewriting.InvokedynamicRewritingConfigKey,
+            ConfigValueFactory.fromAnyRef(rewriteInvokeDynamic)
+        ).withValue(
+                DynamicConstantRewriting.RewritingConfigKey,
+                ConfigValueFactory.fromAnyRef(rewriteDynamicConstants)
+            )
+
         val sourceFiles = cp.map(new File(_)).toArray
         val sourceLibFiles = libcp.map(new File(_)).toArray
-        val project = Project(sourceFiles, sourceLibFiles)
+        val project = Project(sourceFiles, sourceLibFiles, GlobalLogContext, config)
         if (project.projectMethodsCount == 0) {
             handleError(s"no methods found: $cp")
         }
