@@ -19,6 +19,11 @@ The latest release is always found on [Maven Central](https://search.maven.org/#
 
 OPAL consists of multiple sub projects and tools which are described in the following.
 
+### Framework
+Combines all of OPAL's subproject for ease of use.
+
+    libraryDependencies += "de.opal-project" % "framework_2.12" % "4.0.0"
+
 ### Common
 Contains general data structures and algorithms particular useful in the context of static analysis. E.g., graph algorithms, such as
 an implementation of Tarjan's algorithm for finding strongly connected components. The implementations are designed with scalability in mind and should be able to process millions of nodes.
@@ -26,7 +31,6 @@ an implementation of Tarjan's algorithm for finding strongly connected component
     libraryDependencies += "de.opal-project" % "common_2.12" % "4.0.0"
 
 ### Static Analysis Framework
-
 The static analysis framework is a generally useful framework for developing static analyses. The framework has wide ranging support for very different types of static analyses and automatically parallels their execution. The framework only depends on `Common` and can be flexibly combined with other static analyses frameworks (e.g., BCEL, SOOT, Wala, ASM,... ) 
 
     libraryDependencies += "de.opal-project" % "static-analysis-infrastructure_2.12" % "4.0.0"
@@ -39,15 +43,20 @@ basic analyses.
 
     libraryDependencies += "de.opal-project" % "bytecode-representation_2.12" % "4.0.0"
 
-### Architecture Validation Framework
-The architecture validation framework facilitates the development of tools for specifying and validating software architectures.
-
-    libraryDependencies += "de.opal-project" % "architecture-validation_2.12" % "4.0.0"
-
 ### Abstract Interpretation Framework
 The abstract interpretation framework is a highly-customizable framework for the lightweight abstract interpretation of the Java bytecode. The framework was designed with ease of use and customizability in mind.
 
     libraryDependencies += "de.opal-project" % "abstract-interpretation-framework_2.12" % "4.0.0"
+
+### Three-Address Code
+The three-address-code toolkit provides a more human readable representation of the bytecode that includes additional information derived by the abstract interpretation framework.
+
+    libraryDependencies += "de.opal-project" % "three-address-code_2.12" % "4.0.0"
+
+### Architecture Validation Framework
+The architecture validation framework facilitates the development of tools for specifying and validating software architectures.
+
+    libraryDependencies += "de.opal-project" % "architecture-validation_2.12" % "4.0.0"
 
 [comment]: # "Exploring the Abstract Interpretation Framework"
 
