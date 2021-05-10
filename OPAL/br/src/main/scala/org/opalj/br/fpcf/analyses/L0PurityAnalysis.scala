@@ -120,7 +120,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             if (field.isNotFinal) {
 
                                 propertyStore(field, FieldImmutability.key) match {
-                                    case FinalP(NonTransitivelyImmutableField | DependentImmutableField | TransitivelyImmutableField) ⇒
+                                    case FinalP(NonTransitivelyImmutableField | DependentImmutableField(_) | TransitivelyImmutableField) ⇒
                                     case _: FinalEP[Field, FieldImmutability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
@@ -229,7 +229,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     dependees += eps
                     InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalP(TransitivelyImmutableField | DependentImmutableField | NonTransitivelyImmutableField | TransitivelyImmutableType) ⇒
+                case FinalP(TransitivelyImmutableField | DependentImmutableField(_) | NonTransitivelyImmutableField | TransitivelyImmutableType) ⇒
                     if (dependees.isEmpty) {
                         Result(definedMethod, Pure)
                     } else {

@@ -104,7 +104,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val shallowImmutableFields =
             groupedResults.getOrElse(NonTransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
         val dependentImmutableFields =
-            groupedResults.getOrElse(DependentImmutableField, Seq.empty).toSeq.sortWith(order)
+            groupedResults.getOrElse(DependentImmutableField(List.empty), Seq.empty).toSeq.sortWith(order)
         val deepImmutableFields =
             groupedResults.getOrElse(TransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
 

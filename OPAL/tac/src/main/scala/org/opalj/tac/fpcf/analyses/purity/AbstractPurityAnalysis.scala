@@ -388,7 +388,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
         case LBP(NonTransitivelyImmutableField |
-            DependentImmutableField |
+            DependentImmutableField(_) |
             TransitivelyImmutableField) ⇒ // Immutable fields don't impede purity
         case _: FinalEP[Field, FieldImmutability] ⇒ // Mutable field
             if (objRef.isDefined) {

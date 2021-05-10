@@ -281,7 +281,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
             // Cases that are pure
             case FinalP(NonTransitivelyImmutableField |
-                DependentImmutableField |
+                DependentImmutableField(_) |
                 TransitivelyImmutableField) ⇒ // Reading eff. final fields
             case FinalP(TransitivelyImmutableType |
                 TransitivelyImmutableType) ⇒ // Returning immutable reference

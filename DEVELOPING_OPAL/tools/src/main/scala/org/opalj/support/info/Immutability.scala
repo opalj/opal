@@ -309,7 +309,7 @@ object Immutability {
                 .map(unpackFieldEPS)
                 .sortWith(_ < _)
 
-        val immutableReferences = fieldReferenceGroupedResults
+        val nonAssignableFields = fieldReferenceGroupedResults
             .getOrElse(EffectivelyNonAssignable, Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
@@ -337,7 +337,7 @@ object Immutability {
                 |
                 | Immutable References:
                 | ${
-                    immutableReferences
+                    nonAssignableFields
                         .map(_+" | immutable field Reference")
                         .mkString("\n")
                 }
@@ -365,7 +365,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val dependentImmutableFields = fieldGroupedResults
-            .getOrElse(DependentImmutableField, Iterator.empty)
+            .getOrElse(DependentImmutableField(List.empty), Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
             .sortWith(_ < _)
@@ -534,7 +534,8 @@ object Immutability {
                 | Mutable References: ${mutableFieldReferences.size}
                 | Lazy Initialized Not Thread Safe Field References: ${notThreadSafeLazyInitializedFieldReferences.size}
                 | Lazy Initialized Thread Safe Field Reference: ${threadSafeLazyInitializedFieldReferences.size}
-                | Immutable Field References: ${immutableReferences.size}
+                | Effectively Non Assignable Fields:
+                | Non Assignable Fields: ${nonAssignableFields.size}
                 | Field References: ${allFieldsInProjectClassFiles.size}
                 |""".stripMargin
             )

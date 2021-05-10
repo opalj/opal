@@ -341,7 +341,7 @@ class L0ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 case UBP(MutableField)              ⇒ return Result(t, MutableClass);
 
                 case ELBP(e, NonTransitivelyImmutableField |
-                    DependentImmutableField |
+                    DependentImmutableField(_) |
                     TransitivelyImmutableField) ⇒
                     dependees -= e
                     if (minLocalImmutability != NonTransitivelyImmutableClass &&
@@ -349,7 +349,7 @@ class L0ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                         minLocalImmutability = NonTransitivelyImmutableClass // Lift lower bound when possible
 
                 case UBP(TransitivelyImmutableField |
-                    DependentImmutableField |
+                    DependentImmutableField(_) |
                     NonTransitivelyImmutableField) ⇒ // no information about field mutability
 
             }

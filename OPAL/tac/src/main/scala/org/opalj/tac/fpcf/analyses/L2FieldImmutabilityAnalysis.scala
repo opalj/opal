@@ -1054,7 +1054,7 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     def isFinalField(
         eop: EOptionP[Field, FieldImmutability]
     )(implicit state: State): Boolean = eop match {
-        case LBP(TransitivelyImmutableField | DependentImmutableField | NonTransitivelyImmutableField) ⇒
+        case LBP(TransitivelyImmutableField | DependentImmutableField(_) | NonTransitivelyImmutableField) ⇒
             true
         case UBP(MutableField) ⇒ false
         case _ ⇒
