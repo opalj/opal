@@ -1,6 +1,30 @@
 # Changes
 
-## Upcoming (3.0.0)
+## 4.0.0 - Released May 7th 2021
+
+- *we are now using Scala 2.12.13*
+- `cleanBuild` now requires at least Java 14 to compile all test fixtures
+- full support for Java 11 up to 16
+- class files for newer Java versions can be read if they do not use features beyond Java 16
+- opportunistic rewriting of dynamic constants
+- parallel implementation for the PropertyStore
+- FPCF analyses now use sets for their dependencies
+- added preliminary framework for FPCF call graphs
+  - includes CHA, RTA, XTA/MTA/FTA/CTA and points-to based call graphs
+  - also includes modules for reflection, static initializers, finalizers, serialization, threads, selected native methods and to load dynamic data on reflective calls recorded by TamiFlex
+  - allows resolution of calls by method signature for library analyses
+- added an analysis to collect information about the usage of a class within a project
+- added `LongTrieSet`, `LongLinkedTrieSet` and `LongTrieSetWithList` to optimize storage of Long values
+- removed `PrecomputedPartialResult`
+- fixed the semantics of virtual and interface calls w.r.t. private methods
+- fixed TAC text representation where a regular return would be marked with a warning that it always throws an exception even if it doesn't
+- fixed a wrong mapping of TAC indices on some dead bytecode instructions
+- fixed escape analysis which could produce non-deterministic results
+- fixed issues with the purity analyses
+- fixed parsing of -projectConfig parameter for `AnalysisApplication`
+- fixed equals implementation for `EOptionP`
+
+## 3.0.0 - Snapshot available since June 7th, 2019
 
 - added a preliminary IFDS framework
 - the Hermes and BugPicker UI projects were deleted (JavaFX was removed from the JDK 11 which makes the overall development and deplyoment process to cost intensive)
