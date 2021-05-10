@@ -47,7 +47,7 @@ class AbstractClassImmutabilityMatcher(val property: properties.ClassImmutabilit
     }
 }
 
-class TransitiveImmutableClassMatcher
+class TransitivelyImmutableClassMatcher
     extends AbstractClassImmutabilityMatcher(properties.TransitivelyImmutableClass)
 
 class DependentImmutableClassMatcher
