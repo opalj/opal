@@ -2,10 +2,10 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 
 import java.util.Random;
 
@@ -18,7 +18,7 @@ import java.util.Random;
 public class DoubleCheckedLocking {
 
     //@Immutable
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
     private Object o;
 
@@ -99,7 +99,7 @@ public class DoubleCheckedLocking {
         return dclWithTryCatch;
     }
 
-    @MutableFieldReference("no correct lazy initialization because all exceptions are caught in the inner guard")
+    @AssignableFieldReference("no correct lazy initialization because all exceptions are caught in the inner guard")
     Object noDCLAllExceptionsCaughtInsidInnerGuard;
 
     public Object getNoDCL(){
@@ -118,7 +118,7 @@ public class DoubleCheckedLocking {
         return noDCLAllExceptionsCaughtInsidInnerGuard;
     }
 
-    @MutableFieldReference("No correct lazy initialization because all exceptions are caught in the complete dcl")
+    @AssignableFieldReference("No correct lazy initialization because all exceptions are caught in the complete dcl")
     Object noDCLAllExceptionsAreCaughtInTheCompleteDCL;
 
     public Object getNoDCLAllExceptionsAreCaughtInTheCompleteDCL(){
@@ -137,7 +137,7 @@ public class DoubleCheckedLocking {
         return noDCLAllExceptionsAreCaughtInTheCompleteDCL;
     }
 
-    @MutableFieldReference("no correct dcl pattern because all exceptions are caught in the outer guard")
+    @AssignableFieldReference("no correct dcl pattern because all exceptions are caught in the outer guard")
     Object instance;
 
     public Object NoDCL1(){
@@ -154,7 +154,7 @@ public class DoubleCheckedLocking {
     }
 
 
-    @MutableFieldReference("no correct dcl, because the two try-catch-blocks")
+    @AssignableFieldReference("no correct dcl, because the two try-catch-blocks")
     Object noDCLTwoTryCatchBlocks;
 
     public Object getNoDCLTwoTryCatchBlocks(){
@@ -180,7 +180,7 @@ public class DoubleCheckedLocking {
         return noDCLTwoTryCatchBlocks;
     }
 
-    @MutableFieldReference("no correct dcl because wrong exception forwarding")
+    @AssignableFieldReference("no correct dcl because wrong exception forwarding")
     Object noDCLWrongExceptionForwarding;
 
     public Object getNoDCLWrongExceptionForwarding() throws IndexOutOfBoundsException{
@@ -236,7 +236,7 @@ public class DoubleCheckedLocking {
         return synchronizedArrayInitialization;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized method")
     private Integer synchronizedSimpleLazyInitializedIntegerField;
 
@@ -280,7 +280,7 @@ public class DoubleCheckedLocking {
         return noSynchronizedGuard;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("a simple variation of double checked locking without the outer guard")
     private Object onlyOneGuardWithinTheSynchronization;
 
@@ -319,7 +319,7 @@ public class DoubleCheckedLocking {
         return writeOutsideTheSynchronizedGuard;
     }
 
-    @MutableFieldReference("no valid lazy initialization")
+    @AssignableFieldReference("no valid lazy initialization")
     private Object multipleWritesWithinTheDCLPattern;
     public Object getMultipleWritesWithinTheDCLPattern() {
         if(multipleWritesWithinTheDCLPattern ==null){
@@ -333,7 +333,7 @@ public class DoubleCheckedLocking {
         return multipleWritesWithinTheDCLPattern;
     }
 
-    @MutableFieldReference("no valid lazy initialization")
+    @AssignableFieldReference("no valid lazy initialization")
     private Object alsoWrittenOutsideTheDCLPattern;
     public Object getAlsoWrittenOutsideTheDCLPattern() {
         if(alsoWrittenOutsideTheDCLPattern ==null){
@@ -347,7 +347,7 @@ public class DoubleCheckedLocking {
         return alsoWrittenOutsideTheDCLPattern;
     }
 
-    @MutableFieldReference(value = "no lazy initialization due to wrong guard statements")
+    @AssignableFieldReference(value = "no lazy initialization due to wrong guard statements")
     private Object wrongGuardStatement;
 
     public Object getWrongGuardStatement() {
@@ -361,7 +361,7 @@ public class DoubleCheckedLocking {
         return wrongGuardStatement;
     }
 
-    @MutableFieldReference(value = "no valid lazy initialization")
+    @AssignableFieldReference(value = "no valid lazy initialization")
     private Object writeOutsideDCL;
 
     public Object getWriteOutsideDCL() {
@@ -375,7 +375,7 @@ public class DoubleCheckedLocking {
         return writeOutsideDCL;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("dcl pattern with loops in it")
     private Object loopsInDCLPattern;
     public Object getLoopsInDCLPattern() {
@@ -420,7 +420,7 @@ public class DoubleCheckedLocking {
         return notNestedDCLWriteOnlyInGuard;
     }
 
-    @MutableFieldReference("field write outside guards and synchronized blocks")
+    @AssignableFieldReference("field write outside guards and synchronized blocks")
     private Object notNestedDCLWriteOutside;
     public Object getNotNestedDCLWriteOutside() {
         if(notNestedDCLWriteOutside ==null){
@@ -454,7 +454,7 @@ public class DoubleCheckedLocking {
         return multipleGuardsInDCLPattern;
     }
 
-    @MutableFieldReference("guard not only dependent on field value")
+    @AssignableFieldReference("guard not only dependent on field value")
     private Object dclWithLockAnd;
 
     public Object getDclWithLockAnd(boolean lock) {
@@ -468,7 +468,7 @@ public class DoubleCheckedLocking {
         return dclWithLockAnd;
     }
 
-    @MutableFieldReference("guard not only dependent on field value")
+    @AssignableFieldReference("guard not only dependent on field value")
     private Object dclWithLockOr;
 
     public Object getDclWithLockOr(boolean lock) {

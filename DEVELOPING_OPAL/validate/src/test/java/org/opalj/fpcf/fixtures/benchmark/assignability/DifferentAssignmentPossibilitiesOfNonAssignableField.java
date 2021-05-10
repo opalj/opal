@@ -2,24 +2,23 @@
 package org.opalj.fpcf.fixtures.benchmark.assignability;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.fixtures.benchmark.generals.EmptyClass;
-import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
 @MutableType("")
-@DeepImmutableClass("")
+@TransitivelyImmutableClass("")
 public class DifferentAssignmentPossibilitiesOfNonAssignableField {
 
     //@Immutable
-    @DeepImmutableField("")
-    @ImmutableFieldReference("")
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private final Object o;
 
     public DifferentAssignmentPossibilitiesOfNonAssignableField() {
-        this.o = new EmptyClass();
+        this.o = new C();
     }
 
     public DifferentAssignmentPossibilitiesOfNonAssignableField(int n) {
@@ -30,3 +29,6 @@ public class DifferentAssignmentPossibilitiesOfNonAssignableField {
         return this.o;
     }
 }
+
+@TransitivelyImmutableClass("empty class")
+class C {}

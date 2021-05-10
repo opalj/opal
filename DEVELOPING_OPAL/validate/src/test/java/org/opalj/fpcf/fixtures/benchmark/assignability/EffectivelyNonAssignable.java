@@ -2,40 +2,40 @@
 package org.opalj.fpcf.fixtures.benchmark.assignability;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.classes.ShallowImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
-import org.opalj.fpcf.properties.immutability.types.ShallowImmutableType;
+import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
 
 //@Immutable
-@ShallowImmutableType("")
-@ShallowImmutableClass("")
+@NonTransitiveImmutableType("")
+@NonTransitivelyImmutableClass("")
 public final class EffectivelyNonAssignable {
 
     //@Immutable
-    @DeepImmutableField("")
-    @ImmutableFieldReference("")
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private int n = 5;
 
     //@Immutable
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private Object escapingViaConstructor;
 
     //@Immutable
-    @DeepImmutableField("")
-    @ImmutableFieldReference("field is only assigned once")
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("field is only assigned once")
     private static int staticInt = 5;
 
     //@Immutable
-    @DeepImmutableField("")
-    @ImmutableFieldReference("field is only assigned once")
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("field is only assigned once")
     private static Object staticObject = new Object();
 
     //@Immutable
-    @DeepImmutableField("")
-    @ImmutableFieldReference("")
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private Object escapingViaGetter = new Object();
 
     public EffectivelyNonAssignable(Object o) {

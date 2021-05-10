@@ -2,8 +2,9 @@
 package org.opalj.fpcf.fixtures.benchmark.known_types.single;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.classes.TransitiveImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.TransitiveImmutableField;
+import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
@@ -12,11 +13,19 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
  */
 //@Immutable
 @MutableType("class is not final")
-@TransitiveImmutableClass("class has only one transitive immutable field")
+@NonTransitivelyImmutableClass("class has only one transitive immutable field")
 class ConcreteObjectInstanceAssigned {
 
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
+    private final Integer i = new Integer(5);
+
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
+    private final MutableClass mc = new MutableClass();
+
     //@Immutable
-    @TransitiveImmutableField("concrete object is known")
+    @TransitivelyImmutableField("concrete object is known")
     @NonAssignableFieldReference("the field is final")
     private final Object object = new Object();
 
@@ -24,6 +33,25 @@ class ConcreteObjectInstanceAssigned {
         return this.object;
     }
 
+    private final Object managedObjectManagerLock = new Object();
+
+    public ConcreteObjectInstanceAssigned(int n){}
+
+    public ConcreteObjectInstanceAssigned(char c){}
+
+    public ConcreteObjectInstanceAssigned(String s){}
+
+    @NonTransitivelyImmutableField("all concrete objects that can be assigned are not known")
+    private TransitivelyImmutableClass transitivelyImmutableClass = new TransitivelyImmutableClass();
+
+    public ConcreteObjectInstanceAssigned(TransitivelyImmutableClass transitivelyImmutableClass) {
+        this.transitivelyImmutableClass = transitivelyImmutableClass;
+    }
 }
 
+class MutableClass {
+    public int n = 8;
+}
 
+class TransitivelyImmutableClass {
+}

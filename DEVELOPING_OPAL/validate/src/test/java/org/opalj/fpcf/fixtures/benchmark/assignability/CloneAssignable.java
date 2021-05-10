@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.benchmark.assignability;
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 @MutableType("Class is extensible")
@@ -13,12 +13,12 @@ public class CloneAssignable {
 
     //@Immutable
     @MutableField("")
-    @MutableFieldReference("")
+    @AssignableFieldReference("")
     int i;
 
     //@Immutable
     @MutableField("")
-    @MutableFieldReference("")
+    @AssignableFieldReference("")
     CloneAssignable instance;
 
     public CloneAssignable clone(){

@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
 
@@ -11,11 +11,11 @@ import java.util.*;
 
 public class EffectivelyImmutableFields {
 
-    @DeepImmutableField("field value has a primitive type and an immutable field reference")
-    @ImmutableFieldReference("field is not written after initialization")
+    @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
+    @NonAssignableFieldReference("field is not written after initialization")
     private int simpleInitializedFieldWithPrimitiveType = 5;
 
-    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
     private int lazyInitializedFieldWithPrimitiveType;
 
@@ -24,7 +24,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedFieldWithPrimitiveType = 5;
     }
 
-     @DeepImmutableField("Lazy initialized field with primitive type.")
+     @TransitivelyImmutableField("Lazy initialized field with primitive type.")
      @LazyInitializedThreadSafeFieldReference("field is thread safely lazy initialized")
     private int inTheGetterLazyInitializedFieldWithPrimitiveType;
 
@@ -34,8 +34,8 @@ public class EffectivelyImmutableFields {
         return inTheGetterLazyInitializedFieldWithPrimitiveType;
     }
 
-    @DeepImmutableField(value = "immutable reference and deep immutable type")
-    @ImmutableFieldReference(value = "effective immutable field")
+    @TransitivelyImmutableField(value = "immutable reference and deep immutable type")
+    @NonAssignableFieldReference(value = "effective immutable field")
     private Integer effectiveImmutableIntegerField = 5;
 
     @LazyInitializedNotThreadSafeFieldReference(value = "write of reference objects is not atomic")
@@ -46,7 +46,7 @@ public class EffectivelyImmutableFields {
             simpleLazyInitializedIntegerField = 5;
     }
 
-    @DeepImmutableField("immutable reference and deep immutable type")
+    @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized method")
     private Integer synchronizedSimpleLazyInitializedIntegerField;
 
@@ -55,7 +55,7 @@ public class EffectivelyImmutableFields {
             synchronizedSimpleLazyInitializedIntegerField = 5;
     }
 
-    @DeepImmutableField("immutable reference and deep immutable type")
+    @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
     private Integer inGetterSynchronizedSimpleLazyInitializedIntegerField;
 
@@ -65,11 +65,11 @@ public class EffectivelyImmutableFields {
         return inGetterSynchronizedSimpleLazyInitializedIntegerField;
     }
 
-    @DeepImmutableField("field value has a primitive type and an immutable field reference")
-    @ImmutableFieldReference("field is effective immutable")
+    @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
+    @NonAssignableFieldReference("field is effective immutable")
     private double effectiveImmutableDoubleField = 5d;
 
-    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
     private double synchronizedLazyInitializedDoubleField;
 
@@ -78,7 +78,7 @@ public class EffectivelyImmutableFields {
             synchronizedLazyInitializedDoubleField = 5d;
     }
 
-    @DeepImmutableField("immutable reference and deep immutable type")
+    @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
     private double inGetterSynchronizedLazyInitializedDoubleField;
 
@@ -88,11 +88,11 @@ public class EffectivelyImmutableFields {
         return inGetterSynchronizedLazyInitializedDoubleField;
     }
 
-    @DeepImmutableField("immutable reference and deep immutable type")
-    @ImmutableFieldReference("field is effective immutable")
+    @TransitivelyImmutableField("immutable reference and deep immutable type")
+    @NonAssignableFieldReference("field is effective immutable")
     private Double effectiveImmutableObjectDoubleField = 5d;
 
-    @DeepImmutableField("field has an immutable reference and deep immutable type")
+    @TransitivelyImmutableField("field has an immutable reference and deep immutable type")
     @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
     private Double lazyInitializedObjectDoubleField;
 
@@ -101,7 +101,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedObjectDoubleField = 5d;
     }
 
-    @DeepImmutableField("field has an immutable reference and a deep immutable type")
+    @TransitivelyImmutableField("field has an immutable reference and a deep immutable type")
     @LazyInitializedThreadSafeFieldReference("field is in a synchronized getter lazy initialized")
     private Double inAGetterLazyInitializedObjectDoubleField;
 
@@ -111,11 +111,11 @@ public class EffectivelyImmutableFields {
         return inAGetterLazyInitializedObjectDoubleField;
     }
 
-    @DeepImmutableField("field value has a primitive type and an immutable field reference")
-    @ImmutableFieldReference(value = "field is not written after initialization")
+    @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
+    @NonAssignableFieldReference(value = "field is not written after initialization")
     private float effectiveImmutableFloatField = 5;
 
-    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
     private float synchronizedLazyInitializedFloatField;
 
@@ -124,7 +124,7 @@ public class EffectivelyImmutableFields {
             synchronizedLazyInitializedFloatField = 5f;
     }
 
-    @DeepImmutableField("immutable reference and deep immutable type")
+    @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
     private float inGetterSynchronizedLazyInitializedFloatField;
 
@@ -134,11 +134,11 @@ public class EffectivelyImmutableFields {
         return inGetterSynchronizedLazyInitializedFloatField;
     }
 
-    @DeepImmutableField("field has an immutable field reference and a deep immutable type")
-    @ImmutableFieldReference("the field reference is effective immutable")
+    @TransitivelyImmutableField("field has an immutable field reference and a deep immutable type")
+    @NonAssignableFieldReference("the field reference is effective immutable")
     private Float effectiveImmutableFloatObjectField = 5f;
 
-    @DeepImmutableField("field has an immutable field reference and a deep immutable type")
+    @TransitivelyImmutableField("field has an immutable field reference and a deep immutable type")
     @LazyInitializedThreadSafeFieldReference("the field is thread safely lazy initialized")
     private Float lazyInitializedFloatObjectField;
 
@@ -147,7 +147,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedFloatObjectField = 5f;
     }
 
-    @DeepImmutableField("field has an immutable field reference and a deep immutable type")
+    @TransitivelyImmutableField("field has an immutable field reference and a deep immutable type")
     @LazyInitializedThreadSafeFieldReference("the field is in a getter thread safely lazy initialized")
     private float inAGetterLazyInitializedFloatObjectField;
 
@@ -157,11 +157,11 @@ public class EffectivelyImmutableFields {
         return inAGetterLazyInitializedFloatObjectField;
     }
 
-    @DeepImmutableField("field value has a primitive type and an immutable field reference")
-    @ImmutableFieldReference("field is effective immutable")
+    @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
+    @NonAssignableFieldReference("field is effective immutable")
     private byte effectiveImmutableByteField = 5;
 
-    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazyInitializedThreadSafeFieldReference("field is thread safely lazy initialized")
     private byte synchronizedLazyInitializedByteField;
 
@@ -170,7 +170,7 @@ public class EffectivelyImmutableFields {
             synchronizedLazyInitializedByteField = 5;
     }
 
-    @DeepImmutableField("immutable reference and deep immutable type")
+    @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
     private byte inGetterSynchronizedLazyInitializedByteField;
 
@@ -180,11 +180,11 @@ public class EffectivelyImmutableFields {
         return inGetterSynchronizedLazyInitializedByteField;
     }
 
-    @DeepImmutableField("field value has a primitive type and an immutable field reference")
-    @ImmutableFieldReference("field is effective immutable")
+    @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
+    @NonAssignableFieldReference("field is effective immutable")
     private Byte effectiveImmutableByteObjectField = 5;
 
-    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazyInitializedThreadSafeFieldReference("field is thread safely lazy initialized")
     private Byte lazyInitializedByteObjectField;
 
@@ -193,7 +193,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedByteObjectField = 5;
     }
 
-    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazyInitializedThreadSafeFieldReference("field is thread safely lazy initialized in a getter")
     private Byte inAGetterLazyInitializedByteObjectField;
 
@@ -203,11 +203,11 @@ public class EffectivelyImmutableFields {
         return inAGetterLazyInitializedByteObjectField;
     }
 
-    @DeepImmutableField("field value has a primitive type and an immutable field reference")
-    @ImmutableFieldReference(value = "field is effective immutable")
+    @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
+    @NonAssignableFieldReference(value = "field is effective immutable")
     private char c = 'a';
 
-    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
     private char synchronizedLazyInitializedCharField;
 
@@ -216,7 +216,7 @@ public class EffectivelyImmutableFields {
             synchronizedLazyInitializedCharField = 'a';
     }
 
-    @DeepImmutableField("immutable reference and deep immutable type")
+    @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
     private char inGetterSynchronizedLazyInitializedCharField;
 
@@ -226,11 +226,11 @@ public class EffectivelyImmutableFields {
         return inGetterSynchronizedLazyInitializedCharField;
     }
 
-    @DeepImmutableField("field value has a primitive type and an immutable field reference")
-    @ImmutableFieldReference(value = "field is not written after initialization")
+    @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
+    @NonAssignableFieldReference(value = "field is not written after initialization")
     private long effectiveImmutableLongField = 5;
 
-    @DeepImmutableField("field has a primitive type and is synchronized lazy initialized")
+    @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazyInitializedThreadSafeFieldReference("field is thread safe lazy initialized")
     private long sychronizedLazyInitializedLongField;
 
@@ -239,7 +239,7 @@ public class EffectivelyImmutableFields {
             sychronizedLazyInitializedLongField = 5l;
     }
 
-    @DeepImmutableField("immutable reference and deep immutable type")
+    @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized getter method")
     private long inGetterSynchronizedLazyInitializedLongField;
 
@@ -249,11 +249,11 @@ public class EffectivelyImmutableFields {
         return inGetterSynchronizedLazyInitializedLongField;
     }
 
-    @DeepImmutableField("")
-    @ImmutableFieldReference("")
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private Long lO = 5l;
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
     private Long lO2;
 
@@ -262,7 +262,7 @@ public class EffectivelyImmutableFields {
             lO2 = 5l;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
     private Long lO3;
 
@@ -272,11 +272,11 @@ public class EffectivelyImmutableFields {
         return lO3;
     }
 
-    @DeepImmutableField("The concrete assigned object is known to be deep immutable")
-    @ImmutableFieldReference("The field is effective immutable")
+    @TransitivelyImmutableField("The concrete assigned object is known to be deep immutable")
+    @NonAssignableFieldReference("The field is effective immutable")
     private String effectiveImmutableString = "abc";
 
-    @DeepImmutableField("The concrete type of the object that is assigned is known")
+    @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
     @LazyInitializedThreadSafeFieldReference("lazy initialized within a synchronized method")
     private String lazyInitializedString;
 
@@ -285,7 +285,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedString = "abc";
     }
 
-    @DeepImmutableField("The concrete type of the object that is assigned is known")
+    @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
     @LazyInitializedThreadSafeFieldReference("lazy initialized within a synchronized method")
     private String inAGetterLazyInitializedString;
 
@@ -295,11 +295,11 @@ public class EffectivelyImmutableFields {
         return inAGetterLazyInitializedString;
     }
 
-    @DeepImmutableField("The concrete assigned object is known to be deep immutable")
-    @ImmutableFieldReference("The field is effective immutable")
+    @TransitivelyImmutableField("The concrete assigned object is known to be deep immutable")
+    @NonAssignableFieldReference("The field is effective immutable")
     private Object effectiveImmutableObjectReference = new Object();
 
-    @DeepImmutableField("The concrete type of the object that is assigned is known")
+    @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
     @LazyInitializedThreadSafeFieldReference("lazy initialized within a synchronized method")
     private Object lazyInitializedObjectReference;
 
@@ -308,7 +308,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedObjectReference = new Object();
     }
 
-    @DeepImmutableField("The concrete type of the object that is assigned is known")
+    @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
     @LazyInitializedThreadSafeFieldReference("lazy initialized within a synchronized method")
     private Object inAGetterLazyInitializedObjectReference;
 
@@ -320,11 +320,11 @@ public class EffectivelyImmutableFields {
 
 
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("effective immutable reference")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("effective immutable reference")
     private List<Object> effectiveImmutableLinkedList = new LinkedList<Object>();
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
     private List<Object> lazyInitializedLinkedList;
 
@@ -333,7 +333,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedLinkedList = new LinkedList<Object>();
     }
 
-    @ShallowImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
+    @NonTransitivelyImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
     @LazyInitializedThreadSafeFieldReference("thread safe lazy initialization due to synchronized method")
     private List<Object> lazyInitializedLinkedListWithManipulationAfterwards;
 
@@ -343,7 +343,7 @@ public class EffectivelyImmutableFields {
         lazyInitializedLinkedListWithManipulationAfterwards.add(new Object());
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
     private Object inTheGetterLazyInitializedObject;
 
@@ -353,11 +353,11 @@ public class EffectivelyImmutableFields {
         return inTheGetterLazyInitializedObject;
     }
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("effective immutable reference")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("effective immutable reference")
     private List<Object> effectiveImmutableArrayList = new ArrayList<Object>();
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
     private List<Object> lazyInitializedArrayList;
 
@@ -366,7 +366,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedArrayList = new ArrayList<Object>();
     }
 
-    @ShallowImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
+    @NonTransitivelyImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
     @LazyInitializedThreadSafeFieldReference("thread safe lazy initialization due to synchronized method")
     private List<Object> lazyInitializedArrayListWithManipulationAfterwards;
 
@@ -376,7 +376,7 @@ public class EffectivelyImmutableFields {
         lazyInitializedArrayListWithManipulationAfterwards.add(new Object());
     }
 
-    @ShallowImmutableField("immutable reference but assigned object escapes via getter")
+    @NonTransitivelyImmutableField("immutable reference but assigned object escapes via getter")
     @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
     private List<Object> inTheGetterLazyInitializedArrayList;
 
@@ -386,11 +386,11 @@ public class EffectivelyImmutableFields {
         return inTheGetterLazyInitializedArrayList;
     }
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("effective immutable reference")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("effective immutable reference")
     private Set<Object> effectiveImmutableSet = new HashSet<Object>();
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
     private Set<Object> lazyInitializedSet;
 
@@ -399,7 +399,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedSet = new HashSet<Object>();
     }
 
-    @ShallowImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
+    @NonTransitivelyImmutableField("concrete assigned object is known but manipulation of the referenced object with .add")
     @LazyInitializedThreadSafeFieldReference("thread safe lazy initialization due to synchronized method")
     private Set<Object> lazyInitializedSetWithManipulationAfterwards;
 
@@ -409,7 +409,7 @@ public class EffectivelyImmutableFields {
        lazyInitializedSetWithManipulationAfterwards.add(new Object());
     }
 
-    @ShallowImmutableField("immutable reference but assigned object escapes via getter")
+    @NonTransitivelyImmutableField("immutable reference but assigned object escapes via getter")
     @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
     private Set<Object> inTheGetterLazyInitializedSet;
 
@@ -419,11 +419,11 @@ public class EffectivelyImmutableFields {
         return inTheGetterLazyInitializedSet;
     }
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("effective immutable reference")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("effective immutable reference")
     private HashMap<Object, Object> effectiveImmutableHashMap = new HashMap<Object, Object>();
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
     private HashMap<Object, Object> lazyInitializedHashMap;
 
@@ -432,7 +432,7 @@ public class EffectivelyImmutableFields {
             lazyInitializedHashMap = new HashMap<Object, Object>();
     }
 
-    @ShallowImmutableField("concrete assigned object is known but manipulation of the referenced object with .put")
+    @NonTransitivelyImmutableField("concrete assigned object is known but manipulation of the referenced object with .put")
     @LazyInitializedThreadSafeFieldReference("thread safe lazy initialization due to synchronized method")
     private HashMap<Object, Object> lazyInitializedHashMapWithManipulationAfterwards;
 
@@ -442,7 +442,7 @@ public class EffectivelyImmutableFields {
         lazyInitializedHashMapWithManipulationAfterwards.put(new Object(), new Object());
     }
 
-    @ShallowImmutableField("immutable reference but assigned object escapes via getter")
+    @NonTransitivelyImmutableField("immutable reference but assigned object escapes via getter")
     @LazyInitializedThreadSafeFieldReference("synchronized lazy initialization")
     private HashMap<Object, Object> inTheGetterLazyInitializedHashMap;
 

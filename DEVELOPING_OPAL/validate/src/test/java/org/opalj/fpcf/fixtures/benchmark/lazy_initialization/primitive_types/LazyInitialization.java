@@ -1,12 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.primitive_types;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
@@ -17,7 +17,7 @@ import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
 
 class Simple {
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("Simple lazy initialization")
     private int x;
 
@@ -31,7 +31,7 @@ class Simple {
 
 class Local {
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("Lazy initialization with local")
     private int x;
 
@@ -47,7 +47,7 @@ class Local {
 class LocalWrong {
 
     @MutableField("")
-    @MutableFieldReference(value = "Incorrect lazy initialization with local")
+    @AssignableFieldReference(value = "Incorrect lazy initialization with local")
     private int x;
 
     public int init() {
@@ -61,7 +61,7 @@ class LocalWrong {
 
 class LocalReversed {
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference(value = "Lazy initialization with local (reversed)")
     private int x;
 
@@ -76,7 +76,7 @@ class LocalReversed {
 
 class LocalReload {
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("Lazy initialization with local (reloading the field's value after the write)")
     private int x;
 
@@ -92,7 +92,7 @@ class LocalReload {
 
 class SimpleReversed {
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("Simple lazy initialization (reversed)")
     private int x;
 
@@ -108,7 +108,7 @@ class SimpleReversed {
 class WrongDefault {
 
     @MutableField("")
-    @MutableFieldReference(value = "Not lazily initialized because of two different default values")
+    @AssignableFieldReference(value = "Not lazily initialized because of two different default values")
     private int x;
 
     public WrongDefault() {
@@ -167,11 +167,11 @@ class DeterministicCallWithParam {
 
 class DeterministicCallOnFinalField {
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference(value = "Lazy initialization with call to deterministic method ")
     private int x;
 
-    @ImmutableFieldReference(value = "Declared final field")
+    @NonAssignableFieldReference(value = "Declared final field")
     private final Inner inner;
 
     public DeterministicCallOnFinalField(int v) {
@@ -180,8 +180,8 @@ class DeterministicCallOnFinalField {
 
     private final class Inner {
 
-        @DeepImmutableField("immutable reference with base type")
-        @ImmutableFieldReference("")
+        @TransitivelyImmutableField("immutable reference with base type")
+        @NonAssignableFieldReference("")
         final int val;
 
         public Inner(int v) {
@@ -207,7 +207,7 @@ class DeterministicCallOnNonFinalField {
     @LazyInitializedNotThreadSafeFieldReference("Wrong lazy initialization with call to non-deterministic method on final field")
     private int x;
 
-    @MutableFieldReference("Non final field")
+    @AssignableFieldReference("Non final field")
     private Inner inner;
 
     public void createInner(int v) {
@@ -270,7 +270,7 @@ class DoubleLocalAssignment {
 class DoubleAssignment {
 
     @MutableField("")
-    @MutableFieldReference("Field can be observed partially updated")
+    @AssignableFieldReference("Field can be observed partially updated")
     private int x;
 
     public int init() {
@@ -285,7 +285,7 @@ class DoubleAssignment {
 class VisibleInitialization {
 
     @MutableField("")
-    @MutableFieldReference("Incorrect because lazy initialization is visible")
+    @AssignableFieldReference("Incorrect because lazy initialization is visible")
     private int x;
 
     public int init() {
@@ -335,7 +335,7 @@ class CaughtExceptionInInitialization {
 
     //TODO reasoning
     @MutableField("Incorrect because lazy initialization is may not happen due to exception")
-    @MutableFieldReference("Incorrect because lazy initialization is may not happen due to exception")
+    @AssignableFieldReference("Incorrect because lazy initialization is may not happen due to exception")
     private int x;
 
     public int init(int i) {

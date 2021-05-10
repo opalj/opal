@@ -5,9 +5,9 @@ import org.opalj.fpcf.fixtures.benchmark.generic.simple.Generic;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.TransitiveImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.types.TransitiveImmutableType;
+import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 /**
  * Class represents different cases of nested genericity
@@ -16,7 +16,7 @@ import org.opalj.fpcf.properties.immutability.types.TransitiveImmutableType;
 public class NestedGenericFields<T> {
 
     //@Immutable
-    @TransitiveImmutableField("")
+    @TransitivelyImmutableField("")
     @NonAssignableFieldReference("field is final")
     private final Generic<Generic<FinalClassWithNoFields>> nestedTransitive =
             new Generic<>(new Generic<>(new FinalClassWithNoFields()));
@@ -27,7 +27,7 @@ public class NestedGenericFields<T> {
     private Generic<Generic<T>> nestedMutable;
 
     //@Immutable
-    @DependentImmutableField("only generic typ parameters")
+    @DependentImmutableField(value = "only generic typ parameters", parameter={"T"})
     @NonAssignableFieldReference("field is final")
     private final Generic<Generic<T>> nestedDependent;
 
@@ -46,6 +46,6 @@ public class NestedGenericFields<T> {
     }
 }
 
-@TransitiveImmutableType("")
+@TransitivelyImmutableType("")
 final class FinalClassWithNoFields{}
 

@@ -2,11 +2,11 @@
 package org.opalj.fpcf.fixtures.benchmark.generic.extended;
 import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
 import org.opalj.fpcf.fixtures.benchmark.generic.simple.Generic;
-import org.opalj.fpcf.properties.immutability.classes.TransitiveImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.TransitiveImmutableField;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.types.TransitiveImmutableType;
+import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 //import edu.cmu.cs.glacier.qual.Immutable;
 
@@ -28,7 +28,7 @@ class LowerUpperBounds<T extends ClassWithMutableFields> {
     private final Generic<? extends EmptyClass> g2;
 
     //@Immutable
-    @TransitiveImmutableField("Type can only be final")
+    @TransitivelyImmutableField("Type can only be final")
     @NonAssignableFieldReference("field is final")
     private final Generic<? extends FinalEmptyClass> g3;
 
@@ -46,15 +46,15 @@ class LowerUpperBounds<T extends ClassWithMutableFields> {
     }
 
     @MutableType("not final")
-    @TransitiveImmutableClass("empty")
+    @TransitivelyImmutableClass("empty")
     class EmptyClass {}
 
     @MutableType("not final")
-    @TransitiveImmutableClass("empty")
+    @TransitivelyImmutableClass("empty")
     class X2 extends EmptyClass {}
 
-    @TransitiveImmutableType("final")
-    @TransitiveImmutableClass("empty")
+    @TransitivelyImmutableType("final")
+    @TransitivelyImmutableClass("empty")
     final class FinalEmptyClass extends EmptyClass {}
 }
 

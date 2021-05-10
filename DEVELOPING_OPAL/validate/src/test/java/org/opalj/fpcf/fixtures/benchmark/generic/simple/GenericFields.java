@@ -3,22 +3,21 @@ package org.opalj.fpcf.fixtures.benchmark.generic.simple;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
-import org.opalj.fpcf.properties.immutability.classes.NonTransitiveImmutableClass;
+import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.TransitiveImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
-import org.opalj.fpcf.properties.immutability.types.TransitiveImmutableType;
-import org.scalacheck.Gen;
+import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 /**
  * Class with multiple possibilities of generic types in combination with immutability.
  */
 //@Immutable
 @MutableType("")
-@NonTransitiveImmutableClass("")
+@NonTransitivelyImmutableClass("")
 public class GenericFields<T> {
 
     //@Immutable
@@ -43,27 +42,27 @@ public class GenericFields<T> {
             FinalClassWithNonTransitivelyImmutableField, T> multipleNonTransitive;
 
     //@Immutable
-    @DependentImmutableField("The generic type parameter is not concretized")
+    @DependentImmutableField(value = "The generic type parameter is not concretized", parameter = {"T"})
     @NonAssignableFieldReference("field is final")
     private final Generic<T> singleDependent;
 
     //@Immutable
-    @DependentImmutableField("At least one generic type parameter is not concretized")
+    @DependentImmutableField(value = "At least one generic type parameter is not concretized", parameter = {"T"})
     @NonAssignableFieldReference("field is final")
     private final MultipleGeneric<T,T,T> multipleDependentUniform;
 
     //@Immutable
-    @DependentImmutableField("At least one generic type parameter is not concretized")
+    @DependentImmutableField(value = "At least one generic type parameter is not concretized", parameter = {"T"})
     @NonAssignableFieldReference("field is final")
     private final MultipleGeneric<FinalClassWithNoFields,T, FinalClassWithNoFields> multipleDependent;
 
     //@Immutable
-    @TransitiveImmutableField("generic type has only transitively immutable type parameters")
+    @TransitivelyImmutableField("generic type has only transitively immutable type parameters")
     @NonAssignableFieldReference("field is final")
     private final Generic<FinalClassWithNoFields> singleTransitive;
 
     //@Immutable
-    @TransitiveImmutableField("generic type has only transitively immutable type parameters")
+    @TransitivelyImmutableField("generic type has only transitively immutable type parameters")
     @NonAssignableFieldReference("field is final")
     private final MultipleGeneric<FinalClassWithNoFields,
             FinalClassWithNoFields, FinalClassWithNoFields> multipleTransitive;
@@ -88,7 +87,7 @@ public class GenericFields<T> {
     }
 }
 
-@TransitiveImmutableType("Class has no fields and is final")
+@TransitivelyImmutableType("Class has no fields and is final")
 final class FinalClassWithNoFields {}
 
 @NonTransitiveImmutableType("class has only one non transitively immutable field and is final")

@@ -2,7 +2,7 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
 
 import java.util.Random;
@@ -16,7 +16,7 @@ import java.util.Random;
 //@Immutable
 public class DoubleCheckedLockingDeep {
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
     private Object o;
 
@@ -26,7 +26,7 @@ public class DoubleCheckedLockingDeep {
         return this.o;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("standard double checked locked initialized int field")
     private int doubleCheckedLockedIntField;
 
@@ -41,7 +41,7 @@ public class DoubleCheckedLockingDeep {
         return doubleCheckedLockedIntField;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("field write is not deterministic but only once written due to dcl")
     private int initializedWithDCLRandomWrite;
 
@@ -56,7 +56,7 @@ public class DoubleCheckedLockingDeep {
         return initializedWithDCLRandomWrite;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("dcl is implemented with early return")
     private Object dclWithEarlyReturn;
     public Object getDclWithEarlyReturn(){
@@ -70,7 +70,7 @@ public class DoubleCheckedLockingDeep {
     }
 
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("write within a dcl and try catch")
     private Object dclWithTryCatch;
 
@@ -92,7 +92,7 @@ public class DoubleCheckedLockingDeep {
     }
 
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("lazy initialization in a synchronized method")
     private Integer synchronizedSimpleLazyInitializedIntegerField;
 
@@ -102,7 +102,7 @@ public class DoubleCheckedLockingDeep {
     }
 
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference(value = "standard double checked locking")
     private Object standardDCL;
     public Object getStandardDCL() {
@@ -116,7 +116,7 @@ public class DoubleCheckedLockingDeep {
         return standardDCL;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("a simple variation of double checked locking without the outer guard")
     private Object onlyOneGuardWithinTheSynchronization;
 
@@ -129,7 +129,7 @@ public class DoubleCheckedLockingDeep {
         return onlyOneGuardWithinTheSynchronization;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("dcl pattern with loops in it")
     private Object loopsInDCLPattern;
     public Object getLoopsInDCLPattern() {
@@ -147,7 +147,7 @@ public class DoubleCheckedLockingDeep {
         return loopsInDCLPattern;
     }
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("no correct complecte dcl pattern but sufficient for thread " +
             "safety due to a correct guard in a synchronized block")
     private Object outerGuardEndsBeforeSynchronization;
@@ -163,7 +163,7 @@ public class DoubleCheckedLockingDeep {
     }
 
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
     private Object multipleGuardsInDCLPattern;
     public Object getMultipleGuardsInDCLPattern() {

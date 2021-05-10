@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.scala_lazy_val;
 
-import org.opalj.fpcf.properties.immutability.classes.TransitiveImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.TransitiveImmutableField;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
@@ -11,14 +11,14 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
  *
  */
 @MutableType("non final class")
-@TransitiveImmutableClass("Class has only transitive immutable fields.")
+@TransitivelyImmutableClass("Class has only transitive immutable fields.")
 public class LazyCell {
 
-    @TransitiveImmutableField("Lazy initialized field with primitive type")
+    @TransitivelyImmutableField("Lazy initialized field with primitive type")
     @LazyInitializedThreadSafeFieldReference("The field is only set once in a synchronized way.")
     private volatile boolean bitmap_0 = false;
 
-    @TransitiveImmutableField("Lazy initialized field with primitive type")
+    @TransitivelyImmutableField("Lazy initialized field with primitive type")
     @LazyInitializedThreadSafeFieldReference("The field is only set once in a synchronized way.")
     Integer value_0;
 

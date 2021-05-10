@@ -1,82 +1,82 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
-import org.opalj.fpcf.fixtures.benchmark.generals.Mutability;
+import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 
 public class MethodCalls {
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
-    private Mutability tm1;
+    private ClassWithMutableFields tm1;
 
     public synchronized void getTM1(){
         if(tm1==null){
-            tm1= new Mutability();
+            tm1= new ClassWithMutableFields();
         }
         tm1.nop();
     }
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
-    private Mutability tm2;
+    private ClassWithMutableFields tm2;
 
-    public synchronized Mutability getTM2(){
+    public synchronized ClassWithMutableFields getTM2(){
         if(tm2==null){
-            tm2= new Mutability();
+            tm2= new ClassWithMutableFields();
         }
         return tm2;
     }
 
     @MutableField("")
     @LazyInitializedNotThreadSafeFieldReference("")
-    private Mutability tm3;
+    private ClassWithMutableFields tm3;
 
     public void getTm3() {
         if(tm3==null){
-            tm3 = new Mutability();
+            tm3 = new ClassWithMutableFields();
         }
     }
 
-    @MutableFieldReference("")
+    @AssignableFieldReference("")
     @MutableField("")
-    private Mutability tm4;
+    private ClassWithMutableFields tm4;
 
-    public synchronized Mutability getTm4() {
+    public synchronized ClassWithMutableFields getTm4() {
         if(tm4==null){
-            tm4 = new Mutability();
+            tm4 = new ClassWithMutableFields();
         }
         return tm4;
     }
 
-    public synchronized Mutability getTm42() {
+    public synchronized ClassWithMutableFields getTm42() {
         if(tm4==null){
-            tm4 = new Mutability();
+            tm4 = new ClassWithMutableFields();
         }
         return tm4;
     }
 
-    @ShallowImmutableField("")
-    private Mutability tm5;
+    @NonTransitivelyImmutableField("")
+    private ClassWithMutableFields tm5;
 
     public synchronized void getTm5() {
         if(tm5==null){
-            tm5 = new Mutability();
+            tm5 = new ClassWithMutableFields();
         }
         tm5.nop();
     }
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
-    private Mutability tm6 = new Mutability();
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
+    private ClassWithMutableFields tm6 = new ClassWithMutableFields();
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
-    private Mutability tm7 = new Mutability();
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
+    private ClassWithMutableFields tm7 = new ClassWithMutableFields();
 
     public void foo(){
         tm7.nop();

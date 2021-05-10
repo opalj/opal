@@ -1,11 +1,10 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.arrays.not_deep;
+package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
@@ -15,7 +14,7 @@ public class ArrayInitialization {
 
     //@Immutable
     @MutableField("")
-    @MutableFieldReference("Multiple assignments possible")
+    @AssignableFieldReference("Multiple assignments possible")
     private Object[] array;
 
     public Object[] getArray(int n) {
@@ -27,7 +26,7 @@ public class ArrayInitialization {
 
     //@Immutable
     @MutableField("")
-    @MutableFieldReference("")
+    @AssignableFieldReference("")
     private Object[] b;
 
     public Object[] getB(boolean flag) throws Exception {

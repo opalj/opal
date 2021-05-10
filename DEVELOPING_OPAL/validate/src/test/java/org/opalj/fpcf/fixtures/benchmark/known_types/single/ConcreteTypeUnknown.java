@@ -2,11 +2,9 @@
 package org.opalj.fpcf.fixtures.benchmark.known_types.single;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.classes.NonTransitiveImmutableClass;
-import org.opalj.fpcf.properties.immutability.classes.TransitiveImmutableClass;
+import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
 
 /**
@@ -14,8 +12,8 @@ import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
  */
 
 //@Immutable
-@NonTransitiveImmutableType("class is non transitive immutable and final")
-@NonTransitiveImmutableClass("class has only one non transitive immutable field")
+//@NonTransitiveImmutableType("class is non transitive immutable and final")
+//@NonTransitivelyImmutableClass("class has only one non transitive immutable field")
 final class ConcreteTypeUnknown {
 
     //@Immutable

@@ -1,9 +1,9 @@
 package org.opalj.fpcf.fixtures.benchmark.known_types.multiple.types;
 
-import org.opalj.fpcf.properties.immutability.classes.TransitiveImmutableClass;
-import org.opalj.fpcf.properties.immutability.types.TransitiveImmutableType;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
-@TransitiveImmutableType("class is final and transitive immutable")
-@TransitiveImmutableClass("class is empty")
+@TransitivelyImmutableType("class is final and transitive immutable")
+@TransitivelyImmutableClass("class is empty")
 public final class FinalEmptyClassExtendsA1 extends A {
 }

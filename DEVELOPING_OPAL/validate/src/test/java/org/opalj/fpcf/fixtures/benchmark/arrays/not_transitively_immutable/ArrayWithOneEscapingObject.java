@@ -1,13 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.arrays.not_deep;
+package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
@@ -17,12 +17,12 @@ public class ArrayWithOneEscapingObject {
 
     //@Immutable
     @MutableField("Reference of the field is mutable")
-    @MutableFieldReference("Field is public")
+    @AssignableFieldReference("Field is public")
     public Object o = new Object();
 
     //@Immutable
-    @ShallowImmutableField("Field is initialized with an Shallow immutable field")
-    @ImmutableFieldReference("Field is only initialized once.")
+    @NonTransitivelyImmutableField("Field is initialized with an Shallow immutable field")
+    @NonAssignableFieldReference("Field is only initialized once.")
     private Object[] array2;
 
     public ArrayWithOneEscapingObject() {
@@ -30,7 +30,7 @@ public class ArrayWithOneEscapingObject {
     }
 
     //@Immutable
-    @ShallowImmutableField("Field is initialized with a shallow immutable field.")
+    @NonTransitivelyImmutableField("Field is initialized with a shallow immutable field.")
     @LazyInitializedThreadSafeFieldReference("Synchronized method with a guard-statement around the write")
     private Object[] array3;
 
@@ -40,7 +40,7 @@ public class ArrayWithOneEscapingObject {
     }
 
     //@Immutable
-    @ShallowImmutableField("An array element escapes")
+    @NonTransitivelyImmutableField("An array element escapes")
     @LazyInitializedThreadSafeFieldReference("Synchronized method, with guarding if-statement.")
     private Object[] array4;
 

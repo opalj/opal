@@ -2,19 +2,19 @@
 package org.opalj.fpcf.fixtures.benchmark.assignability;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
-import org.opalj.fpcf.properties.immutability.types.DeepImmutableType;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 //@Immutable
-@DeepImmutableType("")
-@DeepImmutableClass("")
+@TransitivelyImmutableType("")
+@TransitivelyImmutableClass("")
 public final class CloneNonAssignable {
 
     //@Immutable
-    @DeepImmutableField("")
-    @ImmutableFieldReference("")
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private int i;
 
     public CloneNonAssignable clone(){

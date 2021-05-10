@@ -1,14 +1,12 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.fpcf.fixtures.benchmark.arrays.not_deep;
+package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
@@ -17,8 +15,8 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 public class ArrayClasses<T> {
 
     //@Immutable
-    @ShallowImmutableField("The elements of the array are manipulated after initialization and can escape.")
-    @ImmutableFieldReference("The array is eager initialized.")
+    @NonTransitivelyImmutableField("The elements of the array are manipulated after initialization and can escape.")
+    @NonAssignableFieldReference("The array is eager initialized.")
     private Object[] b = new Object[]{1, 2, 3, 4, 5};
 
     public void setB() {
@@ -27,7 +25,7 @@ public class ArrayClasses<T> {
 
     //@Immutable
     @MutableField("Array has a mutable reference.")
-    @MutableFieldReference("The array is initalized always when the InitC function is called")
+    @AssignableFieldReference("The array is initalized always when the InitC function is called")
     private Object[] c;
 
     public void InitC() {
@@ -35,8 +33,8 @@ public class ArrayClasses<T> {
     }
 
     //@Immutable
-    @ShallowImmutableField("The elements of the array can escape.")
-    @ImmutableFieldReference("The array is eager initialized.")
+    @NonTransitivelyImmutableField("The elements of the array can escape.")
+    @NonAssignableFieldReference("The array is eager initialized.")
     private Object[] d = new Object[]{1, 2, 3, 4, 5,};
 
     public Object[] getD() {
@@ -51,19 +49,19 @@ public class ArrayClasses<T> {
     }
 
     //@Immutable
-    @ShallowImmutableField("escaping")
+    @NonTransitivelyImmutableField("escaping")
     private String[] stringArray;
 
     //@Immutable
-    @ShallowImmutableField("escaping")
+    @NonTransitivelyImmutableField("escaping")
     private int[] intArray;
 
     //@Immutable
-    @ShallowImmutableField("escaping")
+    @NonTransitivelyImmutableField("escaping")
     private Object[] oArr;
 
     //@Immutable
-    @ShallowImmutableField("escaping")
+    @NonTransitivelyImmutableField("escaping")
     private T[] tArray;
 
     ArrayClasses(String[] stringArray, int[] intArray, Object[] oArr, T[] tArray) {
