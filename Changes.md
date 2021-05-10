@@ -1,6 +1,6 @@
 # Changes
 
-## 4.0.0
+## 4.0.0 - Released May 7th 2021
 
 - *we are now using Scala 2.12.13*
 - `cleanBuild` now requires at least Java 14 to compile all test fixtures
