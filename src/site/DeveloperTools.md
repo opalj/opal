@@ -53,7 +53,7 @@ val html = classFile.toXHTML()
 ## IDE Plugins
 
 ### ATOM
-Using the [Java Bytecode Disassembler](https://atom.io/packages/java-bytecode-disassembler)) plugin, it is in particular possible to click on a type in a disassembled file to also disassemble the target type. This enables you to quickly navigate between ".class" files.
+Using the [Java Bytecode Disassembler](https://atom.io/packages/java-bytecode-disassembler) plugin, it is in particular possible to click on a type in a disassembled file to also disassemble the target type. This enables you to quickly navigate between ".class" files.
 
 Screenshot of the OPAL Java Bytecode Disassembler in action:
 ![ATOM - OPAL Disassembler](images/ATOM-OPAL-Disassembler-2017-07-13.png)
