@@ -26,12 +26,12 @@ import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
  *
  * @author Tobias Roth
  */
-class FieldReferenceImmutabilityTests extends PropertiesTest {
+class FieldAssignabilityTests extends PropertiesTest {
 
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/immutability/sandbox50")
+        List("org/opalj/fpcf/fixtures/immutability")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -42,21 +42,14 @@ class FieldReferenceImmutabilityTests extends PropertiesTest {
         }
 
         p.get(RTACallGraphKey)
-        /*print("-----------------------------------------------------------------------------------")
-        print(p.config.getString(
-            "org.opalj.br.analyses.cg.ClosedPackagesKey.analysis"
-        ))
-        val e = 3
-        if (e % 3 == 0)
-            throw new Exception("------------------------------------------------------------------------") */
+
     }
 
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
         as.propertyStore.shutdown()
-        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldReferenceImmutability"))
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
     }
-
     L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
     describe("the org.opalj.fpcf.analyses.L0ReferenceImmutability is executed") {
@@ -76,6 +69,6 @@ class FieldReferenceImmutabilityTests extends PropertiesTest {
             )
         )
         as.propertyStore.shutdown()
-        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldReferenceImmutability"))
+        validateProperties(as, fieldsWithAnnotations(as.project), Set("FieldAssignability"))
     }
 }
