@@ -1,7 +1,5 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox15;
 
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
-
 public class NonVirtualMethodCallFalsePositive {
 
     public float n = 5;

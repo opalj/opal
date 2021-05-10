@@ -1,27 +1,27 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
 public class ArrayAndString<T> {
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private String[] stringArray;
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private int[] intArray;
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     private String string;
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     private int i;
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private ClassWithPublicFields[] tmc;
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private T[] tArray;
 
     ArrayAndString(String[] stringArray, int[] intArray, String string, int i,

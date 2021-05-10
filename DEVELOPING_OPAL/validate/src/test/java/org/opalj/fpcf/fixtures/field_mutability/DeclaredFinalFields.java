@@ -2,7 +2,7 @@
 package org.opalj.fpcf.fixtures.field_mutability;
 
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
 /**
  * Base class for tests below that calls a virtual method in its constructor that makes declared
@@ -26,13 +26,13 @@ abstract class Super{
  */
 public class DeclaredFinalFields extends Super {
 
-    @ShallowImmutableField("Initialized directly")
+    @NonTransitivelyImmutableField("Initialized directly")
     private final int a = 1;
 
-    @ShallowImmutableField("Initialized through instance initializer")
+    @NonTransitivelyImmutableField("Initialized through instance initializer")
     private final int b;
 
-    @ShallowImmutableField("Initialized through constructor")
+    @NonTransitivelyImmutableField("Initialized through constructor")
     private final int c;
 
     @MutableField(value = "Prematurely read through super constructor", prematurelyRead = true)

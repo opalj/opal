@@ -6,23 +6,23 @@ import java.lang.annotation.RetentionPolicy;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
 /**
  * Annotation to state that the annotated field reference is immutable
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "FieldReferenceImmutability",validator = ImmutableFieldReferenceMatcher.class)
+@PropertyValidator(key = "FieldReferenceImmutability",validator = EffectivelyNonAssignableFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface ImmutableFieldReference {
+public @interface NonAssignableFieldReference {
 
     /**
      * A short reasoning of this property.
      */
     String value();
 
-    Class<? extends FPCFAnalysis>[] analyses() default {L0FieldReferenceImmutabilityAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {L3FieldAssignabilityAnalysis.class};
 
 }

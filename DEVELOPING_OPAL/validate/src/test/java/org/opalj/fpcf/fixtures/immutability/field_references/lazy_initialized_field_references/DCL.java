@@ -3,9 +3,9 @@ package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_f
 
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
 import java.util.Random;
 
@@ -16,7 +16,7 @@ import java.util.Random;
 public class DCL {
 
     @LazyInitializedThreadSafeFieldReference(value = "standard double checked locked initialized int field",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+            analyses = L3FieldAssignabilityAnalysis.class)
     private int doubleCheckedLockedIntField;
 
     public int getDoubleCheckedLockedIntField() {
@@ -31,7 +31,7 @@ public class DCL {
     }
 
     @LazyInitializedThreadSafeFieldReference(value = "field write is not deterministic but only once written due to dcl",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+            analyses = L3FieldAssignabilityAnalysis.class)
     private int initializedWithDCLRandomWrite;
 
     public int getInitializedWithDCLRandomWrite(){
@@ -46,7 +46,7 @@ public class DCL {
     }
 
     @LazyInitializedNotThreadSafeFieldReference(value = "The field is not thread safe and not deterministic written",
-    analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    analyses = L3FieldAssignabilityAnalysis.class)
     private int notThreadSafeRandomWrite;
 
     public int getNotThreadSafeRandomWrite(){
@@ -57,7 +57,7 @@ public class DCL {
     }
 
     @LazyInitializedThreadSafeFieldReference(value = "dcl is implemented with early return",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+            analyses = L3FieldAssignabilityAnalysis.class)
     private Object dclWithEarlyReturn;
     public Object getInstance(){
         if(dclWithEarlyReturn!=null)
@@ -71,7 +71,7 @@ public class DCL {
 
 
     @LazyInitializedThreadSafeFieldReference(value = "write within a dcl and try catch",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+            analyses = L3FieldAssignabilityAnalysis.class)
     private Object dclWithTryCatch;
 
     public Object DCL5(){
@@ -91,9 +91,9 @@ public class DCL {
         return dclWithTryCatch;
     }
 
-    @MutableFieldReference(value = "no correct lazy initialization because " +
+    @AssignableFieldReference(value = "no correct lazy initialization because " +
             "all exceptions are caught in the inner guard",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+            analyses = L3FieldAssignabilityAnalysis.class)
     Object noDCLAllExceptionsCaughtInsidInnerGuard;
 
     public Object getNoDCL(){
@@ -112,8 +112,8 @@ public class DCL {
         return noDCLAllExceptionsCaughtInsidInnerGuard;
     }
 
-    @MutableFieldReference(value = "No correct lazy initialization because all exceptions are caught in the complete dcl",
-    analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "No correct lazy initialization because all exceptions are caught in the complete dcl",
+    analyses = L3FieldAssignabilityAnalysis.class)
     Object noDCLAllExceptionsAreCaughtInTheCompleteDCL;
 
     public Object getNoDCLAllExceptionsAreCaughtInTheCompleteDCL(){
@@ -132,8 +132,8 @@ public class DCL {
         return noDCLAllExceptionsAreCaughtInTheCompleteDCL;
     }
 
-    @MutableFieldReference(value = "no correct dcl pattern because all exceptions are caught in the outer guard",
-    analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "no correct dcl pattern because all exceptions are caught in the outer guard",
+    analyses = L3FieldAssignabilityAnalysis.class)
     Object instance;
 
     public Object NoDCL1(){
@@ -150,8 +150,8 @@ public class DCL {
     }
 
 
-    @MutableFieldReference(value = "no correct dcl, because the two try-catch-blocks",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "no correct dcl, because the two try-catch-blocks",
+            analyses = L3FieldAssignabilityAnalysis.class)
     Object noDCLTwoTryCatchBlocks;
 
     public Object getNoDCLTwoTryCatchBlocks(){
@@ -177,8 +177,8 @@ public class DCL {
         return noDCLTwoTryCatchBlocks;
     }
 
-    @MutableFieldReference(value = "no correct dcl because wrong exception forwarding",
-    analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "no correct dcl because wrong exception forwarding",
+    analyses = L3FieldAssignabilityAnalysis.class)
     Object noDCLWrongExceptionForwarding;
 
     public Object getNoDCLWrongExceptionForwarding() throws IndexOutOfBoundsException{
@@ -200,7 +200,7 @@ public class DCL {
 
 
     @LazyInitializedThreadSafeFieldReference(value = "standard dcl initialization of array reference",
-    analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    analyses = L3FieldAssignabilityAnalysis.class)
     private Object[] lazyInitializedArrayReference;
 
     public Object[] getLazyInitializedArrayReference() {
@@ -219,7 +219,7 @@ public class DCL {
 
 
     @LazyInitializedNotThreadSafeFieldReference(value = "The field is not thread safe lazy initialized but within a guard",
-    analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    analyses = L3FieldAssignabilityAnalysis.class)
     private int[] notThreadSafeLazyInitializedArray;
 
     public int[] getValues(){
@@ -231,7 +231,7 @@ public class DCL {
 
 
     @LazyInitializedThreadSafeFieldReference(value = "the field is guarded initialized within a synchronized method",
-    analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    analyses = L3FieldAssignabilityAnalysis.class)
 
     private int[] synchronizedArrayInitialization;
 

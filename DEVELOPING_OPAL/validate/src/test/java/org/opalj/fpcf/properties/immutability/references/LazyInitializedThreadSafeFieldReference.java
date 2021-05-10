@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
 /**
  * Annotation to state that the annotated field reference is thread safe lazy initialized
@@ -24,6 +24,6 @@ public @interface LazyInitializedThreadSafeFieldReference {
      */
     String value();
 
-    Class<? extends FPCFAnalysis>[] analyses() default {L0FieldReferenceImmutabilityAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default {L3FieldAssignabilityAnalysis.class};
 
 }

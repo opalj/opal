@@ -12,10 +12,10 @@ import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 /**
  * Annotation to state that the annotated type deep immutable.
  * */
-@PropertyValidator(key = "TypeImmutability", validator = DeepImmutableTypeMatcher.class)
+@PropertyValidator(key = "TypeImmutability", validator = TransitiveImmutableTypeMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface DeepImmutableType {
+public @interface TransitivelyImmutableType {
 
     /**
      * A short reasoning of this property.

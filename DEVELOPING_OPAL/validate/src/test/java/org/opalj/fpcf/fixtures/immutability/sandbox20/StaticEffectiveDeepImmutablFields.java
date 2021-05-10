@@ -1,7 +1,6 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox20;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
 import java.io.IOException;
 
@@ -12,11 +11,11 @@ public class StaticEffectiveDeepImmutablFields {
     //@DeepImmutableField("")
     //private static Object[] objectArray = new ;
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private static MutableClass mc = new MutableClass();
 
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private final int[] terminationLock = new int[0];
 
     /*static {

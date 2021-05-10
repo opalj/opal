@@ -1,16 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 
 public class MethodCalls {
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
     private TestMutable tm1;
 
@@ -21,7 +20,7 @@ public class MethodCalls {
         tm1.nop();
     }
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     @LazyInitializedThreadSafeFieldReference("")
     private TestMutable tm2;
 
@@ -42,7 +41,7 @@ public class MethodCalls {
         }
     }
 
-    @MutableFieldReference("")
+    @AssignableFieldReference("")
     @MutableField("")
     private TestMutable tm4;
 
@@ -60,7 +59,7 @@ public class MethodCalls {
         return tm4;
     }
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private TestMutable tm5;
 
     public synchronized void getTm5() {
@@ -70,12 +69,12 @@ public class MethodCalls {
         tm5.nop();
     }
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private TestMutable tm6 = new TestMutable();
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private TestMutable tm7 = new TestMutable();
 
     public void foo(){

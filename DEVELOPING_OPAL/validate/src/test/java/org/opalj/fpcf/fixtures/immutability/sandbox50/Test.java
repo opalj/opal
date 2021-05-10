@@ -1,10 +1,10 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox50;
 
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 
 import java.util.Date;
 
 public class Test {
-    @ImmutableFieldReference("")
+    @NonAssignableFieldReference("")
     protected Date d;
 }

@@ -12,10 +12,10 @@ import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 /**
  * Annotation to state that the annotated field is shallow immutable.
  */
-@PropertyValidator(key="FieldImmutability",validator= ShallowImmutableFieldMatcher.class)
+@PropertyValidator(key="FieldImmutability",validator= NonTransitiveImmutableFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface ShallowImmutableField {
+public @interface NonTransitivelyImmutableField {
 
     /**
      * A short reasoning of this property.

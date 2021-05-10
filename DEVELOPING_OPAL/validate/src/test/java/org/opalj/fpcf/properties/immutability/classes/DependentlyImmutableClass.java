@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
 @PropertyValidator(key = "ClassImmutability",validator = DependentImmutableClassMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface DependentImmutableClass {
+public @interface DependentlyImmutableClass {
 
     /**
      * A short reasoning of this property.

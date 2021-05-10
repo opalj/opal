@@ -1,15 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 
 public class ArrayInitialization {
 
-    @MutableFieldReference("")
+    @AssignableFieldReference("")
     private Object[] array;
 
     public Object[] getArray(int n) {
@@ -19,7 +19,7 @@ public class ArrayInitialization {
         return array;
     }
 
-    @MutableFieldReference("")
+    @AssignableFieldReference("")
     private Object[] b;
 
     public Object[] getB(boolean flag) throws Exception {
@@ -49,7 +49,7 @@ class SimpleLazyObjectsInstantiation{
 
 class EscapingObjectDeep {
     //TODO
-    @ShallowImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
+    @TransitivelyImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
     private Object o;
 
     public synchronized Object getO(){
@@ -59,17 +59,17 @@ class EscapingObjectDeep {
     }
 }
 
-class EscapingObjectThatIsShallow {
+class EscapingObjectWithDifferenAssignments {
 
-    @ShallowImmutableField(value = "there are more than one object possibly assigned",
+    @TransitivelyImmutableField(value = "there are more than one object possibly assigned",
             analyses = L3FieldImmutabilityAnalysis.class)
     private final Object o;
 
-    public EscapingObjectThatIsShallow() {
+    public EscapingObjectWithDifferenAssignments() {
         this.o = new EmptyClass();
     }
 
-    public EscapingObjectThatIsShallow(int n) {
+    public EscapingObjectWithDifferenAssignments(int n) {
         this.o = new Object();
     }
 
@@ -91,7 +91,7 @@ class ClassUsingEmptyClass {
 
 class ClassUsingEmptyClassExtensible {
 
-    @ShallowImmutableField(value = "all the concrete object that can be assigned are not known",
+    @NonTransitivelyImmutableField(value = "all the concrete object that can be assigned are not known",
             analyses = L3FieldImmutabilityAnalysis.class)
     private EmptyClass emptyClass = new EmptyClass();
 

@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.field_mutability;
 
 import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 
@@ -12,7 +12,7 @@ public class Singleton {
     @MutableField("written by static initializer after the field becomes (indirectly) readable")
     private String name;
 
-    @ShallowImmutableField(
+    @NonTransitivelyImmutableField(
             value = "only initialized once by the constructor",
             analyses = { L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class }
     )
@@ -32,7 +32,7 @@ public class Singleton {
 
     // STATIC FUNCTIONALITY
 
-    @ShallowImmutableField("only set in the static initializer")
+    @NonTransitivelyImmutableField("only set in the static initializer")
     private static Singleton theInstance;
 
     static {

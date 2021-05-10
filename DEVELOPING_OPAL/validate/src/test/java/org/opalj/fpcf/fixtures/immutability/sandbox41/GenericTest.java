@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox41;
 
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
 public class GenericTest {
 
@@ -47,10 +47,10 @@ class Generic2<T>{
     @DependentImmutableField("")
     private Generic<T,T,Generic<T,T,Generic<T,T,EmptyClass>>> f;
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private Generic<T,T,MutableClass> g;
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private Generic<T,T,Generic<T,T,Generic<T,T,MutableClass>>> h;
 
 }

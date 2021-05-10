@@ -4,50 +4,50 @@ package org.opalj.fpcf.fixtures.immutability.type;
 import org.opalj.br.fpcf.analyses.L0ClassImmutabilityAnalysis;
 import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
 import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
-import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
-import org.opalj.fpcf.properties.immutability.classes.ShallowImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
-import org.opalj.fpcf.properties.immutability.types.DeepImmutableType;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-import org.opalj.fpcf.properties.immutability.types.ShallowImmutableType;
+import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
-@ShallowImmutableType("has only deep immutable fields and is final")
-@ShallowImmutableClass("has only deep immutable fields")
+@NonTransitiveImmutableType("has only deep immutable fields and is final")
+@NonTransitivelyImmutableClass("has only deep immutable fields")
 public final class WithMutableAndImmutableFieldType {
 
     @MutableField(value="can not handle effective immutability", analyses = L0FieldImmutabilityAnalysis.class)
-    @DeepImmutableField(value = "immutable reference and deep immutable type",
+    @TransitivelyImmutableField(value = "immutable reference and deep immutable type",
             analyses = L3FieldImmutabilityAnalysis.class)
-    @ShallowImmutableField(value = "can not handle deep immutability", analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class} )
-    @ImmutableFieldReference("private, effective immutable field")
+    @NonTransitivelyImmutableField(value = "can not handle deep immutability", analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class} )
+    @NonAssignableFieldReference("private, effective immutable field")
     private FinalEmptyClass fec = new FinalEmptyClass();
 
     @MutableField(value="can not handle effective immutability", analyses = L0FieldImmutabilityAnalysis.class)
-    @ShallowImmutableField(value = "has mutable type but is effectively final",
+    @NonTransitivelyImmutableField(value = "has mutable type but is effectively final",
             analyses = {L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-    @ImmutableFieldReference(value = "private, effectively final field",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @NonAssignableFieldReference(value = "private, effectively final field",
+            analyses = L3FieldAssignabilityAnalysis.class)
     private SimpleMutableClass tmc = new SimpleMutableClass();
 }
 
 @MutableType("class is deep immutable but extensible")
-@DeepImmutableClass("has no fields")
+@TransitivelyImmutableClass("has no fields")
 class EmptyClass {
 }
 
-@DeepImmutableClass("Class has no fields")
-@DeepImmutableType("Class has no fields and is final")
+@TransitivelyImmutableClass("Class has no fields")
+@TransitivelyImmutableType("Class has no fields and is final")
 final class FinalEmptyClass {
 }
 
@@ -58,9 +58,9 @@ final class FinalEmptyClass {
 class SimpleMutableClass{
 
     @MutableField(value = "field is public",
-            analyses = {L0FieldReferenceImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
+            analyses = {L3FieldAssignabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                     L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-    @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
     public int n=0;
     //com.sun.corba.se.impl.io.ObjectStreamClass.noArgsList
     //sun.misc.UCDecoder.tmp

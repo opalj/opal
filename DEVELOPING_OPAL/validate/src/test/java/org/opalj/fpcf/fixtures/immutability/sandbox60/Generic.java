@@ -2,18 +2,18 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox60;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.classes.DependentImmutableClass;
+import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
 @MutableType("")
-@DependentImmutableClass("")
+@DependentlyImmutableClass("")
 public class Generic<T> {
 
     @DependentImmutableField("")
-    @ImmutableFieldReference("")
+    @NonAssignableFieldReference("")
     T t;
     public Generic(T t){this.t = t;}
 }

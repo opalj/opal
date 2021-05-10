@@ -1,26 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import java.util.List;
-import java.util.LinkedList;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.ArrayList;
-
-import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
-import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
-
 public class EffectivelyImmutableFields {
 /*
     @DeepImmutableField(value = "field value has a primitive type and an immutable field reference",

@@ -1,9 +1,5 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox30;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-
 public class Test {
     //sun.awt.ExtendedKeyCodes.regularKeyCodesMap
     /*

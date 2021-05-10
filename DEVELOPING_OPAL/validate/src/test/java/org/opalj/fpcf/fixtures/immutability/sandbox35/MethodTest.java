@@ -1,17 +1,16 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox35;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
 public class MethodTest {
 	//TODO @DeepImmutableField("")
-	@ShallowImmutableField("")
+	@NonTransitivelyImmutableField("")
 private Object object1 = new Object();
-	@ShallowImmutableField("")
+	@NonTransitivelyImmutableField("")
 private Object object2 = new Object();
-	@ShallowImmutableField("")
+	@NonTransitivelyImmutableField("")
 private Mut object3 = new Mut();
-	@ShallowImmutableField("")
+	@NonTransitivelyImmutableField("")
 private Mut object4 = new Mut();
 
 public MethodTest(Object o){

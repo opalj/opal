@@ -1,18 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 
 public class ConstructorWithEscapingParameters {
 
-    @ShallowImmutableField("The field is init")
-    @ImmutableFieldReference("The field is only assigned in the constructor.")
+    @NonTransitivelyImmutableField("The field is init")
+    @NonAssignableFieldReference("The field is only assigned in the constructor.")
     private TrivialClass tc1;
 
    //TODO @DeepImmutableField("The construtor pararameter of the assigned object not escape")
-    @ImmutableFieldReference("The field is only assigned in the constructor.")
+    @NonAssignableFieldReference("The field is only assigned in the constructor.")
     private TrivialClass tc2;
 
     ConstructorWithEscapingParameters(Object o1, Object o2){

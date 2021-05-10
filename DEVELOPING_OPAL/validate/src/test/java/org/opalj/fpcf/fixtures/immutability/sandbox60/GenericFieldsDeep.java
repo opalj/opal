@@ -2,19 +2,19 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox60;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
 @MutableType("")
-@DeepImmutableClass("")
+@TransitivelyImmutableClass("")
 class GenericFieldsDeep<T> {
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     private Generic<Generic<FinalEmptyClass>> nestedDeep = new Generic<>(new Generic<>(new FinalEmptyClass()));
 
-    @DeepImmutableField("")
+    @TransitivelyImmutableField("")
     Generic<FinalEmptyClass> fecG = new Generic<>(new FinalEmptyClass());
 
 }

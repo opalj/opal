@@ -29,8 +29,8 @@
 package org.opalj.fpcf.fixtures.field_mutability;
 
 import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
@@ -45,7 +45,7 @@ import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 
 class Simple {
 
-    @ShallowImmutableField(value = "Simple lazy initialization", analyses = L2FieldImmutabilityAnalysis.class)
+    @NonTransitivelyImmutableField(value = "Simple lazy initialization", analyses = L2FieldImmutabilityAnalysis.class)
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;
@@ -60,7 +60,7 @@ class Simple {
 
 class Local {
 
-    @ShallowImmutableField("Lazy initialization with local")
+    @NonTransitivelyImmutableField("Lazy initialization with local")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;
@@ -90,7 +90,7 @@ class LocalWrong {
 
 class LocalReversed {
 
-    @ShallowImmutableField("Lazy initialization with local (reversed)")
+    @NonTransitivelyImmutableField("Lazy initialization with local (reversed)")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;
@@ -106,7 +106,7 @@ class LocalReversed {
 
 class LocalReload {
 
-    @ShallowImmutableField("Lazy initialization with local (reloading the field's value after the write)")
+    @NonTransitivelyImmutableField("Lazy initialization with local (reloading the field's value after the write)")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;
@@ -123,7 +123,7 @@ class LocalReload {
 
 class SimpleReversed {
 
-    @ShallowImmutableField("Simple lazy initialization (reversed)")
+    @NonTransitivelyImmutableField("Simple lazy initialization (reversed)")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;
@@ -138,7 +138,7 @@ class SimpleReversed {
 
 class SimpleWithDifferentDefault {
 
-    @ShallowImmutableField(value = "Simple lazy initialization, but different default value",
+    @NonTransitivelyImmutableField(value = "Simple lazy initialization, but different default value",
             analyses = {})
     @MutableField(value = "Analysis doesn't recognize lazy initialization with different default")
     private int x;
@@ -220,12 +220,12 @@ class DeterministicCallWithParam {
 
 class DeterministicCallOnFinalField {
 
-    @ShallowImmutableField("Lazy initialization with call to deterministic method on final field")
+    @NonTransitivelyImmutableField("Lazy initialization with call to deterministic method on final field")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;
 
-    @ShallowImmutableField("Declared final field")
+    @NonTransitivelyImmutableField("Declared final field")
     private final Inner inner;
 
     public DeterministicCallOnFinalField(int v) {
@@ -303,7 +303,7 @@ class NondeterministicCall {
 
 class DoubleLocalAssignment {
 
-    @ShallowImmutableField("Lazy initialization with a local that is updated twice")
+    @NonTransitivelyImmutableField("Lazy initialization with a local that is updated twice")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
     private int x;
@@ -357,8 +357,8 @@ class ExceptionInInitialization {
      * @note As the field write is dead, this field is really 'effectively final' as it will never
      * be different from the default value.
      */
-    @DeepImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
-    @ShallowImmutableField(value = "Field is never initialized, so it stays on its default value",
+    @TransitivelyImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
+    @NonTransitivelyImmutableField(value = "Field is never initialized, so it stays on its default value",
             analyses = { L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class })
     @MutableField(value = "Instance field not considered by analysis",
             analyses = L0FieldImmutabilityAnalysis.class)

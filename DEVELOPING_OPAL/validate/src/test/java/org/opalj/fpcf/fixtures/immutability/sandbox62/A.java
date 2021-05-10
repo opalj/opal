@@ -1,14 +1,13 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox62;
 
-import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
-import org.opalj.fpcf.properties.immutability.classes.MutableClass;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 
-@DeepImmutableClass("")
+@TransitivelyImmutableClass("")
 public class A {
     protected int n = 8;
 }
 
-@DeepImmutableClass("")
+@TransitivelyImmutableClass("")
 class B extends A {
 
 }

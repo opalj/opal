@@ -31,7 +31,7 @@ package org.opalj.fpcf.properties.field_mutability;
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableFieldMatcher;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitiveImmutableFieldMatcher;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 
@@ -45,7 +45,7 @@ import java.lang.annotation.RetentionPolicy;
  * @author Michael Eichberg
  * @author Dominik Helm
  */
-@PropertyValidator(key="FieldMutability",validator= ShallowImmutableFieldMatcher.class)
+@PropertyValidator(key="FieldMutability",validator= NonTransitiveImmutableFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface _DeclaredFinal {

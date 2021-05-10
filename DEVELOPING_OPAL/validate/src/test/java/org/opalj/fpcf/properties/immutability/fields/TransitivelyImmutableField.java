@@ -12,10 +12,10 @@ import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 /**
  * Annotation to state that the annotated field is deep immutable.
  */
-@PropertyValidator(key="FieldImmutability",validator= DeepImmutableFieldMatcher.class)
+@PropertyValidator(key="FieldImmutability",validator= TransitiveImmutableFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface DeepImmutableField {
+public @interface TransitivelyImmutableField {
 
     /**
      * A short reasoning of this property.

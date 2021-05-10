@@ -6,14 +6,14 @@ import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
 import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.MutableFieldReference;
+import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
 /**
  * This testclass tests that different modifiers like transient, volatile or static
@@ -31,25 +31,25 @@ public class DifferentModifier {
     @MutableField(value = "field has a mutable field reference",
             analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                     L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-    @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
     public int a = 5;
 
     @MutableField(value = "field has a mutable field reference",
             analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                     L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-    @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
     public transient int b = 5;
 
     @MutableField(value = "field has a mutable field reference",
             analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                     L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-    @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
     public volatile int c = 5;
 
     @MutableField(value = "field has a mutable field reference",
             analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                     L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-    @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
     public volatile long ctl;
 
     DifferentModifier(long ctl){
@@ -61,31 +61,31 @@ public class DifferentModifier {
           @MutableField(value = "field has a mutable field reference",
                   analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                           L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-          @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+          @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
           public static int LEFT = 1;
 
           @MutableField(value = "field has a mutable field reference",
                   analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                           L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-          @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+          @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
         public int c = 5;
 
           @MutableField(value = "field has a mutable field reference",
                   analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                           L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-          @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+          @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
         public transient int d = 5;
 
           @MutableField(value = "field has a mutable field reference",
                   analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                           L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-          @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+          @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
         public volatile int e = 5;
 
           @MutableField(value = "field has a mutable field reference",
                   analyses = {L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
                           L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
-          @MutableFieldReference(value = "field is public", analyses = L0FieldReferenceImmutabilityAnalysis.class)
+          @AssignableFieldReference(value = "field is public", analyses = L3FieldAssignabilityAnalysis.class)
         public volatile transient int f = 5;
     }
 }

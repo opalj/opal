@@ -2,18 +2,18 @@
 package org.opalj.fpcf.fixtures.immutability.fields;
 
 import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
-import org.opalj.fpcf.properties.immutability.classes.DependentImmutableClass;
-import org.opalj.fpcf.properties.immutability.classes.ShallowImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.DeepImmutableField;
+import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
+import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
-import org.opalj.fpcf.properties.immutability.references.ImmutableFieldReference;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L0FieldReferenceImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
 public class Escapers{
 
@@ -21,8 +21,8 @@ public class Escapers{
 
 class TransitiveEscape1 {
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private ClassWithPublicFields tmc = new ClassWithPublicFields();
 
     public void printTMC(){
@@ -37,8 +37,8 @@ class TransitiveEscape1 {
 
 class TransitiveEscape2 {
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private ClassWithPublicFields tmc = new ClassWithPublicFields();
 
     public void printTMC(){
@@ -52,10 +52,10 @@ class TransitiveEscape2 {
     }
 }
 class OneThatNotEscapesAndOneWithDCL {
-    @ShallowImmutableField(value = "immutable field reference and mutable type",
+    @NonTransitivelyImmutableField(value = "immutable field reference and mutable type",
             analyses = L3FieldImmutabilityAnalysis.class)
-    @ImmutableFieldReference(value = "field is only written once",
-            analyses = L0FieldReferenceImmutabilityAnalysis.class)
+    @NonAssignableFieldReference(value = "field is only written once",
+            analyses = L3FieldAssignabilityAnalysis.class)
     private ClassWithPublicFields tmc1 = new ClassWithPublicFields();
 
     @MutableField(value = "mutable reference", analyses = {
@@ -79,8 +79,8 @@ class OneThatNotEscapesAndOneWithDCL {
 }
 class GenericEscapes {
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private SimpleGenericClass sgc;
 
     public GenericEscapes(ClassWithPublicFields tmc){
@@ -89,14 +89,14 @@ class GenericEscapes {
 }
 
 
-@ShallowImmutableClass("")
+@NonTransitivelyImmutableClass("")
 class GenericEscapesTransitive {
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private SimpleGenericClass gc1;
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private ClassWithPublicFields tmc;
 
     public GenericEscapesTransitive(ClassWithPublicFields tmc){
@@ -107,12 +107,12 @@ class GenericEscapesTransitive {
 
 class GenericNotEscapesMutualEscapeDependencyNotAbleToResolve{
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private ClassWithPublicFields tmc = new ClassWithPublicFields();
 
-    @ShallowImmutableField("")
-    @ImmutableFieldReference("")
+    @NonTransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private SimpleGenericClass sgc;
 
     public GenericNotEscapesMutualEscapeDependencyNotAbleToResolve() {
@@ -123,12 +123,12 @@ class GenericNotEscapesMutualEscapeDependencyNotAbleToResolve{
 
 class GenericNotEscapesMutualEscapeDependencyAbleToResolve<T>{
 
-    @DeepImmutableField("")
-    @ImmutableFieldReference("")
+    @TransitivelyImmutableField("")
+    @NonAssignableFieldReference("")
     private FinalEmptyClass fec = new FinalEmptyClass();
 
-    @DependentImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
-    @ImmutableFieldReference("")
+    @DependentImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class, parameter = "T")
+    @NonAssignableFieldReference("")
     private SimpleGenericClass<T> sgc;
 
     public GenericNotEscapesMutualEscapeDependencyAbleToResolve() {
@@ -136,9 +136,9 @@ class GenericNotEscapesMutualEscapeDependencyAbleToResolve<T>{
     }
 }
 
-@DependentImmutableClass("")
+@DependentlyImmutableClass("")
 final class SimpleGenericClass<T> {
-    @DependentImmutableField(value = "")
+    @DependentImmutableField(value = "", parameter = "T")
     private T t;
     SimpleGenericClass(T t){
         this.t = t;

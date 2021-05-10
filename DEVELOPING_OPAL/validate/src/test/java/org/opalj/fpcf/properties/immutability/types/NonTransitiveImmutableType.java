@@ -12,10 +12,10 @@ import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 /**
  * Annotation to state that the annotated type shallow immutable.
  */
-@PropertyValidator(key = "TypeImmutability", validator = ShallowImmutableTypeMatcher.class)
+@PropertyValidator(key = "TypeImmutability", validator = NonTransitiveImmutableTypeMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface ShallowImmutableType {
+public @interface NonTransitiveImmutableType {
 
     /**
      * A short reasoning of this property.

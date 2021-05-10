@@ -1,10 +1,10 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox22;
 
-import org.opalj.fpcf.properties.immutability.fields.ShallowImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
 public class EscapeFailureTest {
 
-    @ShallowImmutableField("")
+    @NonTransitivelyImmutableField("")
     private static final Object[] o;
 
     static {

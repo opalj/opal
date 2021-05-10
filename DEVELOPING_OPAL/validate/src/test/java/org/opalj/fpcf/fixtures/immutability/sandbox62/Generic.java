@@ -1,9 +1,9 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox62;
 
-import org.opalj.fpcf.properties.immutability.classes.DeepImmutableClass;
-import org.opalj.fpcf.properties.immutability.classes.DependentImmutableClass;
+import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 
-@DependentImmutableClass("")
+@DependentlyImmutableClass("")
 public class Generic<T> {
     final T t;
     public Generic(T t){
@@ -11,11 +11,11 @@ public class Generic<T> {
     }
 }
 
-@DeepImmutableClass("")
+@TransitivelyImmutableClass("")
 final class FinalEmptyClass {}
 
 
-@DeepImmutableClass("")
+@TransitivelyImmutableClass("")
 class Extend extends Generic<FinalEmptyClass> {
 
     public Extend(FinalEmptyClass fec){
