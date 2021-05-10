@@ -40,7 +40,7 @@ sealed trait TypeImmutability
 
     def isDeepImmutable: Boolean
     def isShallowImmutable: Boolean
-    def isDependentImmutable: Boolean
+    def isDependentlyImmutable: Boolean = false
     def isMutable: Boolean = true
     def meet(other: TypeImmutability): TypeImmutability
 }
@@ -65,18 +65,17 @@ case object TransitivelyImmutableType extends TypeImmutability {
     override def isDeepImmutable: Boolean = true
     override def isShallowImmutable: Boolean = false
     override def isMutable: Boolean = false
-    override def isDependentImmutable: Boolean = false
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {}
 
     def meet(that: TypeImmutability): TypeImmutability = that
 }
 
-case object DependentImmutableType extends TypeImmutability {
+case class DependentlyImmutableType(parameter: Set[String]) extends TypeImmutability {
     override def isDeepImmutable: Boolean = false
     override def isShallowImmutable: Boolean = false
     override def isMutable: Boolean = false
-    override def isDependentImmutable: Boolean = true
+    override def isDependentlyImmutable: Boolean = true
 
     def meet(that: TypeImmutability): TypeImmutability =
         if (that == MutableType || that == NonTransitivelyImmutableType)
@@ -96,7 +95,6 @@ case object NonTransitivelyImmutableType extends TypeImmutability {
     override def isDeepImmutable: Boolean = false
     override def isShallowImmutable: Boolean = true
     override def isMutable: Boolean = false
-    override def isDependentImmutable: Boolean = false
 
     def meet(that: TypeImmutability): TypeImmutability =
         if (that == MutableType)
@@ -105,8 +103,10 @@ case object NonTransitivelyImmutableType extends TypeImmutability {
             this
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == TransitivelyImmutableType || other == DependentImmutableType) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+        other match {
+            case TransitivelyImmutableType | DependentlyImmutableType(_) ⇒
+                throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            case _ ⇒
         }
     }
 }
@@ -116,7 +116,6 @@ case object MutableType extends TypeImmutability {
     override def isDeepImmutable: Boolean = false
     override def isShallowImmutable: Boolean = false
     override def isMutable: Boolean = true
-    override def isDependentImmutable: Boolean = false
 
     def meet(other: TypeImmutability): TypeImmutability = this
 

@@ -20,7 +20,7 @@ import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableField
@@ -226,6 +226,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         }.toList
         var hasShallowImmutableFields = false
         var hasDependentImmutableFields = false
+        var genericTypeParameters: Set[String] = Set.empty
 
         val fieldsPropertyStoreInformation = propertyStore(instanceFields, FieldImmutability)
 
@@ -239,9 +240,11 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
 
             case FinalP(NonTransitivelyImmutableField) ⇒ hasShallowImmutableFields = true
 
-            case FinalP(DependentImmutableField(_))    ⇒ hasDependentImmutableFields = true
+            case FinalP(DependentlyImmutableField(parameters)) ⇒
+                genericTypeParameters ++= parameters
+                hasDependentImmutableFields = true
 
-            case FinalP(TransitivelyImmutableField)    ⇒
+            case FinalP(TransitivelyImmutableField) ⇒
 
             case ep @ InterimE(e) ⇒
                 hasFieldsWithUnknownMutability = true
@@ -265,8 +268,10 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         var maxLocalImmutability: ClassImmutability = superClassInformation match {
             case UBP(MutableClass)                  ⇒ MutableClass
             case UBP(NonTransitivelyImmutableClass) ⇒ NonTransitivelyImmutableClass
-            case UBP(DependentImmutableClass)       ⇒ DependentImmutableClass
-            case _                                  ⇒ TransitivelyImmutableClass
+            case UBP(DependentImmutableClass(parameters)) ⇒
+                genericTypeParameters ++= parameters
+                DependentImmutableClass(genericTypeParameters)
+            case _ ⇒ TransitivelyImmutableClass
         }
         if (hasShallowImmutableFields) {
             maxLocalImmutability = NonTransitivelyImmutableClass
@@ -274,7 +279,7 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
 
         if (hasDependentImmutableFields &&
             maxLocalImmutability != NonTransitivelyImmutableClass && maxLocalImmutability != MutableClass) {
-            maxLocalImmutability = DependentImmutableClass
+            maxLocalImmutability = DependentImmutableClass(genericTypeParameters)
         }
 
         if (cf.fields.exists(f ⇒ !f.isStatic && f.fieldType.isArrayType)) {
@@ -318,10 +323,12 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                     if (someEPS.isFinal) dependees -= SuperClassKey
                     maxLocalImmutability = NonTransitivelyImmutableClass
 
-                case UBP(DependentImmutableClass) ⇒
+                case UBP(DependentImmutableClass(parameter)) ⇒
                     if (someEPS.isFinal) dependees -= SuperClassKey
-                    if (maxLocalImmutability != NonTransitivelyImmutableClass)
-                        maxLocalImmutability = DependentImmutableClass
+                    if (maxLocalImmutability != NonTransitivelyImmutableClass) {
+                        genericTypeParameters ++= parameter
+                        maxLocalImmutability = DependentImmutableClass(genericTypeParameters)
+                    }
 
                 case LBP(NonTransitivelyImmutableClass) ⇒ // super class is a least shallow immutable
                     if (minLocalImmutability != NonTransitivelyImmutableClass &&
@@ -330,11 +337,12 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
 
                 case LUBP(MutableClass, TransitivelyImmutableClass) ⇒ // No information about superclass
 
-                case FinalP(DependentImmutableField(_)) ⇒
+                case FinalP(DependentlyImmutableField(parameter)) ⇒
                     if (hasShallowImmutableFields) {
                         maxLocalImmutability = NonTransitivelyImmutableClass
                     } else if (maxLocalImmutability != MutableClass && maxLocalImmutability != NonTransitivelyImmutableClass) {
-                        maxLocalImmutability = DependentImmutableClass
+                        genericTypeParameters ++= parameter
+                        maxLocalImmutability = DependentImmutableClass(genericTypeParameters)
                     }
 
                 // Field Immutability related dependencies:
@@ -345,8 +353,9 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 case ELBP(e, NonTransitivelyImmutableField | TransitivelyImmutableField) ⇒ dependees -= e
                 case UBP(TransitivelyImmutableField)                                     ⇒ // no information about field mutability
                 case UBP(NonTransitivelyImmutableField)                                  ⇒ maxLocalImmutability = NonTransitivelyImmutableClass
-                case UBP(DependentImmutableField(_)) if maxLocalImmutability != NonTransitivelyImmutableClass ⇒
-                    maxLocalImmutability = DependentImmutableClass
+                case UBP(DependentlyImmutableField(parameter)) if maxLocalImmutability != NonTransitivelyImmutableClass ⇒
+                    genericTypeParameters ++= parameter
+                    maxLocalImmutability = DependentImmutableClass(genericTypeParameters)
                 case _ ⇒ Result(t, MutableClass) //TODO check
             }
 

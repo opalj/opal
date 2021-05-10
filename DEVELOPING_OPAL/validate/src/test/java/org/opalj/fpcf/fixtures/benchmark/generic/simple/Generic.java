@@ -11,8 +11,8 @@ import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
  * Generic class with a field having a generic type.
  */
 //@Immutable
-@DependentImmutableType("class is dependently immutable and final")
-@DependentlyImmutableClass("class has a dependently immutable field")
+@DependentImmutableType(value = "class is dependently immutable and final", parameter = {"T"})
+@DependentlyImmutableClass(value = "class has a dependently immutable field", parameter = {"T"})
 public final class Generic<T> {
 
     //@Immutable

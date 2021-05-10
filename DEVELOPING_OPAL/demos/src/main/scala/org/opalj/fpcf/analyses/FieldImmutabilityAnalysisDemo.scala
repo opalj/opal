@@ -19,7 +19,7 @@ import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.tac.cg.RTACallGraphKey
@@ -104,7 +104,7 @@ object FieldImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
         val shallowImmutableFields =
             groupedResults.getOrElse(NonTransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
         val dependentImmutableFields =
-            groupedResults.getOrElse(DependentImmutableField(List.empty), Seq.empty).toSeq.sortWith(order)
+            groupedResults.getOrElse(DependentlyImmutableField(Set.empty), Seq.empty).toSeq.sortWith(order)
         val deepImmutableFields =
             groupedResults.getOrElse(TransitivelyImmutableField, Seq.empty).toSeq.sortWith(order)
 

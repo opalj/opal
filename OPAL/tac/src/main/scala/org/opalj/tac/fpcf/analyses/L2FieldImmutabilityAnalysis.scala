@@ -65,7 +65,7 @@ import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.MutableField
@@ -1054,7 +1054,7 @@ class L2FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     def isFinalField(
         eop: EOptionP[Field, FieldImmutability]
     )(implicit state: State): Boolean = eop match {
-        case LBP(TransitivelyImmutableField | DependentImmutableField(_) | NonTransitivelyImmutableField) ⇒
+        case LBP(TransitivelyImmutableField | DependentlyImmutableField(_) | NonTransitivelyImmutableField) ⇒
             true
         case UBP(MutableField) ⇒ false
         case _ ⇒

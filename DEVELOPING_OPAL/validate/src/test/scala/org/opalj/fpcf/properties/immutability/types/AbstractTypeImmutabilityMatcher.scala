@@ -30,16 +30,24 @@ class AbstractTypeImmutabilityMatcher(
     }
 
     override def validateProperty(
-        p:          Project[_],
+        project:    Project[_],
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        if (!properties.exists {
-            case `property` ⇒ true
-            case _          ⇒ false
-        }) {
+        import org.opalj.br.fpcf.properties.DependentlyImmutableType
+        if (!properties.exists(p ⇒ p match {
+            case DependentlyImmutableType(_) ⇒
+                val annotationType = a.annotationType.asFieldType.asObjectType
+                val parameters =
+                    getValue(project, annotationType, a.elementValuePairs, "parameter").
+                        asArrayValue.values.map(x ⇒ x.asStringValue.value)
+                property.isInstanceOf[DependentlyImmutableType] &&
+                    p.asInstanceOf[DependentlyImmutableType].parameter.size == parameters.size &&
+                    parameters.toList.forall(param ⇒ p.asInstanceOf[DependentlyImmutableType].parameter.contains(param))
+            case _ ⇒ p == property
+        })) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
             None
@@ -50,7 +58,7 @@ class AbstractTypeImmutabilityMatcher(
 class TransitiveImmutableTypeMatcher
     extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.TransitivelyImmutableType)
 class DependentImmutableTypeMatcher
-    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.DependentImmutableType)
+    extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.DependentlyImmutableType(Set.empty))
 class NonTransitiveImmutableTypeMatcher
     extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.NonTransitivelyImmutableType)
 class MutableTypeMatcher

@@ -52,7 +52,7 @@ import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldImmutability
@@ -281,7 +281,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
             // Cases that are pure
             case FinalP(NonTransitivelyImmutableField |
-                DependentImmutableField(_) |
+                DependentlyImmutableField(_) |
                 TransitivelyImmutableField) ⇒ // Reading eff. final fields
             case FinalP(TransitivelyImmutableType |
                 TransitivelyImmutableType) ⇒ // Returning immutable reference

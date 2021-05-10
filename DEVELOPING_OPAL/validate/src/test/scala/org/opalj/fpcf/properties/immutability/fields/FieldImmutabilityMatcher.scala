@@ -44,17 +44,16 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
         a:          AnnotationLike,
         properties: Traversable[Property]
     ): Option[String] = {
-        import org.opalj.br.fpcf.properties.DependentImmutableField
+        import org.opalj.br.fpcf.properties.DependentlyImmutableField
         if (!properties.exists(p ⇒ p match {
-            case DependentImmutableField(_) ⇒
+            case DependentlyImmutableField(_) ⇒
                 val annotationType = a.annotationType.asFieldType.asObjectType
                 val parameters =
                     getValue(project, annotationType, a.elementValuePairs, "parameter").
                         asArrayValue.values.map(x ⇒ x.asStringValue.value)
-                property.isInstanceOf[DependentImmutableField] &&
-                    p.asInstanceOf[DependentImmutableField].parameter.
-                    forall(param ⇒ parameters.toSet.contains(param)) &&
-                    parameters.toList.forall(param ⇒ p.asInstanceOf[DependentImmutableField].parameter.contains(param))
+                property.isInstanceOf[DependentlyImmutableField] &&
+                    p.asInstanceOf[DependentlyImmutableField].parameter.size == parameters.size &&
+                    parameters.toList.forall(param ⇒ p.asInstanceOf[DependentlyImmutableField].parameter.contains(param))
             case _ ⇒ p == property
         })) {
             // ... when we reach this point the expected property was not found.
@@ -67,7 +66,7 @@ class FieldImmutabilityMatcher(val property: FieldImmutability) extends Abstract
 
 class NonTransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.NonTransitivelyImmutableField)
 
-class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DependentImmutableField(List.empty))
+class DependentImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.DependentlyImmutableField(Set.empty))
 
 class TransitiveImmutableFieldMatcher extends FieldImmutabilityMatcher(br.fpcf.properties.TransitivelyImmutableField)
 

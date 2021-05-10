@@ -30,7 +30,7 @@ import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.br.Field
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
 import org.opalj.br.fpcf.properties.LazilyInitialized
@@ -42,7 +42,7 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.DependentImmutableType
+import org.opalj.br.fpcf.properties.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
@@ -365,7 +365,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val dependentImmutableFields = fieldGroupedResults
-            .getOrElse(DependentImmutableField(List.empty), Iterator.empty)
+            .getOrElse(DependentlyImmutableField(Set.empty), Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
             .sortWith(_ < _)
@@ -427,7 +427,7 @@ object Immutability {
 
         val dependentImmutableClasses =
             classGroupedResults
-                .getOrElse(DependentImmutableClass, Iterator.empty)
+                .getOrElse(DependentImmutableClass(Set.empty), Iterator.empty)
                 .toSeq
                 .map(unpackClass)
                 .sortWith(_ < _)
@@ -497,7 +497,7 @@ object Immutability {
             .sortWith(_ < _)
 
         val dependentImmutableTypes = typeGroupedResults
-            .getOrElse(DependentImmutableType, Iterator.empty)
+            .getOrElse(DependentlyImmutableType(Set.empty), Iterator.empty)
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)

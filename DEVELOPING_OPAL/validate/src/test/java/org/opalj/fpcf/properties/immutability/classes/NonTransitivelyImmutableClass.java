@@ -14,7 +14,7 @@ import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
  *
  * @author Tobias Roth
  */
-@PropertyValidator(key = "ClassImmutability",validator = NonTransitiveImmutableClassMatcher.class)
+@PropertyValidator(key = "ClassImmutability",validator = NonTransitivelyImmutableClassMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface NonTransitivelyImmutableClass {

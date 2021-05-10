@@ -31,11 +31,11 @@ import org.opalj.br.fpcf.properties.ImpureByLackOfInformation
 import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.instructions._
-import org.opalj.br.fpcf.properties.DependentImmutableType
+import org.opalj.br.fpcf.properties.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.FieldImmutability
@@ -120,7 +120,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             if (field.isNotFinal) {
 
                                 propertyStore(field, FieldImmutability.key) match {
-                                    case FinalP(NonTransitivelyImmutableField | DependentImmutableField(_) | TransitivelyImmutableField) ⇒
+                                    case FinalP(NonTransitivelyImmutableField | DependentlyImmutableField(_) | TransitivelyImmutableField) ⇒
                                     case _: FinalEP[Field, FieldImmutability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
@@ -229,7 +229,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     dependees += eps
                     InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalP(TransitivelyImmutableField | DependentImmutableField(_) | NonTransitivelyImmutableField | TransitivelyImmutableType) ⇒
+                case FinalP(TransitivelyImmutableField | DependentlyImmutableField(_) | NonTransitivelyImmutableField | TransitivelyImmutableType) ⇒
                     if (dependees.isEmpty) {
                         Result(definedMethod, Pure)
                     } else {
@@ -238,7 +238,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                         InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
                     }
 
-                case FinalP(NonTransitivelyImmutableType | DependentImmutableType) ⇒ //ImmutableContainerType) ⇒
+                case FinalP(NonTransitivelyImmutableType | DependentlyImmutableType(_)) ⇒ //ImmutableContainerType) ⇒
                     Result(definedMethod, ImpureByAnalysis)
 
                 // The type is at most conditionally immutable.

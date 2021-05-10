@@ -10,8 +10,8 @@ import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
  * Class with multiple final fields with generic type parameters.
  */
 //@Immutable
-@DependentImmutableType("class dependently immutable and final")
-@DependentlyImmutableClass("class has only dependent immutable fields")
+@DependentImmutableType(value = "class dependently immutable and final", parameter = {"A", "B", "C"})
+@DependentlyImmutableClass(value = "class has only dependent immutable fields", parameter = {"A", "B", "C"})
 public final class MultipleGeneric<A,B,C> {
 
     //@Immutable

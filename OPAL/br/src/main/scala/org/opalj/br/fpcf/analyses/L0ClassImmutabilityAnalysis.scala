@@ -37,7 +37,7 @@ import org.opalj.br.fpcf.properties.TypeImmutability
 import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
@@ -341,7 +341,7 @@ class L0ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                 case UBP(MutableField)              ⇒ return Result(t, MutableClass);
 
                 case ELBP(e, NonTransitivelyImmutableField |
-                    DependentImmutableField(_) |
+                    DependentlyImmutableField(_) |
                     TransitivelyImmutableField) ⇒
                     dependees -= e
                     if (minLocalImmutability != NonTransitivelyImmutableClass &&
@@ -349,7 +349,7 @@ class L0ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
                         minLocalImmutability = NonTransitivelyImmutableClass // Lift lower bound when possible
 
                 case UBP(TransitivelyImmutableField |
-                    DependentImmutableField(_) |
+                    DependentlyImmutableField(_) |
                     NonTransitivelyImmutableField) ⇒ // no information about field mutability
 
             }

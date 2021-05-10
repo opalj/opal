@@ -16,7 +16,7 @@ import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
 import org.opalj.br.fpcf.properties.DependentImmutableClass
-import org.opalj.br.fpcf.properties.DependentImmutableType
+import org.opalj.br.fpcf.properties.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
@@ -123,10 +123,10 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                 case FinalP(NonTransitivelyImmutableClass) ⇒
                     joinedImmutability = NonTransitivelyImmutableType
                     maxImmutability = NonTransitivelyImmutableType
-                case FinalP(DependentImmutableClass) ⇒
-                    joinedImmutability = DependentImmutableType
+                case FinalP(DependentImmutableClass(parameter)) ⇒
+                    joinedImmutability = DependentlyImmutableType(parameter)
                     if (maxImmutability != NonTransitivelyImmutableType)
-                        maxImmutability = DependentImmutableType
+                        maxImmutability = DependentlyImmutableType(parameter)
 
                 case eps @ InterimLUBP(lb, ub) ⇒
                     joinedImmutability = lb.correspondingTypeImmutability
@@ -148,10 +148,10 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                         joinedImmutability = joinedImmutability.meet(NonTransitivelyImmutableType)
                         maxImmutability = NonTransitivelyImmutableType
 
-                    case FinalP(DependentImmutableType) ⇒
-                        joinedImmutability = joinedImmutability.meet(DependentImmutableType)
+                    case FinalP(DependentlyImmutableType(parameter)) ⇒
+                        joinedImmutability = joinedImmutability.meet(DependentlyImmutableType(parameter))
                         if (maxImmutability != NonTransitivelyImmutableType)
-                            maxImmutability = DependentImmutableType
+                            maxImmutability = DependentlyImmutableType(parameter)
 
                     case eps @ InterimLUBP(subtypeLB, subtypeUB) ⇒
                         joinedImmutability = joinedImmutability.meet(subtypeLB)
@@ -229,9 +229,15 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
                             dependencies = dependencies - e
                             nextResult()
 
-                        case FinalEP(e, DependentImmutableClass | DependentImmutableType) ⇒
+                        case FinalEP(e, DependentImmutableClass(parameter)) ⇒
                             if (maxImmutability != NonTransitivelyImmutableType)
-                                maxImmutability = DependentImmutableType
+                                maxImmutability = DependentlyImmutableType(parameter)
+                            dependencies = dependencies - e
+                            nextResult()
+
+                        case FinalEP(e, DependentlyImmutableType(parameter)) ⇒
+                            if (maxImmutability != NonTransitivelyImmutableType)
+                                maxImmutability = DependentlyImmutableType(parameter)
                             dependencies = dependencies - e
                             nextResult()
 

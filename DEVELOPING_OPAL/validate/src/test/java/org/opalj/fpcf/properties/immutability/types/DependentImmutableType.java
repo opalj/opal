@@ -24,5 +24,7 @@ public @interface DependentImmutableType {
      */
     String value();
 
+    String[] parameter() default {""};
+
     Class<? extends FPCFAnalysis>[] analyses() default {L1TypeImmutabilityAnalysis.class};
 }

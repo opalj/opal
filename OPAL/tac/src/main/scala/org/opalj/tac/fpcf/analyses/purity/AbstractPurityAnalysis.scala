@@ -50,7 +50,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.DependentImmutableField
+import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.ClassImmutability
@@ -388,7 +388,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
         case LBP(NonTransitivelyImmutableField |
-            DependentImmutableField(_) |
+            DependentlyImmutableField(_) |
             TransitivelyImmutableField) ⇒ // Immutable fields don't impede purity
         case _: FinalEP[Field, FieldImmutability] ⇒ // Mutable field
             if (objRef.isDefined) {

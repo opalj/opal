@@ -16,7 +16,7 @@ import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.DependentImmutableType
+import org.opalj.br.fpcf.properties.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.fpcf.PropertyStore
@@ -102,7 +102,7 @@ object TypeImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
 
         val shallowImmutableTypes = groupedResults(NonTransitivelyImmutableType).toSeq.sortWith(order)
 
-        val dependentImmutableTypes = groupedResults(DependentImmutableType).toSeq.sortWith(order)
+        val dependentImmutableTypes = groupedResults(DependentlyImmutableType).toSeq.sortWith(order)
 
         val deepImmutableTypes = groupedResults(TransitivelyImmutableType).toSeq.sortWith(order)
 

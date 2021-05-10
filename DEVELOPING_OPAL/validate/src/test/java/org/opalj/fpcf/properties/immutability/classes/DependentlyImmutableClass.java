@@ -14,7 +14,7 @@ import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
  *
  * @author Tobias Roth
  */
-@PropertyValidator(key = "ClassImmutability",validator = DependentImmutableClassMatcher.class)
+@PropertyValidator(key = "ClassImmutability",validator = DependentlyImmutableClassMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
 public @interface DependentlyImmutableClass {
@@ -23,6 +23,8 @@ public @interface DependentlyImmutableClass {
      * A short reasoning of this property.
      */
     String value();
+
+    String[] parameter() default {""};
 
     Class<? extends FPCFAnalysis>[] analyses() default {L1ClassImmutabilityAnalysis.class};
 }

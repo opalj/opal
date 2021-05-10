@@ -20,7 +20,7 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
  *
  * [[NonTransitivelyImmutableField]] A field with an immutable field reference and a shallow immutable or mutable data type
  *
- * [[DependentImmutableField]] A field with an immutable field reference and a generic type and parts of it are no
+ * [[DependentlyImmutableField]] A field with an immutable field reference and a generic type and parts of it are no
  * substantiated in an shallow or mutable way.
  *
  * [[TransitivelyImmutableField]] A field with an immutable field reference and a deep immutable field type or with an
@@ -50,7 +50,7 @@ case object TransitivelyImmutableField extends FieldImmutability {
     def meet(that: FieldImmutability): FieldImmutability = that
 }
 
-case class DependentImmutableField(parameter: List[String]) extends FieldImmutability {
+case class DependentlyImmutableField(parameter: Set[String]) extends FieldImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == TransitivelyImmutableField) {
@@ -76,7 +76,7 @@ case object NonTransitivelyImmutableField extends FieldImmutability {
     }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == TransitivelyImmutableField || other.isInstanceOf[DependentImmutableField]) {
+        if (other == TransitivelyImmutableField || other.isInstanceOf[DependentlyImmutableField]) {
             throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
         }
     }

@@ -35,6 +35,7 @@ sealed trait ClassImmutability
     with ClassImmutabilityPropertyMetaInformation {
     final def key: PropertyKey[ClassImmutability] = ClassImmutability.key
     def correspondingTypeImmutability: TypeImmutability
+    def isDependentlyImmutable: Boolean = false
 }
 
 object ClassImmutability extends ClassImmutabilityPropertyMetaInformation {
@@ -57,9 +58,10 @@ case object TransitivelyImmutableClass extends ClassImmutability {
     def meet(that: ClassImmutability): ClassImmutability = that
 }
 
-case object DependentImmutableClass extends ClassImmutability {
-    override def correspondingTypeImmutability: TypeImmutability = DependentImmutableType
+case class DependentImmutableClass(parameter: Set[String]) extends ClassImmutability {
+    override def correspondingTypeImmutability: TypeImmutability = DependentlyImmutableType(parameter)
 
+    override def isDependentlyImmutable: Boolean = true
     def meet(that: ClassImmutability): ClassImmutability =
         if (that == MutableClass || that == NonTransitivelyImmutableClass)
             that
@@ -84,8 +86,10 @@ case object NonTransitivelyImmutableClass extends ClassImmutability {
     }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
-        if (other == TransitivelyImmutableClass || other == DependentImmutableClass) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+        other match {
+            case TransitivelyImmutableClass | DependentImmutableClass(_) ⇒
+                throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            case _ ⇒
         }
     }
 }

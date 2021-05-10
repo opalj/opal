@@ -7,7 +7,7 @@ import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 public class Specialization {
 
-    @DependentlyImmutableClass("")
+    @DependentlyImmutableClass(value = "", parameter = {"A"})
     class G<A>{
         @DependentImmutableField(value="Has only a generic type", parameter = "A")
         private final A a;
