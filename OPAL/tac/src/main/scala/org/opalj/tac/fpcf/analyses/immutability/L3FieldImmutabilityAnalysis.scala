@@ -133,6 +133,10 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity"
         )
 
+    val defaultTransitivelyImmutableTypes = project.config.getStringList(
+        "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
+    ).toArray().toList.map(s ⇒ ObjectType(s.asInstanceOf[String])).toSet
+
     def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = entity match {
         case field: Field ⇒ determineFieldImmutability(field)
         case _ ⇒
@@ -196,15 +200,18 @@ class L3FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
         def handleTypeImmutability(objectType: FieldType)(implicit state: State): Unit = {
 
-            if (objectType == ObjectType.Object) { //TODO make configerable
+            if (objectType == ObjectType.Object) {
                 state.typeImmutability = MutableType //handling generic fields
-            } else if (objectType.isBaseType || objectType == ObjectType.String) { //TODO make configerable
+            } else if (objectType.isBaseType) {
                 // base types are by design transitively immutable
                 //state.typeImmutability = true // true is default
             } else if (objectType.isArrayType) {
                 // Because the entries of an array can be reassigned we state it as mutable
                 state.typeImmutability = MutableType
-            } else {
+            } else if(defaultTransitivelyImmutableTypes.contains(objectType.asObjectType)){
+              //handles the configured transitively immutable types as transitively immutable
+            }
+            else {
                 propertyStore(objectType, TypeImmutability.key) match {
                     case LBP(TransitivelyImmutableType) ⇒ // transitively immutable type is set as default
                     case FinalEP(t, DependentlyImmutableType(_)) ⇒
