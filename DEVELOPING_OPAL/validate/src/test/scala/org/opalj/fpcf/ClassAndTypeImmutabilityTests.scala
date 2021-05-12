@@ -22,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis */
 import org.opalj.ai.fpcf.analyses.LazyL0BaseAIAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL2FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldAssignabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
@@ -30,7 +30,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 
 /**
@@ -64,7 +64,7 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
             EagerL0ClassImmutabilityAnalysis,
             EagerL0TypeImmutabilityAnalysis,
             LazyUnsoundPrematurelyReadFieldsAnalysis,
-            LazyL2FieldImmutabilityAnalysis,
+            LazyL2FieldAssignabilityAnalysis,
             LazyL3FieldAssignabilityAnalysis,
             LazyL0BaseAIAnalysis
         ))
@@ -84,7 +84,7 @@ class ClassAndTypeImmutabilityTests extends PropertiesTest {
             LazyUnsoundPrematurelyReadFieldsAnalysis,
             LazyL2PurityAnalysis,
             LazyL3FieldAssignabilityAnalysis,
-            LazyL3FieldImmutabilityAnalysis,
+            LazyL0FieldImmutabilityAnalysis,
             EagerL1TypeImmutabilityAnalysis,
             EagerL1ClassImmutabilityAnalysis,
             LazyStaticDataUsageAnalysis,

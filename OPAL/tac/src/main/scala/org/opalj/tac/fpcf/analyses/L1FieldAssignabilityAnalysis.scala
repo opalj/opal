@@ -40,9 +40,10 @@ import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.br.fpcf.properties.MutableField
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
-import org.opalj.br.fpcf.properties.FieldImmutability
+import org.opalj.br.fpcf.properties.NonAssignable
+import org.opalj.br.fpcf.properties.Assignable
+import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.FieldAssignability
 
 /**
  * Simple analysis that checks if a private (static or instance) field is always initialized at
@@ -55,7 +56,7 @@ import org.opalj.br.fpcf.properties.FieldImmutability
  * @author Florian Kübler
  * @author Michael Eichberg
  */
-class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
+class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) extends FPCFAnalysis {
 
     class State(
             val field:           Field,
@@ -70,9 +71,9 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
 
-    def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = {
+    def doDetermineFieldAssignability(entity: Entity): PropertyComputationResult = {
         entity match {
-            case field: Field ⇒ determineFieldImmutability(field)
+            case field: Field ⇒ determineFieldAssignability(field)
             case _ ⇒
                 val m = entity.getClass.getName+"is not an org.opalj.br.Field"
                 throw new IllegalArgumentException(m)
@@ -86,23 +87,25 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
      * If the analysis is schedulued using its companion object all class files with
      * native methods are filtered.
      */
-    private[analyses] def determineFieldImmutability(
+    private[analyses] def determineFieldAssignability(
         field: Field
     ): ProperPropertyComputationResult = {
         if (field.isFinal) {
-            return Result(field, NonTransitivelyImmutableField)
+
+            return Result(field, NonAssignable)
         }
 
         val thisType = field.classFile.thisType
 
         if (field.isPublic) {
-            return Result(field, MutableField);
+
+            return Result(field, Assignable);
         }
 
         val initialClasses =
             if (field.isProtected || field.isPackagePrivate) {
                 if (!closedPackages.isClosed(thisType.packageName)) {
-                    return Result(field, MutableField);
+                    return Result(field, Assignable);
                 }
                 project.classesPerPackage(thisType.packageName)
             } else {
@@ -112,7 +115,7 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         val classesHavingAccess: Iterator[ClassFile] =
             if (field.isProtected) {
                 if (typeExtensibility(thisType).isYesOrUnknown) {
-                    return Result(field, MutableField);
+                    return Result(field, Assignable);
                 }
                 val subclassesIterator: Iterator[ClassFile] =
                     classHierarchy.allSubclassTypes(thisType, reflexive = false).
@@ -125,7 +128,7 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             }
 
         if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
-            return Result(field, MutableField);
+            return Result(field, Assignable);
         }
 
         // We now (compared to the simple one) have to analyze the static initializer as
@@ -155,7 +158,7 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
             taCode ← getTACAIOption(method, pcs)
         } {
             if (methodUpdatesField(method, taCode, pcs))
-                return Result(field, MutableField);
+                return Result(field, Assignable);
         }
 
         returnResult()
@@ -233,13 +236,14 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     }
 
     def returnResult()(implicit state: State): ProperPropertyComputationResult = {
+
         if (state.tacDependees.isEmpty && state.escapeDependees.isEmpty)
-            Result(state.field, NonTransitivelyImmutableField)
+            Result(state.field, EffectivelyNonAssignable)
         else
             InterimResult(
                 state.field,
-                MutableField,
-                NonTransitivelyImmutableField,
+                Assignable,
+                NonAssignable,
                 state.escapeDependees ++ state.tacDependees.valuesIterator.map(_._1),
                 c
             )
@@ -263,7 +267,7 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
         }
 
         if (isNonFinal)
-            Result(state.field, MutableField);
+            Result(state.field, Assignable);
         else
             returnResult()
     }
@@ -326,22 +330,22 @@ class L1FieldImmutabilityAnalysis private[analyses] (val project: SomeProject) e
     }
 }
 
-sealed trait L1FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+sealed trait L1FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(TypeExtensibilityKey, ClosedPackagesKey, FieldAccessInformationKey, DefinitionSitesKey)
 
     final override def uses: Set[PropertyBounds] = PropertyBounds.lubs(TACAI, EscapeProperty)
 
-    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
+    final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldAssignability)
 
 }
 
 /**
  * Executor for the field mutability analysis.
  */
-object EagerL1FieldImmutabilityAnalysis
-    extends L1FieldImmutabilityAnalysisScheduler
+object EagerL1FieldAssignabilityAnalysis
+    extends L1FieldAssignabilityAnalysisScheduler
     with BasicFPCFEagerAnalysisScheduler {
 
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
@@ -349,9 +353,9 @@ object EagerL1FieldImmutabilityAnalysis
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L1FieldImmutabilityAnalysis(p)
+        val analysis = new L1FieldAssignabilityAnalysis(p)
         val fields = p.allFields
-        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldImmutability)
+        ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldAssignability)
         analysis
     }
 }
@@ -359,16 +363,16 @@ object EagerL1FieldImmutabilityAnalysis
 /**
  * Executor for the lazy field mutability analysis.
  */
-object LazyL1FieldImmutabilityAnalysis
-    extends L1FieldImmutabilityAnalysisScheduler
+object LazyL1FieldAssignabilityAnalysis
+    extends L1FieldAssignabilityAnalysisScheduler
     with BasicFPCFLazyAnalysisScheduler {
 
     override def derivesLazily: Some[PropertyBounds] = Some(derivedProperty)
 
     override def register(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new L1FieldImmutabilityAnalysis(p)
+        val analysis = new L1FieldAssignabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
-            FieldImmutability.key, analysis.determineFieldImmutability
+            FieldAssignability.key, analysis.determineFieldAssignability
         )
         analysis
     }

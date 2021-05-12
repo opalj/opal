@@ -27,7 +27,7 @@ import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.LazyL0ClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldAssignabilityAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0PurityAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyL0TypeImmutabilityAnalysis
@@ -48,7 +48,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaClassFileReader
 import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0FieldAssignabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -66,7 +66,7 @@ import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
@@ -76,10 +76,10 @@ import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL1PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
-import org.opalj.tac.fpcf.analyses.EagerL1FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.EagerL2FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL2FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerL1FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.EagerL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL2FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
@@ -589,24 +589,24 @@ object Purity {
         }
 
         fieldMutabilityAnalysisName match {
-            case Some("L0") if eager ⇒ support ::= EagerL0FieldImmutabilityAnalysis
+            case Some("L0") if eager ⇒ support ::= EagerL0FieldAssignabilityAnalysis
 
-            case Some("L0")          ⇒ support ::= LazyL0FieldImmutabilityAnalysis
+            case Some("L0")          ⇒ support ::= LazyL0FieldAssignabilityAnalysis
 
-            case Some("L1") if eager ⇒ support ::= EagerL1FieldImmutabilityAnalysis
+            case Some("L1") if eager ⇒ support ::= EagerL1FieldAssignabilityAnalysis
 
-            case Some("L1")          ⇒ support ::= LazyL1FieldImmutabilityAnalysis
+            case Some("L1")          ⇒ support ::= LazyL1FieldAssignabilityAnalysis
 
             case Some("L2") if eager ⇒
-                support ::= EagerL2FieldImmutabilityAnalysis
+                support ::= EagerL2FieldAssignabilityAnalysis
                 support ::= EagerUnsoundPrematurelyReadFieldsAnalysis
 
             case Some("L2") ⇒
-                support ::= LazyL2FieldImmutabilityAnalysis
+                support ::= LazyL2FieldAssignabilityAnalysis
                 support ::= LazyUnsoundPrematurelyReadFieldsAnalysis
 
             case Some("L3") ⇒
-                support ::= LazyL3FieldImmutabilityAnalysis
+                support ::= LazyL0FieldImmutabilityAnalysis
                 support ::= LazyUnsoundPrematurelyReadFieldsAnalysis
 
                 if (eager) {
@@ -620,9 +620,9 @@ object Purity {
             case Some("none") ⇒
             case None ⇒
                 analysis match {
-                    case LazyL0PurityAnalysis ⇒ LazyL0FieldImmutabilityAnalysis
-                    case LazyL1PurityAnalysis ⇒ LazyL1FieldImmutabilityAnalysis
-                    case LazyL2PurityAnalysis ⇒ LazyL1FieldImmutabilityAnalysis
+                    case LazyL0PurityAnalysis ⇒ LazyL0FieldAssignabilityAnalysis
+                    case LazyL1PurityAnalysis ⇒ LazyL1FieldAssignabilityAnalysis
+                    case LazyL2PurityAnalysis ⇒ LazyL1FieldAssignabilityAnalysis
                 }
 
             case Some(a) ⇒

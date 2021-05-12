@@ -48,13 +48,10 @@ import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.analyses.cg.uVarForDefSites
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.br.fpcf.properties.TransitivelyImmutableClass
-import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.DependentlyImmutableField
-import org.opalj.br.fpcf.properties.FieldImmutability
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.properties.FieldAssignability
 
 /**
  * Base trait for analyses that analyze the purity of methods.
@@ -62,6 +59,10 @@ import org.opalj.br.fpcf.properties.TypeImmutability
  * Provides types and methods needed for purity analyses.
  */
 trait AbstractPurityAnalysis extends FPCFAnalysis {
+
+    import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+    import org.opalj.br.fpcf.properties.LazilyInitialized
+    import org.opalj.br.fpcf.properties.NonAssignable
 
     /** The type of the TAC domain. */
     type V = DUVar[ValueInformation]
@@ -368,10 +369,11 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
         if (state.ubPurity.isDeterministic) {
             fieldRef.asFieldRead.resolveField match {
                 case Some(field) if field.isStatic ⇒
-                    checkFieldMutability(propertyStore(field, FieldImmutability.key), None)
+
+                    checkFieldMutability(propertyStore(field, FieldAssignability.key), None)
                 case Some(field) ⇒
                     checkFieldMutability(
-                        propertyStore(field, FieldImmutability.key), Some(fieldRef.asGetField.objRef)
+                        propertyStore(field, FieldAssignability.key), Some(fieldRef.asGetField.objRef)
                     )
                 case _ ⇒ // Unknown field
                     if (fieldRef.isGetField) isLocal(fieldRef.asGetField.objRef, SideEffectFree)
@@ -384,13 +386,12 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Examines the influence that a given field mutability has on the method's purity.
      */
     def checkFieldMutability(
-        ep:     EOptionP[Field, FieldImmutability],
+        ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit = ep match {
-        case LBP(NonTransitivelyImmutableField |
-            DependentlyImmutableField(_) |
-            TransitivelyImmutableField) ⇒ // Immutable fields don't impede purity
-        case _: FinalEP[Field, FieldImmutability] ⇒ // Mutable field
+        case LBP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) ⇒
+        // not assignable fields don't impede purity
+        case _: FinalEP[Field, FieldAssignability] ⇒ // Mutable field
             if (objRef.isDefined) {
                 if (state.ubPurity.isDeterministic)
                     isLocal(objRef.get, SideEffectFree)
@@ -406,7 +407,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
      * Analyses must implement this method with the behavior they need, e.g. registering dependees.
      */
     def handleUnknownFieldMutability(
-        ep:     EOptionP[Field, FieldImmutability],
+        ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: StateType): Unit
 

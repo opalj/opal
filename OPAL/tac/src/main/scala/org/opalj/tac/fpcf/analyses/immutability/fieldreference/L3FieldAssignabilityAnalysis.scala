@@ -95,7 +95,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
     val considerLazyInitialization: Boolean =
         project.config.getBoolean(
-            "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization"
+            "org.opalj.fpcf.analyses.L3FieldAssignabilityAnalysis.considerLazyInitialization"
         )
 
     def doDetermineFieldAssignability(entity: Entity): PropertyComputationResult = {

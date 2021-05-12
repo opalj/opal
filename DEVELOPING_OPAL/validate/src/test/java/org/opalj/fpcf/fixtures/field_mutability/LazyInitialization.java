@@ -28,14 +28,14 @@
  */
 package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns.
@@ -45,9 +45,9 @@ import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
 
 class Simple {
 
-    @NonTransitivelyImmutableField(value = "Simple lazy initialization", analyses = L2FieldImmutabilityAnalysis.class)
+    @NonTransitivelyImmutableField(value = "Simple lazy initialization", analyses = L2FieldAssignabilityAnalysis.class)
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
+            analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -62,7 +62,7 @@ class Local {
 
     @NonTransitivelyImmutableField("Lazy initialization with local")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
+            analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -92,7 +92,7 @@ class LocalReversed {
 
     @NonTransitivelyImmutableField("Lazy initialization with local (reversed)")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
+            analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -108,7 +108,7 @@ class LocalReload {
 
     @NonTransitivelyImmutableField("Lazy initialization with local (reloading the field's value after the write)")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
+            analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -125,7 +125,7 @@ class SimpleReversed {
 
     @NonTransitivelyImmutableField("Simple lazy initialization (reversed)")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
+            analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -183,10 +183,10 @@ class WrongDefault {
 class DeterministicCall {
 
     @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization with call to deterministic method",
-            analyses = L3FieldImmutabilityAnalysis.class)
+            analyses = L0FieldImmutabilityAnalysis.class)
     //@NotThreadSafeLazyInitialized("Lazy initialization with call to deterministic method")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
+            analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -222,7 +222,7 @@ class DeterministicCallOnFinalField {
 
     @NonTransitivelyImmutableField("Lazy initialization with call to deterministic method on final field")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
+            analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class })
     private int x;
 
     @NonTransitivelyImmutableField("Declared final field")
@@ -305,7 +305,7 @@ class DoubleLocalAssignment {
 
     @NonTransitivelyImmutableField("Lazy initialization with a local that is updated twice")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
-            analyses = { L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class })
+            analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class })
     private int x;
 
     public int init() {
@@ -357,11 +357,11 @@ class ExceptionInInitialization {
      * @note As the field write is dead, this field is really 'effectively final' as it will never
      * be different from the default value.
      */
-    @TransitivelyImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
+    @TransitivelyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "Field is never initialized, so it stays on its default value",
-            analyses = { L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class })
+            analyses = { L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class })
     @MutableField(value = "Instance field not considered by analysis",
-            analyses = L0FieldImmutabilityAnalysis.class)
+            analyses = L0FieldAssignabilityAnalysis.class)
     private int x;
 
     private int getZero() {

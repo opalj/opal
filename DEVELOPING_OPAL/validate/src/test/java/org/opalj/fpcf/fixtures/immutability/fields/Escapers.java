@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.fields;
 
-import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
@@ -10,9 +10,9 @@ import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
 public class Escapers{
@@ -53,14 +53,14 @@ class TransitiveEscape2 {
 }
 class OneThatNotEscapesAndOneWithDCL {
     @NonTransitivelyImmutableField(value = "immutable field reference and mutable type",
-            analyses = L3FieldImmutabilityAnalysis.class)
+            analyses = L0FieldImmutabilityAnalysis.class)
     @NonAssignableFieldReference(value = "field is only written once",
             analyses = L3FieldAssignabilityAnalysis.class)
     private ClassWithPublicFields tmc1 = new ClassWithPublicFields();
 
     @MutableField(value = "mutable reference", analyses = {
-            L0FieldImmutabilityAnalysis.class, L1FieldImmutabilityAnalysis.class,
-            L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class
+            L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
+            L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class
     })
     @LazyInitializedNotThreadSafeFieldReference("")
     private ClassWithPublicFields tmc2;
@@ -127,7 +127,7 @@ class GenericNotEscapesMutualEscapeDependencyAbleToResolve<T>{
     @NonAssignableFieldReference("")
     private FinalEmptyClass fec = new FinalEmptyClass();
 
-    @DependentImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class, parameter = "T")
+    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class, parameter = "T")
     @NonAssignableFieldReference("")
     private SimpleGenericClass<T> sgc;
 

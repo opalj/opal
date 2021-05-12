@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_field_references;
 
-import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
@@ -253,7 +253,7 @@ public class DoubleCheckedLocking {
     }
 
     @LazyInitializedNotThreadSafeFieldReference(value = "the field read for the guard is outside the synchronized block",
-            analyses = L0FieldImmutabilityAnalysis.class)
+            analyses = L0FieldAssignabilityAnalysis.class)
     private Object fieldReadOutsideSynchronizedBlock;
 
     public Object getFieldReadOutsideSynchronizedBlock(){
@@ -265,7 +265,7 @@ public class DoubleCheckedLocking {
         return fieldReadOutsideSynchronizedBlock;
     }
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "the field read for the guard is outside the synchronized block", analyses = L0FieldImmutabilityAnalysis.class)
+    @LazyInitializedNotThreadSafeFieldReference(value = "the field read for the guard is outside the synchronized block", analyses = L0FieldAssignabilityAnalysis.class)
     private Object fieldReadOutsideSynchronizedBlockEarlyReturn;
 
     public Object getFieldReadOutsideSynchronizedBlockEarlyReturn(){

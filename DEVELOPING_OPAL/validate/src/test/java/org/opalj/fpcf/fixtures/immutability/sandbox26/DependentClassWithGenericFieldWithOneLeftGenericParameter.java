@@ -1,12 +1,12 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox26;
 
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
-import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
 final class DependentClassWithGenericFieldWithOneLeftGenericParameter<T> {
 
     @DependentImmutableField(value = "has one left generic parameter T and no shallow or mutable types",
-            analyses = L3FieldImmutabilityAnalysis.class)
+            analyses = L0FieldImmutabilityAnalysis.class)
     private SimpleGenericClass<T, FinalEmptyClass,FinalEmptyClass> sgc;
 
     public DependentClassWithGenericFieldWithOneLeftGenericParameter(T t) {

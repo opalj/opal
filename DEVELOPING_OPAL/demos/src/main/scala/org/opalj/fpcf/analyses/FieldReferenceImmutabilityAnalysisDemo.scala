@@ -19,7 +19,7 @@ import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.EagerL3FieldAssignabilityAnalysis
@@ -66,7 +66,7 @@ object FieldReferenceImmutabilityAnalysisDemo extends ProjectAnalysisApplication
             propertyStore = analysesManager
                 .runAll(
                     EagerL3FieldAssignabilityAnalysis,
-                    LazyL3FieldImmutabilityAnalysis,
+                    LazyL0FieldImmutabilityAnalysis,
                     LazyL1ClassImmutabilityAnalysis,
                     LazyL1TypeImmutabilityAnalysis,
                     LazyUnsoundPrematurelyReadFieldsAnalysis,

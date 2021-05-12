@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_f
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
-import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
 import java.util.Random;
@@ -246,7 +246,7 @@ public class DCL {
 class DoubleCheckedLockingClassWithStaticFields {
 
         @LazyInitializedThreadSafeFieldReference(value = "standard dcl pattern within a static method",
-                analyses = L3FieldImmutabilityAnalysis.class)
+                analyses = L0FieldImmutabilityAnalysis.class)
         private static DoubleCheckedLockingClassWithStaticFields instance;
         public static DoubleCheckedLockingClassWithStaticFields getInstance() {
             if(instance==null){

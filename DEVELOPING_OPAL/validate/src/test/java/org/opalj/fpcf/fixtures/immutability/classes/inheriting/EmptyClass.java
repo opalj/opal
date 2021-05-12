@@ -2,18 +2,18 @@
 package org.opalj.fpcf.fixtures.immutability.classes.inheriting;
 
 import org.opalj.br.fpcf.analyses.L0ClassImmutabilityAnalysis;
-import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
 
 @MutableType(value = "class is extensible",
@@ -46,8 +46,8 @@ final class EmptyClassInheritingMutableClass extends ClassWithMutableField {
         analyses = {L0ClassImmutabilityAnalysis.class, L1ClassImmutabilityAnalysis.class})
 class ClassWithMutableField {
 
-    @MutableField(value = "Mutable reference", analyses = {L0FieldImmutabilityAnalysis.class,
-            L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class, L3FieldImmutabilityAnalysis.class})
+    @MutableField(value = "Mutable reference", analyses = {L0FieldAssignabilityAnalysis.class,
+            L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
     @AssignableFieldReference(value = "public field", analyses = L3FieldAssignabilityAnalysis.class)
     public int n= 0;
 }

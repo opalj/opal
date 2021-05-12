@@ -45,7 +45,6 @@ import org.opalj.br.fpcf.properties.ExtensibleGetter
 import org.opalj.br.fpcf.properties.ExtensibleLocalField
 import org.opalj.br.fpcf.properties.ExtensibleLocalFieldWithGetter
 import org.opalj.br.fpcf.properties.FieldLocality
-import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.FreshReturnValue
 import org.opalj.br.fpcf.properties.Getter
 import org.opalj.br.fpcf.properties.ImpureByAnalysis
@@ -74,6 +73,7 @@ import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.MethodDescriptor
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.br.fpcf.properties.FieldAssignability
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -116,9 +116,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             var lbPurity:      Purity         = CompileTimePure,
             var ubPurity:      Purity         = CompileTimePure
     ) extends AnalysisState {
+
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
 
-        var fieldMutabilityDependees: Map[Field, (EOptionP[Field, FieldImmutability], Set[Option[Expr[V]]])] = Map.empty
+        var fieldMutabilityDependees: Map[Field, (EOptionP[Field, FieldAssignability], Set[Option[Expr[V]]])] = Map.empty
 
         var classImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, ClassImmutability], Set[Expr[V]])] = Map.empty
         var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] = Map.empty
@@ -161,7 +162,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         def addFieldMutabilityDependee(
             f:     Field,
-            eop:   EOptionP[Field, FieldImmutability],
+            eop:   EOptionP[Field, FieldAssignability],
             owner: Option[Expr[V]]
         ): Unit = {
             if (fieldMutabilityDependees.contains(f)) {
@@ -587,7 +588,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * Adds the dependee necessary if a field mutability is not known yet.
      */
     override def handleUnknownFieldMutability(
-        ep:     EOptionP[Field, FieldImmutability],
+        ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
         state.addFieldMutabilityDependee(ep.e, ep, objRef)
@@ -742,12 +743,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 dependees._2.foreach { e ⇒
                     checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]], e)
                 }
-            case FieldImmutability.key ⇒
+            case FieldAssignability.key ⇒
                 val e = eps.e.asInstanceOf[Field]
                 val dependees = state.fieldMutabilityDependees(e)
                 state.removeFieldMutabilityDependee(e)
                 dependees._2.foreach { e ⇒
-                    checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldImmutability]], e)
+                    checkFieldMutability(eps.asInstanceOf[EOptionP[Field, FieldAssignability]], e)
                 }
             case ClassImmutability.key ⇒
                 val e = eps.e.asInstanceOf[ObjectType]
@@ -952,7 +953,7 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     override def uses: Set[PropertyBounds] = {
         Set(
-            PropertyBounds.lub(FieldImmutability),
+            PropertyBounds.lub(FieldAssignability),
             PropertyBounds.lub(ClassImmutability),
             PropertyBounds.lub(TypeImmutability),
             PropertyBounds.lub(StaticDataUsage),

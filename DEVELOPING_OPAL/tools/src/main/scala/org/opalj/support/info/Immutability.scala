@@ -47,7 +47,7 @@ import org.opalj.br.fpcf.properties.MutableClass
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableClass
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
-import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.bytecode.JRELibraryFolder
@@ -170,7 +170,7 @@ object Immutability {
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
                 LazyL3FieldAssignabilityAnalysis,
-                LazyL3FieldImmutabilityAnalysis,
+                LazyL0FieldImmutabilityAnalysis,
                 LazyL1ClassImmutabilityAnalysis,
                 LazyL1TypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
@@ -224,7 +224,7 @@ object Immutability {
                                     f ⇒ propertyStore.force(f, br.fpcf.properties.FieldAssignability.key)
                                 )
                         case Fields ⇒
-                            if (css.contains(LazyL3FieldImmutabilityAnalysis))
+                            if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
                                     f ⇒ propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
                                 )
@@ -243,7 +243,7 @@ object Immutability {
                                 allFieldsInProjectClassFiles.foreach(f ⇒ {
                                     propertyStore.force(f, br.fpcf.properties.FieldAssignability.key)
                                 })
-                            if (css.contains(LazyL3FieldImmutabilityAnalysis))
+                            if (css.contains(LazyL0FieldImmutabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
                                     f ⇒ propertyStore.force(f, br.fpcf.properties.FieldImmutability.key)
                                 )

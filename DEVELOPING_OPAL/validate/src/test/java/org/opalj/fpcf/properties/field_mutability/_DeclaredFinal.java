@@ -29,11 +29,11 @@
 package org.opalj.fpcf.properties.field_mutability;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
-import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitiveImmutableFieldMatcher;
-import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -56,8 +56,8 @@ public @interface _DeclaredFinal {
     String value() ; // default = "N/A";
 
     Class<? extends FPCFAnalysis>[] analyses() default {
-        L0FieldImmutabilityAnalysis.class,
-            L1FieldImmutabilityAnalysis.class,
-            L2FieldImmutabilityAnalysis.class
+        L0FieldAssignabilityAnalysis.class,
+            L1FieldAssignabilityAnalysis.class,
+            L2FieldAssignabilityAnalysis.class
     };
 }

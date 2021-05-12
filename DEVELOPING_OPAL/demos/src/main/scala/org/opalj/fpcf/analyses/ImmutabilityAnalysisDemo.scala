@@ -15,7 +15,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
 import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.LazyL0FieldImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyL0FieldAssignabilityAnalysis
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
@@ -86,7 +86,7 @@ object ImmutabilityAnalysisDemo extends ProjectAnalysisApplication {
             propertyStore.setupPhase(Set[PropertyKind](
                 FieldImmutability.key, ClassImmutability.key, TypeImmutability.key
             ))
-            LazyL0FieldImmutabilityAnalysis.register(project, propertyStore, null)
+            LazyL0FieldAssignabilityAnalysis.register(project, propertyStore, null)
             EagerL0ClassImmutabilityAnalysis.start(project, propertyStore, null)
             EagerL0TypeImmutabilityAnalysis.start(project, propertyStore, null)
 

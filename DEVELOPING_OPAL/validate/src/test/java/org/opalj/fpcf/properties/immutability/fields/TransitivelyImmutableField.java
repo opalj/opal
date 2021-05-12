@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 
 import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
 /**
  * Annotation to state that the annotated field is deep immutable.
@@ -22,5 +22,5 @@ public @interface TransitivelyImmutableField {
      */
     String value();
 
-    Class<? extends FPCFAnalysis>[] analyses() default { L3FieldImmutabilityAnalysis.class };
+    Class<? extends FPCFAnalysis>[] analyses() default { L0FieldImmutabilityAnalysis.class };
 }

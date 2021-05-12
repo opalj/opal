@@ -50,13 +50,10 @@ import org.opalj.br.fpcf.properties.cg.NoCallers
 import org.opalj.br.MethodDescriptor
 import org.opalj.ai.isImmediateVMException
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.DependentlyImmutableField
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.ClassImmutability
-import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.properties.FieldAssignability
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -83,8 +80,11 @@ import org.opalj.br.fpcf.properties.TypeImmutability
  */
 class L1PurityAnalysis private[analyses] (val project: SomeProject) extends AbstractPurityAnalysis {
 
+    import org.opalj.br.fpcf.properties.FieldAssignability
+
     /**
      * Holds the state of this analysis.
+     *
      * @param lbPurity The current minimum purity level for the method
      * @param ubPurity The current maximum purity level for the method that will be assigned by
      *                  checkPurityOfX methods to aggregrate the purity
@@ -204,7 +204,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * known yet.
      */
     override def handleUnknownFieldMutability(
-        ep:     EOptionP[Field, FieldImmutability],
+        ep:     EOptionP[Field, FieldAssignability],
         objRef: Option[Expr[V]]
     )(implicit state: State): Unit = {
         if (objRef.isEmpty || !isLocal(objRef.get, Pure)) state.dependees += ep
@@ -262,6 +262,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      *     - classes files for class types returned (for their mutability)
      */
     def continuation(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
+        import org.opalj.br.fpcf.properties.Assignable
+        import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+        import org.opalj.br.fpcf.properties.FieldAssignability
+        import org.opalj.br.fpcf.properties.LazilyInitialized
         state.dependees = state.dependees.filter(_.e ne eps.e)
         val oldPurity = state.ubPurity
 
@@ -280,14 +284,12 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalP(NonTransitivelyImmutableField |
-                DependentlyImmutableField(_) |
-                TransitivelyImmutableField) ⇒ // Reading eff. final fields
+            case FinalP(Assignable | EffectivelyNonAssignable | LazilyInitialized) ⇒ // Reading eff. final fields
             case FinalP(TransitivelyImmutableType |
                 TransitivelyImmutableType) ⇒ // Returning immutable reference
 
             // Cases resulting in side-effect freeness
-            case FinalP(_: FieldImmutability | // Reading non-final field
+            case FinalP(_: FieldAssignability | // Reading non-final field
                 _: TypeImmutability |
                 _: ClassImmutability) ⇒ // Returning mutable reference
                 atMost(SideEffectFree)
@@ -437,10 +439,11 @@ trait L1PurityAnalysisScheduler extends FPCFAnalysisScheduler {
         Seq(DeclaredMethodsKey, ConfiguredPurityKey)
 
     override def uses: Set[PropertyBounds] = {
+
         Set(
             PropertyBounds.ub(TACAI),
             PropertyBounds.ub(Callees),
-            PropertyBounds.lub(FieldImmutability),
+            PropertyBounds.lub(FieldAssignability),
             PropertyBounds.lub(ClassImmutability),
             PropertyBounds.lub(TypeImmutability),
             PropertyBounds.lub(Purity)

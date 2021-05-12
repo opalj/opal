@@ -32,14 +32,13 @@ import org.opalj.br.fpcf.properties.Pure
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.instructions._
 import org.opalj.br.fpcf.properties.DependentlyImmutableType
-import org.opalj.br.fpcf.properties.MutableField
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
-import org.opalj.br.fpcf.properties.TransitivelyImmutableField
-import org.opalj.br.fpcf.properties.DependentlyImmutableField
-import org.opalj.br.fpcf.properties.NonTransitivelyImmutableField
 import org.opalj.br.fpcf.properties.TransitivelyImmutableType
-import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.TypeImmutability
+import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
+import org.opalj.br.fpcf.properties.FieldAssignability
+import org.opalj.br.fpcf.properties.LazilyInitialized
+import org.opalj.br.fpcf.properties.NonAssignable
 
 /**
  * Very simple, fast, sound but also imprecise analysis of the purity of methods. See the
@@ -119,9 +118,9 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                             }
                             if (field.isNotFinal) {
 
-                                propertyStore(field, FieldImmutability.key) match {
-                                    case FinalP(NonTransitivelyImmutableField | DependentlyImmutableField(_) | TransitivelyImmutableField) ⇒
-                                    case _: FinalEP[Field, FieldImmutability] ⇒
+                                propertyStore(field, FieldAssignability.key) match {
+                                    case FinalP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) ⇒
+                                    case _: FinalEP[Field, FieldAssignability] ⇒
                                         return Result(definedMethod, ImpureByAnalysis);
                                     case ep ⇒
                                         dependees += ep
@@ -218,6 +217,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
         // This function computes the “purity for a method based on the properties of its dependees:
         // other methods (Purity), types (immutability), fields (effectively final)
         def c(eps: SomeEPS): ProperPropertyComputationResult = {
+            import org.opalj.br.fpcf.properties.Assignable
             // Let's filter the entity.
             dependees = dependees.filter(_.e ne eps.e)
 
@@ -229,7 +229,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
                     dependees += eps
                     InterimResult(definedMethod, ImpureByAnalysis, Pure, dependees, c)
 
-                case FinalP(TransitivelyImmutableField | DependentlyImmutableField(_) | NonTransitivelyImmutableField | TransitivelyImmutableType) ⇒
+                case FinalP(NonAssignable | EffectivelyNonAssignable | LazilyInitialized) ⇒
                     if (dependees.isEmpty) {
                         Result(definedMethod, Pure)
                     } else {
@@ -243,7 +243,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 
                 // The type is at most conditionally immutable.
                 case FinalP(_: TypeImmutability) ⇒ Result(definedMethod, ImpureByAnalysis)
-                case FinalP(MutableField)        ⇒ Result(definedMethod, ImpureByAnalysis)
+                case FinalP(Assignable)          ⇒ Result(definedMethod, ImpureByAnalysis)
 
                 case FinalP(CompileTimePure | Pure) ⇒
                     if (dependees.isEmpty)
@@ -338,7 +338,7 @@ class L0PurityAnalysis private[analyses] ( final val project: SomeProject) exten
 trait L0PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
     final override def uses: Set[PropertyBounds] = {
-        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldImmutability))
+        Set(PropertyBounds.ub(TypeImmutability), PropertyBounds.ub(FieldAssignability))
     }
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)

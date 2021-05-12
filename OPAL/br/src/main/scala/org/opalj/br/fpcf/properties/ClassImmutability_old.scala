@@ -63,7 +63,7 @@ sealed trait ClassImmutabilityPropertyMetaInformation_old extends PropertyMetaIn
  * ==Native Methods==
  * Unknown native methods are considered as mutating the state unless all state is
  * explicitly final; however, this is already handled by the
- * [[org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis]].
+ * [[org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis]].
  *
  * ==Identifying Immutable Objects in Practice==
  * Identifying real world immutable classes as such by means of an analysis is in general a

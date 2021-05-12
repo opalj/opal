@@ -14,7 +14,7 @@ import org.opalj.br.fpcf.analyses.EagerL0TypeImmutabilityAnalysis
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL0ClassImmutabilityAnalysis
-import org.opalj.br.fpcf.analyses.EagerL0FieldImmutabilityAnalysis
+import org.opalj.br.fpcf.analyses.EagerL0FieldAssignabilityAnalysis
 
 /**
  * Determines the immutability of the classes of a project.
@@ -43,11 +43,11 @@ object ImmutabilityAnalysis extends ProjectAnalysisApplication {
         val ps = time {
             val ps = get(PropertyStoreKey)
             val derivedPKs = Set.empty ++
-                EagerL0FieldImmutabilityAnalysis.derives.map(_.pk) ++
+                EagerL0FieldAssignabilityAnalysis.derives.map(_.pk) ++
                 EagerL0ClassImmutabilityAnalysis.derives.map(_.pk) ++
                 EagerL0TypeImmutabilityAnalysis.derives.map(_.pk)
             ps.setupPhase(derivedPKs)
-            EagerL0FieldImmutabilityAnalysis.start(project, ps, null)
+            EagerL0FieldAssignabilityAnalysis.start(project, ps, null)
             EagerL0ClassImmutabilityAnalysis.start(project, ps, null)
             EagerL0TypeImmutabilityAnalysis.start(project, ps, null)
             ps.waitOnPhaseCompletion()

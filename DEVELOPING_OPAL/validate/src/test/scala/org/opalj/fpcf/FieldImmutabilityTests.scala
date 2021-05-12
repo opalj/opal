@@ -12,7 +12,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL3FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
@@ -105,7 +105,7 @@ class FieldImmutabilityTests extends PropertiesTest {
                 LazyL3FieldAssignabilityAnalysis,
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
-                EagerL3FieldImmutabilityAnalysis,
+                EagerL0FieldImmutabilityAnalysis,
                 LazyL1ClassImmutabilityAnalysis,
                 LazyL1TypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,

@@ -44,7 +44,7 @@ import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -80,7 +80,7 @@ object UnusedResults extends ProjectAnalysisApplication {
             LazyInterProceduralEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
-            LazyL1FieldImmutabilityAnalysis,
+            LazyL1FieldAssignabilityAnalysis,
             LazyL0ClassImmutabilityAnalysis,
             LazyL0TypeImmutabilityAnalysis,
             EagerL2PurityAnalysis

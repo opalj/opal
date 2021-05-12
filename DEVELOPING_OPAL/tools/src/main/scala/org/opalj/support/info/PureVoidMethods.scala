@@ -22,7 +22,7 @@ import org.opalj.br.fpcf.properties.SideEffectFree
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.fpcf.analyses.purity.EagerL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.LazyL1FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.LazyL1FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 
@@ -53,7 +53,7 @@ object PureVoidMethods extends ProjectAnalysisApplication {
             LazyInterProceduralEscapeAnalysis,
             LazyReturnValueFreshnessAnalysis,
             LazyFieldLocalityAnalysis,
-            LazyL1FieldImmutabilityAnalysis,
+            LazyL1FieldAssignabilityAnalysis,
             LazyL0ClassImmutabilityAnalysis,
             LazyL0TypeImmutabilityAnalysis,
             EagerL2PurityAnalysis

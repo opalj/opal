@@ -5,7 +5,7 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
-import org.opalj.tac.fpcf.analyses.immutability.L3FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
 public class ArrayInitialization {
 
@@ -49,7 +49,7 @@ class SimpleLazyObjectsInstantiation{
 
 class EscapingObjectDeep {
     //TODO
-    @TransitivelyImmutableField(value = "", analyses = L3FieldImmutabilityAnalysis.class)
+    @TransitivelyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private Object o;
 
     public synchronized Object getO(){
@@ -62,7 +62,7 @@ class EscapingObjectDeep {
 class EscapingObjectWithDifferenAssignments {
 
     @TransitivelyImmutableField(value = "there are more than one object possibly assigned",
-            analyses = L3FieldImmutabilityAnalysis.class)
+            analyses = L0FieldImmutabilityAnalysis.class)
     private final Object o;
 
     public EscapingObjectWithDifferenAssignments() {
@@ -92,7 +92,7 @@ class ClassUsingEmptyClass {
 class ClassUsingEmptyClassExtensible {
 
     @NonTransitivelyImmutableField(value = "all the concrete object that can be assigned are not known",
-            analyses = L3FieldImmutabilityAnalysis.class)
+            analyses = L0FieldImmutabilityAnalysis.class)
     private EmptyClass emptyClass = new EmptyClass();
 
     public ClassUsingEmptyClassExtensible(EmptyClass emptyClass) {

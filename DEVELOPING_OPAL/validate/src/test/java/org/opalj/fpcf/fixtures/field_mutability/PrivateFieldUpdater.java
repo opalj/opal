@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.field_mutability;
 
-import org.opalj.br.fpcf.analyses.L0FieldImmutabilityAnalysis;
+import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.tac.fpcf.analyses.L1FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.L2FieldImmutabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 
 /**
  * Simple demo class which updates the private field of another instance of this class.
@@ -14,10 +14,10 @@ public class PrivateFieldUpdater {
 
     @NonTransitivelyImmutableField(
             value = "only initialized by the constructor",
-            analyses = { L1FieldImmutabilityAnalysis.class, L2FieldImmutabilityAnalysis.class }
+            analyses = { L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class }
     )
     @MutableField(value = "instance field not recognized by analysis",
-            analyses = L0FieldImmutabilityAnalysis.class)
+            analyses = L0FieldAssignabilityAnalysis.class)
     private String name;
 
     @MutableField("incremented whenever `this` object is passed to another `NonFinal` object")
