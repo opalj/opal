@@ -48,6 +48,7 @@ The abstract interpretation framework is a highly-customizable framework for the
 
     libraryDependencies += "de.opal-project" % "abstract-interpretation-framework_2.12" % "4.0.0"
 
+<<<<<<< HEAD
 ### Three-Address Code
 The three-address-code toolkit provides a more human readable representation of the bytecode that includes additional information derived by the abstract interpretation framework.
 
