@@ -1,77 +1,28 @@
 # OPAL
 
-OPAL is an extensible, Java bytecode processing, engineering, manipulation and analysis library written in Scala 2.12.x. OPAL supports Java 16 Bytecode; OPAL in particular provides support to facilitate the analysis of Java 8-10 lambda expressions (*Invokedynamic* instructions). 
+OPAL is a next-generation, highly configurable and scalable static analysis platform that supports developers in systematically chosing the best tradeoffs between precision, soundness and performance of static analyses.
+It does so by hosting a wide and extensible collection of modular analyses modules that can be automatically composed in a case-by-case manner to collaboratively reason about a particular software at hand.
+OPAL manages the execution of analysis modules and adjusts it as needed for scalability.
 
-The latest release is *4.0.0*, the latest snapshot version is *4.0.1-SNAPSHOT*. Both versions are found on Maven central. If you want to use the snapshot version do not forget to add the respective resolver:
+OPAL can be used for Java bytecode processing, engineering, manipulation and analysis.
+It is written in Scala 2.12.x and supports Java 16 Bytecode; OPAL in particular provides support to facilitate the analysis of Java 8 lambda expressions (*Invokedynamic* instructions) and Java 15 dynamic constants. 
 
-    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+The latest release is *4.0.0*, the latest snapshot version is *4.0.1-SNAPSHOT*.
+Both versions are found on [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cde.opal-project).
+Look [here](/UsingOPAL.html) for information on how to use OPAL in your project.
 
-If you want to use OPAL for the development of static analyses, you can either use the latest release found on Maven Central or just checkout and build the current development snapshot of OPAL found one BitBucket. In general, using the development snapshot; i.e., the `develop` branch of OPAL is very safe and gives you access to the latest features, improvements and bug fixes.
+In-depth tutorials on developing static analyses with OPAL can be found in the navigation menu on the left, in particular starting with an introduction to [writing fixed-point analyses](/tutorial/FixedPointAnalyses.html).
 
-### Using The Latest Development Snapshot
+Publications about OPAL's core concepts and about uses of OPAL in scientific research can be found [here](/Publications.html)
 
-Go to [GitHub](https://github.com/opalj/OPAL) to checkout OPAL and to read how to compile and deploy it.
-
-
-### Using The Latest Release
-
-The latest release is always found on [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cde.opal-project) and can therefore be added to your project as standard library dependency.
-
-OPAL consists of multiple sub projects and tools which are described in the following.
-
-### Framework
-Combines all of OPAL's subproject for ease of use.
-
-    libraryDependencies += "de.opal-project" % "framework_2.12" % "4.0.0"
-
-### Common
-Contains general data structures and algorithms particular useful in the context of static analysis. E.g., graph algorithms, such as
-an implementation of Tarjan's algorithm for finding strongly connected components. The implementations are designed with scalability in mind and should be able to process millions of nodes.
-
-    libraryDependencies += "de.opal-project" % "common_2.12" % "4.0.0"
-
-### Static Analysis Framework
-The static analysis framework is a generally useful framework for developing static analyses. The framework has wide ranging support for very different types of static analyses and automatically parallels their execution. The framework only depends on `Common` and can be flexibly combined with other static analyses frameworks (e.g., BCEL, SOOT, Wala, ASM,... ) 
-
-    libraryDependencies += "de.opal-project" % "static-analysis-infrastructure_2.12" % "4.0.0"
-
-### Bytecode Representation
-The bytecode toolkit implements a generic infrastructure for parsing Java class files. Additionally,
-it provides a default representation for Java bytecode that can be used to analyze class files. That
-representation provides extensive support for pattern matching on Java bytecode to facilitate writing
-basic analyses.
-
-    libraryDependencies += "de.opal-project" % "bytecode-representation_2.12" % "4.0.0"
-
-### Abstract Interpretation Framework
-The abstract interpretation framework is a highly-customizable framework for the lightweight abstract interpretation of the Java bytecode. The framework was designed with ease of use and customizability in mind.
-
-    libraryDependencies += "de.opal-project" % "abstract-interpretation-framework_2.12" % "4.0.0"
-
-<<<<<<< HEAD
-### Three-Address Code
-The three-address-code toolkit provides a more human readable representation of the bytecode that includes additional information derived by the abstract interpretation framework.
-
-    libraryDependencies += "de.opal-project" % "three-address-code_2.12" % "4.0.0"
-
-### Architecture Validation Framework
-The architecture validation framework facilitates the development of tools for specifying and validating software architectures.
-
-    libraryDependencies += "de.opal-project" % "architecture-validation_2.12" % "4.0.0"
-
-[comment]: # "Exploring the Abstract Interpretation Framework"
-
-[comment]: # "To get a good, first idea what the abstract interpretation framework can do, you can use the *BugPicker*. It enables you to perform some local abstract interpretations. To get good results it is usually necessary to load the JDK and all related libraries."
-
-## OPAL based Tools
+[comment]: ## "OPAL based Tools"
 
 [comment]: # "### BugPicker"
 
 [comment]: # "Find bugs in your Java project using [BugPicker](tools/bugpicker/index.php)."
 
 ### OPAL Java Bytecode Disassembler
-[Disassembles](DeveloperTools.html) your Java bytecode. It is available as a standalone tool and as plugin for ATOM, IntelliJ IDEA and Visual Studio Code.
 
-## Using OPAL
-
-OPAL comes with a large number of code [snippets](https://bitbucket.org/snippets/delors/) and [small (i.e., one-class) analyses](https://github.com/opalj/OPAL/tree/develop/DEVELOPING_OPAL/demos/src/main/scala/org/opalj) to demonstrate various features.
+OPAL's [Java Bytecode Disassembler](DeveloperTools.html) disassembles your Java bytecode.
+OPAL can produce the raw bytecode or a more readable three-address code that optionally contains additional information derived from abstract interpretation.
+The Bytecode Disassembler is available as a standalone tool and as plugin for ATOM, IntelliJ IDEA and Visual Studio Code.
