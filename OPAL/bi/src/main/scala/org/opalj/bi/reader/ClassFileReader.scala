@@ -554,8 +554,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         classFileHandler: (ClassFile, URL) ⇒ Unit,
         exceptionHandler: ExceptionHandler
     ): Unit = {
-        val pathToEntry = jarFileURL.substring(0, jarFileURL.length - 3)
-        val entry = pathToEntry.substring(pathToEntry.lastIndexOf('/') + 1)
+        val pathToEntry = jarFileURL.substring(0, jarFileURL.length - 2)
+        val entry = pathToEntry.substring(4, pathToEntry.lastIndexOf('/') + 1)
         try {
             val jarFile = File.createTempFile(entry, ".zip")
 
