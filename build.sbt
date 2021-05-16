@@ -9,7 +9,7 @@ import sbtunidoc.ScalaUnidocPlugin
 name := "OPAL Library"
 
 // SNAPSHOT
-version in ThisBuild := "4.0.1-SNAPSHOT"
+ThisBuild / version := "4.0.1-SNAPSHOT"
 // RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021
 // SNAPSHOT version in ThisBuild := "3.0.0-SNAPSHOT" // available since June 7th, 2019
 // RELEASED version in ThisBuild := "2.0.1" // October 10th, 2018
@@ -23,52 +23,52 @@ version in ThisBuild := "4.0.1-SNAPSHOT"
 // RELEASED version in ThisBuild := "0.8.10"
 // RELEASED version in ThisBuild := "0.8.9"
 
-organization in ThisBuild := "de.opal-project"
-homepage in ThisBuild := Some(url("https://www.opal-project.de"))
-licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licenses/BSD-2-Clause"))
+ThisBuild / organization := "de.opal-project"
+ThisBuild / homepage := Some(url("https://www.opal-project.de"))
+ThisBuild / licenses := Seq("BSD-2-Clause" -> url("https://opensource.org/licenses/BSD-2-Clause"))
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-scalaVersion in ThisBuild := "2.12.13"
+ThisBuild / scalaVersion := "2.12.13"
 
 ScalacConfiguration.globalScalacOptions
 
-resolvers in ThisBuild += Resolver.jcenterRepo
-resolvers in ThisBuild += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
+ThisBuild / resolvers += Resolver.jcenterRepo
+ThisBuild / resolvers += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/"
 
 // OPAL already parallelizes most tests/analyses internally!
-parallelExecution in ThisBuild := false
-parallelExecution in Global := false
+ThisBuild / parallelExecution := false
+Global / parallelExecution := false
 
-logBuffered in ThisBuild := false
+ThisBuild / logBuffered := false
 
-javacOptions in ThisBuild ++= Seq("-encoding", "utf8", "-source", "1.8")
+ThisBuild / javacOptions ++= Seq("-encoding", "utf8", "-source", "1.8")
 
-testOptions in ThisBuild := {
+ThisBuild /testOptions := {
   baseDirectory
     .map(bd ⇒ Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
     .value
 }
 
-testOptions in ThisBuild += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "2")
+ThisBuild / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "2")
 
-testOptions in ThisBuild += Tests.Argument("-o")
+ThisBuild / testOptions += Tests.Argument("-o")
 
 // Required to get relative links in the generated source code documentation.
-scalacOptions in (ScalaUnidoc, unidoc) := {
+ScalaUnidoc / unidoc / scalacOptions := {
   baseDirectory.map(bd ⇒ Seq("-sourcepath", bd.getAbsolutePath)).value
 }
 
-scalacOptions in (ScalaUnidoc, unidoc) ++=
+ScalaUnidoc / unidoc / scalacOptions ++=
   Opts.doc.sourceUrl(
   	"https://raw.githubusercontent.com/stg-tud/opal/" +
       (if (isSnapshot.value) "develop" else "master") +
       "/€{FILE_PATH}.scala"
   )
-scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.version(version.value)
-scalacOptions in (ScalaUnidoc, unidoc) ++= Opts.doc.title("The OPAL Framework")
+ScalaUnidoc / unidoc / scalacOptions ++= Opts.doc.version(version.value)
+ScalaUnidoc / unidoc / scalacOptions ++= Opts.doc.title("The OPAL Framework")
 
-javaOptions in ThisBuild ++= Seq(
+ThisBuild / javaOptions ++= Seq(
   "-Xmx24G",
   "-Xms4096m",
   "-XX:ThreadStackSize=2048",
@@ -104,23 +104,23 @@ lazy val buildSettings =
     PublishingOverwrite.onSnapshotOverwriteSettings ++
     Seq(libraryDependencies ++= Dependencies.testlibs) ++
     Seq(Defaults.itSettings: _*) ++
-    Seq(unmanagedSourceDirectories := (scalaSource in Compile).value :: Nil) ++
+    Seq(unmanagedSourceDirectories.withRank(KeyRanks.Invisible) := (Compile / scalaSource).value :: Nil) ++
     Seq(
-      unmanagedSourceDirectories in Test := (javaSource in Test).value :: (scalaSource in Test).value :: Nil
+      Test / unmanagedSourceDirectories := (Test / javaSource).value :: (Test / scalaSource).value :: Nil
     ) ++
     Seq(
-      unmanagedSourceDirectories in IntegrationTest := (javaSource in Test).value :: (scalaSource in IntegrationTest).value :: Nil
+      IntegrationTest / unmanagedSourceDirectories := (Test / javaSource).value :: (IntegrationTest / scalaSource).value :: Nil
     ) ++
-    Seq(scalacOptions in (Compile, console) := Seq("-deprecation")) ++
+    Seq(Compile / console / scalacOptions := Seq("-deprecation")) ++
     // We don't want the build to be aborted by inter-project links that are reported by
     // scaladoc as errors using the standard compiler setting. (This case is only true, when
     // we publish the projects.)
-    Seq(scalacOptions in (Compile, doc) := Opts.doc.version(version.value)) ++
+    Seq(Compile / doc / scalacOptions := Opts.doc.version(version.value)) ++
     // Discard module-info files when assembling fat jars
     // see https://github.com/sbt/sbt-assembly/issues/391
-    Seq(assemblyMergeStrategy in assembly := {
+    Seq(assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard
-      case other => (assemblyMergeStrategy in assembly).value(other)
+      case other => (assembly / assemblyMergeStrategy).value(other)
     })
 
 lazy val scalariformSettings = scalariformItSettings ++
@@ -142,7 +142,7 @@ lazy val `OPAL` = (project in file("."))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       hermes,
       validate,
       demos,
@@ -179,7 +179,7 @@ lazy val `Common` = (project in file("OPAL/common"))
   .settings(buildSettings: _*)
   .settings(
     name := "Common",
-    scalacOptions in (Compile, doc) := Opts.doc.title("OPAL-Common"),
+    Compile / doc / scalacOptions := Opts.doc.title("OPAL-Common"),
     libraryDependencies ++= Dependencies.common(scalaVersion.value)
   )
   .configs(IntegrationTest)
@@ -189,7 +189,7 @@ lazy val `StaticAnalysisInfrastructure` = (project in file("OPAL/si"))
   .settings(buildSettings: _*)
   .settings(
     name := "Static Analysis Infrastructure",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Static Analysis Infrastructure"),
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Static Analysis Infrastructure"),
     libraryDependencies ++= Dependencies.si
   )
   .configs(IntegrationTest)
@@ -201,7 +201,7 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
   .settings(
     name := "Bytecode Infrastructure",
     libraryDependencies ++= Dependencies.bi,
-    scalacOptions in (Compile, doc) := Opts.doc.title("OPAL - Bytecode Infrastructure"),
+    Compile / doc / scalacOptions := Opts.doc.title("OPAL - Bytecode Infrastructure"),
     /*
       The following settings relate to the java-fixture-compiler plugin, which
       compiles the java fixture projects in the BytecodeInfrastructure project for testing.
@@ -215,11 +215,11 @@ lazy val `BytecodeInfrastructure` = (project in file("OPAL/bi"))
       JavaFixtureCompiler.baseJavaFixtureSettings ++
         Seq(
           unmanagedResourceDirectories ++= Seq(
-            (javaFixtureProjectsDir in javaFixtureDiscovery).value,
-            (javaFixtureSupportDir in javaFixtureDiscovery).value
+            (javaFixtureDiscovery / javaFixtureProjectsDir).value,
+            (javaFixtureDiscovery / javaFixtureSupportDir).value
           ),
           resourceGenerators += Def.task {
-            (javaFixturePackage in Test).value.flatMap(_.generatedFiles)
+            (Test / javaFixturePackage).value.flatMap(_.generatedFiles)
           }
         )
     )
@@ -233,7 +233,7 @@ lazy val `BytecodeRepresentation` = (project in file("OPAL/br"))
   .settings(buildSettings: _*)
   .settings(
     name := "Bytecode Representation",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Representation"),
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Representation"),
     libraryDependencies ++= Dependencies.br
   )
   .dependsOn(si % "it->it;it->test;test->test;compile->compile")
@@ -245,11 +245,11 @@ lazy val `BytecodeDisassembler` = (project in file("OPAL/da"))
   .settings(buildSettings: _*)
   .settings(
     name := "Bytecode Disassembler",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Disassembler"),
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Disassembler"),
     //[currently we can only use an unversioned version] assemblyJarName
     //in assembly := "OPALBytecodeDisassembler.jar-" + version.value
-    assemblyJarName in assembly := "OPALDisassembler.jar",
-    mainClass in assembly := Some("org.opalj.da.Disassembler")
+    assembly / assemblyJarName := "OPALDisassembler.jar",
+    assembly / mainClass := Some("org.opalj.da.Disassembler")
   )
   .dependsOn(bi % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -259,7 +259,7 @@ lazy val `BytecodeCreator` = (project in file("OPAL/bc"))
   .settings(buildSettings: _*)
   .settings(
     name := "Bytecode Creator",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Creator")
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Creator")
   )
   .dependsOn(da % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -269,9 +269,9 @@ lazy val `AbstractInterpretationFramework` = (project in file("OPAL/ai"))
   .settings(buildSettings: _*)
   .settings(
     name := "Abstract Interpretation Framework",
-    scalacOptions in (Compile, doc) := (Opts.doc
+    Compile / doc / scalacOptions := (Opts.doc
       .title("OPAL - Abstract Interpretation Framework") ++ Seq("-groups", "-implicits")),
-    fork in run := true
+    run / fork := true
   )
   .dependsOn(br % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -281,11 +281,11 @@ lazy val `ThreeAddressCode` = (project in file("OPAL/tac"))
   .settings(buildSettings: _*)
   .settings(
     name := "Three Address Code",
-    scalacOptions in (Compile, doc) := (Opts.doc
+    Compile / doc / scalacOptions := (Opts.doc
       .title("OPAL - Three Address Code") ++ Seq("-groups", "-implicits")),
-    assemblyJarName in assembly := "OPALTACDisassembler.jar",
-    mainClass in assembly := Some("org.opalj.tac.TAC"),
-    fork in run := true
+    assembly / assemblyJarName := "OPALTACDisassembler.jar",
+    assembly / mainClass := Some("org.opalj.tac.TAC"),
+    run / fork := true
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -295,7 +295,7 @@ lazy val `BytecodeAssembler` = (project in file("OPAL/ba"))
   .settings(buildSettings: _*)
   .settings(
     name := "Bytecode Assembler",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Bytecode Assembler")
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Bytecode Assembler")
   )
   .dependsOn(
     bc % "it->it;it->test;test->test;compile->compile",
@@ -310,7 +310,7 @@ lazy val `DependenciesExtractionLibrary` = (project in file("OPAL/de"))
   .settings(buildSettings: _*)
   .settings(
     name := "Dependencies Extraction Library",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Dependencies Extraction Library")
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Dependencies Extraction Library")
   )
   .dependsOn(ai % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -320,7 +320,7 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
   .settings(buildSettings: _*)
   .settings(
     name := "Architecture Validation",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Architecture Validation")
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Architecture Validation")
   )
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -330,8 +330,8 @@ lazy val `Framework` = (project in file("OPAL/framework"))
   .settings(buildSettings: _*)
   .settings(
     name := "Framework",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Framework"),
-    fork in run := true
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Framework"),
+    run / fork := true
   )
   .dependsOn(
     ba  % "it->it;it->test;test->test;compile->compile",
@@ -359,7 +359,7 @@ lazy val `Hermes` = (project in file("TOOLS/hermes"))
   .settings(
     name := "Hermes",
     libraryDependencies ++= Dependencies.hermes,
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Hermes")
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Hermes")
   )
   .dependsOn(framework % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
@@ -369,12 +369,12 @@ lazy val `Tools` = (project in file("DEVELOPING_OPAL/tools"))
   .settings(buildSettings: _*)
   .settings(
     name := "Tools",
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Developer Tools"),
-    scalacOptions in (Compile, console) := Seq("-deprecation"),
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Developer Tools"),
+    Compile / console / scalacOptions := Seq("-deprecation"),
     //library dependencies
     libraryDependencies ++= Dependencies.tools,
-    assemblyJarName in assembly := "OPALInvokedynamicRectifier.jar",
-    mainClass in assembly := Some("org.opalj.support.tools.ProjectSerializer"),
+    assembly / assemblyJarName := "OPALInvokedynamicRectifier.jar",
+    assembly / mainClass := Some("org.opalj.support.tools.ProjectSerializer"),
     // Required by Java/ScalaFX
     fork := true
   )
@@ -396,8 +396,8 @@ lazy val `Validate` = (project in file("DEVELOPING_OPAL/validate"))
   .settings(
     name := "Validate",
     publishArtifact := false,
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Validate"),
-    compileOrder in Test := CompileOrder.Mixed
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Validate"),
+    Test / compileOrder := CompileOrder.Mixed
   )
   .dependsOn(
     tools  % "it->it;it->test;test->test;compile->compile",
@@ -411,9 +411,9 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
   .settings(
     name := "Demos",
     publishArtifact := false,
-    scalacOptions in (Compile, doc) ++= Opts.doc.title("OPAL - Demos"),
-    unmanagedSourceDirectories in Compile := (javaSource in Compile).value :: (scalaSource in Compile).value :: Nil,
-    fork in run := true
+    Compile / doc / scalacOptions ++= Opts.doc.title("OPAL - Demos"),
+    Compile / unmanagedSourceDirectories := (Compile / javaSource).value :: (Compile / scalaSource).value :: Nil,
+    run / fork := true
   )
   .dependsOn(framework)
   .configs(IntegrationTest)
@@ -424,11 +424,11 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
  *
  */
 // To run the task: compile:generateSite
-val generateSite = taskKey[File]("creates the OPAL website") in Compile
+val generateSite = Compile / taskKey[File]("creates the OPAL website")
 generateSite := {
-  lazy val disassemblerJar = (assembly in da).value
-  lazy val projectSerializerJar = (assembly in Tools).value
-  val runUnidoc = (unidoc in Compile).value
+  lazy val disassemblerJar = (da / assembly).value
+  lazy val projectSerializerJar = (Tools / assembly).value
+  val runUnidoc = (Compile / unidoc).value
   SiteGeneration.generateSite(
     sourceDirectory.value,
     resourceManaged.value,
@@ -439,8 +439,8 @@ generateSite := {
 }
 
 compile := {
-  val r = (compile in Compile).value
-  (generateSite in Compile).value
+  val r = (Compile / compile).value
+  (Compile / generateSite).value
   r
 }
 
@@ -450,7 +450,7 @@ compile := {
 //
 //
 
-publishMavenStyle in ThisBuild := true
-publishArtifact in Test := false
-publishTo in ThisBuild := MavenPublishing.publishTo(isSnapshot.value)
-pomExtra in ThisBuild := MavenPublishing.pomNodeSeq()
+ThisBuild / publishMavenStyle.withRank(KeyRanks.Invisible) := true
+Test / publishArtifact := false
+ThisBuild / publishTo := MavenPublishing.publishTo(isSnapshot.value)
+ThisBuild / pomExtra := MavenPublishing.pomNodeSeq()
