@@ -527,8 +527,8 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         innerJarEntries.iterator().forEachRemaining { jarEntry ⇒
             // TODO make this commons.vfs compatible...
-            // To read the nested jars directly without savin them in temp                                                     
-            // https://stackoverflow.com/questions/9661214/uri-for-nested-zip-files-in-apaches-common-vfs                                                     
+            // To read the nested jars directly without savin them in temp
+            // https://stackoverflow.com/questions/9661214/uri-for-nested-zip-files-in-apaches-common-vfs
             // jar:jar/...!/...!...
             val nextJarFileURL = s"${jarFileURL}jar:${jarEntry.getName}!/"
             try {
