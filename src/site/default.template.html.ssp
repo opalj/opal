@@ -77,7 +77,7 @@
                             <li><a href="https://gitter.im/OPAL-Project/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link" class="icon fa-users"><span class="label">Gitter</span></a></li>
                             <li><a href="https://trello.com/theopalproject" class="icon fa-trello"><span class="label">Trello</span></a></li>
                             <li><a href="https://stackoverflow.com/questions/tagged/opal-framework" class="icon fa-stack-overflow"><span class="label">Stackoverflow</span></a></li>
-                            <li><a href="https://hub.docker.com/r/opalj/sbt_scala_javafx/" class="icon fa-cloud"><span class="label">Docker</span></a></li>
+                            <li><a href="https://hub.docker.com/r/opalj/sbt_scala_opal" class="icon fa-cloud"><span class="label">Docker</span></a></li>
                         </ul>
                         <h3>Related</h3>
                         <ul class="alt">
