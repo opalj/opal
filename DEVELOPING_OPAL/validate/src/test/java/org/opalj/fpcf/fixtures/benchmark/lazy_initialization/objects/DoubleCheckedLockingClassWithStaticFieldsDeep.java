@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable

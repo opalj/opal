@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.immutability.fields;
 
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 @MutableType("")
@@ -11,7 +11,7 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 public class ClassWithStaticFields {
 
     @MutableField("")
-    @AssignableFieldReference("")
+    @AssignableField("")
     public static String name = "Class with static fields";
 
    // @ShallowImmutableFieldAnnotation("")

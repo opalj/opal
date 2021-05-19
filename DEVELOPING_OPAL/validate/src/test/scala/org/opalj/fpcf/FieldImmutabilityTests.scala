@@ -15,7 +15,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
 import org.opalj.ai.domain.l2
 import org.opalj.br.fpcf.analyses.LazyVirtualCallAggregatingEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis

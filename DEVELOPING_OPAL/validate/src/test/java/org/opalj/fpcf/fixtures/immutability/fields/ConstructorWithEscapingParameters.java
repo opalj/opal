@@ -2,16 +2,16 @@
 package org.opalj.fpcf.fixtures.immutability.fields;
 
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 
 public class ConstructorWithEscapingParameters {
 
     @NonTransitivelyImmutableField("The field is init")
-    @NonAssignableFieldReference("The field is only assigned in the constructor.")
+    @EffectivelyNonAssignableField("The field is only assigned in the constructor.")
     private TrivialClass tc1;
 
    //TODO @DeepImmutableField("The construtor pararameter of the assigned object not escape")
-    @NonAssignableFieldReference("The field is only assigned in the constructor.")
+    @EffectivelyNonAssignableField("The field is only assigned in the constructor.")
     private TrivialClass tc2;
 
     ConstructorWithEscapingParameters(Object o1, Object o2){

@@ -1,14 +1,14 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox31;
 
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 class TwoVirgin<A, B, C> {
 
     @NonTransitivelyImmutableField(value="field has generic parameter", analyses = L0FieldImmutabilityAnalysis.class)
-    @NonAssignableFieldReference(value = "field is effective immutable",
+    @EffectivelyNonAssignableField(value = "field is effective immutable",
             analyses = L3FieldAssignabilityAnalysis.class)
     private GenericBaseClass<GenericBaseClass<GenericBaseClass, A, A>, B, C> gc1;
 

@@ -4,12 +4,12 @@ package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_f
 import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 /**
  * This class represents a simple model of the string class.
@@ -19,7 +19,7 @@ public class SimpleStringModel {
     @NonTransitivelyImmutableField(value= "field has immutable reference and array type char[]",
             analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
                     L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @NonAssignableFieldReference(value = "final field", analyses = L3FieldAssignabilityAnalysis.class)
+    @EffectivelyNonAssignableField(value = "final field", analyses = L3FieldAssignabilityAnalysis.class)
     private final char value[];
 
     char[] getValue(){

@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.immutability.field_references;
 
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
 
 public class Test {
     @TransitivelyImmutableField("immutable reference and deep immutable type")

@@ -11,8 +11,8 @@ import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableCl
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
@@ -20,7 +20,7 @@ import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 @NonTransitiveImmutableType(value = "has only deep immutable fields and is not extensible",
 analyses =  L1TypeImmutabilityAnalysis.class)
@@ -28,7 +28,7 @@ analyses =  L1TypeImmutabilityAnalysis.class)
 final class ClassWithGenericField {
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private SimpleGenericClass<SimpleMutableClass, FinalEmptyClass,FinalEmptyClass> gc =
             new SimpleGenericClass<SimpleMutableClass,FinalEmptyClass,FinalEmptyClass>
                     (new SimpleMutableClass(), new FinalEmptyClass(), new FinalEmptyClass());
@@ -44,7 +44,7 @@ class SimpleGenericClass<A,B,C> {
     analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "field is effectively final",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @NonAssignableFieldReference(value = "field is effectively final",
+    @EffectivelyNonAssignableField(value = "field is effectively final",
             analyses = L3FieldAssignabilityAnalysis.class)
     private A a;
 
@@ -53,7 +53,7 @@ class SimpleGenericClass<A,B,C> {
             analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "field is effectively final",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @NonAssignableFieldReference(value = "field is effectively final",
+    @EffectivelyNonAssignableField(value = "field is effectively final",
             analyses = L3FieldAssignabilityAnalysis.class)
     private B b;
 
@@ -62,7 +62,7 @@ class SimpleGenericClass<A,B,C> {
             analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "field is effectively final",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @NonAssignableFieldReference(value = "field is effectively final",
+    @EffectivelyNonAssignableField(value = "field is effectively final",
             analyses = L3FieldAssignabilityAnalysis.class)
     private C c;
 
@@ -86,6 +86,6 @@ class SimpleMutableClass{
 
     @MutableField(value = "field is public", analyses = {L0FieldAssignabilityAnalysis.class,
             L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference(value= "field is public", analyses = L3FieldAssignabilityAnalysis.class)
+    @AssignableField(value= "field is public", analyses = L3FieldAssignabilityAnalysis.class)
     public int n = 10;
 }

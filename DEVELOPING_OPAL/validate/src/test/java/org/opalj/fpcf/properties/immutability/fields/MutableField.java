@@ -32,7 +32,6 @@ public @interface MutableField {
      */
     boolean prematurelyRead() default false;
 
-    Class<? extends FPCFAnalysis>[] analyses() default { L0FieldAssignabilityAnalysis.class,
-            L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class};
+    Class<? extends FPCFAnalysis>[] analyses() default { L0FieldImmutabilityAnalysis.class};
 
 }

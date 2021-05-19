@@ -8,12 +8,12 @@ import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 public class Escapers{
 
@@ -22,7 +22,7 @@ public class Escapers{
 class TransitiveEscape1 {
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private ClassWithPublicFields tmc = new ClassWithPublicFields();
 
     public void printTMC(){
@@ -38,7 +38,7 @@ class TransitiveEscape1 {
 class TransitiveEscape2 {
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private ClassWithPublicFields tmc = new ClassWithPublicFields();
 
     public void printTMC(){
@@ -54,7 +54,7 @@ class TransitiveEscape2 {
 class OneThatNotEscapesAndOneWithDCL {
     @NonTransitivelyImmutableField(value = "immutable field reference and mutable type",
             analyses = L0FieldImmutabilityAnalysis.class)
-    @NonAssignableFieldReference(value = "field is only written once",
+    @EffectivelyNonAssignableField(value = "field is only written once",
             analyses = L3FieldAssignabilityAnalysis.class)
     private ClassWithPublicFields tmc1 = new ClassWithPublicFields();
 
@@ -80,7 +80,7 @@ class OneThatNotEscapesAndOneWithDCL {
 class GenericEscapes {
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private SimpleGenericClass sgc;
 
     public GenericEscapes(ClassWithPublicFields tmc){
@@ -92,11 +92,11 @@ class GenericEscapes {
 @NonTransitivelyImmutableClass("")
 class GenericEscapesTransitive {
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private SimpleGenericClass gc1;
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private ClassWithPublicFields tmc;
 
     public GenericEscapesTransitive(ClassWithPublicFields tmc){
@@ -108,11 +108,11 @@ class GenericEscapesTransitive {
 class GenericNotEscapesMutualEscapeDependencyNotAbleToResolve{
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private ClassWithPublicFields tmc = new ClassWithPublicFields();
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private SimpleGenericClass sgc;
 
     public GenericNotEscapesMutualEscapeDependencyNotAbleToResolve() {
@@ -124,11 +124,11 @@ class GenericNotEscapesMutualEscapeDependencyNotAbleToResolve{
 class GenericNotEscapesMutualEscapeDependencyAbleToResolve<T>{
 
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private FinalEmptyClass fec = new FinalEmptyClass();
 
     @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class, parameter = "T")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private SimpleGenericClass<T> sgc;
 
     public GenericNotEscapesMutualEscapeDependencyAbleToResolve() {

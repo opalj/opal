@@ -3,8 +3,8 @@ package org.opalj.fpcf.fixtures.benchmark.assignability;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
@@ -14,7 +14,7 @@ public class DifferentAssignmentPossibilitiesOfEffectivelyNonAssignableField {
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private Object o;
 
     public DifferentAssignmentPossibilitiesOfEffectivelyNonAssignableField() {

@@ -1,10 +1,10 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox42;
 
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 
 public class Clone {
 
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private int i;
 
     public int getI() {

@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.benchmark.generic.simple;
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
 
 /**
@@ -17,7 +17,7 @@ public final class Generic<T> {
 
     //@Immutable
     @DependentImmutableField(value = "field has a generic type parameter", parameter= {"T"} )
-    @NonAssignableFieldReference("field is final")
+    @NonAssignableField("field is final")
     private final T t;
 
     public Generic(T t){this.t = t;}

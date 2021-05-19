@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
 
 class SimpleLazyInitialization {
 

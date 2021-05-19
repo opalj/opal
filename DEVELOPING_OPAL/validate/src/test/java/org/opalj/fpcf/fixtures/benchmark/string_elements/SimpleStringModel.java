@@ -3,8 +3,8 @@ package org.opalj.fpcf.fixtures.benchmark.string_elements;
 
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 /**
@@ -16,7 +16,7 @@ import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 public final class SimpleStringModel {
 
     @TransitivelyImmutableField("The array values are after the assignment no more mutated")
-    @NonAssignableFieldReference("final field")
+    @NonAssignableField("final field")
     private final char value[];
 
     public char[] getValue(){

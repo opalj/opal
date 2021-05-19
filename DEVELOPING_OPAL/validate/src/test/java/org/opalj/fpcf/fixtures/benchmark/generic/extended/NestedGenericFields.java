@@ -6,7 +6,7 @@ import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 /**
@@ -17,23 +17,23 @@ public class NestedGenericFields<T> {
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("field is final")
+    @EffectivelyNonAssignableField("field is final")
     private final Generic<Generic<FinalClassWithNoFields>> nestedTransitive =
             new Generic<>(new Generic<>(new FinalClassWithNoFields()));
 
     //@Immutable
     @MutableField("")
-    @NonAssignableFieldReference("field is final")
+    @EffectivelyNonAssignableField("field is final")
     private Generic<Generic<T>> nestedMutable;
 
     //@Immutable
     @DependentImmutableField(value = "only generic typ parameters", parameter={"T"})
-    @NonAssignableFieldReference("field is final")
+    @EffectivelyNonAssignableField("field is final")
     private final Generic<Generic<T>> nestedDependent;
 
     //@Immutable
     @NonTransitivelyImmutableField("Only transitively immutable type parameters")
-    @NonAssignableFieldReference("field is final")
+    @EffectivelyNonAssignableField("field is final")
     private final Generic<Generic<ClassWithMutableFields>> nestedNonTransitive =
             new Generic<>(new Generic<>(new ClassWithMutableFields()));
 

@@ -3,13 +3,13 @@ package org.opalj.fpcf.fixtures.immutability.fields;
 
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
 public class ArrayInitialization {
 
-    @AssignableFieldReference("")
+    @AssignableField("")
     private Object[] array;
 
     public Object[] getArray(int n) {
@@ -19,7 +19,7 @@ public class ArrayInitialization {
         return array;
     }
 
-    @AssignableFieldReference("")
+    @AssignableField("")
     private Object[] b;
 
     public Object[] getB(boolean flag) throws Exception {

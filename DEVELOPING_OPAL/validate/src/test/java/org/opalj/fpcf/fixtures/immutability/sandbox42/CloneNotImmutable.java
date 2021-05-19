@@ -1,10 +1,10 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox42;
 
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 public class CloneNotImmutable {
 
-    @AssignableFieldReference("")
+    @AssignableField("")
     private int mutableField;
 
     public static CloneNotImmutable instance;

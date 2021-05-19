@@ -2,10 +2,10 @@
 package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_field_references;
 
 import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 /**
  * This classes encompasses different variation of double checked locking as a form of lazy initialization.
@@ -82,7 +82,7 @@ public class DoubleCheckedLocking {
         return writeOutsideTheSynchronizedGuard;
     }
 
-    @AssignableFieldReference(value = "no valid lazy initialization", analyses = L3FieldAssignabilityAnalysis.class)
+    @AssignableField(value = "no valid lazy initialization", analyses = L3FieldAssignabilityAnalysis.class)
     private Object multipleWritesWithinTheDCLPattern;
     public Object getMultipleWritesWithinTheDCLPattern() {
         if(multipleWritesWithinTheDCLPattern ==null){
@@ -96,7 +96,7 @@ public class DoubleCheckedLocking {
         return multipleWritesWithinTheDCLPattern;
     }
 
-    @AssignableFieldReference(value = "no valid lazy initialization", analyses = L3FieldAssignabilityAnalysis.class)
+    @AssignableField(value = "no valid lazy initialization", analyses = L3FieldAssignabilityAnalysis.class)
     private Object alsoWrittenOutsideTheDCLPattern;
     public Object getAlsoWrittenOutsideTheDCLPattern() {
         if(alsoWrittenOutsideTheDCLPattern ==null){
@@ -110,7 +110,7 @@ public class DoubleCheckedLocking {
         return alsoWrittenOutsideTheDCLPattern;
     }
 
-    @AssignableFieldReference(value = "no lazy initialization due to wrong guard statements",
+    @AssignableField(value = "no lazy initialization due to wrong guard statements",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object wrongGuardStatement;
 
@@ -125,7 +125,7 @@ public class DoubleCheckedLocking {
         return wrongGuardStatement;
     }
 
-    @AssignableFieldReference(value = "no valid lazy initialization", analyses = L3FieldAssignabilityAnalysis.class)
+    @AssignableField(value = "no valid lazy initialization", analyses = L3FieldAssignabilityAnalysis.class)
     private Object writeOutsideDCL;
 
     public Object getWriteOutsideDCL() {
@@ -185,7 +185,7 @@ public class DoubleCheckedLocking {
         return notNestedDCLWriteOnlyInGuard;
     }
 
-    @AssignableFieldReference(value = "field write outside guards and synchronized blocks",
+    @AssignableField(value = "field write outside guards and synchronized blocks",
     analyses = L3FieldAssignabilityAnalysis.class)
     private Object notNestedDCLWriteOutside;
     public Object getNotNestedDCLWriteOutside() {
@@ -221,7 +221,7 @@ public class DoubleCheckedLocking {
     }
 
     //@LazyInitializedThreadSafeReference("")
-    @AssignableFieldReference(value = "guard not only dependent on field value",
+    @AssignableField(value = "guard not only dependent on field value",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object dclWithLockAnd;
     //private boolean lock = true;
@@ -237,7 +237,7 @@ public class DoubleCheckedLocking {
     }
 
     //@LazyInitializedThreadSafeReference("")
-    @AssignableFieldReference(value = "guard not only dependent on field value",
+    @AssignableField(value = "guard not only dependent on field value",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object dclWithLockOr;
     //private boolean lock = true;

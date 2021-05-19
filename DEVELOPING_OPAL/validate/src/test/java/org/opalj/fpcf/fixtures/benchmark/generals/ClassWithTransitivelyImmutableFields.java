@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.benchmark.generals;
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 //@Immutable
@@ -14,12 +14,12 @@ public final class ClassWithTransitivelyImmutableFields {
 
     //@Immutable
     @TransitivelyImmutableField("immutable reference and deep immutable field type")
-    @NonAssignableFieldReference("Declared final Field")
+    @NonAssignableField("Declared final Field")
     private final FinalClassWithNoFields fec2 = new FinalClassWithNoFields();
 
     //@Immutable
     @TransitivelyImmutableField("Immutable Reference and Immutable Field Type")
-    @NonAssignableFieldReference("declared final field")
+    @NonAssignableField("declared final field")
     private final FinalClassWithNoFields fec = new FinalClassWithNoFields();
 
     public FinalClassWithNoFields getFec() {
@@ -28,17 +28,17 @@ public final class ClassWithTransitivelyImmutableFields {
 
     //@Immutable
     @TransitivelyImmutableField("Immutable Reference and Immutable Field Type")
-    @NonAssignableFieldReference("effective immutable field")
+    @NonAssignableField("effective immutable field")
     private FinalClassWithNoFields name = new FinalClassWithNoFields();
 
     //@Immutable
     @TransitivelyImmutableField("immutable reference and deep immutable field type")
-    @NonAssignableFieldReference(value = "declared final field reference")
+    @NonAssignableField(value = "declared final field reference")
     private final FinalClassWithNoFields fec1;
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @NonAssignableField("")
     private static String deepImmutableString = "string";
 
     public ClassWithTransitivelyImmutableFields(FinalClassWithNoFields fec) {

@@ -5,9 +5,9 @@ package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
@@ -17,12 +17,12 @@ public class ArrayWithOneEscapingObject {
 
     //@Immutable
     @MutableField("Reference of the field is mutable")
-    @AssignableFieldReference("Field is public")
+    @AssignableField("Field is public")
     public Object o = new Object();
 
     //@Immutable
     @NonTransitivelyImmutableField("Field is initialized with an Shallow immutable field")
-    @NonAssignableFieldReference("Field is only initialized once.")
+    @EffectivelyNonAssignableField("Field is only initialized once.")
     private Object[] array2;
 
     public ArrayWithOneEscapingObject() {

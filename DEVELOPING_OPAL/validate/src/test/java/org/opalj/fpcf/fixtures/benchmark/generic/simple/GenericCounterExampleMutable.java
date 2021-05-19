@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.benchmark.generic.simple;
 
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
@@ -16,6 +16,6 @@ class GenericCounterExampleMutable<T> {
 
     //@Immutable
     @MutableField("field is assignable")
-    @AssignableFieldReference("field is assignable because it is public")
+    @AssignableField("field is assignable because it is public")
     public int n = 5;
 }

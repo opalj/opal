@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.arrays;
 
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
 
 /**
  * This classes tests lazy initialization of arrays to the reference.

@@ -5,13 +5,13 @@ import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
@@ -58,7 +58,7 @@ class LocalWrong {
 
     @MutableField(value = "Incorrect lazy initialization with local", analyses = {L0FieldAssignabilityAnalysis.class,
     L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference(value = "Incorrect lazy initialization with local",
+    @AssignableField(value = "Incorrect lazy initialization with local",
             analyses = L0FieldImmutabilityAnalysis.class)
     private int x;
 
@@ -139,7 +139,7 @@ class SimpleWithDifferentDefault {
     @MutableField(value = "Analysis doesn't recognize lazy initialization with different default", analyses =
             {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
             L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference(value = "Analysis doesn't recognize lazy initialization with different default",
+    @AssignableField(value = "Analysis doesn't recognize lazy initialization with different default",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -164,7 +164,7 @@ class WrongDefault {
     @MutableField(value = "Not lazily initialized because of two different default values",
     analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
             L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference(value = "Not lazily initialized because of two different default values",
+    @AssignableField(value = "Not lazily initialized because of two different default values",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -240,7 +240,7 @@ class DeterministicCallOnFinalField {
     @NonTransitivelyImmutableField(value = "Declared final field",
             analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
                     L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @NonAssignableFieldReference(value = "Declared final field", analyses = L3FieldAssignabilityAnalysis.class)
+    @EffectivelyNonAssignableField(value = "Declared final field", analyses = L3FieldAssignabilityAnalysis.class)
     private final Inner inner;
 
     public DeterministicCallOnFinalField(int v) {
@@ -283,7 +283,7 @@ class DeterministicCallOnNonFinalField {
     @MutableField(value = "Non final field",
     analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class,
     L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference("Non final field")
+    @AssignableField("Non final field")
     private Inner inner;
 
     public void createInner(int v) {
@@ -353,7 +353,7 @@ class DoubleLocalAssignment {
 class DoubleAssignment {
     @MutableField(value = "Field can be observed partially updated", analyses = {L0FieldAssignabilityAnalysis.class,
     L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference(value ="Field can be observed partially updated",
+    @AssignableField(value ="Field can be observed partially updated",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -370,7 +370,7 @@ class VisibleInitialization {
 
     @MutableField(value= "Incorrect because lazy initialization is visible", analyses = {L0FieldAssignabilityAnalysis.class,
     L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference(value = "Incorrect because lazy initialization is visible",
+    @AssignableField(value = "Incorrect because lazy initialization is visible",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -423,7 +423,7 @@ class CaughtExceptionInInitialization {
     @MutableField(value = "Incorrect because lazy initialization is may not happen due to exception",
     analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
     L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference(value = "Incorrect because lazy initialization is may not happen due to exception",
+    @AssignableField(value = "Incorrect because lazy initialization is may not happen due to exception",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 

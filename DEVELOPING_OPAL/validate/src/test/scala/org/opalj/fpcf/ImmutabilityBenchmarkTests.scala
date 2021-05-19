@@ -17,7 +17,7 @@ import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.EagerL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.EagerL3FieldAssignabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -28,10 +28,10 @@ import org.opalj.tac.fpcf.analyses.immutability.fieldreference.EagerL3FieldAssig
  */
 class ImmutabilityBenchmarkTests extends PropertiesTest {
 
-    override def withRT = true
+    // override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/benchmark/generals")
+        List("org/opalj/fpcf/fixtures/benchmark/assignability/clone_function")
     }
 
     override def init(p: Project[URL]): Unit = {

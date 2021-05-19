@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox21;
 
 
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
 
 public class Test {
 

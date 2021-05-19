@@ -8,7 +8,7 @@ import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 /*import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL3FieldImmutabilityAnalysis */
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.br.analyses.Project

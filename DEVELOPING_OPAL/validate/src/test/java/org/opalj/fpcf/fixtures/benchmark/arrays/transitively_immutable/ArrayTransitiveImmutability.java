@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.benchmark.arrays.transitively_immutable;
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 //@Immutable
@@ -13,16 +13,16 @@ public class ArrayTransitiveImmutability {
 
     //@Immutable
     @TransitivelyImmutableField("The elements of the array can not escape")
-    @NonAssignableFieldReference("Array is eager initialized")
+    @EffectivelyNonAssignableField("Array is eager initialized")
     private Object[] array1 = new Object[]{1, 2, 3};
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private static Object[] staticDeepArray = new Object[5];
 
     @TransitivelyImmutableField("The elements of the array can not escape")
-    @NonAssignableFieldReference("Array is initialized in the constructor")
+    @EffectivelyNonAssignableField("Array is initialized in the constructor")
     private Object[] a;
 
     public ArrayTransitiveImmutability() {
@@ -31,7 +31,7 @@ public class ArrayTransitiveImmutability {
 
     //@Immutable
     @TransitivelyImmutableField("The elements of the array can not escape")
-    @NonAssignableFieldReference("The array is not initialized.")
+    @EffectivelyNonAssignableField("The array is not initialized.")
     private Object[] k;
 
 
@@ -42,7 +42,7 @@ public class ArrayTransitiveImmutability {
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private Object[] clonedArray = new Object[]{new Object(), new Object(), new Object()};
 
     public Object[] getClonedArray(){ return  clonedArray.clone(); }

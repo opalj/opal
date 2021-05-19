@@ -4,10 +4,10 @@ package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 public class MethodCalls {
     @NonTransitivelyImmutableField("")
@@ -42,7 +42,7 @@ public class MethodCalls {
         }
     }
 
-    @AssignableFieldReference("")
+    @AssignableField("")
     @MutableField("")
     private ClassWithMutableFields tm4;
 
@@ -71,11 +71,11 @@ public class MethodCalls {
     }
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private ClassWithMutableFields tm6 = new ClassWithMutableFields();
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private ClassWithMutableFields tm7 = new ClassWithMutableFields();
 
     public void foo(){

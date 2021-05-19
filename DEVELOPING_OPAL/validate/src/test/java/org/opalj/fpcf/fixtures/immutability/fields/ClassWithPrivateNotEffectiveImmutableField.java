@@ -6,13 +6,13 @@ import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 @MutableType(value = "class is extensible",
         analyses = {L0TypeImmutabilityAnalysis.class, L1TypeImmutabilityAnalysis.class})
@@ -23,7 +23,7 @@ public class ClassWithPrivateNotEffectiveImmutableField {
     @MutableField(value = "field has mutable reference",
             analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
                     L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @AssignableFieldReference(value = "referenced object can be changed via setter",
+    @AssignableField(value = "referenced object can be changed via setter",
             analyses = L3FieldAssignabilityAnalysis.class)
     private ClassWithPublicFields tmc = new ClassWithPublicFields();
 

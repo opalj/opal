@@ -7,7 +7,7 @@ import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
@@ -27,6 +27,6 @@ public class ClassWithdirectlySetDeepImmutableField {
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
     @MutableField(value = "can not handle effective immutability",
             analyses = L0FieldAssignabilityAnalysis.class)
-    @NonAssignableFieldReference("effective immutable field")
+    @EffectivelyNonAssignableField("effective immutable field")
     private FinalEmptyClass name = new FinalEmptyClass();
 }

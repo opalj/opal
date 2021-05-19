@@ -1,23 +1,23 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.field_references;
 
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 
 public class PrivateFinalArrayEscapesViaConstructor {
 
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private final char[] charArray;
 
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private final byte[] byteArray;
 
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private final int[] intArray;
 
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private final long[] longArray;
 
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private final Object[] objectArray;
 
     public PrivateFinalArrayEscapesViaConstructor(char[] charArray, byte[] byteArray, int[] intArray,

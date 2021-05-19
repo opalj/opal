@@ -22,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.EagerL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.EagerL3FieldAssignabilityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import java.io.IOException
 import java.io.BufferedWriter

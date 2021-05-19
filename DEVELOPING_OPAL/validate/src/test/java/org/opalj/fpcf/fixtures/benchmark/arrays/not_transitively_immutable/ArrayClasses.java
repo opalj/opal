@@ -5,8 +5,8 @@ package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
@@ -16,7 +16,7 @@ public class ArrayClasses<T> {
 
     //@Immutable
     @NonTransitivelyImmutableField("The elements of the array are manipulated after initialization and can escape.")
-    @NonAssignableFieldReference("The array is eager initialized.")
+    @EffectivelyNonAssignableField("The array is eager initialized.")
     private Object[] b = new Object[]{1, 2, 3, 4, 5};
 
     public void setB() {
@@ -25,7 +25,7 @@ public class ArrayClasses<T> {
 
     //@Immutable
     @MutableField("Array has a mutable reference.")
-    @AssignableFieldReference("The array is initalized always when the InitC function is called")
+    @AssignableField("The array is initalized always when the InitC function is called")
     private Object[] c;
 
     public void InitC() {
@@ -34,7 +34,7 @@ public class ArrayClasses<T> {
 
     //@Immutable
     @NonTransitivelyImmutableField("The elements of the array can escape.")
-    @NonAssignableFieldReference("The array is eager initialized.")
+    @EffectivelyNonAssignableField("The array is eager initialized.")
     private Object[] d = new Object[]{1, 2, 3, 4, 5,};
 
     public Object[] getD() {

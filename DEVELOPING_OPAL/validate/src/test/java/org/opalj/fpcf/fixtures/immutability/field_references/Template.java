@@ -5,15 +5,15 @@ package org.opalj.fpcf.fixtures.immutability.field_references;
 
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 public class Template {
 
     //@LazyInitializedNotThreadSafeReferenceAnnotation("")
     @MutableField(value = "mutable field reference", analyses = L0FieldImmutabilityAnalysis.class)
-    @AssignableFieldReference(value = "can not handle this kind of lazy initialization",
+    @AssignableField(value = "can not handle this kind of lazy initialization",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Template _template;
 

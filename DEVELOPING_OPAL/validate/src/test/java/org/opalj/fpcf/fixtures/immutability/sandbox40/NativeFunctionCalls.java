@@ -1,12 +1,12 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox40;
 
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 public class NativeFunctionCalls {
 
     @MutableField("concrete class type is deep immutable")
-    @AssignableFieldReference("field is final")
+    @AssignableField("field is final")
     private Object finalObjectField = new Object();
 
     native void hulului();

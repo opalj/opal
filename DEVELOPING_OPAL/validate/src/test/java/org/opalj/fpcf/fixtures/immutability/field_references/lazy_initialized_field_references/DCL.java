@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_field_references;
 
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.L3FieldAssignabilityAnalysis;
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 import java.util.Random;
 
@@ -91,7 +91,7 @@ public class DCL {
         return dclWithTryCatch;
     }
 
-    @AssignableFieldReference(value = "no correct lazy initialization because " +
+    @AssignableField(value = "no correct lazy initialization because " +
             "all exceptions are caught in the inner guard",
             analyses = L3FieldAssignabilityAnalysis.class)
     Object noDCLAllExceptionsCaughtInsidInnerGuard;
@@ -112,7 +112,7 @@ public class DCL {
         return noDCLAllExceptionsCaughtInsidInnerGuard;
     }
 
-    @AssignableFieldReference(value = "No correct lazy initialization because all exceptions are caught in the complete dcl",
+    @AssignableField(value = "No correct lazy initialization because all exceptions are caught in the complete dcl",
     analyses = L3FieldAssignabilityAnalysis.class)
     Object noDCLAllExceptionsAreCaughtInTheCompleteDCL;
 
@@ -132,7 +132,7 @@ public class DCL {
         return noDCLAllExceptionsAreCaughtInTheCompleteDCL;
     }
 
-    @AssignableFieldReference(value = "no correct dcl pattern because all exceptions are caught in the outer guard",
+    @AssignableField(value = "no correct dcl pattern because all exceptions are caught in the outer guard",
     analyses = L3FieldAssignabilityAnalysis.class)
     Object instance;
 
@@ -150,7 +150,7 @@ public class DCL {
     }
 
 
-    @AssignableFieldReference(value = "no correct dcl, because the two try-catch-blocks",
+    @AssignableField(value = "no correct dcl, because the two try-catch-blocks",
             analyses = L3FieldAssignabilityAnalysis.class)
     Object noDCLTwoTryCatchBlocks;
 
@@ -177,7 +177,7 @@ public class DCL {
         return noDCLTwoTryCatchBlocks;
     }
 
-    @AssignableFieldReference(value = "no correct dcl because wrong exception forwarding",
+    @AssignableField(value = "no correct dcl because wrong exception forwarding",
     analyses = L3FieldAssignabilityAnalysis.class)
     Object noDCLWrongExceptionForwarding;
 

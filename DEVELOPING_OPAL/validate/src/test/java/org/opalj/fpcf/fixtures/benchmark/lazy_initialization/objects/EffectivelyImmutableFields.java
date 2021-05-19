@@ -3,16 +3,16 @@ package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
 
 import java.util.*;
 
 public class EffectivelyImmutableFields {
 
     @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
-    @NonAssignableFieldReference("field is not written after initialization")
+    @EffectivelyNonAssignableField("field is not written after initialization")
     private int simpleInitializedFieldWithPrimitiveType = 5;
 
     @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
@@ -35,7 +35,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField(value = "immutable reference and deep immutable type")
-    @NonAssignableFieldReference(value = "effective immutable field")
+    @EffectivelyNonAssignableField(value = "effective immutable field")
     private Integer effectiveImmutableIntegerField = 5;
 
     @LazyInitializedNotThreadSafeFieldReference(value = "write of reference objects is not atomic")
@@ -66,7 +66,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
-    @NonAssignableFieldReference("field is effective immutable")
+    @EffectivelyNonAssignableField("field is effective immutable")
     private double effectiveImmutableDoubleField = 5d;
 
     @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
@@ -89,7 +89,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("immutable reference and deep immutable type")
-    @NonAssignableFieldReference("field is effective immutable")
+    @EffectivelyNonAssignableField("field is effective immutable")
     private Double effectiveImmutableObjectDoubleField = 5d;
 
     @TransitivelyImmutableField("field has an immutable reference and deep immutable type")
@@ -112,7 +112,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
-    @NonAssignableFieldReference(value = "field is not written after initialization")
+    @EffectivelyNonAssignableField(value = "field is not written after initialization")
     private float effectiveImmutableFloatField = 5;
 
     @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
@@ -135,7 +135,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("field has an immutable field reference and a deep immutable type")
-    @NonAssignableFieldReference("the field reference is effective immutable")
+    @EffectivelyNonAssignableField("the field reference is effective immutable")
     private Float effectiveImmutableFloatObjectField = 5f;
 
     @TransitivelyImmutableField("field has an immutable field reference and a deep immutable type")
@@ -158,7 +158,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
-    @NonAssignableFieldReference("field is effective immutable")
+    @EffectivelyNonAssignableField("field is effective immutable")
     private byte effectiveImmutableByteField = 5;
 
     @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
@@ -181,7 +181,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
-    @NonAssignableFieldReference("field is effective immutable")
+    @EffectivelyNonAssignableField("field is effective immutable")
     private Byte effectiveImmutableByteObjectField = 5;
 
     @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
@@ -204,7 +204,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
-    @NonAssignableFieldReference(value = "field is effective immutable")
+    @EffectivelyNonAssignableField(value = "field is effective immutable")
     private char c = 'a';
 
     @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
@@ -227,7 +227,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("field value has a primitive type and an immutable field reference")
-    @NonAssignableFieldReference(value = "field is not written after initialization")
+    @EffectivelyNonAssignableField(value = "field is not written after initialization")
     private long effectiveImmutableLongField = 5;
 
     @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
@@ -250,7 +250,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private Long lO = 5l;
 
     @TransitivelyImmutableField("")
@@ -273,7 +273,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("The concrete assigned object is known to be deep immutable")
-    @NonAssignableFieldReference("The field is effective immutable")
+    @EffectivelyNonAssignableField("The field is effective immutable")
     private String effectiveImmutableString = "abc";
 
     @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
@@ -296,7 +296,7 @@ public class EffectivelyImmutableFields {
     }
 
     @TransitivelyImmutableField("The concrete assigned object is known to be deep immutable")
-    @NonAssignableFieldReference("The field is effective immutable")
+    @EffectivelyNonAssignableField("The field is effective immutable")
     private Object effectiveImmutableObjectReference = new Object();
 
     @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
@@ -321,7 +321,7 @@ public class EffectivelyImmutableFields {
 
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("effective immutable reference")
+    @EffectivelyNonAssignableField("effective immutable reference")
     private List<Object> effectiveImmutableLinkedList = new LinkedList<Object>();
 
     @NonTransitivelyImmutableField("")
@@ -354,7 +354,7 @@ public class EffectivelyImmutableFields {
     }
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("effective immutable reference")
+    @EffectivelyNonAssignableField("effective immutable reference")
     private List<Object> effectiveImmutableArrayList = new ArrayList<Object>();
 
     @NonTransitivelyImmutableField("")
@@ -387,7 +387,7 @@ public class EffectivelyImmutableFields {
     }
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("effective immutable reference")
+    @EffectivelyNonAssignableField("effective immutable reference")
     private Set<Object> effectiveImmutableSet = new HashSet<Object>();
 
     @NonTransitivelyImmutableField("")
@@ -420,7 +420,7 @@ public class EffectivelyImmutableFields {
     }
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("effective immutable reference")
+    @EffectivelyNonAssignableField("effective immutable reference")
     private HashMap<Object, Object> effectiveImmutableHashMap = new HashMap<Object, Object>();
 
     @NonTransitivelyImmutableField("")

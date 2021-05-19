@@ -1,11 +1,11 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.field_references;
 
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 public class TypeCastsInLazyInitialization {
 
-    @AssignableFieldReference("Analysis couldn't handle typecasts")
+    @AssignableField("Analysis couldn't handle typecasts")
     private Integer iF;
 
     public synchronized Integer getIF(){
@@ -14,7 +14,7 @@ public class TypeCastsInLazyInitialization {
         return iF;
     }
 
-    @AssignableFieldReference("Analysis couldn't handle typecasts")
+    @AssignableField("Analysis couldn't handle typecasts")
     private Integer iD;
 
     public synchronized Integer getiD(){
@@ -23,7 +23,7 @@ public class TypeCastsInLazyInitialization {
         return iD;
     }
 
-    @AssignableFieldReference("Analysis couldn't handle typecasts")
+    @AssignableField("Analysis couldn't handle typecasts")
     private Integer iL;
 
     public synchronized Integer getiL(){

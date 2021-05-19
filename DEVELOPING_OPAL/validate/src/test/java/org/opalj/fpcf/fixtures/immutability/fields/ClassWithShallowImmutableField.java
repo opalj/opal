@@ -3,13 +3,13 @@ package org.opalj.fpcf.fixtures.immutability.fields;
 
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 
 @NonTransitivelyImmutableClass("class has only the shallow immutable field tmc")
 public class ClassWithShallowImmutableField {
 
     @NonTransitivelyImmutableField("field has an immutable field reference and mutable type")
-    @NonAssignableFieldReference("declared final reference")
+    @EffectivelyNonAssignableField("declared final reference")
     private final ClassWithPublicFields tmc = new ClassWithPublicFields();
 
     public ClassWithPublicFields getTmc() {

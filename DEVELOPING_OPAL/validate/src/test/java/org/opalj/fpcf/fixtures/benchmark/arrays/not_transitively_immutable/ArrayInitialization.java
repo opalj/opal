@@ -4,7 +4,7 @@ package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
@@ -14,7 +14,7 @@ public class ArrayInitialization {
 
     //@Immutable
     @MutableField("")
-    @AssignableFieldReference("Multiple assignments possible")
+    @AssignableField("Multiple assignments possible")
     private Object[] array;
 
     public Object[] getArray(int n) {
@@ -26,7 +26,7 @@ public class ArrayInitialization {
 
     //@Immutable
     @MutableField("")
-    @AssignableFieldReference("")
+    @AssignableField("")
     private Object[] b;
 
     public Object[] getB(boolean flag) throws Exception {

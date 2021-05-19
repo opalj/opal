@@ -5,7 +5,7 @@ package org.opalj.fpcf.fixtures.benchmark.assignability;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
 
 //@Immutable
@@ -15,27 +15,27 @@ public final class EffectivelyNonAssignable {
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private int n = 5;
 
     //@Immutable
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private Object escapingViaConstructor;
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("field is only assigned once")
+    @EffectivelyNonAssignableField("field is only assigned once")
     private static int staticInt = 5;
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("field is only assigned once")
+    @EffectivelyNonAssignableField("field is only assigned once")
     private static Object staticObject = new Object();
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private Object escapingViaGetter = new Object();
 
     public EffectivelyNonAssignable(Object o) {

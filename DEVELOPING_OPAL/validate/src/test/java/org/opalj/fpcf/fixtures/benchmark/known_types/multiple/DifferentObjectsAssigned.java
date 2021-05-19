@@ -7,7 +7,7 @@ import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableCl
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
@@ -19,11 +19,11 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 public class DifferentObjectsAssigned {
 
     @TransitivelyImmutableField("Field only refers to transitively immutable objects")
-    @NonAssignableFieldReference("field is final")
+    @NonAssignableField("field is final")
     final A a;
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("field is final")
+    @NonAssignableField("field is final")
     final A nonTransitivelyImmmutableField;
 
     public DifferentObjectsAssigned(boolean b1){

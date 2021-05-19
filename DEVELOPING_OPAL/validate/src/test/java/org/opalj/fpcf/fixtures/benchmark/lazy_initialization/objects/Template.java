@@ -1,15 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
 
 public class Template {
 
     @LazyInitializedNotThreadSafeFieldReference("")
     private Template _template;
 
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private Template _parent;
 
     public Template(Template parent) {

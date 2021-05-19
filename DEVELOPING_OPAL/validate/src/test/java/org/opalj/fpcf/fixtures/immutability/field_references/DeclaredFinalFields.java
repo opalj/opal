@@ -5,8 +5,8 @@ import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.references.AssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
+import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
@@ -38,31 +38,31 @@ public class DeclaredFinalFields extends Super {
     @TransitivelyImmutableField(value = "Initialized directly", analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "Initialized directly", analyses = {L0FieldAssignabilityAnalysis.class,
             L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @NonAssignableFieldReference("Initialized directly")
+    @EffectivelyNonAssignableField("Initialized directly")
     private final int a = 1;
 
     @TransitivelyImmutableField(value = "Initialized through instance initializer", analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "Initialized through instance initializer", analyses = {L0FieldAssignabilityAnalysis.class,
             L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @NonAssignableFieldReference("Initialized through instance initializer")
+    @EffectivelyNonAssignableField("Initialized through instance initializer")
     private final int b;
 
     @TransitivelyImmutableField(value = "Initialized through constructor", analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "Initialized through constructor", analyses = {L0FieldAssignabilityAnalysis.class,
             L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @NonAssignableFieldReference("Initialized through constructor")
+    @EffectivelyNonAssignableField("Initialized through constructor")
     private final int c;
 
     @MutableField(value = "Prematurely read through super constructor", analyses = {L0FieldAssignabilityAnalysis.class,
             L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class},
             prematurelyRead = true)
-    @AssignableFieldReference(value = "Prematurely read through super constructor", prematurelyRead = true)
+    @AssignableField(value = "Prematurely read through super constructor", prematurelyRead = true)
     private final int d;
 
     @MutableField(value = "Prematurely read through own constructor", analyses = {L0FieldAssignabilityAnalysis.class,
             L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class},
             prematurelyRead = true)
-    @AssignableFieldReference(value = "Prematurely read through own constructor", prematurelyRead = true)
+    @AssignableField(value = "Prematurely read through own constructor", prematurelyRead = true)
     private final int e;
 
     public DeclaredFinalFields() {

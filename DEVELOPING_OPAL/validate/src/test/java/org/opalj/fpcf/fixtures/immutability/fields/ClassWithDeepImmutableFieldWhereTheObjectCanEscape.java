@@ -5,7 +5,7 @@ import org.opalj.br.fpcf.analyses.L0ClassImmutabilityAnalysis;
 import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
@@ -17,7 +17,7 @@ analyses = {L0ClassImmutabilityAnalysis.class, L1ClassImmutabilityAnalysis.class
 public class ClassWithDeepImmutableFieldWhereTheObjectCanEscape {
 
     @TransitivelyImmutableField("immutable reference and immutable field type FinalEmptyClass")
-    @NonAssignableFieldReference("field is effective immutable")
+    @EffectivelyNonAssignableField("field is effective immutable")
     private FinalEmptyClass fec = new FinalEmptyClass();
 
     public FinalEmptyClass getFec() {

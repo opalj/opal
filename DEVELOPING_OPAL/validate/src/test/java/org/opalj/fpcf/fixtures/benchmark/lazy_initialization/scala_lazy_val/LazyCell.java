@@ -2,7 +2,7 @@ package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.scala_lazy_val;
 
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**

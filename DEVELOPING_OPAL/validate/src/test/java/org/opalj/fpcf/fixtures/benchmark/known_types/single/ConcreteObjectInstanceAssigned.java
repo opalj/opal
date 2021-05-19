@@ -5,7 +5,7 @@ package org.opalj.fpcf.fixtures.benchmark.known_types.single;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
@@ -17,16 +17,16 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 class ConcreteObjectInstanceAssigned {
 
     @TransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private final Integer i = new Integer(5);
 
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @EffectivelyNonAssignableField("")
     private final MutableClass mc = new MutableClass();
 
     //@Immutable
     @TransitivelyImmutableField("concrete object is known")
-    @NonAssignableFieldReference("the field is final")
+    @EffectivelyNonAssignableField("the field is final")
     private final Object object = new Object();
 
     public Object getObject() {

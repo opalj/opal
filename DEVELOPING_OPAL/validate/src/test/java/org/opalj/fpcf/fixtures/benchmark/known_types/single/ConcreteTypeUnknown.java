@@ -2,10 +2,8 @@
 package org.opalj.fpcf.fixtures.benchmark.known_types.single;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.references.NonAssignableFieldReference;
-import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
+import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 
 /**
  * This class represents the counter-example in which the type of the object assigned to a field is not known
@@ -18,7 +16,7 @@ final class ConcreteTypeUnknown {
 
     //@Immutable
     @NonTransitivelyImmutableField("")
-    @NonAssignableFieldReference("")
+    @NonAssignableField("")
     private final Object object;
 
     public ConcreteTypeUnknown(Object object) {

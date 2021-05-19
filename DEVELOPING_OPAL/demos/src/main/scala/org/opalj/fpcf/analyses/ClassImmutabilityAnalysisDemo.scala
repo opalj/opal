@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.util.Seconds
 import java.io.IOException

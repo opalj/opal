@@ -52,7 +52,7 @@ import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
 import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.immutability.fieldreference.LazyL3FieldAssignabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.fpcf.PropertyStoreContext
