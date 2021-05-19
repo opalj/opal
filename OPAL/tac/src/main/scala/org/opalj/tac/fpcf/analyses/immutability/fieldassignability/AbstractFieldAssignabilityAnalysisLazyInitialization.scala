@@ -4,20 +4,17 @@ package tac
 package fpcf
 package analyses
 package immutability
-package fieldreference
+package fieldassignability
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
 import org.opalj.RelationalOperators.EQ
 import org.opalj.RelationalOperators.NE
-//import org.opalj.br.ComputationalTypeFloat
-//import org.opalj.br.ComputationalTypeInt
 import org.opalj.br.Method
 import org.opalj.br.cfg.BasicBlock
 import org.opalj.br.cfg.CFGNode
 import org.opalj.br.fpcf.FPCFAnalysis
-//import org.opalj.br.fpcf.properties.LazyInitializedNotThreadSafeButDeterministicFieldReference
 import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
 import org.opalj.br.fpcf.properties.LazilyInitialized
 import org.opalj.br.fpcf.properties.Assignable
@@ -25,8 +22,6 @@ import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.ObjectType
 import scala.annotation.switch
-////import org.opalj.br.fpcf.properties.cg.Callees
-//import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.FieldType
 
 /**
@@ -40,7 +35,7 @@ import org.opalj.br.FieldType
  *
  */
 trait AbstractFieldAssignabilityAnalysisLazyInitialization
-    extends AbstractFieldReferenceImmutabilityAnalysis
+    extends AbstractFieldAssignabilityAnalysis
     with FPCFAnalysis {
 
     /**
@@ -48,34 +43,14 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
      * @author Tobias Roth
      * @return true if there is no thread safe or deterministic lazy initialization
      */
-    def handleLazyInitialization(
+    def isNoLazyInitialization(
         writeIndex:   Int,
         defaultValue: Any,
         method:       Method,
         taCode:       TACode[TACMethodParameter, V]
     )(implicit state: State): Boolean = {
-        val lazyInitializationResult: FieldAssignability =
-            determineLazyInitialization(writeIndex, defaultValue, method, taCode)
-
-        state.referenceImmutability = lazyInitializationResult
-        lazyInitializationResult == Assignable
-    }
-
-    /**
-     * Determines whether the basic block of a given index dominates the basic block of the other or is executed
-     * before the other when the basic blocks are the same
-     */
-    def dominates(
-        potentiallyDominator: Int,
-        potentiallyDominated: Int,
-        taCode:               TACode[TACMethodParameter, V]
-    ): Boolean = {
-        val bbPotentiallyDominator = taCode.cfg.bb(potentiallyDominator)
-        val bbPotentiallyDominated = taCode.cfg.bb(potentiallyDominated)
-
-        taCode.cfg.dominatorTree
-            .strictlyDominates(bbPotentiallyDominator.nodeId, bbPotentiallyDominated.nodeId) ||
-            bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominator < potentiallyDominated
+        state.fieldAssignability = determineLazyInitialization(writeIndex, defaultValue, method, taCode)
+        state.fieldAssignability == Assignable
     }
 
     /**
@@ -113,12 +88,7 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
 
         val (readIndex, _ /* guardIndex */ , defaultCaseIndex, elseCaseIndex) = //guardIndex: for debugging purposes
             if (findGuardResult.nonEmpty)
-                (
-                    findGuardResult.head._1,
-                    findGuardResult.head._2,
-                    findGuardResult.head._3,
-                    findGuardResult.head._4
-                )
+                findGuardResult.head
             else
                 return Assignable;
 
@@ -163,11 +133,8 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
 
         // prevents writes outside the method
         // and guarantees that the field is only once written within the method or the constructor
-        if (writes.exists(
-            methodAndPCs ⇒
-                methodAndPCs._2.size > 1 ||
-                    ((methodAndPCs._1 ne method) && !methodAndPCs._1.isInitializer)
-        ))
+        if (writes.exists(methodAndPCs ⇒ methodAndPCs._2.size > 1 ||
+            ((methodAndPCs._1 ne method) && !methodAndPCs._1.isInitializer)))
             return Assignable;
 
         // if the method is synchronized the monitor within the method doesn't have to be searched
@@ -189,22 +156,10 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
                 else
                     Assignable
             } else {
-                if (write.value.asVar.definedBy.forall { defSite ⇒ //TODO check time consumption
-                    defSite >= 0 /*&& checkWriteIsDeterministic(
-                        code(defSite).asAssignment,
-                        method,
-                        code,
-                        taCode
-                    )*/
-                }
-                    && noInterferingExceptions()) {
-                    //val computationalFieldType = state.field.fieldType.computationalType
-                    //if (computationalFieldType != ComputationalTypeInt &&
-                    //    computationalFieldType != ComputationalTypeFloat) {
+                if (write.value.asVar.definedBy.forall { defSite ⇒ defSite >= 0 } && noInterferingExceptions())
                     UnsafelyLazilyInitialized
-                    //} /*else
-                    //LazyInitializedNotThreadSafeButDeterministicFieldReference
-                } else Assignable
+                else
+                    Assignable
             }
         }
     }
@@ -380,16 +335,14 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
                             ifStmt,
                             defaultValue,
                             code,
-                            taCode,
-                            method
+                            taCode
                         )) {
                             result = (endPC, ifStmt.targetStmt, endPC + 1) :: result
                         } else if (ifStmt.condition.equals(NE) && curBB != startBB && isGuard(
                             ifStmt,
                             defaultValue,
                             code,
-                            taCode,
-                            method
+                            taCode
                         )) {
                             result = (endPC, endPC + 1, ifStmt.targetStmt) :: result
                         } else {
@@ -490,104 +443,6 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
     }
 
     /**
-     * Checks if the value written to the field is guaranteed to be always the same.
-     * This is true if the value is constant or originates from a deterministic call of a method
-     * without non-constant parameters. Alternatively, if the initialization method itself is
-     * deterministic and has no parameters, the value is also always the same.
-     */
-    /* def checkWriteIsDeterministic(
-        origin: Assignment[V],
-        method: Method,
-        code:   Array[Stmt[V]],
-        taCode: TACode[TACMethodParameter, V]
-    )(implicit state: State): Boolean = {
-
-        def isConstant(uvar: Expr[V]): Boolean = {
-            val defSites = uvar.asVar.definedBy
-
-            def isConstantDef(index: Int) = {
-                if (index < 0) false
-                else if (code(index).asAssignment.expr.isConst) true
-                else {
-                    val expr = code(index).asAssignment.expr
-                    expr.isFieldRead && (expr.asFieldRead.resolveField(p) match {
-
-                        case Some(field) ⇒
-                            state.field == field ||
-                                isImmutableReference(propertyStore(field, FieldReferenceImmutability.key))
-
-                        case _ ⇒ false // Unknown field
-                    })
-                }
-            }
-            defSites == SelfReferenceParameter || defSites.size == 1 && isConstantDef(defSites.head)
-        }
-
-        val value = origin.expr
-
-        def isNonConstDeterministic(
-            value:  Expr[V],
-            taCode: TACode[TACMethodParameter, V]
-        )(implicit state: State): Boolean = {
-            (value.astID: @switch) match {
-                case BinaryExpr.ASTID ⇒
-                    isConstant(value.asBinaryExpr.left) && isConstant(value.asBinaryExpr.right)
-
-                case GetStatic.ASTID | GetField.ASTID ⇒
-                    value.asFieldRead.resolveField(p) match {
-                        case Some(field) ⇒
-                            state.field == field ||
-                                isImmutableReference(propertyStore(field, FieldReferenceImmutability.key))
-
-                        case _ ⇒ false // Unknown field
-                    }
-
-                case StaticFunctionCall.ASTID | NonVirtualFunctionCall.ASTID | VirtualFunctionCall.ASTID ⇒
-                    // If the value originates from a call, that call must be deterministic and may not
-                    // have any non constant parameters to guarantee that it is the same on every
-                    // invocation. The receiver object must be the 'this' self reference for the same
-                    // reason.
-                    if (value.asFunctionCall.allParams.forall(isConstant)) {
-                        state.lazyInitInvocation = Some((declaredMethods(method), origin.pc))
-                        true
-                    } else false
-
-                case NewArray.ASTID ⇒ true //TODO look at it
-
-                case Var.ASTID ⇒
-                    val varValue = value.asVar
-                    varValue.definedBy.size == 1 && //no different values due to different control flows
-                        varValue.definedBy.forall(
-                            i ⇒ i >= 0 && isNonConstDeterministic(code(i).asAssignment.expr, taCode)
-                        )
-
-                case New.ASTID ⇒
-                    val nonVirtualMethodCallIndexes =
-                        origin.asAssignment.targetVar.usedBy.iterator.filter(i ⇒ code(i).isNonVirtualMethodCall)
-                    nonVirtualMethodCallIndexes.forall { nonVirtualMethodCallIndex ⇒
-                        val callTargetResult =
-                            taCode
-                                .stmts(nonVirtualMethodCallIndex)
-                                .asNonVirtualMethodCall
-                                .resolveCallTarget(
-                                    state.field.classFile.thisType
-                                )
-                        !callTargetResult.isEmpty && (!callTargetResult.value.isConstructor ||
-                            //if the constructor is called it must be deterministic
-                            !isNonDeterministic(propertyStore(declaredMethods(callTargetResult.value), Purity.key)))
-                    }
-
-                case _ ⇒
-                    // The value neither is a constant nor originates from a call, but if the
-                    // current method does not take parameters and is deterministic, the value is
-                    // guaranteed to be the same on every invocation.
-                    lazyInitializerIsDeterministic(method)
-            }
-        }
-        value.isConst || isNonConstDeterministic(value, taCode)
-    } */
-
-    /**
      * Checks if an expression is a field read of the currently analyzed field.
      * For instance fields, the read must be on the `this` reference.
      */
@@ -650,8 +505,7 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
         ifStmt:       If[V],
         defaultValue: Any,
         code:         Array[Stmt[V]],
-        tacCode:      TACode[TACMethodParameter, V],
-        method:       Method
+        tacCode:      TACode[TACMethodParameter, V]
     )(implicit state: State): Boolean = {
 
         /**
@@ -679,35 +533,28 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
          */
         def isGuardInternal(
             expr:    V,
-            tacCode: TACode[TACMethodParameter, V],
-            method:  Method
+            tacCode: TACode[TACMethodParameter, V]
         ): Boolean = {
             expr.definedBy forall { index ⇒
                 if (index < 0)
                     false // If the value is from a parameter, this can not be the guard
                 else {
-                    val isStaticFunctionCall = code(index).asAssignment.expr.isStaticFunctionCall
-                    val isVirtualFunctionCall = code(index).asAssignment.expr.isVirtualFunctionCall
+                    val expression = code(index).asAssignment.expr
+                    val isStaticFunctionCall = expression.isStaticFunctionCall
+                    val isVirtualFunctionCall = expression.isVirtualFunctionCall
                     if (isStaticFunctionCall || isVirtualFunctionCall) {
                         //in case of Integer etc.... .initValue()
-
-                        ///val calleesResult = propertyStore(declaredMethods(method), Callees.key)
-                        ///if (doCallsIntroduceNonDeterminism(calleesResult, code(index).asAssignment.pc))
-                        ///    return false;
-
                         if (isVirtualFunctionCall) {
-                            val virtualFunctionCall = code(index).asAssignment.expr.asVirtualFunctionCall
+                            val virtualFunctionCall = expression.asVirtualFunctionCall
                             virtualFunctionCall.receiver.asVar.definedBy.forall(
                                 receiverDefSite ⇒
                                     receiverDefSite >= 0 &&
                                         isReadOfCurrentField(code(receiverDefSite).asAssignment.expr, tacCode, index)
                             )
-                        } else {
-                            isReadOfCurrentField(code(index).asAssignment.expr, tacCode, index)
-                        }
-                    } else {
-                        isReadOfCurrentField(code(index).asAssignment.expr, tacCode, index)
-                    }
+                        } else
+                            isReadOfCurrentField(expression, tacCode, index)
+                    } else
+                        isReadOfCurrentField(expression, tacCode, index)
                 }
             }
         }
@@ -750,9 +597,9 @@ trait AbstractFieldAssignabilityAnalysisLazyInitialization
             else (rightExpr.isGetField || rightExpr.isGetStatic) && isDefaultConst(leftExpr)
 
         } else if (ifStmt.rightExpr.isVar && isDefaultConst(ifStmt.leftExpr)) {
-            isGuardInternal(ifStmt.rightExpr.asVar, tacCode, method)
+            isGuardInternal(ifStmt.rightExpr.asVar, tacCode)
         } else if (ifStmt.leftExpr.isVar && isDefaultConst(ifStmt.rightExpr)) {
-            isGuardInternal(ifStmt.leftExpr.asVar, tacCode, method)
+            isGuardInternal(ifStmt.leftExpr.asVar, tacCode)
         } else false
     }
 

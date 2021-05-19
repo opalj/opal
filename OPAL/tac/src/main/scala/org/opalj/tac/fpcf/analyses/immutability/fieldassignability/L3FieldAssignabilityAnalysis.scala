@@ -4,13 +4,10 @@ package tac
 package fpcf
 package analyses
 package immutability
-package fieldreference
+package fieldassignability
 
 import scala.annotation.switch
 
-import org.opalj.br.BooleanType
-//import org.opalj.br.ClassFile
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.PCs
@@ -24,13 +21,10 @@ import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
-//import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.LazilyInitialized
 import org.opalj.br.fpcf.properties.Assignable
 import org.opalj.br.fpcf.properties.NoEscape
-import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.FieldAssignability
-//import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
@@ -46,15 +40,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.properties.TACAI
-import org.opalj.br.ReferenceType
-import org.opalj.br.ByteType
-import org.opalj.br.CharType
-import org.opalj.br.DoubleType
-import org.opalj.br.FloatType
-import org.opalj.br.IntegerType
-import org.opalj.br.LongType
 import org.opalj.br.ObjectType
-import org.opalj.br.ShortType
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.analyses.cg.ClosedPackagesKey
 import org.opalj.br.analyses.cg.TypeExtensibilityKey
@@ -63,22 +49,11 @@ import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.br.fpcf.properties.NonAssignable
+import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
 
 /**
  *
- * Determines the immutability of the reference of a class' field.
- * A field reference can either refer to an reference object or have a value.
- *
- * Examples:
- * class ... {
- * ...
- * final Object o;
- * int n;
- * ...
- * }
- *
- * In both cases we consider o and n as a field reference.
- * o refers to a reference object with type [[Object]] and n is storing an a value with type int.
+ * Determines the assignability of a field.
  *
  * @note Requires that the 3-address code's expressions are not deeply nested.
  *
@@ -90,7 +65,7 @@ import org.opalj.br.fpcf.properties.NonAssignable
  */
 class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     extends AbstractFieldAssignabilityAnalysisLazyInitialization
-    with AbstractFieldReferenceImmutabilityAnalysis
+    with AbstractFieldAssignabilityAnalysis
     with FPCFAnalysis {
 
     val considerLazyInitialization: Boolean =
@@ -111,11 +86,10 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     }
 
     /**
-     * Analyzes the immutability fields references.
+     * Analyzes the field's assignability.
      *
      * This analysis is only ''soundy'' if the class file does not contain native methods.
-     * If the analysis is schedulued using its companion object all class files with
-     * native methods are filtered.
+     * Native methods are omitted.
      */
     private[analyses] def determineFieldAssignability(
         field: Field
@@ -135,21 +109,10 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key)))
             return Result(field, Assignable);
 
-        // Collect all classes that have access to the field, i.e. the declaring class and possibly
-        // classes in the same package as well as subclasses
-        // Give up if the set of classes having access to the field is not closed
-        /*val initialClasses =
-            if (field.isProtected || field.isPackagePrivate) {
-                project.classesPerPackage(thisType.packageName)
-            } else {
-                Set(field.classFile)
-            } */
-        //val classesHavingAccess: Iterator[ClassFile] =
         if (field.isPublic) {
             if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
                 return Result(field, Assignable);
             }
-            //project.allClassFiles.iterator
         } else if (field.isProtected) {
             if (typeExtensibility(thisType).isYesOrUnknown) {
                 return Result(field, Assignable);
@@ -157,60 +120,22 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
             if (!closedPackages(thisType.packageName)) {
                 return Result(field, Assignable);
             }
-            /*val subclassesIterator: Iterator[ClassFile] =
-                    classHierarchy.allSubclassTypes(thisType, reflexive = false).flatMap { ot ⇒
-                        project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
-                    } */
-            // initialClasses.iterator ++ subclassesIterator
-        } /*else {
-                initialClasses.iterator
-            }*/
+        }
         if (field.isPackagePrivate) {
             if (!closedPackages(thisType.packageName)) {
                 return Result(field, Assignable);
             }
         }
 
-        // If there are native methods, we give up
-        //if (classesHavingAccess.exists(_.methods.exists(_.isNative))) {
-        // if (!field.isFinal)
-        //     return Result(field, MutableFieldReference);
-        //}
-
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             taCode ← getTACAI(method, pcs) //TODO field accesses via this
         } {
-            if (methodUpdatesField(method, taCode, pcs))
+            val result = methodUpdatesField(method, taCode, pcs)
+            if (result)
                 return Result(field, Assignable);
         }
-        //if (state.lazyInitInvocation.isDefined) {
-        //    val calleesEOP = propertyStore(state.lazyInitInvocation.get._1, Callees.key)
-        //    doCallsIntroduceNonDeterminism(calleesEOP, state.lazyInitInvocation.get._2)
-        //}
         createResult()
-    }
-
-    /**
-     * Returns the value the field will have after initialization or None if there may be multiple
-     * values.
-     */
-    def getDefaultValue()(implicit state: State): Any = {
-
-        state.field.fieldType match {
-            case FloatType | ObjectType.Float     ⇒ 0.0f
-            case DoubleType | ObjectType.Double   ⇒ 0.0d
-            case LongType | ObjectType.Long       ⇒ 0L
-            case CharType | ObjectType.Character  ⇒ '\u0000'
-            case BooleanType | ObjectType.Boolean ⇒ false
-            case IntegerType |
-                ObjectType.Integer |
-                ByteType |
-                ObjectType.Byte |
-                ShortType |
-                ObjectType.Short ⇒ 0
-            case _: ReferenceType ⇒ null
-        }
     }
 
     /**
@@ -219,16 +144,16 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      */
     def createResult()(implicit state: State): ProperPropertyComputationResult = {
 
-        if (state.hasDependees && (state.referenceImmutability ne Assignable)) {
+        if (state.hasDependees && (state.fieldAssignability ne Assignable)) {
             InterimResult(
                 state.field,
                 Assignable,
-                state.referenceImmutability,
+                state.fieldAssignability,
                 state.dependees,
                 c
             )
         } else {
-            Result(state.field, state.referenceImmutability)
+            Result(state.field, state.fieldAssignability)
         }
     }
 
@@ -238,14 +163,12 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      */
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
 
-        var isNotFinal = false
-
-        eps.pk match {
+        val isNotFinal = eps.pk match {
 
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
                 state.escapeDependees = state.escapeDependees.iterator.filter(_.e ne newEP.e).toSet
-                isNotFinal = handleEscapeProperty(newEP)
+                handleEscapeProperty(newEP)
 
             case TACAI.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
@@ -254,31 +177,13 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 state.tacDependees -= method
                 if (eps.isRefinable)
                     state.tacDependees += method -> ((newEP, pcs))
-                isNotFinal = methodUpdatesField(method, newEP.ub.tac.get, pcs)
+                methodUpdatesField(method, newEP.ub.tac.get, pcs)
 
-            ///case Callees.key ⇒
-            ///    val newEPS = eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]
-            ///    val pcs = state.calleesDependee(newEPS.e)._2
-            ///    isNotFinal = pcs.forall(pc ⇒ doCallsIntroduceNonDeterminism(newEPS, pc))
-
-            case FieldPrematurelyRead.key ⇒
-                isNotFinal = isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
-
-            case Purity.key ⇒
-                val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]
-                state.purityDependees = state.purityDependees.iterator.filter(_.e ne newEP.e).toSet
-                val nonDeterministicResult = isNonDeterministic(newEP)
-                isNotFinal = nonDeterministicResult
-
-            case FieldAssignability.key ⇒
-                val newEP = eps.asInstanceOf[EOptionP[Field, FieldAssignability]]
-                state.referenceImmutabilityDependees =
-                    state.referenceImmutabilityDependees.iterator.filter(_.e ne newEP.e).toSet
-                isNotFinal = !isImmutableReference(newEP)
+            case FieldPrematurelyRead.key ⇒ isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
         }
 
         if (isNotFinal)
-            state.referenceImmutability = Assignable
+            state.fieldAssignability = Assignable
         createResult()
     }
 
@@ -312,31 +217,30 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                     stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter) {
                                     // We consider lazy initialization if there is only single write
                                     // outside an initializer, so we can ignore synchronization
-                                    state.referenceImmutability == LazilyInitialized ||
-                                        ///state.referenceImmutability ==
-                                        ///LazyInitializedNotThreadSafeButDeterministicFieldReference ||
+                                    state.fieldAssignability == LazilyInitialized ||
+                                        state.fieldAssignability == UnsafelyLazilyInitialized ||
                                         // A lazily initialized instance field must be initialized only
                                         // by its owning instance
                                         !field.isStatic &&
                                         stmt.asPutField.objRef.asVar.definedBy != SelfReferenceParameter ||
                                         // A field written outside an initializer must be lazily
-                                        // initialized or it is non-final
+                                        // initialized or it is assignable
                                         {
+                                            //TODO prevent reads
                                             if (considerLazyInitialization) {
-                                                handleLazyInitialization(
+                                                val result = isNoLazyInitialization(
                                                     index,
                                                     getDefaultValue(),
                                                     method,
                                                     taCode
                                                 )
+                                                result
                                             } else
                                                 true
                                         }
-                                    //
-
-                                    //
                                 } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
-                                    // println("reference has escaped")
+                                    // Here the clone pattern is determined among others
+                                    //
                                     // note that here we assume real three address code (flat hierarchy)
 
                                     // for instance fields it is okay if they are written in the
@@ -349,7 +253,21 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                     // write the field as long as that new object did not yet escape.
                                     true
                                 } else {
-                                    false
+                                    //Clone Pattern handling
+                                    // The following lines ensure that no getter function of the assigned object is
+                                    // called and that no field is read of it
+                                    stmts.exists(iteratedStmt ⇒ iteratedStmt match {
+                                        case Assignment(_, _, functionCall) ⇒
+                                            functionCall match {
+                                                case VirtualFunctionCall(_, _, _, _, _, receiver, _) ⇒
+                                                    receiver == stmt.asPutField.objRef.asVar
+                                                case GetField(_, _, _, _, objRef) ⇒
+                                                    objRef == stmt.asPutField.objRef.asVar
+                                                case _ ⇒ false
+                                            }
+                                        case _ ⇒ false
+
+                                    })
                                 }
 
                             }
@@ -361,7 +279,6 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 }
             } else false
         }
-        //false
     }
 
     /**
@@ -380,10 +297,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 // Must either be null or freshly allocated
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
-                else
-                    handleEscapeProperty(
-                        propertyStore(definitionSites(method, definition.pc), EscapeProperty.key)
-                    )
+                else handleEscapeProperty(propertyStore(definitionSites(method, definition.pc), EscapeProperty.key))
             }
         }
     }
@@ -396,8 +310,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = {
-
-        val result = ep match {
+        ep match {
             case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒ false
             case FinalP(AtMost(_))                                   ⇒ true
             case _: FinalEP[DefinitionSite, EscapeProperty] ⇒
@@ -415,7 +328,6 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 state.escapeDependees += ep
                 false
         }
-        result
     }
 
 }
@@ -431,7 +343,6 @@ trait L3FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
     )
 
     final override def uses: Set[PropertyBounds] = Set(
-        PropertyBounds.lub(Purity),
         PropertyBounds.lub(FieldPrematurelyRead),
         PropertyBounds.ub(TACAI),
         PropertyBounds.ub(EscapeProperty),
@@ -443,7 +354,7 @@ trait L3FieldAssignabilityAnalysisScheduler extends FPCFAnalysisScheduler {
 }
 
 /**
- * Executor for the eager field reference immutability analysis.
+ * Executor for the eager field assignability analysis.
  */
 object EagerL3FieldAssignabilityAnalysis
     extends L3FieldAssignabilityAnalysisScheduler
@@ -462,7 +373,7 @@ object EagerL3FieldAssignabilityAnalysis
 }
 
 /**
- * Executor for the lazy field reference immutability analysis.
+ * Executor for the lazy field assignability analysis.
  */
 object LazyL3FieldAssignabilityAnalysis
     extends L3FieldAssignabilityAnalysisScheduler
