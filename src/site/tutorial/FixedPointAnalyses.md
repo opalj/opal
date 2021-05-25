@@ -237,7 +237,7 @@ def analyzeClassImmutability(classFile: ClassFile): ProperPropertyComputationRes
 There are two possible cases here:  
 If we have no dependencies, or if we reached the lattice's bottom value `MutableClass`, we can just return the immutability that we computed.  
 Otherwise, however, this immutability is not yet final and we have to create an [`InterimResult`](/library/api/SNAPSHOT/org/opalj/fpcf/InterimResult.html) instead.  
-We specify that the given immutability is an optimistic upper bound by using the `forLB` factory method.  
+We specify that the given immutability is an optimistic upper bound by using the `forUB` factory method.  
 Additionally, we provide the set of dependencies and the `continuation` function defined earlier.  
 Calling the `result` function is the final thing to do in our analysis.
 
