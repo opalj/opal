@@ -11,9 +11,8 @@
         <script src="/js/skel.min.js"></script>
         <script src="/js/skel-layers.min.js"></script>
         <script src="/js/init.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/highlight.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/languages/scala.min.js"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.10.0/styles/default.min.css" />
+        <script src="/js/highlight.pack.js"></script>
+        <link rel="stylesheet" href="/css/highlight/github.css" />
         <noscript>
             <link rel="stylesheet" href="/css/skel.css" />
         	<link rel="stylesheet" href="/css/style.css" />
@@ -123,6 +122,6 @@
           tabReplace: '    ', // 4 spaces
           languages: ["scala","java"]
         })
-        hljs.initHighlightingOnLoad();
+        hljs.highlightAll()
     </script>
 </html>
