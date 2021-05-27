@@ -2,7 +2,9 @@
 package org.opalj
 package br
 
+import scala.collection.{Map ⇒ SomeMap}
 import scala.math.Ordered
+
 import org.opalj.bi.ACC_ABSTRACT
 import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.ACC_NATIVE
@@ -465,6 +467,27 @@ final class Method private[br] (
     override def isMethod: Boolean = true
 
     override def asMethod: this.type = this
+
+    def isAccessibleBy(
+        objectType: ObjectType,
+        nests:      SomeMap[ObjectType, ObjectType]
+    )(
+        implicit
+        classHierarchy: ClassHierarchy
+    ): Boolean = {
+        visibilityModifier match {
+            // TODO Respect Java 9 modules
+            case Some(ACC_PUBLIC) ⇒ true
+            case Some(ACC_PROTECTED) ⇒
+                declaringClassFile.thisType.packageName == objectType.packageName ||
+                    objectType.isASubtypeOf(declaringClassFile.thisType).isNotNo
+            case Some(ACC_PRIVATE) ⇒
+                val thisType = declaringClassFile.thisType
+                thisType == objectType ||
+                    nests.getOrElse(thisType, thisType) == nests.getOrElse(objectType, objectType)
+            case None ⇒ declaringClassFile.thisType.packageName == objectType.packageName
+        }
+    }
 }
 
 /**

@@ -10,6 +10,7 @@ import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DeclaredFinalField
 import org.opalj.br.fpcf.properties.EffectivelyFinalField
@@ -95,6 +96,8 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 }
 
 trait L0FieldMutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
 
     final override def uses: Set[PropertyBounds] = Set.empty
 

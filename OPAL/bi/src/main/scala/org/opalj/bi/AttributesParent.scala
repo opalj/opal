@@ -15,4 +15,6 @@ object AttributesParent extends Enumeration {
 
     final val Code = Value
 
+    final val RecordComponent = Value
+
 }

@@ -9,7 +9,9 @@ import sbtunidoc.ScalaUnidocPlugin
 name := "OPAL Library"
 
 // SNAPSHOT
-version in ThisBuild := "3.0.0-SNAPSHOT"
+version in ThisBuild := "4.0.1-SNAPSHOT"
+// RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021
+// SNAPSHOT version in ThisBuild := "3.0.0-SNAPSHOT" // available since June 7th, 2019
 // RELEASED version in ThisBuild := "2.0.1" // October 10th, 2018
 // RELEASED version in ThisBuild := "2.0.0" // October 2nd, 2018
 // RELEASED version in ThisBuild := "1.0.0" // October 25th, 2017
@@ -24,6 +26,8 @@ version in ThisBuild := "3.0.0-SNAPSHOT"
 organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("https://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licenses/BSD-2-Clause"))
+
+usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
 scalaVersion in ThisBuild := "2.12.13"
 
@@ -111,7 +115,13 @@ lazy val buildSettings =
     // We don't want the build to be aborted by inter-project links that are reported by
     // scaladoc as errors using the standard compiler setting. (This case is only true, when
     // we publish the projects.)
-    Seq(scalacOptions in (Compile, doc) := Opts.doc.version(version.value))
+    Seq(scalacOptions in (Compile, doc) := Opts.doc.version(version.value)) ++
+    // Discard module-info files when assembling fat jars
+    // see https://github.com/sbt/sbt-assembly/issues/391
+    Seq(assemblyMergeStrategy in assembly := {
+      case "module-info.class" => MergeStrategy.discard
+      case other => (assemblyMergeStrategy in assembly).value(other)
+    })
 
 lazy val scalariformSettings = scalariformItSettings ++
   Seq(ScalariformKeys.preferences := baseDirectory(getScalariformPreferences).value)
@@ -413,7 +423,7 @@ lazy val `Demos` = (project in file("DEVELOPING_OPAL/demos"))
  * TASKS, etc
  *
  */
-// To run the task: OPAL/publish::generateSite or compile:generateSite
+// To run the task: compile:generateSite
 val generateSite = taskKey[File]("creates the OPAL website") in Compile
 generateSite := {
   lazy val disassemblerJar = (assembly in da).value

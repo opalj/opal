@@ -32,6 +32,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.PC
 import org.opalj.br.analyses.FieldAccessInformationKey
 import org.opalj.br.Field
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
@@ -156,6 +157,7 @@ class LBFieldValuesAnalysis private[analyses] (
         with domain.l0.TypeLevelLongValuesShiftOperators
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
+        with domain.l0.TypeLevelDynamicLoads
         // IT HAST TO BE L0 - we can't deal with "null" values!
         with domain.l0.DefaultReferenceValuesBinding
         with domain.DefaultHandlingOfMethodResults
@@ -426,6 +428,8 @@ object FieldValuesAnalysis {
 }
 
 object EagerLBFieldValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(FieldAccessInformationKey)
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
         // To ensure that subsequent analyses are able to pick-up the results of this

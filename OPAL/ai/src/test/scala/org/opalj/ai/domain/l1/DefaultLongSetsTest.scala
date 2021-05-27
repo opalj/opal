@@ -6,9 +6,9 @@ package l1
 
 import org.junit.runner.RunWith
 import scala.collection.immutable.SortedSet
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.opalj.br.ObjectType
 
 /**
@@ -18,7 +18,7 @@ import org.opalj.br.ObjectType
  * @author David Becker
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultLongSetsTest extends FunSpec with Matchers {
+class DefaultLongSetsTest extends AnyFunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
     final val SomePC = 100000
@@ -34,6 +34,7 @@ class DefaultLongSetsTest extends FunSpec with Matchers {
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultLongSetValues // <----- Test target
         with l1.LongSetValuesShiftOperators // <----- Test target
         with l0.TypeLevelPrimitiveValuesConversions

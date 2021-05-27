@@ -92,21 +92,25 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             context:               MethodContext,
             computeDeclaredMethod: Int ⇒ DeclaredMethod
         ): Unit = {
-            val oldDm = dms.computeIfAbsent(context, _ ⇒ computeDeclaredMethod(
-                idCounter.getAndIncrement()
-            ))
+            var computedDM: DeclaredMethod = null
+            val oldDm = dms.computeIfAbsent(context, _ ⇒ {
+                computedDM = computeDeclaredMethod(idCounter.getAndIncrement())
+                computedDM
+            })
 
-            val computedDM = computeDeclaredMethod(0)
             assert(
-                oldDm match {
-                    case dm: DefinedMethod ⇒
-                        computedDM.hasSingleDefinedMethod &&
-                            (dm.definedMethod eq computedDM.definedMethod)
-                    case mdm: MultipleDefinedMethods ⇒
-                        mdm.hasMultipleDefinedMethods &&
-                            mdm.definedMethods.size == computedDM.definedMethods.size &&
-                            mdm.definedMethods.forall(computedDM.definedMethods.contains)
-                    case _: VirtualDeclaredMethod ⇒ true
+                (computedDM ne null) || {
+                    computedDM = computeDeclaredMethod(0)
+                    oldDm match {
+                        case dm: DefinedMethod ⇒
+                            computedDM.hasSingleDefinedMethod &&
+                                (dm.definedMethod eq computedDM.definedMethod)
+                        case mdm: MultipleDefinedMethods ⇒
+                            mdm.hasMultipleDefinedMethods &&
+                                mdm.definedMethods.size == computedDM.definedMethods.size &&
+                                mdm.definedMethods.forall(computedDM.definedMethods.contains)
+                        case _: VirtualDeclaredMethod ⇒ true
+                    }
                 },
                 "creation of declared methods failed:\n\t"+
                     s"$oldDm\n\t\tvs.(new)\n\t$computedDM}"
@@ -123,7 +127,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 // all methods present in the current class file, excluding methods derived
                 // from any supertype that are not overridden by this type.
                 m ← cf.methods
-                if m.isStatic || m.isPrivate || m.isAbstract || m.isInitializer
+                if m.isStatic || m.isAbstract || m.isInitializer
             } {
                 if (m.isAbstract) {
                     // Abstract methods can be inherited, but will not appear as instance methods
@@ -174,6 +178,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                             if (subClassFile.findMethod(m.name, m.descriptor).isEmpty) {
                                 val staticMethodResult = p.staticCall(
                                     subtype,
+                                    subtype,
                                     isInterface = false,
                                     m.name,
                                     m.descriptor
@@ -205,7 +210,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
             }
 
             for {
-                // all non-private, non-abstract instance methods present in the current class file,
+                // all non-abstract instance methods present in the current class file,
                 // including methods derived from any supertype that are not overridden by this type
                 mc ← p.instanceMethods(classType)
             } {
@@ -285,16 +290,35 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
          * whether the given method is package-private or not.
          */
         def apply(project: SomeProject, objectType: ObjectType, method: Method): MethodContext = {
-            if (method.isPackagePrivate)
-                new PackagePrivateMethodContext(
-                    method.classFile.thisType.packageName,
-                    method.name,
-                    method.descriptor
-                )
-            else if (project.hasInstanceMethod(objectType, method.name, method.descriptor, true))
-                new ShadowsPackagePrivateMethodContext(method.name, method.descriptor)
+            MethodContext(
+                project,
+                objectType,
+                method.classFile.thisType.packageName,
+                method.name,
+                method.descriptor,
+                method.isPackagePrivate
+            )
+        }
+
+        /**
+         * Factory method for [[MethodContext]]/[[PackagePrivateMethodContext]] depending on
+         * whether the given method is package-private or not.
+         */
+        def apply(
+            project:          SomeProject,
+            objectType:       ObjectType,
+            declaringPackage: String,
+            methodName:       String,
+            descriptor:       MethodDescriptor,
+            isPackagePrivate: Boolean
+        ): MethodContext = {
+            if (isPackagePrivate)
+                new PackagePrivateMethodContext(declaringPackage, methodName, descriptor)
+            else if (project.classFile(objectType).isDefined &&
+                project.hasInstanceMethod(objectType, methodName, descriptor, true))
+                new ShadowsPackagePrivateMethodContext(methodName, descriptor)
             else
-                new MethodContext(method.name, method.descriptor)
+                new MethodContext(methodName, descriptor)
         }
     }
 
@@ -365,28 +389,27 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
                 packageName == that.packageName &&
                     methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    !hasAccessibleMethod
+                    isPackagePrivateMethod
             case that: ShadowsPackagePrivateMethodContext ⇒
                 methodName == that.methodName &&
                     descriptor == that.descriptor &&
-                    hasAccessibleMethod
+                    !isPackagePrivateMethod
             case that: MethodContext ⇒
                 methodName == that.methodName && descriptor == that.descriptor
             case _ ⇒ false
         }
 
-        private def hasAccessibleMethod: Boolean = {
+        private def isPackagePrivateMethod: Boolean = {
             if (project.classHierarchy.isInterface(receiverType).isYes) {
-                val method =
-                    project.resolveInterfaceMethodReference(receiverType, methodName, descriptor)
-                method.exists(m ⇒ m.isPublic || m.isProtected)
+                false
             } else {
                 val method = project.resolveClassMethodReference(
                     receiverType,
                     methodName,
                     descriptor
                 )
-                method.hasValue && (method.value.isPublic || method.value.isProtected)
+                method.hasValue && method.value.isPackagePrivate &&
+                    method.value.declaringClassFile.thisType.packageName == packageName
             }
         }
     }

@@ -21,6 +21,7 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.Method
 import org.opalj.br.PC
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.ai.domain
@@ -62,6 +63,7 @@ class LBMethodReturnValuesAnalysis private[analyses] (
         with domain.l0.TypeLevelLongValuesShiftOperators
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
+        with domain.l0.TypeLevelDynamicLoads
         with domain.l1.DefaultReferenceValuesBinding
         with domain.DefaultHandlingOfMethodResults
         with domain.RecordReturnedValue
@@ -177,6 +179,8 @@ class LBMethodReturnValuesAnalysis private[analyses] (
 }
 
 object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def init(p: SomeProject, ps: PropertyStore): Null = {
         // To ensure that subsequent analyses are able to pick-up the results of this

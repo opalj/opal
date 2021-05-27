@@ -33,7 +33,7 @@ object JavaFixtureCompiler extends AutoPlugin {
 
     // tasks of the plugin
     val javaFixtureCompile = taskKey[Seq[JavaFixtureCompilationResult]](
-      "Compilation of Java fixture projects against Eclipse JDT 3.24.0 compiler."
+      "Compilation of Java fixture projects against Eclipse JDT 3.26.0 compiler."
     )
 
     val javaFixturePackage =

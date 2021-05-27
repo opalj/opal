@@ -3,9 +3,9 @@ package org.opalj
 package da
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import java.net.URL
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -22,7 +22,7 @@ import org.opalj.util.Seconds
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DisassemblerSmokeTest extends FunSpec with Matchers {
+class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
 
     describe("the Disassembler") {
         val jmodsZip = TestResources.locateTestResources(

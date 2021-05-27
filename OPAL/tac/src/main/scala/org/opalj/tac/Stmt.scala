@@ -83,6 +83,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def isNonVirtualMethodCall: Boolean = false
     def isVirtualMethodCall: Boolean = false
     def isStaticMethodCall: Boolean = false
+    def isCaughtException: Boolean = false
 
 }
 
@@ -903,8 +904,8 @@ case class StaticMethodCall[+V <: Var[V]](
      *
      * @see [ProjectLike#staticCall] for further details.
      */
-    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
-        p.staticCall(declaringClass, isInterface, name, descriptor)
+    def resolveCallTarget(callingContext: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+        p.staticCall(callingContext, declaringClass, isInterface, name, descriptor)
     }
 
     // convenience method to enable Call to define a single method to handle all kinds of calls
@@ -915,7 +916,7 @@ case class StaticMethodCall[+V <: Var[V]](
         p:  ProjectLike,
         ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
-        resolveCallTarget(p).toSet
+        resolveCallTarget(callingContext).toSet
     }
 
     private[tac] override def remapIndexes(
@@ -1106,6 +1107,7 @@ case class CaughtException[+V <: Var[V]](
         private var throwingStmts: IntTrieSet
 ) extends Stmt[V] {
 
+    final override def isCaughtException: Boolean = true
     final override def asCaughtException: CaughtException[V] = this
     final override def astID: Int = CaughtException.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = true

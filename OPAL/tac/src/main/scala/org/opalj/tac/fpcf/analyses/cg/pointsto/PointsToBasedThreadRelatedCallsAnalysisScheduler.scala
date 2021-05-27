@@ -56,7 +56,7 @@ trait PointsToBasedThreadStartAnalysis
     override val apiMethod: DeclaredMethod = threadStartMethod
 
     override type State = PointsToBasedCGState[PointsToSet]
-    override type DependerType = CallSiteT
+    override type DependerType = CallSite
 
     override def processNewCaller(
         caller:          DefinedMethod,
@@ -69,10 +69,13 @@ trait PointsToBasedThreadStartAnalysis
     ): ProperPropertyComputationResult = {
         val indirectCalls = new IndirectCalls()
 
-        implicit val state: State = new PointsToBasedCGState[PointsToSet](caller, FinalEP(caller.definedMethod, TheTACAI(tac)))
+        implicit val state: State = new PointsToBasedCGState[PointsToSet](
+            caller, FinalEP(caller.definedMethod, TheTACAI(tac))
+        )
 
         if (isDirect) {
-            val receiver = tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
+            val receiver =
+                tac.stmts(state.tac.properStmtIndexForPC(pc)).asInstanceMethodCall.receiver
             handleStart(caller, receiver, pc, indirectCalls)
         } else
             indirectCalls.addIncompleteCallSite(pc)
@@ -107,9 +110,10 @@ trait PointsToBasedThreadStartAnalysis
                 val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
                 for (cs ← relevantCallSites) {
-                    val pc = cs._1
-                    val receiver =
-                        state.tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.receiver
+                    val pc = cs.pc
+                    val receiver = state.tac.stmts(
+                        state.tac.properStmtIndexForPC(pc)
+                    ).asInstanceMethodCall.receiver
                     ub.forNewestNTypes(ub.numTypes - seenTypes) { newType ⇒
                         val theType = newType.asObjectType
                         handleType(
@@ -168,11 +172,11 @@ trait PointsToBasedThreadStartAnalysis
             indirectCalls
         )
 
-        val callSite = (
+        val callSite = CallSite(
             pc,
             "start",
             MethodDescriptor.NoArgsAndReturnVoid,
-            state.tac.stmts(state.tac.pcToIndex(pc)).asInstanceMethodCall.declaringClass
+            state.tac.stmts(state.tac.properStmtIndexForPC(pc)).asInstanceMethodCall.declaringClass
         )
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
@@ -374,7 +378,7 @@ trait PointsToBasedThreadStartAnalysis
     }
 
     @inline protected[this] def currentPointsTo(
-        depender:   CallSiteT,
+        depender:   CallSite,
         dependee:   Entity,
         typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {

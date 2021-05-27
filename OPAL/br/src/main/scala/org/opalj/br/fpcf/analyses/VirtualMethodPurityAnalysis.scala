@@ -16,6 +16,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ClassifiedImpure
 import org.opalj.br.fpcf.properties.CompileTimePure
@@ -42,16 +43,14 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
         val cfo = project.classFile(dm.declaringClassType)
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(dm.declaringClassType, dm.name, dm.descriptor)
-            else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
-                project.virtualCall(
-                    dm.definedMethod.classFile.thisType.packageName,
+                project.interfaceCall(
+                    dm.declaringClassType,
                     dm.declaringClassType,
                     dm.name,
                     dm.descriptor
                 )
             else project.virtualCall(
-                "" /* package is irrelevant, must be public interface methods */ ,
+                dm.declaringClassType,
                 dm.declaringClassType,
                 dm.name,
                 dm.descriptor
@@ -104,6 +103,8 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
 }
 
 trait VirtualMethodPurityAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(Purity))
 

@@ -4,12 +4,12 @@ package br
 package analyses
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
-import org.opalj.br.reader.Java8Framework.ClassFiles
+import org.opalj.br.reader.Java11Framework.ClassFiles
 
 /**
  * Tests the support for "project" related functionality.
@@ -17,7 +17,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ProjectTest extends FlatSpec with Matchers {
+class ProjectTest extends AnyFlatSpec with Matchers {
 
     import ProjectTest._
     //
@@ -274,6 +274,7 @@ class ProjectTest extends FlatSpec with Matchers {
     testAllMethodsWithBodyWithContext(project, "Methods.jar")
     testAllMethodsWithBodyWithContext(overallProject, "Code.jar")
     testAllMethodsWithBodyWithContext(opalProject, "OPAL")
+    testAllMethodsWithBodyWithContext(java11nestsProject, "Java11Nests.jar")
 
     def testParForeachMethodWithBody(project: SomeProject, name: String): Unit = {
         it should s"return that same methods for $name as a manual search" in {
@@ -309,6 +310,7 @@ class ProjectTest extends FlatSpec with Matchers {
     testParForeachMethodWithBody(project, "Methods.jar")
     testParForeachMethodWithBody(overallProject, "Code.jar")
     testParForeachMethodWithBody(opalProject, "OPAL")
+    testParForeachMethodWithBody(java11nestsProject, "Java11Nests.jar")
 
     // -----------------------------------------------------------------------------------
     //
@@ -410,7 +412,7 @@ class ProjectTest extends FlatSpec with Matchers {
         it should "handle the case if an interface has no implementing class" in {
             val implementingMethods =
                 methodsProject.interfaceCall(
-                    superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid
+                    superI, superI, "someMethod", MethodDescriptor.NoArgsAndReturnVoid
                 )
             implementingMethods.size should be(0)
         }
@@ -419,14 +421,286 @@ class ProjectTest extends FlatSpec with Matchers {
             val classType = ObjectType("methods/b/B")
             val implementingMethods =
                 methodsProject.virtualCall(
-                    "methods/b", classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid
+                    classType, classType, "publicMethod", MethodDescriptor.NoArgsAndReturnVoid
                 )
 
             implementingMethods.size should be(1)
             implementingMethods.head should have(
                 'name("publicMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
+                'declaringClassFile(methodsProject.classFile(ObjectType("methods/b/DirectSub")).get)
+            )
+        }
+
+        it should "find private method for virtual calls" in {
+            val classType = ObjectType("methods/c/Super")
+            val implementingMethods =
+                methodsProject.virtualCall(
+                    classType,
+                    classType,
+                    "originallyPrivateMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(1)
+            implementingMethods.head should have(
+                'name("originallyPrivateMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
+                'declaringClassFile(methodsProject.classFile(classType).get)
+            )
+        }
+
+        it should "not find private method for virtual calls on subclasses" in {
+            val classType = ObjectType("methods/c/Sub1")
+            val implementingMethods =
+                methodsProject.virtualCall(
+                    classType,
+                    classType,
+                    "originallyPrivateMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(1)
+            implementingMethods.head should have(
+                'name("originallyPrivateMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
+                'declaringClassFile(methodsProject.classFile(classType).get)
+            )
+        }
+
+        it should "not find private method for virtual calls declared on subclasses" in {
+            val classType = ObjectType("methods/c/Sub2")
+            val implementingMethods =
+                methodsProject.virtualCall(
+                    classType,
+                    classType,
+                    "originallyPrivateMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(0)
+        }
+
+        it should "find private method for instance calls" in {
+            val classType = ObjectType("methods/c/Super")
+            val implementingMethods =
+                methodsProject.instanceCall(
+                    classType,
+                    classType,
+                    "originallyPrivateMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(true)
+            implementingMethods.value should have(
+                'name("originallyPrivateMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid),
+                'declaringClassFile(methodsProject.classFile(classType).get)
+            )
+        }
+    }
+
+    // -----------------------------------------------------------------------------------
+    //
+    // TESTING THE RESOLVING OF METHOD REFERENCES FOR JAVA 11+ NestHost/NestMembers
+    //
+    // -----------------------------------------------------------------------------------
+
+    {
+        behavior of "instanceCall to resolve method references w.r.t. Java 11+ Nest Attributes"
+
+        it should "resolve a private method in the NestHost" in {
+            val implementingMethods =
+                java11nestsProject.instanceCall(
+                    NestMember1Type,
+                    NestHost,
+                    "nestHostMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(true)
+            implementingMethods.value should have(
+                'name("nestHostMethod"),
                 'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
             )
+        }
+
+        it should "resolve a private method in a NestMember" in {
+            val implementingMethods =
+                java11nestsProject.instanceCall(
+                    NestHost,
+                    NestMember1Type,
+                    "nestMember1Method",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(true)
+            implementingMethods.value should have(
+                'name("nestMember1Method"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+            )
+        }
+
+        it should "resolve a private method in a NestMate" in {
+            val implementingMethods =
+                java11nestsProject.instanceCall(
+                    NestMember2Type,
+                    NestMember1Type,
+                    "nestMember1Method",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(true)
+            implementingMethods.value should have(
+                'name("nestMember1Method"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+            )
+        }
+
+        it should "not resolve a private method in an unrelated class from a NestHost" in {
+            val implementingMethods =
+                java11nestsProject.instanceCall(
+                    NestHost,
+                    NoNestMember,
+                    "noNestMemberMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(false)
+        }
+
+        it should "not resolve a private method in an unrelated class from a NestMember" in {
+            val implementingMethods =
+                java11nestsProject.instanceCall(
+                    NestMember1Type,
+                    NoNestMember,
+                    "noNestMemberMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(false)
+        }
+
+        it should "not resolve a private method in a NestHost from an unrelated class" in {
+            val implementingMethods =
+                java11nestsProject.instanceCall(
+                    NoNestMember,
+                    NestMember1Type,
+                    "nestMember1Method",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(false)
+        }
+
+        it should "not resolve a private method in a NestMember from an unrelated class" in {
+            val implementingMethods =
+                java11nestsProject.instanceCall(
+                    NoNestMember,
+                    NestHost,
+                    "nestHostMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.hasValue should be(false)
+        }
+
+        behavior of "virtualCall to resolve method references w.r.t. Java 11+ Nest Attributes"
+
+        it should "resolve a private method in the NestHost" in {
+            val implementingMethods =
+                java11nestsProject.virtualCall(
+                    NestMember1Type,
+                    NestHost,
+                    "nestHostMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(1)
+            implementingMethods.head should have(
+                'name("nestHostMethod"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+            )
+        }
+
+        it should "resolve a private method in a NestMember" in {
+            val implementingMethods =
+                java11nestsProject.virtualCall(
+                    NestHost,
+                    NestMember1Type,
+                    "nestMember1Method",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(1)
+            implementingMethods.head should have(
+                'name("nestMember1Method"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+            )
+        }
+
+        it should "resolve a private method in a NestMate" in {
+            val implementingMethods =
+                java11nestsProject.virtualCall(
+                    NestMember2Type,
+                    NestMember1Type,
+                    "nestMember1Method",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(1)
+            implementingMethods.head should have(
+                'name("nestMember1Method"),
+                'descriptor(MethodDescriptor.NoArgsAndReturnVoid)
+            )
+        }
+
+        it should "not resolve a private method in an unrelated class from a NestHost" in {
+            val implementingMethods =
+                java11nestsProject.virtualCall(
+                    NestHost,
+                    NoNestMember,
+                    "noNestMemberMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(0)
+        }
+
+        it should "not resolve a private method in an unrelated class from a NestMember" in {
+            val implementingMethods =
+                java11nestsProject.virtualCall(
+                    NestMember1Type,
+                    NoNestMember,
+                    "noNestMemberMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(0)
+        }
+
+        it should "not resolve a private method in a NestHost from an unrelated class" in {
+            val implementingMethods =
+                java11nestsProject.virtualCall(
+                    NoNestMember,
+                    NestMember1Type,
+                    "nestMember1Method",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(0)
+        }
+
+        it should "not resolve a private method in a NestMember from an unrelated class" in {
+            val implementingMethods =
+                java11nestsProject.virtualCall(
+                    NoNestMember,
+                    NestHost,
+                    "nestHostMethod",
+                    MethodDescriptor.NoArgsAndReturnVoid
+                )
+
+            implementingMethods.size should be(0)
         }
     }
 }
@@ -470,6 +744,10 @@ private object ProjectTest {
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
     val opalProject = Project(ClassFiles(opal), Traversable.empty, true)
 
+    val java11nestsArchive =
+        locateTestResources("java11nests-g-11-parameters-genericsignature", "bi")
+    val java11nestsProject = Project(ClassFiles(java11nestsArchive), Traversable.empty, true)
+
     //
     //
     // Types used by the tests
@@ -485,4 +763,9 @@ private object ProjectTest {
     val SubSub2 = ObjectType("interfaces/SubSub2")
     val Subclass1 = ObjectType("interfaces/Subclass1")
     val Subclass2 = ObjectType("interfaces/Subclass2")
+
+    val NestHost = ObjectType("java11nests/NestHost")
+    val NestMember1Type = ObjectType("""java11nests/NestHost$NestMember1""")
+    val NestMember2Type = ObjectType("java11nests/NestHost$NestMember2")
+    val NoNestMember = ObjectType("java11nests/NoNestMember")
 }

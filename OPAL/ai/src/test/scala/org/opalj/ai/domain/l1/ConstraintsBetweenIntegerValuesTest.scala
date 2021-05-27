@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.br.ObjectType
 
@@ -17,7 +17,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers {
+class ConstraintsBetweenIntegerValuesTest extends AnyFunSpec with Matchers {
 
     final val IrrelevantPC = Int.MinValue
 
@@ -31,6 +31,7 @@ class ConstraintsBetweenIntegerValuesTest extends FunSpec with Matchers {
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with l1.DefaultIntegerRangeValues // <----- The one we are going to test
         with l1.ConstraintsBetweenIntegerValues // <----- The one we are going to test
         with l0.TypeLevelPrimitiveValuesConversions

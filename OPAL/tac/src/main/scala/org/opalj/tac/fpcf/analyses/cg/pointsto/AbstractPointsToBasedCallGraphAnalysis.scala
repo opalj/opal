@@ -40,7 +40,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     with AbstractPointsToBasedAnalysis {
 
     override type State = PointsToBasedCGState[PointsToSet]
-    override type DependerType = CallSiteT
+    override type DependerType = CallSite
 
     override protected[this] def handlePreciseCall(
         calleeType:        ObjectType,
@@ -68,7 +68,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit = {
         val callerType = caller.definedMethod.classFile.thisType
-        val callSite = (pc, call.name, call.descriptor, call.declaringClass)
+        val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
         val currentPointsToSets = currentPointsToOfDefSites(callSite, call.receiver.asVar.definedBy)
@@ -122,7 +122,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                             if (newType.isObjectType) newType.asObjectType else ObjectType.Object
                         if (typesLeft.contains(theType.id)) {
                             state.removeTypeForCallSite(callSite, theType)
-                            val (pc, name, descriptor, declaredType) = callSite
+                            val CallSite(pc, name, descriptor, declaredType) = callSite
                             val tgtR = project.instanceCall(
                                 state.method.declaringClassType,
                                 theType,
@@ -180,6 +180,21 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
             }
             pointsToUB(p2s)
         }
+    }
+
+    @inline override protected[this] def canResolveCall(
+        implicit
+        state: State
+    ): ObjectType ⇒ Boolean = {
+        throw new UnsupportedOperationException()
+    }
+
+    @inline protected[this] def handleUnresolvedCall(
+        possibleTgtType: ObjectType,
+        call:            Call[V] with VirtualCall[V],
+        pc:              Int
+    )(implicit state: State): Unit = {
+        throw new UnsupportedOperationException()
     }
 }
 

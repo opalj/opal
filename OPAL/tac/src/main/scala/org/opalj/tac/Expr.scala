@@ -24,7 +24,6 @@ import org.opalj.br.BootstrapMethod
 import org.opalj.br.MethodHandle
 import org.opalj.br.Method
 import org.opalj.br.PC
-import org.opalj.br.Field
 import org.opalj.br.analyses.ProjectLike
 import org.opalj.value.ValueInformation
 
@@ -109,6 +108,8 @@ trait Expr[+V <: Var[V]] extends ASTNode[V] {
     def asClassConst: ClassConst = throw new ClassCastException();
     def isNullExpr: Boolean = false
     def asNullExpr: NullExpr = throw new ClassCastException();
+    def isDynamicConst: Boolean = false
+    def asDynamicConst: DynamicConst = throw new ClassCastException();
     def asBinaryExpr: BinaryExpr[V] = throw new ClassCastException();
     def asPrefixExpr: PrefixExpr[V] = throw new ClassCastException();
     def asPrimitiveTypeCastExpr: PrimitiveTypecastExpr[V] = throw new ClassCastException();
@@ -332,6 +333,21 @@ case class ClassConst(pc: PC, value: ReferenceType) extends SimpleValueConst {
     override def toString: String = s"ClassConst(pc=$pc,${value.toJava})"
 }
 object ClassConst { final val ASTID = -12 }
+
+case class DynamicConst(
+        pc:              PC,
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      FieldType
+) extends SimpleValueConst {
+    final override def isDynamicConst: Boolean = true
+    final override def asDynamicConst: this.type = this
+    final override def astID: Int = DynamicConst.ASTID
+    final override def tpe: Type = descriptor
+    final override def cTpe: ComputationalType = descriptor.computationalType
+    override def toString: String = s"DynamicConst(pc=$pc,$bootstrapMethod,$name,$descriptor)"
+}
+object DynamicConst { final val ASTID = -28 }
 
 case class NullExpr(pc: PC) extends SimpleValueConst {
     final override def isNullExpr: Boolean = true
@@ -954,8 +970,8 @@ case class StaticFunctionCall[+V <: Var[V]](
      *
      * @see [ProjectLike#staticCall] for further details.
      */
-    def resolveCallTarget(implicit p: ProjectLike): Result[Method] = {
-        p.staticCall(declaringClass, isInterface, name, descriptor)
+    def resolveCallTarget(callingContext: ObjectType)(implicit p: ProjectLike): Result[Method] = {
+        p.staticCall(callingContext, declaringClass, isInterface, name, descriptor)
     }
 
     final override def resolveCallTargets(
@@ -965,7 +981,7 @@ case class StaticFunctionCall[+V <: Var[V]](
         p:  ProjectLike,
         ev: V <:< DUVar[ValueInformation]
     ): Set[Method] = {
-        resolveCallTarget(p).toSet
+        resolveCallTarget(callingContext).toSet
     }
 
     private[tac] override def remapIndexes(

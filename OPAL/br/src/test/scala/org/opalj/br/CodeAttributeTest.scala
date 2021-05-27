@@ -3,9 +3,9 @@ package org.opalj
 package br
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.reader.Java8Framework.ClassFiles
@@ -20,7 +20,7 @@ import org.opalj.collection.immutable.Naught
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class CodeAttributeTest extends FlatSpec with Matchers {
+class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
     import CodeAttributeTest._
 

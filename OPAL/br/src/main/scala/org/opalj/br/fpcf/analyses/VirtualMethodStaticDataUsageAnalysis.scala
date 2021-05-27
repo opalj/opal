@@ -16,6 +16,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.StaticDataUsage
 import org.opalj.br.fpcf.properties.UsesConstantDataOnly
@@ -46,16 +47,14 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
         val cfo = project.classFile(dm.declaringClassType)
         val methods =
             if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
-                project.interfaceCall(dm.declaringClassType, dm.name, dm.descriptor)
-            else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
-                project.virtualCall(
-                    dm.definedMethod.classFile.thisType.packageName,
+                project.interfaceCall(
+                    dm.declaringClassType,
                     dm.declaringClassType,
                     dm.name,
                     dm.descriptor
                 )
             else project.virtualCall(
-                "" /* package is irrelevant, must be public interface methods */ ,
+                dm.declaringClassType,
                 dm.declaringClassType,
                 dm.name,
                 dm.descriptor
@@ -117,6 +116,8 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
 }
 
 trait VirtualMethodStaticDataUsageAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(StaticDataUsage))
 

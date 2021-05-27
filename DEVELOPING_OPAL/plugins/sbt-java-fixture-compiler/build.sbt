@@ -11,6 +11,8 @@ sbtPlugin := true
 
 publishMavenStyle := false
 
+resolvers in ThisBuild += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
+
 scalacOptions in ThisBuild ++= Seq(
   "-deprecation",
   "-feature",
@@ -29,4 +31,4 @@ scalacOptions in ThisBuild ++= Seq(
 )
 
 // The version of Eclipse JDT compiler library needs to stay fixed for use within OPAL!
-libraryDependencies ++= Seq("org.eclipse.jdt" % "ecj" % "3.24.0")
+libraryDependencies ++= Seq("org.eclipse.jdt" % "ecj" % "3.26.0.v20210317-0507")

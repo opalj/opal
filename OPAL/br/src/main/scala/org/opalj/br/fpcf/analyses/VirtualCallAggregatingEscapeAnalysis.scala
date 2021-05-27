@@ -15,6 +15,7 @@ import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParametersKey
@@ -50,20 +51,17 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
         var escapeState: EscapeProperty = NoEscape
         var dependees: Set[SomeEOptionP] = Set.empty
 
-        val maybeFile = project.classFile(dm.declaringClassType)
-
+        val cfo = project.classFile(dm.declaringClassType)
         val methods =
-            if (maybeFile.isDefined && maybeFile.get.isInterfaceDeclaration)
-                project.interfaceCall(dm.declaringClassType, dm.name, dm.descriptor)
-            else if (dm.hasSingleDefinedMethod && dm.definedMethod.isPackagePrivate)
-                project.virtualCall(
-                    dm.definedMethod.classFile.thisType.packageName,
+            if (cfo.isDefined && cfo.get.isInterfaceDeclaration)
+                project.interfaceCall(
+                    dm.declaringClassType,
                     dm.declaringClassType,
                     dm.name,
                     dm.descriptor
                 )
             else project.virtualCall(
-                "" /* package is irrelevant, must be public interface methods */ ,
+                dm.declaringClassType,
                 dm.declaringClassType,
                 dm.name,
                 dm.descriptor
@@ -113,6 +111,11 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
 }
 
 sealed trait VirtualCallAggregatingEscapeAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(
+        VirtualFormalParametersKey,
+        DeclaredMethodsKey
+    )
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(EscapeProperty))
 

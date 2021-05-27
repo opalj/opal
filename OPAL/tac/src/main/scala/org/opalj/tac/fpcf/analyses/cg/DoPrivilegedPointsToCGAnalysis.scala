@@ -66,7 +66,7 @@ abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
 ) extends TACAIBasedAPIBasedAnalysis with AbstractPointsToBasedAnalysis {
 
     override protected[this] type State = PointsToBasedCGState[PointsToSet]
-    override protected[this] type DependerType = CallSiteT
+    override protected[this] type DependerType = CallSite
 
     override def processNewCaller(
         caller:          DefinedMethod,
@@ -82,11 +82,11 @@ abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
             caller, FinalEP(caller.definedMethod, TheTACAI(tac))
         )
 
-        val StaticFunctionCallStatement(call) = tac.stmts(tac.pcToIndex(pc))
+        val StaticFunctionCallStatement(call) = tac.stmts(tac.properStmtIndexForPC(pc))
 
         val actualParamDefSites = call.params.head.asVar.definedBy
 
-        val callSite = (pc, call.name, call.descriptor, call.declaringClass)
+        val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
 
         val pointsToSets = currentPointsToOfDefSites(callSite, actualParamDefSites)
 
@@ -176,7 +176,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
     }
 
     override protected[this] type State = PointsToBasedCGState[PointsToSet]
-    override protected[this] type DependerType = CallSiteT
+    override protected[this] type DependerType = CallSite
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
         override protected[this] type ElementType = self.ElementType
