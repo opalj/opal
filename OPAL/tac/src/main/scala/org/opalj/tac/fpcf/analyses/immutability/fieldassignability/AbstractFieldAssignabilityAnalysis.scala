@@ -67,13 +67,11 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
             var escapeDependees:         Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty,
             var tacDependees:            Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty
     ) {
-        def hasDependees: Boolean = {
+        def hasDependees: Boolean =
             prematurelyReadDependee.isDefined || escapeDependees.nonEmpty || tacDependees.nonEmpty
-        }
 
-        def dependees: Set[EOptionP[Entity, Property]] = {
+        def dependees: Set[EOptionP[Entity, Property]] =
             (prematurelyReadDependee ++ escapeDependees ++ tacDependees.valuesIterator.map(_._1)).toSet
-        }
     }
 
     /**
@@ -82,74 +80,65 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     def getTACAI(
         method: Method,
         pcs:    PCs
-    )(implicit state: State): Option[TACode[TACMethodParameter, V]] = {
-        propertyStore(method, TACAI.key) match {
+    )(implicit state: State): Option[TACode[TACMethodParameter, V]] = propertyStore(method, TACAI.key) match {
 
-            case finalEP: FinalEP[Method, TACAI] ⇒ finalEP.ub.tac
+        case finalEP: FinalEP[Method, TACAI] ⇒ finalEP.ub.tac
 
-            case epk ⇒
-                state.tacDependees += method -> ((epk, pcs))
-                None
-        }
+        case epk ⇒
+            state.tacDependees += method -> ((epk, pcs))
+            None
     }
 
     /**
      * Checks whether the field is prematurely read, i.e. read before it is initialized in the
      * constructor, using the corresponding property.
      */
-    def isPrematurelyRead(
-        eop: EOptionP[Field, FieldPrematurelyRead]
-    )(implicit state: State): Boolean = {
-        eop match {
+    def isPrematurelyRead(eop: EOptionP[Field, FieldPrematurelyRead])(implicit state: State): Boolean = eop match {
 
-            case LBP(NotPrematurelyReadField) ⇒
-                state.prematurelyReadDependee = None
-                false
+        case LBP(NotPrematurelyReadField) ⇒
+            state.prematurelyReadDependee = None
+            false
 
-            case UBP(PrematurelyReadField) ⇒
-                state.prematurelyReadDependee = None
-                true
+        case UBP(PrematurelyReadField) ⇒
+            state.prematurelyReadDependee = None
+            true
 
-            case eps ⇒
-                state.prematurelyReadDependee = Some(eps)
-                true
-        }
+        case eps ⇒
+            state.prematurelyReadDependee = Some(eps)
+            true
     }
 
     /**
-     * Determines whether the basic block of a given index dominates the basic block of the other or is executed
-     * before the other when the basic blocks are the same
+     * Determines whether the basic block of a given index dominates the basic block of the other index or is executed
+     * before the other index in the case of both indexes belonging to the same basic block.
      */
     def dominates(
-        potentiallyDominator: Int,
-        potentiallyDominated: Int,
-        taCode:               TACode[TACMethodParameter, V]
+        potentiallyDominatorIndex: Int,
+        potentiallyDominatedIndex: Int,
+        taCode:                    TACode[TACMethodParameter, V]
     ): Boolean = {
-        val bbPotentiallyDominator = taCode.cfg.bb(potentiallyDominator)
-        val bbPotentiallyDominated = taCode.cfg.bb(potentiallyDominated)
+        val bbPotentiallyDominator = taCode.cfg.bb(potentiallyDominatorIndex)
+        val bbPotentiallyDominated = taCode.cfg.bb(potentiallyDominatedIndex)
         taCode.cfg.dominatorTree.strictlyDominates(bbPotentiallyDominator.nodeId, bbPotentiallyDominated.nodeId) ||
-            bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominator < potentiallyDominated
+            bbPotentiallyDominator == bbPotentiallyDominated && potentiallyDominatorIndex < potentiallyDominatedIndex
     }
 
     /**
-     * Returns the value the field will have after initialization or None if there may be multiple
-     * values.
+     * Returns the initialization value of a given type or None if the concrete type can not be determined.
      */
-    def getDefaultValue()(implicit state: State): Any = {
-
-        state.field.fieldType match {
-            case FloatType | ObjectType.Float     ⇒ 0.0f
-            case DoubleType | ObjectType.Double   ⇒ 0.0d
-            case LongType | ObjectType.Long       ⇒ 0L
-            case CharType | ObjectType.Character  ⇒ '\u0000'
-            case BooleanType | ObjectType.Boolean ⇒ false
-            case IntegerType |
-                ObjectType.Integer |
-                ByteType |
-                ObjectType.Byte |
-                ShortType |
-                ObjectType.Short ⇒ 0
-            case _: ReferenceType ⇒ null
-        }
+    def getDefaultValues()(implicit state: State): Set[Any] = state.field.fieldType match {
+        case FloatType | ObjectType.Float     ⇒ Set(0.0f)
+        case DoubleType | ObjectType.Double   ⇒ Set(0.0d)
+        case LongType | ObjectType.Long       ⇒ Set(0L)
+        case CharType | ObjectType.Character  ⇒ Set('\u0000')
+        case BooleanType | ObjectType.Boolean ⇒ Set(false)
+        case IntegerType |
+            ObjectType.Integer |
+            ByteType |
+            ObjectType.Byte |
+            ShortType |
+            ObjectType.Short ⇒ Set(0)
+        case ObjectType.String ⇒ Set("", null)
+        case _: ReferenceType  ⇒ Set(null)
     }
 }

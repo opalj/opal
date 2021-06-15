@@ -25,7 +25,6 @@ import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
-import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.br.ObjectType
 import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.br.Field
@@ -59,9 +58,6 @@ import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.tac.fpcf.analyses.purity.L2PurityAnalysis
 import org.opalj.tac.fpcf.analyses.purity.SystemOutLoggingAllExceptionRater
 import org.opalj.log.LogContext
-import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
-import org.opalj.tac.cg.CHACallGraphKey
-import org.opalj.tac.cg.AbstractCallGraphKey
 import org.opalj.br.fpcf.properties.ClassImmutability
 import org.opalj.br.fpcf.properties.FieldImmutability
 import org.opalj.br.fpcf.properties.FieldAssignability
@@ -73,17 +69,18 @@ import org.opalj.fpcf.OrderedProperty
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.collection.immutable.Chain
 import org.opalj.fpcf.ComputationSpecification
+import org.opalj.br.fpcf.properties.NonAssignable
 
 /**
- * Determines the immutability of field references, fields, classes and types and provides several setting
- * options for the evaluation.
+ * Determines the assignability of fields and the immutability  of fields, classes and types and provides several
+ * setting options for the evaluation.
  *
  * @author Tobias Roth
  */
 object Immutability {
 
     sealed trait Analyses
-    case object FieldReferences extends Analyses
+    case object Assignability extends Analyses
     case object Fields extends Analyses
     case object Classes extends Analyses
     case object Types extends Analyses
@@ -98,8 +95,6 @@ object Immutability {
         resultsFolder:                     Path,
         withoutJDK:                        Boolean,
         isLibrary:                         Boolean,
-        closedWorldAssumption:             Boolean,
-        callGraphKey:                      AbstractCallGraphKey,
         level:                             Int,
         withoutConsiderGenericity:         Boolean,
         withoutConsiderLazyInitialization: Boolean,
@@ -128,21 +123,13 @@ object Immutability {
             else
                 ConfigFactory.load("CommandLineProject.conf")
 
-        // TODO: in case of application this value is already set
-        if (closedWorldAssumption) {
-            config = config.withValue(
-                "org.opalj.br.analyses.cg.ClassExtensibilityKey.analysis",
-                ConfigValueFactory.fromAnyRef("org.opalj.br.analyses.cg.ClassHierarchyIsNotExtensible")
-            )
-        }
-
         config = config.withValue(
-            "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity",
+            "org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis.considerGenericity",
             ConfigValueFactory.fromAnyRef(!withoutConsiderGenericity)
         )
 
         config = config.withValue(
-            "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization",
+            "org.opalj.fpcf.analyses.L3FieldAssignabilityAnalysis.considerLazyInitialization",
             ConfigValueFactory.fromAnyRef(!withoutConsiderLazyInitialization)
         )
 
@@ -205,9 +192,7 @@ object Immutability {
                 }
             }
         )
-        //time { project.get(callGraphKey) } { t ⇒
-        //    callGraphTime = t.toSeconds
-        //}
+
         val propertyStore = project.get(PropertyStoreKey)
 
         val analysesManager = project.get(FPCFAnalysesManagerKey)
@@ -218,7 +203,7 @@ object Immutability {
 
                 css: Chain[ComputationSpecification[FPCFAnalysis]] ⇒
                     analysis match {
-                        case FieldReferences ⇒
+                        case Assignability ⇒
                             if (css.contains(LazyL3FieldAssignabilityAnalysis))
                                 allFieldsInProjectClassFiles.foreach(
                                     f ⇒ propertyStore.force(f, br.fpcf.properties.FieldAssignability.key)
@@ -258,14 +243,13 @@ object Immutability {
                     }
             }
             )
-
         } { t ⇒
             analysisTime = t.toSeconds
         }
 
         val stringBuilderResults: StringBuilder = new StringBuilder()
 
-        val fieldReferenceGroupedResults = propertyStore
+        val fieldAssignabilityGroupedResults = propertyStore
             .entities(FieldAssignability.key)
             .filter(field ⇒ allFieldsInProjectClassFiles.contains(field.e.asInstanceOf[Field]))
             .toTraversable
@@ -281,64 +265,70 @@ object Immutability {
             packageName+"."+className+"."+fieldName
         }
 
-        val mutableFieldReferences =
-            fieldReferenceGroupedResults
+        val assignableFields =
+            fieldAssignabilityGroupedResults
                 .getOrElse(Assignable, Iterator.empty)
                 .map(unpackFieldEPS)
                 .toSeq
                 .sortWith(_ < _)
 
-        val notThreadSafeLazyInitializedFieldReferences =
-            fieldReferenceGroupedResults
+        val notThreadSafeLazilyInitializedFields =
+            fieldAssignabilityGroupedResults
                 .getOrElse(UnsafelyLazilyInitialized, Iterator.empty)
                 .toSeq
                 .map(unpackFieldEPS)
                 .sortWith(_ < _)
 
-        /*val lazyInitializedReferencesNotThreadSafeButDeterministic =
-            fieldReferenceGroupedResults
-                .getOrElse(LazyInitializedNotThreadSafeButDeterministicFieldReference, Iterator.empty)
-                .toSeq
-                .map(unpackFieldEPS)
-                .sortWith(_ < _) */
-
-        val threadSafeLazyInitializedFieldReferences =
-            fieldReferenceGroupedResults
+        val threadSafeLazilyInitializedFields =
+            fieldAssignabilityGroupedResults
                 .getOrElse(LazilyInitialized, Iterator.empty)
                 .toSeq
                 .map(unpackFieldEPS)
                 .sortWith(_ < _)
 
-        val nonAssignableFields = fieldReferenceGroupedResults
+        val effectivelyNonAssignableFields = fieldAssignabilityGroupedResults
             .getOrElse(EffectivelyNonAssignable, Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
             .sortWith(_ < _)
+        val nonAssignableFields = fieldAssignabilityGroupedResults
+            .getOrElse(NonAssignable, Iterator.empty)
+            .toSeq
+            .map(unpackFieldEPS)
+            .sortWith(_ < _)
 
-        if (analysis == All || analysis == FieldReferences) {
+        if (analysis == All || analysis == Assignability) {
             stringBuilderResults.append(
                 s"""
-                | Mutable References:
-                | ${mutableFieldReferences.map(_+" | Mutable Reference ").mkString("\n")}
+                | Assignable Fields:
+                | ${assignableFields.map(_+" | Assignable Field ").mkString("\n")}
                 |
-                | Lazy Initialized Not Thread Safe And Not Deterministic Field References:
+                | Lazy Initialized Not Thread Safe Field:
                 | ${
-                    notThreadSafeLazyInitializedFieldReferences
-                        .map(_+" | Lazy Initialized Not Thread Safe And Not Deterministic Field Reference")
+                    notThreadSafeLazilyInitializedFields
+                        .map(_+" | Lazy Initialized Not Thread Safe Field")
                         .mkString("\n")
                 }
                 |
-                | Lazy Initialized Thread Safe References:
+                | Lazy Initialized Thread Safe Field:
                 | ${
-                    threadSafeLazyInitializedFieldReferences
-                        .map(_+" | Lazy Initialized Thread Safe Field Reference")
+                    threadSafeLazilyInitializedFields
+                        .map(_+" | Lazy Initialized Thread Safe Field")
                         .mkString("\n")
                 }
                 |
-                | Immutable References:
+                |
+                | effectively non assignable Fields:
+                |                | ${
+                    effectivelyNonAssignableFields
+                        .map(_+" | effectively non assignable ")
+                        .mkString("\n")
+                }
+
+                | non assignable Fields:
                 | ${
                     nonAssignableFields
-                        .map(_+" | immutable field Reference")
+                        .map(_+" | non assignable")
                         .mkString("\n")
                 }
                 |
@@ -358,7 +348,7 @@ object Immutability {
             .map(unpackFieldEPS)
             .sortWith(_ < _)
 
-        val shallowImmutableFields = fieldGroupedResults
+        val nonTransitivelyImmutableFields = fieldGroupedResults
             .getOrElse(NonTransitivelyImmutableField, Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
@@ -370,7 +360,7 @@ object Immutability {
             .map(unpackFieldEPS)
             .sortWith(_ < _)
 
-        val deepImmutableFields = fieldGroupedResults
+        val transitivelyImmutableFields = fieldGroupedResults
             .getOrElse(TransitivelyImmutableField, Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
@@ -382,8 +372,8 @@ object Immutability {
                 | Mutable Fields:
                 | ${mutableFields.map(_+" | Mutable Field ").mkString("\n")}
                 |
-                | Shallow Immutable Fields:
-                | ${shallowImmutableFields.map(_+" | Shallow Immutable Field ").mkString("\n")}
+                | Non Transitively Immutable Fields:
+                | ${nonTransitivelyImmutableFields.map(_+" | Non Transitively Immutable Field ").mkString("\n")}
                 |
                 | Dependent Immutable Fields:
                 | ${
@@ -392,8 +382,8 @@ object Immutability {
                         .mkString("\n")
                 }
                 |
-                | Deep Immutable Fields:
-                | ${deepImmutableFields.map(_+" | Deep Immutable Field ").mkString("\n")}
+                | Transitively Immutable Fields:
+                | ${transitivelyImmutableFields.map(_+" | Transitively Immutable Field ").mkString("\n")}
                 |
                 |""".stripMargin
             )
@@ -418,7 +408,7 @@ object Immutability {
                 .map(unpackClass)
                 .sortWith(_ < _)
 
-        val shallowImmutableClasses =
+        val nonTransitivelyImmutableClasses =
             classGroupedResults
                 .getOrElse(NonTransitivelyImmutableClass, Iterator.empty)
                 .toSeq
@@ -432,18 +422,18 @@ object Immutability {
                 .map(unpackClass)
                 .sortWith(_ < _)
 
-        val deepImmutables = classGroupedResults.getOrElse(TransitivelyImmutableClass, Iterator.empty)
+        val transitivelyImmutables = classGroupedResults.getOrElse(TransitivelyImmutableClass, Iterator.empty)
 
         val allInterfaces =
             project.allProjectClassFiles.filter(_.isInterfaceDeclaration).map(_.thisType).toSet
 
-        val deepImmutableClassesInterfaces = deepImmutables
+        val transitivelyImmutableClassesInterfaces = transitivelyImmutables
             .filter(eps ⇒ allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
             .toSeq
             .map(unpackClass)
             .sortWith(_ < _)
 
-        val deepImmutableClasses = deepImmutables
+        val transitivelyImmutableClasses = transitivelyImmutables
             .filter(eps ⇒ !allInterfaces.contains(eps.e.asInstanceOf[ObjectType]))
             .toSeq
             .map(unpackClass)
@@ -455,8 +445,8 @@ object Immutability {
                 | Mutable Classes:
                 | ${mutableClasses.map(_+" | Mutable Class ").mkString("\n")}
                 |
-                | Shallow Immutable Classes:
-                | ${shallowImmutableClasses.map(_+" | Shallow Immutable Class ").mkString("\n")}
+                | Non Transitively Immutable Classes:
+                | ${nonTransitivelyImmutableClasses.map(_+" | Non Transitively Immutable Class ").mkString("\n")}
                 |
                 | Dependent Immutable Classes:
                 | ${
@@ -465,13 +455,13 @@ object Immutability {
                         .mkString("\n")
                 }
                 |
-                | Deep Immutable Classes:
-                | ${deepImmutableClasses.map(_+" | Deep Immutable Classes ").mkString("\n")}
+                | Transitively Immutable Classes:
+                | ${transitivelyImmutableClasses.map(_+" | Transitively Immutable Classes ").mkString("\n")}
                 |
-                | Deep Immutable Interfaces:
+                | Transitively Immutable Interfaces:
                 | ${
-                    deepImmutableClassesInterfaces
-                        .map(_+" | Deep Immutable Interfaces ")
+                    transitivelyImmutableClassesInterfaces
+                        .map(_+" | Transitively Immutable Interfaces ")
                         .mkString("\n")
                 }
                 |""".stripMargin
@@ -490,7 +480,7 @@ object Immutability {
             .map(unpackClass)
             .sortWith(_ < _)
 
-        val shallowImmutableTypes = typeGroupedResults
+        val nonTransitivelyImmutableTypes = typeGroupedResults
             .getOrElse(NonTransitivelyImmutableType, Iterator.empty)
             .toSeq
             .map(unpackClass)
@@ -502,7 +492,7 @@ object Immutability {
             .map(unpackClass)
             .sortWith(_ < _)
 
-        val deepImmutableTypes = typeGroupedResults
+        val transitivelyImmutableTypes = typeGroupedResults
             .getOrElse(TransitivelyImmutableType, Iterator.empty)
             .toSeq
             .map(unpackClass)
@@ -515,28 +505,28 @@ object Immutability {
                 | ${mutableTypes.map(_+" | Mutable Type ").mkString("\n")}
                 |
                 | Shallow Immutable Types:
-                | ${shallowImmutableTypes.map(_+" | Shallow Immutable Types ").mkString("\n")}
+                | ${nonTransitivelyImmutableTypes.map(_+" | Shallow Immutable Types ").mkString("\n")}
                 |
                 | Dependent Immutable Types:
                 | ${dependentImmutableTypes.map(_+" | Dependent Immutable Types ").mkString("\n")}
                 |
                 | Deep Immutable Types:
-                | ${deepImmutableTypes.map(_+" | Deep Immutable Types ").mkString("\n")}
+                | ${transitivelyImmutableTypes.map(_+" | Deep Immutable Types ").mkString("\n")}
                 |""".stripMargin
             )
         }
 
         val stringBuilderNumber: StringBuilder = new StringBuilder
 
-        if (analysis == FieldReferences || analysis == All) {
+        if (analysis == Assignability || analysis == All) {
             stringBuilderNumber.append(
                 s"""
-                | Mutable References: ${mutableFieldReferences.size}
-                | Lazy Initialized Not Thread Safe Field References: ${notThreadSafeLazyInitializedFieldReferences.size}
-                | Lazy Initialized Thread Safe Field Reference: ${threadSafeLazyInitializedFieldReferences.size}
-                | Effectively Non Assignable Fields:
+                | Assignable Fields: ${assignableFields.size}
+                | Lazily Initialized Not Thread Safe Assigned Fields: ${notThreadSafeLazilyInitializedFields.size}
+                | Lazily Initialized Thread Safe Assigned Fields: ${threadSafeLazilyInitializedFields.size}
+                | Effectively Non Assignable Fields: ${effectivelyNonAssignableFields.size}
                 | Non Assignable Fields: ${nonAssignableFields.size}
-                | Field References: ${allFieldsInProjectClassFiles.size}
+                | Fields: ${allFieldsInProjectClassFiles.size}
                 |""".stripMargin
             )
         }
@@ -545,9 +535,9 @@ object Immutability {
             stringBuilderNumber.append(
                 s"""
                 | Mutable Fields: ${mutableFields.size}
-                | Shallow Immutable Fields: ${shallowImmutableFields.size}
+                | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
                 | Dependent Immutable Fields: ${dependentImmutableFields.size}
-                | Deep Immutable Fields: ${deepImmutableFields.size}
+                | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
                 | Fields: ${allFieldsInProjectClassFiles.size}
                 |""".stripMargin
             )
@@ -557,12 +547,12 @@ object Immutability {
             stringBuilderNumber.append(
                 s"""
                 | Mutable Classes: ${mutableClasses.size}
-                | Shallow Immutable Classes: ${shallowImmutableClasses.size}
+                | Non Transitively Immutable Classes: ${nonTransitivelyImmutableClasses.size}
                 | Dependent Immutable Classes: ${dependentImmutableClasses.size}
-                | Deep Immutable Classes: ${deepImmutableClasses.size}
-                | Classes: ${allProjectClassTypes.size - deepImmutableClassesInterfaces.size}
+                | Transitively Immutable Classes: ${transitivelyImmutableClasses.size}
+                | Classes: ${allProjectClassTypes.size - transitivelyImmutableClassesInterfaces.size}
                 |
-                | Deep Immutable Interfaces: ${deepImmutableClassesInterfaces.size}
+                | Transitively Immutable Interfaces: ${transitivelyImmutableClassesInterfaces.size}
                 |
                 |""".stripMargin
             )
@@ -572,9 +562,9 @@ object Immutability {
             stringBuilderNumber.append(
                 s"""
                 | Mutable Types: ${mutableTypes.size}
-                | Shallow Immutable Types: ${shallowImmutableTypes.size}
+                | Non Transitively Immutable Types: ${nonTransitivelyImmutableTypes.size}
                 | Dependent Immutable Types: ${dependentImmutableTypes.size}
-                | Deep immutable Types: ${deepImmutableTypes.size}
+                | Transitively immutable Types: ${transitivelyImmutableTypes.size}
                 | Types: ${allProjectClassTypes.size}
                 |""".stripMargin
             )
@@ -640,9 +630,9 @@ object Immutability {
                     "_withoutConsiderLazyInitialization"
                 } else ""
             } + {
-                if (closedWorldAssumption) {
-                    println("closed world assumption")
-                    "_closedWorldAssumption_"
+                if (isLibrary) {
+                    println("is Library")
+                    "_isLibrary_"
                 } else ""
             } + {
                 if (numThreads == 0) ""
@@ -706,7 +696,7 @@ object Immutability {
             | -libDir <library directory>
             | -isLibrary
             | [-JDK] (running with the JDK)
-            | [-analysis <imm analysis that should be executed: References, Fields, Classes, Types, All>]
+            | [-analysis <imm analysis that should be executed: FieldAssignability, Fields, Classes, Types, All>]
             | [-threads <threads that should be max used>]
             | [-resultFolder <folder for the result files>]
             | [-closedWorld] (uses closed world assumption, i.e. no class can be extended)
@@ -723,8 +713,8 @@ object Immutability {
         var cp: File = null
         var resultFolder: Path = null
         var numThreads = 0
-        var timeEvaluation: Boolean = false
-        var threadEvaluation: Boolean = false
+        //var timeEvaluation: Boolean = false
+        //var threadEvaluation: Boolean = false
         var projectDir: Option[String] = None
         var libDir: Option[String] = None
         var withoutJDK: Boolean = false
@@ -757,8 +747,8 @@ object Immutability {
                     val result = readNextArg()
                     if (result == "All")
                         analysis = All
-                    else if (result == "FieldReferences")
-                        analysis = FieldReferences
+                    else if (result == "FieldAssignability")
+                        analysis = Assignability
                     else if (result == "Fields")
                         analysis = Fields
                     else if (result == "Classes")
@@ -773,8 +763,6 @@ object Immutability {
                 case "-threads"                           ⇒ numThreads = readNextArg().toInt
                 case "-cp"                                ⇒ cp = new File(readNextArg())
                 case "-resultFolder"                      ⇒ resultFolder = FileSystems.getDefault.getPath(readNextArg())
-                case "-timeEvaluation"                    ⇒ timeEvaluation = true
-                case "-threadEvaluation"                  ⇒ threadEvaluation = true
                 case "-projectDir"                        ⇒ projectDir = Some(readNextArg())
                 case "-libDir"                            ⇒ libDir = Some(readNextArg())
                 case "-closedWorld"                       ⇒ closedWorldAssumption = true
@@ -800,20 +788,10 @@ object Immutability {
         if (!(0 <= level && level <= 2))
             throw new Exception(s"not a domain level: $level")
 
-        val callGraphKey = callGraphName match {
-            case Some("CHA")        ⇒ CHACallGraphKey
-            case Some("PointsTo")   ⇒ AllocationSiteBasedPointsToCallGraphKey
-            case Some("RTA") | None ⇒ RTACallGraphKey
-            case Some(a) ⇒
-                Console.println(s"unknown call graph analysis: $a")
-                Console.println(usage)
-                return ;
-        }
         var nIndex = 1
         while (nIndex <= times) {
             if (multiProjects) {
-                // println("xxxxxxxxxx: "+cp.listFiles().map(_.isDirectory).mkString(", ")) //.filter(_.isDirectory))
-                for (subp ← cp.listFiles()) { //.filter(_.isDirectory)) {
+                for (subp ← cp.listFiles()) {
                     evaluate(
                         subp,
                         analysis,
@@ -823,8 +801,6 @@ object Immutability {
                         resultFolder,
                         withoutJDK,
                         isLibrary || (subp eq JRELibraryFolder),
-                        closedWorldAssumption,
-                        callGraphKey,
                         level,
                         withoutConsiderGenericity,
                         withoutConsiderLazyInitialization,
@@ -833,7 +809,6 @@ object Immutability {
                     )
                 }
             } else {
-                println(s"start $nIndex")
                 evaluate(
                     cp,
                     analysis,
@@ -843,8 +818,6 @@ object Immutability {
                     resultFolder,
                     withoutJDK,
                     isLibrary,
-                    closedWorldAssumption,
-                    callGraphKey,
                     level,
                     withoutConsiderGenericity,
                     withoutConsiderLazyInitialization,

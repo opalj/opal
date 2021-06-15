@@ -200,9 +200,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
         def handleTypeImmutability(objectType: FieldType)(implicit state: State): Unit = {
 
-            if (objectType == ObjectType.Object) {
-                state.typeImmutability = MutableType //handling generic fields
-            } else if (objectType.isBaseType) {
+            if (objectType.isBaseType) {
                 // base types are by design transitively immutable
                 //state.typeImmutability = true // true is default
             } else if (objectType.isArrayType) {
@@ -210,6 +208,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                 state.typeImmutability = MutableType
             } else if (defaultTransitivelyImmutableTypes.contains(objectType.asObjectType)) {
                 //handles the configured transitively immutable types as transitively immutable
+            } else if (objectType == ObjectType.Object) {
+                state.typeImmutability = MutableType //handling generic fields
             } else {
                 propertyStore(objectType, TypeImmutability.key) match {
                     case LBP(TransitivelyImmutableType) ⇒ // transitively immutable type is set as default
@@ -362,18 +362,21 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
              */
             def handleKnownClassType(objectType: ObjectType): Unit = {
 
-                propertyStore(objectType, ClassImmutability.key) match {
-                    case LBP(TransitivelyImmutableClass) ⇒ //nothing to do ; transitively immutable ist default
+                if (defaultTransitivelyImmutableTypes.contains(objectType))
+                    state.classImmutability = TransitivelyImmutableClass
+                else
+                    propertyStore(objectType, ClassImmutability.key) match {
+                        case LBP(TransitivelyImmutableClass) ⇒ //nothing to do ; transitively immutable ist default
 
-                    case FinalEP(t, DependentImmutableClass(_)) ⇒
-                        state.classImmutability = DependentImmutableClass(Set.empty).meet(state.classImmutability)
-                        if (t == field.fieldType)
-                            state.fieldTypeIsDependentImmutable = true
+                        case FinalEP(t, DependentImmutableClass(_)) ⇒
+                            state.classImmutability = DependentImmutableClass(Set.empty).meet(state.classImmutability)
+                            if (t == field.fieldType)
+                                state.fieldTypeIsDependentImmutable = true
 
-                    case UBP(MutableClass | NonTransitivelyImmutableClass) ⇒ state.classImmutability = MutableClass
+                        case UBP(MutableClass | NonTransitivelyImmutableClass) ⇒ state.classImmutability = MutableClass
 
-                    case eps                                               ⇒ state.dependees += eps
-                }
+                        case eps                                               ⇒ state.dependees += eps
+                    }
             }
 
             /**

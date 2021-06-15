@@ -17,7 +17,7 @@ import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.AtMost
-import org.opalj.br.fpcf.properties.EscapeInCallee
+//import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
@@ -198,6 +198,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     )(implicit state: State): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
+
         pcs.iterator.exists { pc ⇒
             val index = taCode.pcToIndex(pc)
             if (index > -1) { //TODO actually, unnecessary but required because there are '-1'; dead
@@ -213,6 +214,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                     receiverDefs != SelfReferenceParameter
                                 }
                             } else {
+
                                 if (field.isStatic ||
                                     stmt.asPutField.objRef.asVar.definedBy == SelfReferenceParameter) {
                                     // We consider lazy initialization if there is only single write
@@ -226,11 +228,10 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                         // A field written outside an initializer must be lazily
                                         // initialized or it is assignable
                                         {
-                                            //TODO prevent reads
                                             if (considerLazyInitialization) {
-                                                val result = isNoLazyInitialization(
+                                                val result = isAssignable(
                                                     index,
-                                                    getDefaultValue(),
+                                                    getDefaultValues(),
                                                     method,
                                                     taCode
                                                 )
@@ -253,21 +254,42 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                     // write the field as long as that new object did not yet escape.
                                     true
                                 } else {
-                                    //Clone Pattern handling
-                                    // The following lines ensure that no getter function of the assigned object is
-                                    // called and that no field is read of it
-                                    stmts.exists(iteratedStmt ⇒ iteratedStmt match {
-                                        case Assignment(_, _, functionCall) ⇒
-                                            functionCall match {
-                                                case VirtualFunctionCall(_, _, _, _, _, receiver, _) ⇒
-                                                    receiver == stmt.asPutField.objRef.asVar
-                                                case GetField(_, _, _, _, objRef) ⇒
-                                                    objRef == stmt.asPutField.objRef.asVar
-                                                case _ ⇒ false
-                                            }
-                                        case _ ⇒ false
+                                    val writes = fieldAccessInformation.writeAccesses(state.field)
+                                    val reads = fieldAccessInformation.readAccesses(state.field)
+                                    val writesInMethod = writes.iterator.filter(_._1 eq method).toList.head._2
 
+                                    val fieldWriteInMethodIndex = taCode.pcToIndex(writesInMethod.head)
+
+                                    val assignedValueObject = stmt.asPutField.objRef.asVar
+
+                                    if (assignedValueObject.definedBy.exists(_ < 0))
+                                        return true;
+
+                                    if (writesInMethod.size > 1)
+                                        return true;
+
+                                    val assignedValueObjectVar = stmts(assignedValueObject.definedBy.head).asAssignment.targetVar.asVar
+
+                                    if (assignedValueObjectVar != null && !assignedValueObjectVar.usedBy.forall { index ⇒
+                                        val stmt = stmts(index)
+                                        // val writeStmt  = stmts(fieldWriteInMethodIndex)
+                                        fieldWriteInMethodIndex == index || //The value is itself written to another object
+                                            stmt.isPutField && stmt.asPutField.name != state.field.name ||
+                                            stmt.isAssignment && stmt.asAssignment.targetVar == assignedValueObjectVar ||
+                                            stmt.isMethodCall && stmt.asMethodCall.name == "<init>" ||
+                                            dominates(fieldWriteInMethodIndex, index, taCode)
                                     })
+                                        return true;
+
+                                    val fieldReadsInMethod = reads.iterator.filter(_._1 eq method).map(_._2).toList
+
+                                    if (fieldReadsInMethod.size > 1 && !fieldReadsInMethod.head.forall { pc ⇒
+                                        val index = taCode.pcToIndex(pc)
+                                        fieldWriteInMethodIndex == index ||
+                                            dominates(fieldWriteInMethodIndex, index, taCode)
+                                    })
+                                        return true;
+                                    false
                                 }
 
                             }
@@ -297,7 +319,10 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 // Must either be null or freshly allocated
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
-                else handleEscapeProperty(propertyStore(definitionSites(method, definition.pc), EscapeProperty.key))
+                else {
+                    val escapeProperty = propertyStore(definitionSites(method, definition.pc), EscapeProperty.key)
+                    handleEscapeProperty(escapeProperty)
+                }
             }
         }
     }
@@ -310,13 +335,14 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = {
+        import org.opalj.br.fpcf.properties.EscapeInCallee
         ep match {
-            case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒ false
+            case FinalP(NoEscape | EscapeViaReturn | EscapeInCallee) ⇒ false //
             case FinalP(AtMost(_))                                   ⇒ true
             case _: FinalEP[DefinitionSite, EscapeProperty] ⇒
                 true // Escape state is worse than via return
 
-            case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+            case InterimUBP(NoEscape | EscapeViaReturn | EscapeInCallee) ⇒ //
                 state.escapeDependees += ep
                 false
 
