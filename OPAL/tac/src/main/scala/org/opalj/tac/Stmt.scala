@@ -65,10 +65,12 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asMonitorExit: MonitorExit[V] = throw new ClassCastException();
     def asArrayStore: ArrayStore[V] = throw new ClassCastException();
     def asThrow: Throw[V] = throw new ClassCastException();
+    def isThrow: Boolean = false
     def asFieldWriteAccessStmt: FieldWriteAccessStmt[V] = throw new ClassCastException();
     def asPutStatic: PutStatic[V] = throw new ClassCastException();
     def asPutField: PutField[V] = throw new ClassCastException();
     /*inner type*/ def asMethodCall: MethodCall[V] = throw new ClassCastException();
+    def isMethodCall: Boolean = false
     /*inner type*/ def asInstanceMethodCall: InstanceMethodCall[V] = throw new ClassCastException();
     def asNonVirtualMethodCall: NonVirtualMethodCall[V] = throw new ClassCastException();
     def asVirtualMethodCall: VirtualMethodCall[V] = throw new ClassCastException();
@@ -77,6 +79,7 @@ sealed abstract class Stmt[+V <: Var[V]] extends ASTNode[V] {
     def asExprStmt: ExprStmt[V] = throw new ClassCastException();
     def asCaughtException: CaughtException[V] = throw new ClassCastException();
     def asCheckcast: Checkcast[V] = throw new ClassCastException();
+    def isCheckcast: Boolean = false;
 
     def isAssignment: Boolean = false
     def isArrayStore: Boolean = false
@@ -618,6 +621,7 @@ object ArrayStore {
 case class Throw[+V <: Var[V]](pc: PC, exception: Expr[V]) extends Stmt[V] {
 
     final override def asThrow: this.type = this
+    final override def isThrow: Boolean = true
     final override def astID: Int = Throw.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         p(exception)
@@ -763,6 +767,8 @@ sealed abstract class MethodCall[+V <: Var[V]] extends Stmt[V] with Call[V] {
     final override def isSideEffectFree: Boolean = false // IMPROVE Check if a call has no side-effect
 
     final override def asMethodCall: this.type = this
+
+    final override def isMethodCall: Boolean = true
 
 }
 
@@ -1211,6 +1217,7 @@ object CaughtException {
 case class Checkcast[+V <: Var[V]](pc: PC, value: Expr[V], cmpTpe: ReferenceType) extends Stmt[V] {
 
     final override def asCheckcast: this.type = this
+    final override def isCheckcast: Boolean = true
     final override def astID: Int = Checkcast.ASTID
     final override def forallSubExpressions[W >: V <: Var[W]](p: Expr[W] ⇒ Boolean): Boolean = {
         p(value)
