@@ -3,49 +3,51 @@ package org.opalj.fpcf.fixtures.benchmark.known_types.single;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
  * This class represents the case in which a single known object is assigned to a field.
  */
 //@Immutable
-@MutableType("class is not final")
-@NonTransitivelyImmutableClass("class has only one transitive immutable field")
+@MutableType("Class is not final")
+@NonTransitivelyImmutableClass("Class has at least transitive immutable field")
 class ConcreteObjectInstanceAssigned {
 
-    @TransitivelyImmutableField("")
-    @EffectivelyNonAssignableField("")
-    private final Integer i = new Integer(5);
+    @TransitivelyImmutableField("Field has a transitively immutable type")
+    @NonAssignableField("Field is final")
+    private final Integer integer = new Integer(5);
 
-    @NonTransitivelyImmutableField("")
-    @EffectivelyNonAssignableField("")
-    private final MutableClass mc = new MutableClass();
+    @NonTransitivelyImmutableField("Field has a mutable type")
+    @NonAssignableField("Field is final")
+    private final MutableClass mutableClass = new MutableClass();
 
     //@Immutable
     @TransitivelyImmutableField("concrete object is known")
-    @EffectivelyNonAssignableField("the field is final")
-    private final Object object = new Object();
+    @NonAssignableField("The field is final")
+    private final TransitivelyImmutableClass transitivelyImmutableClass = new TransitivelyImmutableClass();
 
-    public Object getObject() {
-        return this.object;
+    public Object getTransitivelyImmutableClass() {
+        return this.transitivelyImmutableClass;
     }
 
     private final Object managedObjectManagerLock = new Object();
 
+    @NonTransitivelyImmutableField("all concrete objects that can be assigned are not known")
+    private TransitivelyImmutableClass fieldWithMutableType = new TransitivelyImmutableClass();
+
+
+    //The many constructors are needed to simulate the case of multiple constructors
     public ConcreteObjectInstanceAssigned(int n){}
 
     public ConcreteObjectInstanceAssigned(char c){}
 
     public ConcreteObjectInstanceAssigned(String s){}
 
-    @NonTransitivelyImmutableField("all concrete objects that can be assigned are not known")
-    private TransitivelyImmutableClass transitivelyImmutableClass = new TransitivelyImmutableClass();
-
     public ConcreteObjectInstanceAssigned(TransitivelyImmutableClass transitivelyImmutableClass) {
-        this.transitivelyImmutableClass = transitivelyImmutableClass;
+        this.fieldWithMutableType = transitivelyImmutableClass;
     }
 }
 

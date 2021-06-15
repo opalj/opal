@@ -5,5 +5,5 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 @MutableType("class is not final")
 @TransitivelyImmutableClass("class is empty")
-public class EmptyClassExtendsA2 extends A {}
+public class EmptyClassExtendsSuperClass2 extends SuperClass {}
 

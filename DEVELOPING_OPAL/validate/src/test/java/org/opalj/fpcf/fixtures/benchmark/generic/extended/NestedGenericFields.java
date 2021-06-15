@@ -2,32 +2,31 @@ package org.opalj.fpcf.fixtures.benchmark.generic.extended;
 
 import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
 import org.opalj.fpcf.fixtures.benchmark.generic.simple.Generic;
-import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.MutableField;
+import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 /**
- * Class represents different cases of nested genericity
+ * Class represents different cases of nested genericity.
  */
 //import edu.cmu.cs.glacier.qual.Immutable;
 public class NestedGenericFields<T> {
 
     //@Immutable
-    @TransitivelyImmutableField("")
+    @TransitivelyImmutableField("The generic types are nested transitively immutable")
     @EffectivelyNonAssignableField("field is final")
-    private final Generic<Generic<FinalClassWithNoFields>> nestedTransitive =
+    private final Generic<Generic<FinalClassWithNoFields>> nestedTransitivelyImmutable =
             new Generic<>(new Generic<>(new FinalClassWithNoFields()));
 
     //@Immutable
-    @MutableField("")
+    @DependentlyImmutableField("")
     @EffectivelyNonAssignableField("field is final")
     private Generic<Generic<T>> nestedMutable;
 
     //@Immutable
-    @DependentImmutableField(value = "only generic typ parameters", parameter={"T"})
+    @DependentlyImmutableField(value = "only generic typ parameters", parameter={"T"})
     @EffectivelyNonAssignableField("field is final")
     private final Generic<Generic<T>> nestedDependent;
 

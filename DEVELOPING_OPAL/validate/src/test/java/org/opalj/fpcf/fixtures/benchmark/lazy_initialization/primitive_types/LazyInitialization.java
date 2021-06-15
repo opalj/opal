@@ -1,12 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.primitive_types;
 
+import org.opalj.fpcf.properties.immutability.field_assignability.*;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
@@ -18,7 +15,7 @@ import org.opalj.fpcf.properties.immutability.field_assignability.AssignableFiel
 class Simple {
 
     @TransitivelyImmutableField("")
-    @LazyInitializedThreadSafeFieldReference("Simple lazy initialization")
+    @LazilyInitializedField("Simple lazy initialization")
     private int x;
 
     public int init() {
@@ -32,7 +29,7 @@ class Simple {
 class Local {
 
     @TransitivelyImmutableField("")
-    @LazyInitializedThreadSafeFieldReference("Lazy initialization with local")
+    @LazilyInitializedField("Lazy initialization with local")
     private int x;
 
     public int init() {
@@ -62,7 +59,7 @@ class LocalWrong {
 class LocalReversed {
 
     @TransitivelyImmutableField("")
-    @LazyInitializedThreadSafeFieldReference(value = "Lazy initialization with local (reversed)")
+    @LazilyInitializedField(value = "Lazy initialization with local (reversed)")
     private int x;
 
     public int init() {
@@ -77,7 +74,7 @@ class LocalReversed {
 class LocalReload {
 
     @TransitivelyImmutableField("")
-    @LazyInitializedThreadSafeFieldReference("Lazy initialization with local (reloading the field's value after the write)")
+    @LazilyInitializedField("Lazy initialization with local (reloading the field's value after the write)")
     private int x;
 
     public int init() {
@@ -93,7 +90,7 @@ class LocalReload {
 class SimpleReversed {
 
     @TransitivelyImmutableField("")
-    @LazyInitializedThreadSafeFieldReference("Simple lazy initialization (reversed)")
+    @LazilyInitializedField("Simple lazy initialization (reversed)")
     private int x;
 
     public int init() {
@@ -132,7 +129,7 @@ class DeterministicCall {
     //FIXME: Iusse with Java11 @LazyInitialized("Lazy initialization with call to deterministic method")
     //FIXME: Issue with Java11 @NonFinal(value = "Analysis doesn't recognize lazy initialization",
     //       analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
-    @LazyInitializedNotThreadSafeFieldReference("Lazy initialization with call to deterministic method")
+    @UnsafelyLazilyInitializedField("Lazy initialization with call to deterministic method")
     private int x;
 
     public int init() {
@@ -150,7 +147,7 @@ class DeterministicCall {
 class DeterministicCallWithParam {
 
     @MutableField("")
-    @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization is not the same for different invocations")
+    @UnsafelyLazilyInitializedField(value = "Lazy initialization is not the same for different invocations")
     private int x;
 
     public int init(int z) {
@@ -168,10 +165,10 @@ class DeterministicCallWithParam {
 class DeterministicCallOnFinalField {
 
     @TransitivelyImmutableField("")
-    @LazyInitializedThreadSafeFieldReference(value = "Lazy initialization with call to deterministic method ")
+    @LazilyInitializedField(value = "Lazy initialization with call to deterministic method ")
     private int x;
 
-    @EffectivelyNonAssignableField(value = "Declared final field")
+    @NonAssignableField(value = "Declared final field")
     private final Inner inner;
 
     public DeterministicCallOnFinalField(int v) {
@@ -181,7 +178,7 @@ class DeterministicCallOnFinalField {
     private final class Inner {
 
         @TransitivelyImmutableField("immutable reference with base type")
-        @EffectivelyNonAssignableField("")
+        @NonAssignableField("")
         final int val;
 
         public Inner(int v) {
@@ -204,7 +201,7 @@ class DeterministicCallOnFinalField {
 class DeterministicCallOnNonFinalField {
 
     @MutableField("")
-    @LazyInitializedNotThreadSafeFieldReference("Wrong lazy initialization with call to non-deterministic method on final field")
+    @UnsafelyLazilyInitializedField("Wrong lazy initialization with call to non-deterministic method on final field")
     private int x;
 
     @AssignableField("Non final field")
@@ -238,7 +235,7 @@ class DeterministicCallOnNonFinalField {
 class NondeterministicCall {
 
     @MutableField("")
-    @LazyInitializedNotThreadSafeFieldReference(value = "Wrong lazy initialization with call to non-deterministic method")
+    @UnsafelyLazilyInitializedField(value = "Wrong lazy initialization with call to non-deterministic method")
     private int x;
 
     private final Object object = new Object();
@@ -254,7 +251,7 @@ class NondeterministicCall {
 class DoubleLocalAssignment {
 
     @MutableField("")
-    @LazyInitializedNotThreadSafeFieldReference("Lazy initialization with a local that is updated twice")
+    @UnsafelyLazilyInitializedField("Lazy initialization with a local that is updated twice")
     private int x;
 
     public int init() {
@@ -312,7 +309,7 @@ class ExceptionInInitialization {
     //        analyses = { L1FieldMutabilityAnalysis.class, L2FieldMutabilityAnalysis.class })
     //FIXME: Issue with Java11 @NonFinal(value = "Instance field not considered by analysis",
     //        analyses = L0FieldMutabilityAnalysis.class)
-    @LazyInitializedNotThreadSafeFieldReference("L1 Domain can not recognize this exception") //Field is never initialized, so it stays on its default value",
+    @UnsafelyLazilyInitializedField("L1 Domain can not recognize this exception") //Field is never initialized, so it stays on its default value",
 
     private int x;
 

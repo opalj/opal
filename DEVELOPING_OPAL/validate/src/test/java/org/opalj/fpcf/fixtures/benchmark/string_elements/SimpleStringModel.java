@@ -4,19 +4,19 @@ package org.opalj.fpcf.fixtures.benchmark.string_elements;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 /**
- * This class represents a simple model of the string class.
- * This includes cases of a shared array and a lazy initialized field storing a hash value.
+ * This class represents a simple model of the class java.util.String.
+ * It encompasses cases of a shared array and a lazy initialized field storing a hash value.
  */
-@TransitivelyImmutableType("Final class with only non-assignable fields")
-@TransitivelyImmutableClass("Final class with only not assignable fields")
+@TransitivelyImmutableType("Class is final")
+@TransitivelyImmutableClass("Class has only transitively immutable fields")
 public final class SimpleStringModel {
 
-    @TransitivelyImmutableField("The array values are after the assignment no more mutated")
-    @NonAssignableField("final field")
+    @TransitivelyImmutableField("The array values are not mutated anymore after the assignment ")
+    @NonAssignableField("Field is final")
     private final char value[];
 
     public char[] getValue(){
@@ -24,7 +24,7 @@ public final class SimpleStringModel {
     }
 
     @TransitivelyImmutableField("Lazy initialized field with primitive type")
-    @LazyInitializedThreadSafeFieldReference("")
+    @LazilyInitializedField("Field is lazily initialized")
     private int hash; // Default value 0
 
     public SimpleStringModel(SimpleStringModel original) {

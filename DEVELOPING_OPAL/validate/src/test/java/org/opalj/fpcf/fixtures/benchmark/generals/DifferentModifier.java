@@ -10,104 +10,104 @@ import org.opalj.fpcf.properties.immutability.field_assignability.AssignableFiel
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
- * This testclass tests that different modifiers like transient, volatile or static
- * does not have an impact of mutability.
+ * This testclass checks that different modifiers like transient, volatile or static
+ * does not have an impact of the assignability and immutability of a given field.
  *
  * @author Tobias Roth
  *
  */
-@MutableType("")
-@MutableClass("")
+@MutableType("Class is mutable")
+@MutableClass("The class has mutable fields")
 public class DifferentModifier {
 
-    @MutableField(value = "field has a mutable field reference")
-    @AssignableField(value = "field is public")
-    public int mutableInt = 5;
+    @MutableField("The field is assignable")
+    @AssignableField("The field is public")
+    public int assignableInt = 5;
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @EffectivelyNonAssignableField("")
-    private int immutableInt = 3;
+    @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+    @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
+    private int effectivelyNonAssignableInt = 3;
 
     //@Immutable
-    @MutableField(value = "field has a mutable field reference")
-    @AssignableField(value = "field is public")
-    public transient int mutableTransientInt = 5;
+    @MutableField("The field is assignable")
+    @AssignableField("The field is public")
+    public transient int assignableTransientInt = 5;
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @EffectivelyNonAssignableField("")
-    private transient int immutableTransientInt = 5;
+    @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+    @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
+    private transient int effectivelyNonAssignableTransientInt = 5;
 
     //@Immutable
-    @MutableField(value = "field has a mutable field reference")
-    @AssignableField(value = "field is public")
-    public volatile int mutableVolatileInt = 5;
+    @MutableField("The field is assignable")
+    @AssignableField("The field is public")
+    public volatile int assignableVolatileInt = 5;
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @EffectivelyNonAssignableField("")
-    private volatile int immutableVolatileInt = 5;
+    @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+    @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
+    private volatile int effectivelyNonAssignableVolatileInt = 5;
 
     //@Immutable
-    @MutableField(value = "field has a mutable field reference")
-    @AssignableField(value = "field is public")
-    public volatile long mutableVolatileLong;
+    @MutableField("The field is assignable")
+    @AssignableField("The field is public")
+    public volatile long assignableVolatileLong;
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @EffectivelyNonAssignableField("")
+    @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+    @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
     private volatile long immutableVolatileLong = 0L;
 
     DifferentModifier(long l){
-        this.mutableVolatileLong = l;
+        this.assignableVolatileLong = l;
     }
 
       static final class InnerClass {
 
-          @MutableField(value = "field has a mutable field reference")
-          @AssignableField(value = "field is public")
-          public static int mutableInnerStaticInt = 1;
+          @MutableField("The field is assignable")
+          @AssignableField("The field is public")
+          public static int assignableInnerStaticInt = 1;
 
           //@Immutable
-          @TransitivelyImmutableField("")
-          @EffectivelyNonAssignableField("")
-          private static int immutableInnerStaticInt = 1;
+          @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+          @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
+          private static int effectivelyNonAssignableInnerStaticInt = 1;
 
-          @MutableField(value = "field has a mutable field reference")
-          @AssignableField(value = "field is public")
-          public int mutableInnerInt = 5;
-
-          //@Immutable
-          @TransitivelyImmutableField("")
-          @EffectivelyNonAssignableField("")
-          private int immutableInnerInt = 5;
-
-          @MutableField(value = "field has a mutable field reference")
-          @AssignableField(value = "field is public")
-        public transient int mutableInnerTransientInt = 5;
+          @MutableField("The field is assignable")
+          @AssignableField("The field is public")
+          public int assignableInnerInt = 5;
 
           //@Immutable
-          @TransitivelyImmutableField("")
-          @EffectivelyNonAssignableField("")
-          private transient int immutableInnerTransientInt = 5;
+          @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+          @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
+          private int effectivelyNonAssignableInnerInt = 5;
 
-          @MutableField(value = "field has a mutable field reference")
-          @AssignableField(value = "field is public")
-        public volatile int mutableInnerVolatileInt = 5;
+          @MutableField("The field is assignable")
+          @AssignableField("The field is public")
+        public transient int assignableInnerTransientInt = 5;
 
           //@Immutable
-          @TransitivelyImmutableField("")
-          @EffectivelyNonAssignableField("")
-          private volatile int immutableInnerVolatileInt = 5;
+          @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+          @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
+          private transient int effectivelyNonAssignableInnerTransientInt = 5;
 
-          @MutableField(value = "field has a mutable field reference")
-          @AssignableField(value = "field is public")
+          @MutableField("The field is assignable")
+          @AssignableField("The field is public")
+        public volatile int assignableInnerVolatileInt = 5;
+
+          //@Immutable
+          @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+          @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
+          private volatile int effectivelyNonAssignableInnerVolatileInt = 5;
+
+          @MutableField("The field is assignable")
+          @AssignableField("The field is public")
         public volatile transient int mutableInnerVolatileTransientInt = 5;
 
           //@Immutable
-          @TransitivelyImmutableField("")
-          @EffectivelyNonAssignableField("")
+          @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
+          @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
           private volatile transient int immutableInnerVolatileTransientInt = 5;
     }
 }

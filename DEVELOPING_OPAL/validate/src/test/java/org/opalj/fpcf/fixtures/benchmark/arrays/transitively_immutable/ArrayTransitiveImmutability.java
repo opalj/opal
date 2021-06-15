@@ -2,31 +2,35 @@ package org.opalj.fpcf.fixtures.benchmark.arrays.transitively_immutable;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
+import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
+/**
+ * This class encompasses different array-typed transitively immutable fields.
+ */
 //@Immutable
-@TransitivelyImmutableType("")
-@TransitivelyImmutableClass("")
+@TransitivelyImmutableType("Class is final")
+@TransitivelyImmutableClass("Class has only transitively immutable fields")
 public class ArrayTransitiveImmutability {
 
     //@Immutable
     @TransitivelyImmutableField("The elements of the array can not escape")
-    @EffectivelyNonAssignableField("Array is eager initialized")
-    private Object[] array1 = new Object[]{1, 2, 3};
+    @NonAssignableField("Field is final")
+    private final Integer[] eagerAssignedIntegerArray = new Integer[]{1, 2, 3};
 
     //@Immutable
     @TransitivelyImmutableField("")
-    @EffectivelyNonAssignableField("")
-    private static Object[] staticDeepArray = new Object[5];
+    @NonAssignableField("")
+    private static final Integer[] staticTransitivelyImmutableArray = new Integer[5];
 
     @TransitivelyImmutableField("The elements of the array can not escape")
-    @EffectivelyNonAssignableField("Array is initialized in the constructor")
-    private Object[] a;
+    @EffectivelyNonAssignableField("Field is initialized in the constructor")
+    private final Integer[] transitivelyImmutableArrayAssignedInTheConstructor;
 
     public ArrayTransitiveImmutability() {
-        a = new Object[]{5, 6, 7, 8};
+        transitivelyImmutableArrayAssignedInTheConstructor = new Integer[]{5, 6, 7, 8};
     }
 
     //@Immutable
@@ -34,18 +38,10 @@ public class ArrayTransitiveImmutability {
     @EffectivelyNonAssignableField("The array is not initialized.")
     private Object[] k;
 
-
-
-
-
-
-
     //@Immutable
     @TransitivelyImmutableField("")
     @EffectivelyNonAssignableField("")
     private Object[] clonedArray = new Object[]{new Object(), new Object(), new Object()};
 
     public Object[] getClonedArray(){ return  clonedArray.clone(); }
-
-
 }

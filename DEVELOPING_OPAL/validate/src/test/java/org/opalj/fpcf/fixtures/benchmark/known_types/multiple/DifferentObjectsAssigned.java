@@ -1,7 +1,7 @@
 package org.opalj.fpcf.fixtures.benchmark.known_types.multiple;
 
 //import afu.org.checkerframework.checker.igj.qual.Mutable;
-import org.opalj.fpcf.fixtures.benchmark.known_types.multiple.types.A;
+import org.opalj.fpcf.fixtures.benchmark.known_types.multiple.types.SuperClass;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
@@ -20,11 +20,11 @@ public class DifferentObjectsAssigned {
 
     @TransitivelyImmutableField("Field only refers to transitively immutable objects")
     @NonAssignableField("field is final")
-    final A a;
+    final SuperClass a;
 
     @NonTransitivelyImmutableField("")
     @NonAssignableField("field is final")
-    final A nonTransitivelyImmmutableField;
+    final SuperClass nonTransitivelyImmmutableField;
 
     public DifferentObjectsAssigned(boolean b1){
 
@@ -40,12 +40,12 @@ public class DifferentObjectsAssigned {
 }
 
 @TransitivelyImmutableClass("")
-class E1 extends A{private int n = 8;}
+class E1 extends SuperClass {private int n = 8;}
 
 @TransitivelyImmutableClass("")
-class E2 extends A{private int n = 10;}
+class E2 extends SuperClass {private int n = 10;}
 
 @MutableClass("")
-class M extends A{public int n = 10;}
+class M extends SuperClass {public int n = 10;}
 
 

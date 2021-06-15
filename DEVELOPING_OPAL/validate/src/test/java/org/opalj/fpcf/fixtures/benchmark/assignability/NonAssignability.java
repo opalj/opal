@@ -6,61 +6,60 @@ import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-
+/**
+ * Encompasses different cases of final fields in combinations with different modifiers.
+ */
 //@Immutable
-@MutableType("")
-@TransitivelyImmutableClass("")
+@MutableType("Class is not final")
+@TransitivelyImmutableClass("Encompasses different case")
 public class NonAssignability {
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @NonAssignableField("")
-    public final Object publicObject = new Object();
+    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @NonAssignableField("Field is final")
+    public final Integer publicInteger = new Integer(5);
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @NonAssignableField("")
-    protected final Object protectedObject = new Object();
+    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @NonAssignableField("Field is final")
+    protected final Integer protectedInteger = new Integer(5);
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @NonAssignableField("")
-    final Object packagePrivateObject = new Object();
+    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @NonAssignableField("Field is final")
+    final Integer packagePrivateInteger = new Integer(5);
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @NonAssignableField("Initialized directly")
-    private final int a = 1;
+    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @NonAssignableField("Field is final and initialized directly")
+    private final int privateIntDirectlyAssigned = 1;
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @NonAssignableField("Initialized through instance initializer")
-    private final int b;
+    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @NonAssignableField("Field is final and initialized through instance initializer")
+    private final int privateIntAssignedToInstanceInitializer;
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @NonAssignableField("Initialized through constructor")
-    private final int c;
+    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @NonAssignableField("Field is final and initialized through constructor")
+    private final int privateIntAssignedThroughConstructor;
 
     final int n = 5;
 
-
-
     // Instance initializer!
     {
-        b = 1;
+        privateIntAssignedToInstanceInitializer = 1;
     }
 
     //@Immutable
-    @TransitivelyImmutableField("non-assignable field with primitive type")
-    @NonAssignableField("non-assignable due to final modifier")
+    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @NonAssignableField("Field is final")
     public static final int publicStaticFinalInt = 5;
 
     //@Immutable
-    @TransitivelyImmutableField("non-assignable field with primitive type")
-    @NonAssignableField("non-assignable due to final modifier")
+    @TransitivelyImmutableField("Field is final and has a transitively immutable type.")
+    @NonAssignableField("Field is final")
     protected static final int protectedStaticFinalInt = 5;
 
     //@Immutable
@@ -94,10 +93,11 @@ public class NonAssignability {
     static final Object packagePrivateStaticFinalObject = new MutableClass();
 
     public NonAssignability() {
-        c=1;
+        privateIntAssignedThroughConstructor =1;
     }
 }
-
+@MutableType("Class is mutable")
+@org.opalj.fpcf.properties.immutability.classes.MutableClass("Class has a mutable field")
 class MutableClass{
     public int n = 8;
 }

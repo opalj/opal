@@ -7,28 +7,28 @@ import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableF
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
+/**
+ * Class encompasses two cases of assigning non assignable fields.
+ */
 //@Immutable
-@MutableType("")
-@TransitivelyImmutableClass("")
+@MutableType("Class is not final.")
+@TransitivelyImmutableClass("Class has only a transitively immutable field.")
 public class DifferentAssignmentPossibilitiesOfNonAssignableField {
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @NonAssignableField("")
-    private final Object o;
+    @TransitivelyImmutableField("Field is non assignable and has a transitively immutable type.")
+    @NonAssignableField("Field is final")
+    private final Integer integer;
 
     public DifferentAssignmentPossibilitiesOfNonAssignableField() {
-        this.o = new C();
+        this.integer = new Integer(5);
     }
 
-    public DifferentAssignmentPossibilitiesOfNonAssignableField(int n) {
-        this.o = new Object();
+    public DifferentAssignmentPossibilitiesOfNonAssignableField(Integer integer) {
+        this.integer = integer;
     }
 
     public Object getO(){
-        return this.o;
+        return this.integer;
     }
 }
-
-@TransitivelyImmutableClass("empty class")
-class C {}

@@ -8,41 +8,37 @@ import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableF
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 //@Immutable
-@TransitivelyImmutableType("")
-@TransitivelyImmutableClass("")
+@TransitivelyImmutableType("Class is transitively immutable and final and as a result not extensible")
+@TransitivelyImmutableClass("Class has only transitively immutable fields")
 public final class ClassWithTransitivelyImmutableFields {
 
     //@Immutable
-    @TransitivelyImmutableField("immutable reference and deep immutable field type")
-    @NonAssignableField("Declared final Field")
-    private final FinalClassWithNoFields fec2 = new FinalClassWithNoFields();
+    @TransitivelyImmutableField("Field is non assignable and has a transitively immutable type")
+    @NonAssignableField("Field is final")
+    private final FinalClassWithNoFields transitivelyImmutableFieldWithGetter = new FinalClassWithNoFields();
 
-    //@Immutable
-    @TransitivelyImmutableField("Immutable Reference and Immutable Field Type")
-    @NonAssignableField("declared final field")
-    private final FinalClassWithNoFields fec = new FinalClassWithNoFields();
-
-    public FinalClassWithNoFields getFec() {
-        return fec;
+    public FinalClassWithNoFields getTransitivelyImmutableFieldWithGetter() {
+        return transitivelyImmutableFieldWithGetter;
     }
 
     //@Immutable
-    @TransitivelyImmutableField("Immutable Reference and Immutable Field Type")
-    @NonAssignableField("effective immutable field")
-    private FinalClassWithNoFields name = new FinalClassWithNoFields();
+    @TransitivelyImmutableField("Field is non assignable and has a transitively immutable type")
+    @NonAssignableField("Field is final")
+    private final FinalClassWithNoFields eagerAssignedFinalTransitivelyImmutableField =
+            new FinalClassWithNoFields();
 
     //@Immutable
-    @TransitivelyImmutableField("immutable reference and deep immutable field type")
-    @NonAssignableField(value = "declared final field reference")
-    private final FinalClassWithNoFields fec1;
+    @TransitivelyImmutableField("Field is non assignable and has a transitively immutable type")
+    @NonAssignableField("Field is final")
+    private final FinalClassWithNoFields inConstructorAssignedFinalFieldWithTransitivelyImmutableType;
 
     //@Immutable
-    @TransitivelyImmutableField("")
-    @NonAssignableField("")
-    private static String deepImmutableString = "string";
+    @TransitivelyImmutableField("Field is non assignable and has a transitively immutable type")
+    @NonAssignableField("Field is final")
+    private final static String transitivelyImmutableFieldWithStringType = "string";
 
     public ClassWithTransitivelyImmutableFields(FinalClassWithNoFields fec) {
-        this.fec1 = fec;
+        this.inConstructorAssignedFinalFieldWithTransitivelyImmutableType = fec;
     }
 
 }

@@ -1,16 +1,21 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.arrays;
 
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.classes.MutableClass;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
+import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
- * This classes tests lazy initialization of arrays to the reference.
- * This definition of lazy initialization only considers the lazy initialization of the arrays and not of its elements.
+ * This classes checks lazy initialization of arrays to the reference.
+ * The definition of lazy initialization only considers the lazy initialization of the arrays and not of its elements.
  */
+@MutableType("Class is mutable")
+@MutableClass("Class has a mutable field")
 public class LazyInitializedArrays {
 
     //@Immutable
-    @LazyInitializedNotThreadSafeFieldReference("The array is lazily initialized.")
+    @UnsafelyLazilyInitializedField("The array is unsafely lazily initialized.")
     private int[] simpleLazyInitialized;
 
     public int[] getSimpleLazyInitialized() {
@@ -22,7 +27,7 @@ public class LazyInitializedArrays {
     }
 
     //@Immutable
-    @LazyInitializedThreadSafeFieldReference("The array is synchronized lazily initialized.")
+    @LazilyInitializedField("The array is synchronized lazily initialized.")
     private int[] simpleSynchronizedLazyInitialized;
 
     public synchronized int[] getSynchronizedLazyInitialized() {
@@ -34,7 +39,7 @@ public class LazyInitializedArrays {
     }
 
     //@Immutable
-    @LazyInitializedThreadSafeFieldReference("The array is synchronized lazily initialized.")
+    @LazilyInitializedField("The array is synchronized lazily initialized.")
     private int[] complexSynchronizedLazyInitialized;
 
     public synchronized int[] getComplexSynchronizedLazyInitialized() {
@@ -46,21 +51,6 @@ public class LazyInitializedArrays {
             this.complexSynchronizedLazyInitialized = tmp;
         }
         return this.complexSynchronizedLazyInitialized;
-    }
-
-    //@Immutable
-    @LazyInitializedNotThreadSafeFieldReference("The array is lazily initialized.")
-    private int[] complexLazyInitialized;
-
-    public int[] getComplexLazyInitialized() {
-        int[] tmp;
-        if (complexLazyInitialized == null) {
-            tmp = new int[3];
-            for (int i = 0; i < 3; i++)
-                tmp[i] = i;
-            this.complexLazyInitialized = tmp;
-        }
-        return this.complexLazyInitialized;
     }
 
 }

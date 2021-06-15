@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.benchmark.generic.extended;
 import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
 import org.opalj.fpcf.fixtures.benchmark.generic.simple.Generic;
+import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
@@ -10,50 +11,42 @@ import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 //import edu.cmu.cs.glacier.qual.Immutable;
 
+
+/**
+ * This class encompasses different cases where the generic type has a lower/upper bound.
+ */
+@MutableType("class is not final")
+@NonTransitivelyImmutableClass("Class has a non transitively immutable field")
 class LowerUpperBounds<T extends ClassWithMutableFields> {
 
     //@Immutable
-    @NonTransitivelyImmutableField("type T extends a mutable type")
+    @NonTransitivelyImmutableField("The field type T extends a mutable type")
     @NonAssignableField("field is final")
     private final T t;
 
     //@Immutable
-    @NonTransitivelyImmutableField("has super type object")
+    @NonTransitivelyImmutableField("? has super type object")
     @NonAssignableField("field is final")
-    private final Generic<? super EmptyClass> g1;
+    private final Generic<? super EmptyClass> nonTransitivelyImmutableField;
+
 
     //@Immutable
-    @NonTransitivelyImmutableField("type can still be non-transitive")
+    @TransitivelyImmutableField("Type ? can only be FinalEmptyClass and, thus, transitively immutable")
     @NonAssignableField("field is final")
-    private final Generic<? extends EmptyClass> g2;
+    private final Generic<? extends FinalEmptyClass> transitivelyImmutableField;
 
-    //@Immutable
-    @TransitivelyImmutableField("Type can only be final")
-    @NonAssignableField("field is final")
-    private final Generic<? extends FinalEmptyClass> g3;
-
-    //@Immutable
-    @NonTransitivelyImmutableField("has super type object")
-    @NonAssignableField("field is final")
-    private final Generic<? super FinalEmptyClass> g4;
-
-    public LowerUpperBounds(Generic<? super EmptyClass> g1, Generic<? extends EmptyClass> g2, Generic<? extends FinalEmptyClass> g3, Generic<? super FinalEmptyClass> g4, T t){
-        this.g1 = g1;
-        this.g2 = g2;
-        this.g3 = g3;
-        this.g4 = g4;
+    public LowerUpperBounds(Generic<? super EmptyClass> nonTransitivelyImmutableField,
+                            Generic<? extends FinalEmptyClass> transitivelyImmutableField, T t){
         this.t = t;
+        this.nonTransitivelyImmutableField = nonTransitivelyImmutableField;
+        this.transitivelyImmutableField = transitivelyImmutableField;
     }
 
-    @MutableType("not final")
-    @TransitivelyImmutableClass("empty")
+    @MutableType("Class is not final")
+    @TransitivelyImmutableClass("Class with no fields")
     class EmptyClass {}
 
-    @MutableType("not final")
-    @TransitivelyImmutableClass("empty")
-    class X2 extends EmptyClass {}
-
-    @TransitivelyImmutableType("final")
+    @TransitivelyImmutableType("Class is final, has no fields and extends a transitively immutable class")
     @TransitivelyImmutableClass("empty")
     final class FinalEmptyClass extends EmptyClass {}
 }

@@ -8,14 +8,17 @@ import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
+/**
+ * This class encompasses different possible cases of the clone pattern.
+ */
 //@Immutable
-@TransitivelyImmutableType("class ins final and transitively immutable")
-@TransitivelyImmutableClass("class has only transitively immutable fields")
+@TransitivelyImmutableType("Class is final and transitively immutable")
+@TransitivelyImmutableClass("Class has only transitively immutable fields")
 public final class SimpleClonePattern {
 
     //@Immutable
-    @TransitivelyImmutableField("field is effectively non assignable and has a primitive type")
-    @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
+    @TransitivelyImmutableField("Field is effectively non assignable and has a primitive type")
+    @EffectivelyNonAssignableField("Field is only assigned ones due to the clone function pattern")
     private int i;
 
     public SimpleClonePattern clone(){
@@ -25,36 +28,74 @@ public final class SimpleClonePattern {
     }
 }
 
+
 class CloneNonAssignableWithNewObject {
 
     //@Immutable
     @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")
     @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
-    private Object o;
+    private Integer integer;
 
     public CloneNonAssignableWithNewObject clone(){
-        CloneNonAssignableWithNewObject c = new CloneNonAssignableWithNewObject();
-        c.o = new Object();
-        return c;
+        CloneNonAssignableWithNewObject newInstance = new CloneNonAssignableWithNewObject();
+        newInstance.integer = new Integer(5);
+        return newInstance;
+    }
+}
+
+class EscapesAfterAssignment {
+
+    //@Immutable
+    @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")
+    @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
+    private Integer integer;
+
+    private Integer integerCopy;
+
+    public EscapesAfterAssignment clone(){
+        EscapesAfterAssignment newInstance = new EscapesAfterAssignment();
+        newInstance.integer = new Integer(5);
+        this.integerCopy = newInstance.integer;
+        return newInstance;
+    }
+}
+
+@TransitivelyImmutableType("Class is transitively immutable and final")
+@TransitivelyImmutableClass("Class has only transitively immutable fields")
+final class MultipleFieldsAssignedInCloneFunction {
+
+    @TransitivelyImmutableField("The field is effectively non assignable and has a transitively immutable type")
+    @EffectivelyNonAssignableField("The field is only assigned once in the clone function")
+    private Integer firstInteger;
+
+    @TransitivelyImmutableField("The field is effectively non assignable and has a transitively immutable type")
+    @EffectivelyNonAssignableField("The field is only assigned once in the clone function")
+    private Integer secondInteger;
+
+    public MultipleFieldsAssignedInCloneFunction clone(){
+        MultipleFieldsAssignedInCloneFunction newInstance = new MultipleFieldsAssignedInCloneFunction();
+        newInstance.firstInteger = new Integer(5);
+        newInstance.secondInteger = new Integer(5);
+        return newInstance;
     }
 }
 
 class ConstructorWithParameter {
 
     //@Immutable
-    @NonTransitivelyImmutableField("field is effectively non assignable but has not a transitively immutable type")
+    @TransitivelyImmutableField("field is effectively non assignable but has a transitively immutable type")
     @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
-    private Object o;
+    private Integer integer;
 
-    public ConstructorWithParameter(Object o){
-        this.o = o;
+    public ConstructorWithParameter(Integer integer){
+        this.integer = integer;
     }
     public ConstructorWithParameter(){}
 
-    public ConstructorWithParameter clone(Object o){
-        ConstructorWithParameter c = new ConstructorWithParameter(o);
-        c.o = this.o;
-        return c;
+    public ConstructorWithParameter clone(Integer integer){
+        ConstructorWithParameter newInstance = new ConstructorWithParameter(integer);
+        newInstance.integer = this.integer;
+        return newInstance;
     }
 }
 

@@ -2,11 +2,14 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 
+/**
+ * This pattern was found in the JDK.
+ */
 public class Template {
 
-    @LazyInitializedNotThreadSafeFieldReference("")
+    @UnsafelyLazilyInitializedField("")
     private Template _template;
 
     @EffectivelyNonAssignableField("")

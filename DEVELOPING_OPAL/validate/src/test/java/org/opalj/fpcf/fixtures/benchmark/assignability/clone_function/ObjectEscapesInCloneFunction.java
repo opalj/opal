@@ -7,7 +7,10 @@ import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
-@MutableType("Class is mutable")
+/**
+ * This class encompasses different counter examples for the clone pattern.
+ */
+@MutableType("Class is not final")
 @MutableClass("Class has a mutable field")
 public class ObjectEscapesInCloneFunction {
 
@@ -18,58 +21,91 @@ public class ObjectEscapesInCloneFunction {
 
     //@Immutable
     @MutableField("field is assignable")
-    @AssignableField("field can be assigned multiple times")
+    @AssignableField("Field is default visible and as a result assignable")
     ObjectEscapesInCloneFunction instance;
 
     public ObjectEscapesInCloneFunction clone(){
-        ObjectEscapesInCloneFunction c = new ObjectEscapesInCloneFunction();
-        instance = c;
-        c.i = 5;
-        return c;
+        ObjectEscapesInCloneFunction newInstance = new ObjectEscapesInCloneFunction();
+        instance = newInstance;
+        newInstance.i = 5;
+        return newInstance;
     }
 }
 
-
-
-@MutableType("Class is mutable")
+@MutableType("Class is not final")
 @MutableClass("Class has a mutable field")
 class ThereIsNoNewObjectInCloneFunctionCreated {
 
-    @MutableField("field is assignable")
-    @AssignableField("field can be assigned multiple times")
-    private Object o;
+    @MutableField("Field is assignable")
+    @AssignableField("Field can be assigned multiple times")
+    private Integer integer;
 
     public ThereIsNoNewObjectInCloneFunctionCreated clone(){
-        ThereIsNoNewObjectInCloneFunctionCreated c = this;
-        c.o = new Object();
-        return c;
+        ThereIsNoNewObjectInCloneFunctionCreated instanceCopy = this;
+        instanceCopy.integer = new Integer(5);
+        return instanceCopy;
     }
 }
 
-@MutableType("Class is mutable")
+//@Immutable
+@MutableType("Class is not final")
 @MutableClass("Class has a mutable field")
-class FieldReadInCloneFunction {
+final class EscapesViaMethod {
 
     //@Immutable
-    @MutableField("")
-    @AssignableField("")
-    private int i;
+    @MutableField("Field is assignable")
+    @AssignableField("Field can be seen with different values while calling the clone method.")
+    private Integer integer;
 
-    @MutableField("field is assignable")
-    @AssignableField("can be assigned multiple times")
-    private int n;
-
-    public FieldReadInCloneFunction clone(){
-        FieldReadInCloneFunction c = new FieldReadInCloneFunction();
-        this.n = c.i;
-        c.i = this.i;
-        return c;
+    public EscapesViaMethod clone(){
+        EscapesViaMethod newInstance = new EscapesViaMethod();
+        Static.setInteger(newInstance.integer);
+        newInstance.integer = integer;
+        return newInstance;
     }
 }
 
-@MutableType("Class is mutable")
+//@Immutable
+@MutableType("Class is not final")
 @MutableClass("Class has a mutable field")
-class GetterCallInCloneFunction {
+final class EscapingThroughIdentityFunction {
+
+    //@Immutable
+    @MutableField("Field is assignable")
+    @AssignableField("")
+    private Integer integer;
+
+    public Integer integerCopy;
+
+    public Integer identity(Integer integer) {
+        return integer;
+    }
+
+    public EscapingThroughIdentityFunction clone() {
+        EscapingThroughIdentityFunction newInstance = new EscapingThroughIdentityFunction();
+        this.integerCopy = newInstance.identity(newInstance.integer);
+        newInstance.integer = integer;
+        return newInstance;
+    }
+}
+
+class Static {
+
+    public Integer identity(Integer integer){
+        return integer;
+    }
+
+    public static Integer integer;
+
+    public static void setInteger(Object o){
+        Static.integer = integer;
+    }
+
+}
+
+@MutableType("Class is not final")
+@MutableClass("Class has a mutable field")
+class EscapesViaGetterCall {
 
     //@Immutable
     @MutableField("field is assignable")
@@ -84,18 +120,29 @@ class GetterCallInCloneFunction {
     @AssignableField("can be assigned multiple times")
     private int n;
 
-    public GetterCallInCloneFunction clone(){
-        GetterCallInCloneFunction c = new GetterCallInCloneFunction();
+    public EscapesViaGetterCall clone(){
+        EscapesViaGetterCall c = new EscapesViaGetterCall();
         this.n = c.getI(); //c.i;
         c.i = this.i;
         return c;
     }
 }
 
+//@Immutable
+@MutableType("Class is not final")
+@MutableClass("Class has a mutable field")
+final class EscapesViaStaticSetterMethod {
 
+    //@Immutable
+    @MutableField("field is assignable")
+    @AssignableField("Field escapes via static setter")
+    private Object integer;
 
-
-
-
-
-
+    public EscapesViaStaticSetterMethod clone(){
+        EscapesViaStaticSetterMethod newInstance = new EscapesViaStaticSetterMethod();
+        Object integerCopy = newInstance.integer;
+        Static.setInteger(integerCopy);
+        newInstance.integer = integer;
+        return newInstance;
+    }
+}

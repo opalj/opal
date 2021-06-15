@@ -6,8 +6,8 @@ import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 //@Immutable
-@MutableType("The interface is extensible and thus assignable")
-@TransitivelyImmutableClass("As an interface has no state, it is deeply immutable.")
+@MutableType("The interface is extensible and, thus, has  a mutable type")
+@TransitivelyImmutableClass("Since an interface has no state, it is deeply immutable.")
 public interface Interface {
 
     public void run();

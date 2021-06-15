@@ -16,6 +16,6 @@ class GenericCounterExampleMutable<T> {
 
     //@Immutable
     @MutableField("field is assignable")
-    @AssignableField("field is assignable because it is public")
+    @AssignableField("field is public and as a result assignable")
     public int n = 5;
 }

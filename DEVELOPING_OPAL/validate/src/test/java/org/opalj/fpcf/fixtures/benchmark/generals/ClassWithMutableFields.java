@@ -12,58 +12,39 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 public class ClassWithMutableFields {
 
     //@Immutable
-    @MutableField(value = "field is public")
-    @AssignableField(value = "field is public")
-    public String name = "name";
+    @MutableField("Field is assignable")
+    @AssignableField("Field is public and not final and as a result assignable")
+    public String publicNonFinalField = "name";
 
     //@Immutable
-    @MutableField("the field has a mutable field reference")
-    @AssignableField("the field is protected")
-    protected FinalClassWithNoFields fec1 = new FinalClassWithNoFields();
+    @MutableField("Field is assignable")
+    @AssignableField("The field is protected and not final and as a result assignable")
+    protected FinalClassWithNoFields protectedNonFinalField = new FinalClassWithNoFields();
 
     //@Immutable
-    @MutableField("Because of Mutable Reference")
-    @AssignableField("Because it is declared as protected")
-    protected ClassWithNonTransitivelyImmutableFields cwpf1 =
-            new ClassWithNonTransitivelyImmutableFields(new Object(), new ClassWithMutableFields(), new ClassWithMutableFields());
+    @MutableField("Field is assignable")
+    @AssignableField("The field is not final and default-visible and as a result assignable")
+    int defaultVisibleNonFinalField = 5;
 
     //@Immutable
-    @MutableField("This field is not final and public and thus assignable")
-    @AssignableField("This field is not final and public")
-    public int publicN = 5;
+    @MutableField("The field is assignable")
+    @AssignableField("The field can be written multiple times due to its setter")
+    private int privateNonFinalFieldWithSetter = 5;
 
-    //@Immutable
-    @MutableField("This field is not final and protected and thus assignable")
-    @AssignableField("This field is not final and protected")
-    protected  int protectedN = 5;
-
-    //@Immutable
-    @MutableField("This field is not final and default-visible and thus assignable")
-    @AssignableField("This field is not final and default-visible")
-    int defaultVisibleN = 5;
-
-    //@Immutable
-    @MutableField("The field can be set and is thus assignable")
-    @AssignableField("The field can be set")
-    private int n = 5;
-
-    public void setN(){
-        this.n = 5;
+    public void setPrivateNonFinalFieldWithSetter(int n){
+        this.privateNonFinalFieldWithSetter = n;
     }
 
     //@Immutable
-    @MutableField("The field can be incremented and is thus assignable")
-    @AssignableField("The field can be incremented")
+    @MutableField("The field is assignable")
+    @AssignableField("The field can be incremented and is thus assignable")
     private int iCompound;
 
     //@Immutable
-    @MutableField("The field can be set in the constructor of another instance and is thus assignable")
-    @AssignableField("The field can be set in the constructor of another instance")
+    @MutableField("The field is assignable")
+    @AssignableField("The field can be set in the constructor of another instance and is thus assignable")
     private int iConstr;
 
-    public void setN(int n){
-        this.n = n;
-    }
 
     public static void updateI(ClassWithMutableFields s) {
         if (s != null) {
@@ -78,18 +59,18 @@ public class ClassWithMutableFields {
     }
 
     //@Immutable
-    @MutableField("")
-    @AssignableField("")
+    @MutableField("The field is assignable")
+    @AssignableField("The field can be written multiple times")
     private static int manualIncrementingCounter;
 
     //@Immutable
-    @MutableField("")
-    @AssignableField("")
+    @MutableField("The field is assignable")
+    @AssignableField("The field can be written multiple times")
     private static int manualCounter;
 
     //@Immutable
-    @MutableField("")
-    @AssignableField("")
+    @MutableField("The field is assignable")
+    @AssignableField("The static field is written everytime a new instance is created")
     private static int instanceCounter;
 
     public ClassWithMutableFields() {
