@@ -1,12 +1,12 @@
 package org.opalj.fpcf.fixtures.immutability.classes.multinested_genericClasses;
 
-import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
 public class MultipleNestedInnerClasses {
 }
 class LevelZero<T>{
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     T t;
     public LevelZero(T t){
         this.t = t;
@@ -15,7 +15,7 @@ class LevelZero<T>{
 
 class LevelOne<T> {
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private T t;
 
     public LevelOne(T t){
@@ -25,7 +25,7 @@ class LevelOne<T> {
 
 class LevelTwo<T> {
     class InnerOne {
-        @DependentImmutableField("")
+        @DependentlyImmutableField("")
         private T t;
         public InnerOne(T t){
             this.t = t;
@@ -36,13 +36,13 @@ class LevelTwo<T> {
 class LevelThree<A> {
     class InnerOne<B> {
         class InnerTwo<C> {
-            @DependentImmutableField("")
+            @DependentlyImmutableField("")
             private A a;
 
-            @DependentImmutableField("")
+            @DependentlyImmutableField("")
             private B b;
 
-            @DependentImmutableField("")
+            @DependentlyImmutableField("")
             private C c;
 
             public InnerTwo(A a, B b, C c){
@@ -58,16 +58,16 @@ class LevelFour<A> {
     class InnerOne<B> {
         class InnerTwo<C> {
 class InnerThree<D>{
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private A a;
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private B b;
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private C c;
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private D d;
 
     public InnerThree(A a, B b, C c, D d){
@@ -87,19 +87,19 @@ class LevelFive<A> {
             class InnerThree<D>{
 class InnerFour<E>{
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private A a;
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private B b;
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private C c;
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private D d;
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class)
     private E e;
 
     public InnerFour(A a, B b, C c, D d, E e){

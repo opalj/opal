@@ -1,8 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_field_references;
 
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
@@ -15,7 +15,7 @@ import java.util.Random;
  */
 public class DCL {
 
-    @LazyInitializedThreadSafeFieldReference(value = "standard double checked locked initialized int field",
+    @LazilyInitializedField(value = "standard double checked locked initialized int field",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int doubleCheckedLockedIntField;
 
@@ -30,7 +30,7 @@ public class DCL {
         return doubleCheckedLockedIntField;
     }
 
-    @LazyInitializedThreadSafeFieldReference(value = "field write is not deterministic but only once written due to dcl",
+    @LazilyInitializedField(value = "field write is not deterministic but only once written due to dcl",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int initializedWithDCLRandomWrite;
 
@@ -45,7 +45,7 @@ public class DCL {
         return initializedWithDCLRandomWrite;
     }
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "The field is not thread safe and not deterministic written",
+    @UnsafelyLazilyInitializedField(value = "The field is not thread safe and not deterministic written",
     analyses = L3FieldAssignabilityAnalysis.class)
     private int notThreadSafeRandomWrite;
 
@@ -56,7 +56,7 @@ public class DCL {
         return notThreadSafeRandomWrite;
     }
 
-    @LazyInitializedThreadSafeFieldReference(value = "dcl is implemented with early return",
+    @LazilyInitializedField(value = "dcl is implemented with early return",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object dclWithEarlyReturn;
     public Object getInstance(){
@@ -70,7 +70,7 @@ public class DCL {
     }
 
 
-    @LazyInitializedThreadSafeFieldReference(value = "write within a dcl and try catch",
+    @LazilyInitializedField(value = "write within a dcl and try catch",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object dclWithTryCatch;
 
@@ -199,7 +199,7 @@ public class DCL {
     }
 
 
-    @LazyInitializedThreadSafeFieldReference(value = "standard dcl initialization of array reference",
+    @LazilyInitializedField(value = "standard dcl initialization of array reference",
     analyses = L3FieldAssignabilityAnalysis.class)
     private Object[] lazyInitializedArrayReference;
 
@@ -218,7 +218,7 @@ public class DCL {
 
 
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "The field is not thread safe lazy initialized but within a guard",
+    @UnsafelyLazilyInitializedField(value = "The field is not thread safe lazy initialized but within a guard",
     analyses = L3FieldAssignabilityAnalysis.class)
     private int[] notThreadSafeLazyInitializedArray;
 
@@ -230,7 +230,7 @@ public class DCL {
     }
 
 
-    @LazyInitializedThreadSafeFieldReference(value = "the field is guarded initialized within a synchronized method",
+    @LazilyInitializedField(value = "the field is guarded initialized within a synchronized method",
     analyses = L3FieldAssignabilityAnalysis.class)
 
     private int[] synchronizedArrayInitialization;
@@ -245,7 +245,7 @@ public class DCL {
 
 class DoubleCheckedLockingClassWithStaticFields {
 
-        @LazyInitializedThreadSafeFieldReference(value = "standard dcl pattern within a static method",
+        @LazilyInitializedField(value = "standard dcl pattern within a static method",
                 analyses = L0FieldImmutabilityAnalysis.class)
         private static DoubleCheckedLockingClassWithStaticFields instance;
         public static DoubleCheckedLockingClassWithStaticFields getInstance() {

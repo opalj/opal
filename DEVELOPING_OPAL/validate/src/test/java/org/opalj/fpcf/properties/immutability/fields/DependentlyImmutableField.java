@@ -10,12 +10,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Annotation to state that the annotated field is dependent immutable.
+ * Annotation to state that the annotated field is dependently immutable.
  */
-@PropertyValidator(key="FieldImmutability",validator= DependentImmutableFieldMatcher.class)
+@PropertyValidator(key="FieldImmutability",validator= DependentlyImmutableFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface DependentImmutableField {
+public @interface DependentlyImmutableField {
 
     /**
      * A short reasoning of this property.

@@ -1,11 +1,11 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox21;
 
 
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 
 public class Test {
 
-    @LazyInitializedNotThreadSafeFieldReference("")
+    @UnsafelyLazilyInitializedField("")
 private Object o = null;
     public void getO() {
         if (this.o == null) {

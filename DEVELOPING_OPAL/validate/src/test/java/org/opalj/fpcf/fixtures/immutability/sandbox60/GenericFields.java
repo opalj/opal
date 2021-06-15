@@ -2,19 +2,19 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox60;
 
 import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
-import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
 //@MutableType("")
 //@ShallowImmutableClass("")
 class GenericFields<T> {
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private Generic<T> generic;
     @NonTransitivelyImmutableField("")
     private Generic<ClassWithMutableFields> mutable = new Generic(new ClassWithMutableFields());
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private Generic<Generic<T>> nestedDependent;
 
     @NonTransitivelyImmutableField("")

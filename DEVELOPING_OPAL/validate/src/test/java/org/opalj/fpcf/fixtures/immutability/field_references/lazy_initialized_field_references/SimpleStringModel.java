@@ -5,7 +5,7 @@ import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
@@ -29,7 +29,7 @@ public class SimpleStringModel {
     //TODO @DeepImmutableField
     //TODO @LazyInitializedNotThreadSafeButDeterministicReference
     @MutableField("Mutable field reference")
-    @LazyInitializedNotThreadSafeFieldReference(value="The analysis state this for performance issues as being not thread safe") //The two def sites of h are conservatively handled as mutable")
+    @UnsafelyLazilyInitializedField(value="The analysis state this for performance issues as being not thread safe") //The two def sites of h are conservatively handled as mutable")
     private int hash; // Default value 0
 
 

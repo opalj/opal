@@ -28,10 +28,11 @@ import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.EagerL3FieldA
  */
 class ImmutabilityBenchmarkTests extends PropertiesTest {
 
-    // override def withRT = true
+    override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/benchmark/assignability/clone_function")
+        // lazy_initialization/objects/counterExamples
+        List("org/opalj/fpcf/fixtures/benchmark/lazy_initialization/objects")
     }
 
     override def init(p: Project[URL]): Unit = {

@@ -14,7 +14,7 @@ import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNon
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
+import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
@@ -22,7 +22,7 @@ import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
-@NonTransitiveImmutableType("has only deep immutable fields and is final")
+@NonTransitivelyImmutableType("has only deep immutable fields and is final")
 @NonTransitivelyImmutableClass("has only deep immutable fields")
 public final class WithMutableAndImmutableFieldType {
 

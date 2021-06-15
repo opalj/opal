@@ -10,12 +10,14 @@ import org.opalj.fpcf.properties.PropertyValidator;
 import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 /**
- * Annotation to state that the annotated field reference is not thread safe lazy initialized
+ * Annotation to state that the annotated field reference is thread safe lazy initialized
+ *
+ * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "FieldAssignability",validator = UnsafelyLazilyInitializedFieldMatcher.class)
+@PropertyValidator(key = "FieldAssignability",validator = LazilyInitializedFieldMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface LazyInitializedNotThreadSafeFieldReference {
+public @interface LazilyInitializedField {
 
     /**
      * A short reasoning of this property.

@@ -1,6 +1,6 @@
 package org.opalj.fpcf.fixtures.immutability.sandbox41;
 
-import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
 public class GenericTest {
@@ -14,13 +14,13 @@ final class EmptyClass{}
 
 final class Generic<A,B,C> {
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private A a;
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private B b;
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private C c;
 
     public Generic(A a, B b, C c){
@@ -32,19 +32,19 @@ final class Generic<A,B,C> {
 
 class Generic2<T>{
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private Generic<T,T,T> a;
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private Generic<T,T, EmptyClass> c;
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private Generic<T,T,Generic<T,T,T>> d;
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private Generic<T,T,Generic<T,T,Generic<T,T,T>>> e;
 
-    @DependentImmutableField("")
+    @DependentlyImmutableField("")
     private Generic<T,T,Generic<T,T,Generic<T,T,EmptyClass>>> f;
 
     @NonTransitivelyImmutableField("")

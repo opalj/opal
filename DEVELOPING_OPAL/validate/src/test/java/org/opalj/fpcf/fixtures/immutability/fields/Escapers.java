@@ -5,11 +5,11 @@ import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
@@ -62,7 +62,7 @@ class OneThatNotEscapesAndOneWithDCL {
             L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
             L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class
     })
-    @LazyInitializedNotThreadSafeFieldReference("")
+    @UnsafelyLazilyInitializedField("")
     private ClassWithPublicFields tmc2;
 
     public ClassWithPublicFields set() {
@@ -127,7 +127,7 @@ class GenericNotEscapesMutualEscapeDependencyAbleToResolve<T>{
     @EffectivelyNonAssignableField("")
     private FinalEmptyClass fec = new FinalEmptyClass();
 
-    @DependentImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class, parameter = "T")
+    @DependentlyImmutableField(value = "", analyses = L0FieldImmutabilityAnalysis.class, parameter = "T")
     @EffectivelyNonAssignableField("")
     private SimpleGenericClass<T> sgc;
 
@@ -138,7 +138,7 @@ class GenericNotEscapesMutualEscapeDependencyAbleToResolve<T>{
 
 @DependentlyImmutableClass("")
 final class SimpleGenericClass<T> {
-    @DependentImmutableField(value = "", parameter = "T")
+    @DependentlyImmutableField(value = "", parameter = "T")
     private T t;
     SimpleGenericClass(T t){
         this.t = t;

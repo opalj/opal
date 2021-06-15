@@ -2,7 +2,7 @@
 package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_field_references;
 
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 /**
@@ -13,7 +13,7 @@ import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssign
  *
  */
 public class SimpleLazyInitialization {
-	@LazyInitializedNotThreadSafeFieldReference(value = "the write to the object reference simpleLazyInitialization" +
+	@UnsafelyLazilyInitializedField(value = "the write to the object reference simpleLazyInitialization" +
 			" is not atomic",
 			analyses = L3FieldAssignabilityAnalysis.class)
 	private static SimpleLazyInitialization simpleLazyInitialization;
@@ -29,7 +29,7 @@ public class SimpleLazyInitialization {
 	@DeepImmutableField(value = "field has immutable field reference an primitive type",
 			analyses = L3FieldImmutabilityAnalysis.class) */
 	@MutableField(value = "can not handle effective immutability and lazy initialization")
-	@LazyInitializedNotThreadSafeFieldReference(value = "deterministic write due to guarded primitive type",
+	@UnsafelyLazilyInitializedField(value = "deterministic write due to guarded primitive type",
 			analyses = {L3FieldAssignabilityAnalysis.class})
 	private int i = 0;
 	public int hashcode() {

@@ -15,7 +15,7 @@ import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
 @PropertyValidator(key = "TypeImmutability", validator = NonTransitiveImmutableTypeMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface NonTransitiveImmutableType {
+public @interface NonTransitivelyImmutableType {
 
     /**
      * A short reasoning of this property.

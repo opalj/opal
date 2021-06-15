@@ -9,7 +9,7 @@ import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableCl
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
+import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
@@ -29,7 +29,7 @@ public class Container {
 
        @NonTransitivelyImmutableClass(value = "The body is of ImmutableContainerType",
                analyses = {L0ClassImmutabilityAnalysis.class, L1ClassImmutabilityAnalysis.class})
-       @NonTransitiveImmutableType(value = "The body is of ImmutableContainerType",
+       @NonTransitivelyImmutableType(value = "The body is of ImmutableContainerType",
                analyses = {L0TypeImmutabilityAnalysis.class, L1TypeImmutabilityAnalysis.class})
         private static final class Repeated extends Tree {
 
@@ -51,7 +51,7 @@ public class Container {
 
        @NonTransitivelyImmutableClass(value = "The body is of ImmutableContainerType",
                analyses = L0ClassImmutabilityAnalysis.class)
-       @NonTransitiveImmutableType(value = "The body is of ImmutableContainerType",
+       @NonTransitivelyImmutableType(value = "The body is of ImmutableContainerType",
                analyses = L0TypeImmutabilityAnalysis.class)
         private static final class Optional extends Tree {
 
@@ -72,7 +72,7 @@ public class Container {
         }
 
        @NonTransitivelyImmutableClass(value = "Arrays are treated as immutable", analyses = L0ClassImmutabilityAnalysis.class)
-       @NonTransitiveImmutableType(value = "Arrays are treated as immutable", analyses = L0TypeImmutabilityAnalysis.class)
+       @NonTransitivelyImmutableType(value = "Arrays are treated as immutable", analyses = L0TypeImmutabilityAnalysis.class)
         private static final class Group extends Tree {
 
            @NonTransitivelyImmutableField(value=" ",

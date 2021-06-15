@@ -5,7 +5,7 @@ import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
@@ -31,7 +31,7 @@ public class ArrayWithOneEscapingObject {
     }
 
     @NonTransitivelyImmutableField("Field is initialized with a shallow immutable field.")
-    @LazyInitializedThreadSafeFieldReference("Synchronized method with a guard-statement around the write")
+    @LazilyInitializedField("Synchronized method with a guard-statement around the write")
     private Object[] array3;
 
     public synchronized void initArray3(Object o){
@@ -40,7 +40,7 @@ public class ArrayWithOneEscapingObject {
     }
 
     @NonTransitivelyImmutableField("An array element escapes")
-    @LazyInitializedThreadSafeFieldReference("Synchronized method, with guarding if-statement.")
+    @LazilyInitializedField("Synchronized method, with guarding if-statement.")
     private Object[] array4;
 
     public synchronized Object initArray4(Object o){

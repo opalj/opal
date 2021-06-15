@@ -9,7 +9,7 @@ import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
@@ -57,7 +57,7 @@ final class FinalEmptyClass {
 @DependentlyImmutableClass(value = "class has dependent immutable field", analyses = L1ClassImmutabilityAnalysis.class)
 class TrivialDependentImmutableClass<T> {
 
-    @DependentImmutableField(value = "Because of type generic type T", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "Because of type generic type T", analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "Private effectively final field",
             analyses = L3FieldAssignabilityAnalysis.class)
     private T t;

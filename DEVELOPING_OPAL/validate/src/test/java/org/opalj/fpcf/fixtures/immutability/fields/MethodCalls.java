@@ -4,13 +4,13 @@ package org.opalj.fpcf.fixtures.immutability.fields;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 public class MethodCalls {
     @NonTransitivelyImmutableField("")
-    @LazyInitializedThreadSafeFieldReference("")
+    @LazilyInitializedField("")
     private TestMutable tm1;
 
     public synchronized void getTM1(){
@@ -21,7 +21,7 @@ public class MethodCalls {
     }
 
     @NonTransitivelyImmutableField("")
-    @LazyInitializedThreadSafeFieldReference("")
+    @LazilyInitializedField("")
     private TestMutable tm2;
 
     public synchronized TestMutable getTM2(){
@@ -32,7 +32,7 @@ public class MethodCalls {
     }
 
     @MutableField("")
-    @LazyInitializedNotThreadSafeFieldReference("")
+    @UnsafelyLazilyInitializedField("")
     private TestMutable tm3;
 
     public void getTm3() {

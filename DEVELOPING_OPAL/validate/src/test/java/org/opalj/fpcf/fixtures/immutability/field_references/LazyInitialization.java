@@ -6,7 +6,7 @@ import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
@@ -26,7 +26,7 @@ class Simple {
             analyses = L3FieldImmutabilityAnalysis.class)
     @ShallowImmutableField(value = "Simple lazy initialization", analyses = L2FieldImmutabilityAnalysis.class) */
     @MutableField(value = "Analysis doesn't recognize lazy initialization")
-    @LazyInitializedNotThreadSafeFieldReference("Simple lazy initialization")
+    @UnsafelyLazilyInitializedField("Simple lazy initialization")
     private int x;
 
     public int init() {
@@ -42,7 +42,7 @@ class Local {
     /*@DeepImmutableField(value = "Lazy initialized and primitive type", analyses = {L3FieldImmutabilityAnalysis.class})
     @ShallowImmutableField(value = "Lazy initialization with local", analyses = {L2FieldImmutabilityAnalysis.class}) */
     @MutableField(value = "Analysis doesn't recognize lazy initialization")
-    @LazyInitializedNotThreadSafeFieldReference("Lazy initialization with local")
+    @UnsafelyLazilyInitializedField("Lazy initialization with local")
     private int x;
 
     public int init() {
@@ -77,7 +77,7 @@ class LocalReversed {
     @ShallowImmutableField(value = "Lazy initialization with local (reversed)",
     analyses =  L2FieldImmutabilityAnalysis.class) */
     @MutableField(value = "Not thread safe lazy initialized field reference is seen as mutable")
-    @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization with local (reversed)",
+    @UnsafelyLazilyInitializedField(value = "Lazy initialization with local (reversed)",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -99,7 +99,7 @@ class LocalReload {
     @MutableField(value = "Analysis doesn't recognize lazy initialization",
             analyses = { L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class ,
                     L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class })
-    @LazyInitializedNotThreadSafeFieldReference(
+    @UnsafelyLazilyInitializedField(
             value = "Lazy initialization with local (reloading the field's value after the write)")
     private int x;
 
@@ -120,7 +120,7 @@ class SimpleReversed {
     @ShallowImmutableField(value = "Simple lazy initialization (reversed)",
     analyses = L2FieldImmutabilityAnalysis.class) */
     @MutableField(value = "Analysis doesn't recognize lazy initialization")
-    @LazyInitializedNotThreadSafeFieldReference(value = "Simple lazy initialization (reversed)",
+    @UnsafelyLazilyInitializedField(value = "Simple lazy initialization (reversed)",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -189,7 +189,7 @@ class DeterministicCall {
     //FIXME: Iusse with Java11 @LazyInitialized("Lazy initialization with call to deterministic method")
     //FIXME: Issue with Java11 @NonFinal(value = "Analysis doesn't recognize lazy initialization",
     //       analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
-    @LazyInitializedNotThreadSafeFieldReference("Lazy initialization with call to deterministic method")
+    @UnsafelyLazilyInitializedField("Lazy initialization with call to deterministic method")
     private int x;
 
     public int init() {
@@ -209,7 +209,7 @@ class DeterministicCallWithParam {
     @MutableField(value = "Lazy initialization is not the same for different invocations",
     analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
             L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization is not the same for different invocations",
+    @UnsafelyLazilyInitializedField(value = "Lazy initialization is not the same for different invocations",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -233,7 +233,7 @@ class DeterministicCallOnFinalField {
     @ShallowImmutableField(value = "Lazy initialization with call to deterministic method on final field",
     analyses = L2FieldImmutabilityAnalysis.class) */
     @MutableField(value="Not thread safe lazy initialized field reference is seen as mutable")
-    @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization with call to deterministic method " +
+    @UnsafelyLazilyInitializedField(value = "Lazy initialization with call to deterministic method " +
             "on final field", analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -275,7 +275,7 @@ class DeterministicCallOnNonFinalField {
     @MutableField(value = "Wrong lazy initialization with call to non-deterministic method on final field",
     analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
             L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @LazyInitializedNotThreadSafeFieldReference(value = "Wrong lazy initialization with call to non-deterministic method on final field",
+    @UnsafelyLazilyInitializedField(value = "Wrong lazy initialization with call to non-deterministic method on final field",
             analyses = L0FieldImmutabilityAnalysis.class)
     private int x;
 
@@ -316,7 +316,7 @@ class NondeterministicCall {
     @MutableField(value = "Wrong lazy initialization with call to non-deterministic method",
             analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,
     L2FieldAssignabilityAnalysis.class, L0FieldImmutabilityAnalysis.class})
-    @LazyInitializedNotThreadSafeFieldReference(value = "Wrong lazy initialization with call to non-deterministic method",
+    @UnsafelyLazilyInitializedField(value = "Wrong lazy initialization with call to non-deterministic method",
     analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -336,7 +336,7 @@ class DoubleLocalAssignment {
     @ShallowImmutableField(value = "Lazy initialization with a local that is updated twice",
     analyses =  L2FieldImmutabilityAnalysis.class) */
     @MutableField(value = "Analysis doesn't recognize lazy initialization")
-    @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization with a local that is updated twice",
+    @UnsafelyLazilyInitializedField(value = "Lazy initialization with a local that is updated twice",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 
@@ -398,7 +398,7 @@ class ExceptionInInitialization {
     //        analyses = { L1FieldMutabilityAnalysis.class, L2FieldMutabilityAnalysis.class })
     //FIXME: Issue with Java11 @NonFinal(value = "Instance field not considered by analysis",
     //        analyses = L0FieldMutabilityAnalysis.class)
-    @LazyInitializedNotThreadSafeFieldReference(value = "L1 Domain can not recognize this exception", //Field is never initialized, so it stays on its default value",
+    @UnsafelyLazilyInitializedField(value = "L1 Domain can not recognize this exception", //Field is never initialized, so it stays on its default value",
             analyses = L3FieldAssignabilityAnalysis.class)
     private int x;
 

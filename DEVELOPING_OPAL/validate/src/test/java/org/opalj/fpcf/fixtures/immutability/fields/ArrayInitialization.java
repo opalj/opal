@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.immutability.fields;
 
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 
@@ -37,7 +37,7 @@ public class ArrayInitialization {
 
 class SimpleLazyObjectsInstantiation{
 
-    @LazyInitializedNotThreadSafeFieldReference("")
+    @UnsafelyLazilyInitializedField("")
     private SimpleLazyObjectsInstantiation instance;
 
     public SimpleLazyObjectsInstantiation getInstance() {

@@ -9,7 +9,7 @@ import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
@@ -17,7 +17,7 @@ import org.opalj.fpcf.properties.immutability.field_assignability.AssignableFiel
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
+import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
@@ -34,7 +34,7 @@ public final class DependentClassWithGenericField<T> {
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class,
                     L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable field reference with generic type T",
+    @DependentlyImmutableField(value = "immutable field reference with generic type T",
     analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable reference", analyses = L0FieldImmutabilityAnalysis.class)
     private T t;
@@ -42,7 +42,7 @@ public final class DependentClassWithGenericField<T> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
     analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "dep imm field", analyses = L0FieldImmutabilityAnalysis.class)
+    @DependentlyImmutableField(value = "dep imm field", analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable reference",
             analyses = L3FieldAssignabilityAnalysis.class)
     private SimpleGenericClass<T,FinalEmptyClass,FinalEmptyClass> gc;
@@ -81,7 +81,7 @@ final class DependentClassWithGenericField_deep01 {
 analyses = L1ClassImmutabilityAnalysis.class)
 final class DependentClassWithGenericFieldWithOneLeftGenericParameter<T> {
 
-    @DependentImmutableField(value = "has one left generic parameter T and no shallow or mutable types", 
+    @DependentlyImmutableField(value = "has one left generic parameter T and no shallow or mutable types",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -126,7 +126,7 @@ final class SimpleGenericClass<T1,T2,T3> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable field reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -135,7 +135,7 @@ final class SimpleGenericClass<T1,T2,T3> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable field reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -144,7 +144,7 @@ final class SimpleGenericClass<T1,T2,T3> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable field reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -164,7 +164,7 @@ final class GenericAndDeepImmutableFields<T1, T2> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable field reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -173,7 +173,7 @@ final class GenericAndDeepImmutableFields<T1, T2> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable field reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -208,7 +208,7 @@ class ClassWithGenericAndMutableFields<T1, T2> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable field reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -229,7 +229,7 @@ class GenericAndShallowImmutableFields<T1, T2> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable field reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -238,7 +238,7 @@ class GenericAndShallowImmutableFields<T1, T2> {
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
     @NonTransitivelyImmutableField(value = "can not handle generics",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @EffectivelyNonAssignableField(value = "effective immutable field reference",
             analyses = L3FieldAssignabilityAnalysis.class)
@@ -309,7 +309,7 @@ final class FinalMutableClass{
     public int n = 0;
 }
 
-@NonTransitiveImmutableType(value = "class is not extensible", analyses = L0TypeImmutabilityAnalysis.class)
+@NonTransitivelyImmutableType(value = "class is not extensible", analyses = L0TypeImmutabilityAnalysis.class)
 @NonTransitivelyImmutableClass(value = "can not handle generics", analyses = L0ClassImmutabilityAnalysis.class)
 @TransitivelyImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
 @TransitivelyImmutableClass(value = "has only deep immutable fields", analyses = L1ClassImmutabilityAnalysis.class)
@@ -341,7 +341,7 @@ final class MutableClassWithGenericField {
 
 //@DeepImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
 //@DeepImmutableClass(value = "has only deep immutable fields", analyses = L1ClassImmutabilityAnalysis.class)
-@NonTransitiveImmutableType(value = "class is not extensible", analyses = {L0TypeImmutabilityAnalysis.class, L1TypeImmutabilityAnalysis.class})
+@NonTransitivelyImmutableType(value = "class is not extensible", analyses = {L0TypeImmutabilityAnalysis.class, L1TypeImmutabilityAnalysis.class})
 @NonTransitivelyImmutableClass(value = "can not handle generics", analyses = {L0ClassImmutabilityAnalysis.class, L1ClassImmutabilityAnalysis.class})
 final class ClassWithGenericField_shallow {
 
@@ -362,7 +362,7 @@ final class ClassWithGenericField_shallow {
         analyses = {L0ClassImmutabilityAnalysis.class, L1ClassImmutabilityAnalysis.class})
 class DependentClassInheritingMutableOne<T> extends SimpleMutableClass {
 
-    @DependentImmutableField(value="effective final field with generic type T",
+    @DependentlyImmutableField(value="effective final field with generic type T",
     analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value= "can not handle generic type",
     analyses = {L0FieldAssignabilityAnalysis.class, L1FieldAssignabilityAnalysis.class,

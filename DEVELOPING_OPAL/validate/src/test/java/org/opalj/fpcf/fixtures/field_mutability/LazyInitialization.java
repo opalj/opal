@@ -32,7 +32,7 @@ import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
@@ -182,7 +182,7 @@ class WrongDefault {
 
 class DeterministicCall {
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "Lazy initialization with call to deterministic method",
+    @UnsafelyLazilyInitializedField(value = "Lazy initialization with call to deterministic method",
             analyses = L0FieldImmutabilityAnalysis.class)
     //@NotThreadSafeLazyInitialized("Lazy initialization with call to deterministic method")
     @MutableField(value = "Analysis doesn't recognize lazy initialization",

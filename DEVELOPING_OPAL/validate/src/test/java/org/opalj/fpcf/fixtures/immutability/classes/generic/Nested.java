@@ -7,13 +7,13 @@ import org.opalj.br.fpcf.analyses.L0TypeImmutabilityAnalysis;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
-import org.opalj.fpcf.properties.immutability.fields.DependentImmutableField;
+import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-import org.opalj.fpcf.properties.immutability.types.NonTransitiveImmutableType;
+import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.L1ClassImmutabilityAnalysis;
@@ -40,7 +40,7 @@ class Simple<T>{
     class Inner{
 
         @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
-        @DependentImmutableField(value= "effective final with generic type T",
+        @DependentlyImmutableField(value= "effective final with generic type T",
                 analyses = L0FieldImmutabilityAnalysis.class)
         @NonTransitivelyImmutableField(value="can not handle generic types",
                 analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
@@ -66,7 +66,7 @@ class Complex<T>{
     class Inner {
 
         @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
-        @DependentImmutableField(value = "immutable reference with generic type",
+        @DependentlyImmutableField(value = "immutable reference with generic type",
                 analyses = L0FieldImmutabilityAnalysis.class)
         @NonTransitivelyImmutableField(value="can not work with generic type",
                 analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})
@@ -80,14 +80,14 @@ class Complex<T>{
 }
 
 @DependentImmutableType(value= "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
-@NonTransitiveImmutableType(value = "class is not extensible", analyses = L0TypeImmutabilityAnalysis.class)
+@NonTransitivelyImmutableType(value = "class is not extensible", analyses = L0TypeImmutabilityAnalysis.class)
 @DependentlyImmutableClass(value="has only one dependent immutable field", analyses = L1ClassImmutabilityAnalysis.class)
 @NonTransitivelyImmutableClass(value="can not work with dependent immutable fields",
         analyses = L0ClassImmutabilityAnalysis.class)
 final class GenericClass<T> {
 
     @MutableField(value="can not handle effective immutability", analyses = L0FieldAssignabilityAnalysis.class)
-    @DependentImmutableField(value = "immutable reference with generic type",
+    @DependentlyImmutableField(value = "immutable reference with generic type",
             analyses = L0FieldImmutabilityAnalysis.class)
     @NonTransitivelyImmutableField(value="can not work with generic type",
             analyses = {L1FieldAssignabilityAnalysis.class, L2FieldAssignabilityAnalysis.class})

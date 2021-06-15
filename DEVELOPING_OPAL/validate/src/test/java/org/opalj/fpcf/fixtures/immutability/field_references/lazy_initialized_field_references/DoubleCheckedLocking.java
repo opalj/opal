@@ -2,8 +2,8 @@
 package org.opalj.fpcf.fixtures.immutability.field_references.lazy_initialized_field_references;
 
 import org.opalj.br.fpcf.analyses.L0FieldAssignabilityAnalysis;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedNotThreadSafeFieldReference;
-import org.opalj.fpcf.properties.immutability.field_assignability.LazyInitializedThreadSafeFieldReference;
+import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
@@ -15,7 +15,7 @@ import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssign
  */
 public class DoubleCheckedLocking {
 
-    @LazyInitializedThreadSafeFieldReference(value = "standard double checked locking",
+    @LazilyInitializedField(value = "standard double checked locking",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object standardDCL;
     public Object getStandardDCL() {
@@ -30,7 +30,7 @@ public class DoubleCheckedLocking {
     }
 
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "the field write is not synchronized guarded",
+    @UnsafelyLazilyInitializedField(value = "the field write is not synchronized guarded",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object noSynchronizedGuard;
     public Object getNoSynchronizedGuard() {
@@ -42,7 +42,7 @@ public class DoubleCheckedLocking {
         return noSynchronizedGuard;
     }
 
-    @LazyInitializedThreadSafeFieldReference(value = "a simple variation of double checked locking without the outer guard",
+    @LazilyInitializedField(value = "a simple variation of double checked locking without the outer guard",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object onlyOneGuardWithinTheSynchronization;
     public Object getOnlyOneGuardWithinTheSynchronization() {
@@ -54,7 +54,7 @@ public class DoubleCheckedLocking {
         return onlyOneGuardWithinTheSynchronization;
     }
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "the field write is not synchronized guarded two times",
+    @UnsafelyLazilyInitializedField(value = "the field write is not synchronized guarded two times",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object twoNotSynchronizedGuards;
     public Object getTwoNotSynchronizedGuards() {
@@ -66,7 +66,7 @@ public class DoubleCheckedLocking {
         return twoNotSynchronizedGuards;
     }
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "the field is written outside the synchronized block",
+    @UnsafelyLazilyInitializedField(value = "the field is written outside the synchronized block",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object writeOutsideTheSynchronizedGuard;
     public Object getWriteOutsideTheSynchronizedGuard() {
@@ -139,7 +139,7 @@ public class DoubleCheckedLocking {
         return writeOutsideDCL;
     }
 
-    @LazyInitializedThreadSafeFieldReference(value = "dcl pattern with loops in it",
+    @LazilyInitializedField(value = "dcl pattern with loops in it",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object loopsInDCLPattern;
     public Object getLoopsInDCLPattern() {
@@ -157,7 +157,7 @@ public class DoubleCheckedLocking {
         return loopsInDCLPattern;
     }
 
-    @LazyInitializedThreadSafeFieldReference(value = "no correct complecte dcl pattern but sufficient for thread " +
+    @LazilyInitializedField(value = "no correct complecte dcl pattern but sufficient for thread " +
             "safety due to a correct guard in a synchronized block", analyses = L3FieldAssignabilityAnalysis.class)
     private Object outerGuardEndsBeforeSynchronization;
     public Object getOuterGuardEndsBeforeSynchronization() {
@@ -171,7 +171,7 @@ public class DoubleCheckedLocking {
         return outerGuardEndsBeforeSynchronization;
     }
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "only a guard around the field write",
+    @UnsafelyLazilyInitializedField(value = "only a guard around the field write",
             analyses = L3FieldAssignabilityAnalysis.class)
     private Object notNestedDCLWriteOnlyInGuard;
     public Object getNotNestedDCLWriteOnlyInGuard() {
@@ -201,7 +201,7 @@ public class DoubleCheckedLocking {
     }
 
 
-    @LazyInitializedThreadSafeFieldReference("")
+    @LazilyInitializedField("")
     private Object multipleGuardsInDCLPattern;
     public Object getMultipleGuardsInDCLPattern() {
         if(multipleGuardsInDCLPattern ==null){
@@ -252,7 +252,7 @@ public class DoubleCheckedLocking {
         return dclWithLockOr;
     }
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "the field read for the guard is outside the synchronized block",
+    @UnsafelyLazilyInitializedField(value = "the field read for the guard is outside the synchronized block",
             analyses = L0FieldAssignabilityAnalysis.class)
     private Object fieldReadOutsideSynchronizedBlock;
 
@@ -265,7 +265,7 @@ public class DoubleCheckedLocking {
         return fieldReadOutsideSynchronizedBlock;
     }
 
-    @LazyInitializedNotThreadSafeFieldReference(value = "the field read for the guard is outside the synchronized block", analyses = L0FieldAssignabilityAnalysis.class)
+    @UnsafelyLazilyInitializedField(value = "the field read for the guard is outside the synchronized block", analyses = L0FieldAssignabilityAnalysis.class)
     private Object fieldReadOutsideSynchronizedBlockEarlyReturn;
 
     public Object getFieldReadOutsideSynchronizedBlockEarlyReturn(){
