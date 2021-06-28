@@ -62,6 +62,7 @@ object SiteGeneration {
       import com.vladsch.flexmark.util.ast.Node
       import com.vladsch.flexmark.html.HtmlRenderer
       import com.vladsch.flexmark.parser.Parser
+      import com.vladsch.flexmark.util.data.DataKey
       import com.vladsch.flexmark.util.data.MutableDataSet
       import org.fusesource.scalate.TemplateEngine
 
@@ -86,7 +87,7 @@ object SiteGeneration {
       }
 
       // 2.3 pre-process pages
-      val mdParserOptions = new MutableDataSet()
+      val mdParserOptions = new MutableDataSet().set[java.lang.Boolean](HtmlRenderer.RENDER_HEADER_ID, true).set[java.lang.Boolean](HtmlRenderer.GENERATE_HEADER_ID, true)
       val mdParser = Parser.builder(mdParserOptions).build()
       val mdToHTMLRenderer = HtmlRenderer.builder(mdParserOptions).build()
       val pages = for (page ← config.getAnyRefList("pages").asScala) yield {
@@ -134,7 +135,8 @@ object SiteGeneration {
               /* the file object */ sourceFile,
               /* the title */ pageConfig.get("title").toString,
               /* the content */ htmlContent.toString,
-              /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false)
+              /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false),
+              /* show in TOC */ Option(pageConfig.get("inTOC")).getOrElse(true).asInstanceOf[Boolean]
             )
 
           case sectionTitle: String ⇒
@@ -144,15 +146,16 @@ object SiteGeneration {
               null,
               sectionTitle,
               null,
-              false
+              false,
+              true
             )
 
           case _ ⇒
             throw new RuntimeException("unsupported page configuration: " + page)
         }
       }
-      val toc /*Traversable[(String,String)]*/ = pages.map { page ⇒
-        val (baseFileName, _, title, _, _) = page
+      val toc /*Traversable[(String,String)]*/ = pages.filter(_._6).map { page ⇒
+        val (baseFileName, _, title, _, _, _) = page
         (baseFileName, title)
       }
 
@@ -160,7 +163,7 @@ object SiteGeneration {
       val engine = new TemplateEngine
       val defaultTemplate = sourceFolder / "default.template.html.ssp"
       for {
-        (baseFileName, sourceFile, title, html, useBanner) ← pages
+        (baseFileName, sourceFile, title, html, useBanner, _) ← pages
         if baseFileName ne null
       } {
         val htmlFile = targetFolder / (baseFileName + ".html")
