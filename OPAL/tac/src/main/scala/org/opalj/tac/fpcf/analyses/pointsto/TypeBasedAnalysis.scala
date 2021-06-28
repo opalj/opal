@@ -36,5 +36,9 @@ trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
         isEmptyArray:   Boolean        = false
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 
-    override protected[this] def getTypeOf(element: ReferenceType): ReferenceType = element
+    @inline protected[this] def getTypeOf(element: ReferenceType): ReferenceType = element
+
+    @inline protected[this] def getTypeIdOf(element: ReferenceType): Int = element.id
+
+    @inline protected[this] def isEmptyArray(element: ReferenceType): Boolean = false
 }

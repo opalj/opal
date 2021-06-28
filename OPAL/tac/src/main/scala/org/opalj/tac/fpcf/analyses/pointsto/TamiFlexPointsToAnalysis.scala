@@ -67,7 +67,7 @@ abstract class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
             self.createPointsToSet(pc, declaredMethod, allocatedType, isConstant, isEmptyArray)
         }
 
-        override protected[this] def currentPointsTo(
+        @inline override protected[this] def currentPointsTo(
             depender:   DependerType,
             dependee:   Entity,
             typeFilter: ReferenceType ⇒ Boolean
@@ -75,8 +75,16 @@ abstract class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
             self.currentPointsTo(depender, dependee, typeFilter)
         }
 
-        override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
+        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
             self.getTypeOf(element)
+        }
+
+        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = {
+            self.getTypeIdOf(element)
+        }
+
+        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = {
+            self.isEmptyArray(element)
         }
     }
 

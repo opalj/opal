@@ -23,6 +23,7 @@ import org.opalj.br.fpcf.properties.pointsto.NoAllocationSites
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.pointsto.AllocationSite
 import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
+import org.opalj.br.fpcf.properties.pointsto.isEmptyArrayAllocationSite
 
 trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
 
@@ -98,15 +99,23 @@ trait AllocationSiteBasedAnalysis extends AbstractPointsToBasedAnalysis {
         }
     }
 
-    override protected[this] def getTypeOf(element: AllocationSite): ReferenceType = {
+    @inline protected[this] def getTypeOf(element: AllocationSite): ReferenceType = {
         ReferenceType.lookup(allocationSiteLongToTypeId(element))
+    }
+
+    @inline protected[this] def getTypeIdOf(element: AllocationSite): Int = {
+        allocationSiteLongToTypeId(element)
+    }
+
+    @inline protected[this] def isEmptyArray(element: AllocationSite): Boolean = {
+        isEmptyArrayAllocationSite(element)
     }
 
     override protected[this] val pointsToPropertyKey: PropertyKey[AllocationSitePointsToSet] = {
         AllocationSitePointsToSet.key
     }
 
-    override protected[this] def emptyPointsToSet: AllocationSitePointsToSet = {
+    @inline protected[this] def emptyPointsToSet: AllocationSitePointsToSet = {
         NoAllocationSites
     }
 }
