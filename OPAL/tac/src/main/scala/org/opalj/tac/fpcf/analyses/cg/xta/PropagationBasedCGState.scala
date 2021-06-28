@@ -57,9 +57,7 @@ class PropagationBasedCGState(
             UIDSet.empty
     }
 
-    def instantiatedTypesContains(tpe: ReferenceType): Boolean = {
-        _instantiatedTypesDependeeMap.keys.exists(instantiatedTypes(_).contains(tpe))
-    }
+    def typeSetEntities(): Iterable[TypeSetEntity] = _instantiatedTypesDependeeMap.keys
 
     def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
         val typeDependee = _instantiatedTypesDependeeMap(typeSetEntity)
@@ -78,12 +76,12 @@ class PropagationBasedCGState(
 
     override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty
 
-    def addVirtualCallSite(objectType: ObjectType, callSite: CallSite): Unit = {
-        val oldValOpt = _virtualCallSites.get(objectType.id.toLong)
+    def addVirtualCallSite(typeId: Long, callSite: CallSite): Unit = {
+        val oldValOpt = _virtualCallSites.get(typeId)
         if (oldValOpt.isDefined)
             oldValOpt.get += callSite
         else {
-            _virtualCallSites += (objectType.id.toLong → mutable.Set(callSite))
+            _virtualCallSites += (typeId → mutable.Set(callSite))
         }
     }
 

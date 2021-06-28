@@ -8,6 +8,7 @@ package xta
 
 import scala.language.existentials
 
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.EUBP
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -41,6 +42,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
 
     override type State = PropagationBasedCGState
+    override type LocalTypeInformation = Iterable[TypeSetEntity]
 
     override def c(state: PropagationBasedCGState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case EUBP(typeSetEntity: TypeSetEntity, _: InstantiatedTypes) ⇒
@@ -121,20 +123,24 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     }
 
     @inline override protected[this] def canResolveCall(
-        implicit
-        state: PropagationBasedCGState
-    ): ObjectType ⇒ Boolean = {
-        state.instantiatedTypesContains(_)
+        localTypeInformation: LocalTypeInformation,
+        state:                PropagationBasedCGState
+    ): ObjectType ⇒ Boolean = { tpe ⇒
+        localTypeInformation.exists(state.instantiatedTypes(_).contains(tpe))
     }
 
     @inline protected[this] def handleUnresolvedCall(
-        possibleTgtType: ObjectType,
-        call:            Call[V] with VirtualCall[V],
-        pc:              Int
+        unresolvedTypes: IntTrieSet,
+        callSite:        CallSite
     )(implicit state: PropagationBasedCGState): Unit = {
-        state.addVirtualCallSite(
-            possibleTgtType, CallSite(pc, call.name, call.descriptor, call.declaringClass)
-        )
+        for (typeId ← unresolvedTypes)
+            state.addVirtualCallSite(typeId.toLong, callSite)
+    }
+
+    @inline protected[this] def getLocalTypeInformation(
+        callSite: CallSite, call: Call[V] with VirtualCall[V]
+    )(implicit state: State): LocalTypeInformation = {
+        state.typeSetEntities
     }
 }
 

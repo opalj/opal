@@ -176,7 +176,7 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     private[this] val _virtualCallSites: mutable.Map[CallSite, IntTrieSet] = mutable.Map.empty
 
     def typesForCallSite(callSite: CallSite): IntTrieSet = {
-        _virtualCallSites(callSite)
+        _virtualCallSites.getOrElse(callSite, IntTrieSet.empty)
     }
 
     def addPotentialTypesOfCallSite(

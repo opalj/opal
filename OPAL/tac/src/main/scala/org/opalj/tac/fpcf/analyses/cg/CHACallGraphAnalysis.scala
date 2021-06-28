@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPS
 import org.opalj.br.Method
@@ -32,6 +33,7 @@ class CHACallGraphAnalysis private[analyses] (
         final val project: SomeProject
 ) extends AbstractCallGraphAnalysis {
     override type State = CHAState
+    override type LocalTypeInformation = Null
 
     override def createInitialState(
         definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
@@ -40,19 +42,22 @@ class CHACallGraphAnalysis private[analyses] (
     }
 
     @inline override protected[this] def canResolveCall(
-        implicit
-        state: CHAState
+        localTypeInformation: LocalTypeInformation,
+        state:                CHAState
     ): ObjectType ⇒ Boolean = {
         _ ⇒ true
     }
 
     @inline protected[this] def handleUnresolvedCall(
-        possibleTgtType: ObjectType,
-        call:            Call[V] with VirtualCall[V],
-        pc:              Int
+        unresolvedTypes: IntTrieSet,
+        callSite:        CallSite
     )(implicit state: CHAState): Unit = {
         throw new UnsupportedOperationException()
     }
+
+    @inline protected[this] def getLocalTypeInformation(
+        callSite: CallSite, call: Call[V] with VirtualCall[V]
+    )(implicit state: CHAState): LocalTypeInformation = null
 }
 
 object CHACallGraphAnalysisScheduler extends CallGraphAnalysisScheduler {

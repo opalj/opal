@@ -6,7 +6,6 @@ package analyses
 package cg
 package pointsto
 
-import org.opalj.collection.ForeachRefIterator
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
@@ -41,65 +40,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
 
     override type State = PointsToBasedCGState[PointsToSet]
     override type DependerType = CallSite
-
-    override protected[this] def handlePreciseCall(
-        calleeType:        ObjectType,
-        caller:            DefinedMethod,
-        callerType:        ObjectType,
-        call:              Call[V] with VirtualCall[V],
-        pc:                Int,
-        calleesAndCallers: DirectCalls
-    )(implicit state: State): Unit = {
-        handleImpreciseCall(calleeType, caller, call, pc, calleesAndCallers)
-    }
-
-    /**
-     * Computes the calls of the given `method` including the known effect of the `call` and
-     * the call sites associated ith this call (in order to process updates of instantiated types).
-     * There can be multiple "call sites", in case the three-address code has computed multiple
-     * type bounds for the receiver.
-     */
-    override protected[this] def doHandleImpreciseCall(
-        caller:                        DefinedMethod,
-        call:                          Call[V] with VirtualCall[V],
-        pc:                            Int,
-        specializedDeclaringClassType: ReferenceType,
-        potentialTargets:              ForeachRefIterator[ObjectType],
-        calleesAndCallers:             DirectCalls
-    )(implicit state: State): Unit = {
-        val callerType = caller.definedMethod.classFile.thisType
-        val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
-
-        // get the upper bound of the pointsToSet and creates a dependency if needed
-        val currentPointsToSets = currentPointsToOfDefSites(callSite, call.receiver.asVar.definedBy)
-        val pointsToSet = currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) ⇒ r.included(l) }
-
-        var types = IntTrieSet.empty
-
-        for (newType ← potentialTargets) {
-            if (pointsToSet.types.contains(newType) ||
-                (newType eq ObjectType.Object) && pointsToSet.types.exists(_.isArrayType)) {
-                val tgtR = project.instanceCall(
-                    callerType,
-                    newType,
-                    call.name,
-                    call.descriptor
-                )
-                handleCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    pc,
-                    tgtR,
-                    calleesAndCallers
-                )
-            } else {
-                types += newType.id
-            }
-        }
-        state.addPotentialTypesOfCallSite(callSite, types)
-    }
+    override type LocalTypeInformation = PointsToSet
 
     override def c(
         state: State
@@ -183,19 +124,28 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     }
 
     @inline override protected[this] def canResolveCall(
-        implicit
-        state: State
-    ): ObjectType ⇒ Boolean = {
-        throw new UnsupportedOperationException()
+        localTypeInformation: LocalTypeInformation,
+        state:                State
+    ): ObjectType ⇒ Boolean = { newType ⇒
+        (localTypeInformation.types.contains(newType) ||
+            (newType eq ObjectType.Object) && localTypeInformation.types.exists(_.isArrayType))
     }
 
     @inline protected[this] def handleUnresolvedCall(
-        possibleTgtType: ObjectType,
-        call:            Call[V] with VirtualCall[V],
-        pc:              Int
+        unresolvedTypes: IntTrieSet,
+        callSite:        CallSite
     )(implicit state: State): Unit = {
-        throw new UnsupportedOperationException()
+        state.addPotentialTypesOfCallSite(callSite, unresolvedTypes)
     }
+
+    @inline protected[this] def getLocalTypeInformation(
+        callSite: CallSite, call: Call[V] with VirtualCall[V]
+    )(implicit state: State): LocalTypeInformation = {
+        // get the upper bound of the pointsToSet and creates a dependency if needed
+        val currentPointsToSets = currentPointsToOfDefSites(callSite, call.receiver.asVar.definedBy)
+        currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) ⇒ r.included(l) }
+    }
+
 }
 
 class TypeBasedPointsToBasedCallGraphAnalysis private[pointsto] (
