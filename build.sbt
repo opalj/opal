@@ -29,7 +29,7 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licen
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-scalaVersion in ThisBuild := "2.12.13"
+scalaVersion in ThisBuild := "2.12.14"
 
 ScalacConfiguration.globalScalacOptions
 
