@@ -161,6 +161,7 @@ lazy val `OPAL` = (project in file("."))
     tac,
     de,
     av,
+    ll,
     framework,
     //  bp, (just temporarily...)
     tools,
@@ -325,6 +326,18 @@ lazy val `ArchitectureValidation` = (project in file("OPAL/av"))
   .dependsOn(de % "it->it;it->test;test->test;compile->compile")
   .configs(IntegrationTest)
 
+
+lazy val ll = `LLVM`
+lazy val `LLVM` = (project in file("OPAL/ll"))
+  .settings(buildSettings: _*)
+  .settings(
+    name := "LLVM",
+    scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - LLVM"),
+    fork := true
+  )
+.dependsOn(common % "it->test;test->test;compile->compile")
+.configs(IntegrationTest)
+
 lazy val framework = `Framework`
 lazy val `Framework` = (project in file("OPAL/framework"))
   .settings(buildSettings: _*)
@@ -336,7 +349,8 @@ lazy val `Framework` = (project in file("OPAL/framework"))
   .dependsOn(
     ba  % "it->it;it->test;test->test;compile->compile",
     av  % "it->it;it->test;test->test;compile->compile",
-    tac % "it->it;it->test;test->test;compile->compile"
+    tac % "it->it;it->test;test->test;compile->compile",
+    ll % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 
