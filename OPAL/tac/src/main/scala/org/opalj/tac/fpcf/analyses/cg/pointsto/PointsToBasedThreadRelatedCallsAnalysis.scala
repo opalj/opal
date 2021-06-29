@@ -15,6 +15,7 @@ import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
+import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -34,10 +35,13 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 import org.opalj.tac.fpcf.properties.TheTACAI
 
@@ -48,12 +52,9 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Florian Kuebler
  * @author Dominik Helm
  */
-trait PointsToBasedThreadStartAnalysis
-    extends TACAIBasedAPIBasedAnalysis
-    with AbstractPointsToBasedAnalysis {
-
-    def threadStartMethod: DeclaredMethod
-    override val apiMethod: DeclaredMethod = threadStartMethod
+abstract class PointsToBasedThreadStartAnalysis private[cg] (
+        override val project: SomeProject, override val apiMethod: DeclaredMethod
+) extends TACAIBasedAPIBasedAnalysis with AbstractPointsToBasedAnalysis {
 
     override type State = PointsToBasedCGState[PointsToSet]
     override type DependerType = CallSite
@@ -73,10 +74,8 @@ trait PointsToBasedThreadStartAnalysis
             caller, FinalEP(caller.definedMethod, TheTACAI(tac))
         )
 
-        if (isDirect) {
-            val receiver =
-                tac.stmts(state.tac.properStmtIndexForPC(pc)).asInstanceMethodCall.receiver
-            handleStart(caller, receiver, pc, indirectCalls)
+        if (receiverOption.isDefined) {
+            handleStart(caller, receiverOption.get, pc, indirectCalls)
         } else
             indirectCalls.addIncompleteCallSite(pc)
 
@@ -410,8 +409,10 @@ trait PointsToBasedThreadStartAnalysis
  * @author Dominik Helm
  * @author Michael Reif
  */
-trait PointsToBasedThreadRelatedCallsAnalysis extends FPCFAnalysis {
-    val createAnalysis: (SomeProject, DeclaredMethod) ⇒ PointsToBasedThreadStartAnalysis
+class PointsToBasedThreadRelatedCallsAnalysis private[cg] (
+        val project:        SomeProject,
+        val createAnalysis: (SomeProject, DeclaredMethod) ⇒ PointsToBasedThreadStartAnalysis
+) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
         val declaredMethods = p.get(DeclaredMethodsKey)
@@ -461,25 +462,15 @@ trait PointsToBasedThreadRelatedCallsAnalysis extends FPCFAnalysis {
     }
 }
 
-class TypeBasedPointsToBasedThreadStartAnalysis private[pointsto] (
-        final val project:                    SomeProject,
-        override final val threadStartMethod: DeclaredMethod
-) extends PointsToBasedThreadStartAnalysis with AllocationSiteBasedAnalysis
-
-class TypeBasedPointsToBasedThreadRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject
-) extends PointsToBasedThreadRelatedCallsAnalysis {
-    override val createAnalysis: (SomeProject, DeclaredMethod) ⇒ TypeBasedPointsToBasedThreadStartAnalysis =
-        (p, m) ⇒ new TypeBasedPointsToBasedThreadStartAnalysis(p, m)
-}
-
-object TypeBasedPointsToBasedThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait PointsToBasedThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+    val propertyKind: PropertyMetaInformation
+    val createAnalysis: SomeProject ⇒ PointsToBasedThreadRelatedCallsAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
 
     override def uses: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callees, Callers, TACAI)
+        PropertyBounds.ubs(Callees, Callers, TACAI, propertyKind)
 
     override def derivesCollaboratively: Set[PropertyBounds] =
         PropertyBounds.ubs(Callees, Callers)
@@ -488,43 +479,33 @@ object TypeBasedPointsToBasedThreadRelatedCallsAnalysisScheduler extends BasicFP
 
     override def start(
         p: SomeProject, ps: PropertyStore, unused: Null
-    ): TypeBasedPointsToBasedThreadRelatedCallsAnalysis = {
-        val analysis = new TypeBasedPointsToBasedThreadRelatedCallsAnalysis(p)
+    ): PointsToBasedThreadRelatedCallsAnalysis = {
+        val analysis = createAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }
 }
 
-class AllocationSiteBasedPointsToBasedThreadStartAnalysis private[pointsto] (
-        final val project:                    SomeProject,
-        override final val threadStartMethod: DeclaredMethod
-) extends PointsToBasedThreadStartAnalysis with AllocationSiteBasedAnalysis
+object TypeBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
+        extends PointsToBasedThreadRelatedCallsAnalysisScheduler {
 
-class AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject
-) extends PointsToBasedThreadRelatedCallsAnalysis {
-    override val createAnalysis: (SomeProject, DeclaredMethod) ⇒ AllocationSiteBasedPointsToBasedThreadStartAnalysis =
-        (p, m) ⇒ new AllocationSiteBasedPointsToBasedThreadStartAnalysis(p, m)
+    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
+
+    val createAnalysis: SomeProject ⇒ PointsToBasedThreadRelatedCallsAnalysis =
+        p ⇒ new PointsToBasedThreadRelatedCallsAnalysis(
+            p,
+            (p, m) ⇒ new PointsToBasedThreadStartAnalysis(p, m) with TypeBasedAnalysis
+        )
 }
 
-object AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+object AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
+        extends PointsToBasedThreadRelatedCallsAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
+    override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
 
-    override def uses: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callees, Callers, TACAI)
-
-    override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(Callees, Callers)
-
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    override def start(
-        p: SomeProject, ps: PropertyStore, unused: Null
-    ): AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysis = {
-        val analysis = new AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysis(p)
-        ps.scheduleEagerComputationForEntity(p)(analysis.process)
-        analysis
-    }
+    val createAnalysis: SomeProject ⇒ PointsToBasedThreadRelatedCallsAnalysis =
+        p ⇒ new PointsToBasedThreadRelatedCallsAnalysis(
+            p,
+            (p, m) ⇒ new PointsToBasedThreadStartAnalysis(p, m) with AllocationSiteBasedAnalysis
+        )
 }
