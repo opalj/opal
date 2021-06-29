@@ -333,7 +333,8 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
   .settings(
     name := "LLVM",
     scalacOptions in(Compile, doc) ++= Opts.doc.title("OPAL - LLVM"),
-    fork := true
+    fork := true,
+    libraryDependencies ++= Dependencies.ll
   )
 .dependsOn(common % "it->test;test->test;compile->compile")
 .configs(IntegrationTest)

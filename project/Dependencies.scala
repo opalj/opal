@@ -25,6 +25,8 @@ object Dependencies {
     val fastutil = "8.5.4"
 
     val openjfx = "16"
+
+    val llvm = "11.1.0-1.5.5"
   }
 
   object library {
@@ -49,6 +51,7 @@ object Dependencies {
     val jacksonDF = "com.fasterxml.jackson.dataformat"    % "jackson-dataformat-csv"    % version.jacksonDF withSources () withJavadoc ()
     val fastutil = "it.unimi.dsi"                         % "fastutil"                  % version.fastutil withSources () withJavadoc ()
     val javafxBase = "org.openjfx" % "javafx-base" % version.openjfx classifier osName
+    val llvm = "org.bytedeco" % "llvm-platform" % version.llvm
 
     // --- test related dependencies
 
@@ -67,6 +70,7 @@ object Dependencies {
   val si = Seq()
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
+  val ll = Seq(llvm)
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
 
