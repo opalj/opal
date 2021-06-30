@@ -1,7 +1,7 @@
 # Reading Class Files
 OPAL provides multiple different representations for Java class files to support different use cases. Next, we will discuss how to directly read Java class files and how to create the different representations.
 
-> The following examples expect that you have checked out OPAL, and that you started `sbt` in OPAL's main folder. After that, you have changed to the project `project OPAL-DeveloperTools` and started the `console`. Alternatively to checking out OPAL and building OPAL on your own, you can use our preconfigured [Docker Container](https://hub.docker.com/r/opalj/sbt_scala_javafx/).
+> The following examples expect that you have checked out OPAL, and that you started `sbt` in OPAL's main folder. After that, you have changed to the project `project OPAL-DeveloperTools` and started the `console`. Alternatively to checking out OPAL and building OPAL on your own, you can use our preconfigured [Docker Container](https://hub.docker.com/r/opalj/sbt_scala_opal).
 
 > A growing number of small code snippets that demonstrate various aspects of the API can be found [here](https://bitbucket.org/snippets/delors/).
 

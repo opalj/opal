@@ -20,11 +20,13 @@ import org.opalj.ai.isImmediateVMException
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ReferenceType
 
+case class CallSite(
+        pc: Int, methodName: String, methodDescriptor: MethodDescriptor, receiver: ReferenceType
+)
+
 package object cg {
 
     type V = DUVar[ValueInformation]
-
-    type CallSiteT = (Int /*PC*/ , String, MethodDescriptor, ReferenceType)
 
     /**
      * A persistent representation (using pcs instead of TAC value origins) for a UVar.

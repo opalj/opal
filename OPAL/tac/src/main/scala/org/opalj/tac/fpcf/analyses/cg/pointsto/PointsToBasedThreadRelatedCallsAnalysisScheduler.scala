@@ -56,7 +56,7 @@ trait PointsToBasedThreadStartAnalysis
     override val apiMethod: DeclaredMethod = threadStartMethod
 
     override type State = PointsToBasedCGState[PointsToSet]
-    override type DependerType = CallSiteT
+    override type DependerType = CallSite
 
     override def processNewCaller(
         caller:          DefinedMethod,
@@ -110,7 +110,7 @@ trait PointsToBasedThreadStartAnalysis
                 val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
                 for (cs ← relevantCallSites) {
-                    val pc = cs._1
+                    val pc = cs.pc
                     val receiver = state.tac.stmts(
                         state.tac.properStmtIndexForPC(pc)
                     ).asInstanceMethodCall.receiver
@@ -172,7 +172,7 @@ trait PointsToBasedThreadStartAnalysis
             indirectCalls
         )
 
-        val callSite = (
+        val callSite = CallSite(
             pc,
             "start",
             MethodDescriptor.NoArgsAndReturnVoid,
@@ -378,7 +378,7 @@ trait PointsToBasedThreadStartAnalysis
     }
 
     @inline protected[this] def currentPointsTo(
-        depender:   CallSiteT,
+        depender:   CallSite,
         dependee:   Entity,
         typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {

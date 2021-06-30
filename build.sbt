@@ -9,7 +9,9 @@ import sbtunidoc.ScalaUnidocPlugin
 name := "OPAL Library"
 
 // SNAPSHOT
-version in ThisBuild := "3.0.0-SNAPSHOT"
+version in ThisBuild := "4.0.1-SNAPSHOT"
+// RELEASED version in ThisBuild := "4.0.0" // May 7th, 2021
+// SNAPSHOT version in ThisBuild := "3.0.0-SNAPSHOT" // available since June 7th, 2019
 // RELEASED version in ThisBuild := "2.0.1" // October 10th, 2018
 // RELEASED version in ThisBuild := "2.0.0" // October 2nd, 2018
 // RELEASED version in ThisBuild := "1.0.0" // October 25th, 2017
@@ -25,7 +27,9 @@ organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("https://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licenses/BSD-2-Clause"))
 
-scalaVersion in ThisBuild := "2.12.13"
+usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
+
+scalaVersion in ThisBuild := "2.12.14"
 
 ScalacConfiguration.globalScalacOptions
 
