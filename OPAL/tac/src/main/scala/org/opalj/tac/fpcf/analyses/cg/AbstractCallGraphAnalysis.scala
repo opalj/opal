@@ -88,12 +88,13 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         pc:                            Int,
         specializedDeclaringClassType: ReferenceType,
         potentialTargets:              ForeachRefIterator[ObjectType],
+        isPrecise:                     Boolean,
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit = {
         val callerType = caller.declaringClassType
         val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
 
-        val cbsTargets = if (resovleCallBySignature && call.isInterface & call.declaringClass.isObjectType) {
+        val cbsTargets = if (!isPrecise && resovleCallBySignature && call.isInterface & call.declaringClass.isObjectType) {
             val cf = project.classFile(call.declaringClass.asObjectType)
             cf.flatMap { _.findMethod(call.name, call.descriptor) }.map {
                 getCBSTargets(_)
@@ -131,34 +132,36 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
 
         // Deal with the fact that there may be unknown subtypes of the receiver type that might
         // override the method
-        if (specializedDeclaringClassType.isObjectType) {
-            val declType = specializedDeclaringClassType.asObjectType
+        if (!isPrecise) {
+            if (specializedDeclaringClassType.isObjectType) {
+                val declType = specializedDeclaringClassType.asObjectType
 
-            val mResult = if (classHierarchy.isInterface(declType).isYes)
-                org.opalj.Result(project.resolveInterfaceMethodReference(
-                    declType, call.name, call.descriptor
-                ))
-            else
-                org.opalj.Result(project.resolveMethodReference(
-                    declType,
-                    call.name,
-                    call.descriptor,
-                    forceLookupInSuperinterfacesOnFailure = true
-                ))
+                val mResult = if (classHierarchy.isInterface(declType).isYes)
+                    org.opalj.Result(project.resolveInterfaceMethodReference(
+                        declType, call.name, call.descriptor
+                    ))
+                else
+                    org.opalj.Result(project.resolveMethodReference(
+                        declType,
+                        call.name,
+                        call.descriptor,
+                        forceLookupInSuperinterfacesOnFailure = true
+                    ))
 
-            if (mResult.isEmpty) {
-                unknownLibraryCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    declType,
-                    caller.definedMethod.classFile.thisType.packageName,
-                    pc,
-                    calleesAndCallers
-                )
-            } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
-                calleesAndCallers.addIncompleteCallSite(pc)
+                if (mResult.isEmpty) {
+                    unknownLibraryCall(
+                        caller,
+                        call.name,
+                        call.descriptor,
+                        call.declaringClass,
+                        declType,
+                        caller.definedMethod.classFile.thisType.packageName,
+                        pc,
+                        calleesAndCallers
+                    )
+                } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
+                    calleesAndCallers.addIncompleteCallSite(pc)
+                }
             }
         }
     }
@@ -366,6 +369,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     pc,
                     call.declaringClass,
                     potentialTypes,
+                    isPrecise = false,
                     calleesAndCallers
                 )
 
@@ -387,6 +391,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
             pc,
             calleeType,
             ForeachRefIterator(calleeType),
+            isPrecise = true,
             calleesAndCallers
         )
     }
@@ -414,6 +419,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
             pc,
             calleeType,
             potentialTypes,
+            isPrecise = false,
             calleesAndCallers
         )
     }
