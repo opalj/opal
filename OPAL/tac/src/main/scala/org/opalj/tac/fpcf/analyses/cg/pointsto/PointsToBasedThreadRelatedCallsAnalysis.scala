@@ -487,7 +487,7 @@ trait PointsToBasedThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAna
 }
 
 object TypeBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
-        extends PointsToBasedThreadRelatedCallsAnalysisScheduler {
+    extends PointsToBasedThreadRelatedCallsAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
 
@@ -499,7 +499,7 @@ object TypeBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
 }
 
 object AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
-        extends PointsToBasedThreadRelatedCallsAnalysisScheduler {
+    extends PointsToBasedThreadRelatedCallsAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
 
