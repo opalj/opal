@@ -42,7 +42,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
 
     override type State = PropagationBasedCGState
-    override type LocalTypeInformation = Iterable[TypeSetEntity]
+    override type LocalTypeInformation = Null
 
     override def c(state: PropagationBasedCGState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case EUBP(typeSetEntity: TypeSetEntity, _: InstantiatedTypes) ⇒
@@ -125,9 +125,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     @inline override protected[this] def canResolveCall(
         localTypeInformation: LocalTypeInformation,
         state:                PropagationBasedCGState
-    ): ObjectType ⇒ Boolean = { tpe ⇒
-        localTypeInformation.exists(state.instantiatedTypes(_).contains(tpe))
-    }
+    ): ObjectType ⇒ Boolean = state.instantiatedTypesContains
 
     @inline protected[this] def handleUnresolvedCall(
         unresolvedTypes: IntTrieSet,
@@ -139,9 +137,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
 
     @inline protected[this] def getLocalTypeInformation(
         callSite: CallSite, call: Call[V] with VirtualCall[V]
-    )(implicit state: State): LocalTypeInformation = {
-        state.typeSetEntities
-    }
+    )(implicit state: State): LocalTypeInformation = null
 }
 
 class PropagationBasedCallGraphAnalysisScheduler(
