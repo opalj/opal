@@ -72,7 +72,8 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
             // the method is reachable, so we analyze it!
         }
 
-        if (nativeMethodData.contains(dm) && nativeMethodData(dm).nonEmpty)
+        if (nativeMethodData.contains(dm) && nativeMethodData(dm).nonEmpty &&
+            dm.hasSingleDefinedMethod) // FIXME Find way to do this even if no Method object exists
             handleNativeMethod(dm.asDefinedMethod, nativeMethodData(dm).get)
         else
             NoResult
