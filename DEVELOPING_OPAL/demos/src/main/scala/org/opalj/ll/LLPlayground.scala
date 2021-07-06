@@ -2,13 +2,12 @@
 package org.opalj
 package ll
 
-import org.bytedeco.llvm.global.LLVM.LLVMDumpModule
-
-
 object LLPlayground {
 
     def main(args: Array[String]): Unit = {
         val module = Reader.readIR("./OPAL/ll/src/test/resources/org/opalj/ll/test.ll").get
-        LLVMDumpModule(module)
+        println(module.repr)
+        println(module.functions.map(f => f.name).toList)
+        println(module.functions.map(f => f.repr).toList)
     }
 }
