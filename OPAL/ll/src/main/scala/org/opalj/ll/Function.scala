@@ -2,19 +2,10 @@
 package org.opalj.ll
 
 import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM.{LLVMDisposeMessage, LLVMGetFirstBasicBlock, LLVMGetNextBasicBlock, LLVMGetValueName, LLVMPrintValueToString}
+import org.bytedeco.llvm.global.LLVM.{LLVMFunctionValueKind, LLVMGetFirstBasicBlock, LLVMGetNextBasicBlock, LLVMGetValueKind}
 
-case class Function(ref: LLVMValueRef) {
-    def repr(): String = {
-        val bytePointer = LLVMPrintValueToString(ref)
-        val string = bytePointer.getString
-        LLVMDisposeMessage(bytePointer)
-        string
-    }
-
-    def name(): String = {
-        LLVMGetValueName(ref).getString
-    }
+case class Function(ref: LLVMValueRef) extends Value(ref) {
+    assert(LLVMGetValueKind(ref) == LLVMFunctionValueKind, "ref has to be a function")
 
     def basicBlocks(): BasicBlockIterator = {
         new BasicBlockIterator(LLVMGetFirstBasicBlock(ref))
@@ -22,10 +13,11 @@ case class Function(ref: LLVMValueRef) {
 }
 
 class BasicBlockIterator(var ref: LLVMBasicBlockRef) extends Iterator[BasicBlock] {
-    override def hasNext: Boolean = LLVMGetNextBasicBlock(ref) != null
+    override def hasNext: Boolean = ref != null
 
     override def next(): BasicBlock = {
+        val basicBlock = BasicBlock(ref)
         this.ref = LLVMGetNextBasicBlock(ref)
-        BasicBlock(ref)
+        basicBlock
     }
 }

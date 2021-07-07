@@ -18,10 +18,11 @@ case class Module(ref: LLVMModuleRef) {
 }
 
 class FunctionIterator(var ref: LLVMValueRef) extends Iterator[Function] {
-    override def hasNext: Boolean = LLVMGetNextFunction(ref) != null
+    override def hasNext: Boolean = ref != null
 
     override def next(): Function = {
+        val function = Function(ref)
         this.ref = LLVMGetNextFunction(ref)
-        Function(ref)
+        function
     }
 }
