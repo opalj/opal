@@ -142,6 +142,7 @@ lazy val `OPAL` = (project in file("."))
   .settings((Defaults.coreDefaultSettings ++ Seq(publishArtifact := false)): _*)
   .enablePlugins(ScalaUnidocPlugin)
   .settings(
+    libraryDependencies += Dependencies.scalaCompiler(scalaVersion.value),
     unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(
       hermes,
       validate,

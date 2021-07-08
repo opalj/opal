@@ -1,6 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-import sbt._
+
+
+import play.twirl.api.Html
 import sbt.Keys.TaskStreams
+import sbt._
 
 /**
  * Definition of the tasks and settings to generate the OPAL Website (www.opal-project.de)
@@ -11,12 +14,12 @@ import sbt.Keys.TaskStreams
 object SiteGeneration {
 
   def generateSite(
-      sourceDirectory: File,
-      resourceManaged: File,
-      streams: TaskStreams,
-      disassemblerJAR: File,
-      projectSerializerJAR: File
-  ): File = {
+                    sourceDirectory: File,
+                    resourceManaged: File,
+                    streams: TaskStreams,
+                    disassemblerJAR: File,
+                    projectSerializerJAR: File
+                  ): File = {
 
     // NOTE: Currently we keep all pages in memory during the transformation process... but, this
     // should nevertheless work for a very long time!
@@ -53,20 +56,16 @@ object SiteGeneration {
     if (siteGenerationNecessary) {
       log.info("Generating site using: " + sourceFolder / "site.conf")
 
-      import java.io.File
+      import com.typesafe.config.ConfigFactory
+      import com.vladsch.flexmark.html.HtmlRenderer
+      import com.vladsch.flexmark.parser.Parser
+      import com.vladsch.flexmark.util.data.MutableDataSet
+
       import java.nio.charset.Charset
       import java.nio.file.Files
       import scala.collection.JavaConverters._
-      import scala.io.Source.fromFile
-      import com.typesafe.config.ConfigFactory
-      import com.vladsch.flexmark.util.ast.Node
-      import com.vladsch.flexmark.html.HtmlRenderer
-      import com.vladsch.flexmark.parser.Parser
-      import com.vladsch.flexmark.util.data.DataKey
-      import com.vladsch.flexmark.util.data.MutableDataSet
-      import org.fusesource.scalate.TemplateEngine
-
-      import java.util.Arrays;
+      import scala.io.Source.fromFile;
+      import play.twirl.compiler.TwirlCompiler
 
       // 1. read config
       val config = ConfigFactory.parseFile(sourceFolder / "site.conf")
@@ -95,7 +94,9 @@ object SiteGeneration {
           case pageConfig: java.util.Map[_, _] ⇒
             val sourceFileName = pageConfig.get("source").toString
             val sourceFile = sourceFolder / sourceFileName
-            val sourceContent = fromFile(sourceFile).getLines.mkString("\n")
+            val sourceStream = fromFile(sourceFile)
+            val sourceContent = sourceStream.getLines.mkString("\n")
+            sourceStream.close()
             // 2.3.1 process each page:
             val (baseFileName, htmlContent) =
               if (sourceFileName.endsWith(".md")) {
@@ -134,13 +135,13 @@ object SiteGeneration {
               /* name without extension */ baseFileName,
               /* the file object */ sourceFile,
               /* the title */ pageConfig.get("title").toString,
-              /* the content */ htmlContent.toString,
+              /* the content */ htmlContent,
               /* use banner */ Option(pageConfig.get("useBanner")).getOrElse(false),
               /* show in TOC */ Option(pageConfig.get("inTOC")).getOrElse(true).asInstanceOf[Boolean]
             )
 
           case sectionTitle: String ⇒
-            // the entry in the site.conf was "just" a titel of some subsection
+            // the entry in the site.conf was "just" a title of some subsection
             (
               null,
               null,
@@ -160,24 +161,22 @@ object SiteGeneration {
       }
 
       // 2.4 create HTML pages
-      val engine = new TemplateEngine
-      val defaultTemplate = sourceFolder / "default.template.html.ssp"
+      val ct = TwirlCompiler.compileVirtual(
+        IO.read(sourceDirectory / "site" / "defaultTemplate.scala.html"),
+        sourceDirectory / "site" / "defaultTemplate.scala.html",
+        sourceDirectory,
+        "play.twirl.api.HtmlFormat.Appendable",
+        "play.twirl.api.HtmlFormat",
+        additionalImports = TwirlCompiler.DefaultImports
+      )
       for {
-        (baseFileName, sourceFile, title, html, useBanner, _) ← pages
+        (baseFileName, sourceFile, title, html, useBanner: Boolean, _) ← pages
         if baseFileName ne null
       } {
         val htmlFile = targetFolder / (baseFileName + ".html")
-        val completePage = engine.layout(
-          defaultTemplate.toString,
-          Map(
-            "title" → title,
-            "content" → html,
-            "toc" → toc,
-            "useBanner" → useBanner
-          )
-        )
-        Files.write(htmlFile.toPath, completePage.getBytes(Charset.forName("UTF8")))
-        log.info(s"Converted $sourceFile to $htmlFile using $defaultTemplate")
+        val completePage = buildPageFromTemplate(title, html, toc, useBanner)(ct.content)
+        Files.write(htmlFile.toPath, completePage.toString().getBytes(Charset.forName("UTF8")))
+        log.info(s"Converted $sourceFile to $htmlFile using defaultTemplate")
       }
     }
 
@@ -185,5 +184,22 @@ object SiteGeneration {
 
     // (End)
     targetFolder
+  }
+
+  def buildPageFromTemplate(title: String, content: String, toc: Traversable[(String, String)], useBanner: Boolean)(htmlTemplate: String): play.twirl.api.Html = {
+    // remove package declaration -
+    val sanitizedTemplate = htmlTemplate.linesIterator.filter(line => !line.startsWith("package")).mkString("\n")
+    import scala.reflect.runtime.universe._
+    import scala.tools.reflect.ToolBox
+    val tb = runtimeMirror(this.getClass.getClassLoader).mkToolBox()
+    // map toc to String
+    val tocString = toc.map { case (left, right) => ("\"" + left + "\"", "\"" + right + "\"") }.mkString("Seq(", ",", ")")
+    val tree = tb.parse(sanitizedTemplate +
+      s"""
+         |defaultTemplate(\"$title\",\"\"\"$content\"\"\",$tocString,$useBanner)
+         |""".stripMargin
+    )
+    val res = tb.eval(tree)
+    res.asInstanceOf[Html]
   }
 }

@@ -38,7 +38,7 @@ object Dependencies {
       case _ ⇒ throw new Exception("Unknown platform!")
     }
 
-    def reflect(scalaVersion: String) = "org.scala-lang" % "scala-reflect" % scalaVersion
+    def reflect(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-reflect" % scalaVersion
 
     val scalaxml = "org.scala-lang.modules"               %% "scala-xml"                % version.scalaxml
     val playjson = "com.typesafe.play"                    %% "play-json"                % version.playjson
@@ -64,6 +64,7 @@ object Dependencies {
 
   def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus, fastutil)
 
+  def scalaCompiler(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-compiler" % scalaVersion
   val si = Seq()
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
