@@ -3,7 +3,7 @@ package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.primitive_types;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.*;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-import org.opalj.fpcf.properties.immutability.fields.MutableField;
+//import edu.cmu.cs.glacier.qual.Immutable;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
@@ -11,11 +11,12 @@ import org.opalj.fpcf.properties.immutability.fields.MutableField;
  * @author Dominik Helm
  * @author Tobias Roth
  */
-
+//@Immutable
 class Simple {
 
-    @TransitivelyImmutableField("")
-    @LazilyInitializedField("Simple lazy initialization")
+    //@Immutable
+    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @LazilyInitializedField("Simple lazy initialization with primitive type")
     private int x;
 
     public int init() {
@@ -26,9 +27,11 @@ class Simple {
     }
 }
 
+//@Immutable
 class Local {
 
-    @TransitivelyImmutableField("")
+    //@Immutable
+    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @LazilyInitializedField("Lazy initialization with local")
     private int x;
 
@@ -41,10 +44,12 @@ class Local {
     }
 }
 
+//@Immutable
 class LocalWrong {
 
-    @MutableField("")
-    @AssignableField(value = "Incorrect lazy initialization with local")
+    //@Immutable
+    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @AssignableField("Incorrect lazy initialization with local")
     private int x;
 
     public int init() {
@@ -56,10 +61,12 @@ class LocalWrong {
     }
 }
 
+//@Immutable
 class LocalReversed {
 
-    @TransitivelyImmutableField("")
-    @LazilyInitializedField(value = "Lazy initialization with local (reversed)")
+    //@Immutable
+    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @LazilyInitializedField("Lazy initialization with local (reversed)")
     private int x;
 
     public int init() {
@@ -71,25 +78,11 @@ class LocalReversed {
     }
 }
 
-class LocalReload {
-
-    @TransitivelyImmutableField("")
-    @LazilyInitializedField("Lazy initialization with local (reloading the field's value after the write)")
-    private int x;
-
-    public int init() {
-        int y = this.x;
-        if (y == 0) {
-            x = 5;
-            y = x;
-        }
-        return y;
-    }
-}
-
+//@Immutable
 class SimpleReversed {
 
-    @TransitivelyImmutableField("")
+    //@Immutable
+    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @LazilyInitializedField("Simple lazy initialization (reversed)")
     private int x;
 
@@ -101,11 +94,11 @@ class SimpleReversed {
     }
 }
 
-
+//@Immutable
 class WrongDefault {
 
-    @MutableField("")
-    @AssignableField(value = "Not lazily initialized because of two different default values")
+    //@Immutable
+    @AssignableField("Not lazily initialized because of two different default values")
     private int x;
 
     public WrongDefault() {
@@ -124,12 +117,12 @@ class WrongDefault {
     }
 }
 
+//@Immutable
 class DeterministicCall {
 
-    //FIXME: Iusse with Java11 @LazyInitialized("Lazy initialization with call to deterministic method")
-    //FIXME: Issue with Java11 @NonFinal(value = "Analysis doesn't recognize lazy initialization",
-    //       analyses = { L0FieldMutabilityAnalysis.class, L1FieldMutabilityAnalysis.class })
-    @UnsafelyLazilyInitializedField("Lazy initialization with call to deterministic method")
+    //@Immutable
+    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @LazilyInitializedField("Lazy initialization with call to deterministic method")
     private int x;
 
     public int init() {
@@ -144,10 +137,12 @@ class DeterministicCall {
     }
 }
 
+//@Immutable
 class DeterministicCallWithParam {
 
-    @MutableField("")
-    @UnsafelyLazilyInitializedField(value = "Lazy initialization is not the same for different invocations")
+    //@Immutable
+    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @UnsafelyLazilyInitializedField("Lazy initialization is not the same for different invocations")
     private int x;
 
     public int init(int z) {
@@ -162,10 +157,12 @@ class DeterministicCallWithParam {
     }
 }
 
+//@Immutable
 class DeterministicCallOnFinalField {
 
-    @TransitivelyImmutableField("")
-    @LazilyInitializedField(value = "Lazy initialization with call to deterministic method ")
+    //@Immutable
+    @TransitivelyImmutableField("field is lazily initialized and has primitive value")
+    @LazilyInitializedField("Lazy initialization with call to deterministic method ")
     private int x;
 
     @NonAssignableField(value = "Declared final field")
@@ -177,8 +174,7 @@ class DeterministicCallOnFinalField {
 
     private final class Inner {
 
-        @TransitivelyImmutableField("immutable reference with base type")
-        @NonAssignableField("")
+        @NonAssignableField("field is final")
         final int val;
 
         public Inner(int v) {
@@ -198,12 +194,14 @@ class DeterministicCallOnFinalField {
     }
 }
 
+//@Immutable
 class DeterministicCallOnNonFinalField {
 
-    @MutableField("")
+    //@Immutable
     @UnsafelyLazilyInitializedField("Wrong lazy initialization with call to non-deterministic method on final field")
     private int x;
 
+    //@Immutable
     @AssignableField("Non final field")
     private Inner inner;
 
@@ -232,10 +230,11 @@ class DeterministicCallOnNonFinalField {
     }
 }
 
+//@Immutable
 class NondeterministicCall {
 
-    @MutableField("")
-    @UnsafelyLazilyInitializedField(value = "Wrong lazy initialization with call to non-deterministic method")
+    //@Immutable
+    @UnsafelyLazilyInitializedField("Wrong lazy initialization with call to non-deterministic method")
     private int x;
 
     private final Object object = new Object();
@@ -248,9 +247,10 @@ class NondeterministicCall {
     }
 }
 
+//@Immutable
 class DoubleLocalAssignment {
 
-    @MutableField("")
+    //@Immutable
     @UnsafelyLazilyInitializedField("Lazy initialization with a local that is updated twice")
     private int x;
 
@@ -264,9 +264,10 @@ class DoubleLocalAssignment {
     }
 }
 
+//@Immutable
 class DoubleAssignment {
 
-    @MutableField("")
+    //@Immutable
     @AssignableField("Field can be observed partially updated")
     private int x;
 
@@ -278,10 +279,10 @@ class DoubleAssignment {
         return x;
     }
 }
-
+//@Immutable
 class VisibleInitialization {
 
-    @MutableField("")
+    //@Immutable
     @AssignableField("Incorrect because lazy initialization is visible")
     private int x;
 
@@ -299,18 +300,15 @@ class VisibleInitialization {
     }
 }
 
+//@Immutable
 class ExceptionInInitialization {
 
     /**
      * @note As the field write is dead, this field is really 'effectively final' as it will never
      * be different from the default value.
      */
-    //FIXME: Issue with Java11 @EffectivelyFinal(value = "Field is never initialized, so it stays on its default value",
-    //        analyses = { L1FieldMutabilityAnalysis.class, L2FieldMutabilityAnalysis.class })
-    //FIXME: Issue with Java11 @NonFinal(value = "Instance field not considered by analysis",
-    //        analyses = L0FieldMutabilityAnalysis.class)
-    @UnsafelyLazilyInitializedField("L1 Domain can not recognize this exception") //Field is never initialized, so it stays on its default value",
-
+    //@Immutable
+    @LazilyInitializedField("Field is never initialized, so it stays on its default value")
     private int x;
 
     private int getZero() {
@@ -327,12 +325,11 @@ class ExceptionInInitialization {
     }
 }
 
-
+//@Immutable
 class CaughtExceptionInInitialization {
 
-    //TODO reasoning
-    @MutableField("Incorrect because lazy initialization is may not happen due to exception")
-    @AssignableField("Incorrect because lazy initialization is may not happen due to exception")
+    //@Immutable
+    @LazilyInitializedField("Despite the possible exception the field is always seen with one value")
     private int x;
 
     public int init(int i) {

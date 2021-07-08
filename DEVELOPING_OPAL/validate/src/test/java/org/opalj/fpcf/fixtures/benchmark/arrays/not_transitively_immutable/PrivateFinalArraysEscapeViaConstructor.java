@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
+import org.opalj.fpcf.fixtures.benchmark.commons.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
@@ -38,10 +39,10 @@ public final class PrivateFinalArraysEscapeViaConstructor {
     //@Immutable
     @NonTransitivelyImmutableField("Array has a primitive type but is assigned in the constructor and, thus, escapes")
     @NonAssignableField("Array is final")
-    private final Object[] objectArray;
+    private final CustomObject[] objectArray;
 
     public PrivateFinalArraysEscapeViaConstructor(char[] charArray, byte[] byteArray, int[] intArray,
-                                                  long[] longArray, Object[] objectArray) {
+                                                  long[] longArray, CustomObject[] objectArray) {
         this.charArray = charArray;
         this.byteArray = byteArray;
         this.intArray = intArray;

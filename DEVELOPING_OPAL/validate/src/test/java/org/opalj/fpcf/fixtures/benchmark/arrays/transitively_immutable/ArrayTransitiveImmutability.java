@@ -1,6 +1,7 @@
 package org.opalj.fpcf.fixtures.benchmark.arrays.transitively_immutable;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
+import org.opalj.fpcf.fixtures.benchmark.commons.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
@@ -36,12 +37,12 @@ public class ArrayTransitiveImmutability {
     //@Immutable
     @TransitivelyImmutableField("The elements of the array can not escape")
     @EffectivelyNonAssignableField("The array is not initialized.")
-    private Object[] k;
+    private CustomObject[] notInitializedArray;
 
     //@Immutable
     @TransitivelyImmutableField("")
     @EffectivelyNonAssignableField("")
-    private Object[] clonedArray = new Object[]{new Object(), new Object(), new Object()};
+    private CustomObject[] clonedArray = new CustomObject[]{new CustomObject(), new CustomObject()};
 
-    public Object[] getClonedArray(){ return  clonedArray.clone(); }
+    public CustomObject[] getClonedArray(){ return  clonedArray.clone(); }
 }

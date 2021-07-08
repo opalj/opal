@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.benchmark.known_types.single;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
+import org.opalj.fpcf.fixtures.benchmark.commons.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
@@ -16,10 +17,12 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 @NonTransitivelyImmutableClass("Class has at least transitive immutable field")
 class ConcreteObjectInstanceAssigned {
 
+    //@Immutable
     @TransitivelyImmutableField("Field has a transitively immutable type")
     @NonAssignableField("Field is final")
     private final Integer integer = new Integer(5);
 
+    //@Immutable
     @NonTransitivelyImmutableField("Field has a mutable type")
     @NonAssignableField("Field is final")
     private final MutableClass mutableClass = new MutableClass();
@@ -33,8 +36,10 @@ class ConcreteObjectInstanceAssigned {
         return this.transitivelyImmutableClass;
     }
 
-    private final Object managedObjectManagerLock = new Object();
+    //@Immutable
+    private final Object managedObjectManagerLock = new CustomObject();
 
+    //@Immutable
     @NonTransitivelyImmutableField("all concrete objects that can be assigned are not known")
     private TransitivelyImmutableClass fieldWithMutableType = new TransitivelyImmutableClass();
 
@@ -51,9 +56,11 @@ class ConcreteObjectInstanceAssigned {
     }
 }
 
+//@Immutable
 class MutableClass {
     public int n = 8;
 }
 
+//@Immutable
 class TransitivelyImmutableClass {
 }

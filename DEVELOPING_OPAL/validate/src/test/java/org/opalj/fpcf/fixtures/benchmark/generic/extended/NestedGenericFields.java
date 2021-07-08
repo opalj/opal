@@ -45,6 +45,7 @@ public class NestedGenericFields<T> {
     }
 }
 
+//@Immutable
 @TransitivelyImmutableType("")
 final class FinalClassWithNoFields{}
 

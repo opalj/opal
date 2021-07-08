@@ -7,15 +7,17 @@ import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-
+//import edu.cmu.cs.glacier.qual.Immutable;
 /**
  * This class represents the case in which only objects with well known transitively immutable class-types are assigned.
  */
+//@Immutable
 @MutableType("class is not final")
-@TransitivelyImmutableClass("class has only one transitive immutable field")
+@TransitivelyImmutableClass("class has only one transitively immutable field")
 public class DifferentConcreteClassesAssigned {
 
-    @TransitivelyImmutableField("only two different objects with well known transitive immutable class type are assigned.")
+    //@Immutable
+    @TransitivelyImmutableField("only two different objects with well known transitively immutable class types are assigned.")
     @NonAssignableField("field is final")
     final SuperClass a;
 

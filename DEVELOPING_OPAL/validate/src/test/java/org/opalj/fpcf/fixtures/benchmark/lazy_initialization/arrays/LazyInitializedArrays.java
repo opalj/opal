@@ -10,6 +10,7 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
  * This classes checks lazy initialization of arrays to the reference.
  * The definition of lazy initialization only considers the lazy initialization of the arrays and not of its elements.
  */
+//@Immutable
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 public class LazyInitializedArrays {

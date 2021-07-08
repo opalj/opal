@@ -2,13 +2,14 @@ package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
+//import edu.cmu.cs.glacier.qual.Immutable;
 
 /**
  * This class encompasses different forms of (un)correct lazy initialization in combination with try catch blocks
  */
 public class TryCatch {
 
-
+    //@Immutable
     @LazilyInitializedField("The exception that is caught is also thrown.")
     private Object dclWithTryCatch;
 
@@ -29,6 +30,7 @@ public class TryCatch {
         return dclWithTryCatch;
     }
 
+    //@Immutable
     @AssignableField("no correct lazy initialization because all exceptions are caught in the inner guard")
     Object noDCLAllExceptionsCaughtInsideInnerGuard;
 
@@ -46,6 +48,7 @@ public class TryCatch {
         return noDCLAllExceptionsCaughtInsideInnerGuard;
     }
 
+    //@Immutable
     @AssignableField("No correct lazy initialization because all exceptions are caught in the complete dcl")
     Object noDCLAllExceptionsAreCaughtInTheCompleteDCL;
 
@@ -65,6 +68,7 @@ public class TryCatch {
         return noDCLAllExceptionsAreCaughtInTheCompleteDCL;
     }
 
+    //@Immutable
     @AssignableField("no correct lazy initialization, because all exceptions are caught in the outer guard")
     Object instance;
 
@@ -81,7 +85,7 @@ public class TryCatch {
         return instance;
     }
 
-
+    //@Immutable
     @AssignableField("no correct lazy initialization, because the two try-catch-blocks")
     Object noDCLTwoTryCatchBlocks;
 
@@ -108,6 +112,7 @@ public class TryCatch {
         return noDCLTwoTryCatchBlocks;
     }
 
+    //@Immutable
     @AssignableField("no correct lazy initialization, because wrong exception forwarding")
     Object noDCLWrongExceptionForwarding;
 

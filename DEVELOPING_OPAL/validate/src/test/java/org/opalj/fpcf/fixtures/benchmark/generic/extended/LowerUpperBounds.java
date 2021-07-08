@@ -15,6 +15,7 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 /**
  * This class encompasses different cases where the generic type has a lower/upper bound.
  */
+//@Immutable
 @MutableType("class is not final")
 @NonTransitivelyImmutableClass("Class has a non transitively immutable field")
 class LowerUpperBounds<T extends ClassWithMutableFields> {
@@ -29,7 +30,6 @@ class LowerUpperBounds<T extends ClassWithMutableFields> {
     @NonAssignableField("field is final")
     private final Generic<? super EmptyClass> nonTransitivelyImmutableField;
 
-
     //@Immutable
     @TransitivelyImmutableField("Type ? can only be FinalEmptyClass and, thus, transitively immutable")
     @NonAssignableField("field is final")
@@ -42,10 +42,12 @@ class LowerUpperBounds<T extends ClassWithMutableFields> {
         this.transitivelyImmutableField = transitivelyImmutableField;
     }
 
+    //@Immutable
     @MutableType("Class is not final")
     @TransitivelyImmutableClass("Class with no fields")
     class EmptyClass {}
 
+    //@Immutable
     @TransitivelyImmutableType("Class is final, has no fields and extends a transitively immutable class")
     @TransitivelyImmutableClass("empty")
     final class FinalEmptyClass extends EmptyClass {}

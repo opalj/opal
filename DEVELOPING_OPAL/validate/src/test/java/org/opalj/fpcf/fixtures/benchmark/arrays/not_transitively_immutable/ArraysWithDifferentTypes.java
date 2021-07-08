@@ -2,7 +2,9 @@
 package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
+import org.opalj.fpcf.fixtures.benchmark.commons.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
+import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
@@ -13,38 +15,37 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
  * This class encompasses fields with different types of arrays.
  */
 //@Immutable
-@MutableType("")
-@MutableClass("")
+@MutableType("The class is mutable")
+@MutableClass("The class has mutable fields")
 public class ArraysWithDifferentTypes<T> {
 
     //@Immutable
     @NonTransitivelyImmutableField("The elements of the array are manipulated after initialization.")
-    @EffectivelyNonAssignableField("The array is eager initialized.")
-    private final Object[] finalArrayWithSetterForOneElement = new Object[]{1, 2, 3, 4, 5};
+    @NonAssignableField("The field is final")
+    private final CustomObject[] finalArrayWithSetterForOneElement =
+            new CustomObject[]{new CustomObject(), new CustomObject()};
 
     public void setB() {
-        finalArrayWithSetterForOneElement[2] = 2;
+        finalArrayWithSetterForOneElement[2] = new CustomObject();
     }
 
     //@Immutable
-    @MutableField("Array has a mutable reference.")
-    @AssignableField("The array is initalized always when the InitC function is called")
-    private Object[] arrayWithAssignableRefeference;
+    @MutableField("Array is assignable.")
+    @AssignableField("The array is initialized always when the InitC function is called")
+    private CustomObject[] assignableArray;
 
     public void InitC() {
-        arrayWithAssignableRefeference = new Object[]{1, 2, 3};
+        assignableArray = new CustomObject[]{new CustomObject(), new CustomObject()};
     }
 
     //@Immutable
     @NonTransitivelyImmutableField("The elements of the array can escape.")
     @EffectivelyNonAssignableField("The array is eager initialized.")
-    private Object[] arrayThatCanEscapeViaGetter = new Object[]{1, 2, 3, 4, 5,};
+    private CustomObject[] arrayThatCanEscapeViaGetter = new CustomObject[]{new CustomObject(), new CustomObject()};
 
-    public Object[] getArrayThatCanEscapeViaGetter() {
+    public CustomObject[] getArrayThatCanEscapeViaGetter() {
         return arrayThatCanEscapeViaGetter;
     }
-
-
 
     @Override
     protected void finalize() throws Throwable {
@@ -64,14 +65,14 @@ public class ArraysWithDifferentTypes<T> {
     //@Immutable
     @NonTransitivelyImmutableField("The array escapes via the constructor")
     @EffectivelyNonAssignableField("The field is initialized in the constructor")
-    private Object[] privateObjectArrayEscapingViaConstructor;
+    private CustomObject[] privateObjectArrayEscapingViaConstructor;
 
     //@Immutable
     @NonTransitivelyImmutableField("The array escapes via the constructor")
     @EffectivelyNonAssignableField("The field is initialized in the constructor")
     private T[] privateTArrayEscapingViaConstructor;
 
-    ArraysWithDifferentTypes(String[] stringArray, int[] intArray, Object[] objectArr, T[] tArray) {
+    ArraysWithDifferentTypes(String[] stringArray, int[] intArray, CustomObject[] objectArr, T[] tArray) {
         this.privateStringArrayEscapingViaConstructor = stringArray;
         this.privateIntArrayEscapingViaConstructor = intArray;
         this.privateObjectArrayEscapingViaConstructor = objectArr;

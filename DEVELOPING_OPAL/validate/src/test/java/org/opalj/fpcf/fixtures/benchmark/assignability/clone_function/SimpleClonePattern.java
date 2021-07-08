@@ -64,10 +64,12 @@ class EscapesAfterAssignment {
 @TransitivelyImmutableClass("Class has only transitively immutable fields")
 final class MultipleFieldsAssignedInCloneFunction {
 
+    //@Immutable
     @TransitivelyImmutableField("The field is effectively non assignable and has a transitively immutable type")
     @EffectivelyNonAssignableField("The field is only assigned once in the clone function")
     private Integer firstInteger;
 
+    //@Immutable
     @TransitivelyImmutableField("The field is effectively non assignable and has a transitively immutable type")
     @EffectivelyNonAssignableField("The field is only assigned once in the clone function")
     private Integer secondInteger;

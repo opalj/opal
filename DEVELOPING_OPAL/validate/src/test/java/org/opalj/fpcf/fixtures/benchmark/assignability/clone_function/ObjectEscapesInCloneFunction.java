@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.benchmark.assignability.clone_function;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
+import org.opalj.fpcf.fixtures.benchmark.commons.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
@@ -10,6 +11,7 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 /**
  * This class encompasses different counter examples for the clone pattern.
  */
+//@Immutable
 @MutableType("Class is not final")
 @MutableClass("Class has a mutable field")
 public class ObjectEscapesInCloneFunction {
@@ -136,13 +138,13 @@ final class EscapesViaStaticSetterMethod {
     //@Immutable
     @MutableField("field is assignable")
     @AssignableField("Field escapes via static setter")
-    private Object integer;
+    private CustomObject customObject;
 
     public EscapesViaStaticSetterMethod clone(){
         EscapesViaStaticSetterMethod newInstance = new EscapesViaStaticSetterMethod();
-        Object integerCopy = newInstance.integer;
+        CustomObject integerCopy = newInstance.customObject;
         Static.setInteger(integerCopy);
-        newInstance.integer = integer;
+        newInstance.customObject = customObject;
         return newInstance;
     }
 }

@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.benchmark.generic.simple;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
+import org.opalj.fpcf.fixtures.benchmark.commons.CustomObject;
 import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
@@ -74,10 +75,10 @@ public class GenericFields<T> {
         this.multipleMutable = new MultipleGeneric<>(t, new ClassWithMutableFields(), fcwnf);
 
         this.singleNonTransitivelyImmutable =
-                new Generic(new FinalClassWithNonTransitivelyImmutableField(new Object()));
+                new Generic(new FinalClassWithNonTransitivelyImmutableField(new CustomObject()));
 
         this.multipleNonTransitivelyImmutable =
-                new MultipleGeneric<>(fcwnf,new FinalClassWithNonTransitivelyImmutableField(new Object()), t);
+                new MultipleGeneric<>(fcwnf,new FinalClassWithNonTransitivelyImmutableField(new CustomObject()), t);
 
         this.singleDependentlyImmutable = new Generic<>(t);
         this.multipleDependentUniform = new MultipleGeneric<T,T,T>(t,t,t);
@@ -87,14 +88,15 @@ public class GenericFields<T> {
         this.multipleTransitive = new MultipleGeneric<>(fcwnf, fcwnf, fcwnf);
     }
 }
-
+//@Immutable
 @TransitivelyImmutableType("Class has no fields and is final")
 final class FinalClassWithNoFields {}
 
+//@Immutable
 @NonTransitivelyImmutableType("class has only one non transitively immutable field and is final")
 final class FinalClassWithNonTransitivelyImmutableField{
-    private final Object o;
-    public FinalClassWithNonTransitivelyImmutableField(Object o){
+    private final CustomObject o;
+    public FinalClassWithNonTransitivelyImmutableField(CustomObject o){
         this.o = o;
     }
 }

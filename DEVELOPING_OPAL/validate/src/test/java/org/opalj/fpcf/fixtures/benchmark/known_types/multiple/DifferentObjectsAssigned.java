@@ -14,14 +14,19 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
  * This class represents the test case in which only two transitively immutable
  * well known objects are assigned to a field.
  */
+//import edu.cmu.cs.glacier.qual.Immutable;
+
+
 @MutableType("class is not final")
 @NonTransitivelyImmutableClass("class has a non transitively immutable field but no mutable one")
 public class DifferentObjectsAssigned {
 
+    //@Immutable
     @TransitivelyImmutableField("Field only refers to transitively immutable objects")
     @NonAssignableField("field is final")
     final SuperClass a;
 
+    //@Immutable
     @NonTransitivelyImmutableField("")
     @NonAssignableField("field is final")
     final SuperClass nonTransitivelyImmmutableField;

@@ -8,7 +8,7 @@ import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
- * Class encompasses two possible cases of assigning an effectively non assignable field.
+ * Class encompasses two possible cases of assigning the effectively non assignable field o.
  */
 //@Immutable
 @MutableType("Class is not final")

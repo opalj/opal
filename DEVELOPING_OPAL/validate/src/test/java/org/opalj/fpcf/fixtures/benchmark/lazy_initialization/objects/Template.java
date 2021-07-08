@@ -3,10 +3,12 @@ package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
+import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 
 /**
  * This pattern was found in the JDK.
  */
+//@Immutable
 public class Template {
 
     @UnsafelyLazilyInitializedField("")

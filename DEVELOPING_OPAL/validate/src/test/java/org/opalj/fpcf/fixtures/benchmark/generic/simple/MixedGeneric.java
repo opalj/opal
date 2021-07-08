@@ -5,15 +5,18 @@ import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableF
 import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
+//@Immutable
 @MutableType("Class is not final")
 @DependentlyImmutableClass(value="Generic class whichs immutability not depends on all generic type parameters",
         parameter={"C", "B"})
 public class MixedGeneric<A, B, C> {
 
+    //@Immutable
     @DependentlyImmutableField(value = "final field with generic type", parameter = {"B"})
     @NonAssignableField("field is final")
     private final B b;
 
+    //@Immutable
     @DependentlyImmutableField(value = "final field with generic type", parameter = {"C"})
     @NonAssignableField("field is final")
     private final C c;

@@ -1,11 +1,14 @@
 package org.opalj.fpcf.fixtures.benchmark.lazy_initialization.objects.counterExamples;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
-
+//import edu.cmu.cs.glacier.qual.Immutable;
 /**
  * This class encompasses several cases of writes that hinder the correct lazy initialization.
  */
+//@Immutable
 public class WrongWrites {
+
+    //@Immutable
     @AssignableField("no valid lazy initialization due to write outside pattern")
     private Integer writeOutsideDCL;
 
@@ -19,8 +22,11 @@ public class WrongWrites {
         writeOutsideDCL = new Integer(5);
         return writeOutsideDCL;
     }
+
+    //@Immutable
     @AssignableField("no valid lazy initialization due to second write outside dcl pattern")
     private Integer alsoWrittenOutsideTheDCLPattern;
+
     public Integer getAlsoWrittenOutsideTheDCLPattern() {
         if(alsoWrittenOutsideTheDCLPattern ==null){
             synchronized(this) {
@@ -33,9 +39,10 @@ public class WrongWrites {
         return alsoWrittenOutsideTheDCLPattern;
     }
 
-
+    //@Immutable
     @AssignableField("no valid lazy initialization due to write outside dcl pattern")
     private Integer multipleWritesWithinTheDCLPattern;
+
     public Integer getMultipleWritesWithinTheDCLPattern() {
         if(multipleWritesWithinTheDCLPattern ==null){
             synchronized(this) {
@@ -47,9 +54,10 @@ public class WrongWrites {
         }
         return multipleWritesWithinTheDCLPattern;
     }
-
+    //@Immutable
     @AssignableField("field write outside guards and synchronized blocks")
     private Integer writeOutsidePattern;
+
     public Integer getWriteOutsidePattern() {
         if(writeOutsidePattern ==null){
         }

@@ -2,6 +2,7 @@
 package org.opalj.fpcf.fixtures.benchmark.arrays.not_transitively_immutable;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
+import org.opalj.fpcf.fixtures.benchmark.commons.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
@@ -17,15 +18,15 @@ public class ClassWithAnArrayWithOneEscapingObject {
     //@Immutable
     @MutableField("Reference of the field is mutable")
     @AssignableField("Field is public")
-    public Object publicObject = new Object();
+    public CustomObject publicObject = new CustomObject();
 
     //@Immutable
     @NonTransitivelyImmutableField("Field is initialized with an Shallow immutable field")
     @EffectivelyNonAssignableField("Field is only initialized once.")
-    private Object[] arrayWithOneEscapingObject;
+    private CustomObject[] arrayWithOneEscapingObject;
 
     public ClassWithAnArrayWithOneEscapingObject() {
-        arrayWithOneEscapingObject = new Object[]{publicObject};
+        arrayWithOneEscapingObject = new CustomObject[]{publicObject};
     }
 
 }

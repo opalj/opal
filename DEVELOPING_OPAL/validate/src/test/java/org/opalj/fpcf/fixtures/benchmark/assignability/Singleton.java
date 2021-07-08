@@ -10,7 +10,7 @@ import org.opalj.fpcf.properties.immutability.field_assignability.AssignableFiel
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 
 /**
- * This class encompasses possibilites in combination with field reads of the static analyzer.
+ * This class encompasses possibilities in combination with field reads of the static analyzer.
  */
 //@Immutable
 @MutableType("Class is not final and has mutable field")
