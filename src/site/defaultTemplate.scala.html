@@ -29,27 +29,21 @@
             </nav>
         </header>
 
-        @if(useBanner){
-        <section id="banner">
+        @if(useBanner){<section id="banner">
             <div class="inner">
                 <h2>The OPAL Project</h2>
                 <p>Be Relaxed - Static Analysis Is Easy</p>
             </div>
-        </section>
-        }
+        </section> }
 
         <section id="one" class="wrapper style1">
             <div class="container">
     			<div class="row">
                     <div class="3u">
                         <nav>
-                        @for((href,title) <- toc){
-                            @if(href != null && href != "null") {
-                                <a href=@{"/" + href +".html"}>@title</a><br>
-                            } else {
-                                <br><b>@title</b><br>
-                            }
-                        }
+                        @for((href,title) <- toc){ @if(href != null && href != "null") {
+                            <a href=@{"/" + href +".html"}>@title</a><br>
+                        } else {  <br><b>@title</b><br> } }
                         </nav>
                         <hr/>
                         <div class="hide-at-medium">
