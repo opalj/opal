@@ -111,7 +111,9 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
                                 // but it soundly overapproximates
                                 subtypeCFOption.forall(_.constructors.exists { c ⇒
                                     c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
-                                }))
+                                }) || classFile.methods.exists {
+                                    m ⇒ m.isStatic && m.isPublic && m.returnType == ot
+                                })
                     }
                 } else if (method.isProtected) {
                     isExtensible(ot).isYesOrUnknown &&
@@ -337,10 +339,11 @@ object MetaEntryPointsFinder
  * @author Dominik Helm
  */
 object AllEntryPointsFinder extends EntryPointFinder {
+    final val ConfigKey =
+        InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
+
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
-        val projectMethodsOnlyConfigKey =
-            InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
-        if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
+        if (project.config.as[Boolean](ConfigKey))
             project.allProjectClassFiles.flatMap(_.methodsWithBody)
         else project.allMethodsWithBody
     }
@@ -420,26 +423,3 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
         }
         eps
     }
-
-    /**
-     * experimental / not working yet
-     * please do not use it
-     * @param project
-     * @return
-     */
-    def additionalCallbacks(project: SomeProject): Traversable[Method] = {
-
-        val eps = collectEntryPoints(project).toBuffer
-
-        project.classHierarchy.foreachSubtype(ObjectType("android/view/View")) { st ⇒
-            val cf = project.classFile(st).get
-            cf.nestedClasses(project).foreach { nc ⇒
-                val ncf = project.classFile(nc).get
-                if (ncf.isInterfaceDeclaration) {
-                    eps.appendAll(ncf.methods)
-                }
-            }
-        }
-        eps
-    }
-}
