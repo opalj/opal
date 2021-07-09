@@ -12,6 +12,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.DeclaredMethod
@@ -29,9 +30,11 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.BooleanType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -42,7 +45,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Dominik Helm
  * @author Florian Kuebler
  */
-abstract class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
+abstract class TamiFlexPointsToAnalysis private[analyses] (
         final val project: SomeProject
 ) extends PointsToAnalysisBase { self ⇒
 
@@ -88,7 +91,7 @@ abstract class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
         }
     }
 
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def process(p: SomeProject): PropertyComputationResult = {
         val analyses: List[APIBasedAnalysis] = List(
@@ -186,27 +189,39 @@ abstract class AllocationSiteBasedTamiFlexPointsToAnalysis private[analyses] (
     }
 }
 
-object AllocationSiteBasedTamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+
+    val propertyKind: PropertyMetaInformation
+    val createAnalysis: SomeProject ⇒ TamiFlexPointsToAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TamiFlexKey)
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        Callers,
-        AllocationSitePointsToSet
-    )
+    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(Callers, propertyKind)
 
-    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        AllocationSitePointsToSet
-    )
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(propertyKind)
+
+    override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
-        val analysis = new AllocationSiteBasedTamiFlexPointsToAnalysis(p) with AllocationSiteBasedAnalysis
+        val analysis = createAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }
 
-    override def derivesEagerly: Set[PropertyBounds] = Set.empty
+}
+
+object TypeBasedTamiFlexPointsToAnalysisScheduler extends TamiFlexPointsToAnalysisScheduler {
+    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
+    override val createAnalysis: SomeProject ⇒ TamiFlexPointsToAnalysis =
+        new TamiFlexPointsToAnalysis(_) with TypeBasedAnalysis
+}
+
+object AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
+    extends TamiFlexPointsToAnalysisScheduler {
+    override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
+    override val createAnalysis: SomeProject ⇒ TamiFlexPointsToAnalysis =
+        new TamiFlexPointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }
 
 abstract class TamiFlexPointsToArrayGetAnalysis( final val project: SomeProject)

@@ -82,12 +82,12 @@ class PropagationBasedCGState(
 
     override def hasNonFinalCallSite: Boolean = _virtualCallSites.nonEmpty
 
-    def addVirtualCallSite(objectType: ObjectType, callSite: CallSite): Unit = {
-        val oldValOpt = _virtualCallSites.get(objectType.id.toLong)
+    def addVirtualCallSite(typeId: Long, callSite: CallSite): Unit = {
+        val oldValOpt = _virtualCallSites.get(typeId)
         if (oldValOpt.isDefined)
             oldValOpt.get += callSite
         else {
-            _virtualCallSites += (objectType.id.toLong → mutable.Set(callSite))
+            _virtualCallSites += (typeId → mutable.Set(callSite))
         }
     }
 

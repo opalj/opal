@@ -112,14 +112,14 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     }
 
     final def removeTypeForCallSite(callSite: CallSite, instantiatedType: ObjectType): Unit = {
-        if (!_virtualCallSites.contains(callSite))
-            assert(_virtualCallSites(callSite).contains(instantiatedType.id))
-        val typesLeft = _virtualCallSites(callSite) - instantiatedType.id
-        if (typesLeft.isEmpty) {
-            _virtualCallSites -= callSite
-            removePointsToDepender(callSite)
-        } else {
-            _virtualCallSites(callSite) = typesLeft
+        if (_virtualCallSites.contains(callSite)) {
+            val typesLeft = _virtualCallSites(callSite) - instantiatedType.id
+            if (typesLeft.isEmpty) {
+                _virtualCallSites -= callSite
+                removePointsToDepender(callSite)
+            } else {
+                _virtualCallSites(callSite) = typesLeft
+            }
         }
     }
 
@@ -176,7 +176,7 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
     private[this] val _virtualCallSites: mutable.Map[CallSite, IntTrieSet] = mutable.Map.empty
 
     def typesForCallSite(callSite: CallSite): IntTrieSet = {
-        _virtualCallSites(callSite)
+        _virtualCallSites.getOrElse(callSite, IntTrieSet.empty)
     }
 
     def addPotentialTypesOfCallSite(
