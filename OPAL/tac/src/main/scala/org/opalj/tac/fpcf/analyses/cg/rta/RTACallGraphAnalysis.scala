@@ -8,6 +8,8 @@ package rta
 
 import scala.language.existentials
 
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
@@ -20,6 +22,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -42,6 +45,7 @@ class RTACallGraphAnalysis private[analyses] (
     // TODO maybe cache results for Object.toString, Iterator.hasNext, Iterator.next
 
     override type State = RTAState
+    override type LocalTypeInformation = UIDSet[ReferenceType]
 
     override def c(state: RTAState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
         case UBP(_: InstantiatedTypes) ⇒
@@ -112,20 +116,24 @@ class RTACallGraphAnalysis private[analyses] (
     }
 
     @inline override protected[this] def canResolveCall(
-        implicit
-        state: RTAState
+        localTypeInformation: LocalTypeInformation,
+        state:                RTAState
     ): ObjectType ⇒ Boolean = {
-        state.instantiatedTypesUB.contains(_)
+        localTypeInformation.contains(_)
     }
 
     @inline protected[this] def handleUnresolvedCall(
-        possibleTgtType: ObjectType,
-        call:            Call[V] with VirtualCall[V],
-        pc:              Int
+        unresovedTypes: IntTrieSet,
+        callSite:       CallSite
     )(implicit state: RTAState): Unit = {
-        state.addVirtualCallSite(
-            possibleTgtType, CallSite(pc, call.name, call.descriptor, call.declaringClass)
-        )
+        for (typeId ← unresovedTypes)
+            state.addVirtualCallSite(typeId.toLong, callSite)
+    }
+
+    @inline protected[this] def getLocalTypeInformation(
+        callSite: CallSite, call: Call[V] with VirtualCall[V]
+    )(implicit state: State): LocalTypeInformation = {
+        state.instantiatedTypesUB
     }
 }
 

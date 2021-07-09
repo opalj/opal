@@ -9,8 +9,8 @@ import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.pointsto.AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.DoPrivilegedPointsToCGAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.pointsto.AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.AllocationSiteBasedDoPrivilegedPointsToCGAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
@@ -40,8 +40,8 @@ object AllocationSiteBasedPointsToCallGraphKey extends AbstractCallGraphKey {
             AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler, // TODO make this one independent
             AllocationSiteBasedPointsToAnalysisScheduler,
             AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler,
+            AllocationSiteBasedDoPrivilegedPointsToCGAnalysisScheduler,
             AllocationSiteBasedTamiFlexPointsToAnalysisScheduler,
-            DoPrivilegedPointsToCGAnalysisScheduler,
             AllocationSiteBasedArraycopyPointsToAnalysisScheduler,
             AllocationSiteBasedUnsafePointsToAnalysisScheduler,
             AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysisScheduler

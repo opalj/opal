@@ -33,6 +33,7 @@ import org.opalj.br.BooleanType
 import org.opalj.br.IntegerType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -46,7 +47,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] ( final val project: Som
     extends PointsToAnalysisBase { self ⇒
 
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
         override protected[this] type ElementType = self.ElementType
@@ -247,14 +248,14 @@ trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 }
 
 object TypeBasedUnsafePointsToAnalysisScheduler extends UnsafePointsToAnalysisScheduler {
-    override val propertyKind = TypeBasedPointsToSet
+    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis =
         new UnsafePointsToAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedUnsafePointsToAnalysisScheduler
     extends UnsafePointsToAnalysisScheduler {
-    override val propertyKind = AllocationSitePointsToSet
+    override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis =
         new UnsafePointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

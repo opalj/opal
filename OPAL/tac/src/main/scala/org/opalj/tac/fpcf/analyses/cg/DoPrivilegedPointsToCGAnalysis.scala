@@ -15,6 +15,7 @@ import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
@@ -33,10 +34,13 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
+import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
+import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.pointsto.PointsToBasedCGState
 import org.opalj.tac.fpcf.analyses.pointsto.AbstractPointsToBasedAnalysis
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedAnalysis
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
@@ -59,7 +63,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  *
  * @author Florian Kuebler
  */
-abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
+abstract class AbstractDoPrivilegedMethodPointsToCGAnalysis private[cg] (
         final val doPrivilegedMethod: DeclaredMethod,
         final val declaredRunMethod:  DeclaredMethod,
         final val project:            SomeProject
@@ -148,9 +152,9 @@ abstract class AbstractDoPrivilegedPointsToCGAnalysis private[cg] (
     override val apiMethod: DeclaredMethod = doPrivilegedMethod
 }
 
-class DoPrivilegedPointsToCGAnalysis private[cg] (
+abstract class DoPrivilegedPointsToCGAnalysis private[cg] (
         final val project: SomeProject
-) extends AllocationSiteBasedAnalysis { self ⇒
+) extends AbstractPointsToBasedAnalysis { self ⇒
 
     @inline override protected[this] def currentPointsTo(
         depender:   DependerType,
@@ -221,7 +225,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
     }
 
     def analyze(p: SomeProject): PropertyComputationResult = {
-        var analyses: List[AbstractDoPrivilegedPointsToCGAnalysis] = Nil
+        var analyses: List[AbstractDoPrivilegedMethodPointsToCGAnalysis] = Nil
 
         val accessControllerType = ObjectType("java/security/AccessController")
         val privilegedActionType = ObjectType("java/security/PrivilegedAction")
@@ -247,7 +251,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             MethodDescriptor(privilegedActionType, ObjectType.Object)
         )
         if (doPrivileged1.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged1, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivileged1, runMethod, p) with PointsToBase
 
         val doPrivileged2 = declaredMethods(
             accessControllerType,
@@ -260,7 +264,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivileged2.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged2, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivileged2, runMethod, p) with PointsToBase
 
         val doPrivileged3 = declaredMethods(
             accessControllerType,
@@ -273,7 +277,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivileged3.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged3, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivileged3, runMethod, p) with PointsToBase
 
         val doPrivileged4 = declaredMethods(
             accessControllerType,
@@ -283,7 +287,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             MethodDescriptor(privilegedExceptionActionType, ObjectType.Object)
         )
         if (doPrivileged4.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged4, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivileged4, runMethod, p) with PointsToBase
 
         val doPrivileged5 = declaredMethods(
             accessControllerType,
@@ -296,7 +300,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivileged5.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged5, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivileged5, runMethod, p) with PointsToBase
 
         val doPrivileged6 = declaredMethods(
             accessControllerType,
@@ -309,7 +313,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivileged6.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivileged6, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivileged6, runMethod, p) with PointsToBase
 
         val doPrivilegedWithCombiner1 = declaredMethods(
             accessControllerType,
@@ -319,7 +323,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             MethodDescriptor(privilegedActionType, ObjectType.Object)
         )
         if (doPrivilegedWithCombiner1.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner1, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivilegedWithCombiner1, runMethod, p) with PointsToBase
 
         val doPrivilegedWithCombiner2 = declaredMethods(
             accessControllerType,
@@ -332,7 +336,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner2.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner2, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivilegedWithCombiner2, runMethod, p) with PointsToBase
 
         val doPrivilegedWithCombiner3 = declaredMethods(
             accessControllerType,
@@ -345,7 +349,7 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner3.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner3, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivilegedWithCombiner3, runMethod, p) with PointsToBase
 
         val doPrivilegedWithCombiner4 = declaredMethods(
             accessControllerType,
@@ -358,30 +362,52 @@ class DoPrivilegedPointsToCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner4.hasSingleDefinedMethod)
-            analyses ::= new AbstractDoPrivilegedPointsToCGAnalysis(doPrivilegedWithCombiner4, runMethod, p) with PointsToBase
+            analyses ::= new AbstractDoPrivilegedMethodPointsToCGAnalysis(doPrivilegedWithCombiner4, runMethod, p) with PointsToBase
 
         Results(analyses.iterator.map(_.registerAPIMethod())) //analyze()))
     }
 }
 
-object DoPrivilegedPointsToCGAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
+trait DoPrivilegedPointsToCGAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    def pointsToSet: PropertyMetaInformation
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
 
-    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(AllocationSitePointsToSet))
+    override def uses: Set[PropertyBounds] = Set(PropertyBounds.ub(pointsToSet))
 
     override def derivesCollaboratively: Set[PropertyBounds] =
-        PropertyBounds.ubs(AllocationSitePointsToSet, Callers, Callees)
+        PropertyBounds.ubs(pointsToSet, Callers, Callees)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
+
+}
+
+object TypeBasedDoPrivilegedPointsToCGAnalysisScheduler
+    extends DoPrivilegedPointsToCGAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
+
+    val pointsToSet = TypeBasedPointsToSet
 
     override def start(
         p: SomeProject, ps: PropertyStore, unused: Null
     ): DoPrivilegedPointsToCGAnalysis = {
-        val analysis = new DoPrivilegedPointsToCGAnalysis(p)
+        val analysis = new DoPrivilegedPointsToCGAnalysis(p) with TypeBasedAnalysis
         ps.scheduleEagerComputationForEntity(p)(analysis.analyze)
         analysis
     }
 }
 
+object AllocationSiteBasedDoPrivilegedPointsToCGAnalysisScheduler
+    extends DoPrivilegedPointsToCGAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
+
+    val pointsToSet = AllocationSitePointsToSet
+
+    override def start(
+        p: SomeProject, ps: PropertyStore, unused: Null
+    ): DoPrivilegedPointsToCGAnalysis = {
+        val analysis = new DoPrivilegedPointsToCGAnalysis(p) with AllocationSiteBasedAnalysis
+        ps.scheduleEagerComputationForEntity(p)(analysis.analyze)
+        analysis
+    }
+}

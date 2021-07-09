@@ -111,13 +111,13 @@ trait ArraycopyPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler
 }
 
 object TypeBasedArraycopyPointsToAnalysisScheduler extends ArraycopyPointsToAnalysisScheduler {
-    override val propertyKind = TypeBasedPointsToSet
+    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject ⇒ ArraycopyPointsToAnalysis =
         new ArraycopyPointsToAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedArraycopyPointsToAnalysisScheduler extends ArraycopyPointsToAnalysisScheduler {
-    override val propertyKind = AllocationSitePointsToSet
+    override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject ⇒ ArraycopyPointsToAnalysis =
         new ArraycopyPointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

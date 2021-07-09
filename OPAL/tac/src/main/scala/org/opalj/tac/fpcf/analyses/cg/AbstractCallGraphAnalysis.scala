@@ -8,6 +8,7 @@ package cg
 import org.opalj.log.OPALLogger.logOnce
 import org.opalj.log.Warn
 import org.opalj.collection.ForeachRefIterator
+import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.EPS
 import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
@@ -47,6 +48,7 @@ trait CGState extends TACAIBasedAnalysisState {
  */
 trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     type State <: CGState
+    type LocalTypeInformation
 
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
     private[this] lazy val getCBSTargets = project.get(CallBySignatureKey)
@@ -80,15 +82,19 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         processMethod(state, new DirectCalls())
     }
 
-    protected[this] def doHandleImpreciseCall(
+    protected[this] def doHandleVirtualCall(
         caller:                        DefinedMethod,
         call:                          Call[V] with VirtualCall[V],
         pc:                            Int,
         specializedDeclaringClassType: ReferenceType,
         potentialTargets:              ForeachRefIterator[ObjectType],
+        isPrecise:                     Boolean,
         calleesAndCallers:             DirectCalls
     )(implicit state: State): Unit = {
-        val cbsTargets = if (resovleCallBySignature && call.isInterface & call.declaringClass.isObjectType) {
+        val callerType = caller.declaringClassType
+        val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
+
+        val cbsTargets = if (!isPrecise && resovleCallBySignature && call.isInterface & call.declaringClass.isObjectType) {
             val cf = project.classFile(call.declaringClass.asObjectType)
             cf.flatMap { _.findMethod(call.name, call.descriptor) }.map {
                 getCBSTargets(_)
@@ -97,10 +103,14 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
 
         val targetTypes = potentialTargets ++ cbsTargets.foreachIterator
 
+        var unresolvedTypes = IntTrieSet.empty
+
+        val localTypeInformation = getLocalTypeInformation(callSite, call)
+
         for (possibleTgtType ← targetTypes) {
-            if (canResolveCall(state)(possibleTgtType)) {
+            if (canResolveCall(localTypeInformation, state)(possibleTgtType)) {
                 val tgtR = project.instanceCall(
-                    caller.declaringClassType, possibleTgtType, call.name, call.descriptor
+                    callerType, possibleTgtType, call.name, call.descriptor
                 )
 
                 handleCall(
@@ -113,40 +123,45 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     calleesAndCallers
                 )
             } else {
-                handleUnresolvedCall(possibleTgtType, call, pc)
+                unresolvedTypes += possibleTgtType.id
             }
         }
 
+        if (unresolvedTypes.nonEmpty)
+            handleUnresolvedCall(unresolvedTypes, callSite)
+
         // Deal with the fact that there may be unknown subtypes of the receiver type that might
         // override the method
-        if (specializedDeclaringClassType.isObjectType) {
-            val declType = specializedDeclaringClassType.asObjectType
+        if (!isPrecise) {
+            if (specializedDeclaringClassType.isObjectType) {
+                val declType = specializedDeclaringClassType.asObjectType
 
-            val mResult = if (classHierarchy.isInterface(declType).isYes)
-                org.opalj.Result(project.resolveInterfaceMethodReference(
-                    declType, call.name, call.descriptor
-                ))
-            else
-                org.opalj.Result(project.resolveMethodReference(
-                    declType,
-                    call.name,
-                    call.descriptor,
-                    forceLookupInSuperinterfacesOnFailure = true
-                ))
+                val mResult = if (classHierarchy.isInterface(declType).isYes)
+                    org.opalj.Result(project.resolveInterfaceMethodReference(
+                        declType, call.name, call.descriptor
+                    ))
+                else
+                    org.opalj.Result(project.resolveMethodReference(
+                        declType,
+                        call.name,
+                        call.descriptor,
+                        forceLookupInSuperinterfacesOnFailure = true
+                    ))
 
-            if (mResult.isEmpty) {
-                unknownLibraryCall(
-                    caller,
-                    call.name,
-                    call.descriptor,
-                    call.declaringClass,
-                    declType,
-                    caller.definedMethod.classFile.thisType.packageName,
-                    pc,
-                    calleesAndCallers
-                )
-            } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
-                calleesAndCallers.addIncompleteCallSite(pc)
+                if (mResult.isEmpty) {
+                    unknownLibraryCall(
+                        caller,
+                        call.name,
+                        call.descriptor,
+                        call.declaringClass,
+                        declType,
+                        caller.definedMethod.classFile.thisType.packageName,
+                        pc,
+                        calleesAndCallers
+                    )
+                } else if (isMethodOverridable(mResult.value).isYesOrUnknown) {
+                    calleesAndCallers.addIncompleteCallSite(pc)
+                }
             }
         }
     }
@@ -319,20 +334,14 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: State): Unit = {
-        val callerType = caller.definedMethod.classFile.thisType
-
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv ← rvs) rv match {
             case _: IsSArrayValue ⇒
-                handlePreciseCall(
-                    ObjectType.Object, caller, callerType, call, pc, calleesAndCallers
-                )
+                handlePreciseCall(ObjectType.Object, caller, call, pc, calleesAndCallers)
 
             case ov: IsSObjectValue ⇒
                 if (ov.isPrecise) {
-                    handlePreciseCall(
-                        ov.theUpperTypeBound, caller, callerType, call, pc, calleesAndCallers
-                    )
+                    handlePreciseCall(ov.theUpperTypeBound, caller, call, pc, calleesAndCallers)
                 } else {
                     handleImpreciseCall(ov.theUpperTypeBound, caller, call, pc, calleesAndCallers)
                 }
@@ -354,12 +363,13 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     }
                 }
 
-                doHandleImpreciseCall(
+                doHandleVirtualCall(
                     caller,
                     call,
                     pc,
                     call.declaringClass,
                     potentialTypes,
+                    isPrecise = false,
                     calleesAndCallers
                 )
 
@@ -371,26 +381,17 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     protected[this] def handlePreciseCall(
         calleeType:        ObjectType,
         caller:            DefinedMethod,
-        callerType:        ObjectType,
         call:              Call[V] with VirtualCall[V],
         pc:                Int,
         calleesAndCallers: DirectCalls
     )(implicit state: State): Unit = {
-        assert(state ne null)
-        val tgt = project.instanceCall(
-            callerType,
-            calleeType,
-            call.name,
-            call.descriptor
-        )
-
-        handleCall(
+        doHandleVirtualCall(
             caller,
-            call.name,
-            call.descriptor,
-            call.declaringClass,
+            call,
             pc,
-            tgt,
+            calleeType,
+            ForeachRefIterator(calleeType),
+            isPrecise = true,
             calleesAndCallers
         )
     }
@@ -412,12 +413,13 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
             }
         }
 
-        doHandleImpreciseCall(
+        doHandleVirtualCall(
             caller,
             call,
             pc,
             calleeType,
             potentialTypes,
+            isPrecise = false,
             calleesAndCallers
         )
     }
@@ -425,14 +427,20 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     /**
      * Decides whether this call graph implementation can resolve this call immediately.
      */
-    @inline protected[this] def canResolveCall(implicit state: State): ObjectType ⇒ Boolean
+    @inline protected[this] def canResolveCall(
+        localTypeInformation: LocalTypeInformation,
+        state:                State
+    ): ObjectType ⇒ Boolean
 
     /**
      * Handles a call that is not immediately resolved by this call graph implementation.
      */
     @inline protected[this] def handleUnresolvedCall(
-        possibleTgtType: ObjectType,
-        call:            Call[V] with VirtualCall[V],
-        pc:              Int
+        unresovedTypes: IntTrieSet,
+        callSite:       CallSite
     )(implicit state: State): Unit
+
+    @inline protected[this] def getLocalTypeInformation(
+        callSite: CallSite, call: Call[V] with VirtualCall[V]
+    )(implicit state: State): LocalTypeInformation
 }

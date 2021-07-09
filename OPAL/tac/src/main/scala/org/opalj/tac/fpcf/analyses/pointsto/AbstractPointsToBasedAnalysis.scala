@@ -78,7 +78,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
         if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here
             createPointsToSet(
-                ai.pcOfImmediateVMException(dependeeDefSite),
+                state.tac.stmts(ai.pcOfImmediateVMException(dependeeDefSite)).pc,
                 state.method,
                 ObjectType.Throwable,
                 isConstant = false
