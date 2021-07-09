@@ -111,9 +111,7 @@ trait LibraryEntryPointsFinder extends EntryPointFinder {
                                 // but it soundly overapproximates
                                 subtypeCFOption.forall(_.constructors.exists { c ⇒
                                     c.isPublic || (c.isProtected && isExtensible(st).isYesOrUnknown)
-                                }) || classFile.methods.exists {
-                                    m ⇒ m.isStatic && m.isPublic && m.returnType == ot
-                                })
+                                }))
                     }
                 } else if (method.isProtected) {
                     isExtensible(ot).isYesOrUnknown &&
@@ -339,12 +337,109 @@ object MetaEntryPointsFinder
  * @author Dominik Helm
  */
 object AllEntryPointsFinder extends EntryPointFinder {
-    final val ConfigKey =
-        InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
-
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
-        if (project.config.as[Boolean](ConfigKey))
+        val projectMethodsOnlyConfigKey =
+            InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
+        if (project.config.as[Boolean](projectMethodsOnlyConfigKey))
             project.allProjectClassFiles.flatMap(_.methodsWithBody)
         else project.allMethodsWithBody
+    }
+}
+
+/**
+ * The AndroidEntryPointFinder considers specific methods of app components as entry points.
+ *
+ * @author Tom Nikisch
+ */
+object AndroidEntryPointsFinder extends EntryPointFinder {
+    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+        val classHierarchy = project.classHierarchy
+        val eps = ArrayBuffer.empty[Method]
+
+        var peps: List[String] = List("onCreate", "onRestart", "onStart", "onResume", "onStop", "onDestroy",
+            "onActivityResult")
+        classHierarchy.foreachSubclass(ObjectType("android/app/Activity"), project) { sc ⇒
+            for (pep ← peps) {
+                val mc = sc.findMethod(pep)
+                for (m ← mc) {
+                    if (m.body != null) {
+                        eps.append(m)
+                    }
+                }
+            }
+        }
+
+        peps = List("onCreate", "onStartCommand", "onBind", "onStart")
+        classHierarchy.foreachSubclass(ObjectType("android/app/Service"), project) { sc ⇒
+            for (pep ← peps) {
+                val mc = sc.findMethod(pep)
+                for (m ← mc) {
+                    if (m.body != null) {
+                        eps.append(m)
+                    }
+                }
+            }
+        }
+
+        peps = List("onCreate", "query", "insert", "update")
+        classHierarchy.foreachSubclass(ObjectType("android/content/ContentProvider"), project) { sc ⇒
+            for (pep ← peps) {
+                val mc = sc.findMethod(pep)
+                for (m ← mc) {
+                    if (m.body != null) {
+                        eps.append(m)
+                    }
+                }
+            }
+        }
+
+        peps = List("onLocationChanged", "onProviderDisabled", "onProviderEnabled", "onStatusChanged")
+        classHierarchy.foreachSubtype(ObjectType("android/location/LocationListener")) { st ⇒
+            val cf = project.classFile(st).get
+            if (cf != null) {
+                for (pep ← peps) {
+                    val mc = cf.findMethod(pep)
+                    for (m ← mc) {
+                        if (m.body != null) {
+                            eps.append(m)
+                        }
+                    }
+                }
+            }
+        }
+
+        classHierarchy.foreachSubtype(ObjectType("android/location/onNmeaMessageListener")) { st ⇒
+            val cf = project.classFile(st).get
+            if (cf != null) {
+                val mc = cf.findMethod("onNmeaMessage")
+                for (m ← mc)
+                    if (m.body.nonEmpty) {
+                        eps.append(m)
+                    }
+            }
+        }
+        eps
+    }
+
+    /**
+     * experimental / not working yet
+     * please do not use it
+     * @param project
+     * @return
+     */
+    def additionalCallbacks(project: SomeProject): Traversable[Method] = {
+
+        val eps = collectEntryPoints(project).toBuffer
+
+        project.classHierarchy.foreachSubtype(ObjectType("android/view/View")) { st ⇒
+            val cf = project.classFile(st).get
+            cf.nestedClasses(project).foreach { nc ⇒
+                val ncf = project.classFile(nc).get
+                if (ncf.isInterfaceDeclaration) {
+                    eps.appendAll(ncf.methods)
+                }
+            }
+        }
+        eps
     }
 }
