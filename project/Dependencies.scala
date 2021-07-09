@@ -64,7 +64,6 @@ object Dependencies {
 
   def common(scalaVersion: String) = Seq(reflect(scalaVersion), scalaxml, playjson, ficus, fastutil)
 
-  def scalaCompiler(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-compiler" % scalaVersion
   val si = Seq()
   val bi = Seq(commonstext)
   val br = Seq(scalaparsercombinators, scalaxml)
