@@ -42,7 +42,7 @@
                     <div class="3u">
                         <nav>
                         @for((href,title) <- toc){ @if(href != null && href != "null") {
-                            <a href=@{"/" + href +".html"}>@title</a><br>
+                            <a href="@{"/" + href +".html"}">@title</a><br>
                         } else {  <br><b>@title</b><br> } }
                         </nav>
                         <hr/>
