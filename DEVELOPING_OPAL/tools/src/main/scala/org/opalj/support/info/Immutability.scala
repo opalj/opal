@@ -340,7 +340,12 @@ object Immutability {
             .entities(FieldImmutability.key)
             .filter(eps ⇒ allFieldsInProjectClassFiles.contains(eps.e.asInstanceOf[Field]))
             .toTraversable
-            .groupBy(_.asFinal.p)
+            .groupBy {
+                _.asFinal.p match {
+                    case DependentlyImmutableField(_) ⇒ DependentlyImmutableField(Set.empty)
+                    case default                      ⇒ default
+                }
+            }
 
         val mutableFields = fieldGroupedResults
             .getOrElse(MutableField, Iterator.empty)
@@ -354,7 +359,7 @@ object Immutability {
             .map(unpackFieldEPS)
             .sortWith(_ < _)
 
-        val dependentImmutableFields = fieldGroupedResults
+        val dependentlyImmutableFields = fieldGroupedResults //.collect { case (DependentlyImmutableField(_), rhs) ⇒ rhs }
             .getOrElse(DependentlyImmutableField(Set.empty), Iterator.empty)
             .toSeq
             .map(unpackFieldEPS)
@@ -375,10 +380,10 @@ object Immutability {
                 | Non Transitively Immutable Fields:
                 | ${nonTransitivelyImmutableFields.map(_+" | Non Transitively Immutable Field ").mkString("\n")}
                 |
-                | Dependent Immutable Fields:
+                | Dependently Immutable Fields:
                 | ${
-                    dependentImmutableFields
-                        .map(_+" | Dependent Immutable Field ")
+                    dependentlyImmutableFields
+                        .map(_+" | Dependently Immutable Field ")
                         .mkString("\n")
                 }
                 |
@@ -393,7 +398,12 @@ object Immutability {
             .entities(ClassImmutability.key)
             .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
-            .groupBy(_.asFinal.p)
+            .groupBy {
+                _.asFinal.p match {
+                    case DependentImmutableClass(_) ⇒ DependentImmutableClass(Set.empty)
+                    case default                    ⇒ default
+                }
+            }
 
         def unpackClass(eps: EPS[Entity, OrderedProperty]): String = {
             val classFile = eps.e.asInstanceOf[ObjectType]
@@ -415,7 +425,7 @@ object Immutability {
                 .map(unpackClass)
                 .sortWith(_ < _)
 
-        val dependentImmutableClasses =
+        val dependentlyImmutableClasses =
             classGroupedResults
                 .getOrElse(DependentImmutableClass(Set.empty), Iterator.empty)
                 .toSeq
@@ -448,10 +458,10 @@ object Immutability {
                 | Non Transitively Immutable Classes:
                 | ${nonTransitivelyImmutableClasses.map(_+" | Non Transitively Immutable Class ").mkString("\n")}
                 |
-                | Dependent Immutable Classes:
+                | Dependently Immutable Classes:
                 | ${
-                    dependentImmutableClasses
-                        .map(_+" | Dependent Immutable Class ")
+                    dependentlyImmutableClasses
+                        .map(_+" | Dependently Immutable Class ")
                         .mkString("\n")
                 }
                 |
@@ -472,7 +482,13 @@ object Immutability {
             .entities(TypeImmutability.key)
             .filter(eps ⇒ allProjectClassTypes.contains(eps.e.asInstanceOf[ObjectType]))
             .toTraversable
-            .groupBy(_.asFinal.p)
+            .groupBy {
+                _.asFinal.p match {
+                    case DependentlyImmutableType(_) ⇒ DependentlyImmutableType(Set.empty)
+                    case default                     ⇒ default
+                }
+            }
+        ()
 
         val mutableTypes = typeGroupedResults
             .getOrElse(MutableType, Iterator.empty)
@@ -486,7 +502,7 @@ object Immutability {
             .map(unpackClass)
             .sortWith(_ < _)
 
-        val dependentImmutableTypes = typeGroupedResults
+        val dependentlyImmutableTypes = typeGroupedResults
             .getOrElse(DependentlyImmutableType(Set.empty), Iterator.empty)
             .toSeq
             .map(unpackClass)
@@ -504,14 +520,14 @@ object Immutability {
                 | Mutable Types:
                 | ${mutableTypes.map(_+" | Mutable Type ").mkString("\n")}
                 |
-                | Shallow Immutable Types:
-                | ${nonTransitivelyImmutableTypes.map(_+" | Shallow Immutable Types ").mkString("\n")}
+                | Non-Transitively Immutable Types:
+                | ${nonTransitivelyImmutableTypes.map(_+" | Non-Transitively Immutable Types ").mkString("\n")}
                 |
-                | Dependent Immutable Types:
-                | ${dependentImmutableTypes.map(_+" | Dependent Immutable Types ").mkString("\n")}
+                | Dependently Immutable Types:
+                | ${dependentlyImmutableTypes.map(_+" | Dependently Immutable Types ").mkString("\n")}
                 |
-                | Deep Immutable Types:
-                | ${transitivelyImmutableTypes.map(_+" | Deep Immutable Types ").mkString("\n")}
+                | Transitively Immutable Types:
+                | ${transitivelyImmutableTypes.map(_+" | Transitively Immutable Types ").mkString("\n")}
                 |""".stripMargin
             )
         }
@@ -536,7 +552,7 @@ object Immutability {
                 s"""
                 | Mutable Fields: ${mutableFields.size}
                 | Non Transitively Immutable Fields: ${nonTransitivelyImmutableFields.size}
-                | Dependent Immutable Fields: ${dependentImmutableFields.size}
+                | Dependently Immutable Fields: ${dependentlyImmutableFields.size}
                 | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
                 | Fields: ${allFieldsInProjectClassFiles.size}
                 |""".stripMargin
@@ -548,7 +564,7 @@ object Immutability {
                 s"""
                 | Mutable Classes: ${mutableClasses.size}
                 | Non Transitively Immutable Classes: ${nonTransitivelyImmutableClasses.size}
-                | Dependent Immutable Classes: ${dependentImmutableClasses.size}
+                | Dependently Immutable Classes: ${dependentlyImmutableClasses.size}
                 | Transitively Immutable Classes: ${transitivelyImmutableClasses.size}
                 | Classes: ${allProjectClassTypes.size - transitivelyImmutableClassesInterfaces.size}
                 |
@@ -563,7 +579,7 @@ object Immutability {
                 s"""
                 | Mutable Types: ${mutableTypes.size}
                 | Non Transitively Immutable Types: ${nonTransitivelyImmutableTypes.size}
-                | Dependent Immutable Types: ${dependentImmutableTypes.size}
+                | Dependently Immutable Types: ${dependentlyImmutableTypes.size}
                 | Transitively immutable Types: ${transitivelyImmutableTypes.size}
                 | Types: ${allProjectClassTypes.size}
                 |""".stripMargin
