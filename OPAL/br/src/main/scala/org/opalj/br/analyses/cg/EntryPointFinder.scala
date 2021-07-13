@@ -355,71 +355,47 @@ object AllEntryPointsFinder extends EntryPointFinder {
  * @author Tom Nikisch
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
+
+    val ActivityEPS: List[String] = List("onCreate", "onRestart", "onStart", "onResume", "onStop", "onDestroy",
+        "onActivityResult")
+    val ServiceEPS: List[String] = List("onCreate", "onStartCommand", "onBind", "onStart")
+    val ContentProviderEPS: List[String] = List("onCreate", "query", "insert", "update")
+    val LocationListenerEPS: List[String] = List("onLocationChanged", "onProviderDisabled", "onProviderEnabled",
+        "onStatusChanged")
+
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
         val classHierarchy = project.classHierarchy
         val eps = ArrayBuffer.empty[Method]
 
-        var peps: List[String] = List("onCreate", "onRestart", "onStart", "onResume", "onStop", "onDestroy",
-            "onActivityResult")
         classHierarchy.foreachSubclass(ObjectType("android/app/Activity"), project) { sc ⇒
-            for (pep ← peps) {
-                val mc = sc.findMethod(pep)
-                for (m ← mc) {
-                    if (m.body != null) {
-                        eps.append(m)
-                    }
-                }
-            }
+            eps.appendAll(verifyEPS(ActivityEPS, sc))
         }
 
-        peps = List("onCreate", "onStartCommand", "onBind", "onStart")
         classHierarchy.foreachSubclass(ObjectType("android/app/Service"), project) { sc ⇒
-            for (pep ← peps) {
-                val mc = sc.findMethod(pep)
-                for (m ← mc) {
-                    if (m.body != null) {
-                        eps.append(m)
-                    }
-                }
-            }
+            eps.appendAll(verifyEPS(ServiceEPS, sc))
         }
 
-        peps = List("onCreate", "query", "insert", "update")
         classHierarchy.foreachSubclass(ObjectType("android/content/ContentProvider"), project) { sc ⇒
-            for (pep ← peps) {
-                val mc = sc.findMethod(pep)
-                for (m ← mc) {
-                    if (m.body != null) {
-                        eps.append(m)
-                    }
-                }
-            }
+            eps.appendAll(verifyEPS(ContentProviderEPS, sc))
         }
 
-        peps = List("onLocationChanged", "onProviderDisabled", "onProviderEnabled", "onStatusChanged")
-        classHierarchy.foreachSubtype(ObjectType("android/location/LocationListener")) { st ⇒
-            val cf = project.classFile(st).get
-            if (cf != null) {
-                for (pep ← peps) {
-                    val mc = cf.findMethod(pep)
-                    for (m ← mc) {
-                        if (m.body != null) {
-                            eps.append(m)
-                        }
-                    }
-                }
-            }
+        classHierarchy.foreachSubclass(ObjectType("android/location/LocationListener"), project) { sc ⇒
+            eps.appendAll(verifyEPS(ContentProviderEPS, sc))
         }
 
-        classHierarchy.foreachSubtype(ObjectType("android/location/onNmeaMessageListener")) { st ⇒
-            val cf = project.classFile(st).get
-            if (cf != null) {
-                val mc = cf.findMethod("onNmeaMessage")
-                for (m ← mc)
-                    if (m.body.nonEmpty) {
-                        eps.append(m)
-                    }
-            }
+        classHierarchy.foreachSubclass(ObjectType("android/location/onNmeaMessageListener"), project) { sc ⇒
+            val mc = sc.findMethod("onNmeaMessage")
+            for (m ← mc if m.body.isDefined)
+                eps.append(m)
         }
         eps
     }
+
+    def verifyEPS(possibleEPS: List[String], sc: ClassFile): ArrayBuffer[Method] = {
+        val eps = ArrayBuffer.empty[Method]
+        for (pep ← possibleEPS; m ← sc.findMethod(pep) if m.body.isDefined && !eps.contains(m)) {
+            eps.append(m)
+        }
+        eps
+    }
+}
