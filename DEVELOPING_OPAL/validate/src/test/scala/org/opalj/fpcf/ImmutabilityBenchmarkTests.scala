@@ -32,7 +32,7 @@ class ImmutabilityBenchmarkTests extends PropertiesTest {
 
     override def fixtureProjectPackage: List[String] = {
         // lazy_initialization/objects/counterExamples
-        List("org/opalj/fpcf/fixtures/benchmark/lazy_initialization/objects")
+        List("org/opalj/fpcf/fixtures/cifi_benchmark/common", "org/opalj/fpcf/fixtures/cifi_benchmark/lazy_initialization/objects")
     }
 
     override def init(p: Project[URL]): Unit = {

@@ -34,7 +34,7 @@ class FieldImmutabilityTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/benchmark/arrays/not_transitively_immutable")
+        List("org/opalj/fpcf/fixtures/cifi_benchmark/arrays/not_transitively_immutable")
     }
 
     override def init(p: Project[URL]): Unit = {

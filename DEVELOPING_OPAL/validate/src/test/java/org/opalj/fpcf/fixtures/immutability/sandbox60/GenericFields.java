@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.immutability.sandbox60;
 
-import org.opalj.fpcf.fixtures.benchmark.generals.ClassWithMutableFields;
+import org.opalj.fpcf.fixtures.cifi_benchmark.general.ClassWithMutableFields;
 import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 
