@@ -1,11 +1,8 @@
-<%@ var title:String %>
-<%@ var content:String %>
-<%@ var toc:Traversable[(String,String)] %>
-<%@ var useBanner : Boolean = false %>
+@(title: String, content: String, toc: Traversable[(String,String)], useBanner: Boolean = false)
 <!DOCTYPE HTML>
 <html>
     <head>
-        <title>${title}</title>
+        <title>@title</title>
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
         <script src="/js/jquery.min.js"></script>
         <script src="/js/skel.min.js"></script>
@@ -32,27 +29,21 @@
             </nav>
         </header>
 
-        #if (useBanner)
-        <section id="banner">
+        @if(useBanner){<section id="banner">
             <div class="inner">
                 <h2>The OPAL Project</h2>
                 <p>Be Relaxed - Static Analysis Is Easy</p>
             </div>
-        </section>
-        #end
+        </section> }
 
         <section id="one" class="wrapper style1">
             <div class="container">
     			<div class="row">
                     <div class="3u">
                         <nav>
-                        #for ((href,title) <- toc)
-                            #if (href != null)
-                                <a href="/${href}.html">${title}</a><br>
-                            #else
-                                <br><b>${title}</b><br>
-                            #end
-                        #end
+                        @for((href,title) <- toc){ @if(href != null && href != "null") {
+                            <a href="@{"/" + href +".html"}">@title</a><br>
+                        } else {  <br><b>@title</b><br> } }
                         </nav>
                         <hr/>
                         <div class="hide-at-medium">
@@ -60,7 +51,7 @@
                         </div>
                     </div>
     				<div class="9u">
-                        ${unescape(content)}
+                        @Html(content)
                     </div>
                 </div>
             </div>
@@ -104,7 +95,7 @@
     	</footer>
 
     </body>
-<%--
+@*
     <script type="text/javascript">
         var _gaq = _gaq || [];
         _gaq.push(['_setAccount', 'UA-49499962-1']);
@@ -116,7 +107,7 @@
         var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
         })();
     </script>
---%>
+*@
     <script>
         hljs.configure({
           tabReplace: '    ', // 4 spaces
