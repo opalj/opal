@@ -27,7 +27,7 @@ public final class ArrayTransitiveImmutability {
     private static final Integer[] staticTransitivelyImmutableArray = new Integer[5];
 
     @TransitivelyImmutableField("The elements of the array can not escape")
-    @EffectivelyNonAssignableField("Field is initialized in the constructor")
+    @NonAssignableField("Field is initialized in the constructor")
     private final Integer[] transitivelyImmutableArrayAssignedInTheConstructor;
 
     public ArrayTransitiveImmutability() {
