@@ -402,7 +402,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                             state.nonConcreteObjectAssignments = true
                             if (putValue.asVar.value.isInstanceOf[ASObjectValue]) {
                                 val oType = putValue.asVar.value.asInstanceOf[ASObjectValue].theUpperTypeBound
-                                if (oType != field.fieldType.asObjectType &&
+                                if (oType == field.fieldType.asObjectType ||
                                     oType.isSubtypeOf(field.fieldType.asObjectType)) {
                                     state.concreterTypeIsKnown = true
                                     handleTypeImmutability(oType)
@@ -606,6 +606,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         /**
          * In cases where we know the concrete class type assigned to the field we could use the immutability of this.
          */
+        if (field.name == "integer")
+            println("integer")
         if (!state.concreterTypeIsKnown) {
             if (!state.concreteClassTypeIsKnown)
                 handleTypeImmutability(state.field.fieldType)
