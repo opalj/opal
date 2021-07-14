@@ -611,23 +611,7 @@ object Immutability {
             |
             | CofigurationName: $configurationName
             |
-            |  level: ${project.getProjectInformationKeyInitializationData(AIDomainFactoryKey)}
-            |
-            |  consider escape: ${
-                project.config.atKey(
-                    "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerEscape"
-                )
-            }
-            |  consider genericity: ${
-                project.config.atKey(
-                    "org.opalj.fpcf.analyses.L3FieldImmutabilityAnalysis.considerGenericity"
-                )
-            }
-            |  consider lazy initialization: ${
-                project.config.atKey(
-                    "org.opalj.fpcf.analyses.L0FieldReferenceImmutabilityAnalysis.considerLazyInitialization"
-                )
-            }
+            |  level: $level
             |
             |propertyStore: ${propertyStore.getClass}
             |
