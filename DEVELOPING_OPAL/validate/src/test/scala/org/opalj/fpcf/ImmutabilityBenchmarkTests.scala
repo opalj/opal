@@ -31,7 +31,7 @@ class ImmutabilityBenchmarkTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/cifi_benchmark")
+        List("org/opalj/fpcf/fixtures/cifi_benchmark/general","org/opalj/fpcf/fixtures/cifi_benchmark/assignability","org/opalj/fpcf/fixtures/cifi_benchmark/common")
     }
 
     override def init(p: Project[URL]): Unit = {
