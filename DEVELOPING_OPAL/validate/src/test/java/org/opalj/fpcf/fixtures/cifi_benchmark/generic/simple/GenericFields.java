@@ -12,8 +12,6 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
-import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 
 /**
  * Class with multiple possibilities of generic types in combination with immutability.

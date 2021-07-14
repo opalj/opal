@@ -4,7 +4,6 @@ import org.opalj.fpcf.fixtures.immutability.fields.FinalEmptyClass;
 import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
-import org.opalj.fpcf.fixtures.cifi_benchmark.generic.extended.UseSiteVariance.EmptyClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 //import edu.cmu.cs.glacier.qual.Immutable;
 

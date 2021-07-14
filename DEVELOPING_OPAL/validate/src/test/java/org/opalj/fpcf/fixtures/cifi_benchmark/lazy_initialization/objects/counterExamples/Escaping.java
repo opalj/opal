@@ -2,7 +2,6 @@
 package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.objects.counterExamples;
 
 //import edu.cmu.cs.glacier.qual.Immutable;
-
 import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
