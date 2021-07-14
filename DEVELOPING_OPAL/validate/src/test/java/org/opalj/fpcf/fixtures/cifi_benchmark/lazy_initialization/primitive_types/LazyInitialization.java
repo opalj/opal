@@ -301,31 +301,6 @@ class VisibleInitialization {
 }
 
 //@Immutable
-class ExceptionInInitialization {
-
-    /**
-     * @note As the field write is dead, this field is really 'effectively final' as it will never
-     * be different from the default value.
-     */
-    //@Immutable
-    @LazilyInitializedField("Field is never initialized, so it stays on its default value")
-    private int x;
-
-    private int getZero() {
-        return 0;
-    }
-
-    public int init() {
-        int y = this.x;
-        if (y == 0) {
-            int z = 10 / getZero();
-            y = x = 5;
-        }
-        return y;
-    }
-}
-
-//@Immutable
 class CaughtExceptionInInitialization {
 
     //@Immutable
