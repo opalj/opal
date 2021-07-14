@@ -351,26 +351,28 @@ object AllEntryPointsFinder extends EntryPointFinder {
 
 /**
  * The AndroidEntryPointFinder considers specific methods of app components as entry points.
+ * It does not work for androidx
  *
  * @author Tom Nikisch
  */
 object AndroidEntryPointsFinder extends EntryPointFinder {
 
-    val activityEPS: List[String] = List("android/app/Activity", "onCreate", "onRestart", "onStart", "onResume",
+    val activityEPS: List[String] = List("onCreate", "onRestart", "onStart", "onResume",
         "onStop", "onDestroy", "onActivityResult")
-    val serviceEPS: List[String] = List("android/app/Service", "onCreate", "onStartCommand", "onBind", "onStart")
-    val contentProviderEPS: List[String] = List("android/content/ContentProvider", "onCreate", "query", "insert",
-        "update")
-    val locationListenerEPS: List[String] = List("android/location/LocationListener", "onLocationChanged",
-        "onProviderDisabled", "onProviderEnabled", "onStatusChanged")
-    val onNmeaMessageListenerEPS: List[String] = List("android/location/onNmeaMessageListener", "onNmeaMessage")
-    val defaultEPSList: List[List[String]] = List(activityEPS, serviceEPS, contentProviderEPS, locationListenerEPS,
-        onNmeaMessageListenerEPS)
+    val serviceEPS: List[String] = List("onCreate", "onStartCommand", "onBind", "onStart")
+    val contentProviderEPS: List[String] = List("onCreate", "query", "insert", "update")
+    val locationListenerEPS: List[String] = List("onLocationChanged", "onProviderDisabled", "onProviderEnabled",
+        "onStatusChanged")
+    val onNmeaMessageListenerEPS: List[String] = List("onNmeaMessage")
+    val defaultEPS = Map("android/app/Activity" -> activityEPS, "android/app/Service" -> serviceEPS,
+        "android/content/ContentProvider" -> contentProviderEPS,
+        "android/location/LocationListener" -> locationListenerEPS,
+        "android/location/onNmeaMessageListener" -> onNmeaMessageListenerEPS)
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
         val eps = ArrayBuffer.empty[Method]
-        for (epsList ← defaultEPSList) {
-            eps ++= findEPS(ObjectType(epsList.head), epsList.tail, project)
+        for (key ← defaultEPS.keys) {
+            eps ++= findEPS(ObjectType(key), defaultEPS(key), project)
         }
         eps
     }
