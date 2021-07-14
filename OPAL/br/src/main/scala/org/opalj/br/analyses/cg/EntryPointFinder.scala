@@ -371,8 +371,8 @@ object AndroidEntryPointsFinder extends EntryPointFinder {
 
     override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
         val eps = ArrayBuffer.empty[Method]
-        for (key ← defaultEPS.keys) {
-            eps ++= findEPS(ObjectType(key), defaultEPS(key), project)
+        for ((superClass, methodList) ← defaultEPS) {
+            eps ++= findEPS(ObjectType(superClass), methodList, project)
         }
         eps
     }
