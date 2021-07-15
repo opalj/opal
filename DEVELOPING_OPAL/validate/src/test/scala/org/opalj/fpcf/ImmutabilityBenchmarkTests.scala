@@ -1,8 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf
 
-import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-
 import java.net.URL
 import org.opalj.ai.domain.l2
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
@@ -47,7 +45,6 @@ class ImmutabilityBenchmarkTests extends PropertiesTest {
 
         val as = executeAnalyses(
             Set(
-                LazyUnsoundPrematurelyReadFieldsAnalysis,
                 LazyL2PurityAnalysis,
                 EagerL3FieldAssignabilityAnalysis,
                 EagerL0FieldImmutabilityAnalysis,

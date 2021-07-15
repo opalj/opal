@@ -606,8 +606,7 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         /**
          * In cases where we know the concrete class type assigned to the field we could use the immutability of this.
          */
-        if (field.name == "integer")
-            println("integer")
+
         if (!state.concreterTypeIsKnown) {
             if (!state.concreteClassTypeIsKnown)
                 handleTypeImmutability(state.field.fieldType)

@@ -18,15 +18,11 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
-import org.opalj.br.fpcf.properties.NotPrematurelyReadField
-import org.opalj.br.fpcf.properties.PrematurelyReadField
 import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.FinalEP
-import org.opalj.fpcf.LBP
 import org.opalj.fpcf.Property
-import org.opalj.fpcf.UBP
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TACAI
@@ -87,25 +83,6 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
         case epk ⇒
             state.tacDependees += method -> ((epk, pcs))
             None
-    }
-
-    /**
-     * Checks whether the field is prematurely read, i.e. read before it is initialized in the
-     * constructor, using the corresponding property.
-     */
-    def isPrematurelyRead(eop: EOptionP[Field, FieldPrematurelyRead])(implicit state: State): Boolean = eop match {
-
-        case LBP(NotPrematurelyReadField) ⇒
-            state.prematurelyReadDependee = None
-            false
-
-        case UBP(PrematurelyReadField) ⇒
-            state.prematurelyReadDependee = None
-            true
-
-        case eps ⇒
-            state.prematurelyReadDependee = Some(eps)
-            true
     }
 
     /**
