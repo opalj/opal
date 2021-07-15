@@ -174,8 +174,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 if (eps.isRefinable)
                     state.tacDependees += method -> ((newEP, pcs))
                 methodUpdatesField(method, newEP.ub.tac.get, pcs)
-
-            case FieldPrematurelyRead.key ⇒ isPrematurelyRead(eps.asInstanceOf[EOptionP[Field, FieldPrematurelyRead]])
+            
         }
 
         if (isNotFinal)
