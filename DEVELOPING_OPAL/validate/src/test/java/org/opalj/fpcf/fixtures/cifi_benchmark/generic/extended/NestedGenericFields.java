@@ -27,7 +27,7 @@ public class NestedGenericFields<T> {
     private Generic<Generic<T>> nestedMutable;
 
     //@Immutable
-    @DependentlyImmutableField(value = "only generic typ parameters", parameter={"T"})
+    @DependentlyImmutableField(value = "only generic type parameters", parameter={"T"})
     @NonAssignableField("field is final")
     private final Generic<Generic<T>> nestedDependent;
 
