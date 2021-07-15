@@ -105,10 +105,6 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         val thisType = field.classFile.thisType
 
-        // Fields are not final if they are read prematurely!
-        if (isPrematurelyRead(propertyStore(field, FieldPrematurelyRead.key)))
-            return Result(field, Assignable);
-
         if (field.isPublic) {
             if (typeExtensibility(ObjectType.Object).isYesOrUnknown) {
                 return Result(field, Assignable);
