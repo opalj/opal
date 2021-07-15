@@ -22,8 +22,8 @@ public class NestedGenericFields<T> {
             new Generic<>(new Generic<>(new FinalClassWithNoFields()));
 
     //@Immutable
-    @DependentlyImmutableField("")
-    @EffectivelyNonAssignableField("field is final")
+    @DependentlyImmutableField("Has nested generic type parameter")
+    @EffectivelyNonAssignableField("field is never written")
     private Generic<Generic<T>> nestedMutable;
 
     //@Immutable
