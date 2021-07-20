@@ -61,7 +61,7 @@ class TACNaiveIntegerIfTest extends TACNaiveTest {
         it("should correctly reflect the not-equals case") {
             val statements = TACNaive(method = ICMPNEMethod, classHierarchy = ClassHierarchy.PreInitializedClassHierarchy).stmts
             val javaLikeCode = ToTxt.stmtsToTxtStmt(statements, false)
-
+println("knc")
             assert(statements.nonEmpty)
             assert(javaLikeCode.length > 0)
             statements.shouldEqual(resultAST(
