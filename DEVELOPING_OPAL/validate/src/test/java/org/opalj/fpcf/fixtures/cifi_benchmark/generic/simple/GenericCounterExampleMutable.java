@@ -9,12 +9,10 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 /**
  * Generic class with only a mutable field.
  */
-//@Immutable
 @MutableType("class is mutable")
 @MutableClass("class has a mutable field")
 class GenericCounterExampleMutable<T> {
 
-    //@Immutable
     @MutableField("field is assignable")
     @AssignableField("field is public and as a result assignable")
     public int n = 5;

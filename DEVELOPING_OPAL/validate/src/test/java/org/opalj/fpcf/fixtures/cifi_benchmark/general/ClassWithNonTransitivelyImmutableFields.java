@@ -9,18 +9,14 @@ import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType
 @NonTransitivelyImmutableClass("Class has only non transitively immutable fields")
 public final class ClassWithNonTransitivelyImmutableFields {
 
-    //@Immutable
     @NonTransitivelyImmutableField("Final field with mutable type assigned in the constructor")
     @NonAssignableField("Declared final Field")
     private final ClassWithMutableFields nonTransitivelyImmutableFieldConstructorAssigned;
 
-    //@Immutable
     @NonTransitivelyImmutableField("Final field with mutable type eager assigned")
     @NonAssignableField("Declared final Field")
     private final ClassWithMutableFields nonTransitivelyImmutableFieldEagerAssigned = new ClassWithMutableFields();
 
-
-    //@Immutable
     @NonTransitivelyImmutableField("Field is assignable and has a non transitively immutable type")
     @NonAssignableField("Declared final Field")
     private final ClassWithNonTransitivelyImmutableFields instance =

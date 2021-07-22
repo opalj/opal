@@ -6,12 +6,10 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 
-//@Immutable
 @NonTransitivelyImmutableType("")
 @NonTransitivelyImmutableClass("")
 public final class FinalClassWithNonTransitivelyImmutableField {
 
-    //@Immutable
     @NonTransitivelyImmutableField("field has a mutable type and the concrete assigned object can not be determined")
     @NonAssignableField("field is final")
     private final CustomObject finalFieldWithMutableType;

@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.assignability.clone_function;
 
-//import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
@@ -11,17 +10,14 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 /**
  * This class encompasses different counter examples for the clone pattern.
  */
-//@Immutable
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 public class ObjectEscapesInCloneFunction {
 
-    //@Immutable
     @MutableField("Field is assignable")
     @AssignableField("Field can be seen with different values")
     int i;
 
-    //@Immutable
     @MutableField("Field is assignable")
     @AssignableField("Field is default visible and as a result assignable")
     ObjectEscapesInCloneFunction instance;
@@ -49,12 +45,12 @@ class ThereIsNoNewObjectInCloneFunctionCreated {
     }
 }
 
-//@Immutable
+
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 final class EscapesViaMethod {
 
-    //@Immutable
+    
     @MutableField("Field is assignable")
     @AssignableField("Field can be seen with different values while calling the clone method.")
     private CustomObject customObject;
@@ -67,12 +63,12 @@ final class EscapesViaMethod {
     }
 }
 
-//@Immutable
+
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 final class EscapingThroughIdentityFunction {
 
-    //@Immutable
+    
     @MutableField("Field is assignable")
     @AssignableField("The field value is assigned t the field integerCopy before it is set and, thus, " +
             "it can be seen with multiple values")
@@ -110,7 +106,7 @@ class Static {
 @MutableClass("Class has a mutable field")
 class EscapesViaGetterCall {
 
-    //@Immutable
+    
     @MutableField("field is assignable")
     @AssignableField("field can be seen with different values")
     private int i;
@@ -131,12 +127,12 @@ class EscapesViaGetterCall {
     }
 }
 
-//@Immutable
+
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 final class EscapesViaStaticSetterMethod {
 
-    //@Immutable
+    
     @MutableField("Field is assignable")
     @AssignableField("Field escapes via static setter")
     private CustomObject customObject;

@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.general;
 
-//import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
@@ -24,37 +23,30 @@ public class DifferentModifier {
     @AssignableField("The field is public")
     public int assignableInt = 5;
 
-    //@Immutable
     @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
     @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
     private int effectivelyNonAssignableInt = 3;
 
-    //@Immutable
     @MutableField("The field is assignable")
     @AssignableField("The field is public")
     public transient int assignableTransientInt = 5;
 
-    //@Immutable
     @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
     @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
     private transient int effectivelyNonAssignableTransientInt = 5;
-
-    //@Immutable
+    
     @MutableField("The field is assignable")
     @AssignableField("The field is public")
     public volatile int assignableVolatileInt = 5;
 
-    //@Immutable
     @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
     @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
     private volatile int effectivelyNonAssignableVolatileInt = 5;
 
-    //@Immutable
     @MutableField("The field is assignable")
     @AssignableField("The field is public")
     public volatile long assignableVolatileLong;
 
-    //@Immutable
     @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
     @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
     private volatile long immutableVolatileLong = 0L;
@@ -69,7 +61,6 @@ public class DifferentModifier {
           @AssignableField("The field is public")
           public static int assignableInnerStaticInt = 1;
 
-          //@Immutable
           @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
           @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
           private static int effectivelyNonAssignableInnerStaticInt = 1;
@@ -78,7 +69,6 @@ public class DifferentModifier {
           @AssignableField("The field is public")
           public int assignableInnerInt = 5;
 
-          //@Immutable
           @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
           @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
           private int effectivelyNonAssignableInnerInt = 5;
@@ -87,7 +77,6 @@ public class DifferentModifier {
           @AssignableField("The field is public")
           public transient int assignableInnerTransientInt = 5;
 
-          //@Immutable
           @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
           @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
           private transient int effectivelyNonAssignableInnerTransientInt = 5;
@@ -96,7 +85,6 @@ public class DifferentModifier {
           @AssignableField("The field is public")
           public volatile int assignableInnerVolatileInt = 5;
 
-          //@Immutable
           @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
           @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
           private volatile int effectivelyNonAssignableInnerVolatileInt = 5;
@@ -105,7 +93,6 @@ public class DifferentModifier {
           @AssignableField("The field is public")
           public volatile transient int mutableInnerVolatileTransientInt = 5;
 
-          //@Immutable
           @TransitivelyImmutableField("The field is effectively non-assignable and has a primitive type")
           @EffectivelyNonAssignableField("The field is private and effectively assigned only once")
           private volatile transient int immutableInnerVolatileTransientInt = 5;

@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.assignability.clone_function;
 
-//import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
@@ -10,12 +9,10 @@ import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
 /**
  * This class encompasses different possible cases of the clone pattern.
  */
-//@Immutable
 @TransitivelyImmutableType("Class is final and transitively immutable")
 @TransitivelyImmutableClass("Class has only transitively immutable fields")
 public final class SimpleClonePattern {
 
-    //@Immutable
     @TransitivelyImmutableField("Field is effectively non assignable and has a primitive type")
     @EffectivelyNonAssignableField("Field is only assigned ones due to the clone function pattern")
     private int i;
@@ -30,7 +27,6 @@ public final class SimpleClonePattern {
 
 class CloneNonAssignableWithNewObject {
 
-    //@Immutable
     @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")
     @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
     private Integer integer;
@@ -44,7 +40,6 @@ class CloneNonAssignableWithNewObject {
 
 class EscapesAfterAssignment {
 
-    //@Immutable
     @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")
     @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
     private Integer integer;
@@ -63,12 +58,10 @@ class EscapesAfterAssignment {
 @TransitivelyImmutableClass("Class has only transitively immutable fields")
 final class MultipleFieldsAssignedInCloneFunction {
 
-    //@Immutable
     @TransitivelyImmutableField("The field is effectively non assignable and has a transitively immutable type")
     @EffectivelyNonAssignableField("The field is only assigned once in the clone function")
     private Integer firstInteger;
 
-    //@Immutable
     @TransitivelyImmutableField("The field is effectively non assignable and has a transitively immutable type")
     @EffectivelyNonAssignableField("The field is only assigned once in the clone function")
     private Integer secondInteger;
@@ -83,7 +76,6 @@ final class MultipleFieldsAssignedInCloneFunction {
 
 class ConstructorWithParameter {
 
-    //@Immutable
     @TransitivelyImmutableField("field is effectively non assignable but has a transitively immutable type")
     @EffectivelyNonAssignableField("field is only assigned ones due to the clone function pattern")
     private Integer integer;
@@ -99,5 +91,3 @@ class ConstructorWithParameter {
         return newInstance;
     }
 }
-
-

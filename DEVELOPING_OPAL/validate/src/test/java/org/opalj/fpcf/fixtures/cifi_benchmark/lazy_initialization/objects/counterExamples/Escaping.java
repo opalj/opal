@@ -1,21 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.objects.counterExamples;
 
-//import edu.cmu.cs.glacier.qual.Immutable;
 import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 /**
  * This classes encompasses different counter examples of lazy initialization of field with object types.
  */
-//@Immutable
 public class Escaping {
 
-    //@Immutable
     @AssignableField("The field is assigned to another field before the guarding if statement.")
     private CustomObject normalDoubleCheckedLockingEscapesBeforeGuard;
 
-    //@Immutable
     @AssignableField("The field can be assigned multiple times.")
     private CustomObject escapingInteger;
 
@@ -26,7 +22,6 @@ public class Escaping {
         return this.normalDoubleCheckedLockingEscapesBeforeGuard;
     }
 
-    //@Immutable
     @AssignableField("The field is read before it is assigned in the lazy initialization pattern.")
     private CustomObject doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment;
 
@@ -69,4 +64,3 @@ public class Escaping {
 class StaticClass{
     public static CustomObject customObject;
 }
-

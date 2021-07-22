@@ -2,7 +2,6 @@ package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
-//import edu.cmu.cs.glacier.qual.Immutable;
 
 import java.util.Random;
 
@@ -11,7 +10,6 @@ import java.util.Random;
  */
 public class UnsafelyLazilyInitialization {
 
-    //@Immutable
     @UnsafelyLazilyInitializedField("the write to the object reference simpleLazyInitialization is not atomic")
     private static CustomObject simpleLazyInitialization;
 
@@ -21,7 +19,6 @@ public class UnsafelyLazilyInitialization {
         return simpleLazyInitialization;
     }
 
-    //@Immutable
     @UnsafelyLazilyInitializedField("The field is not thread safe and not deterministic written")
     private int notThreadSafeRandomWrite;
 
@@ -32,7 +29,6 @@ public class UnsafelyLazilyInitialization {
         return notThreadSafeRandomWrite;
     }
 
-    //@Immutable
     @UnsafelyLazilyInitializedField("the field nonnull check is not synchronized guarded")
     private CustomObject noSynchronizedGuard;
     public CustomObject getNoSynchronizedGuard() {
@@ -44,7 +40,6 @@ public class UnsafelyLazilyInitialization {
         return noSynchronizedGuard;
     }
 
-    //@Immutable
     @UnsafelyLazilyInitializedField(value = "the field write is not synchronized guarded")
     private CustomObject twoNotSynchronizedGuards;
     public CustomObject getTwoNotSynchronizedGuards() {
@@ -55,8 +50,7 @@ public class UnsafelyLazilyInitialization {
         }
         return twoNotSynchronizedGuards;
     }
-
-    //@Immutable
+    
     @UnsafelyLazilyInitializedField("the field is written outside the synchronized block")
     private CustomObject writeOutsideTheSynchronizedGuard;
     public CustomObject getWriteOutsideTheSynchronizedGuard() {
@@ -72,7 +66,6 @@ public class UnsafelyLazilyInitialization {
         return writeOutsideTheSynchronizedGuard;
     }
 
-    //@Immutable
     @UnsafelyLazilyInitializedField(value = "only a guard around the field write")
     private CustomObject notNestedDCLWriteOnlyInGuard;
     public CustomObject getNotNestedDCLWriteOnlyInGuard() {
@@ -86,7 +79,6 @@ public class UnsafelyLazilyInitialization {
         return notNestedDCLWriteOnlyInGuard;
     }
 
-    //@Immutable
     @UnsafelyLazilyInitializedField("the field read for the guard is outside the synchronized block")
     private CustomObject fieldReadOutsideSynchronizedBlock;
 
@@ -99,7 +91,6 @@ public class UnsafelyLazilyInitialization {
         return fieldReadOutsideSynchronizedBlock;
     }
 
-    //@Immutable
     @UnsafelyLazilyInitializedField("the field read for the guard is outside the synchronized block")
     private CustomObject fieldReadOutsideSynchronizedBlockEarlyReturn;
 

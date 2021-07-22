@@ -12,26 +12,21 @@ import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNon
 /**
  * Class represents different cases of nested genericity.
  */
-//import edu.cmu.cs.glacier.qual.Immutable;
 public class NestedGenericFields<T> {
 
-    //@Immutable
     @TransitivelyImmutableField("The generic types are nested transitively immutable")
     @NonAssignableField("field is final")
     private final Generic<Generic<FinalClassWithNoFields>> nestedTransitivelyImmutable =
             new Generic<>(new Generic<>(new FinalClassWithNoFields()));
 
-    //@Immutable
     @DependentlyImmutableField("")
     @EffectivelyNonAssignableField("field is final")
     private Generic<Generic<T>> nestedMutable;
 
-    //@Immutable
     @DependentlyImmutableField(value = "only generic typ parameters", parameter={"T"})
     @NonAssignableField("field is final")
     private final Generic<Generic<T>> nestedDependent;
 
-    //@Immutable
     @NonTransitivelyImmutableField("Only transitively immutable type parameters")
     @NonAssignableField("field is final")
     private final Generic<Generic<ClassWithMutableFields>> nestedNonTransitive =

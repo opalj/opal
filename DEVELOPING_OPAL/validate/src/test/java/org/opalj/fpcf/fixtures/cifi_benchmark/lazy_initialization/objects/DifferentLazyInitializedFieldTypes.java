@@ -10,15 +10,12 @@ import java.util.HashMap;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
-//import edu.cmu.cs.glacier.qual.Immutable;
 
 /**
  * This class encompasses different cases of lazily initialized fields.
  */
-//@Immutable
 public class DifferentLazyInitializedFieldTypes {
 
-    //@Immutable
      @TransitivelyImmutableField("Lazy initialized field with primitive type.")
      @LazilyInitializedField("field is thread safely lazy initialized")
     private int inTheGetterLazyInitializedIntField;
@@ -29,7 +26,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inTheGetterLazyInitializedIntField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazilyInitializedField("lazy initialization in a synchronized getter method")
     private Integer inGetterSynchronizedSimpleLazyInitializedIntegerField;
@@ -40,7 +36,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inGetterSynchronizedSimpleLazyInitializedIntegerField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazilyInitializedField("lazy initialization in a synchronized getter method")
     private double inGetterSynchronizedLazyInitializedDoubleField;
@@ -51,7 +46,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inGetterSynchronizedLazyInitializedDoubleField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("field has an immutable reference and a deep immutable type")
     @LazilyInitializedField("field is in a synchronized getter lazy initialized")
     private Double inAGetterLazyInitializedObjectDoubleField;
@@ -61,8 +55,7 @@ public class DifferentLazyInitializedFieldTypes {
             inAGetterLazyInitializedObjectDoubleField = 5d;
         return inAGetterLazyInitializedObjectDoubleField;
     }
-
-    //@Immutable
+    
     @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazilyInitializedField("lazy initialization in a synchronized getter method")
     private float inGetterSynchronizedLazyInitializedFloatField;
@@ -73,7 +66,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inGetterSynchronizedLazyInitializedFloatField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("field has an immutable field reference and a deep immutable type")
     @LazilyInitializedField("the field is in a getter thread safely lazy initialized")
     private float inAGetterLazyInitializedFloatObjectField;
@@ -84,7 +76,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inAGetterLazyInitializedFloatObjectField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazilyInitializedField("lazy initialization in a synchronized getter method")
     private byte inGetterSynchronizedLazyInitializedByteField;
@@ -95,7 +86,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inGetterSynchronizedLazyInitializedByteField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("field has a primitive type and is synchronized lazy initialized")
     @LazilyInitializedField("field is thread safely lazy initialized in a getter")
     private Byte inAGetterLazyInitializedByteObjectField;
@@ -106,7 +96,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inAGetterLazyInitializedByteObjectField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazilyInitializedField("lazy initialization in a synchronized getter method")
     private char inGetterSynchronizedLazyInitializedCharField;
@@ -117,7 +106,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inGetterSynchronizedLazyInitializedCharField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("immutable reference and deep immutable type")
     @LazilyInitializedField("lazy initialization in a synchronized getter method")
     private long inGetterSynchronizedLazyInitializedLongField;
@@ -128,7 +116,6 @@ public class DifferentLazyInitializedFieldTypes {
         return inGetterSynchronizedLazyInitializedLongField;
     }
 
-    //@Immutable
     @TransitivelyImmutableField("")
     @LazilyInitializedField("")
     private Long lO3;
@@ -139,7 +126,6 @@ public class DifferentLazyInitializedFieldTypes {
         return lO3;
     }
 
-
     @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
     @LazilyInitializedField("lazy initialized within a synchronized method")
     private String inAGetterLazyInitializedString;
@@ -149,7 +135,6 @@ public class DifferentLazyInitializedFieldTypes {
             inAGetterLazyInitializedString = "abc";
         return inAGetterLazyInitializedString;
     }
-
 
     @TransitivelyImmutableField("The concrete type of the object that is assigned is known")
     @LazilyInitializedField("lazy initialized within a synchronized method")

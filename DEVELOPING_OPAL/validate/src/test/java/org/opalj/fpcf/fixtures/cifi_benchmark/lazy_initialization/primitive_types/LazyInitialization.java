@@ -3,7 +3,6 @@ package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.primitive_typ
 
 import org.opalj.fpcf.properties.immutability.field_assignability.*;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
-//import edu.cmu.cs.glacier.qual.Immutable;
 
 /**
  * Test classes for simple lazy initialization patterns and anti-patterns regarding reference immutability analysis.
@@ -11,10 +10,8 @@ import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
  * @author Dominik Helm
  * @author Tobias Roth
  */
-//@Immutable
 class Simple {
 
-    //@Immutable
     @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @LazilyInitializedField("Simple lazy initialization with primitive type")
     private int x;
@@ -27,10 +24,8 @@ class Simple {
     }
 }
 
-//@Immutable
 class Local {
-
-    //@Immutable
+    
     @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @LazilyInitializedField("Lazy initialization with local")
     private int x;
@@ -44,10 +39,8 @@ class Local {
     }
 }
 
-//@Immutable
 class LocalWrong {
 
-    //@Immutable
     @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @AssignableField("Incorrect lazy initialization with local")
     private int x;
@@ -61,10 +54,8 @@ class LocalWrong {
     }
 }
 
-//@Immutable
 class LocalReversed {
 
-    //@Immutable
     @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @LazilyInitializedField("Lazy initialization with local (reversed)")
     private int x;
@@ -78,10 +69,8 @@ class LocalReversed {
     }
 }
 
-//@Immutable
 class SimpleReversed {
 
-    //@Immutable
     @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @LazilyInitializedField("Simple lazy initialization (reversed)")
     private int x;
@@ -94,10 +83,8 @@ class SimpleReversed {
     }
 }
 
-//@Immutable
 class WrongDefault {
 
-    //@Immutable
     @AssignableField("Not lazily initialized because of two different default values")
     private int x;
 
@@ -117,10 +104,8 @@ class WrongDefault {
     }
 }
 
-//@Immutable
 class DeterministicCall {
 
-    //@Immutable
     @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @LazilyInitializedField("Lazy initialization with call to deterministic method")
     private int x;
@@ -137,10 +122,8 @@ class DeterministicCall {
     }
 }
 
-//@Immutable
 class DeterministicCallWithParam {
 
-    //@Immutable
     @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @UnsafelyLazilyInitializedField("Lazy initialization is not the same for different invocations")
     private int x;
@@ -157,10 +140,8 @@ class DeterministicCallWithParam {
     }
 }
 
-//@Immutable
 class DeterministicCallOnFinalField {
 
-    //@Immutable
     @TransitivelyImmutableField("field is lazily initialized and has primitive value")
     @LazilyInitializedField("Lazy initialization with call to deterministic method ")
     private int x;
@@ -194,14 +175,11 @@ class DeterministicCallOnFinalField {
     }
 }
 
-//@Immutable
 class DeterministicCallOnNonFinalField {
 
-    //@Immutable
     @UnsafelyLazilyInitializedField("Wrong lazy initialization with call to non-deterministic method on final field")
     private int x;
 
-    //@Immutable
     @AssignableField("Non final field")
     private Inner inner;
 
@@ -230,10 +208,8 @@ class DeterministicCallOnNonFinalField {
     }
 }
 
-//@Immutable
 class NondeterministicCall {
 
-    //@Immutable
     @UnsafelyLazilyInitializedField("Wrong lazy initialization with call to non-deterministic method")
     private int x;
 
@@ -247,10 +223,8 @@ class NondeterministicCall {
     }
 }
 
-//@Immutable
 class DoubleLocalAssignment {
 
-    //@Immutable
     @UnsafelyLazilyInitializedField("Lazy initialization with a local that is updated twice")
     private int x;
 
@@ -264,10 +238,8 @@ class DoubleLocalAssignment {
     }
 }
 
-//@Immutable
 class DoubleAssignment {
 
-    //@Immutable
     @AssignableField("Field can be observed partially updated")
     private int x;
 
@@ -279,10 +251,9 @@ class DoubleAssignment {
         return x;
     }
 }
-//@Immutable
+
 class VisibleInitialization {
 
-    //@Immutable
     @AssignableField("Incorrect because lazy initialization is visible")
     private int x;
 
@@ -300,10 +271,8 @@ class VisibleInitialization {
     }
 }
 
-//@Immutable
 class CaughtExceptionInInitialization {
 
-    //@Immutable
     @LazilyInitializedField("Despite the possible exception the field is always seen with one value")
     private int x;
 
@@ -320,4 +289,3 @@ class CaughtExceptionInInitialization {
         }
     }
 }
-

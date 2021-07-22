@@ -3,14 +3,12 @@ package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.objects;
 import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.fixtures.cifi_benchmark.general.ClassWithMutableFields;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
-//import edu.cmu.cs.glacier.qual.Immutable;
 
 /**
  * This class encompasses different forms of lazy initialized fields with object type.
  */
 public class LazyInitialization {
 
-    //@Immutable
     @LazilyInitializedField("field is correctly lazily initialized guarded within a synchronized method")
     private Integer lazyInitializedIntegerWithinASynchronizedMethod;
 
@@ -20,7 +18,6 @@ public class LazyInitialization {
         return this.lazyInitializedIntegerWithinASynchronizedMethod;
     }
 
-    //@Immutable
     @LazilyInitializedField("standard double checked locked initialized integer field")
     private Integer doubleCheckedLockedIntegerField;
 
@@ -34,8 +31,7 @@ public class LazyInitialization {
         }
         return doubleCheckedLockedIntegerField;
     }
-
-    //@Immutable
+    
     @LazilyInitializedField("a simple variation of double checked locking without the outer guard")
     private CustomObject onlyOneGuardWithinTheSynchronization;
 
@@ -48,7 +44,6 @@ public class LazyInitialization {
         return onlyOneGuardWithinTheSynchronization;
     }
 
-    //@Immutable
     @LazilyInitializedField("The function call after assignment does not affect the lazy initialization.")
     private ClassWithMutableFields functionCallAfterAssignment;
 
@@ -59,7 +54,6 @@ public class LazyInitialization {
         functionCallAfterAssignment.nop();
     }
 
-    //@Immutable
     @LazilyInitializedField("The field is lazily initialized within dcl pattern that is implemented with early return")
     private CustomObject dclWithEarlyReturn;
 
@@ -72,8 +66,7 @@ public class LazyInitialization {
         }
         return dclWithEarlyReturn;
     }
-
-    //@Immutable
+    
     @LazilyInitializedField("The field is synchronized guarded lazily initialized.")
     private CustomObject loopsInDCLPattern;
 
@@ -91,8 +84,7 @@ public class LazyInitialization {
         }
         return loopsInDCLPattern;
     }
-
-    //@Immutable
+    
     @LazilyInitializedField("The field is lazy initialized within a dcl pattern with multiple guards.")
     private Object multipleGuardsInDCLPattern;
 

@@ -20,7 +20,6 @@ public class EffectivelyNonAssignable {
         classWithMutableField.nop();
     }
 
-
     @TransitivelyImmutableField("field value has a primitive type and an effectively non assignable field")
     @EffectivelyNonAssignableField("field is not written after initialization")
     private int simpleInitializedFieldWithPrimitiveType = 5;
@@ -84,5 +83,4 @@ public class EffectivelyNonAssignable {
     @NonTransitivelyImmutableField("")
     @EffectivelyNonAssignableField("effective immutable reference")
     private HashMap<Object, Object> effectiveImmutableHashMap = new HashMap<Object, Object>();
-
 }
