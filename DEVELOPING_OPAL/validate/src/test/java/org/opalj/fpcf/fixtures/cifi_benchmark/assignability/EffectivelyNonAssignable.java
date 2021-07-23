@@ -20,8 +20,8 @@ public class EffectivelyNonAssignable {
     @EffectivelyNonAssignableField("The field is only assigned once")
     private ClassWithMutableFields classWithMutableFields = new ClassWithMutableFields();
 
-    public void setClassWithMutableField(ClassWithMutableFields classWithMutableFields){
-        this.classWithMutableFields = classWithMutableFields;
+    public void callNopOfClassWithMutableFields(){
+        this.classWithMutableFields.nop();
     }
 
     @TransitivelyImmutableField("The field has a primitive type and is effectively non assignable")
