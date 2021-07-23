@@ -76,6 +76,7 @@ trait Instruction extends InstructionLike {
     def isCheckcast: Boolean = false
     def isInvocationInstruction: Boolean = false
     def isMethodInvocationInstruction: Boolean = false
+    def isInvokeStatic: Boolean = false
     def isIINC: Boolean = false
 
     def asReturnInstruction: ReturnInstruction = throw new ClassCastException();

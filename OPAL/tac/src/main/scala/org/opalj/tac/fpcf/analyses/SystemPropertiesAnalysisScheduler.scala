@@ -23,7 +23,6 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
-import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callers
@@ -34,7 +33,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
         final val project: SomeProject
 ) extends ReachableMethodAnalysis {
     def processMethod(
-        declaredMethod: DefinedMethod, tacaiEP: EPS[Method, TACAI]
+        callContext: ContextType, tacaiEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
         assert(tacaiEP.hasUBP && tacaiEP.ub.tac.isDefined)
         val stmts = tacaiEP.ub.tac.get.stmts
@@ -92,7 +91,7 @@ class SystemPropertiesAnalysisScheduler private[analyses] (
                 SystemProperties.key,
                 update,
                 Set(tacaiEP),
-                continuationForTAC(declaredMethod)
+                continuationForTAC(callContext)
             )
         }
     }

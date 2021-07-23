@@ -27,7 +27,8 @@ package object pointsto {
             val pc = ai.pcOfMethodExternalException(defSite)
             CallExceptions(toEntity(pc, method, stmts).asInstanceOf[DefinitionSite])
         } else if (ai.isImmediateVMException(defSite)) {
-            null // TODO Implement
+            val pc = ai.pcOfImmediateVMException(defSite)
+            definitionSites(method.definedMethod, stmts(pc).pc)
         } else if (defSite < 0) {
             formalParameters.apply(method)(-1 - defSite)
         } else {

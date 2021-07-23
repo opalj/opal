@@ -23,7 +23,6 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CHECKCAST
-import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.fpcf.EPS
@@ -56,12 +55,14 @@ final class TypePropagationAnalysis private[analyses] (
     private[this] val debug = false
     private[this] val _trace: TypePropagationTrace = new TypePropagationTrace()
 
-    private type State = TypePropagationState
+    private type State = TypePropagationState[ContextType]
 
     override def processMethod(
-        definedMethod: DefinedMethod,
-        tacEP:         EPS[Method, TACAI]
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
+
+        val definedMethod = callContext.method.asDefinedMethod
 
         val typeSetEntity = selectTypeSetEntity(definedMethod)
         val instantiatedTypesEOptP = propertyStore(typeSetEntity, InstantiatedTypes.key)
@@ -69,8 +70,9 @@ final class TypePropagationAnalysis private[analyses] (
 
         if (debug) _trace.traceInit(definedMethod)
 
-        implicit val state: TypePropagationState =
-            new TypePropagationState(definedMethod, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP)
+        implicit val state: TypePropagationState[ContextType] = new TypePropagationState(
+            callContext, typeSetEntity, tacEP, instantiatedTypesEOptP, calleesEOptP
+        )
         implicit val partialResults: RefArrayBuffer[SomePartialResult] = RefArrayBuffer.empty[SomePartialResult]
 
         if (calleesEOptP.hasUBP)
@@ -85,10 +87,10 @@ final class TypePropagationAnalysis private[analyses] (
      * Processes the method upon initialization. Finds field/array accesses and wires up dependencies accordingly.
      */
     private def processTACStatements(implicit state: State, partialResults: RefArrayBuffer[SomePartialResult]): Unit = {
-        val bytecode = state.method.definedMethod.body.get
+        val bytecode = state.callContext.method.definedMethod.body.get
         val tac = state.tac
         tac.stmts.foreach {
-            case stmt @ Assignment(_, _, expr) if expr.isFieldRead ⇒ {
+            case stmt @ Assignment(_, _, expr) if expr.isFieldRead ⇒
                 val fieldRead = expr.asFieldRead
                 if (fieldRead.declaredFieldType.isReferenceType) {
                     // Internally, generic fields have type "Object" due to type erasure. In many cases
@@ -109,8 +111,8 @@ final class TypePropagationAnalysis private[analyses] (
                             registerEntityForBackwardPropagation(ef, mostPreciseFieldType)
                     }
                 }
-            }
-            case fieldWrite: FieldWriteAccessStmt[_] ⇒ {
+
+            case fieldWrite: FieldWriteAccessStmt[_] ⇒
                 if (fieldWrite.declaredFieldType.isReferenceType) {
                     fieldWrite.resolveField match {
                         case Some(f: Field) if project.isProjectType(f.classFile.thisType) ⇒
@@ -120,13 +122,13 @@ final class TypePropagationAnalysis private[analyses] (
                             registerEntityForForwardPropagation(ef, UIDSet(ef.declaredFieldType.asReferenceType))
                     }
                 }
-            }
-            case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID ⇒ {
+
+            case Assignment(_, _, expr) if expr.astID == ArrayLoad.ASTID ⇒
                 state.methodReadsArrays = true
-            }
-            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID ⇒ {
+
+            case stmt: Stmt[_] if stmt.astID == ArrayStore.ASTID ⇒
                 state.methodWritesArrays = true
-            }
+
             case _ ⇒
         }
     }
@@ -135,17 +137,17 @@ final class TypePropagationAnalysis private[analyses] (
 
         case EUBP(e: DefinedMethod, _: Callees) ⇒
             if (debug) {
-                assert(e == state.method)
+                assert(e == state.callContext.method)
                 _trace.traceCalleesUpdate(e)
             }
             handleUpdateOfCallees(eps.asInstanceOf[EPS[DefinedMethod, Callees]])(state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity ⇒
-            if (debug) _trace.traceTypeUpdate(state.method, e, t.types)
+            if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
             handleUpdateOfOwnTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) ⇒
-            if (debug) _trace.traceTypeUpdate(state.method, e, t.types)
+            if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
             handleUpdateOfBackwardPropagationTypeSet(eps.asInstanceOf[EPS[TypeSetEntity, InstantiatedTypes]])(state)
 
         case _ ⇒
@@ -237,7 +239,7 @@ final class TypePropagationAnalysis private[analyses] (
         state:          State,
         partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
-        val bytecode = state.method.definedMethod.body.get
+        val bytecode = state.callContext.method.definedMethod.body.get
         for {
             pc ← callees.callSitePCs
             callee ← callees.callees(pc)
@@ -277,13 +279,9 @@ final class TypePropagationAnalysis private[analyses] (
             }
         }
 
-        // This is the only place where we can find out whether a VirtualDeclaredMethod is static or not!
-        val isStaticCall = bytecode.instructions(pc).isInstanceOf[INVOKESTATIC]
-        // Sanity check.
-        assert(!callee.hasSingleDefinedMethod || !isStaticCall || (isStaticCall && callee.asDefinedMethod.definedMethod.isStatic))
-
         // If the call is not static, we need to take the implicit "this" parameter into account.
-        if (!isStaticCall) {
+        if (callee.hasSingleDefinedMethod && !callee.definedMethod.isStatic ||
+            !callee.hasSingleDefinedMethod && !bytecode.instructions(pc).isInvokeStatic) {
             params += callee.declaringClassType
         }
 

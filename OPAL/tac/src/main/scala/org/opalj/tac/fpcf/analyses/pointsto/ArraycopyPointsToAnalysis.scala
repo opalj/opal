@@ -17,7 +17,6 @@ import org.opalj.fpcf.Results
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.ArrayType
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -56,7 +55,7 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] ( final val project: 
     }
 
     def processNewCaller(
-        caller:          DefinedMethod,
+        callContext:     ContextType,
         pc:              Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -65,8 +64,8 @@ abstract class ArraycopyPointsToAnalysis private[pointsto] ( final val project: 
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet](
-                caller, FinalEP(caller.definedMethod, TheTACAI(tac))
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
+                callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
             )
 
         val sourceArr = params.head

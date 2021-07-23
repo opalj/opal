@@ -10,7 +10,6 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
-import org.opalj.br.DeclaredMethod
 
 /**
  * Mix-in trait for points-to analyses using typesets ([[TypeBasedPointsToSet]]) as points-to sets.
@@ -29,11 +28,11 @@ trait TypeBasedAnalysis extends AbstractPointsToBasedAnalysis {
     override protected[this] def emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
     override protected[this] def createPointsToSet(
-        pc:             Int,
-        declaredMethod: DeclaredMethod,
-        allocatedType:  ReferenceType,
-        isConstant:     Boolean,
-        isEmptyArray:   Boolean        = false
+        pc:            Int,
+        callContext:   ContextType,
+        allocatedType: ReferenceType,
+        isConstant:    Boolean,
+        isEmptyArray:  Boolean       = false
     ): TypeBasedPointsToSet = TypeBasedPointsToSet(UIDSet(allocatedType))
 
     @inline protected[this] def getTypeOf(element: ReferenceType): ReferenceType = element

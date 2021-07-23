@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package cg
 package reflection
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.BaseType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -20,13 +22,53 @@ object TypesUtil {
      */
     def getPossibleForNameClasses(
         className: Expr[V],
-        pc:        Option[Int],
         stmts:     Array[Stmt[V]],
         project:   SomeProject
     ): Option[Set[ObjectType]] = {
-        val classNamesOpt = StringUtil.getPossibleStrings(className, pc, stmts)
+        val classNamesOpt = StringUtil.getPossibleStrings(className, stmts)
         classNamesOpt.map(_.map(cls ⇒
             ObjectType(cls.replace('.', '/'))).filter(project.classFile(_).isDefined))
+    }
+
+    /**
+     * Returns classes that may be loaded by an invocation of Class.forName.
+     * Clients MUST handle TWO types of dependencies:
+     * - One where the depender is the given one and the dependee provides allocation sites of Class
+     * objects on which the method in question is defined AND
+     * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
+     * and the dependee provides allocation sites of Strings that give class names of such classes
+     */
+    def getPossibleForNameClasses(
+        className: Expr[V],
+        context:   Context,
+        depender:  Entity,
+        stmts:     Array[Stmt[V]],
+        project:   SomeProject,
+        failure:   () ⇒ Unit
+    )(
+        implicit
+        typeProvider: TypeProvider,
+        state:        TypeProviderState,
+        ps:           PropertyStore
+    ): Set[ObjectType] = {
+        StringUtil.getPossibleStrings(className, context, depender, stmts, failure).map { cls ⇒
+            val tpe = ReferenceType(cls.replace('.', '/'))
+            if (tpe.isArrayType) ObjectType.Object else tpe.asObjectType
+        }.filter(project.classFile(_).isDefined)
+    }
+
+    /**
+     * Returns class that may be loaded by an invocation of Class.forName with the given String.
+     */
+    def getPossibleForNameClass(
+        classNameDefSite: Int,
+        stmts:            Array[Stmt[V]],
+        project:          SomeProject
+    ): Option[ObjectType] = {
+        StringUtil.getString(classNameDefSite, stmts).map { cls ⇒
+            val tpe = ReferenceType(cls.replace('.', '/'))
+            if (tpe.isArrayType) ObjectType.Object else tpe.asObjectType
+        }.filter(project.classFile(_).isDefined)
     }
 
     /**
@@ -36,7 +78,6 @@ object TypesUtil {
      */
     def getPossibleTypes(
         value:   Expr[V],
-        pc:      Int,
         stmts:   Array[Stmt[V]],
         project: SomeProject
     ): Option[Iterator[Type]] = {
@@ -69,8 +110,14 @@ object TypesUtil {
             if (expr.isClassConst) {
                 possibleTypes += stmts(defSite).asAssignment.expr.asClassConst.value
             } else if (expr.isStaticFunctionCall) {
+                val className =
+                    if (expr.asFunctionCall.descriptor.parameterTypes.head eq ObjectType.String)
+                        expr.asStaticFunctionCall.params.head
+                    else
+                        expr.asStaticFunctionCall.params(1)
+
                 val possibleClassesOpt = getPossibleForNameClasses(
-                    expr.asStaticFunctionCall.params.head, Some(pc), stmts, project
+                    className, stmts, project
                 )
                 if (possibleClassesOpt.isEmpty) {
                     return None;
@@ -78,7 +125,7 @@ object TypesUtil {
 
                 possibleTypes ++= possibleClassesOpt.get
             } else if (expr.isVirtualFunctionCall) {
-                val typesOfVarOpt = getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar, pc)
+                val typesOfVarOpt = getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar)
                 if (typesOfVarOpt.isEmpty) {
                     return None;
                 }
@@ -91,6 +138,105 @@ object TypesUtil {
         }
 
         Some(possibleTypes.iterator)
+    }
+
+    /**
+     * Returns types that a given expression potentially evaluates to.
+     * Identifies uses of Class constants, class instances returned from Class.forName,
+     * by accesses to a primitive type's class as well as from Object.getClass.
+     * Clients MUST handle TWO types of dependencies:
+     * - One where the depender is the given one and the dependee provides allocation sites of Class
+     * objects AND
+     * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
+     * and the dependee provides allocation sites of Strings that give class names of such classes
+     */
+    private[reflection] def getPossibleTypes(
+        context:  Context,
+        value:    Expr[V],
+        depender: Entity,
+        stmts:    Array[Stmt[V]],
+        project:  SomeProject,
+        failure:  () ⇒ Unit
+    )(
+        implicit
+        typeProvider: TypeProvider,
+        state:        TypeProviderState,
+        ps:           PropertyStore
+    ): Set[Type] = {
+        var possibleTypes: Set[Type] = Set.empty
+
+        AllocationsUtil.handleAllocations(
+            value, context, depender, stmts, _ eq ObjectType.Class, failure
+        ) { (allocationContext, defSite, _stmts) ⇒
+            possibleTypes ++= getPossibleTypes(
+                allocationContext, defSite, (depender, "getPossibleTypes"), _stmts, project, failure
+            )
+        }
+
+        possibleTypes
+    }
+
+    /**
+     * Returns types provided by a given definition site.
+     * Identifies uses of Class constants, class instances returned from Class.forName,
+     * by accesses to a primitive type's class as well as from Object.getClass.
+     * Clients MUST handle TWO types of dependencies:
+     * - One where the depender is the given one and the dependee provides allocation sites of Class
+     * objects AND
+     * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
+     * and the dependee provides allocation sites of Strings that give class names of such classes
+     */
+    private[reflection] def getPossibleTypes(
+        context:  Context,
+        defSite:  Int,
+        depender: Entity,
+        stmts:    Array[Stmt[V]],
+        project:  SomeProject,
+        failure:  () ⇒ Unit
+    )(
+        implicit
+        typeProvider: TypeProvider,
+        state:        TypeProviderState,
+        ps:           PropertyStore
+    ): Set[Type] = {
+        var possibleTypes: Set[Type] = Set.empty
+
+        val expr = stmts(defSite).asAssignment.expr
+
+        if (expr.isClassConst) {
+            possibleTypes += expr.asClassConst.value
+        } else if (isForName(expr)) {
+            val className =
+                if (expr.asFunctionCall.descriptor.parameterTypes.head eq ObjectType.String)
+                    expr.asStaticFunctionCall.params.head
+                else
+                    expr.asStaticFunctionCall.params(1)
+
+            possibleTypes ++= getPossibleForNameClasses(
+                className, context, depender, stmts, project, failure
+            )
+        } else if (isGetClass(expr)) {
+            val typesOfVarOpt = getTypesOfVar(expr.asVirtualFunctionCall.receiver.asVar)
+            if (typesOfVarOpt.isEmpty)
+                failure()
+            else
+                possibleTypes ++= typesOfVarOpt.get
+        } else if (isBaseTypeLoad(expr)) {
+            possibleTypes += getBaseType(expr)
+        }
+
+        possibleTypes
+    }
+
+    private[this] def isForName(expr: Expr[V]): Boolean = { // static call to Class.forName
+        expr.isStaticFunctionCall &&
+            (expr.asStaticFunctionCall.declaringClass eq ObjectType.Class) &&
+            expr.asStaticFunctionCall.name == "forName"
+    }
+
+    private[this] def isGetClass(expr: Expr[V]): Boolean = { // virtual call to Object.getClass
+        expr.isVirtualFunctionCall && expr.asVirtualFunctionCall.name == "getClass" &&
+            expr.asVirtualFunctionCall.descriptor == MethodDescriptor.withNoArgs(ObjectType.Class)
     }
 
     /**
@@ -120,8 +266,7 @@ object TypesUtil {
      * Otherwise, the call site is marked as incomplete and an empty Iterator is returned.
      */
     private[this] def getTypesOfVar(
-        uvar: V,
-        pc:   Int
+        uvar: V
     ): Option[Iterator[ReferenceType]] = {
         val value = uvar.value.asReferenceValue
         if (value.isPrecise) value.leastUpperType.map(Iterator(_))

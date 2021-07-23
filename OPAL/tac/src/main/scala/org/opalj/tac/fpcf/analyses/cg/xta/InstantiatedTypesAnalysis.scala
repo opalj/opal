@@ -373,7 +373,7 @@ class InstantiatedTypesAnalysisScheduler(
             // Only object types should be initially instantiated.
             ot = iit.asObjectType
         ) {
-            // Assign initial types to all accessable fields.
+            // Assign initial types to all accessible fields.
             p.classFile(ot) match {
                 case Some(cf) ⇒
                     for (f ← cf.fields if f.isNotFinal && fieldIsRelevant(f) && fieldIsAccessible(f)) {
@@ -408,9 +408,7 @@ class InstantiatedTypesAnalysisScheduler(
                         initialize(fieldSetEntity, initialAssignments)
                     }
                 case None ⇒
-                    // Sanity check. If some other class than String is not available, there is probably a bug here.
-                    if (ot != ObjectType.String)
-                        sys.error(s"Class file of $ot is not available.")
+                // Nothing to do here, no classfile => no fields
             }
         }
 

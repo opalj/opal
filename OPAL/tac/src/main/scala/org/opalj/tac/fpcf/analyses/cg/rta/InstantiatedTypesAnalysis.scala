@@ -196,7 +196,7 @@ class InstantiatedTypesAnalysis private[analyses] (
 object InstantiatedTypesAnalysis {
     def update(
         p:                    SomeProject,
-        newInstantiatedTypes: UIDSet[ObjectType]
+        newInstantiatedTypes: UIDSet[ReferenceType]
     )(
         eop: EOptionP[SomeProject, InstantiatedTypes]
     ): Option[InterimEP[SomeProject, InstantiatedTypes]] = eop match {

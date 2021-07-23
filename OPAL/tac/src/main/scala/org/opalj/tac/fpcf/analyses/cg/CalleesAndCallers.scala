@@ -16,7 +16,6 @@ import org.opalj.fpcf.PartialResult
 import org.opalj.fpcf.Property
 import org.opalj.value.ValueInformation
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -40,7 +39,10 @@ sealed trait CalleesAndCallers {
     final def partialResults(
         caller: DeclaredMethod
     ): TraversableOnce[PartialResult[DeclaredMethod, _ >: Null <: Property]] =
-        Iterator(partialResultForCallees(caller)) ++ partialResultsForCallers
+        if (directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty)
+            partialResultsForCallers
+        else
+            Iterator(partialResultForCallees(caller)) ++ partialResultsForCallers
 
     protected def directCallees: IntMap[IntTrieSet] = IntMap.empty
 
@@ -130,9 +132,9 @@ trait Calls extends CalleesAndCallers {
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, Callers]] =
         List.empty
 
-    private[cg] def addCall(
-        caller: DeclaredMethod, callee: DeclaredMethod, pc: Int
-    ): Unit = {
+    def addCall(context: Context, pc: Int, callee: DeclaredMethod): Unit = {
+        val caller = context.method.asDefinedMethod
+
         val calleeId = callee.id
         val oldCalleesAtPCOpt = _callees.get(pc)
         if (oldCalleesAtPCOpt.isEmpty) {
@@ -180,13 +182,13 @@ trait IndirectCallsBase extends Calls {
     override protected def indirectCallees: IntMap[IntTrieSet] = _callees
 
     def addCall(
-        caller:   DefinedMethod,
-        callee:   DeclaredMethod,
+        context:  Context,
         pc:       Int,
+        callee:   DeclaredMethod,
         params:   Seq[Option[(ValueInformation, IntTrieSet)]],
         receiver: Option[(ValueInformation, IntTrieSet)]
     ): Unit = {
-        addCall(caller, callee, pc)
+        addCall(context, pc, callee)
         _parameters = _parameters.updated(
             pc,
             _parameters.getOrElse(pc, IntMap.empty).updated(callee.id, params)
@@ -195,13 +197,12 @@ trait IndirectCallsBase extends Calls {
             pc,
             _receivers.getOrElse(pc, IntMap.empty).updated(callee.id, receiver)
         )
-
     }
 
     def addCallOrFallback(
-        caller:             DefinedMethod,
-        callee:             org.opalj.Result[Method],
+        context:            Context,
         pc:                 Int,
+        callee:             org.opalj.Result[Method],
         callerPackage:      String,
         fallbackType:       ObjectType,
         fallbackName:       String,
@@ -210,7 +211,7 @@ trait IndirectCallsBase extends Calls {
         receiver:           Option[(ValueInformation, IntTrieSet)]
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         if (callee.hasValue) {
-            addCall(caller, declaredMethods(callee.value), pc, parameters, receiver)
+            addCall(context, pc, declaredMethods(callee.value), parameters, receiver)
         } else {
             val fallbackCallee = declaredMethods(
                 fallbackType,
@@ -219,8 +220,7 @@ trait IndirectCallsBase extends Calls {
                 fallbackName,
                 fallbackDescriptor
             )
-            addCall(caller, fallbackCallee, pc, parameters, receiver)
-
+            addCall(context, pc, fallbackCallee, parameters, receiver)
         }
     }
 }
