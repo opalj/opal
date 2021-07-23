@@ -152,9 +152,15 @@ class L1ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis
         genericTypeBounds
     }
 
+    val defaultTransitivelyImmutableTypes = project.config.getStringList(
+        "org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
+    ).toArray().toList.map(s ⇒ ObjectType(s.asInstanceOf[String])).toSet
+
     def doDetermineL1ClassImmutability(e: Entity): ProperPropertyComputationResult = {
         e match {
             case t: ObjectType ⇒
+                if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
+                    return Result(t, TransitivelyImmutableClass)
                 //this is safe
                 val a = classHierarchy.superclassType(t)
                 a match {

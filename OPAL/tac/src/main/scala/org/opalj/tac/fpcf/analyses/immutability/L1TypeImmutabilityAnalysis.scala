@@ -51,13 +51,17 @@ import org.opalj.br.analyses.ProjectInformationKeys
  */
 class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAnalysis {
 
-    def doDetermineTypeImmutability_new(
+    val defaultTransitivelyImmutableTypes = project.config.getStringList(
+        "org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
+    ).toArray().toList.map(s ⇒ ObjectType(s.asInstanceOf[String])).toSet
+
+    def doDetermineTypeImmutability(
         typeExtensibility: ObjectType ⇒ Answer
     )(
         e: Entity
     ): ProperPropertyComputationResult = e match {
         case t: ObjectType ⇒ step1(typeExtensibility)(t)
-        case _             ⇒ throw new IllegalArgumentException(s"$e is not an ObjectType")
+        case _ ⇒ throw new IllegalArgumentException(s"$e is not an ObjectType")
     }
 
     /**
@@ -69,6 +73,8 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
         t: ObjectType
     ): ProperPropertyComputationResult =
         {
+          if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
+            return Result(t, TransitivelyImmutableType)
             val te = typeExtensibility(t)
             te match {
                 case Yes | Unknown ⇒
@@ -305,7 +311,7 @@ object LazyL1TypeImmutabilityAnalysis extends L1TypeImmutabilityAnalysisSchedule
         val typeExtensibility = p.get(TypeExtensibilityKey)
         val analysis = new L1TypeImmutabilityAnalysis(p)
         val analysisRunner: ProperPropertyComputation[Entity] =
-            analysis.doDetermineTypeImmutability_new(typeExtensibility)
+            analysis.doDetermineTypeImmutability(typeExtensibility)
         ps.registerLazyPropertyComputation(TypeImmutability.key, analysisRunner)
         analysis
     }

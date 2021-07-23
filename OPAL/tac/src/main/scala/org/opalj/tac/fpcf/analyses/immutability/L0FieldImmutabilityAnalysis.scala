@@ -133,10 +133,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             "org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis.considerGenericity"
         )
 
-    val defaultTransitivelyImmutableTypes = project.config.getStringList(
-        "org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis.defaultTransitivelyImmutableTypes"
-    ).toArray().toList.map(s ⇒ ObjectType(s.asInstanceOf[String])).toSet
-
     def doDetermineFieldImmutability(entity: Entity): PropertyComputationResult = entity match {
         case field: Field ⇒ determineFieldImmutability(field)
         case _ ⇒
@@ -203,13 +199,9 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             if (objectType.isBaseType) {
                 // base types are by design transitively immutable
                 //state.typeImmutability = true // true is default
-            } else if (objectType.isArrayType) {
-                // Because the entries of an array can be reassigned we state it as mutable
+            } else if (objectType == ObjectType.Object || //handling generic fields
+              objectType.isArrayType) { //Because the entries of an array can be reassigned we state it as mutable
                 state.typeImmutability = MutableType
-            } else if (defaultTransitivelyImmutableTypes.contains(objectType.asObjectType)) {
-                //handles the configured transitively immutable types as transitively immutable
-            } else if (objectType == ObjectType.Object) {
-                state.typeImmutability = MutableType //handling generic fields
             } else {
                 propertyStore(objectType, TypeImmutability.key) match {
                     case LBP(TransitivelyImmutableType) ⇒ // transitively immutable type is set as default
@@ -357,16 +349,12 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
         )(implicit state: State): Unit = {
 
             /**
-             * In case of the concrete assigned classtype is known this method handles the immutability of it.
+             * In case of the concrete assigned class-type is known this method handles the immutability of it.
              * @note [[state.concreteClassTypeIsKnown]] must be set to true, before calling this function
              */
             def handleKnownClassType(objectType: ObjectType): Unit = {
-
-                if (defaultTransitivelyImmutableTypes.contains(objectType))
-                    state.classImmutability = TransitivelyImmutableClass
-                else
                     propertyStore(objectType, ClassImmutability.key) match {
-                        case LBP(TransitivelyImmutableClass) ⇒ //nothing to do ; transitively immutable ist default
+                        case LBP(TransitivelyImmutableClass) ⇒ //nothing to do ; transitively immutable is default
 
                         case FinalEP(t, DependentImmutableClass(_)) ⇒
                             state.classImmutability = DependentImmutableClass(Set.empty).meet(state.classImmutability)
