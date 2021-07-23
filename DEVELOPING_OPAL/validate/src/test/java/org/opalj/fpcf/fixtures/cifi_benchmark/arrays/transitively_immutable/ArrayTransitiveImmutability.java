@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.cifi_benchmark.arrays.transitively_immutable;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
@@ -32,11 +31,11 @@ public final class ArrayTransitiveImmutability {
 
     @TransitivelyImmutableField("The elements of the array can not escape")
     @EffectivelyNonAssignableField("The array is not initialized.")
-    private CustomObject[] notInitializedArray;
+    private Object[] notInitializedArray;
 
     @TransitivelyImmutableField("")
     @EffectivelyNonAssignableField("")
-    private CustomObject[] clonedArray = new CustomObject[]{new CustomObject(), new CustomObject()};
+    private Object[] clonedArray = new Object[]{new Object(), new Object()};
 
-    public CustomObject[] getClonedArray(){ return  clonedArray.clone(); }
+    public Object[] getClonedArray(){ return  clonedArray.clone(); }
 }

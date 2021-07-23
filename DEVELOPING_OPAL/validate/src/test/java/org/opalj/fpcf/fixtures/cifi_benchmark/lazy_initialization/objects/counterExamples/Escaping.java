@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.objects.counterExamples;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 
 /**
@@ -10,57 +9,57 @@ import org.opalj.fpcf.properties.immutability.field_assignability.AssignableFiel
 public class Escaping {
 
     @AssignableField("The field is assigned to another field before the guarding if statement.")
-    private CustomObject normalDoubleCheckedLockingEscapesBeforeGuard;
+    private Object normalDoubleCheckedLockingEscapesBeforeGuard;
 
     @AssignableField("The field can be assigned multiple times.")
-    private CustomObject escapingInteger;
+    private Object escapingObject;
 
-    public synchronized CustomObject getNormalDoubleCheckedLockingEscapesBeforeGuard() {
-        this.escapingInteger = normalDoubleCheckedLockingEscapesBeforeGuard;
+    public synchronized Object getNormalDoubleCheckedLockingEscapesBeforeGuard() {
+        this.escapingObject = normalDoubleCheckedLockingEscapesBeforeGuard;
         if (this.normalDoubleCheckedLockingEscapesBeforeGuard == null)
-            this.normalDoubleCheckedLockingEscapesBeforeGuard = new CustomObject();
+            this.normalDoubleCheckedLockingEscapesBeforeGuard = new Object();
         return this.normalDoubleCheckedLockingEscapesBeforeGuard;
     }
 
     @AssignableField("The field is read before it is assigned in the lazy initialization pattern.")
-    private CustomObject doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment;
+    private Object doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment;
 
-        public synchronized CustomObject getNormalDoubleCheckedLocking () {
+        public synchronized Object getNormalDoubleCheckedLocking () {
         if (this.doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment == null) {
-            this.escapingInteger = doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment;
-            this.doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment = new CustomObject();
+            this.escapingObject = doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment;
+            this.doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment = new Object();
         }
         return this.doubleCheckedLockingAssignedToInstanceFieldEscapesWithinGuardBeforeAssignment;
     }
 
     @AssignableField("The field value escapes via assignment to a static field before lazy initialization")
-    private CustomObject doubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass;
+    private Object doubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass;
 
-    public synchronized CustomObject getDoubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass() {
-        StaticClass.customObject = doubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass;
+    public synchronized Object getDoubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass() {
+        StaticClass.object = doubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass;
         if (this.doubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass == null)
-            this.doubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass = new CustomObject();
+            this.doubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass = new Object();
         return this.doubleCheckedLockingAssignedToPublicStaticFieldOfAnotherClass;
     }
 
     @AssignableField("The field has two getters, that could interleave")
-    private CustomObject customObjectWithTwoLazyInitializedGetters;
+    private Object customObjectWithTwoLazyInitializedGetters;
 
-    public synchronized CustomObject getCustomObject1() {
+    public synchronized Object getObject1() {
         if(customObjectWithTwoLazyInitializedGetters ==null){
-            customObjectWithTwoLazyInitializedGetters = new CustomObject();
+            customObjectWithTwoLazyInitializedGetters = new Object();
         }
         return customObjectWithTwoLazyInitializedGetters;
     }
 
-    public synchronized CustomObject getCustomObject2() {
+    public synchronized Object getObject2() {
         if(customObjectWithTwoLazyInitializedGetters ==null){
-            customObjectWithTwoLazyInitializedGetters = new CustomObject();
+            customObjectWithTwoLazyInitializedGetters = new Object();
         }
         return customObjectWithTwoLazyInitializedGetters;
     }
 }
 
 class StaticClass{
-    public static CustomObject customObject;
+    public static Object object;
 }

@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.arrays.not_transitively_immutable;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
@@ -19,27 +18,27 @@ public class ArraysWithDifferentTypes<T> {
 
     @NonTransitivelyImmutableField("The elements of the array are manipulated after initialization.")
     @NonAssignableField("The field is final")
-    private final CustomObject[] finalArrayWithSetterForOneElement =
-            new CustomObject[]{new CustomObject(), new CustomObject()};
+    private final Object[] finalArrayWithSetterForOneElement =
+            new Object[]{new Object(), new Object()};
 
     public void setB() {
-        finalArrayWithSetterForOneElement[2] = new CustomObject();
+        finalArrayWithSetterForOneElement[2] = new Object();
     }
 
     
     @MutableField("Array is assignable.")
     @AssignableField("The array is initialized always when the InitC function is called")
-    private CustomObject[] assignableArray;
+    private Object[] assignableArray;
 
     public void setC() {
-        assignableArray = new CustomObject[]{new CustomObject(), new CustomObject()};
+        assignableArray = new Object[]{new Object(), new Object()};
     }
 
     @NonTransitivelyImmutableField("The elements of the array can escape.")
     @EffectivelyNonAssignableField("The array is eager initialized.")
-    private CustomObject[] arrayThatCanEscapeViaGetter = new CustomObject[]{new CustomObject(), new CustomObject()};
+    private Object[] arrayThatCanEscapeViaGetter = new Object[]{new Object(), new Object()};
 
-    public CustomObject[] getArrayThatCanEscapeViaGetter() {
+    public Object[] getArrayThatCanEscapeViaGetter() {
         return arrayThatCanEscapeViaGetter;
     }
 
@@ -54,13 +53,13 @@ public class ArraysWithDifferentTypes<T> {
     
     @NonTransitivelyImmutableField("The array escapes via the constructor")
     @EffectivelyNonAssignableField("The field is initialized in the constructor")
-    private CustomObject[] privateObjectArrayEscapingViaConstructor;
+    private Object[] privateObjectArrayEscapingViaConstructor;
 
     @NonTransitivelyImmutableField("The array escapes via the constructor")
     @EffectivelyNonAssignableField("The field is initialized in the constructor")
     private T[] privateTArrayEscapingViaConstructor;
 
-    ArraysWithDifferentTypes(String[] stringArray, int[] intArray, CustomObject[] objectArr, T[] tArray) {
+    ArraysWithDifferentTypes(String[] stringArray, int[] intArray, Object[] objectArr, T[] tArray) {
         this.privateStringArrayEscapingViaConstructor = stringArray;
         this.privateIntArrayEscapingViaConstructor = intArray;
         this.privateObjectArrayEscapingViaConstructor = objectArr;

@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.arrays.not_transitively_immutable;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
@@ -32,10 +31,10 @@ public final class PrivateFinalArraysEscapeViaConstructor {
 
     @NonTransitivelyImmutableField("Array has a primitive type but is assigned in the constructor and, thus, escapes")
     @NonAssignableField("Array is final")
-    private final CustomObject[] objectArray;
+    private final Object[] objectArray;
 
     public PrivateFinalArraysEscapeViaConstructor(char[] charArray, byte[] byteArray, int[] intArray,
-                                                  long[] longArray, CustomObject[] objectArray) {
+                                                  long[] longArray, Object[] objectArray) {
         this.charArray = charArray;
         this.byteArray = byteArray;
         this.intArray = intArray;

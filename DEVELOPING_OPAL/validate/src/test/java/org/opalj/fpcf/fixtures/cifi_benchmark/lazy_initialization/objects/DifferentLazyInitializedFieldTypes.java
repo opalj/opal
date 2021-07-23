@@ -116,8 +116,8 @@ public class DifferentLazyInitializedFieldTypes {
         return inGetterSynchronizedLazyInitializedLongField;
     }
 
-    @TransitivelyImmutableField("")
-    @LazilyInitializedField("")
+    @TransitivelyImmutableField("The field is not assignable and has a primitive value")
+    @LazilyInitializedField("The field is assigned deterministic with always the same value")
     private Long lO3;
 
     public synchronized Long lO3(){

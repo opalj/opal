@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.objects;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.field_assignability.UnsafelyLazilyInitializedField;
 
 import java.util.Random;
@@ -11,11 +10,11 @@ import java.util.Random;
 public class UnsafelyLazilyInitialization {
 
     @UnsafelyLazilyInitializedField("the write to the object reference simpleLazyInitialization is not atomic")
-    private static CustomObject simpleLazyInitialization;
+    private static Object simpleLazyInitialization;
 
-    public static CustomObject init() {
+    public static Object init() {
         if (simpleLazyInitialization == null)
-            simpleLazyInitialization = new CustomObject();
+            simpleLazyInitialization = new Object();
         return simpleLazyInitialization;
     }
 
@@ -30,36 +29,36 @@ public class UnsafelyLazilyInitialization {
     }
 
     @UnsafelyLazilyInitializedField("the field nonnull check is not synchronized guarded")
-    private CustomObject noSynchronizedGuard;
-    public CustomObject getNoSynchronizedGuard() {
+    private Object noSynchronizedGuard;
+    public Object getNoSynchronizedGuard() {
         if(noSynchronizedGuard ==null){
-            synchronized(CustomObject.class) {
-                noSynchronizedGuard = new CustomObject();
+            synchronized(Object.class) {
+                noSynchronizedGuard = new Object();
             }
         }
         return noSynchronizedGuard;
     }
 
     @UnsafelyLazilyInitializedField(value = "the field write is not synchronized guarded")
-    private CustomObject twoNotSynchronizedGuards;
-    public CustomObject getTwoNotSynchronizedGuards() {
+    private Object twoNotSynchronizedGuards;
+    public Object getTwoNotSynchronizedGuards() {
         if(twoNotSynchronizedGuards ==null){
             if(twoNotSynchronizedGuards ==null){
-                twoNotSynchronizedGuards = new CustomObject();
+                twoNotSynchronizedGuards = new Object();
             }
         }
         return twoNotSynchronizedGuards;
     }
     
     @UnsafelyLazilyInitializedField("the field is written outside the synchronized block")
-    private CustomObject writeOutsideTheSynchronizedGuard;
-    public CustomObject getWriteOutsideTheSynchronizedGuard() {
+    private Object writeOutsideTheSynchronizedGuard;
+    public Object getWriteOutsideTheSynchronizedGuard() {
         if(writeOutsideTheSynchronizedGuard ==null){
             synchronized(this) {
                 if(writeOutsideTheSynchronizedGuard ==null){
 
                 }
-                writeOutsideTheSynchronizedGuard = new CustomObject();
+                writeOutsideTheSynchronizedGuard = new Object();
             }
 
         }
@@ -67,40 +66,40 @@ public class UnsafelyLazilyInitialization {
     }
 
     @UnsafelyLazilyInitializedField(value = "only a guard around the field write")
-    private CustomObject notNestedDCLWriteOnlyInGuard;
-    public CustomObject getNotNestedDCLWriteOnlyInGuard() {
+    private Object notNestedDCLWriteOnlyInGuard;
+    public Object getNotNestedDCLWriteOnlyInGuard() {
         if(notNestedDCLWriteOnlyInGuard ==null){
         }
         synchronized(this) {
         }
         if(notNestedDCLWriteOnlyInGuard ==null){
-            notNestedDCLWriteOnlyInGuard = new CustomObject();
+            notNestedDCLWriteOnlyInGuard = new Object();
         }
         return notNestedDCLWriteOnlyInGuard;
     }
 
     @UnsafelyLazilyInitializedField("the field read for the guard is outside the synchronized block")
-    private CustomObject fieldReadOutsideSynchronizedBlock;
+    private Object fieldReadOutsideSynchronizedBlock;
 
-    public CustomObject getFieldReadOutsideSynchronizedBlock(){
-        CustomObject tmpCustomObject = fieldReadOutsideSynchronizedBlock;
+    public Object getFieldReadOutsideSynchronizedBlock(){
+        Object tmpObject = fieldReadOutsideSynchronizedBlock;
         synchronized (this){
-            if(tmpCustomObject==null)
-                fieldReadOutsideSynchronizedBlock = new CustomObject();
+            if(tmpObject==null)
+                fieldReadOutsideSynchronizedBlock = new Object();
         }
         return fieldReadOutsideSynchronizedBlock;
     }
 
     @UnsafelyLazilyInitializedField("the field read for the guard is outside the synchronized block")
-    private CustomObject fieldReadOutsideSynchronizedBlockEarlyReturn;
+    private Object fieldReadOutsideSynchronizedBlockEarlyReturn;
 
-    public CustomObject getFieldReadOutsideSynchronizedBlockEarlyReturn(){
-        CustomObject tmpCustomObject = fieldReadOutsideSynchronizedBlockEarlyReturn;
-        if(tmpCustomObject!=null)
+    public Object getFieldReadOutsideSynchronizedBlockEarlyReturn(){
+        Object tmpObject = fieldReadOutsideSynchronizedBlockEarlyReturn;
+        if(tmpObject!=null)
             return fieldReadOutsideSynchronizedBlockEarlyReturn;
         synchronized (this){
-            if(tmpCustomObject==null)
-                fieldReadOutsideSynchronizedBlockEarlyReturn = new CustomObject();
+            if(tmpObject==null)
+                fieldReadOutsideSynchronizedBlockEarlyReturn = new Object();
         }
         return fieldReadOutsideSynchronizedBlockEarlyReturn;
     }

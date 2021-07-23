@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.assignability.clone_function;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
@@ -53,12 +52,12 @@ final class EscapesViaMethod {
     
     @MutableField("Field is assignable")
     @AssignableField("Field can be seen with different values while calling the clone method.")
-    private CustomObject customObject;
+    private Object object;
 
     public EscapesViaMethod clone(){
         EscapesViaMethod newInstance = new EscapesViaMethod();
-        Static.setCustomObject(newInstance.customObject);
-        newInstance.customObject = customObject;
+        Static.setObject(newInstance.object);
+        newInstance.object = object;
         return newInstance;
     }
 }
@@ -94,10 +93,10 @@ class Static {
         return integer;
     }
 
-    public static Integer customObject;
+    public static Integer object;
 
-    public static void setCustomObject(CustomObject customObject){
-        Static.customObject = Static.customObject;
+    public static void setObject(Object object){
+        Static.object = Static.object;
     }
 
 }
@@ -135,13 +134,13 @@ final class EscapesViaStaticSetterMethod {
     
     @MutableField("Field is assignable")
     @AssignableField("Field escapes via static setter")
-    private CustomObject customObject;
+    private Object object;
 
     public EscapesViaStaticSetterMethod clone(){
         EscapesViaStaticSetterMethod newInstance = new EscapesViaStaticSetterMethod();
-        CustomObject customObjectCopy = newInstance.customObject;
-        Static.setCustomObject(customObjectCopy);
-        newInstance.customObject = customObject;
+        Object objectCopy = newInstance.object;
+        Static.setObject(objectCopy);
+        newInstance.object = object;
         return newInstance;
     }
 }

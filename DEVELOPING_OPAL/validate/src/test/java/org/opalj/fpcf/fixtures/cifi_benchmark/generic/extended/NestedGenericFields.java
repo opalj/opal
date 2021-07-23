@@ -19,11 +19,13 @@ public class NestedGenericFields<T> {
     private final Generic<Generic<FinalClassWithNoFields>> nestedTransitivelyImmutable =
             new Generic<>(new Generic<>(new FinalClassWithNoFields()));
 
-    @DependentlyImmutableField("")
+    @DependentlyImmutableField(value = "The immutability of the field depends on the generic type parameter T",
+            parameter = {"T"})
     @EffectivelyNonAssignableField("field is final")
     private Generic<Generic<T>> nestedMutable;
 
-    @DependentlyImmutableField(value = "only generic typ parameters", parameter={"T"})
+    @DependentlyImmutableField(value = "The immutability of the field depends on the generic type parameter T",
+            parameter={"T"})
     @NonAssignableField("field is final")
     private final Generic<Generic<T>> nestedDependent;
 

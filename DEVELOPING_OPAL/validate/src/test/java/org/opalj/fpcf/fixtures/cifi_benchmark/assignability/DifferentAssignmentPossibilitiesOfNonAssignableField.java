@@ -15,17 +15,17 @@ public class DifferentAssignmentPossibilitiesOfNonAssignableField {
 
     @TransitivelyImmutableField("Field is non assignable and has a transitively immutable type.")
     @NonAssignableField("Field is final")
-    private final Object o;
+    private final Object object;
 
     public DifferentAssignmentPossibilitiesOfNonAssignableField(int n) {
-        this.o = new Integer(n);
+        this.object = new Integer(n);
     }
 
     public DifferentAssignmentPossibilitiesOfNonAssignableField() {
-        this.o = new Object();
+        this.object = new Object();
     }
 
-    public Object getO(){
-        return this.o;
+    public Object getObject(){
+        return this.object;
     }
 }

@@ -7,24 +7,20 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.fields.TransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
-//import edu.cmu.cs.glacier.qual.Immutable;
 
 /**
  * This class represents the test case in which only two transitively immutable
  * well known objects are assigned to a field.
  */
-//@Immutable
 @MutableType("class is not final")
 @NonTransitivelyImmutableClass("class has a non transitively immutable field but no mutable one")
 public class DifferentObjectsAssigned {
 
-    //@Immutable
     @TransitivelyImmutableField("Field only refers to transitively immutable objects")
     @NonAssignableField("field is final")
     final SuperClass a;
 
-    //@Immutable
-    @NonTransitivelyImmutableField("")
+    @NonTransitivelyImmutableField("The field is non-assignable and has not a transitively immutable value")
     @NonAssignableField("field is final")
     final SuperClass nonTransitivelyImmmutableField;
 
@@ -41,17 +37,17 @@ public class DifferentObjectsAssigned {
     }
 }
 
-@TransitivelyImmutableClass("")
+@TransitivelyImmutableClass("The class has only a transitively immutable field")
 class E1 extends SuperClass {
     private int n = 8;
 }
 
-@TransitivelyImmutableClass("")
+@TransitivelyImmutableClass("The class has only a transitively immutable field")
 class E2 extends SuperClass {
     private int n = 10;
 }
 
-@MutableClass("")
+@MutableClass("The class has only a mutable field")
 class M extends SuperClass {
     public int n = 10;
 }

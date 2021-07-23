@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.objects;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.fixtures.cifi_benchmark.general.ClassWithMutableFields;
 import org.opalj.fpcf.properties.immutability.field_assignability.LazilyInitializedField;
 
@@ -33,12 +32,12 @@ public class LazyInitialization {
     }
     
     @LazilyInitializedField("a simple variation of double checked locking without the outer guard")
-    private CustomObject onlyOneGuardWithinTheSynchronization;
+    private Object onlyOneGuardWithinTheSynchronization;
 
-    public CustomObject getOnlyOneGuardWithinTheSynchronization() {
+    public Object getOnlyOneGuardWithinTheSynchronization() {
         synchronized(this) {
             if(onlyOneGuardWithinTheSynchronization ==null){
-                onlyOneGuardWithinTheSynchronization = new CustomObject();
+                onlyOneGuardWithinTheSynchronization = new Object();
             }
         }
         return onlyOneGuardWithinTheSynchronization;
@@ -55,22 +54,22 @@ public class LazyInitialization {
     }
 
     @LazilyInitializedField("The field is lazily initialized within dcl pattern that is implemented with early return")
-    private CustomObject dclWithEarlyReturn;
+    private Object dclWithEarlyReturn;
 
-    public CustomObject getDclWithEarlyReturn(){
+    public Object getDclWithEarlyReturn(){
         if(dclWithEarlyReturn!=null)
             return dclWithEarlyReturn;
         synchronized(this) {
             if(dclWithEarlyReturn==null)
-                dclWithEarlyReturn = new CustomObject();
+                dclWithEarlyReturn = new Object();
         }
         return dclWithEarlyReturn;
     }
     
     @LazilyInitializedField("The field is synchronized guarded lazily initialized.")
-    private CustomObject loopsInDCLPattern;
+    private Object loopsInDCLPattern;
 
-    public CustomObject getLoopsInDCLPattern() {
+    public Object getLoopsInDCLPattern() {
         for(int i=0; i<1000; i++){}
         if(loopsInDCLPattern ==null){
             for(int i=0; i<1000; i++){}
@@ -78,7 +77,7 @@ public class LazyInitialization {
                 for(int i=0; i<1000; i++){}
                 if(loopsInDCLPattern ==null){
                     for(int i=0; i<1000; i++){}
-                    loopsInDCLPattern = new CustomObject();
+                    loopsInDCLPattern = new Object();
                 }
             }
         }

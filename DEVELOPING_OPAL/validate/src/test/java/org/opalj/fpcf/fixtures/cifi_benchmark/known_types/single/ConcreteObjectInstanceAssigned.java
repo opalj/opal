@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.known_types.single;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
@@ -31,7 +30,7 @@ class ConcreteObjectInstanceAssigned {
         return this.transitivelyImmutableClass;
     }
 
-    private final Object managedObjectManagerLock = new CustomObject();
+    private final Object managedObjectManagerLock = new Object();
 
     @NonTransitivelyImmutableField("all concrete objects that can be assigned are not known")
     private TransitivelyImmutableClass fieldWithMutableType = new TransitivelyImmutableClass();

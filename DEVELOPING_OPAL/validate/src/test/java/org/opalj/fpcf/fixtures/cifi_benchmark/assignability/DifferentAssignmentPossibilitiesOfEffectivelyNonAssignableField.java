@@ -15,17 +15,17 @@ public class DifferentAssignmentPossibilitiesOfEffectivelyNonAssignableField {
 
     @TransitivelyImmutableField("Field is effectively non assignable and has a transitively immutable type")
     @EffectivelyNonAssignableField("Field is only once assigned in the constructor via new created object or parameter")
-    private Object o;
+    private Object object;
 
     public DifferentAssignmentPossibilitiesOfEffectivelyNonAssignableField() {
-        this.o = new Object();
+        this.object = new Object();
     }
 
     public DifferentAssignmentPossibilitiesOfEffectivelyNonAssignableField(int n) {
-        this.o = new Integer(n);
+        this.object = new Integer(n);
     }
 
-    public Object getO(){
-        return this.o;
+    public Object getObject(){
+        return this.object;
     }
 }

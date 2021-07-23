@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.known_types.single;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
@@ -16,9 +15,9 @@ final class ConcreteTypeUnknown {
 
     @NonTransitivelyImmutableField("field has a mutable type")
     @NonAssignableField("field is final")
-    private final CustomObject customObject;
+    private final Object object;
 
-    public ConcreteTypeUnknown(CustomObject customObject) {
-        this.customObject = customObject;
+    public ConcreteTypeUnknown(Object object) {
+        this.object = object;
     }
 }

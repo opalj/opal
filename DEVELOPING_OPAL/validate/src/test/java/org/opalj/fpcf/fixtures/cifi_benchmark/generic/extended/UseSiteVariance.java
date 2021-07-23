@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.generic.extended;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.ClassWithMutableField;
+import org.opalj.fpcf.fixtures.cifi_benchmark.general.ClassWithMutableFields;
 import org.opalj.fpcf.fixtures.cifi_benchmark.generic.simple.Generic;
 import org.opalj.fpcf.properties.immutability.classes.NonTransitivelyImmutableClass;
 import org.opalj.fpcf.properties.immutability.classes.TransitivelyImmutableClass;
@@ -16,7 +16,7 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
  */
 @MutableType("class is not final")
 @NonTransitivelyImmutableClass("Class has a non transitively immutable field")
-class UseSiteVariance<T extends ClassWithMutableField> {
+class UseSiteVariance<T extends ClassWithMutableFields> {
 
     @NonTransitivelyImmutableField("The field type T extends a mutable type")
     @NonAssignableField("field is final")

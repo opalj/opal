@@ -1,7 +1,6 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.generic.simple;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.fixtures.cifi_benchmark.general.ClassWithMutableFields;
 import org.opalj.fpcf.fixtures.cifi_benchmark.general.FinalClassWithNoFields;
 import org.opalj.fpcf.fixtures.cifi_benchmark.general.FinalClassWithNonTransitivelyImmutableField;
@@ -15,8 +14,8 @@ import org.opalj.fpcf.properties.immutability.types.MutableType;
 /**
  * Class with multiple possibilities of generic types in combination with immutability.
  */
-@MutableType("")
-@NonTransitivelyImmutableClass("")
+@MutableType("The class is extensible")
+@NonTransitivelyImmutableClass("The class has non transitively immutable fields")
 public class GenericFields<T> {
 
     @NonTransitivelyImmutableField("The generic type parameter is concretized with a mutable type")
@@ -64,10 +63,10 @@ public class GenericFields<T> {
         this.multipleMutable = new MultipleGeneric<>(t, new ClassWithMutableFields(), fcwnf);
 
         this.singleNonTransitivelyImmutable =
-                new Generic(new FinalClassWithNonTransitivelyImmutableField(new CustomObject()));
+                new Generic(new FinalClassWithNonTransitivelyImmutableField(new Object()));
 
         this.multipleNonTransitivelyImmutable =
-                new MultipleGeneric<>(fcwnf,new FinalClassWithNonTransitivelyImmutableField(new CustomObject()), t);
+                new MultipleGeneric<>(fcwnf,new FinalClassWithNonTransitivelyImmutableField(new Object()), t);
 
         this.singleDependentlyImmutable = new Generic<>(t);
         this.multipleDependentUniform = new MultipleGeneric<T,T,T>(t,t,t);

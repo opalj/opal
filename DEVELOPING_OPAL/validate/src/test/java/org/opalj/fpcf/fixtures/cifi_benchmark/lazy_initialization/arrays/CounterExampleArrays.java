@@ -1,6 +1,5 @@
 package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.arrays;
 
-import org.opalj.fpcf.fixtures.cifi_benchmark.common.CustomObject;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 
@@ -11,26 +10,26 @@ public class CounterExampleArrays {
 
     @MutableField("Field is assignable")
     @AssignableField("Multiple assignments possible")
-    private CustomObject[] array;
+    private Object[] array;
 
-    public CustomObject[] getArray(int n) {
+    public Object[] getArray(int n) {
         if (array == null || array.length < n) {
-            this.array = new CustomObject[n];
+            this.array = new Object[n];
         }
         return array;
     }
 
     @MutableField("Field is assignable")
     @AssignableField("Field can be read with multiple values.")
-    private CustomObject[] b;
+    private Object[] b;
 
-    public CustomObject[] getB(boolean flag) throws Exception {
+    public Object[] getB(boolean flag) throws Exception {
         if(b!=null)
             return b;
         else if(flag)
             return b;
         else {
-            this.b = new CustomObject[5];
+            this.b = new Object[5];
             return b;
         }
     }
