@@ -69,5 +69,5 @@ object Dependencies {
   val br = Seq(scalaparsercombinators, scalaxml)
   val tools = Seq(txtmark, jacksonDF)
   val hermes = Seq(txtmark, jacksonDF, javafxBase)
-
+val a=""
 }
