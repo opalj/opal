@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.lazy_initialization.objects;
 
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;

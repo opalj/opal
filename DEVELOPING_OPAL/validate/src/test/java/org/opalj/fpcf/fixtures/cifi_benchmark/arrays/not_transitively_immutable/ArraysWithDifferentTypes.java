@@ -25,7 +25,6 @@ public class ArraysWithDifferentTypes<T> {
         finalArrayWithSetterForOneElement[2] = new Object();
     }
 
-    
     @MutableField("Array is assignable.")
     @AssignableField("The array is initialized always when the InitC function is called")
     private Object[] assignableArray;
@@ -50,7 +49,6 @@ public class ArraysWithDifferentTypes<T> {
     @EffectivelyNonAssignableField("The field is initialized in the constructor")
     private int[] privateIntArrayEscapingViaConstructor;
 
-    
     @NonTransitivelyImmutableField("The array escapes via the constructor")
     @EffectivelyNonAssignableField("The field is initialized in the constructor")
     private Object[] privateObjectArrayEscapingViaConstructor;

@@ -56,7 +56,6 @@ public class GenericFields<T> {
     private final MultipleGeneric<FinalClassWithNoFields,
             FinalClassWithNoFields, FinalClassWithNoFields> multipleTransitive;
 
-
     public GenericFields(T t, Object o, FinalClassWithNoFields fcwnf){
 
         this.singleMutable = new Generic(new ClassWithMutableFields());

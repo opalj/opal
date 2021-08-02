@@ -1,3 +1,4 @@
+/* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.fixtures.cifi_benchmark.known_types.multiple;
 
 import org.opalj.fpcf.properties.immutability.classes.MutableClass;

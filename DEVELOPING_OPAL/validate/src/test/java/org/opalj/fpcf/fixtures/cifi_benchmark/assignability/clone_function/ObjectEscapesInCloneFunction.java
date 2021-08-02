@@ -44,12 +44,10 @@ class ThereIsNoNewObjectInCloneFunctionCreated {
     }
 }
 
-
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 final class EscapesViaMethod {
 
-    
     @MutableField("Field is assignable")
     @AssignableField("Field can be seen with different values while calling the clone method.")
     private Object object;
@@ -62,11 +60,9 @@ final class EscapesViaMethod {
     }
 }
 
-
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 final class EscapingThroughIdentityFunction {
-
     
     @MutableField("Field is assignable")
     @AssignableField("The field value is assigned t the field integerCopy before it is set and, thus, " +
@@ -98,13 +94,11 @@ class Static {
     public static void setObject(Object object){
         Static.object = Static.object;
     }
-
 }
 
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 class EscapesViaGetterCall {
-
     
     @MutableField("field is assignable")
     @AssignableField("field can be seen with different values")
@@ -126,12 +120,10 @@ class EscapesViaGetterCall {
     }
 }
 
-
 @MutableType("Class is mutable")
 @MutableClass("Class has a mutable field")
 final class EscapesViaStaticSetterMethod {
 
-    
     @MutableField("Field is assignable")
     @AssignableField("Field escapes via static setter")
     private Object object;

@@ -24,7 +24,6 @@ public final class SimpleClonePattern {
     }
 }
 
-
 class CloneNonAssignableWithNewObject {
 
     @TransitivelyImmutableField("field is effectively non assignable and assigned with a transitively immutable object")

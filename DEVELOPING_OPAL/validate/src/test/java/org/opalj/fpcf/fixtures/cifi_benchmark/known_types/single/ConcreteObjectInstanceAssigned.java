@@ -35,7 +35,6 @@ class ConcreteObjectInstanceAssigned {
     @NonTransitivelyImmutableField("all concrete objects that can be assigned are not known")
     private TransitivelyImmutableClass fieldWithMutableType = new TransitivelyImmutableClass();
 
-
     //The many constructors are needed to simulate the case of multiple constructors
     public ConcreteObjectInstanceAssigned(int n){}
 

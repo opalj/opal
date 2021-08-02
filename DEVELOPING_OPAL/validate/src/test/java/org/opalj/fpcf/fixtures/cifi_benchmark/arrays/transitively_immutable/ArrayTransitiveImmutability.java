@@ -33,8 +33,8 @@ public final class ArrayTransitiveImmutability {
     @EffectivelyNonAssignableField("The array is not initialized.")
     private Object[] notInitializedArray;
 
-    @TransitivelyImmutableField("")
-    @EffectivelyNonAssignableField("")
+    @TransitivelyImmutableField("The field is not assignable and only assigned with transitively immutable objects.")
+    @EffectivelyNonAssignableField("The field is effectively only assigned once.")
     private Object[] clonedArray = new Object[]{new Object(), new Object()};
 
     public Object[] getClonedArray(){ return  clonedArray.clone(); }
