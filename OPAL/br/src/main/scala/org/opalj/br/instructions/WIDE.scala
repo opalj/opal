@@ -22,9 +22,9 @@ case object WIDE extends Instruction with ConstantLengthInstruction with NoLabel
 
     final def length: Int = 1
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def stackSlotsChange: Int = 0
 

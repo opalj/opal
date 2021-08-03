@@ -22,7 +22,7 @@ class LocationsContainer[S](implicit hermes: HermesConfig) {
     private var theLocationsCount = 0
     private var theLocations: Chain[Location[S]] = Naught
 
-    def +=(location: ⇒ Location[S]): Unit = {
+    def +=(location: => Location[S]): Unit = {
         theLocationsCount += 1
         if (theLocationsCount <= hermes.MaxLocations) {
             theLocations :&:= location

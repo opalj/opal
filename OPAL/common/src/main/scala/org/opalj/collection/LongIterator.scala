@@ -13,7 +13,7 @@ import org.opalj.collection.immutable.LongTrieSet
  *
  * @author Michael Eichberg
  */
-abstract class LongIterator extends AbstractIterator[Long] { self ⇒
+abstract class LongIterator extends AbstractIterator[Long] { self =>
 
     def ++(other: LongIterator): LongIterator = {
         new LongIterator {
@@ -37,11 +37,11 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
      */
     def next(): Long
 
-    override def exists(p: Long ⇒ Boolean): Boolean = {
+    override def exists(p: Long => Boolean): Boolean = {
         while (this.hasNext) { if (p(this.next())) return true; }
         false
     }
-    override def forall(p: Long ⇒ Boolean): Boolean = {
+    override def forall(p: Long => Boolean): Boolean = {
         while (this.hasNext) { if (!p(this.next())) return false; }
         true
     }
@@ -49,7 +49,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
         while (this.hasNext) { if (i == this.next()) return true; }
         false
     }
-    override def foldLeft[B](start: B)(f: (B, Long) ⇒ B): B = {
+    override def foldLeft[B](start: B)(f: (B, Long) => B): B = {
         var c = start
         while (this.hasNext) { c = f(c, next()) }
         c
@@ -67,7 +67,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
         }) { /*empty*/ }
     }
 
-    def map(f: Long ⇒ Long): LongIterator = {
+    def map(f: Long => Long): LongIterator = {
         new LongIterator {
             def hasNext: Boolean = self.hasNext
             def next(): Long = f(self.next())
@@ -82,18 +82,20 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
         }
     }
 
-    def map(f: Long ⇒ Int): IntIterator = new IntIterator {
+    def map(f: Long => Int): IntIterator = new IntIterator {
         def hasNext: Boolean = self.hasNext
         def next(): Int = f(self.next())
     }
-    override def map[X](m: Long ⇒ X): RefIterator[X] = new RefIterator[X] {
+    override def map[X](m: Long => X): RefIterator[X] = new RefIterator[X] {
         def hasNext: Boolean = self.hasNext
+
         def next: X = m(self.next())
+
     }
 
-    override def foreach[U](f: Long ⇒ U): Unit = while (hasNext) f(next())
+    override def foreach[U](f: Long => U): Unit = while (hasNext) f(next())
 
-    def flatMap(f: Long ⇒ LongIterator): LongIterator = {
+    def flatMap(f: Long => LongIterator): LongIterator = {
         new LongIterator {
             private[this] var it: LongIterator = LongIterator.empty
             private[this] def advanceIterator(): Unit = {
@@ -112,9 +114,9 @@ abstract class LongIterator extends AbstractIterator[Long] { self ⇒
         }
     }
 
-    override def withFilter(p: Long ⇒ Boolean): LongIterator = filter(p)
+    override def withFilter(p: Long => Boolean): LongIterator = filter(p)
 
-    override def filter(p: Long ⇒ Boolean): LongIterator = new LongIterator {
+    override def filter(p: Long => Boolean): LongIterator = new LongIterator {
         private[this] var hasNextValue: Boolean = true
         private[this] var v: Long = 0
         private[this] def goToNextValue(): Unit = {
@@ -242,10 +244,10 @@ object LongIterator {
         def next(): Long = {
             nextId += 1
             nextId match {
-                case 1 ⇒ i1
-                case 2 ⇒ i2
-                case 3 ⇒ i3
-                case _ ⇒ i4
+                case 1 => i1
+                case 2 => i2
+                case 3 => i3
+                case _ => i4
             }
         }
         override def toArray: Array[Long] = {

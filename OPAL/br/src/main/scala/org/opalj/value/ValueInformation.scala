@@ -123,16 +123,16 @@ object ValueInformation {
      */
     def forProperValue(t: Type)(implicit classHierarchy: ClassHierarchy): ValueInformation = {
         (t.id: @switch) match {
-            case VoidType.id    ⇒ TheVoidValue
-            case BooleanType.id ⇒ ABooleanValue
-            case ByteType.id    ⇒ AByteValue
-            case CharType.id    ⇒ ACharValue
-            case ShortType.id   ⇒ AShortValue
-            case IntegerType.id ⇒ AnIntegerValue
-            case LongType.id    ⇒ ALongValue
-            case FloatType.id   ⇒ AFloatValue
-            case DoubleType.id  ⇒ ADoubleValue
-            case _ /*referenceTypeId*/ ⇒
+            case VoidType.id    => TheVoidValue
+            case BooleanType.id => ABooleanValue
+            case ByteType.id    => AByteValue
+            case CharType.id    => ACharValue
+            case ShortType.id   => AShortValue
+            case IntegerType.id => AnIntegerValue
+            case LongType.id    => ALongValue
+            case FloatType.id   => AFloatValue
+            case DoubleType.id  => ADoubleValue
+            case _ /*referenceTypeId*/ =>
                 if (t.isObjectType) {
                     val objectType = t.asObjectType
                     AProperSObjectValue(
@@ -661,11 +661,11 @@ trait IsMObjectValue extends IsBaseReferenceValue {
         classHierarchy: ClassHierarchy
     ): Answer = {
         var isASubtypeOf: Answer = No
-        upperTypeBound foreach { anUpperTypeBound ⇒
+        upperTypeBound foreach { anUpperTypeBound =>
             classHierarchy.isASubtypeOf(anUpperTypeBound, supertype) match {
-                case Yes     ⇒ return Yes; // <= Shortcut evaluation
-                case Unknown ⇒ isASubtypeOf = Unknown
-                case No      ⇒ /*nothing to do*/
+                case Yes     => return Yes; // <= Shortcut evaluation
+                case Unknown => isASubtypeOf = Unknown
+                case No      => /*nothing to do*/
             }
         }
         /* No | Unknown*/
@@ -684,11 +684,11 @@ trait IsMObjectValue extends IsBaseReferenceValue {
 
             case No if (
                 supertype.isArrayType && upperTypeBound != ObjectType.SerializableAndCloneable
-            ) ⇒
+            ) =>
                 // even if the upper bound is not precise we are now 100% sure
                 // that this value is not a subtype of the given supertype
                 No
-            case _ ⇒
+            case _ =>
                 Unknown
         }
     }
@@ -738,7 +738,7 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
     ): Answer = {
         val subtype = theUpperTypeBound
         classHierarchy.isASubtypeOf(subtype, supertype) match {
-            case Yes ⇒
+            case Yes =>
                 Yes
             case No if isPrecise
                 || (
@@ -757,13 +757,13 @@ trait IsSObjectValue extends IsSReferenceValue[ObjectType] {
                         classHierarchy.isInterface(supertype.asObjectType).isNo &&
                         classHierarchy.isInterface(subtype).isNo &&
                         classHierarchy.isASubtypeOf(supertype, subtype).isNo
-                    ) ⇒
+                    ) =>
                 No
             case _ if isPrecise &&
                 // Note "reflexivity" is already captured by the first isSubtypeOf call
-                classHierarchy.isSubtypeOf(supertype, subtype) ⇒
+                classHierarchy.isSubtypeOf(supertype, subtype) =>
                 No
-            case _ ⇒
+            case _ =>
                 Unknown
         }
     }
@@ -819,7 +819,7 @@ trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
         classHierarchy: ClassHierarchy
     ): Answer = {
         classHierarchy.isASubtypeOf(theUpperTypeBound, supertype) match {
-            case Yes ⇒ Yes
+            case Yes => Yes
             case No if isPrecise ||
                 // the array's supertypes: Object, Serializable and Cloneable
                 // are handled by domain.isASubtypeOf
@@ -832,8 +832,8 @@ trait IsSArrayValue extends IsSReferenceValue[ArrayType] {
                         theUpperTypeBound.dimensions >= supertype.asArrayType.dimensions ||
                         (theUpperTypeBound.componentType ne ObjectType.Object)
                     )
-                ) ⇒ No
-            case _ ⇒ Unknown
+                ) => No
+            case _ => Unknown
         }
     }
 
@@ -899,9 +899,9 @@ trait IsStringValue
                 | ObjectType.SerializableId
                 | ObjectType.CloneableId
                 | ObjectType.ComparableId
-                | ObjectType.StringId ⇒
+                | ObjectType.StringId =>
                 Yes
-            case _ ⇒ No
+            case _ => No
         }
     }
     override def constantValue: Option[String] = Some(value)
@@ -944,9 +944,9 @@ trait IsClassValue
                 | ObjectType.SerializableId
                 | AnnotatedElement.id
                 | Type.id
-                | GenericDeclaration.id ⇒
+                | GenericDeclaration.id =>
                 Yes
-            case _ ⇒ No
+            case _ => No
         }
     }
 
@@ -1010,7 +1010,7 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
         // even if this upperTypeBound is not a subtype of supertype.
         val values = baseValues.toIterator.filter(_.isNull.isNoOrUnknown)
         var answer: Answer = values.next.isValueASubtypeOf(supertype)
-        values foreach { value ⇒ /* the first value is already removed */
+        values foreach { value => /* the first value is already removed */
             if (answer eq Unknown)
                 return answer; //isSubtype
 
@@ -1055,8 +1055,8 @@ case class AMultipleReferenceValue(
 
     final override def isArrayValue: Answer = {
         leastUpperType match {
-            case Some(_: ArrayType) ⇒ isNull.negate // isNull is either No or unknown
-            case _                  ⇒ No
+            case Some(_: ArrayType) => isNull.negate // isNull is either No or unknown
+            case _                  => No
         }
     }
 

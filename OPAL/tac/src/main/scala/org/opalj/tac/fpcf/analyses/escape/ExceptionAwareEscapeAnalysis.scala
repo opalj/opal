@@ -35,22 +35,22 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
             for (pc ← successors) {
                 if (pc.isCatchNode) {
                     val exceptionType = context.entity match {
-                        case defSite: DefinitionSiteLike ⇒
+                        case defSite: DefinitionSiteLike =>
                             val Assignment(_, left, _) = tacai.stmts.find(_.pc == defSite.pc).get
                             classHierarchy.joinReferenceTypesUntilSingleUpperBound(
                                 left.value.asReferenceValue.upperTypeBound
                             )
-                        case VirtualFormalParameter(dm: DefinedMethod, -1) ⇒
+                        case VirtualFormalParameter(dm: DefinedMethod, -1) =>
                             dm.definedMethod.classFile.thisType
-                        case VirtualFormalParameter(callee, origin) ⇒
+                        case VirtualFormalParameter(callee, origin) =>
                             // we would not end in this case if the parameter is not an object
                             callee.descriptor.parameterTypes(-2 - origin).asObjectType
                     }
                     pc.asCatchNode.catchType match {
-                        case Some(catchType) ⇒
+                        case Some(catchType) =>
                             if (classHierarchy.isSubtypeOf(exceptionType, catchType))
                                 isCaught = true
-                        case None ⇒
+                        case None =>
                     }
                 } else if (pc.isAbnormalReturnExitNode) {
                     abnormalReturned = true

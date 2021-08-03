@@ -76,13 +76,13 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
         // (1) TEST
         // Tests if the dominator tree information is consistent
         //
-        liveInstructions.iterator.foreach(pc ⇒ if (pc != 0) dt.dom(pc) should be < codeSize)
+        liveInstructions.iterator.foreach(pc => if (pc != 0) dt.dom(pc) should be < codeSize)
 
         val instructions = code.instructions
         val ehs = code.exceptionHandlers
 
         for {
-            (ops, pc) ← r.operandsArray.iterator.zipWithIndex
+            (ops, pc) <- r.operandsArray.iterator.zipWithIndex
             if ops ne null // let's filter only the executed instructions
             instruction = instructions(pc)
             if !instruction.isStackManagementInstruction
@@ -99,12 +99,12 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
             // E.g. StackManagementInstructions, Checkcasts,
             // LoadLocalVariableInstructions, but also INVOKE instructions
             // of functions whose return value is ignored are not "def-sites".
-            d.safeUsedBy(pc) foreach { useSite ⇒
+            d.safeUsedBy(pc) foreach { useSite =>
                 // let's see if we have a corresponding use...
                 val useInstruction = instructions(useSite)
                 val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
                 val hasDefSite =
-                    (0 until poppedOperands).exists { poIndex ⇒
+                    (0 until poppedOperands).exists { poIndex =>
                         d.operandOrigin(useSite, poIndex).contains(pc)
                     } || {
                         useInstruction.readsLocal &&
@@ -114,12 +114,12 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                     fail(s"use at $useSite has no def site $pc ($instruction)")
                 }
             }
-            d.safeExternalExceptionsUsedBy(pc) foreach { useSite ⇒
+            d.safeExternalExceptionsUsedBy(pc) foreach { useSite =>
                 // let's see if we have a corresponding use...
                 val useInstruction = instructions(useSite)
                 val poppedOperands = useInstruction.numberOfPoppedOperands(NotRequired)
                 val hasDefSite =
-                    (0 until poppedOperands).exists { poIndex ⇒
+                    (0 until poppedOperands).exists { poIndex =>
                         val defSites = d.operandOrigin(useSite, poIndex)
                         defSites.contains(ai.ValueOriginForMethodExternalException(pc)) ||
                             defSites.contains(ai.ValueOriginForImmediateVMException(pc))
@@ -136,18 +136,18 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
             // Tests if the def/use information for reference values corresponds to the
             // def/use information (implicitly) collected by the corresponding domain.
             //
-            for { (op, opIndex) ← ops.toIterator.zipWithIndex } {
+            for { (op, opIndex) <- ops.toIterator.zipWithIndex } {
                 val defUseOrigins =
                     try {
                         d.operandOrigin(pc, opIndex)
                     } catch {
-                        case t: Throwable ⇒ fail(s"pc=$pc[operand=$opIndex] no def/use info", t)
+                        case t: Throwable => fail(s"pc=$pc[operand=$opIndex] no def/use info", t)
                     }
                 val domainOrigins = d.origins(op)
-                domainOrigins foreach { o ⇒
+                domainOrigins foreach { o =>
                     if (!(
                         defUseOrigins.contains(o) ||
-                        defUseOrigins.exists(duo ⇒ ehs.exists(_.handlerPC == duo))
+                        defUseOrigins.exists(duo => ehs.exists(_.handlerPC == duo))
                     )) {
                         val instruction = code.instructions(pc)
                         val isHandler = code.exceptionHandlers.exists(_.handlerPC == pc)
@@ -172,7 +172,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                 if (opIndex < usedOperands &&
                     // we already tested: !instruction.isStackManagementInstruction
                     !instruction.isStoreLocalVariableInstruction) {
-                    defUseOrigins foreach { defUseOrigin ⇒ // the origins of a value...
+                    defUseOrigins foreach { defUseOrigin => // the origins of a value...
                         val defUseUseSites = d.usedBy(defUseOrigin)
                         if (defUseUseSites == null) {
                             val belongsToSubroutine = code.belongsToSubroutine()
@@ -216,39 +216,39 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
         val failures = new ConcurrentLinkedQueue[(Method, Throwable)]
 
         time {
-            project.parForeachMethodWithBody() { methodInfo ⇒
+            project.parForeachMethodWithBody() { methodInfo =>
                 val m = methodInfo.method
                 try {
                     val aiResult = BaseAI(m, new DefUseDomain(m, project))
                     analyzeDefUse(m, aiResult, identicalOrigins, refinedDefUseInformation = false)
                 } catch {
-                    case t: Throwable ⇒ failures.add((m, t.fillInStackTrace))
+                    case t: Throwable => failures.add((m, t.fillInStackTrace))
                 }
             }
-        } { t ⇒ info(s"using the record def use origin information took ${t.toSeconds}") }
+        } { t => info(s"using the record def use origin information took ${t.toSeconds}") }
 
         time {
-            project.parForeachMethodWithBody() { methodInfo ⇒
+            project.parForeachMethodWithBody() { methodInfo =>
                 val m = methodInfo.method
                 try {
                     val aiResult = BaseAI(m, new RefinedDefUseDomain(m, project))
                     analyzeDefUse(m, aiResult, identicalOrigins, refinedDefUseInformation = true)
                 } catch {
-                    case t: Throwable ⇒ failures.add((m, t.fillInStackTrace))
+                    case t: Throwable => failures.add((m, t.fillInStackTrace))
                 }
             }
-        } { t ⇒ info(s"using the reference domain's origin information took ${t.toSeconds}") }
+        } { t => info(s"using the reference domain's origin information took ${t.toSeconds}") }
 
         val baseMessage = s"origin information of ${identicalOrigins.get} values is identical"
         if (failures.size > 0) {
-            val failureMessages = for { (m, exception) ← failures.asScala } yield {
+            val failureMessages = for { (m, exception) <- failures.asScala } yield {
                 var root: Throwable = exception
                 var location: String = ""
                 do {
                     location += {
                         val st = root.getStackTrace
                         if (st != null && st.length > 0) {
-                            st.take(5).map { ste ⇒
+                            st.take(5).map { ste =>
                                 s"${ste.getClassName}{ ${ste.getMethodName}:${ste.getLineNumber}}"
                             }.mkString("; ")
                         } else {
@@ -260,7 +260,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
                         location += "\n- next cause -\n"
                 } while (root != null)
                 val containsJSR =
-                    m.body.get.find(i ⇒ i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
+                    m.body.get.find(i => i.opcode == JSR.opcode || i.opcode == JSR_W.opcode)
                 val details = exception.getMessage.replace("\n", "\n\t")
                 s"${m.toJava}[containsJSR=$containsJSR;\n\t"+
                     s"${exception.getClass.getSimpleName}:\n\t$details;\n\tlocation: $location]"
@@ -281,22 +281,22 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
 
         val reader = new Java8FrameworkWithCaching(new BytecodeInstructionsCache)
 
-        def evaluateProject(projectName: String, projectFactory: () ⇒ Project[URL]): Unit = {
+        def evaluateProject(projectName: String, projectFactory: () => Project[URL]): Unit = {
             it(s"should be possible to compute def/use information for all methods of $projectName") {
                 DominatorsPerformanceEvaluation.resetAll()
                 val project = projectFactory()
                 time {
                     analyzeProject(projectName, project)
-                } { t ⇒ info("the analysis took (real time): "+t.toSeconds) }
+                } { t => info("the analysis took (real time): "+t.toSeconds) }
                 val effort = DominatorsPerformanceEvaluation.getTime('Dominators).toSeconds
                 info(s"computing dominator information took (CPU time): $effort")
             }
         }
 
-        evaluateProject("the JDK", () ⇒ createJREProject)
+        evaluateProject("the JDK", () => createJREProject)
 
         var projectsCount = 0
-        br.TestSupport.allBIProjects(reader, None) foreach { biProject ⇒
+        br.TestSupport.allBIProjects(reader, None) foreach { biProject =>
             val (projectName, projectFactory) = biProject
             evaluateProject(projectName, projectFactory)
             projectsCount += 1

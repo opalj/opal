@@ -55,7 +55,7 @@ case class LOOKUPSWITCH(
     def toLabeledInstruction(currentPC: PC): LabeledInstruction = {
         LabeledLOOKUPSWITCH(
             InstructionLabel(currentPC + defaultOffset),
-            npairs.map[(Int, InstructionLabel)] { e ⇒
+            npairs.map[(Int, InstructionLabel)] { e =>
                 val IntIntPair(v, branchoffset) = e
                 (v, InstructionLabel(currentPC + branchoffset))
             }
@@ -86,7 +86,7 @@ case class LOOKUPSWITCH(
         val defaultTarget = currentPC + defaultOffset
         var pcs = Chain.singleton(defaultTarget)
         var seen: IntArraySet = new IntArraySet1(defaultTarget)
-        npairs foreach { npair ⇒
+        npairs foreach { npair =>
             val offset = npair.value
             val nextTarget = currentPC + offset
             if (!seen.contains(nextTarget)) {
@@ -102,7 +102,7 @@ case class LOOKUPSWITCH(
 
         code.instructions(otherPC) match {
 
-            case LOOKUPSWITCH(otherDefaultOffset, otherNpairs) ⇒
+            case LOOKUPSWITCH(otherDefaultOffset, otherNpairs) =>
                 (this.defaultOffset + paddingOffset == otherDefaultOffset) &&
                     this.npairs.size == otherNpairs.size && {
                         val tIt = this.npairs.iterator
@@ -117,14 +117,14 @@ case class LOOKUPSWITCH(
                         doesMatch
                     }
 
-            case _ ⇒ false
+            case _ => false
         }
     }
 
     override def toString(pc: Int): String = {
         "LOOKUPSWITCH("+
             npairs.iterator.
-            map[String](p ⇒ p._1+"="+(pc + p._2) + (if (p._2 >= 0) "↓" else "↑")).
+            map[String](p => p._1+"="+(pc + p._2) + (if (p._2 >= 0) "↓" else "↑")).
             mkString(",")+
             "; ifNoMatch="+(defaultOffset + pc) + (if (defaultOffset >= 0) "↓" else "↑")+
             ")"
@@ -177,7 +177,7 @@ case class LabeledLOOKUPSWITCH(
     override def resolveJumpTargets(currentPC: PC, pcs: Map[InstructionLabel, PC]): LOOKUPSWITCH = {
         LOOKUPSWITCH(
             asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
-            npairs map { pair ⇒
+            npairs map { pair =>
                 val (value, target) = pair
                 IntIntPair(value, asShortBranchoffset(pcs(target) - currentPC))
             }
@@ -191,7 +191,7 @@ case class LabeledLOOKUPSWITCH(
 
     override def toString(pc: Int): String = {
         npairs.iterator.
-            map(p ⇒ p._1+"="+p._2).
+            map(p => p._1+"="+p._2).
             mkString("LOOKUPSWITCH(", ",", s"; ifNoMatch=$defaultBranchTarget)")
     }
 }

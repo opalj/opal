@@ -73,8 +73,8 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     def doDetermineFieldMutability(entity: Entity): PropertyComputationResult = {
         entity match {
-            case field: Field ⇒ determineFieldMutability(field)
-            case _ ⇒
+            case field: Field => determineFieldMutability(field)
+            case _ =>
                 val m = entity.getClass.getName+"is not an org.opalj.br.Field"
                 throw new IllegalArgumentException(m)
         }
@@ -117,8 +117,8 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 }
                 val subclassesIterator: Iterator[ClassFile] =
                     classHierarchy.allSubclassTypes(thisType, reflexive = false).
-                        flatMap { ot ⇒
-                            project.classFile(ot).filter(cf ⇒ !initialClasses.contains(cf))
+                        flatMap { ot =>
+                            project.classFile(ot).filter(cf => !initialClasses.contains(cf))
                         }
                 initialClasses.iterator ++ subclassesIterator
             } else {
@@ -181,11 +181,11 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                 val stmtCandidate = stmts(index)
                 if (stmtCandidate.pc == pc) {
                     stmtCandidate match {
-                        case _: PutStatic[_] ⇒
+                        case _: PutStatic[_] =>
                             if (!method.isStaticInitializer) {
                                 return true;
                             };
-                        case stmt: PutField[V] ⇒
+                        case stmt: PutField[V] =>
                             val objRef = stmt.objRef.asVar
                             if ((!method.isConstructor ||
                                 objRef.definedBy != SelfReferenceParameter) &&
@@ -202,7 +202,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                                 // write the field as long as that new object did not yet escape.
                                 return true;
                             }
-                        case _ ⇒ throw new RuntimeException("unexpected field access");
+                        case _ => throw new RuntimeException("unexpected field access");
                     }
                 } else {
                     // nothing to do as the put field is dead
@@ -223,12 +223,12 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         state: State
     ): Option[TACode[TACMethodParameter, V]] = {
         propertyStore(method, TACAI.key) match {
-            case FinalP(tacai) ⇒ tacai.tac
-            case eps: InterimEP[Method, TACAI] ⇒
-                state.tacDependees += method → ((eps, pcs))
+            case FinalP(tacai) => tacai.tac
+            case eps: InterimEP[Method, TACAI] =>
+                state.tacDependees += method -> ((eps, pcs))
                 eps.ub.tac
-            case epk ⇒
-                state.tacDependees += method → ((epk, pcs))
+            case epk =>
+                state.tacDependees += method -> ((epk, pcs))
                 None
         }
     }
@@ -248,16 +248,16 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
 
     def c(eps: SomeEPS)(implicit state: State): ProperPropertyComputationResult = {
         val isNonFinal = eps.e match {
-            case ds: DefinitionSite ⇒
+            case ds: DefinitionSite =>
                 val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
                 state.escapeDependees = state.escapeDependees.filter(_.e ne ds)
                 handleEscapeProperty(newEP)
-            case method: Method ⇒
+            case method: Method =>
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val pcs = state.tacDependees(method)._2
                 state.tacDependees -= method
                 if (eps.isRefinable)
-                    state.tacDependees += method → ((newEP, pcs))
+                    state.tacDependees += method -> ((newEP, pcs))
                 if (newEP.ub.tac.isDefined)
                     methodUpdatesField(method, newEP.ub.tac.get, pcs)
                 else false
@@ -278,7 +278,7 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         stmts:  Array[Stmt[V]],
         method: Method
     )(implicit state: State): Boolean = {
-        ref.definedBy.forall { defSite ⇒
+        ref.definedBy.forall { defSite =>
             if (defSite < 0) false // Must be locally created
             else {
                 val definition = stmts(defSite).asAssignment
@@ -302,26 +302,26 @@ class L1FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     def handleEscapeProperty(
         ep: EOptionP[DefinitionSite, EscapeProperty]
     )(implicit state: State): Boolean = ep match {
-        case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case FinalP(NoEscape | EscapeInCallee | EscapeViaReturn) =>
             false
 
-        case FinalP(AtMost(_)) ⇒
+        case FinalP(AtMost(_)) =>
             true
 
-        case _: FinalEP[_, _] ⇒
+        case _: FinalEP[_, _] =>
             true // Escape state is worse than via return
 
-        case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) ⇒
+        case InterimUBP(NoEscape | EscapeInCallee | EscapeViaReturn) =>
             state.escapeDependees += ep
             false
 
-        case InterimUBP(AtMost(_)) ⇒
+        case InterimUBP(AtMost(_)) =>
             true
 
-        case _: SomeInterimEP ⇒
+        case _: SomeInterimEP =>
             true // Escape state is worse than via return
 
-        case _ ⇒
+        case _ =>
             state.escapeDependees += ep
             false
     }

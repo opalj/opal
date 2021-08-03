@@ -62,12 +62,12 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
         repository: ClassFileRepository
     ): Iterable[(ObjectType, Method)] = {
         repository.classFile(classType) match {
-            case Some(cf) ⇒ cf.methods.map { (classType, _) }
-            case None     ⇒ fail(s"${classType.toJava} cannot be found")
+            case Some(cf) => cf.methods.map { (classType, _) }
+            case None     => fail(s"${classType.toJava} cannot be found")
         }
     }
 
-    private def collectTheMethodOf(classFile: ClassFile)(filter: Method ⇒ Boolean): Method = {
+    private def collectTheMethodOf(classFile: ClassFile)(filter: Method => Boolean): Method = {
         val methods = classFile.methods.filter(filter)
         methods should have size (1)
         val method = methods.head
@@ -80,13 +80,13 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
     }
 
     private def collectTheFactoryMethod(classFile: ClassFile): Method = {
-        collectTheMethodOf(classFile) { m ⇒
+        collectTheMethodOf(classFile) { m =>
             m.isStatic && m.isPublic && (m.name == "$newInstance" || m.name == "$createInstance")
         }
     }
 
     private def collectTheForwardingMethod(classFile: ClassFile): Method = {
-        collectTheMethodOf(classFile) { m ⇒
+        collectTheMethodOf(classFile) { m =>
             !(m.isConstructor || m.name == "$newInstance" || m.name == "$createInstance")
         }
     }
@@ -115,7 +115,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 staticMethods
 
             it("with one instance field for instance methods, none for static") {
-                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
+                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) =>
                     if (calleeTypeAndMethod._2.isStatic) {
                         classFile.fields should have size (0)
                     } else {
@@ -128,7 +128,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("and a constructor that sets that instance field (if present)") {
-                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
+                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) =>
                     if (!calleeTypeAndMethod._2.isStatic) {
                         val constructor = collectTheConstructor(classFile)
                         bi.ACC_PUBLIC.isSet(constructor.accessFlags) should be(true)
@@ -165,7 +165,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("and one static factory method that calls the constructor") {
-                testMethods(methods, testProject) { (classFile, _) ⇒
+                testMethods(methods, testProject) { (classFile, _) =>
                     val factoryMethod = collectTheFactoryMethod(classFile)
                     val constructor = collectTheConstructor(classFile)
                     val parameterTypes = constructor.parameterTypes
@@ -174,7 +174,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     val maxStack = maxLocals + 2 // new + dup makes two extra on the stack
                     var currentVariableIndex = 0
                     val loadParametersInstructions: Array[Instruction] =
-                        factoryMethod.parameterTypes.flatMap[Instruction] { t ⇒
+                        factoryMethod.parameterTypes.flatMap[Instruction] { t =>
                             val instruction = LoadLocalVariableInstruction(t, currentVariableIndex)
                             currentVariableIndex += t.computationalType.operandSize
                             if (currentVariableIndex > 3) Array(instruction, null) else Array(instruction)
@@ -201,14 +201,14 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("and one forwarding method") {
-                testMethods(methods, testProject) { (classFile, _) ⇒
+                testMethods(methods, testProject) { (classFile, _) =>
                     val method = collectTheForwardingMethod(classFile)
                     bi.ACC_PUBLIC.isSet(method.accessFlags) should be(true)
                 }
             }
 
             it("that calls the callee method with the appropriate invokeX instruction") {
-                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
+                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) =>
                     val method = collectTheForwardingMethod(classFile)
                     val (calleeType, calleeMethod) = calleeTypeAndMethod
                     val body = method.body.get
@@ -241,7 +241,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("and passes all parameters correctly [barring reference type check]") {
-                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
+                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) =>
                     val method = collectTheForwardingMethod(classFile)
                     var currentInstruction = 0
                     val body = method.body.get
@@ -253,20 +253,20 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         } else {
                             calleeTypeAndMethod._1 +: method.parameterTypes
                         }
-                    parameters.foreach { requiredParameter ⇒
+                    parameters.foreach { requiredParameter =>
                         val remainingInstructions =
                             instructions.slice(currentInstruction, instructions.size)
                         val consumedInstructions =
                             requiredParameter match {
-                                case IntegerType      ⇒ requireIntLoad(remainingInstructions)
-                                case ShortType        ⇒ requireIntLoad(remainingInstructions)
-                                case ByteType         ⇒ requireIntLoad(remainingInstructions)
-                                case CharType         ⇒ requireIntLoad(remainingInstructions)
-                                case BooleanType      ⇒ requireIntLoad(remainingInstructions)
-                                case FloatType        ⇒ requireFloatLoad(remainingInstructions)
-                                case DoubleType       ⇒ requireDoubleLoad(remainingInstructions)
-                                case LongType         ⇒ requireLongLoad(remainingInstructions)
-                                case _: ReferenceType ⇒ requireReferenceLoadOrCreation(remainingInstructions)
+                                case IntegerType      => requireIntLoad(remainingInstructions)
+                                case ShortType        => requireIntLoad(remainingInstructions)
+                                case ByteType         => requireIntLoad(remainingInstructions)
+                                case CharType         => requireIntLoad(remainingInstructions)
+                                case BooleanType      => requireIntLoad(remainingInstructions)
+                                case FloatType        => requireFloatLoad(remainingInstructions)
+                                case DoubleType       => requireDoubleLoad(remainingInstructions)
+                                case LongType         => requireLongLoad(remainingInstructions)
+                                case _: ReferenceType => requireReferenceLoadOrCreation(remainingInstructions)
                             }
                         currentInstruction += consumedInstructions
                     }
@@ -274,7 +274,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
             }
 
             it("and computes correct maxLocals/maxStack values") {
-                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
+                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) =>
                     val method = collectTheForwardingMethod(classFile)
                     val body = method.body.get
                     val operandsSize: Int =
@@ -301,7 +301,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     InstanceMethods,
                     methodWithManyParametersAndNoReturnValue,
                     testProject
-                ) { (classFile, calleeTypeAndMethod) ⇒
+                ) { (classFile, calleeTypeAndMethod) =>
                     val calleeField = classFile.fields.head
                     val method = collectTheForwardingMethod(classFile)
                     val (calleeType, calleeMethod) = calleeTypeAndMethod
@@ -350,7 +350,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     StaticMethods,
                     staticMethodWithManyParametersAndNoReturnValue,
                     testProject
-                ) { (classFile, calleeTypeAndMethod) ⇒
+                ) { (classFile, calleeTypeAndMethod) =>
                     val method = collectTheForwardingMethod(classFile)
                     val (calleeType, calleeMethod) = calleeTypeAndMethod
                     val body = method.body.get
@@ -644,22 +644,22 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
             it("and returns correctly") {
 
-                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) ⇒
+                testMethods(methods, testProject) { (classFile, calleeTypeAndMethod) =>
                     val method = collectTheForwardingMethod(classFile)
                     val body = method.body.get
                     val instructions = body.instructions
                     instructions.last should be(method.returnType match {
-                        case VoidType         ⇒ RETURN
-                        case IntegerType      ⇒ IRETURN
-                        case ShortType        ⇒ IRETURN
-                        case ByteType         ⇒ IRETURN
-                        case CharType         ⇒ IRETURN
-                        case BooleanType      ⇒ IRETURN
-                        case LongType         ⇒ LRETURN
-                        case FloatType        ⇒ FRETURN
-                        case DoubleType       ⇒ DRETURN
-                        case _: ReferenceType ⇒ ARETURN
-                        case CTIntType        ⇒ throw new UnknownError("unexpected type")
+                        case VoidType         => RETURN
+                        case IntegerType      => IRETURN
+                        case ShortType        => IRETURN
+                        case ByteType         => IRETURN
+                        case CharType         => IRETURN
+                        case BooleanType      => IRETURN
+                        case LongType         => LRETURN
+                        case FloatType        => FRETURN
+                        case DoubleType       => DRETURN
+                        case _: ReferenceType => ARETURN
+                        case CTIntType        => throw new UnknownError("unexpected type")
                     })
                 }
                 for {
@@ -778,7 +778,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 it("they are not constructor references") {
                     for {
                         MethodWithBody(body) ← lambdas.methods
-                        invokedynamic ← body.instructions.collect { case i: INVOKEDYNAMIC ⇒ i }
+                        invokedynamic ← body.instructions.collect { case i: INVOKEDYNAMIC => i }
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
                             arguments(1).asInstanceOf[MethodCallMethodHandle]
@@ -796,7 +796,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 it("nor are they virtual method calls") {
                     for {
                         MethodWithBody(body) ← lambdas.methods
-                        invokedynamic ← body.instructions.collect { case i: INVOKEDYNAMIC ⇒ i }
+                        invokedynamic ← body.instructions.collect { case i: INVOKEDYNAMIC => i }
                     } {
                         val targetMethodHandle = invokedynamic.bootstrapMethod.
                             arguments(1).asInstanceOf[MethodCallMethodHandle]
@@ -816,10 +816,10 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                     val body = newValueMethod.body.get
                     val indy =
                         body.collectFirst {
-                            case i: INVOKEDYNAMIC ⇒ i
+                            case i: INVOKEDYNAMIC => i
                         } match {
-                            case Some(i) ⇒ i
-                            case None    ⇒ fail(s"no invokedynamic instruction:\n$body")
+                            case Some(i) => i
+                            case None    => fail(s"no invokedynamic instruction:\n$body")
                         }
                     val targetMethod = indy.bootstrapMethod.arguments(1).
                         asInstanceOf[MethodCallMethodHandle]
@@ -978,7 +978,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                         MethodDescriptor.NoArgsAndReturnVoid, // <= not tested...
                         RefArray(MethodDescriptor(RefArray(ObjectType.Object, DoubleType), IntegerType))
                     )
-                val bridge = proxy.methods.find(m ⇒ ACC_BRIDGE.isSet(m.accessFlags))
+                val bridge = proxy.methods.find(m => ACC_BRIDGE.isSet(m.accessFlags))
                 bridge should be('defined)
                 bridge.get.body should be('defined)
                 val body = bridge.get.body.get
@@ -1026,9 +1026,9 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                             MethodDescriptor(RefArray(ObjectType.Serializable, DoubleType), IntegerType)
                         )
                     )
-                val bridges = proxy.methods.filter(m ⇒ ACC_BRIDGE.isSet(m.accessFlags))
+                val bridges = proxy.methods.filter(m => ACC_BRIDGE.isSet(m.accessFlags))
                 bridges.length should be(2)
-                bridges.foreach { bridge ⇒
+                bridges.foreach { bridge =>
                     bridge.body should be('defined)
                     val body = bridge.body.get
                     body.maxStack should be(4)
@@ -1064,7 +1064,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
                 fieldTypes:     RefArray[FieldType],
                 expectedLocals: Int, expectedStack: Int
             ): Unit = {
-                val fields = fieldTypes.zipWithIndex.map { p ⇒
+                val fields = fieldTypes.zipWithIndex.map { p =>
                     val (ft, i) = p
                     Field(bi.ACC_PRIVATE.mask, "field"+i, ft, NoAttributes)
                 }
@@ -1378,7 +1378,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
         describe("should create correct return/conversion instructions") {
 
             it("should convert Object to base types by casting and unboxing") {
-                BaseType.baseTypes foreach { t ⇒
+                BaseType.baseTypes foreach { t =>
                     val name = s"${t.toJava}Value"
                     val desc = new NoArgumentMethodDescriptor(t)
                     val conv = ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object)
@@ -1391,7 +1391,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
 
             it("should convert Object to any reference type by casting") {
                 Seq(ObjectType.String, ArrayType(LongType), ObjectType.Integer).foreach(
-                    t ⇒ ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object) should be(
+                    t => ClassFileFactory.returnAndConvertInstructions(t, ObjectType.Object) should be(
                         Array(CHECKCAST(t.asReferenceType), null, null, ARETURN)
                     )
                 )
@@ -1624,7 +1624,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
         methods:    Iterable[(ObjectType, Method)],
         repository: ClassFileRepository
     )(
-        test: (ClassFile, (ObjectType, Method)) ⇒ Unit
+        test: (ClassFile, (ObjectType, Method)) => Unit
     ): Unit = {
         for (
             (calleeType, calleeMethod) ← methods
@@ -1637,7 +1637,7 @@ class ClassFileFactoryTest extends AnyFunSpec with Matchers {
         calleeType: ObjectType, calleeMethod: Method,
         repository: ClassFileRepository
     )(
-        test: (ClassFile, (ObjectType, Method)) ⇒ Unit
+        test: (ClassFile, (ObjectType, Method)) => Unit
     ): Unit = {
         val calleeMethodName = calleeMethod.name
         val calleeMethodDescriptor = calleeMethod.descriptor

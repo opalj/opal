@@ -24,7 +24,7 @@ case class FIELD(
     def result(): br.FieldTemplate = {
         val fieldType = br.FieldType(descriptor)
         val accessFlags = accessModifiers.accessFlags
-        val attributes = attributesBuilders.map[br.Attribute] { attributeBuilder ⇒
+        val attributes = attributesBuilders.map[br.Attribute] { attributeBuilder =>
             attributeBuilder(accessFlags, name, fieldType)
         }
 

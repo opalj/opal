@@ -59,7 +59,7 @@ trait MethodParameters_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val parameters_count = in.readUnsignedByte
         if (parameters_count > 0 || reifyEmptyAttributes) {
@@ -77,5 +77,5 @@ trait MethodParameters_attributeReader extends AttributeReader {
         }
     }
 
-    registerAttributeReader(MethodParametersAttribute.Name → parserFactory())
+    registerAttributeReader(MethodParametersAttribute.Name -> parserFactory())
 }

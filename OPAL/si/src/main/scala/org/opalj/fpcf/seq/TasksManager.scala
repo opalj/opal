@@ -309,8 +309,8 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
 
     override def push(task: QualifiedTask): Unit = {
         task match {
-            case _: HandleResultTask[_, _] ⇒ this.initialTasks.addFirst(task)
-            case _                         ⇒ this.initialTasks.addLast(task)
+            case _: HandleResultTask[_, _] => this.initialTasks.addFirst(task)
+            case _                         => this.initialTasks.addLast(task)
         }
     }
 
@@ -325,7 +325,7 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
             task()
         } else {
             var weight = 0
-            currentDependersOfUpdatedEOptionP foreach { epk ⇒ weight += ps.dependeesCount(epk) }
+            currentDependersOfUpdatedEOptionP foreach { epk => weight += ps.dependeesCount(epk) }
             val wt = new WeightedQualifiedTask(task, weight)
             this.tasks.add(wt)
         }
@@ -361,8 +361,8 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
 
     override def push(task: QualifiedTask): Unit = {
         task match {
-            case _: HandleResultTask[_, _] ⇒ this.initialTasks.addFirst(task)
-            case _                         ⇒ this.initialTasks.addLast(task)
+            case _: HandleResultTask[_, _] => this.initialTasks.addFirst(task)
+            case _                         => this.initialTasks.addLast(task)
         }
     }
 
@@ -377,7 +377,7 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
             task()
         } else {
             var weight = 0
-            currentDependersOfUpdatedEOptionP foreach { epk ⇒ weight += ps.dependeesCount(epk) }
+            currentDependersOfUpdatedEOptionP foreach { epk => weight += ps.dependeesCount(epk) }
             val wt = new WeightedQualifiedTask(task, -weight)
             this.tasks.add(wt)
         }
@@ -424,7 +424,7 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksMana
         currentDependers: Traversable[SomeEPK]
     ): Unit = {
         var weight = 0
-        currentDependers foreach { epk ⇒
+        currentDependers foreach { epk =>
             weight += ps.dependeesCount(epk) + ps.dependersCount(epk)
         }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
@@ -463,7 +463,7 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
         currentDependers: Traversable[SomeEPK]
     ): Unit = {
         var weight = 0
-        currentDependers foreach { epk ⇒
+        currentDependers foreach { epk =>
             weight -= ps.dependeesCount(epk) + ps.dependersCount(epk)
         }
         this.tasks.add(new WeightedQualifiedTask(task, weight))
@@ -504,7 +504,7 @@ private[seq] final class AllDependeesTasksManager(
             newDependees = newDependees.tail
             val nextDependeeEPK = nextDependee
             allDependees += nextDependeeEPK
-            ps.dependees(nextDependeeEPK) foreach { nextNextDependee ⇒
+            ps.dependees(nextDependeeEPK) foreach { nextNextDependee =>
                 val nextNextDependeeEPK = nextNextDependee.toEPK
                 if (allDependees.add(nextNextDependeeEPK)) {
                     newDependees ::= nextNextDependeeEPK
@@ -522,7 +522,7 @@ private[seq] final class AllDependeesTasksManager(
             val nextDepender = newDependers.head
             newDependers = newDependers.tail
             allDependers += nextDepender
-            ps.dependers(nextDepender) foreach { nextNextDepender ⇒
+            ps.dependers(nextDepender) foreach { nextNextDepender =>
                 if (allDependers.add(nextNextDepender)) {
                     newDependers ::= nextNextDepender
                     weight += ps.dependeesCount(nextNextDepender)

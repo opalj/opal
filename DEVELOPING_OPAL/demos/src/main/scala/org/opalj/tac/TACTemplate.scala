@@ -72,13 +72,13 @@ object TACTemplate {
         }
         while (i < args.length) {
             args(i) match {
-                case "-cp"     ⇒ cp ::= readNextArg()
-                case "-libJDK" ⇒ libcp ::= JRELibraryFolder.toString
-                case "-libcp"  ⇒ libcp ::= readNextArg()
-                case "-class"  ⇒ className = Some(readNextArg().replace('/', '.'))
-                case "-method" ⇒ methodSignature = Some(readNextArg())
-                case "-domain" ⇒ domainName = readNextArg() // overwrites default domain
-                case unknown   ⇒ handleError(s"unknown parameter: $unknown")
+                case "-cp"     => cp ::= readNextArg()
+                case "-libJDK" => libcp ::= JRELibraryFolder.toString
+                case "-libcp"  => libcp ::= readNextArg()
+                case "-class"  => className = Some(readNextArg().replace('/', '.'))
+                case "-method" => methodSignature = Some(readNextArg())
+                case "-domain" => domainName = readNextArg() // overwrites default domain
+                case unknown   => handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
@@ -106,7 +106,7 @@ object TACTemplate {
         val constructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
         p.getOrCreateProjectInformationKeyInitializationData(
             SimpleAIKey,
-            (m: Method) ⇒ constructor.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
+            (m: Method) => constructor.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
         )
         p.get(SimpleAIKey) // used by the LazyTACUsingAIKey
         val tac = p.get(LazyTACUsingAIKey)

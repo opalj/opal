@@ -20,7 +20,7 @@ object ClassesWithoutConcreteSubclasses extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ) = {
         val classHierarchy = project.classHierarchy
         val abstractTypes =

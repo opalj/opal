@@ -58,10 +58,10 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), Purity.key) match {
-                case eps @ UBP(ub) ⇒
+                case eps @ UBP(ub) =>
                     maxPurity = maxPurity meet ub
                     if (eps.isRefinable) dependees += eps
-                case epk ⇒ dependees += epk
+                case epk => dependees += epk
             }
         }
 
@@ -95,8 +95,8 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
     /** Called when the analysis is scheduled lazily. */
     def doDeterminePurity(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case m: DefinedMethod ⇒ determinePurity(m)
-            case _                ⇒ throw new IllegalArgumentException(s"$e ist not a DefinedMethod")
+            case m: DefinedMethod => determinePurity(m)
+            case _                => throw new IllegalArgumentException(s"$e ist not a DefinedMethod")
         }
     }
 
@@ -144,7 +144,7 @@ object EagerVirtualMethodPurityAnalysis
         val analysis = new VirtualMethodPurityAnalysis(p)
         val (declaredMethods, configuredPurity) = data
         ps.scheduleEagerComputationsForEntities(
-            declaredMethods.declaredMethods.filter { dm ⇒
+            declaredMethods.declaredMethods.filter { dm =>
                 !configuredPurity.wasSet(dm) && dm.isInstanceOf[DefinedMethod]
             }.map(_.asInstanceOf[DefinedMethod])
         )(analysis.determinePurity)

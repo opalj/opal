@@ -126,7 +126,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             true
         } else if (expr.isVar) {
             val defSites = expr.asVar.definedBy -- excludedDefSites
-            if (defSites.forall { defSite ⇒
+            if (defSites.forall { defSite =>
                 if (defSite >= 0) {
                     val rhs = state.tac.stmts(defSite).asAssignment.expr
                     if (rhs.isConst)
@@ -134,14 +134,14 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     else {
                         val astID = rhs.astID
                         astID match {
-                            case New.ASTID | NewArray.ASTID ⇒ true
-                            case GetField.ASTID ⇒
+                            case New.ASTID | NewArray.ASTID => true
+                            case GetField.ASTID =>
                                 val objRef = rhs.asGetField.objRef
                                 isLocal(objRef, otherwise, excludedDefSites ++ defSites)
-                            case ArrayLoad.ASTID ⇒
+                            case ArrayLoad.ASTID =>
                                 val arrayRef = rhs.asArrayLoad.arrayRef
                                 isLocal(arrayRef, otherwise, excludedDefSites ++ defSites)
-                            case _ ⇒ false
+                            case _ => false
                         }
                     }
                 } else if (isImmediateVMException(defSite)) {
@@ -176,10 +176,10 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         ep:     EOptionP[DeclaredMethod, Purity],
         params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
-        case UBP(_: ClassifiedImpure) ⇒
+        case UBP(_: ClassifiedImpure) =>
             atMost(ImpureByAnalysis)
             false
-        case eps @ LUBP(lb, ub) ⇒
+        case eps @ LUBP(lb, ub) =>
             if (ub.modifiesParameters) {
                 atMost(ImpureByAnalysis)
                 false
@@ -191,7 +191,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 atMost(ub)
                 true
             }
-        case _ ⇒
+        case _ =>
             state.dependees += ep
             reducePurityLB(ImpureByAnalysis)
             true
@@ -242,7 +242,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     def cleanupDependees()(implicit state: State): Unit = {
         // Remove unnecessary dependees
         if (!state.ubPurity.isDeterministic) {
-            state.dependees = state.dependees.filter { ep ⇒
+            state.dependees = state.dependees.filter { ep =>
                 ep.pk == Purity.key || ep.pk == VirtualMethodPurity.key || ep.pk == Callees.key ||
                     ep.pk == TACAI.key
             }
@@ -262,29 +262,29 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val oldPurity = state.ubPurity
 
         (eps: @unchecked) match {
-            case UBP(_: Callees) ⇒
+            case UBP(_: Callees) =>
                 if (!checkPurityOfCallees(eps.asInstanceOf[EOptionP[DeclaredMethod, Callees]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
 
-            case UBP(tacai: TACAI) ⇒
+            case UBP(tacai: TACAI) =>
                 handleTACAI(eps.asInstanceOf[EOptionP[Method, TACAI]])
                 return determineMethodPurity(tacai.tac.get.cfg);
 
             // Cases dealing with other purity values
-            case UBP(_: Purity) ⇒
+            case UBP(_: Purity) =>
                 if (!checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]]))
                     return Result(state.definedMethod, ImpureByAnalysis)
 
             // Cases that are pure
-            case FinalP(_: FinalField)                   ⇒ // Reading eff. final fields
-            case FinalP(ImmutableType | ImmutableObject) ⇒ // Returning immutable reference
+            case FinalP(_: FinalField)                   => // Reading eff. final fields
+            case FinalP(ImmutableType | ImmutableObject) => // Returning immutable reference
 
             // Cases resulting in side-effect freeness
             case FinalP(_: FieldMutability | // Reading non-final field
-                _: TypeImmutability | _: ClassImmutability) ⇒ // Returning mutable reference
+                _: TypeImmutability | _: ClassImmutability) => // Returning mutable reference
                 atMost(SideEffectFree)
 
-            case _: SomeInterimEP ⇒ state.dependees += eps
+            case _: SomeInterimEP => state.dependees += eps
         }
 
         if (state.ubPurity ne oldPurity)
@@ -312,13 +312,13 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // Special case: The Throwable constructor is `LBSideEffectFree`, but subtype constructors
         // may not be because of overridable fillInStackTrace method
         if (state.method.isConstructor && state.declClass.isSubtypeOf(ObjectType.Throwable)) {
-            val candidate = ConstArray.find(project.instanceMethods(state.declClass)) { mdc ⇒
+            val candidate = ConstArray.find(project.instanceMethods(state.declClass)) { mdc =>
                 mdc.method.compare(
                     "fillInStackTrace",
                     MethodDescriptor.withNoArgs(ObjectType.Throwable)
                 )
             }
-            candidate foreach { mdc ⇒
+            candidate foreach { mdc =>
                 if (mdc.method.classFile.thisType != ObjectType.Throwable) {
                     val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
                     if (!checkMethodPurity(fISTPurity, Seq.empty))
@@ -461,7 +461,7 @@ object EagerL1PurityAnalysis extends L1PurityAnalysisScheduler with FPCFEagerAna
     ): FPCFAnalysis = {
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val methods = dms.collect {
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
+            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers =>
                 dm.asDefinedMethod
         }
 

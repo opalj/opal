@@ -44,7 +44,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
             // Get sub-annotations from the container annotation.
             val subAnnotations: RefArray[AnnotationLike] =
                 getValue(p, containerAnnotation, a.elementValuePairs, "value")
-                    .asArrayValue.values.map(a ⇒ a.asAnnotationValue.annotation)
+                    .asArrayValue.values.map(a => a.asAnnotationValue.annotation)
 
             // Validate each sub-annotation individually.
             val validationResults =
@@ -74,7 +74,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         // Get call graph analyses for which this annotation applies.
         val analysesElementValues: Seq[ElementValue] =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         // If none of the annotated analyses match the executed ones, return...
         // If the list of specified analyses is empty, we assume the annotation applies to all
@@ -87,14 +87,14 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
 
         val calleesP = {
             properties.find(_.isInstanceOf[Callees]) match {
-                case Some(property) ⇒ property.asInstanceOf[Callees]
-                case None           ⇒ return Some("Callees property is missing.");
+                case Some(property) => property.asInstanceOf[Callees]
+                case None           => return Some("Callees property is missing.");
             }
         }
 
         val callsiteCode = entity.asInstanceOf[DefinedMethod].definedMethod.body match {
-            case Some(code) ⇒ code
-            case None       ⇒ return Some("Code of call site is not available.");
+            case Some(code) => code
+            case None       => return Some("Code of call site is not available.");
         }
 
         // Retrieve all calls resolved by the call graph algorithm.
@@ -120,21 +120,21 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         val methodName = getValue(p, annotationType, a.elementValuePairs, "name").asStringValue.value
         val resolvedTargets = {
             val av = a.elementValuePairs collectFirst {
-                case ElementValuePair("resolvedTargets", ArrayValue(ab)) ⇒
+                case ElementValuePair("resolvedTargets", ArrayValue(ab)) =>
                     ab.toIndexedSeq.map(_.asInstanceOf[StringValue].value)
             }
             av.getOrElse(List())
         }
         val returnType = a.elementValuePairs.find(_.name == "returnType") match {
-            case Some(ElementValuePair(_, ClassValue(declType))) ⇒ declType
-            case None                                            ⇒ VoidType
-            case _                                               ⇒ sys.error("Invalid annotation.")
+            case Some(ElementValuePair(_, ClassValue(declType))) => declType
+            case None                                            => VoidType
+            case _                                               => sys.error("Invalid annotation.")
         }
         val parameterTypes = a.elementValuePairs.find(_.name == "parameterType") match {
-            case Some(ElementValuePair(_, ArrayValue(params))) ⇒
-                params.toArray.map(ev ⇒ ev.asInstanceOf[ClassValue].value.asFieldType)
-            case None ⇒ Array[FieldType]()
-            case _    ⇒ sys.error("Invalid annotation.")
+            case Some(ElementValuePair(_, ArrayValue(params))) =>
+                params.toArray.map(ev => ev.asInstanceOf[ClassValue].value.asFieldType)
+            case None => Array[FieldType]()
+            case _    => sys.error("Invalid annotation.")
         }
 
         // TODO there HAS to be nicer way to get the RefArray for the MethodDescriptor

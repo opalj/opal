@@ -14,7 +14,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
-    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
+    domain: ValuesDomain with Configuration with ExceptionsFactory =>
 
     type ThrownException = ExceptionValue
 
@@ -35,9 +35,9 @@ trait RecordJoinedThrownExceptions extends RecordThrownExceptions {
             return thrownException;
 
         previouslyThrownException.join(pc, thrownException) match {
-            case NoUpdate                     ⇒ previouslyThrownException
-            case StructuralUpdate(exVal)      ⇒ exVal.asInstanceOf[ExceptionValue]
-            case MetaInformationUpdate(exVal) ⇒ exVal.asInstanceOf[ExceptionValue]
+            case NoUpdate                     => previouslyThrownException
+            case StructuralUpdate(exVal)      => exVal.asInstanceOf[ExceptionValue]
+            case MetaInformationUpdate(exVal) => exVal.asInstanceOf[ExceptionValue]
         }
     }
 }

@@ -31,7 +31,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
         )
         val jreLibraryFolder = bytecode.JRELibraryFolder
         val specialResources = Traversable(jmodsZip, jreLibraryFolder)
-        for { file ← bi.TestResources.allBITestJARs ++ specialResources } {
+        for { file <- bi.TestResources.allBITestJARs ++ specialResources } {
 
             describe(s"(when processing $file)") {
 
@@ -40,7 +40,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                     var seconds: Seconds = Seconds.None
                     val classFiles = PerformanceEvaluation.time {
                         val Lock = new Object
-                        val exceptionHandler = (source: AnyRef, throwable: Throwable) ⇒ {
+                        val exceptionHandler = (source: AnyRef, throwable: Throwable) => {
                             Lock.synchronized {
                                 exceptions ::= ((source, throwable))
                             }
@@ -54,7 +54,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                         }
 
                         classFiles
-                    } { t ⇒ seconds = t.toSeconds }
+                    } { t => seconds = t.toSeconds }
                     info(s"reading of ${classFiles.size} class files took $seconds")
 
                     it(s"reading should not result in exceptions") {
@@ -69,7 +69,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
 
                 it(s"should be able to create the xHTML representation for every class") {
 
-                    val classFilesGroupedByPackage = classFiles.groupBy { e ⇒
+                    val classFilesGroupedByPackage = classFiles.groupBy { e =>
                         val (classFile, _ /*url*/ ) = e
                         val fqn = classFile.thisType.asJava
                         if (fqn.contains('.'))
@@ -80,26 +80,26 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
                     info(s"identified ${classFilesGroupedByPackage.size} packages")
 
                     val exceptions: Iterable[(URL, Exception)] =
-                        (for { (packageName, classFiles) ← classFilesGroupedByPackage } yield {
+                        (for { (packageName, classFiles) <- classFilesGroupedByPackage } yield {
                             val transformationCounter = new AtomicInteger(0)
                             val parClassFiles = classFiles.par
                             parClassFiles.tasksupport = OPALHTBoundedExecutionContextTaskSupport
                             PerformanceEvaluation.time {
                                 (
-                                    for { (classFile, url) ← parClassFiles } yield {
+                                    for { (classFile, url) <- parClassFiles } yield {
                                         var result: Option[(URL, Exception)] = None
                                         try {
                                             classFile.toXHTML(None).label should be("html")
                                             transformationCounter.incrementAndGet()
                                         } catch {
-                                            case e: Exception ⇒
+                                            case e: Exception =>
                                                 e.printStackTrace()
                                                 result = Some((url, e))
                                         }
                                         result
                                     }
                                 ).seq.flatten
-                            } { t ⇒
+                            } { t =>
                                 info(
                                     s"transformation of ${transformationCounter.get} class files "+
                                         s"in $packageName (parallelized) took ${t.toSeconds}"

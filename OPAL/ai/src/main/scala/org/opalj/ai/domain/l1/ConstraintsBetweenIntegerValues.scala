@@ -4,12 +4,12 @@ package ai
 package domain
 package l1
 
-import java.util.{IdentityHashMap ⇒ IDMap}
+import java.util.{IdentityHashMap => IDMap}
 
 import scala.collection.JavaConverters._
 
 import org.opalj.constraints.NumericConstraints
-import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.br.instructions.Instruction
 import org.opalj.br.LiveVariables
@@ -24,7 +24,7 @@ trait ConstraintsBetweenIntegerValues
     extends CoreDomainFunctionality
     with IntegerRangeValues // IMRPOVE Define a common trait that specifies that the values support aliasing analyses
     with TheCodeStructure {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
 
     type Constraint = NumericConstraints.Value
 
@@ -247,8 +247,8 @@ trait ConstraintsBetweenIntegerValues
     ): (Operands, Locals) = {
 
         oldValue match {
-            case _: IntegerLikeValue ⇒ updatedValues.put(oldValue, newValue)
-            case _                   ⇒ /*nothing special to do*/
+            case _: IntegerLikeValue => updatedValues.put(oldValue, newValue)
+            case _                   => /*nothing special to do*/
         }
 
         super.updateMemoryLayout(oldValue, newValue, operands, locals)
@@ -273,19 +273,19 @@ trait ConstraintsBetweenIntegerValues
         value1: DomainValue, value2: DomainValue
     ): Answer = {
         super.intAreEqual(pc, value1, value2) match {
-            case Unknown ⇒
+            case Unknown =>
                 val constraint = getConstraint(pc, value1, value2)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case NumericConstraints.!= ⇒ No
-                        case NumericConstraints.>  ⇒ No
-                        case NumericConstraints.<  ⇒ No
-                        case NumericConstraints.== ⇒ Yes
-                        case _                     ⇒ Unknown
+                        case NumericConstraints.!= => No
+                        case NumericConstraints.>  => No
+                        case NumericConstraints.<  => No
+                        case NumericConstraints.== => Yes
+                        case _                     => Unknown
                     }
                 else
                     Unknown
-            case answer ⇒
+            case answer =>
                 answer
         }
     }
@@ -296,38 +296,38 @@ trait ConstraintsBetweenIntegerValues
         right: DomainValue
     ): Answer = {
         super.intIsLessThan(pc, left, right) match {
-            case Unknown ⇒
+            case Unknown =>
                 val constraint = getConstraint(pc, left, right)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case NumericConstraints.>  ⇒ No
-                        case NumericConstraints.>= ⇒ No
-                        case NumericConstraints.<  ⇒ Yes
-                        case NumericConstraints.== ⇒ No
-                        case _                     ⇒ Unknown
+                        case NumericConstraints.>  => No
+                        case NumericConstraints.>= => No
+                        case NumericConstraints.<  => Yes
+                        case NumericConstraints.== => No
+                        case _                     => Unknown
                     }
                 else
                     Unknown
-            case answer ⇒
+            case answer =>
                 answer
         }
     }
 
     override def intIsLessThanOrEqualTo(pc: Int, left: DomainValue, right: DomainValue): Answer = {
         super.intIsLessThanOrEqualTo(pc, left, right) match {
-            case Unknown ⇒
+            case Unknown =>
                 val constraint = getConstraint(pc, left, right)
                 if (constraint.isDefined)
                     constraint.get match {
-                        case NumericConstraints.>  ⇒ No
-                        case NumericConstraints.<  ⇒ Yes
-                        case NumericConstraints.<= ⇒ Yes
-                        case NumericConstraints.== ⇒ Yes
-                        case _                     ⇒ Unknown
+                        case NumericConstraints.>  => No
+                        case NumericConstraints.<  => Yes
+                        case NumericConstraints.<= => Yes
+                        case NumericConstraints.== => Yes
+                        case _                     => Unknown
                     }
                 else
                     Unknown
-            case answer ⇒
+            case answer =>
                 answer
         }
     }
@@ -426,7 +426,7 @@ trait ConstraintsBetweenIntegerValues
 
     //    override def iadd(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
     //        (value1, value2) match {
-    //            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) ⇒
+    //            case (IntegerRange(lb1, ub1), IntegerRange(lb2, ub2)) =>
     //                // to identify overflows we simply do the "add" on long values
     //                // and check afterwards
     //                val lb = lb1.toLong + lb2.toLong
@@ -435,7 +435,7 @@ trait ConstraintsBetweenIntegerValues
     //                    IntegerValue(pc)
     //                else
     //                    IntegerRange(lb.toInt, ub.toInt)
-    //            case _ ⇒
+    //            case _ =>
     //                // we have to create a new instance... even if we just add "0"
     //                IntegerValue(pc)
     //        }
@@ -444,14 +444,14 @@ trait ConstraintsBetweenIntegerValues
     //
     //    override def iinc(pc: Int, value: DomainValue, increment: Int): DomainValue = {
     //        value match {
-    //            case IntegerRange(lb, ub) ⇒
+    //            case IntegerRange(lb, ub) =>
     //                val newLB = lb.toLong + increment.toLong
     //                val newUB = ub.toLong + increment.toLong
     //                if (newLB < Int.MinValue || newUB > Int.MaxValue)
     //                    IntegerValue(pc)
     //                else
     //                    IntegerRange(newLB.toInt, newUB.toInt)
-    //            case _ ⇒
+    //            case _ =>
     //                IntegerValue(pc)
     //        }
     //    }
@@ -461,7 +461,7 @@ trait ConstraintsBetweenIntegerValues
     //            return IntegerRange(0, 0)
     //
     //        (left, right) match {
-    //            case (IntegerRange(llb, lub), IntegerRange(rlb, rub)) ⇒
+    //            case (IntegerRange(llb, lub), IntegerRange(rlb, rub)) =>
     //                // to identify overflows we simply do the "add" on long values
     //                // and check afterwards
     //                val lb = llb.toLong - rub.toLong
@@ -470,7 +470,7 @@ trait ConstraintsBetweenIntegerValues
     //                    IntegerValue(pc)
     //                else
     //                    IntegerRange(lb.toInt, ub.toInt)
-    //            case _ ⇒
+    //            case _ =>
     //                // we have to create a new instance... even if we just subtract "0"
     //                IntegerValue(pc)
     //        }
@@ -481,12 +481,12 @@ trait ConstraintsBetweenIntegerValues
     //        numerator: DomainValue,
     //        denominator: DomainValue): IntegerValueOrArithmeticException = {
     //        denominator match {
-    //            case IntegerRange(1, 1) ⇒
+    //            case IntegerRange(1, 1) =>
     //                ComputedValue(numerator.asInstanceOf[IntegerLikeValue].newInstance)
-    //            case IntegerRange(lb, ub) if lb > 0 || ub < 0 ⇒
+    //            case IntegerRange(lb, ub) if lb > 0 || ub < 0 =>
     //                // no div by "0"
     //                ComputedValue(IntegerValue(pc))
-    //            case _ ⇒
+    //            case _ =>
     //                if (throwArithmeticExceptions)
     //                    ComputedValueOrException(
     //                        IntegerValue(pc), ArithmeticException(pc))
@@ -497,10 +497,10 @@ trait ConstraintsBetweenIntegerValues
     //
     //    override def imul(pc: Int, value1: DomainValue, value2: DomainValue): DomainValue = {
     //        value1 match {
-    //            case IntegerRange(lb1, ub1) ⇒
+    //            case IntegerRange(lb1, ub1) =>
     //                if (lb1 == 0 && ub1 == 0) IntegerRange(0, 0)
     //                else value2 match {
-    //                    case IntegerRange(lb2, ub2) ⇒
+    //                    case IntegerRange(lb2, ub2) =>
     //                        // to identify overflows we simply do the "mul" on long values
     //                        // and check afterwards
     //                        val lb1l = lb1.toLong
@@ -520,14 +520,14 @@ trait ConstraintsBetweenIntegerValues
     //                            IntegerValue(pc)
     //                        else
     //                            IntegerRange(lb.toInt, ub.toInt)
-    //                    case _ ⇒
+    //                    case _ =>
     //                        IntegerValue(pc)
     //                }
     //
-    //            case _ ⇒
+    //            case _ =>
     //                value2 match {
-    //                    case IntegerRange(0, 0) ⇒ IntegerRange(0, 0)
-    //                    case _ ⇒
+    //                    case IntegerRange(0, 0) => IntegerRange(0, 0)
+    //                    case _ =>
     //                        IntegerValue(pc)
     //                }
     //        }
@@ -538,10 +538,10 @@ trait ConstraintsBetweenIntegerValues
     //        left: DomainValue,
     //        right: DomainValue): IntegerValueOrArithmeticException = {
     //        right match {
-    //            case IntegerRange(rightLB, rightUB) if rightLB > 0 || rightUB < 0 ⇒
+    //            case IntegerRange(rightLB, rightUB) if rightLB > 0 || rightUB < 0 =>
     //                // no div by "0"
     //                ComputedValue(IntegerValue(pc))
-    //            case _ ⇒
+    //            case _ =>
     //                if (throwArithmeticExceptions)
     //                    ComputedValueOrException(
     //                        IntegerValue(pc), ArithmeticException(pc))
@@ -577,12 +577,12 @@ trait ConstraintsBetweenIntegerValues
 
     protected[this] def constraintsToText(
         pc:            Int,
-        valueToString: AnyRef ⇒ String
+        valueToString: AnyRef => String
     ): String = {
         if (constraints(pc) == null)
             return "No constraints found."
 
-        val cs = (constraints(pc).asScala.map { e ⇒
+        val cs = (constraints(pc).asScala.map { e =>
             val (v1, v2c) = e
             val jv2c = v2c.asScala
             for ((v2, c) ← jv2c)
@@ -593,7 +593,7 @@ trait ConstraintsBetweenIntegerValues
 
     abstract override def properties(
         pc:            Int,
-        valueToString: AnyRef ⇒ String
+        valueToString: AnyRef => String
     ): Option[String] = {
         val superProperties = super.properties(pc)
         if (constraints(pc) != null) {

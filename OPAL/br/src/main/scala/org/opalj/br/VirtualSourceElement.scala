@@ -53,7 +53,7 @@ object VirtualSourceElement {
     ): Set[VirtualSourceElement] = {
         var sourceElements: Set[VirtualSourceElement] = Set.empty
 
-        classFiles foreach { classFile ⇒
+        classFiles foreach { classFile =>
             val classType = classFile.thisType
             sourceElements += classFile.asVirtualClass
             if (includeMethods)
@@ -86,8 +86,8 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
     override def compare(that: VirtualSourceElement): Int = {
         //x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
         that match {
-            case VirtualClass(thatType) ⇒ thisType.compare(thatType)
-            case _                      ⇒ -1
+            case VirtualClass(thatType) => thisType.compare(thatType)
+            case _                      => -1
         }
     }
 
@@ -99,8 +99,8 @@ final case class VirtualClass(thisType: ObjectType) extends VirtualSourceElement
      */
     override def equals(other: Any): Boolean = {
         other match {
-            case that: VirtualClass ⇒ this.thisType eq that.thisType
-            case _                  ⇒ false
+            case that: VirtualClass => this.thisType eq that.thisType
+            case _                  => false
         }
     }
 }
@@ -132,13 +132,13 @@ final case class VirtualField(
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
         that match {
-            case _: VirtualClass ⇒
+            case _: VirtualClass =>
                 1
-            case that: VirtualField ⇒
+            case that: VirtualField =>
                 if (this.declaringClassType eq that.declaringClassType) {
                     this.name.compareTo(that.name) match {
-                        case 0 ⇒ this.fieldType.compare(that.fieldType)
-                        case x ⇒ x
+                        case 0 => this.fieldType.compare(that.fieldType)
+                        case x => x
                     }
                 } else {
                     if (this.declaringClassType.id < that.declaringClassType.id)
@@ -146,7 +146,7 @@ final case class VirtualField(
                     else
                         1
                 }
-            case _ /*VirtualMethod*/ ⇒
+            case _ /*VirtualMethod*/ =>
                 -1
         }
     }
@@ -157,11 +157,11 @@ final case class VirtualField(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: VirtualField ⇒
+            case that: VirtualField =>
                 (this.declaringClassType eq that.declaringClassType) &&
                     (this.fieldType eq that.fieldType) &&
                     this.name == that.name
-            case _ ⇒ false
+            case _ => false
         }
     }
 }
@@ -187,19 +187,19 @@ sealed class VirtualMethod(
         if (declaringClassType.isArrayType)
             return None;
 
-        project.classFile(declaringClassType.asObjectType).flatMap { cf ⇒
-            cf.findMethod(name, descriptor).flatMap(m ⇒ m.body.flatMap(b ⇒ b.firstLineNumber))
+        project.classFile(declaringClassType.asObjectType).flatMap { cf =>
+            cf.findMethod(name, descriptor).flatMap(m => m.body.flatMap(b => b.firstLineNumber))
         }
     }
 
     override def compare(that: VirtualSourceElement): Int = {
         // x < 0 when this < that; x == 0 when this == that; x > 0 when this > that
         that match {
-            case that: VirtualMethod ⇒
+            case that: VirtualMethod =>
                 if (this.declaringClassType eq that.declaringClassType) {
                     this.name.compareTo(that.name) match {
-                        case 0 ⇒ this.descriptor.compare(that.descriptor)
-                        case x ⇒ x
+                        case 0 => this.descriptor.compare(that.descriptor)
+                        case x => x
                     }
                 } else {
                     if (this.declaringClassType.id < that.declaringClassType.id)
@@ -207,7 +207,7 @@ sealed class VirtualMethod(
                     else
                         1
                 }
-            case _ ⇒
+            case _ =>
                 1
         }
     }
@@ -218,11 +218,11 @@ sealed class VirtualMethod(
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: VirtualMethod ⇒
+            case that: VirtualMethod =>
                 (this.declaringClassType eq that.declaringClassType) &&
                     this.descriptor == that.descriptor &&
                     this.name == that.name
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -262,10 +262,10 @@ final case class VirtualForwardingMethod(
     override def hashCode: Opcode = (target.hashCode() * 41) + super.hashCode
 
     override def equals(other: Any): Boolean = other match {
-        case that: VirtualForwardingMethod ⇒
+        case that: VirtualForwardingMethod =>
             (this.target eq that.target) &&
                 super.equals(other)
-        case _ ⇒ false
+        case _ => false
     }
 
 }

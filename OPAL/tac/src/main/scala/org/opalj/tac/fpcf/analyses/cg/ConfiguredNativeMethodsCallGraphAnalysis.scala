@@ -54,16 +54,16 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
         ConfiguredMethods.reader.read(
             p.config, configKey
-        ).nativeMethods.map { v ⇒ (v.method, v.methodInvocations) }.toMap
+        ).nativeMethods.map { v => (v.method, v.methodInvocations) }.toMap
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
         (propertyStore(dm, Callers.key): @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result

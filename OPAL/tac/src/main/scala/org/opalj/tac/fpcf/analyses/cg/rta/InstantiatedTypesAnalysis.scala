@@ -69,11 +69,11 @@ class InstantiatedTypesAnalysis private[analyses] (
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
 
         val callersUB: Callers = (callersEOptP: @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -135,8 +135,8 @@ class InstantiatedTypesAnalysis private[analyses] (
 
             // the constructor is called from another constructor. it is only an new instantiated
             // type if it was no super call. Thus the caller must be a direct subtype
-            project.classFile(caller.declaringClassType).foreach { cf ⇒
-                cf.superclassType.foreach { supertype ⇒
+            project.classFile(caller.declaringClassType).foreach { cf =>
+                cf.superclassType.foreach { supertype =>
                     if (supertype != declaredType)
                         return partialResult(declaredType);
                 }
@@ -148,7 +148,7 @@ class InstantiatedTypesAnalysis private[analyses] (
             // check if there is an explicit NEW that instantiates the type
             val newInstr = NEW(declaredType)
             val hasNew = body.exists {
-                case (_, i) ⇒ i == newInstr
+                case (_, i) => i == newInstr
             }
             if (hasNew)
                 return partialResult(declaredType);
@@ -187,8 +187,8 @@ class InstantiatedTypesAnalysis private[analyses] (
         instantiatedTypesEOptP: EOptionP[SomeProject, InstantiatedTypes]
     ): UIDSet[ReferenceType] = {
         instantiatedTypesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.types
-            case _              ⇒ UIDSet.empty
+            case eps: EPS[_, _] => eps.ub.types
+            case _              => UIDSet.empty
         }
     }
 }
@@ -200,19 +200,19 @@ object InstantiatedTypesAnalysis {
     )(
         eop: EOptionP[SomeProject, InstantiatedTypes]
     ): Option[InterimEP[SomeProject, InstantiatedTypes]] = eop match {
-        case InterimUBP(ub: InstantiatedTypes) ⇒
+        case InterimUBP(ub: InstantiatedTypes) =>
             val newUB = ub.updated(newInstantiatedTypes)
             if (newUB.types.size > ub.types.size)
                 Some(InterimEUBP(p, newUB))
             else
                 None
 
-        case _: EPK[_, _] ⇒
+        case _: EPK[_, _] =>
             throw new IllegalStateException(
                 "the instantiated types property should be pre initialized"
             )
 
-        case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+        case r => throw new IllegalStateException(s"unexpected previous result $r")
     }
 }
 
@@ -241,8 +241,8 @@ object InstantiatedTypesAnalysisScheduler extends BasicFPCFTriggeredAnalysisSche
         val initialInstantiatedTypes = UIDSet[ReferenceType](p.get(InitialInstantiatedTypesKey).toSeq: _*)
 
         ps.preInitialize[SomeProject, InstantiatedTypes](p, InstantiatedTypes.key) {
-            case _: EPK[_, _] ⇒ InterimEUBP(p, org.opalj.br.fpcf.properties.cg.InstantiatedTypes(initialInstantiatedTypes))
-            case eps          ⇒ throw new IllegalStateException(s"unexpected property: $eps")
+            case _: EPK[_, _] => InterimEUBP(p, org.opalj.br.fpcf.properties.cg.InstantiatedTypes(initialInstantiatedTypes))
+            case eps          => throw new IllegalStateException(s"unexpected property: $eps")
         }
 
         null

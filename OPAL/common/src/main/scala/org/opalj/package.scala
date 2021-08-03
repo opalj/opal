@@ -69,7 +69,7 @@ package object opalj {
             // when we reach this point assertions are turned off
             info("OPAL Common", "Production Build")
         } catch {
-            case _: AssertionError ⇒ info("OPAL Common", "Development Build with Assertions")
+            case _: AssertionError => info("OPAL Common", "Development Build with Assertions")
         }
     }
 
@@ -81,7 +81,7 @@ package object opalj {
     }
 
     /** Non-elidable version of `assert`; only to be used in a guarded context. */
-    def check(condition: Boolean, message: ⇒ String): Unit = {
+    def check(condition: Boolean, message: => String): Unit = {
         if (!condition) throw new AssertionError(message);
     }
 
@@ -144,6 +144,6 @@ package object opalj {
      * A method that takes an arbitrary parameter and throws an `UnknownError` that states
      * that an implementation was not required.
      */
-    final val NotRequired: Any ⇒ Nothing = (a: Any) ⇒ { notRequired() }
+    final val NotRequired: Any => Nothing = (a: Any) => { notRequired() }
 
 }

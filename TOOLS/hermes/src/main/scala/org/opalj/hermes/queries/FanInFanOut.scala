@@ -176,7 +176,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
 
         val seqBuilder = Seq.newBuilder[String]
 
-        _featureInfo.foreach { featureKind ⇒
+        _featureInfo.foreach { featureKind =>
             val FeatureConfiguration(featureName, numCategories, _, _) = featureKind
             var i = 1
             while (i <= numCategories) {
@@ -215,21 +215,21 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         } {
             implicit val constantPool = classFile.constant_pool
             val cpEntryPredicate: PartialFunction[Constant_Pool_Entry, Constant_Pool_Entry] = {
-                case CONSTANT_Fieldref_info(_, name_and_type_index) ⇒ constantPool(name_and_type_index)
-                case CONSTANT_NameAndType_info(_, descriptor_index) ⇒ constantPool(descriptor_index)
-                case CONSTANT_MethodHandle_info(_, reference_index) ⇒ constantPool(reference_index)
-                case CONSTANT_Methodref_info(_, class_index)        ⇒ constantPool(class_index)
-                case CONSTANT_Class_info(name_index)                ⇒ constantPool(name_index)
+                case CONSTANT_Fieldref_info(_, name_and_type_index) => constantPool(name_and_type_index)
+                case CONSTANT_NameAndType_info(_, descriptor_index) => constantPool(descriptor_index)
+                case CONSTANT_MethodHandle_info(_, reference_index) => constantPool(reference_index)
+                case CONSTANT_Methodref_info(_, class_index)        => constantPool(class_index)
+                case CONSTANT_Class_info(name_index)                => constantPool(name_index)
             }
 
             @inline def cpEntries = classFile.constant_pool.filter(cpEntryPredicate.isDefinedAt)
 
             val referencedTypes = mutable.Set.empty[Int]
-            cpEntries.foreach { cpEntry ⇒
+            cpEntries.foreach { cpEntry =>
                 val typeInfo = getTypeInfo(cpEntry)(constantPool)
                 if (typeInfo.charAt(0) == '(') {
                     val md = MethodDescriptor(typeInfo)
-                    referencedTypes ++= md.parameterTypes.foldLeft(Set.empty[Int])((res, p) ⇒
+                    referencedTypes ++= md.parameterTypes.foldLeft(Set.empty[Int])((res, p) =>
                         if (p.isObjectType)
                             res + p.asObjectType.id
                         else res)
@@ -241,7 +241,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
                         if (ft.isObjectType)
                             referencedTypes += ft.asObjectType.id
                     } catch {
-                        case iae: IllegalArgumentException ⇒
+                        case iae: IllegalArgumentException =>
                             referencedTypes += ObjectType(typeInfo).id
                     }
                 }
@@ -251,9 +251,9 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             val fanOutIndex = fanoutFeature.featureIndex(fanOut)
             features(fanOutIndex) += location
 
-            fanOutMap += (objectTypeId → fanOut)
+            fanOutMap += (objectTypeId -> fanOut)
 
-            referencedTypes.foreach { otId ⇒
+            referencedTypes.foreach { otId =>
                 if (otId != objectTypeId) {
                     val newRefCount = fanInMap.getOrElse(otId, 0) + 1
                     fanInMap += ((otId, newRefCount))
@@ -261,7 +261,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             }
         }
 
-        fanInMap.foreach { entry ⇒
+        fanInMap.foreach { entry =>
             val (otID, fanIn) = entry
             val fanOut = fanOutMap.getOrElse(otID, 1)
             val fanInFanOut = fanIn.toDouble / fanOut.toDouble
@@ -283,19 +283,19 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         constant_Pool_Entry: Constant_Pool_Entry
     )(implicit constant_pool: Constant_Pool): String = {
         constant_Pool_Entry match {
-            case CONSTANT_Class_info(name_index) ⇒
+            case CONSTANT_Class_info(name_index) =>
                 getTypeInfo(constant_pool(name_index))
-            case CONSTANT_Fieldref_info(_, name_and_type_index) ⇒
+            case CONSTANT_Fieldref_info(_, name_and_type_index) =>
                 getTypeInfo(constant_pool(name_and_type_index))
-            case CONSTANT_MethodHandle_info(_, reference_index) ⇒
+            case CONSTANT_MethodHandle_info(_, reference_index) =>
                 getTypeInfo(constant_pool(reference_index))
-            case CONSTANT_Methodref_info(_, class_index) ⇒
+            case CONSTANT_Methodref_info(_, class_index) =>
                 getTypeInfo(constant_pool(class_index))
-            case CONSTANT_InterfaceMethodref_info(_, class_index) ⇒
+            case CONSTANT_InterfaceMethodref_info(_, class_index) =>
                 getTypeInfo(constant_pool(class_index))
-            case CONSTANT_NameAndType_info(_, descriptor_index) ⇒
+            case CONSTANT_NameAndType_info(_, descriptor_index) =>
                 getTypeInfo(constant_pool(descriptor_index))
-            case CONSTANT_Utf8_info(_, value) ⇒ value
+            case CONSTANT_Utf8_info(_, value) => value
         }
     }
 }

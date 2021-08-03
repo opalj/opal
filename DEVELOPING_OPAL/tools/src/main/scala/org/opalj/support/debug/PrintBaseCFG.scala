@@ -38,7 +38,7 @@ object PrintBaseCFG {
         }
 
         val project = try { Project(file) } catch {
-            case e: Exception ⇒
+            case e: Exception =>
                 println(RED+"[error] cannot process file: "+e.getMessage+"."+RESET)
                 return ;
         }
@@ -57,19 +57,19 @@ object PrintBaseCFG {
 
         val methodOption =
             if (methodName.contains("("))
-                classFile.methods.find(m ⇒ m.descriptor.toJava(m.name).contains(methodName))
+                classFile.methods.find(m => m.descriptor.toJava(m.name).contains(methodName))
             else
                 classFile.methods.find(_.name == methodName)
 
         val method = methodOption match {
-            case Some(method) ⇒
+            case Some(method) =>
                 if (method.body.isDefined)
                     method
                 else {
                     println(RED+"[error] the method: "+methodName+" does not have a body"+RESET)
                     return ;
                 }
-            case None ⇒
+            case None =>
                 val allMethods = classFile.methods.map(_.signatureToJava(false)).toSet
                 val altMethods = allMethods.toSeq.sorted.mkString(" Candidates: ", ", ", ".")
                 println(s"$RED[error] cannot find the method: $methodName.$RESET $altMethods")
@@ -91,7 +91,7 @@ object PrintBaseCFG {
 
         println(code.cfJoins.mkString("JoinPCs (conservative):", ", ", ""))
         val (cfJoins, _, cfForks) = code.cfPCs
-        val cfForksInfo = cfForks.map { e ⇒ val (k, v) = e; k+" ⇒ "+v.mkString("{", ",", "}") }
+        val cfForksInfo = cfForks.map { e => val (k, v) = e; k+" => "+v.mkString("{", ",", "}") }
         println(cfJoins.mkString("CFJoins               :", ", ", ""))
         println(cfForksInfo.mkString("CFForks               :", ", ", ""))
 
@@ -101,7 +101,7 @@ object PrintBaseCFG {
         val liveVariables = code.liveVariables(predecessorPCs, exitPCs, cfJoins)
         val liveVariableInfo = liveVariables.
             zipWithIndex.map(_.swap).filter(_._2 ne null).
-            map { e ⇒ val (pc, liveVariableInfo) = e; liveVariableInfo.mkString(pc+":{", ",", "}\n") }.
+            map { e => val (pc, liveVariableInfo) = e; liveVariableInfo.mkString(pc+":{", ",", "}\n") }.
             mkString("LiveVariables:\n\t", "\t", "")
         println(liveVariableInfo)
     }

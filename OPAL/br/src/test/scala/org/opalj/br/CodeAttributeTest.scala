@@ -39,24 +39,24 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's collect method"
 
     it should "be able to correctly collect all matching instructions" in {
-        codeOfPut collect { case DUP ⇒ DUP } should equal(Seq(PCAndAnyRef(31, DUP)))
+        codeOfPut collect { case DUP => DUP } should equal(Seq(PCAndAnyRef(31, DUP)))
 
         codeOfPut collect {
-            case ICONST_1 ⇒ ICONST_1
+            case ICONST_1 => ICONST_1
         } should equal(Seq(PCAndAnyRef(20, ICONST_1), PCAndAnyRef(35, ICONST_1)))
 
         codeOfPut collect {
-            case GETFIELD(declaringClass, "last", _) ⇒ declaringClass
+            case GETFIELD(declaringClass, "last", _) => declaringClass
         } should equal(Seq(PCAndAnyRef(17, boundedBufferClass), PCAndAnyRef(45, boundedBufferClass)))
 
         codeOfPut collect {
-            case RETURN ⇒ "The very last instruction."
+            case RETURN => "The very last instruction."
         } should equal(Seq(PCAndAnyRef(54, "The very last instruction.")))
 
     }
 
     it should "be able to correctly handle the case if no instruction is matched" in {
-        codeOfPut collect { case DUP2_X2 ⇒ DUP2_X2 } should equal(Seq())
+        codeOfPut collect { case DUP2_X2 => DUP2_X2 } should equal(Seq())
     }
 
     import org.opalj.br.CodeAttributeTest._
@@ -65,7 +65,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
     it should "be able to collect all jump targets" in {
         codeOfPut.collectWithIndex({
-            case i: PCAndInstruction if i.instruction.isSimpleConditionalBranchInstruction ⇒
+            case i: PCAndInstruction if i.instruction.isSimpleConditionalBranchInstruction =>
                 val cbi = i.instruction.asSimpleConditionalBranchInstruction
                 Seq(cbi.indexOfNextInstruction(i.pc)(codeOfPut), i.pc + cbi.branchoffset)
         }).flatten should equal(Seq(11, 15))
@@ -73,7 +73,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
     it should "be able to handle the case where no instruction is found" in {
         codeOfPut collectWithIndex {
-            case i: PCAndInstruction if i.instruction == IMUL ⇒ i.pc
+            case i: PCAndInstruction if i.instruction == IMUL => i.pc
         } should equal(Naught)
     }
 
@@ -81,37 +81,37 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
 
     it should "be able to correctly identify the first matching instruction" in {
         codeOfPut collectFirstWithIndex {
-            case i: PCAndInstruction if i.instruction == ICONST_1 ⇒ (i.pc, ICONST_1)
+            case i: PCAndInstruction if i.instruction == ICONST_1 => (i.pc, ICONST_1)
         } should equal(Some((20, ICONST_1)))
     }
 
     it should "be able to handle the case where no instruction is found" in {
         codeOfPut collectFirstWithIndex {
-            case i: PCAndInstruction if i.instruction == IMUL ⇒ (i.pc, IMUL)
+            case i: PCAndInstruction if i.instruction == IMUL => (i.pc, IMUL)
         } should be(None)
     }
 
     behavior of "the \"Code\" attribute's slidingCollect method"
 
     it should "be able to handle the case where the sliding window is too large compared to the number of instructions" in {
-        codeOfPut.slidingCollect(500) { case pcAndInstr ⇒ pcAndInstr } should be(Seq())
+        codeOfPut.slidingCollect(500) { case pcAndInstr => pcAndInstr } should be(Seq())
     }
 
     it should "be able to find some consecutive instructions" in {
         codeOfPut.slidingCollect(2)({
-            case PCAndAnyRef(pc, Seq(ALOAD_0, ALOAD_0)) ⇒ Integer.valueOf(pc)
+            case PCAndAnyRef(pc, Seq(ALOAD_0, ALOAD_0)) => Integer.valueOf(pc)
         }) should be(Seq(15))
     }
 
     it should "be able to find the last instructions" in {
         codeOfPut.slidingCollect(2)({
-            case PCAndAnyRef(pc, Seq(INVOKEVIRTUAL(_, _, _), RETURN)) ⇒ Integer.valueOf(pc)
+            case PCAndAnyRef(pc, Seq(INVOKEVIRTUAL(_, _, _), RETURN)) => Integer.valueOf(pc)
         }) should be(Seq(51))
     }
 
     it should "be able to find multiple sequences of matching instructions" in {
         codeOfPut.slidingCollect(2)({
-            case PCAndAnyRef(pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) ⇒ Integer.valueOf(pc)
+            case PCAndAnyRef(pc, Seq(PUTFIELD(_, _, _), ALOAD_0)) => Integer.valueOf(pc)
         }) should be(Seq(27, 37))
     }
 
@@ -181,8 +181,8 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's localVariableAt method"
 
     it should "return the local variables defined at the respective pc" in {
-        val lvs = codeOfPut.localVariablesAt(32).map(e ⇒ (e._1, e._2.name))
-        lvs should be(Map(0 → "this", 1 → "item"))
+        val lvs = codeOfPut.localVariablesAt(32).map(e => (e._1, e._2.name))
+        lvs should be(Map(0 -> "this", 1 -> "item"))
     }
 
     behavior of "the \"Code\" attribute's localVariable method"

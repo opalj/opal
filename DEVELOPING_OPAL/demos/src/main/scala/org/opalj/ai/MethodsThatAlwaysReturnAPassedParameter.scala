@@ -28,7 +28,7 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val methods = for {
@@ -46,8 +46,8 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
                 new domain.l1.DefaultDomain(theProject, method) with RecordLastReturnedValues
             )
             if result.domain.allReturnedValues.forall {
-                case (_, Origins(os)) if os.forall(_ < 0) ⇒ true
-                case _                                    ⇒ false
+                case (_, Origins(os)) if os.forall(_ < 0) => true
+                case _                                    => false
             }
         } yield {
             // collect the origin information

@@ -50,7 +50,7 @@ final class DominanceFrontiers private (
 
     def xIsDirectlyControlDependentOn(x: Int): IntArraySet = df(x)
 
-    def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit = {
+    def xIsControlDependentOn(x: Int)(f: Int => Unit): Unit = {
         val maxNodeId = maxNode
 
         // IMPROVE Evaluate if a typed chain or an Int(Array|Trie)Set is more efficient...
@@ -61,7 +61,7 @@ final class DominanceFrontiers private (
         do {
             val x = worklist.pop()
 
-            df(x) foreach { y ⇒
+            df(x) foreach { y =>
                 if (!seen.contains(y)) {
                     seen += y
                     worklist.push(y)
@@ -86,15 +86,15 @@ final class DominanceFrontiers private (
      *          a valid node, then the default function, which always returns `true`,
      *          can be used.
      */
-    def toDot(isNodeValid: Int ⇒ Boolean = _ ⇒ true): String = {
+    def toDot(isNodeValid: Int => Boolean = _ => true): String = {
         val g = Graph.empty[Int]
-        dfs.zipWithIndex.foreach { e ⇒
+        dfs.zipWithIndex.foreach { e =>
             val (df, s /*index*/ ) = e
             if (isNodeValid(s)) {
                 if (df == null) {
                     g += s
                 } else {
-                    df.foreach { t ⇒ g += (s, t) }
+                    df.foreach { t => g += (s, t) }
                 }
             }
         }
@@ -116,9 +116,9 @@ object DominanceFrontiers {
      * {{{
      * // A graph taken from the paper:
      * // Efficiently Computing Static Single Assignment Form and the Control Dependence Graph
-     * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3->5) += (5->6) += (4->6) += (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) += (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
-     * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-     * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+     * val g = org.opalj.graphs.Graph.empty[Int] += (0 -> 1) += (1 -> 2) += (2 -> 3) += (2 -> 7) += (3 -> 4) += (3->5) += (5->6) += (4->6) += (6->8) += (7->8)  += (8->9) += (9->10) += (9->11) += (10->11) += (11->9) += (11 -> 12) += (12 -> 13) += (12 ->2) += (0 -> 13)
+     * val foreachSuccessor = (n: Int) => g.successors.getOrElse(n, List.empty).foreach _
+     * val foreachPredecessor = (n: Int) => g.predecessors.getOrElse(n, List.empty).foreach _
      * val dt = org.opalj.graphs.DominatorTree(0, false, foreachSuccessor, foreachPredecessor, 13)
      * val isValidNode = (n : Int) => n>= 0 && n <= 13
      * org.opalj.io.writeAndOpen(dt.toDot(),"g",".dt.gv")
@@ -127,9 +127,9 @@ object DominanceFrontiers {
      *
      *
      * // A degenerated graph which consists of a single node that has a self-reference.
-     * val g = org.opalj.graphs.Graph.empty[Int] += (0 → 0)
-     * val foreachSuccessor = (n: Int) ⇒ g.successors.getOrElse(n, List.empty).foreach _
-     * val foreachPredecessor = (n: Int) ⇒ g.predecessors.getOrElse(n, List.empty).foreach _
+     * val g = org.opalj.graphs.Graph.empty[Int] += (0 -> 0)
+     * val foreachSuccessor = (n: Int) => g.successors.getOrElse(n, List.empty).foreach _
+     * val foreachPredecessor = (n: Int) => g.predecessors.getOrElse(n, List.empty).foreach _
      * val dtf = org.opalj.graphs.DominatorTreeFactory(0, true, foreachSuccessor, foreachPredecessor, 0)
      * val isValidNode = (n : Int) => n == 0
      * org.opalj.io.writeAndOpen(dtf.dt.toDot(),"g",".dt.gv")
@@ -164,7 +164,7 @@ object DominanceFrontiers {
      *          node then this node may or may not be reported as a valid node; this is not relevant
      *          for this algorithm.
      */
-    def apply(dt: AbstractDominatorTree, isValidNode: Int ⇒ Boolean): DominanceFrontiers = {
+    def apply(dt: AbstractDominatorTree, isValidNode: Int => Boolean): DominanceFrontiers = {
         val startNode: Int = dt.startNode
         val foreachSuccessorOf = dt.foreachSuccessorOf
         val max = dt.maxNode + 1
@@ -192,9 +192,9 @@ object DominanceFrontiers {
         @inline def dfLocal(n: Int): IntArraySet = {
             var s = IntArraySet.empty
             try {
-                foreachSuccessorOf(n) { y ⇒ if (dt.dom(y) != n) s = s + y }
+                foreachSuccessorOf(n) { y => if (dt.dom(y) != n) s = s + y }
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     throw new Throwable(s"failed iterating over successors of node $n", t)
             }
             s
@@ -215,9 +215,9 @@ object DominanceFrontiers {
             }
         }
 
-        inDFSOrder foreach { n ⇒
-            val s = children(n).foldLeft(dfLocal(n)) { (s, c) ⇒
-                dfs(c).foldLeft(s) { (s, w) ⇒
+        inDFSOrder foreach { n =>
+            val s = children(n).foldLeft(dfLocal(n)) { (s, c) =>
+                dfs(c).foldLeft(s) { (s, w) =>
                     if (!dt.strictlyDominates(n, w)) {
                         s + w
                     } else
@@ -229,20 +229,20 @@ object DominanceFrontiers {
 
         if (dt.isAugmented) {
             dt match {
-                case pdt: PostDominatorTree ⇒
+                case pdt: PostDominatorTree =>
                     // let's filter the extra exit points; recall that we are
                     // non-termination _in_sensitive
-                    dfs = dfs.map { e ⇒
+                    dfs = dfs.map { e =>
                         if (e ne null)
                             e -- pdt.additionalExitNodes
                         else
                             e
                     }
 
-                case _: DominatorTree ⇒
+                case _: DominatorTree =>
                 //nothing special to do
 
-                case dt ⇒
+                case dt =>
                     org.opalj.log.OPALLogger.warn(
                         "computing dominance frontier",
                         s"the augmentation of $dt is not understood and ignored"

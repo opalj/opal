@@ -48,7 +48,7 @@ class RTACallGraphAnalysis private[analyses] (
     override type LocalTypeInformation = UIDSet[ReferenceType]
 
     override def c(state: RTAState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case UBP(_: InstantiatedTypes) ⇒
+        case UBP(_: InstantiatedTypes) =>
             val seenTypes = state.instantiatedTypesUB.size
 
             state.updateInstantiatedTypesDependee(
@@ -62,7 +62,7 @@ class RTACallGraphAnalysis private[analyses] (
 
             returnResult(calleesAndCallers)(state)
 
-        case _ ⇒ super.c(state)(eps)
+        case _ => super.c(state)(eps)
     }
 
     override def createInitialState(
@@ -89,9 +89,9 @@ class RTACallGraphAnalysis private[analyses] (
     private[this] def handleVirtualCallSites(
         calleesAndCallers: DirectCalls, seenTypes: Int
     )(implicit state: RTAState): Unit = {
-        state.newInstantiatedTypes(seenTypes).filter(_.isObjectType).foreach { instantiatedType ⇒
+        state.newInstantiatedTypes(seenTypes).filter(_.isObjectType).foreach { instantiatedType =>
             val callSites = state.getVirtualCallSites(instantiatedType.asObjectType)
-            callSites.foreach { callSite ⇒
+            callSites.foreach { callSite =>
                 val CallSite(pc, name, descr, declaringClass) = callSite
                 val tgtR = project.instanceCall(
                     state.method.definedMethod.classFile.thisType,
@@ -118,7 +118,7 @@ class RTACallGraphAnalysis private[analyses] (
     @inline override protected[this] def canResolveCall(
         localTypeInformation: LocalTypeInformation,
         state:                RTAState
-    ): ObjectType ⇒ Boolean = {
+    ): ObjectType => Boolean = {
         localTypeInformation.contains(_)
     }
 

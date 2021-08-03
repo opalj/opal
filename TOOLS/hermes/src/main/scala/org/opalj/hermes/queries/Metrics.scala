@@ -47,28 +47,28 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
             // fpc
 
             classFile.fields.size match {
-                case 0            ⇒ classLocations(0) += classLocation
-                case x if x <= 3  ⇒ classLocations(1) += classLocation
-                case x if x <= 10 ⇒ classLocations(2) += classLocation
-                case x            ⇒ classLocations(3) += classLocation
+                case 0            => classLocations(0) += classLocation
+                case x if x <= 3  => classLocations(1) += classLocation
+                case x if x <= 10 => classLocations(2) += classLocation
+                case x            => classLocations(3) += classLocation
             }
 
             // mpc
 
             classFile.methods.size match {
-                case 0            ⇒ classLocations(4) += classLocation
-                case x if x <= 3  ⇒ classLocations(5) += classLocation
-                case x if x <= 10 ⇒ classLocations(6) += classLocation
-                case x            ⇒ classLocations(7) += classLocation
+                case 0            => classLocations(4) += classLocation
+                case x if x <= 3  => classLocations(5) += classLocation
+                case x if x <= 10 => classLocations(6) += classLocation
+                case x            => classLocations(7) += classLocation
             }
 
             // noc
 
             classHierarchy.directSubtypesOf(classFile.thisType).size match {
-                case 0            ⇒ classLocations(11) += classLocation
-                case x if x <= 3  ⇒ classLocations(12) += classLocation
-                case x if x <= 10 ⇒ classLocations(13) += classLocation
-                case x            ⇒ classLocations(14) += classLocation
+                case 0            => classLocations(11) += classLocation
+                case x if x <= 3  => classLocations(12) += classLocation
+                case x if x <= 10 => classLocations(13) += classLocation
+                case x            => classLocations(14) += classLocation
             }
 
             // count the classes per package
@@ -80,29 +80,29 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
             packageInfo.classesCount += 1
 
             // McCabe
-            classFile.methods foreach { method ⇒
-                CFGFactory(method, project.classHierarchy) foreach { cfg ⇒
+            classFile.methods foreach { method =>
+                CFGFactory(method, project.classHierarchy) foreach { cfg =>
                     val methodLocation = MethodLocation(classLocation, method)
                     val bbs = cfg.reachableBBs
-                    val edges = bbs.foldLeft(0) { (res, node) ⇒
+                    val edges = bbs.foldLeft(0) { (res, node) =>
                         res + node.successors.size
                     }
                     val mcCabe = edges - bbs.size + 2
                     mcCabe match {
-                        case 1            ⇒ classLocations(15) += methodLocation
-                        case x if x <= 3  ⇒ classLocations(16) += methodLocation
-                        case x if x <= 10 ⇒ classLocations(17) += methodLocation
-                        case x            ⇒ classLocations(18) += methodLocation
+                        case 1            => classLocations(15) += methodLocation
+                        case x if x <= 3  => classLocations(16) += methodLocation
+                        case x if x <= 10 => classLocations(17) += methodLocation
+                        case x            => classLocations(18) += methodLocation
                     }
                 }
             }
         }
 
-        packagesInfo.values foreach { pi ⇒
+        packagesInfo.values foreach { pi =>
             pi.classesCount match {
-                case x if x <= 3  ⇒ classLocations(8) += pi.location
-                case x if x <= 10 ⇒ classLocations(9) += pi.location
-                case x            ⇒ classLocations(10) += pi.location
+                case x if x <= 3  => classLocations(8) += pi.location
+                case x if x <= 10 => classLocations(9) += pi.location
+                case x            => classLocations(10) += pi.location
             }
         }
 

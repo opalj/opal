@@ -29,7 +29,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[Set[ObjectType]](
             typesOpt,
             pc,
-            v ⇒ new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
+            v => new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
         )
     }
 
@@ -42,7 +42,7 @@ object MatcherUtil {
     private[reflection] def retrieveSuitableMatcher[A](
         v:       Option[A],
         pc:      Int,
-        factory: A ⇒ MethodMatcher
+        factory: A => MethodMatcher
     )(
         implicit
         incompleteCallSites: IncompleteCallSites,
@@ -67,7 +67,7 @@ object MatcherUtil {
      */
     private[reflection] def retrieveSuitableNonEssentialMatcher[A](
         v: Option[A],
-        f: A ⇒ MethodMatcher
+        f: A => MethodMatcher
     ): MethodMatcher = {
         if (v.isEmpty) {
             AllMethodsMatcher
@@ -86,7 +86,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[FieldTypes](
             paramTypesO,
             pc,
-            v ⇒ new ParameterTypesBasedMethodMatcher(v)
+            v => new ParameterTypesBasedMethodMatcher(v)
         )
     }
 
@@ -99,7 +99,7 @@ object MatcherUtil {
         retrieveSuitableMatcher[Set[String]](
             namesO,
             pc,
-            v ⇒ new NameBasedMethodMatcher(v)
+            v => new NameBasedMethodMatcher(v)
         )
     }
 

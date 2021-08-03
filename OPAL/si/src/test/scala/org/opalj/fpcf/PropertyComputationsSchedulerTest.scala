@@ -35,7 +35,7 @@ class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with Be
     }
 
     val pks: Array[PropertyKind] = new Array[PropertyKind](12)
-    (0 to 11).foreach { i ⇒ pks(i) = PropertyKey.create[Null, Null]("p"+(i)) }
+    (0 to 11).foreach { i => pks(i) = PropertyKey.create[Null, Null]("p"+(i)) }
 
     val c1 = BasicComputationSpecification(
         "c1",

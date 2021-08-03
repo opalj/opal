@@ -29,7 +29,7 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
 
     def testMethod(
         method:        Method,
-        domainFactory: Method ⇒ Domain
+        domainFactory: Method => Domain
     ): Unit = {
         val instructions = method.body.get.instructions
 
@@ -40,7 +40,7 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
             result should not be 'wasAborted
             // the layout of the instructions array is correct
             for {
-                pc ← instructions.indices
+                pc <- instructions.indices
                 if instructions(pc) != null
             } {
                 val modifiedByWide = pc != 0 && instructions(pc) == WIDE
@@ -48,7 +48,7 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
                 instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
             }
         } catch {
-            case e: InterpretationFailedException ⇒
+            case e: InterpretationFailedException =>
                 val pc = e.pc
                 val details =
                     if (pc == instructions.length) {
@@ -81,7 +81,7 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
 
             it("should be able to perform abstract interpretation of rewritten dynamic constants "+
                 "in the dynamic constants test project") {
-                project.allMethods.foreach(testMethod(_, m ⇒ BaseDomain(project, m)))
+                project.allMethods.foreach(testMethod(_, m => BaseDomain(project, m)))
             }
         }
 
@@ -96,10 +96,10 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
             it("should be able to rewrite all dynamic constants in the dynamic constants test "+
                 "project") {
                 val hasDynamicLoadsRemaining =
-                    project.allMethods.exists { m ⇒
+                    project.allMethods.exists { m =>
                         m.body.get.instructions.exists {
-                            case LDCDynamic(_, _, _) ⇒ true
-                            case _                   ⇒ false
+                            case LDCDynamic(_, _, _) => true
+                            case _                   => false
                         }
                     }
                 assert(!hasDynamicLoadsRemaining)
@@ -107,7 +107,7 @@ class DynamicConstantsBytecodeStructureTest extends AnyFunSpec with Matchers {
 
             it("should be able to perform abstract interpretation of rewritten dynamic constants "+
                 "in the dynamic constants test project") {
-                project.allMethods.foreach(testMethod(_, m ⇒ BaseDomain(project, m)))
+                project.allMethods.foreach(testMethod(_, m => BaseDomain(project, m)))
             }
         }
     }

@@ -5,7 +5,7 @@ package immutable
 
 import scala.reflect.ClassTag
 
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 import java.lang.System.arraycopy
 
 import scala.collection.IndexedSeqOptimized
@@ -13,7 +13,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayBuffer
 
-import org.opalj.control.{find ⇒ findInArray}
+import org.opalj.control.{find => findInArray}
 
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
@@ -32,7 +32,7 @@ final class ConstArray[T <: AnyRef] private (
 
     override def length: Int = data.length
     override def size: Int = data.length
-    override def foreach[U](f: T ⇒ U): Unit = {
+    override def foreach[U](f: T => U): Unit = {
         val data = this.data
         var i = 0
         val max = data.length
@@ -80,14 +80,14 @@ final class ConstArray[T <: AnyRef] private (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IndexedSeq[_] ⇒
+            case that: IndexedSeq[_] =>
                 this.length == that.length && {
                     val thisIt = this.toIterator
                     val thatIt = that.toIterator
                     while (thisIt.hasNext && thisIt.next == thatIt.next) { /*continue*/ }
                     !thisIt.hasNext // <=> all elements are equal
                 }
-            case _ ⇒
+            case _ =>
                 false
         }
     }
@@ -125,7 +125,7 @@ object ConstArray /*extends LowLevelConstArrayImplicits*/ {
 
     def newBuilder[T <: AnyRef](sizeHint: Int = 8): Builder[T, ConstArray[T]] = {
         val builder = new ArrayBuffer[T](sizeHint)
-        builder mapResult (r ⇒ ConstArray(r.toArray[Object].asInstanceOf[Array[T]]))
+        builder mapResult (r => ConstArray(r.toArray[Object].asInstanceOf[Array[T]]))
     }
 
     implicit def canBuildFrom[T <: AnyRef]: CanBuildFrom[ConstArray[_ <: AnyRef], T, ConstArray[T]] = {
@@ -136,7 +136,7 @@ object ConstArray /*extends LowLevelConstArrayImplicits*/ {
     }
 
     // TODO rename binarySearch
-    def find[T <: AnyRef](sortedConstArray: ConstArray[T])(evaluate: T ⇒ Int): Option[T] = {
+    def find[T <: AnyRef](sortedConstArray: ConstArray[T])(evaluate: T => Int): Option[T] = {
         findInArray(sortedConstArray.data)(evaluate)
     }
 

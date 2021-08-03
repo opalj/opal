@@ -26,7 +26,7 @@ class DependencyExtractorJava8Test extends AnyFunSuite {
         var dependencies: Map[(String, String, DependencyType), Int] =
             DependencyExtractorsHelper.extractDependencies(
                 "bi", "dependencies-1.8-g-parameters-genericsignature-preserveAllLocals.jar",
-                (dp: DependencyProcessor) ⇒ new DependencyExtractor(dp)
+                (dp: DependencyProcessor) => new DependencyExtractor(dp)
             )
         assert(dependencies.nonEmpty, "dependency extraction failed miserably")
 
@@ -34,11 +34,11 @@ class DependencyExtractorJava8Test extends AnyFunSuite {
             val key = (src, trgt, dType)
 
             dependencies.get(key) match {
-                case Some(0) ⇒
+                case Some(0) =>
                     fail("the dependency "+key+" was not extracted the expected number of times")
-                case Some(x) ⇒
+                case Some(x) =>
                     dependencies = dependencies.updated(key, x - 1)
-                case None ⇒
+                case None =>
                     val remainigDependencies =
                         dependencies.toList.sorted.mkString(
                             s"Remaining dependencies (${dependencies.size}):\n\t",

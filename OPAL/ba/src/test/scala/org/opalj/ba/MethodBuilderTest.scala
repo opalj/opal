@@ -18,7 +18,7 @@ import org.opalj.bc.Assembler
 import org.opalj.bi._
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.instructions._
-import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ J8ClassFile}
+import org.opalj.br.reader.Java8Framework.{ClassFile => J8ClassFile}
 import org.opalj.br.MethodAttributeBuilder
 import org.opalj.br.ObjectType
 import org.opalj.br.IntegerType
@@ -51,7 +51,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     "the generated method 'SimpleMethodClass.testMethod'" should "execute correctly" in {
         val loader = new InMemoryClassLoader(
-            Map("SimpleMethodClass" → rawClassFile),
+            Map("SimpleMethodClass" -> rawClassFile),
             this.getClass.getClassLoader
         )
 
@@ -63,9 +63,9 @@ class MethodBuilderTest extends AnyFlatSpec {
         assert(mirror.reflectMethod(method)("test") == null)
     }
 
-    val brClassFile = J8ClassFile(() ⇒ new java.io.ByteArrayInputStream(rawClassFile)).head
+    val brClassFile = J8ClassFile(() => new java.io.ByteArrayInputStream(rawClassFile)).head
 
-    val testMethod = brClassFile.methods.find { m ⇒
+    val testMethod = brClassFile.methods.find { m =>
         val expectedMethodDescritor = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/String;")
         m.name == "testMethod" && m.descriptor == expectedMethodDescritor
     }
@@ -81,7 +81,7 @@ class MethodBuilderTest extends AnyFlatSpec {
     }
 
     it should "have the Exception attribute set: 'java/lang/Exception" in {
-        val attribute = testMethod.get.attributes.collect { case e: br.ExceptionTable ⇒ e }
+        val attribute = testMethod.get.attributes.collect { case e: br.ExceptionTable => e }
         assert(attribute.head.exceptions.head.fqn == "java/lang/Exception")
     }
 
@@ -155,14 +155,14 @@ class MethodBuilderTest extends AnyFlatSpec {
         ).toDA()
 
     val rawAttributeCF = Assembler(attributeMethodClass)
-    val attributeBrClassFile = J8ClassFile(() ⇒ new ByteArrayInputStream(rawAttributeCF)).head
+    val attributeBrClassFile = J8ClassFile(() => new ByteArrayInputStream(rawAttributeCF)).head
 
-    val attributeTestMethod = attributeBrClassFile.methods.find { m ⇒
+    val attributeTestMethod = attributeBrClassFile.methods.find { m =>
         m.name == "<init>" && m.descriptor == MethodDescriptor("()V")
     }.get
 
     val loader = new InMemoryClassLoader(
-        Map("AttributeMethodClass" → rawAttributeCF),
+        Map("AttributeMethodClass" -> rawAttributeCF),
         this.getClass.getClassLoader
     )
 
@@ -176,7 +176,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     it should "have the expected LineNumberTable" in {
         val lineNumberTable = attributeTestMethod.body.get.attributes.collect {
-            case l: br.LineNumberTable ⇒ l
+            case l: br.LineNumberTable => l
         }.head
         assert(lineNumberTable.lookupLineNumber(0).get == 0)
         assert(lineNumberTable.lookupLineNumber(1).get == 1)
@@ -185,7 +185,7 @@ class MethodBuilderTest extends AnyFlatSpec {
 
     "the generated method `tryCatchFinallyTest`" should "have the correct exceptionTable set" in {
         val exceptionTable = attributeBrClassFile.methods.find {
-            m ⇒ m.name == "tryCatchFinallyTest"
+            m => m.name == "tryCatchFinallyTest"
         }.get.body.get.exceptionHandlers
         assert(
             exceptionTable(0) ==
@@ -206,7 +206,7 @@ class MethodBuilderTest extends AnyFlatSpec {
             assert(mirror.reflectMethod(method)(0) == 1)
             assert(mirror.reflectMethod(method)(1) == 2)
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 info(
                     attributeBrClassFile.findMethod("tryCatchFinallyTest").head.toJava
                 )

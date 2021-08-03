@@ -21,8 +21,8 @@ class AbstractTypeImmutabilityMatcher(
         properties: Traversable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case `property` ⇒ true
-            case _          ⇒ false
+            case `property` => true
+            case _          => false
         }) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {

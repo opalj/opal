@@ -88,12 +88,12 @@ object MethodHandlesUtil {
         val actualDescriptorOpt =
             // for instance methods, we need to peel off the receiver type
             if (!isStatic && !isConstructor)
-                descriptorsOpt.map(_.map { md ⇒
+                descriptorsOpt.map(_.map { md =>
                     MethodDescriptor(md.parameterTypes.tail, md.returnType)
                 })
             else if (isConstructor)
                 // for constructor
-                descriptorsOpt.map(_.map { md ⇒
+                descriptorsOpt.map(_.map { md =>
                     MethodDescriptor(md.parameterTypes, VoidType)
                 })
             else
@@ -103,7 +103,7 @@ object MethodHandlesUtil {
         // e.g. name or classes.
         MatcherUtil.retrieveSuitableNonEssentialMatcher[Set[MethodDescriptor]](
             actualDescriptorOpt,
-            v ⇒ new DescriptorBasedMethodMatcher(v)
+            v => new DescriptorBasedMethodMatcher(v)
 
         )
     }

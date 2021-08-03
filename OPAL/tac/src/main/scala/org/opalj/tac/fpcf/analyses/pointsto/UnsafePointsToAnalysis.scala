@@ -44,7 +44,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  * @author Dominik Helm
  */
 abstract class UnsafePointsToAnalysis private[pointsto] ( final val project: SomeProject)
-    extends PointsToAnalysisBase { self ⇒
+    extends PointsToAnalysisBase { self =>
 
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
     val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
@@ -73,7 +73,7 @@ abstract class UnsafePointsToAnalysis private[pointsto] ( final val project: Som
         @inline override protected[this] def currentPointsTo(
             depender:   DependerType,
             dependee:   Entity,
-            typeFilter: ReferenceType ⇒ Boolean
+            typeFilter: ReferenceType => Boolean
         )(implicit state: State): PointsToSet = {
             self.currentPointsTo(depender, dependee, typeFilter)
         }
@@ -227,7 +227,7 @@ abstract class UnsafePutPointsToAnalysis(
 trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
-    val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis
+    val createAnalysis: SomeProject => UnsafePointsToAnalysis
 
     override type InitializationData = Null
 
@@ -249,13 +249,13 @@ trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
 object TypeBasedUnsafePointsToAnalysisScheduler extends UnsafePointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis =
+    override val createAnalysis: SomeProject => UnsafePointsToAnalysis =
         new UnsafePointsToAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedUnsafePointsToAnalysisScheduler
     extends UnsafePointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
-    override val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis =
+    override val createAnalysis: SomeProject => UnsafePointsToAnalysis =
         new UnsafePointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

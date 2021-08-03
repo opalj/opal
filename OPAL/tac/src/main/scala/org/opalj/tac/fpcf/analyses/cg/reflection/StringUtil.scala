@@ -17,12 +17,12 @@ object StringUtil {
         pc:    Option[Int],
         stmts: Array[Stmt[V]]
     ): Option[Set[String]] = {
-        Some(value.asVar.definedBy.map[Set[String]] { index ⇒
+        Some(value.asVar.definedBy.map[Set[String]] { index =>
             if (index >= 0) {
                 val expr = stmts(index).asAssignment.expr
                 expr match {
-                    case StringConst(_, v) ⇒ Set(v)
-                    case _ ⇒
+                    case StringConst(_, v) => Set(v)
+                    case _ =>
                         return None;
                 }
             } else {

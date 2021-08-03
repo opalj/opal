@@ -77,7 +77,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
     def reachableMethods(): Iterator[DeclaredMethod] = {
         val callersProperties = ps.entities(Callers.key)
         callersProperties.collect {
-            case EUBP(dm: DeclaredMethod, ub: Callers) if ub ne NoCallers ⇒ dm
+            case EUBP(dm: DeclaredMethod, ub: Callers) if ub ne NoCallers => dm
         }
     }
 

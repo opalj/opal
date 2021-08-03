@@ -108,7 +108,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
-            parameters.filter { p ⇒
+            parameters.filter { p =>
                 !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity)
             }
         super.checkAnalysisSpecificParameters(remainingParameters)
@@ -130,9 +130,9 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
         val isFineGrainedAnalysis =
             if (granularityParam.isDefined) {
                 granularityParam.get.substring(granularityParam.get.indexOf("=") + 1) match {
-                    case "fine"   ⇒ true
-                    case "coarse" ⇒ false
-                    case _ ⇒
+                    case "fine"   => true
+                    case "coarse" => false
+                    case _ =>
                         val msg = "incorrect argument: -granularity must be one of fine|coarse"
                         throw new IllegalArgumentException(msg)
                 }
@@ -144,34 +144,34 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
+        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
     ): ReportableAnalysisResult = {
         val (className, isFineGrainedAnalysis) = getAnalysisParameters(parameters)
         val resultMap: ConcurrentHashMap[String, AtomicInteger] = new ConcurrentHashMap()
         val tacProvider = project.get(LazyDetachedTACAIKey)
 
-        project.parForeachMethodWithBody() { methodInfo ⇒
-            tacProvider(methodInfo.method).stmts.foreach { stmt ⇒
+        project.parForeachMethodWithBody() { methodInfo =>
+            tacProvider(methodInfo.method).stmts.foreach { stmt =>
                 (stmt.astID: @switch) match {
-                    case Assignment.ASTID | ExprStmt.ASTID ⇒
+                    case Assignment.ASTID | ExprStmt.ASTID =>
                         stmt.asAssignmentLike.expr match {
-                            case c: Call[V] @unchecked ⇒
+                            case c: Call[V] @unchecked =>
                                 processCall(c, resultMap, className, isFineGrainedAnalysis)
-                            case _ ⇒
+                            case _ =>
                         }
                     case NonVirtualMethodCall.ASTID | VirtualMethodCall.ASTID |
-                        StaticMethodCall.ASTID ⇒
+                        StaticMethodCall.ASTID =>
                         processCall(stmt.asMethodCall, resultMap, className, isFineGrainedAnalysis)
-                    case _ ⇒
+                    case _ =>
                 }
             }
         }
 
         val report = ListBuffer[String]("Result:")
         // Transform to a list, sort in ascending order of occurrences, and format the information
-        resultMap.entrySet().stream().sorted { (value1, value2) ⇒
+        resultMap.entrySet().stream().sorted { (value1, value2) =>
             value1.getValue.get().compareTo(value2.getValue.get())
-        }.forEach(next ⇒ report.append(s"${next.getKey}: ${next.getValue}"))
+        }.forEach(next => report.append(s"${next.getKey}: ${next.getValue}"))
         BasicReport(report)
     }
 

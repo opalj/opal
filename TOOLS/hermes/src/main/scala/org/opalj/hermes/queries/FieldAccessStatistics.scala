@@ -52,18 +52,18 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
             val category =
                 if (!isAccessed(field)) {
                     field.visibilityModifier match {
-                        case Some(ACC_PRIVATE)   ⇒ 0
-                        case None                ⇒ 1
-                        case Some(ACC_PROTECTED) ⇒ 2
-                        case Some(ACC_PUBLIC)    ⇒ 3
+                        case Some(ACC_PRIVATE)   => 0
+                        case None                => 1
+                        case Some(ACC_PROTECTED) => 2
+                        case Some(ACC_PUBLIC)    => 3
                     }
-                } else if (!field.isPrivate && allAccesses(field).forall(mi ⇒ mi._1.classFile eq cf)) {
+                } else if (!field.isPrivate && allAccesses(field).forall(mi => mi._1.classFile eq cf)) {
                     field.visibilityModifier match {
-                        case None                ⇒ 4
-                        case Some(ACC_PROTECTED) ⇒ 5
-                        case Some(ACC_PUBLIC)    ⇒ 6
+                        case None                => 4
+                        case Some(ACC_PROTECTED) => 5
+                        case Some(ACC_PUBLIC)    => 6
 
-                        case Some(ACC_PRIVATE) ⇒
+                        case Some(ACC_PRIVATE) =>
                             throw new UnknownError(s"non private-field $field has private modifier")
                     }
                 } else {

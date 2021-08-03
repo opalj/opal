@@ -30,7 +30,7 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
 
     var count = 0
     for {
-        file ← allBITestJARs() ++ Iterator(JRELibraryFolder)
+        file <- allBITestJARs() ++ Iterator(JRELibraryFolder)
         if file.length() > 0
         if file.getName.endsWith(".jar") || file.getName.endsWith(".jmod")
     } {
@@ -52,14 +52,14 @@ class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT P
                 if (twinDiff.nonEmpty)
                     fail(s"the $classFile is not jvm equal to its twin: "+twinDiff.get)
 
-                for (MethodWithBody(body) ← classFile.methods.par) {
+                for (MethodWithBody(body) <- classFile.methods.par) {
                     body.belongsToSubroutine() should not be (null)
 
                     testedMethods.set(true)
                     var isomorphicCount = 0
                     var notIsomorphicCount = 0
                     var lastPC = -1
-                    body iterate { (pc, instruction) ⇒
+                    body iterate { (pc, instruction) =>
                         assert(
                             instruction.isIsomorphic(pc, pc)(body),
                             s"$instruction should be isomorphic to itself"

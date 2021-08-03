@@ -21,8 +21,8 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.br.ObjectType
-import org.opalj.br.ObjectType.{ObjectOutputStream ⇒ ObjectOutputStreamType}
-import org.opalj.br.ObjectType.{ObjectInputStream ⇒ ObjectInputStreamType}
+import org.opalj.br.ObjectType.{ObjectOutputStream => ObjectOutputStreamType}
+import org.opalj.br.ObjectType.{ObjectInputStream => ObjectInputStreamType}
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callees
@@ -92,7 +92,7 @@ class OOSWriteObjectAnalysis private[analyses] (
     ): Unit = {
         val receiver = persistentUVar(param)
         val parameterList = Seq(
-            outputStream.flatMap(os ⇒ persistentUVar(os.asVar))
+            outputStream.flatMap(os => persistentUVar(os.asVar))
         )
 
         for (rv ← param.value.asReferenceValue.allValues) {
@@ -239,7 +239,7 @@ class OISReadObjectAnalysis private[analyses] (
         stmts: Array[Stmt[V]]
     ): Unit = {
         var foundCast = false
-        val parameterList = Seq(inputStream.flatMap(is ⇒ persistentUVar(is.asVar)))
+        val parameterList = Seq(inputStream.flatMap(is => persistentUVar(is.asVar)))
         for { Checkcast(_, _, ElementReferenceType(castType)) ← stmts } {
             foundCast = true
 
@@ -268,7 +268,7 @@ class OISReadObjectAnalysis private[analyses] (
                     )
 
                     // call to no-arg constructor
-                    cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c ⇒
+                    cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c =>
                         calleesAndCallers.addCall(
                             definedMethod, declaredMethods(c), pc, UnknownParam, None
                         )
@@ -291,7 +291,7 @@ class OISReadObjectAnalysis private[analyses] (
                     // call to first super no-arg constructor
                     val nonSerializableSuperclass = firstNotSerializableSupertype(t)
                     if (nonSerializableSuperclass.isDefined) {
-                        val constructor = p.classFile(nonSerializableSuperclass.get).flatMap { cf ⇒
+                        val constructor = p.classFile(nonSerializableSuperclass.get).flatMap { cf =>
                             cf.findMethod("<init>", NoArgsAndReturnVoid)
                         }
                         // otherwise an exception will thrown at runtime
@@ -312,9 +312,9 @@ class OISReadObjectAnalysis private[analyses] (
                     // Note, that we assume that there is a constructor
                     // Note that we have to do a String comparison since methods with ObjectType
                     // descriptors are not sorted consistently across runs
-                    val constructor = cf.constructors.map[(String, Method)] { cf ⇒
+                    val constructor = cf.constructors.map[(String, Method)] { cf =>
                         (cf.descriptor.toJava, cf)
-                    }.minBy(t ⇒ t._1)._2
+                    }.minBy(t => t._1)._2
 
                     calleesAndCallers.addCall(
                         definedMethod, declaredMethods(constructor), pc, UnknownParam, None
@@ -358,8 +358,8 @@ class OISReadObjectAnalysis private[analyses] (
 
     @tailrec private[this] def firstNotSerializableSupertype(t: ObjectType): Option[ObjectType] = {
         ch.superclassType(t) match {
-            case None ⇒ None
-            case Some(superType) ⇒
+            case None => None
+            case Some(superType) =>
                 if (ch.isSubtypeOf(superType, ObjectType.Serializable)) {
                     firstNotSerializableSupertype(superType)
                 } else {

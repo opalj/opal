@@ -27,7 +27,7 @@ case class PUTSTATIC(
 
     final def mayThrowExceptions: Boolean = false
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = -fieldType.computationalType.operandSize
 

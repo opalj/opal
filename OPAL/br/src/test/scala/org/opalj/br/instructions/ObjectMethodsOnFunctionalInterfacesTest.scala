@@ -33,7 +33,7 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
         for {
             method ← classFile.findMethod(name)
             body ← method.body
-            invokevirtual ← body.instructions.view.collect { case i: INVOKEVIRTUAL ⇒ i }
+            invokevirtual ← body.instructions.view.collect { case i: INVOKEVIRTUAL => i }
             annotations = method.runtimeVisibleAnnotations
         } {
             val invokedMethod = getInvokedMethod(annotations)
@@ -88,17 +88,17 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
     }
 
     private def getParameterTypes(pairs: ElementValuePairs): FieldTypes = {
-        pairs.find(_.name == "parameterTypes").map { p ⇒
+        pairs.find(_.name == "parameterTypes").map { p =>
             p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
-                case ClassValue(x: ObjectType) ⇒ x
-                case ClassValue(x: BaseType)   ⇒ x
-                case x: ElementValue           ⇒ x.valueType
+                case ClassValue(x: ObjectType) => x
+                case ClassValue(x: BaseType)   => x
+                case x: ElementValue           => x.valueType
             }
         }.getOrElse(NoFieldTypes)
     }
 
     private def getReturnType(pairs: ElementValuePairs): Type = {
-        pairs.find(_.name == "returnType").map { p ⇒
+        pairs.find(_.name == "returnType").map { p =>
             p.value.asInstanceOf[ClassValue].value
         }.getOrElse(VoidType)
     }
@@ -107,6 +107,6 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
         val testClassType = ObjectType("lambdas/ObjectMethodsOnFunctionalInterfaces")
         val testClass = project.classFile(testClassType).get
         val annotatedMethods = testClass.methods.filter(_.runtimeVisibleAnnotations.nonEmpty)
-        annotatedMethods.foreach(m ⇒ testMethod(testClass, m.name))
+        annotatedMethods.foreach(m => testMethod(testClass, m.name))
     }
 }

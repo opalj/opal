@@ -51,7 +51,7 @@ trait APIBasedAnalysis extends FPCFAnalysis {
         seenCallers: Set[(DeclaredMethod, Int, Boolean)]
     )(callersEOptP: SomeEOptionP): ProperPropertyComputationResult =
         (callersEOptP: @unchecked) match {
-            case UBP(callersUB: Callers) ⇒
+            case UBP(callersUB: Callers) =>
                 // IMPROVE: use better design in order to get new callers
                 var newSeenCallers = seenCallers
                 var results: List[ProperPropertyComputationResult] = Nil
@@ -75,6 +75,6 @@ trait APIBasedAnalysis extends FPCFAnalysis {
 
                 Results(results)
 
-            case _: EPK[_, _] ⇒ InterimPartialResult(Set(callersEOptP), c(seenCallers))
+            case _: EPK[_, _] => InterimPartialResult(Set(callersEOptP), c(seenCallers))
         }
 }

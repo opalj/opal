@@ -83,7 +83,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
         try {
             processSource(Source.fromURL(descriptionResourceURL)(Codec.UTF8)) { _.mkString }
         } catch {
-            case t: Throwable ⇒ s"not available: $descriptionResourceURL; ${t.getMessage}"
+            case t: Throwable => s"not available: $descriptionResourceURL; ${t.getMessage}"
         }
     }
 
@@ -106,7 +106,7 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
     private[hermes] val accumulatedAnalysisTime: LongProperty = new SimpleLongProperty()
 
     private[hermes] def createInitialFeatures[S]: Seq[ObjectProperty[Feature[S]]] = {
-        featureIDs.map(fid ⇒ new SimpleObjectProperty(Feature[S](fid)))
+        featureIDs.map(fid => new SimpleObjectProperty(Feature[S](fid)))
     }
 
 }

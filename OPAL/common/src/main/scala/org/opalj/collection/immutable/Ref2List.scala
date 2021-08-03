@@ -21,7 +21,7 @@ package immutable
  *
  * @author Michael Eichberg
  */
-sealed abstract class Ref2List[+T <: AnyRef] extends Serializable { self ⇒
+sealed abstract class Ref2List[+T <: AnyRef] extends Serializable { self =>
 
     private[immutable] def h: T
     private[immutable] def t: T
@@ -31,10 +31,10 @@ sealed abstract class Ref2List[+T <: AnyRef] extends Serializable { self ⇒
     def isSingletonList: Boolean
     def nonEmpty: Boolean
 
-    def foreach[U](f: T ⇒ U): Unit
+    def foreach[U](f: T => U): Unit
 
     /** Iterates over the first N values. */
-    def forFirstN[U](n: Int)(f: T ⇒ U): Unit
+    def forFirstN[U](n: Int)(f: T => U): Unit
 
     /**
      * @return An iterator over this list's values. In general, you should prefer using foreach or
@@ -48,8 +48,8 @@ sealed abstract class Ref2List[+T <: AnyRef] extends Serializable { self ⇒
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case l: Ref2List[AnyRef] ⇒ equals(l)
-            case _                   ⇒ false
+            case l: Ref2List[AnyRef] => equals(l)
+            case _                   => false
         }
     }
     def equals(that: Ref2List[AnyRef]): Boolean
@@ -86,9 +86,9 @@ private[immutable] case object Ref2ListEnd extends Ref2List[Nothing] {
     override private[immutable] def t: Nothing = throw new UnsupportedOperationException
     override private[immutable] def rest: Ref2List[Nothing] = throw new UnsupportedOperationException
 
-    override def foreach[U](f: Nothing ⇒ U): Unit = {}
+    override def foreach[U](f: Nothing => U): Unit = {}
     /** Iterates over the first N values. */
-    override def forFirstN[U](n: Int)(f: Nothing ⇒ U): Unit = {}
+    override def forFirstN[U](n: Int)(f: Nothing => U): Unit = {}
     override def iterator: RefIterator[Nothing] = RefIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     override def +:[X <: AnyRef](v: X): Ref2List[X] = {
@@ -108,13 +108,13 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
         private[immutable] var h:    T,
         private[immutable] var t:    T,
         private[immutable] var rest: Ref2List[T]
-) extends Ref2List[T] { list ⇒
+) extends Ref2List[T] { list =>
 
     override def isEmpty: Boolean = false
     override def isSingletonList: Boolean = h == null && (rest eq Ref2ListEnd)
     override def nonEmpty: Boolean = true
 
-    override def foreach[U](f: T ⇒ U): Unit = {
+    override def foreach[U](f: T => U): Unit = {
         if (h != null) f(h)
         f(t)
         var list: Ref2List[T] = this.rest
@@ -125,17 +125,17 @@ private[immutable] final case class Ref2ListNode[T >: Null <: AnyRef](
         }
     }
 
-    override def forFirstN[U](n: Int)(f: T ⇒ U): Unit = {
+    override def forFirstN[U](n: Int)(f: T => U): Unit = {
         n match {
-            case 0 ⇒
+            case 0 =>
                 return ;
-            case 1 ⇒
+            case 1 =>
                 if (h != null)
                     f(h)
                 else
                     f(t)
                 return ;
-            case _ ⇒
+            case _ =>
                 // ... n >= 2
                 var i = n - 1 // <= -1 for the second element "t"...
                 if (h != null) { f(h); i -= 1 }

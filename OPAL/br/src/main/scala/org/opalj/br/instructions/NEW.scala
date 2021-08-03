@@ -25,9 +25,9 @@ case class NEW(objectType: ObjectType) extends ConstantLengthInstruction with No
 
     final override def length: Int = 3
 
-    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final override def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final override def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final override def stackSlotsChange: Int = 1
 

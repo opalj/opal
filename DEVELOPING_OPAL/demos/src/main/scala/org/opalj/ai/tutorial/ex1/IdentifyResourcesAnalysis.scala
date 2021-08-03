@@ -46,7 +46,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         // Step 1
@@ -57,21 +57,21 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                 m ← cf.methodsWithBody
             } yield {
                 val pcs =
-                    m.body.get.foldLeft(Chain.empty[Int /*PC*/ ]) { (pcs, pc, instruction) ⇒
+                    m.body.get.foldLeft(Chain.empty[Int /*PC*/ ]) { (pcs, pc, instruction) =>
                         instruction match {
                             case INVOKESPECIAL(
                                 ObjectType("java/io/File"), false /* = isInterface*/ ,
                                 "<init>",
                                 SingleArgumentMethodDescriptor((ObjectType.String, VoidType))
-                                ) ⇒
+                                ) =>
                                 pc :&: pcs
-                            case _ ⇒
+                            case _ =>
                                 pcs
                         }
                     }
                 (m, pcs)
             }).filter(_._2.size > 0)
-        } { ns ⇒ println(s"Finding candidates took: ${ns.toSeconds}") }
+        } { ns => println(s"Finding candidates took: ${ns.toSeconds}") }
 
         // Step 2
         // Perform a simple abstract interpretation to check if there is some
@@ -80,11 +80,11 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
             for {
                 (m, pcs) ← callSites
                 result = BaseAI(m, new AnalysisDomain(theProject, m))
-                (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
-                    case (pc, result.domain.StringValue(value) :&: _) ⇒ (pc, value)
+                (pc, value) ← pcs.map(pc => (pc, result.operandsArray(pc))).collect {
+                    case (pc, result.domain.StringValue(value) :&: _) => (pc, value)
                 }
             } yield (m, pc, value)
-        } { ns ⇒ println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
+        } { ns => println(s"Performing the abstract interpretations took ${ns.toSeconds}") }
 
         def callSiteToString(callSite: (Method, Int /* PC*/ , String)): String = {
             val (m, pc, v) = callSite

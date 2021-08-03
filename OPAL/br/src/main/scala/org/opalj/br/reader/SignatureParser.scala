@@ -60,7 +60,7 @@ object SignatureParser {
             opt(formalTypeParametersParser) ~
                 superclassSignatureParser ~
                 rep(superinterfaceSignatureParser) ^^ {
-                    case ftps ~ scs ~ siss ⇒ ClassSignature(ftps.getOrElse(Nil), scs, siss)
+                    case ftps ~ scs ~ siss => ClassSignature(ftps.getOrElse(Nil), scs, siss)
                 }
 
         protected val fieldTypeSignatureParser: Parser[FieldTypeSignature] =
@@ -73,7 +73,7 @@ object SignatureParser {
                 ('(' ~> rep(typeSignatureParser) <~ ')') ~
                 returnTypeParser ~
                 rep(throwsSignatureParser) ^^ {
-                    case ftps ~ psts ~ rt ~ tss ⇒
+                    case ftps ~ psts ~ rt ~ tss =>
                         MethodTypeSignature(ftps.getOrElse(Nil), psts, rt, tss)
                 }
 
@@ -84,7 +84,7 @@ object SignatureParser {
 
         protected def formalTypeParameterParser: Parser[FormalTypeParameter] =
             identifierParser ~ classBoundParser ~ rep(interfaceBoundParser) ^^ {
-                case id ~ cb ~ ib ⇒ FormalTypeParameter(id, cb, ib)
+                case id ~ cb ~ ib => FormalTypeParameter(id, cb, ib)
             }
 
         protected def classBoundParser: Parser[Option[FieldTypeSignature]] =
@@ -113,17 +113,17 @@ object SignatureParser {
                 opt(packageSpecifierParser) ~
                 simpleClassTypeSignatureParser ~
                 rep(classTypeSignatureSuffixParser) <~ ';' ^^ {
-                    case ps ~ scts ~ ctsss ⇒ ClassTypeSignature(ps, scts, ctsss)
+                    case ps ~ scts ~ ctsss => ClassTypeSignature(ps, scts, ctsss)
                 }
 
         protected def packageSpecifierParser: Parser[String] =
             (identifierParser ~ ('/' ~> opt(packageSpecifierParser))) ^^ {
-                case id ~ rest ⇒ id + '/' + rest.getOrElse("")
+                case id ~ rest => id + '/' + rest.getOrElse("")
             }
 
         protected def simpleClassTypeSignatureParser: Parser[SimpleClassTypeSignature] =
             identifierParser ~ opt(typeArgumentsParser) ^^ {
-                case id ~ tas ⇒ SimpleClassTypeSignature(id, tas.getOrElse(Nil))
+                case id ~ tas => SimpleClassTypeSignature(id, tas.getOrElse(Nil))
             }
 
         protected def classTypeSignatureSuffixParser: Parser[SimpleClassTypeSignature] =
@@ -137,20 +137,20 @@ object SignatureParser {
 
         protected def typeArgumentParser: Parser[TypeArgument] =
             (opt(wildcardIndicatorParser) ~ fieldTypeSignatureParser) ^^ {
-                case wi ~ fts ⇒ ProperTypeArgument(wi, fts)
+                case wi ~ fts => ProperTypeArgument(wi, fts)
             } |
                 ('*' ^^^ { Wildcard })
 
         protected def wildcardIndicatorParser: Parser[VarianceIndicator] =
             // Conceptually, we do the following:
-            // '+' ^^ { _ ⇒ CovariantIndicator } | '-' ^^ { _ ⇒ ContravariantIndicator }
+            // '+' ^^ { _ => CovariantIndicator } | '-' ^^ { _ => ContravariantIndicator }
             new Parser[VarianceIndicator] {
                 def apply(in: Input): ParseResult[VarianceIndicator] = {
                     if (in.atEnd) Failure("signature incomplete", in)
                     else (in.first: @scala.annotation.switch) match {
-                        case '+' ⇒ Success(CovariantIndicator, in.rest)
-                        case '-' ⇒ Success(ContravariantIndicator, in.rest)
-                        case x   ⇒ Failure(s"unknown wildcard indicator: $x", in.rest)
+                        case '+' => Success(CovariantIndicator, in.rest)
+                        case '-' => Success(ContravariantIndicator, in.rest)
+                        case x   => Failure(s"unknown wildcard indicator: $x", in.rest)
                     }
                 }
             }
@@ -166,9 +166,9 @@ object SignatureParser {
 
         protected def baseTypeParser: Parser[BaseType] =
             // This is what is conceptually done:
-            // 'B' ^^ (_ ⇒ ByteType) | 'C' ^^ (_ ⇒ CharType) | 'D' ^^ (_ ⇒ DoubleType) |
-            // 'F' ^^ (_ ⇒ FloatType) | 'I' ^^ (_ ⇒ IntegerType) | 'J' ^^ (_ ⇒ LongType) |
-            // 'S' ^^ (_ ⇒ ShortType) | 'Z' ^^ (_ ⇒ BooleanType)
+            // 'B' ^^ (_ => ByteType) | 'C' ^^ (_ => CharType) | 'D' ^^ (_ => DoubleType) |
+            // 'F' ^^ (_ => FloatType) | 'I' ^^ (_ => IntegerType) | 'J' ^^ (_ => LongType) |
+            // 'S' ^^ (_ => ShortType) | 'Z' ^^ (_ => BooleanType)
             // This is a way more efficient implementation:
             new Parser[BaseType] {
                 def apply(in: Input): ParseResult[BaseType] = {
@@ -176,15 +176,15 @@ object SignatureParser {
                         Failure("signature is incomplete, base type identifier expected", in)
                     } else {
                         (in.first: @scala.annotation.switch) match {
-                            case 'B' ⇒ Success(ByteType, in.rest)
-                            case 'C' ⇒ Success(CharType, in.rest)
-                            case 'D' ⇒ Success(DoubleType, in.rest)
-                            case 'F' ⇒ Success(FloatType, in.rest)
-                            case 'I' ⇒ Success(IntegerType, in.rest)
-                            case 'J' ⇒ Success(LongType, in.rest)
-                            case 'S' ⇒ Success(ShortType, in.rest)
-                            case 'Z' ⇒ Success(BooleanType, in.rest)
-                            case x   ⇒ Failure(s"unknown base type identifier: $x", in.rest)
+                            case 'B' => Success(ByteType, in.rest)
+                            case 'C' => Success(CharType, in.rest)
+                            case 'D' => Success(DoubleType, in.rest)
+                            case 'F' => Success(FloatType, in.rest)
+                            case 'I' => Success(IntegerType, in.rest)
+                            case 'J' => Success(LongType, in.rest)
+                            case 'S' => Success(ShortType, in.rest)
+                            case 'Z' => Success(BooleanType, in.rest)
+                            case x   => Failure(s"unknown base type identifier: $x", in.rest)
                         }
                     }
                 }

@@ -17,9 +17,9 @@ class ScalaInvokedynamicRewritingTest extends InvokedynamicRewritingTest {
     test("rewriting of invokedynamic instructions in Scala 2.12.4 library") {
         val project = load(locateTestResources("classfiles/scala-2.12.4", "bi"))
 
-        val invokedynamics = project.allMethodsWithBody.par.flatMap { method ⇒
+        val invokedynamics = project.allMethodsWithBody.par.flatMap { method =>
             method.body.get.collect {
-                case i: INVOKEDYNAMIC ⇒ i
+                case i: INVOKEDYNAMIC => i
             }
         }
 

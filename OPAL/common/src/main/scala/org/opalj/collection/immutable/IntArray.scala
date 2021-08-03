@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 
 import scala.collection.AbstractIterator
 import scala.collection.mutable.Builder
@@ -25,7 +25,7 @@ class IntArray private (
      * '''This method is only to be used if `this` instance is no longer used afterwards!'''
      */
     // IMPROVE Design annotation (+Analysis) that ensures that this operation is only performed if – after the usage of this method - the reference to this data-structure will not be used anymore.
-    def _UNSAFE_map(f: Int ⇒ Int): this.type = {
+    def _UNSAFE_map(f: Int => Int): this.type = {
         var i = 0
         val max = data.length
         while (i < max) {
@@ -49,7 +49,7 @@ class IntArray private (
 
     def apply(idx: Int): Int = data(idx)
 
-    def map[X <: AnyRef](f: Int ⇒ X): RefArray[X] = {
+    def map[X <: AnyRef](f: Int => X): RefArray[X] = {
         val newData = new Array[AnyRef](data.length)
         var i = 0
         val max = data.length
@@ -60,7 +60,7 @@ class IntArray private (
         RefArray._UNSAFE_from[X](newData)
     }
 
-    def map(f: Int ⇒ Int): IntArray = {
+    def map(f: Int => Int): IntArray = {
         val newData = new Array[Int](data.length)
         var i = 0
         val max = data.length
@@ -71,7 +71,7 @@ class IntArray private (
         new IntArray(newData)
     }
 
-    def flatMap[X <: AnyRef](f: Int ⇒ TraversableOnce[X]): RefArray[X] = {
+    def flatMap[X <: AnyRef](f: Int => TraversableOnce[X]): RefArray[X] = {
         val b = RefArray.newBuilder[X]
         var i = 0
         val max = data.length
@@ -83,7 +83,7 @@ class IntArray private (
         b.result()
     }
 
-    def flatMap(f: Int ⇒ TraversableOnce[Int]): IntArray = {
+    def flatMap(f: Int => TraversableOnce[Int]): IntArray = {
         val b = IntArray.newBuilder
         var i = 0
         val max = data.length
@@ -132,7 +132,7 @@ class IntArray private (
             throw new NoSuchElementException
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach[U](f: Int => U): Unit = {
         val data = this.data
         val max = data.length
         var i = 0
@@ -162,7 +162,7 @@ class IntArray private (
         override def next(): Int = { val e = data(i); i += 1; e }
     }
 
-    override def filter(f: Int ⇒ Boolean): IntArray = {
+    override def filter(f: Int => Boolean): IntArray = {
         val b = IntArray.newBuilder
         val data = this.data
         val max = data.length
@@ -178,7 +178,7 @@ class IntArray private (
         b.result()
     }
 
-    override def filterNot(f: Int ⇒ Boolean): IntArray = filter(e ⇒ !f(e))
+    override def filterNot(f: Int => Boolean): IntArray = filter(e => !f(e))
 
     /**
      * Creates a new `IntArray` where the value at the given index is replaced by
@@ -192,8 +192,8 @@ class IntArray private (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: IntArray ⇒ JArrays.equals(this.data, that.data)
-            case _ ⇒
+            case that: IntArray => JArrays.equals(this.data, that.data)
+            case _ =>
                 false
         }
     }
@@ -259,7 +259,7 @@ object IntArray {
         new IntArray(data.clone())
     }
 
-    def from[T](data: Traversable[T])(f: T ⇒ Int): IntArray = {
+    def from[T](data: Traversable[T])(f: T => Int): IntArray = {
         val max = data.size
         val it = data.toIterator
         val newData = new Array[Int](max)

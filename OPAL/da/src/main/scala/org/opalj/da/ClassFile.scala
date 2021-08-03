@@ -93,7 +93,7 @@ case class ClassFile(
                 Seq(
                     Text("implements "),
                     asJavaObjectType(cp(interfaces.head).toString).asSpan("implements"),
-                    interfaces.tail.map { i ⇒
+                    interfaces.tail.map { i =>
                         Seq(Text(", "), asJavaObjectType(cp(i).toString).asSpan("implements"))
                     }
                 )
@@ -120,15 +120,15 @@ case class ClassFile(
 
     def attributeToXHTML(attribute: Attribute): Node = {
         attribute match {
-            case ica: InnerClasses_attribute ⇒ ica.toXHTML(thisType)
-            case _                           ⇒ attribute.toXHTML(cp)
+            case ica: InnerClasses_attribute => ica.toXHTML(thisType)
+            case _                           => attribute.toXHTML(cp)
         }
     }
 
-    def fieldsToXHTML: Iterator[Node] = fields.iterator.map { field ⇒ field.toXHTML }
+    def fieldsToXHTML: Iterator[Node] = fields.iterator.map { field => field.toXHTML }
 
     def methodsToXHTML: Iterator[Node] = {
-        methods.iterator.zipWithIndex.map { mi ⇒ val (method, index) = mi; method.toXHTML(index) }
+        methods.iterator.zipWithIndex.map { mi => val (method, index) = mi; method.toXHTML(index) }
     }
 
     protected def accessFlags: Node = {
@@ -229,7 +229,7 @@ case class ClassFile(
                 }
                 <br/>
                 {
-                    sourceFileAttributes.headOption.map { a ⇒
+                    sourceFileAttributes.headOption.map { a =>
                         Seq(
                             Text("Source file: "),
                             <span class="source_file">{ a.sourceFile } </span>,

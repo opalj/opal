@@ -29,28 +29,28 @@ object GetReceivers extends ProjectAnalysisApplication {
 
     var usePropertyStore: Boolean = true
 
-    override def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+    override def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () => Boolean): BasicReport = {
 
-        val performAI: (Method) ⇒ AIResult { val domain: Domain with RecordDefUse } =
+        val performAI: (Method) => AIResult { val domain: Domain with RecordDefUse } =
             if (usePropertyStore) {
                 val analysesManager = p.get(FPCFAnalysesManagerKey)
                 analysesManager.runAll(
                     org.opalj.ai.fpcf.analyses.EagerLBFieldValuesAnalysis,
                     org.opalj.ai.fpcf.analyses.EagerLBMethodReturnValuesAnalysis
                 )
-                (m: Method) ⇒ {
+                (m: Method) => {
                     BaseAI(m, new L1DefaultDomainWithCFGAndDefUseAndSignatureRefinement(p, m))
                 }
             } else {
                 p.updateProjectInformationKeyInitializationData(org.opalj.ai.common.SimpleAIKey) { // new org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
-                _ ⇒ (m: Method) ⇒ new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
+                _ => (m: Method) => new org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse(p, m)
                 }
                 p.get(org.opalj.ai.common.SimpleAIKey)
             }
 
         val counts: mutable.Map[String, Int] = mutable.Map.empty.withDefaultValue(0)
 
-        p.parForeachMethodWithBody() { mi ⇒
+        p.parForeachMethodWithBody() { mi =>
             val m = mi.method
             lazy val aiResult = performAI(m).asInstanceOf[AIResult { val domain: Domain with Origin }]
             for {
@@ -85,7 +85,7 @@ object GetReceivers extends ProjectAnalysisApplication {
                     s += " (trivially)"
 
                 s += ", "+value.isNull
-                if (aiResult.domain.origins(value.asInstanceOf[aiResult.domain.DomainValue]).forall(pc ⇒
+                if (aiResult.domain.origins(value.asInstanceOf[aiResult.domain.DomainValue]).forall(pc =>
                     pc >= 0 && {
                         val i = m.body.get.instructions(pc)
                         i.opcode == NEW.opcode || i.isLoadConstantInstruction
@@ -103,7 +103,7 @@ object GetReceivers extends ProjectAnalysisApplication {
             "type, isPrecise, isNull, count\n"+
                 counts
                 .iterator
-                .map(e ⇒ e._1+", "+e._2)
+                .map(e => e._1+", "+e._2)
                 .mkString("\n")
         )
     }

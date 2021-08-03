@@ -68,16 +68,16 @@ trait TypeAnnotationPathReader extends Constant_PoolAbstractions {
                         // FROM THE JVM SPEC:
                         // If the value of the type_path_kind item is 0, 1, or 2,
                         // then the value of the type_argument_index item is 0.
-                        case 0 ⇒
+                        case 0 =>
                             in.read() // <=> in.skip..
                             TypeAnnotationDeeperInArrayType
-                        case 1 ⇒
+                        case 1 =>
                             in.read() // <=> in.skip..
                             TypeAnnotationDeeperInNestedType
-                        case 2 ⇒
+                        case 2 =>
                             in.read() // <=> in.skip..
                             TypeAnnotationOnBoundOfWildcardType
-                        case 3 ⇒
+                        case 3 =>
                             TypeAnnotationOnTypeArgument(in.readUnsignedByte())
                     }
                 }

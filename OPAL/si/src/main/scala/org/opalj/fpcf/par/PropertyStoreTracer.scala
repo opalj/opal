@@ -459,8 +459,8 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
 
     def toTxt: String = {
         allEvents.map {
-            case e: ProcessingResultEvent ⇒ "->\t"+e.toTxt
-            case e                        ⇒ "\t"+e.toTxt
+            case e: ProcessingResultEvent => "->\t"+e.toTxt
+            case e                        => "\t"+e.toTxt
         }.mkString("Events [\n", "\n", "\n]")
     }
 

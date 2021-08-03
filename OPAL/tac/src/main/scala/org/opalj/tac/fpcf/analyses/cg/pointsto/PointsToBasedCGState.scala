@@ -148,7 +148,7 @@ class PointsToBasedCGState[PointsToSet <: PointsToSetLike[_, _, PointsToSet]](
         // IMPROVE: make it more efficient (maybe use immutable map and join traversables)
         var allDependees = super.dependees
 
-        _pointsToDependees.valuesIterator.foreach { d ⇒
+        _pointsToDependees.valuesIterator.foreach { d =>
             assert(_dependeeToDependers.contains(d.e))
             allDependees += d
         }

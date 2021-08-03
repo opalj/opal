@@ -91,10 +91,10 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             import mirror.reflectModule
             Some(reflectModule(module).instance.asInstanceOf[FPCFAnalysisScheduler])
         } catch {
-            case sre: ScalaReflectionException ⇒
+            case sre: ScalaReflectionException =>
                 error("call graph", s"cannot find analysis scheduler $className", sre)
                 None
-            case cce: ClassCastException ⇒
+            case cce: ClassCastException =>
                 error("call graph", "analysis scheduler class is invalid", cce)
                 None
         }

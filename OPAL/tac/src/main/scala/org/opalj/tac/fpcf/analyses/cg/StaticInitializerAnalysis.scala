@@ -62,9 +62,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
      */
     def analyze(p: SomeProject): PropertyComputationResult = {
         val (lcDependee, loadedClassesUB) = propertyStore(project, LoadedClasses.key) match {
-            case FinalP(loadedClasses)                          ⇒ None → Some(loadedClasses)
-            case eps @ InterimUBP(loadedClasses: LoadedClasses) ⇒ Some(eps) → Some(loadedClasses)
-            case epk                                            ⇒ Some(epk) → None
+            case FinalP(loadedClasses)                          => None -> Some(loadedClasses)
+            case eps @ InterimUBP(loadedClasses: LoadedClasses) => Some(eps) -> Some(loadedClasses)
+            case epk                                            => Some(epk) -> None
         }
 
         implicit val state: LCState = LCState(
@@ -98,18 +98,18 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         val callersResult =
             unseenLoadedClasses
-                .flatMap { lc ⇒ retrieveStaticInitializers(lc) }
-                .map { clInit ⇒
+                .flatMap { lc => retrieveStaticInitializers(lc) }
+                .map { clInit =>
                     PartialResult[DeclaredMethod, Callers](
                         clInit,
                         Callers.key,
                         {
-                            case InterimUBP(ub: Callers) if !ub.hasVMLevelCallers ⇒
+                            case InterimUBP(ub: Callers) if !ub.hasVMLevelCallers =>
                                 Some(InterimEUBP(clInit, ub.updatedWithVMLevelCall()))
 
-                            case _: InterimEP[_, _] ⇒ None
+                            case _: InterimEP[_, _] => None
 
-                            case _: EPK[_, _]       ⇒ Some(InterimEUBP(clInit, OnlyVMLevelCallers))
+                            case _: EPK[_, _]       => Some(InterimEUBP(clInit, OnlyVMLevelCallers))
                         }
                     )
                 }
@@ -125,11 +125,11 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
     ): PropertyComputationResult = {
         (someEPS: @unchecked) match {
 
-            case FinalP(loadedClasses: LoadedClasses) ⇒
+            case FinalP(loadedClasses: LoadedClasses) =>
                 state.lcDependee = None
                 state.loadedClassesUB = Some(loadedClasses)
                 handleLoadedClasses()
-            case InterimUBP(loadedClasses: LoadedClasses) ⇒
+            case InterimUBP(loadedClasses: LoadedClasses) =>
                 state.lcDependee = Some(someEPS.asInstanceOf[EPS[SomeProject, LoadedClasses]])
                 state.loadedClassesUB = Some(loadedClasses)
                 handleLoadedClasses()
@@ -140,9 +140,9 @@ class StaticInitializerAnalysis(val project: SomeProject) extends FPCFAnalysis {
         declaringClassType: ObjectType
     ): Iterator[DefinedMethod] = {
         // TODO only for interfaces with default methods
-        ch.allSuperclassesIterator(declaringClassType, reflexive = true).flatMap { cf ⇒
+        ch.allSuperclassesIterator(declaringClassType, reflexive = true).flatMap { cf =>
             // IMPROVE Only return the static initializer if it is not already present
-            cf.staticInitializer map { clInit ⇒ declaredMethods(clInit) }
+            cf.staticInitializer map { clInit => declaredMethods(clInit) }
         }
     }
 

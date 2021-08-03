@@ -25,7 +25,7 @@ class DEArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
     it should "be well modularized in the sense that a superpackage does not depend on a subpackage" in {
         val deTargetClasses = Specification
             .ProjectDirectory("OPAL/de/target/scala-2.12/classes")
-            .filterNot { cfSrc ⇒
+            .filterNot { cfSrc =>
                 // Ignore the rewritten lambda expressions
                 val (cf, _) = cfSrc
                 cf.thisType.toJava.matches(InvokedynamicRewriting.LambdaNameRegEx)

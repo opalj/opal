@@ -339,7 +339,7 @@ case class ClassTypeSignature(
             else
                 new java.lang.StringBuilder()
         className.append(simpleClassTypeSignature.simpleName)
-        classTypeSignatureSuffix foreach { ctss ⇒
+        classTypeSignatureSuffix foreach { ctss =>
             className.append('$')
             className.append(ctss.simpleName)
         }
@@ -358,8 +358,8 @@ case class ClassTypeSignature(
             packageName +
             simpleClassTypeSignature.toJVMSignature +
             (classTypeSignatureSuffix match {
-                case Nil ⇒ ""
-                case l   ⇒ l.map(_.toJVMSignature).mkString(".", ".", "")
+                case Nil => ""
+                case l   => l.map(_.toJVMSignature).mkString(".", ".", "")
             })+
             ";"
     }
@@ -404,8 +404,8 @@ case class SimpleClassTypeSignature(
     def toJVMSignature: String = {
         simpleName +
             (typeArguments match {
-                case Nil ⇒ ""
-                case l   ⇒ l.map(_.toJVMSignature).mkString("<", "", ">")
+                case Nil => ""
+                case l   => l.map(_.toJVMSignature).mkString("<", "", ">")
             })
     }
 }
@@ -424,12 +424,12 @@ case class FormalTypeParameter(
     def toJVMSignature: String = {
         identifier +
             (classBound match {
-                case Some(x) ⇒ ":"+x.toJVMSignature
-                case None    ⇒ ":"
+                case Some(x) => ":"+x.toJVMSignature
+                case None    => ":"
             }) +
             (interfaceBound match {
-                case Nil ⇒ ""
-                case l   ⇒ ":"+l.map(_.toJVMSignature).mkString(":")
+                case Nil => ""
+                case l   => ":"+l.map(_.toJVMSignature).mkString(":")
             })
     }
 }
@@ -451,8 +451,8 @@ case class ProperTypeArgument(
 
     override def toJVMSignature: String = {
         (varianceIndicator match {
-            case Some(x) ⇒ x.toJVMSignature
-            case None    ⇒ ""
+            case Some(x) => x.toJVMSignature
+            case None    => ""
         }) +
             fieldTypeSignature.toJVMSignature
     }
@@ -540,10 +540,10 @@ object ConcreteType {
     def unapply(cts: ClassTypeSignature): Option[ObjectType] = {
         cts match {
 
-            case ClassTypeSignature(cpn, SimpleClassTypeSignature(csn, Nil), Nil) ⇒
+            case ClassTypeSignature(cpn, SimpleClassTypeSignature(csn, Nil), Nil) =>
                 Some(ObjectType(cpn.getOrElse("") + csn))
 
-            case _ ⇒
+            case _ =>
                 None
         }
     }
@@ -561,8 +561,8 @@ object ConcreteTypeArgument {
 
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = {
         pta match {
-            case ProperTypeArgument(None, ConcreteType(ot)) ⇒ Some(ot)
-            case _                                          ⇒ None
+            case ProperTypeArgument(None, ConcreteType(ot)) => Some(ot)
+            case _                                          => None
         }
     }
 }
@@ -587,8 +587,8 @@ object ConcreteTypeArgument {
 object UpperTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
-        case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ot)) ⇒ Some(ot)
-        case _ ⇒ None
+        case ProperTypeArgument(Some(CovariantIndicator), ConcreteType(ot)) => Some(ot)
+        case _ => None
     }
 }
 
@@ -612,8 +612,8 @@ object UpperTypeBound {
 object LowerTypeBound {
 
     def unapply(pta: ProperTypeArgument): Option[ObjectType] = pta match {
-        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) ⇒ Some(ot)
-        case _ ⇒ None
+        case ProperTypeArgument(Some(ContravariantIndicator), ConcreteType(ot)) => Some(ot)
+        case _ => None
     }
 }
 
@@ -640,8 +640,8 @@ object GenericTypeArgument {
         pta: ProperTypeArgument
     ): Option[(Option[VarianceIndicator], ClassTypeSignature)] = {
         pta match {
-            case ProperTypeArgument(variance, cts: ClassTypeSignature) ⇒ Some((variance, cts))
-            case _ ⇒ None
+            case ProperTypeArgument(variance, cts: ClassTypeSignature) => Some((variance, cts))
+            case _ => None
         }
     }
 }
@@ -661,10 +661,10 @@ object GenericType {
             case ClassTypeSignature(
                 _,
                 SimpleClassTypeSignature(_, typeArgs),
-                Nil) if typeArgs.nonEmpty ⇒
+                Nil) if typeArgs.nonEmpty =>
                 Some((cts.objectType, typeArgs))
 
-            case _ ⇒
+            case _ =>
                 None
         }
     }
@@ -689,10 +689,10 @@ object GenericTypeWithClassSuffix {
             case ClassTypeSignature(
                 _,
                 SimpleClassTypeSignature(_, typeArgs),
-                suffix) if suffix.nonEmpty ⇒
+                suffix) if suffix.nonEmpty =>
                 Some((cts.objectType, typeArgs, suffix))
 
-            case _ ⇒
+            case _ =>
                 None
         }
     }
@@ -725,10 +725,10 @@ object SimpleGenericType {
                     csn,
                     List(ProperTypeArgument(None, ConcreteType(tp)))),
                 Nil
-                ) ⇒
+                ) =>
                 Some((ObjectType(cpn.getOrElse("") + csn), tp))
 
-            case _ ⇒
+            case _ =>
                 None
         }
     }

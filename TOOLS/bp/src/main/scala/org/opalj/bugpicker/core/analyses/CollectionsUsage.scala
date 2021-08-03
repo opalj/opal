@@ -55,7 +55,7 @@ object CollectionsUsage {
         val domain = result.domain
         val code = domain.code
         val instructions = code.instructions
-        code iterate { (pc, instruction) ⇒
+        code iterate { (pc, instruction) =>
             instruction match {
 
                 case INVOKESTATIC(
@@ -63,7 +63,7 @@ object CollectionsUsage {
                     false,
                     "unmodifiableCollection",
                     UnmodifiableCollectionMethodDescriptor
-                    ) ⇒
+                    ) =>
                     val origins = domain.operandOrigin(pc, 0)
                     if ((origins ne null) && // the instruction is not dead
                         origins.size == 1 &&
@@ -77,7 +77,7 @@ object CollectionsUsage {
                             instructions(usages.withFilter(_ != pc).head) match {
 
                                 // TODO Support the matching of other constructors... (e.g., which take a size hint)
-                                case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
+                                case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) =>
                                     issues ::= Issue(
                                         "CollectionsUsage",
                                         Relevance.DefaultRelevance,
@@ -97,29 +97,29 @@ object CollectionsUsage {
                                         )
                                     )
 
-                                case _ ⇒ // other constructors are ignored
+                                case _ => // other constructors are ignored
                             }
 
                         } else if (usages.size == 3) {
                             var foundConstructorCall = false
                             var foundAddCall = false
                             val previousUsages = usages.withFilter(_ != pc)
-                            previousUsages.foreach { pc ⇒
+                            previousUsages.foreach { pc =>
                                 instructions(pc) match {
 
                                     // TODO Support the matching of other constructors... (e.g., which take a size hint)
-                                    case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) ⇒
+                                    case INVOKESPECIAL(_, false, _, MethodDescriptor.NoArgsAndReturnVoid) =>
                                         foundConstructorCall = true
 
                                     // TODO Support the case of a call to addElement
                                     case INVOKEVIRTUAL(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) |
-                                        INVOKEINTERFACE(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) ⇒
+                                        INVOKEINTERFACE(_, "add", MethodDescriptor(IndexedSeq(ObjectType.Object), _)) =>
                                         // is it the receiver or the parameter (in relation to a different collection?
                                         if (domain.operandOrigin(pc, 1) == origins) {
                                             foundAddCall = true
                                         }
 
-                                    case i ⇒ // other calls are ignored
+                                    case i => // other calls are ignored
                                         println("let's see"+i)
                                 }
                             }
@@ -144,7 +144,7 @@ object CollectionsUsage {
                             }
                         }
                     }
-                case _ ⇒ // don't care
+                case _ => // don't care
             }
         }
 

@@ -54,9 +54,9 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation ← body collect {
-                case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   ⇒ iv
-                case ii: INVOKEINTERFACE if isPotentialCallOnDefaultMethod(ii, project) ⇒ ii
-                case is: INVOKESTATIC if is.isInterface                                 ⇒ is
+                case iv: INVOKEVIRTUAL if isPotentialCallOnDefaultMethod(iv, project)   => iv
+                case ii: INVOKEINTERFACE if isPotentialCallOnDefaultMethod(ii, project) => ii
+                case is: INVOKESTATIC if is.isInterface                                 => is
             }
         } {
             val pc = pcAndInvocation.pc
@@ -65,9 +65,9 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case ii @ INVOKEINTERFACE(dc, name, md) ⇒ {
+                case ii @ INVOKEINTERFACE(dc, name, md) => {
                     val subtypes = project.classHierarchy.allSubtypes(dc.asObjectType, false)
-                    val hasDefaultMethodTarget = subtypes.exists { ot ⇒
+                    val hasDefaultMethodTarget = subtypes.exists { ot =>
                         val target = project.instanceCall(callerType, ot, name, md)
                         if (target.hasValue) {
                             val definingClass = target.value.asVirtualMethod.classType.asObjectType
@@ -82,10 +82,10 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                         1 /* interface has default method, but it's always overridden */
                     }
                 }
-                case iv @ INVOKEVIRTUAL(dc, name, md) ⇒ {
+                case iv @ INVOKEVIRTUAL(dc, name, md) => {
                     val subtypes = project.classHierarchy.allSubtypes(dc.asObjectType, true)
                     var subtypeWithMultipleInterfaces = false
-                    val hasDefaultMethodTarget = subtypes.exists { ot ⇒
+                    val hasDefaultMethodTarget = subtypes.exists { ot =>
                         val target = project.instanceCall(callerType, ot, name, md)
                         if (target.hasValue) {
                             val definingClass = target.value.asVirtualMethod.classType.asObjectType
@@ -93,7 +93,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                             if (isIDM) {
                                 // if the method is resolved to an IDM we have to check whether there are multiple options
                                 // in order to check the linearization order
-                                val typeInheritMultipleIntWithSameIDM = project.classHierarchy.allSuperinterfacetypes(ot, false).count { it ⇒
+                                val typeInheritMultipleIntWithSameIDM = project.classHierarchy.allSuperinterfacetypes(ot, false).count { it =>
                                     val cf = project.classFile(it)
                                     if (cf.nonEmpty) {
                                         val method = cf.get.findMethod(name, md)
@@ -119,11 +119,11 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
                     }
 
                 }
-                case is @ INVOKESTATIC(dc, true, name, md) ⇒ {
+                case is @ INVOKESTATIC(dc, true, name, md) => {
                     val cf = project.classFile(dc)
                     if (cf.nonEmpty) {
                         val method = cf.get.findMethod(name, md)
-                        method.map { m ⇒
+                        method.map { m =>
                             if (m.isPrivate) 6 /* call to a private static interface method */
                             else 5 /* call to a static interface method */
                         }.getOrElse(-1)
@@ -160,11 +160,11 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
 
         val ch = project.classHierarchy
         var relevantInterfaces = ch.allSuperinterfacetypes(ot, true)
-        ch.allSubclassTypes(ot, false).foreach { st ⇒
+        ch.allSubclassTypes(ot, false).foreach { st =>
             relevantInterfaces = relevantInterfaces ++ ch.allSuperinterfacetypes(st, false)
         }
 
-        val isRelevant = relevantInterfaces.exists { si ⇒
+        val isRelevant = relevantInterfaces.exists { si =>
             val cf = project.classFile(si)
             if (cf.isDefined) {
                 val method = cf.get.findMethod(methodName, methodDescriptor)

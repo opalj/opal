@@ -37,7 +37,7 @@ package object bi {
             assert(false)
             info("OPAL Bytecode Infrastructure", "Production Build")
         } catch {
-            case _: AssertionError ⇒
+            case _: AssertionError =>
                 info("OPAL Bytecode Infrastructure", "Development Build with Assertions")
         }
     }
@@ -129,8 +129,8 @@ package object bi {
         val versionString = System.getProperty("java.version")
         try {
             val isAtLeastSpecifiedJavaVersion = versionString.split('.') match {
-                case Array("1", "8", _*)     ⇒ x == 8
-                case Array(majorVersion, _*) ⇒ parseInt(majorVersion) >= x
+                case Array("1", "8", _*)     => x == 8
+                case Array(majorVersion, _*) => parseInt(majorVersion) >= x
             }
             if (isAtLeastSpecifiedJavaVersion) {
                 info("system configuration", s"current JRE is at least Java $x")
@@ -140,14 +140,14 @@ package object bi {
                 false // we were not able to detect/derive enough information!
             }
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 error("system configuration", s"could not interpret JRE version: $versionString", t)
                 false
         }
     }
 
     val MissingLibraryWarning: String = {
-        process(this.getClass.getResourceAsStream("MissingLibraryWarning.txt")) { in ⇒
+        process(this.getClass.getResourceAsStream("MissingLibraryWarning.txt")) { in =>
             Source.fromInputStream(in).getLines.mkString("\n")
         }
     }

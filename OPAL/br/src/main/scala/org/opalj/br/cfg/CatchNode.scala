@@ -68,19 +68,19 @@ final class CatchNode(
     //
 
     override def toHRR: Option[String] = Some(
-        s"try[$startPC,$endPC) ⇒ $handlerPC{${catchType.map(_.toJava).getOrElse("Any")}}"
+        s"try[$startPC,$endPC) => $handlerPC{${catchType.map(_.toJava).getOrElse("Any")}}"
     )
 
     override def visualProperties: Map[String, String] = Map(
-        "shape" → "box",
-        "labelloc" → "l",
-        "fillcolor" → "orange",
-        "style" → "filled",
-        "shape" → "rectangle"
+        "shape" -> "box",
+        "labelloc" -> "l",
+        "fillcolor" -> "orange",
+        "style" -> "filled",
+        "shape" -> "rectangle"
     )
 
     override def toString: String = {
-        s"CatchNode([$startPC,$endPC)⇒$handlerPC,${catchType.map(_.toJava).getOrElse("<none>")})"
+        s"CatchNode([$startPC,$endPC)=>$handlerPC,${catchType.map(_.toJava).getOrElse("<none>")})"
     }
 
 }

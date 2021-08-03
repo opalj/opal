@@ -13,7 +13,7 @@ import scala.collection.Set
  * @author Michael Eichberg
  * @author Marco Torsello
  */
-trait SourceElementsMatcher extends (SomeProject ⇒ Set[VirtualSourceElement]) { left ⇒
+trait SourceElementsMatcher extends (SomeProject => Set[VirtualSourceElement]) { left =>
 
     final def apply(project: SomeProject): Set[VirtualSourceElement] = extension(project)
 

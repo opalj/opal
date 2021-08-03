@@ -14,9 +14,9 @@ abstract class ArrayLoadInstruction extends ArrayAccessInstruction {
 
     final def jvmExceptions: List[ObjectType] = ArrayLoadInstruction.jvmExceptions
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 2
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 2
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = -2 + elementTypeComputationalType.operandSize
 

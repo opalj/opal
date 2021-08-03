@@ -36,11 +36,11 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
     final def analyze(declaredMethod: DeclaredMethod): PropertyComputationResult = {
         val callersEOptP = propertyStore(declaredMethod, Callers.key)
         (callersEOptP: @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -80,9 +80,9 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
         definedMethod: DefinedMethod
     )(someEPS: SomeEPS): ProperPropertyComputationResult = {
         someEPS match {
-            case UBP(tac: TACAI) if tac.tac.isDefined ⇒
+            case UBP(tac: TACAI) if tac.tac.isDefined =>
                 processMethod(definedMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
-            case _ ⇒
+            case _ =>
                 throw new IllegalArgumentException(s"unexpected eps $someEPS")
         }
     }

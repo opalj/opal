@@ -37,9 +37,9 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
-        val eps = getValue(p, annotationType, a.elementValuePairs, "eps").asArrayValue.values.map(ev ⇒ ev.asAnnotationValue.annotation)
+        val eps = getValue(p, annotationType, a.elementValuePairs, "eps").asArrayValue.values.map(ev => ev.asAnnotationValue.annotation)
         val negate = getValue(p, annotationType, a.elementValuePairs, "negate").asInstanceOf[BooleanValue].value
 
         analyses.exists(as.contains) && eps.forall(negate ^ evaluateEP(p, as, _, negate))
@@ -62,18 +62,18 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         val analysesElementValues =
             getValue(project, annotationType, ep.elementValuePairs, "analyses").asArrayValue.values
-        val analyses = analysesElementValues.map(ev ⇒ ev.asClassValue.value.asObjectType)
+        val analyses = analysesElementValues.map(ev => ev.asClassValue.value.asObjectType)
 
         if (analyses.nonEmpty && !analyses.exists(as.contains)) {
             return !negate // Analysis specific ep requirement, but analysis was not executed
         }
 
         val pk = getValue(project, annotationType, ep.elementValuePairs, "pk").asStringValue.value match {
-            case "Purity"               ⇒ Purity.key
-            case "FieldMutability"      ⇒ FieldMutability.key
-            case "ClassImmutability"    ⇒ ClassImmutability.key
-            case "ReturnValueFreshness" ⇒ ReturnValueFreshness.key
-            case "FieldLocality"        ⇒ FieldLocality.key
+            case "Purity"               => Purity.key
+            case "FieldMutability"      => FieldMutability.key
+            case "ClassImmutability"    => ClassImmutability.key
+            case "ReturnValueFreshness" => ReturnValueFreshness.key
+            case "FieldLocality"        => FieldLocality.key
         }
         val p = getValue(project, annotationType, ep.elementValuePairs, "p").asStringValue.value
 
@@ -92,8 +92,8 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
 
         if (field != "") {
             val cfo = project.classFile(classType)
-            cfo exists { cf ⇒
-                cf findField field exists { field ⇒
+            cfo exists { cf =>
+                cf findField field exists { field =>
                     checkProperty(propertyStore(field, pk))
                 }
             }
@@ -104,8 +104,8 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
             val descriptor = MethodDescriptor(method.substring(descriptorIndex))
             val cfo = project.classFile(classType)
 
-            cfo exists { cf ⇒
-                cf findMethod (methodName, descriptor) exists { method ⇒
+            cfo exists { cf =>
+                cf findMethod (methodName, descriptor) exists { method =>
                     checkProperty(propertyStore(declaredMethods(method), pk))
                 }
             }
@@ -122,8 +122,8 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         properties: Traversable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case `property` ⇒ true
-            case _          ⇒ false
+            case `property` => true
+            case _          => false
         }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
@@ -133,7 +133,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
     }
 }
 
-sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet ⇒ Purity)
+sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet => Purity)
     extends PurityMatcher(null) {
     override def validateProperty(
         p:          SomeProject,
@@ -148,15 +148,15 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet �
             getValue(p, annotationType, a.elementValuePairs, "modifies").asArrayValue.values
 
         var modifiedParams: IntTrieSet = EmptyIntTrieSet
-        annotated.foreach { param ⇒
+        annotated.foreach { param =>
             modifiedParams = modifiedParams + param.asIntValue.value
         }
 
         val expected = propertyConstructor(modifiedParams)
 
         if (!properties.exists(_ match {
-            case `expected` ⇒ true
-            case _          ⇒ false
+            case `expected` => true
+            case _          => false
         })) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)
@@ -189,14 +189,14 @@ class SideEffectFreeMatcher extends PurityMatcher(br.fpcf.properties.SideEffectF
  * [[org.opalj.br.fpcf.properties.ContextuallyPure]].
  */
 class ContextuallyPureMatcher
-    extends ContextualPurityMatcher(params ⇒ br.fpcf.properties.ContextuallyPure(params))
+    extends ContextualPurityMatcher(params => br.fpcf.properties.ContextuallyPure(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.br.fpcf.properties.ContextuallySideEffectFree]].
  */
 class ContextuallySideEffectFreeMatcher
-    extends ContextualPurityMatcher(params ⇒ br.fpcf.properties.ContextuallySideEffectFree(params))
+    extends ContextualPurityMatcher(params => br.fpcf.properties.ContextuallySideEffectFree(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
@@ -215,14 +215,14 @@ class DomainSpecificSideEffectFreeMatcher extends PurityMatcher(br.fpcf.properti
  * [[org.opalj.br.fpcf.properties.DContextuallyPure]].
  */
 class DomainSpecificContextuallyPureMatcher
-    extends ContextualPurityMatcher(params ⇒ br.fpcf.properties.DContextuallyPure(params))
+    extends ContextualPurityMatcher(params => br.fpcf.properties.DContextuallyPure(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the method has the property
  * [[org.opalj.br.fpcf.properties.DContextuallySideEffectFree]].
  */
 class DomainSpecificContextuallySideEffectFreeMatcher
-    extends ContextualPurityMatcher(params ⇒ br.fpcf.properties.DContextuallySideEffectFree(params))
+    extends ContextualPurityMatcher(params => br.fpcf.properties.DContextuallySideEffectFree(params))
 
 /**
  * Matches a method's `Purity` property. The match is successful if the property is an instance of
@@ -238,8 +238,8 @@ class ImpureMatcher extends PurityMatcher(null) {
         properties: Traversable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case _: ClassifiedImpure ⇒ true
-            case _                   ⇒ false
+            case _: ClassifiedImpure => true
+            case _                   => false
         }) {
             // ... when we reach this point the expected property was not found.
             Some(a.elementValuePairs.head.value.asStringValue.value)

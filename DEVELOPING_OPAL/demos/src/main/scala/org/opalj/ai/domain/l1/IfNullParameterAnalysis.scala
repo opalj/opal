@@ -55,12 +55,12 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         // Explicitly specifies that all reference values are not null.
         def setToNonNull(domain: DefaultDomain[URL])(locals: domain.Locals): domain.Locals = {
-            locals.map { value ⇒
+            locals.map { value =>
                 if (value == null)
                     // not all local values are used right from the beginning
                     null
@@ -106,12 +106,12 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                 // the difference.
                 var result = LongMap.empty[Set[_ <: AnyRef]]
                 var d2ThrownExceptions = domain2.allThrownExceptions
-                domain1.allThrownExceptions.foreach { e ⇒
+                domain1.allThrownExceptions.foreach { e =>
                     val (pc, d1thrownException) = e
                     val d2ThrownException = d2ThrownExceptions.get(pc)
                     if (d2ThrownException.isDefined) {
                         val adaptedD2ThrownException =
-                            d2ThrownException.get.map(ex ⇒
+                            d2ThrownException.get.map(ex =>
                                 ex.adapt(
                                     domain1,
                                     // We need to keep the original location, otherwise
@@ -136,15 +136,15 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
                     result ++ d2ThrownExceptions
                 )
             }
-        } { t ⇒ println("Analysis time "+t.toSeconds) }
+        } { t => println("Analysis time "+t.toSeconds) }
 
         val methodsWithDifferences = methodsWithDifferentExceptions.filter(_._3.nonEmpty).seq.toSeq
         BasicReport(
-            methodsWithDifferences.sortWith { (l, r) ⇒
+            methodsWithDifferences.sortWith { (l, r) =>
                 val (cf1: ClassFile, _, _) = l
                 val (cf2: ClassFile, _, _) = r
                 cf1.thisType.toString < cf2.thisType.toString
-            }.map(e ⇒ (e._2, e._3)).mkString("\n\n")+
+            }.map(e => (e._2, e._3)).mkString("\n\n")+
                 "Number of findings: "+methodsWithDifferences.size
         )
     }

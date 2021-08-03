@@ -43,8 +43,8 @@ private[thrown_exceptions] trait ExceptionTypeExtractor extends AbstractProperty
         ).asArrayValue
 
         (
-            concreteTypeExceptions.values.map[ObjectType](ev ⇒ ev.asClassValue.value.asObjectType),
-            upperBoundTypeExceptions.values.map[ObjectType](ev ⇒ ev.asClassValue.value.asObjectType)
+            concreteTypeExceptions.values.map[ObjectType](ev => ev.asClassValue.value.asObjectType),
+            upperBoundTypeExceptions.values.map[ObjectType](ev => ev.asClassValue.value.asObjectType)
         )
     }
 }
@@ -69,15 +69,15 @@ class ExpectedExceptionsMatcher extends AbstractPropertyMatcher with ExceptionTy
         val annotationType = a.annotationType.asObjectType
         val analysesElementValues =
             getValue(p, annotationType, a.elementValuePairs, "requires").asArrayValue.values
-        val requiredAnalysis = analysesElementValues.map[ObjectType](ev ⇒ ev.asClassValue.value.asObjectType)
+        val requiredAnalysis = analysesElementValues.map[ObjectType](ev => ev.asClassValue.value.asObjectType)
 
         val isPropertyValid = !requiredAnalysis.exists(as.contains) ||
             properties.forall {
-                case t: ThrownExceptions ⇒
+                case t: ThrownExceptions =>
                     t.types.nonEmpty &&
                         concreteTypeExceptions.forall(t.types.concreteTypes.contains(_)) &&
                         upperBoundTypeExceptions.forall(t.types.upperTypeBounds.contains(_))
-                case _ ⇒ true
+                case _ => true
             }
 
         if (isPropertyValid) {

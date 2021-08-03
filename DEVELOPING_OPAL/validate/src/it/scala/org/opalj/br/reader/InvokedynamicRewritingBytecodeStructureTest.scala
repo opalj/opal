@@ -38,7 +38,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
     def verifyMethod(
         testProject:   SomeProject,
         method:        Method,
-        domainFactory: (SomeProject, Method) ⇒ Domain
+        domainFactory: (SomeProject, Method) => Domain
     ): Unit = {
         val classFile = method.classFile
         val code = method.body.get
@@ -54,7 +54,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             result should not be 'wasAborted
             // the layout of the instructions array is correct
             for {
-                pc ← instructions.indices
+                pc <- instructions.indices
                 if instructions(pc) != null
             } {
                 val modifiedByWide = pc != 0 && instructions(pc) == WIDE
@@ -62,7 +62,7 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                 instructions.slice(pc + 1, nextPc).foreach(_ should be(null))
             }
         } catch {
-            case e: InterpretationFailedException ⇒
+            case e: InterpretationFailedException =>
                 val pc = e.pc
                 val details =
                     if (pc == instructions.length) {
@@ -80,17 +80,17 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
         }
     }
 
-    def testProject(project: SomeProject, domainFactory: (SomeProject, Method) ⇒ Domain): Int = {
+    def testProject(project: SomeProject, domainFactory: (SomeProject, Method) => Domain): Int = {
         val verifiedMethodsCounter = new AtomicInteger(0)
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
             instructions = body.instructions
             if instructions.exists {
-                case i: INVOKESTATIC ⇒
+                case i: INVOKESTATIC =>
                     i.declaringClass.fqn.matches(LambdaNameRegEx) ||
                         i.name.matches(TargetMethodNameRegEx)
-                case _ ⇒ false
+                case _ => false
             }
         } {
             verifiedMethodsCounter.incrementAndGet()
@@ -121,8 +121,8 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             it("should be able to perform abstract interpretation of rewritten Java lambda"+
                 "expressions in the lambdas test project") {
                 val verifiedMethodsCount =
-                    testProject(lambdas, (p, m) ⇒ BaseDomain(p, m)) +
-                        testProject(lambdas, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                    testProject(lambdas, (p, m) => BaseDomain(p, m)) +
+                        testProject(lambdas, (p, m) => new DefaultDomainWithCFGAndDefUse(p, m))
                 info(s"interpreted ${verifiedMethodsCount / 2} methods")
             }
         }
@@ -140,8 +140,8 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             it("should be able to perform abstract interpretation of rewritten Java string concat"+
                 " expressions in the string concat test project") {
                 val verifiedMethodsCount =
-                    testProject(stringConcat, (p, m) ⇒ BaseDomain(p, m)) +
-                        testProject(stringConcat, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                    testProject(stringConcat, (p, m) => BaseDomain(p, m)) +
+                        testProject(stringConcat, (p, m) => new DefaultDomainWithCFGAndDefUse(p, m))
                 info(s"interpreted ${verifiedMethodsCount / 2} methods")
             }
         }
@@ -159,8 +159,8 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             it("should be able to perform abstract interpretation of rewritten Java 16 record"+
                 " methods in the java16records test project") {
                 val verifiedMethodsCount =
-                    testProject(records, (p, m) ⇒ BaseDomain(p, m)) +
-                        testProject(records, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                    testProject(records, (p, m) => BaseDomain(p, m)) +
+                        testProject(records, (p, m) => new DefaultDomainWithCFGAndDefUse(p, m))
                 info(s"interpreted ${verifiedMethodsCount / 2} methods")
             }
         }
@@ -177,8 +177,8 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
                 it("should be able to perform abstract interpretation of rewritten Java lambda "+
                     "expressions in the JRE") {
                     val verifiedMethodsCount =
-                        testProject(jre, (p, m) ⇒ BaseDomain(p, m)) +
-                            testProject(jre, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                        testProject(jre, (p, m) => BaseDomain(p, m)) +
+                            testProject(jre, (p, m) => new DefaultDomainWithCFGAndDefUse(p, m))
                     info(s"successfully interpreted ${verifiedMethodsCount / 2} methods")
                 }
             }

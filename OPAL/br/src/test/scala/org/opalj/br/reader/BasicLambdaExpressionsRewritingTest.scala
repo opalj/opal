@@ -17,7 +17,7 @@ import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
-import org.opalj.bi.TestResources.{locateTestResources ⇒ locate}
+import org.opalj.bi.TestResources.{locateTestResources => locate}
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.collection.immutable.RefArray
@@ -46,18 +46,18 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         for {
             method ← classFile.findMethod(name)
             body ← method.body
-            factoryCall ← body.iterator.collect { case i: INVOKESTATIC ⇒ i }
+            factoryCall ← body.iterator.collect { case i: INVOKESTATIC => i }
             if factoryCall.declaringClass.fqn.matches(InvokedynamicRewriting.LambdaNameRegEx)
         } {
             val annotations = method.runtimeVisibleAnnotations
             successFull = true
             implicit val MethodDeclarationEquality: Equality[Method] =
-                (a: Method, b: Any) ⇒ b match {
-                    case m: Method ⇒
+                (a: Method, b: Any) => b match {
+                    case m: Method =>
                         a.compare(m) == 0 /* <=> same name and descriptor */ &&
                             a.visibilityModifier == m.visibilityModifier &&
                             a.isStatic == m.isStatic
-                    case _ ⇒ false
+                    case _ => false
                 }
 
             if (annotations.exists(_.annotationType == InvokedMethods)) {
@@ -80,7 +80,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
                         .filter(_.annotationType == InvokedMethods)
                         .flatMap[ElementValuePair](_.elementValuePairs)
                         .flatMap[ElementValue](_.value.asInstanceOf[ArrayValue].values)
-                        .filter { invokeMethod ⇒
+                        .filter { invokeMethod =>
                             val innerAnnotation = RefArray(invokeMethod.asInstanceOf[AnnotationValue].annotation)
                             val expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
                             val actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
@@ -111,11 +111,11 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         expectedTargetName: String
     ): Option[Method] = {
         val proxy = project.classFile(factoryCall.declaringClass).get
-        val forwardingMethod = proxy.methods.find { m ⇒
+        val forwardingMethod = proxy.methods.find { m =>
             !m.isConstructor && m.name != factoryCall.name && !m.isBridge && !m.isSynthetic
         }.get
         val invocationInstructions = forwardingMethod.body.get.instructions.collect {
-            case i: MethodInvocationInstruction ⇒ i
+            case i: MethodInvocationInstruction => i
         }
 
         // Make sure to get the correct instruction, Integer::compareUnsigned has 3
@@ -227,8 +227,8 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             }
             if (methodOpt.isEmpty) {
                 classFile.superclassType match {
-                    case Some(superType) ⇒ findMethodRecursiveInner(project.classFile(superType).get)
-                    case None ⇒ throw new IllegalStateException(
+                    case Some(superType) => findMethodRecursiveInner(project.classFile(superType).get)
+                    case None => throw new IllegalStateException(
                         s"$receiverType does not define $methodName"
                     )
                 }
@@ -240,12 +240,12 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
     }
 
     private def getParameterTypes(pairs: ElementValuePairs): Option[RefArray[FieldType]] = {
-        pairs.find(_.name == "parameterTypes").map { p ⇒
+        pairs.find(_.name == "parameterTypes").map { p =>
             p.value.asInstanceOf[ArrayValue].values.map[FieldType] {
-                case ClassValue(x: ArrayType)  ⇒ x
-                case ClassValue(x: ObjectType) ⇒ x
-                case ClassValue(x: BaseType)   ⇒ x
-                case x: ElementValue           ⇒ x.valueType
+                case ClassValue(x: ArrayType)  => x
+                case ClassValue(x: ObjectType) => x
+                case ClassValue(x: BaseType)   => x
+                case x: ElementValue           => x.valueType
             }
         }
     }
@@ -255,10 +255,10 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             val classFile = project.classFile(ObjectType(ot)).get
             classFile
                 .methods
-                .filter(_.runtimeVisibleAnnotations.exists { a ⇒
+                .filter(_.runtimeVisibleAnnotations.exists { a =>
                     a.annotationType == InvokedMethod || a.annotationType == InvokedMethods
                 })
-                .foreach(m ⇒ testMethod(project, classFile, m.name))
+                .foreach(m => testMethod(project, classFile, m.name))
         }
 
         it("should resolve all references in Lambdas") {

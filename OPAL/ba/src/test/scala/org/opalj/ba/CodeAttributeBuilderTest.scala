@@ -64,11 +64,11 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         codeElements:   Array[CodeElement[AnyRef]],
         theBRClassFile: br.ClassFile,
         theBRMethod:    br.Method
-    )(f: ⇒ Unit): Unit = {
+    )(f: => Unit): Unit = {
         try {
             f
         } catch {
-            case e: VerifyError ⇒
+            case e: VerifyError =>
                 import ClassHierarchy.PreInitializedClassHierarchy
                 val theCode = theBRMethod.body.get
                 val theSMT = theCode.stackMapTable.get
@@ -208,7 +208,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
-            Map("TheClass" → rawClassFile), this.getClass.getClassLoader
+            Map("TheClass" -> rawClassFile), this.getClass.getClassLoader
         )
         val clazz = loader.loadClass("TheClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
@@ -346,7 +346,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
-            Map("CodeAttributeBuilderTestClass" → rawClassFile), this.getClass.getClassLoader
+            Map("CodeAttributeBuilderTestClass" -> rawClassFile), this.getClass.getClassLoader
         )
         val clazz = loader.loadClass("CodeAttributeBuilderTestClass")
         testEvaluation(codeElements, brClassFile, brMethod) {
@@ -430,7 +430,7 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
         val rawClassFile = Assembler(daClassFile)
 
         val loader = new InMemoryClassLoader(
-            Map(thisName → rawClassFile), this.getClass.getClassLoader
+            Map(thisName -> rawClassFile), this.getClass.getClassLoader
         )
         val clazz = loader.loadClass(thisName)
         testEvaluation(codeElements, brClassFile, brMethod) {
@@ -441,8 +441,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "not remove live code after simple conditional branch instructions" in {
-        import ObjectType.{Object ⇒ OObject}
-        import ObjectType.{RuntimeException ⇒ ORuntimeException}
+        import ObjectType.{Object => OObject}
+        import ObjectType.{RuntimeException => ORuntimeException}
         val codeElements = Array[CodeElement[AnyRef]](
             LabelElement(0),
             TRY('eh),
@@ -518,8 +518,8 @@ class CodeAttributeBuilderTest extends AnyFlatSpec {
     }
 
     it should "allow inline ExceptionHandlers that include the last PC" in {
-        import ObjectType.{RuntimeException ⇒ ORuntimeException}
-        import ObjectType.{Object ⇒ OObject}
+        import ObjectType.{RuntimeException => ORuntimeException}
+        import ObjectType.{Object => OObject}
         val codeElements = Array[CodeElement[AnyRef]](
             GOTO('NORMAL_CF), // => 0,1,2
             CATCH('eh, 1, Some(ORuntimeException)),

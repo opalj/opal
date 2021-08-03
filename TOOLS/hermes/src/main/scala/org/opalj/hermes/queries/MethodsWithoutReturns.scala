@@ -35,7 +35,7 @@ class MethodsWithoutReturns(implicit hermes: HermesConfig) extends FeatureQuery 
             classFileLocation = ClassFileLocation(source, classFile)
             method ← classFile.methods
             body ← method.body
-            hasReturnInstruction = body.exists { (pc, i) ⇒ i.isInstanceOf[ReturnInstruction] }
+            hasReturnInstruction = body.exists { (pc, i) => i.isInstanceOf[ReturnInstruction] }
             if !hasReturnInstruction
         } {
             val cfg = CFGFactory(body, project.classHierarchy)

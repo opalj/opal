@@ -18,7 +18,7 @@ import org.opalj.br.Method
  *
  * @author Michael Eichberg
  */
-trait CalledMethodsStore { rootStore ⇒
+trait CalledMethodsStore { rootStore =>
 
     implicit val logContext: LogContext
 
@@ -60,8 +60,8 @@ trait CalledMethodsStore { rootStore ⇒
 
         val adaptedOperands = mapOperands(operands, domain)
         calledMethods.get(method) match {
-            case None ⇒ Some(updated(method, List(adaptedOperands)))
-            case Some(previousOperandsList) ⇒
+            case None => Some(updated(method, List(adaptedOperands)))
+            case Some(previousOperandsList) =>
                 for (previousOperands ← previousOperandsList) {
                     try {
                         val previousOperandsIterator = previousOperands.iterator
@@ -76,8 +76,8 @@ trait CalledMethodsStore { rootStore ⇒
                             // a previous computation completely abstracts over this computation
                             return None;
                     } catch {
-                        case ct: ControlThrowable ⇒ throw ct
-                        case t: Throwable ⇒
+                        case ct: ControlThrowable => throw ct
+                        case t: Throwable =>
                             OPALLogger.error(
                                 "internal error",
                                 s"incompatible operands lists: $previousOperands and $adaptedOperands",

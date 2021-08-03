@@ -45,7 +45,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     override type LocalTypeInformation = Null
 
     override def c(state: PropagationBasedCGState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBP(typeSetEntity: TypeSetEntity, _: InstantiatedTypes) ⇒
+        case EUBP(typeSetEntity: TypeSetEntity, _: InstantiatedTypes) =>
             val seenTypes = state.instantiatedTypes(typeSetEntity).size
 
             state.updateInstantiatedTypesDependee(
@@ -61,7 +61,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
 
             returnResult(calleesAndCallers)(state)
 
-        case _ ⇒ super.c(state)(eps)
+        case _ => super.c(state)(eps)
     }
 
     override def createInitialState(
@@ -96,9 +96,9 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     private[this] def handleVirtualCallSites(
         calleesAndCallers: DirectCalls, newTypes: TraversableOnce[ReferenceType]
     )(implicit state: PropagationBasedCGState): Unit = {
-        newTypes.filter(_.isObjectType).foreach { instantiatedType ⇒
+        newTypes.filter(_.isObjectType).foreach { instantiatedType =>
             val callSites = state.getVirtualCallSites(instantiatedType.asObjectType)
-            callSites.foreach { callSite ⇒
+            callSites.foreach { callSite =>
                 val CallSite(pc, name, descr, declaringClass) = callSite
                 val tgtR = project.instanceCall(
                     state.method.definedMethod.classFile.thisType,
@@ -125,7 +125,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     @inline override protected[this] def canResolveCall(
         localTypeInformation: LocalTypeInformation,
         state:                PropagationBasedCGState
-    ): ObjectType ⇒ Boolean = state.instantiatedTypesContains
+    ): ObjectType => Boolean = state.instantiatedTypesContains
 
     @inline protected[this] def handleUnresolvedCall(
         unresolvedTypes: IntTrieSet,

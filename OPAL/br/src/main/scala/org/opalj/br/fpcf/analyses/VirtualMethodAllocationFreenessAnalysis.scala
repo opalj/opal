@@ -59,9 +59,9 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] (
 
         for (method ← methods) {
             propertyStore(declaredMethods(method), AllocationFreeness.key) match {
-                case FinalP(AllocationFreeMethod)  ⇒
-                case FinalP(MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
-                case epk                           ⇒ dependees += epk
+                case FinalP(AllocationFreeMethod)  =>
+                case FinalP(MethodWithAllocations) => return Result(dm, VMethodWithAllocations);
+                case epk                           => dependees += epk
             }
         }
 
@@ -69,9 +69,9 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] (
             dependees = dependees.filter { _.e ne eps.e }
 
             eps match {
-                case FinalP(AllocationFreeMethod)  ⇒
-                case FinalP(MethodWithAllocations) ⇒ return Result(dm, VMethodWithAllocations);
-                case epk ⇒
+                case FinalP(AllocationFreeMethod)  =>
+                case FinalP(MethodWithAllocations) => return Result(dm, VMethodWithAllocations);
+                case epk =>
                     dependees += epk.asInstanceOf[EOptionP[DeclaredMethod, AllocationFreeness]]
             }
 
@@ -92,8 +92,8 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] (
     /** Called when the analysis is scheduled lazily. */
     def doDetermineAllocationFreeness(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case m: DeclaredMethod ⇒ determineAllocationFreeness(m)
-            case _                 ⇒ throw new IllegalArgumentException(s"$e ist not a method")
+            case m: DeclaredMethod => determineAllocationFreeness(m)
+            case _                 => throw new IllegalArgumentException(s"$e ist not a method")
         }
     }
 

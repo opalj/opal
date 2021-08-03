@@ -20,7 +20,7 @@ import org.opalj.br.CTIntType
  * @author Michael Eichberg
  */
 trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with IntegerSetValues {
-    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory ⇒
+    domain: CorrelationalDomainSupport with Configuration with ExceptionsFactory =>
 
     class AnIntegerValue extends super.AnIntegerValue {
 
@@ -55,9 +55,9 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             val result = other match {
-                case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
+                case _: AnIntegerValue => StructuralUpdate(AnIntegerValue())
 
-                case that: BaseTypesBasedSet ⇒
+                case that: BaseTypesBasedSet =>
                     // every base types based set is necessarily larger, because the
                     // absolute maximum cardinality is 254 (ByteSet.cardinality-1)
                     val thisLB = this.values.firstKey
@@ -66,7 +66,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
                     val newUB = max(thisUB, that.upperBound)
                     StructuralUpdate(approximateSet(pc, newLB, newUB))
 
-                case IntegerSet(thatValues) ⇒
+                case IntegerSet(thatValues) =>
                     val newValues = this.values ++ thatValues
 
                     if (newValues.size == 1) {
@@ -95,8 +95,8 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (
                 other match {
-                    case that: IntegerSet ⇒ that.values.subsetOf(this.values)
-                    case _                ⇒ false
+                    case that: IntegerSet => that.values.subsetOf(this.values)
+                    case _                => false
                 }
             )
         }
@@ -120,8 +120,8 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: IntegerSet ⇒ (this eq that) || (this.values == that.values)
-                case _                ⇒ false
+                case that: IntegerSet => (this eq that) || (this.values == that.values)
+                case _                => false
             }
         }
 
@@ -130,15 +130,15 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     // NOTE: IF WE HAVE TWO VALUES THAT ARE REFERENCE EQUAL, THEN THE
     // (UNKNOWN) UNDERLYING VALUE IS THE SAME!
-    trait BaseTypesBasedSet extends super.BaseTypesBasedSet { this: DomainValue ⇒
+    trait BaseTypesBasedSet extends super.BaseTypesBasedSet { this: DomainValue =>
 
         def name: String
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue())
+                case _: AnIntegerValue => StructuralUpdate(AnIntegerValue())
 
-                case that: BaseTypesBasedSet ⇒
+                case that: BaseTypesBasedSet =>
                     val thisLB = this.lowerBound
                     val thisUB = this.upperBound
                     val newLB = min(thisLB, that.lowerBound)
@@ -148,7 +148,7 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
                     else
                         StructuralUpdate(approximateSet(pc, newLB, newUB))
 
-                case IntegerSet(thatValues) ⇒
+                case IntegerSet(thatValues) =>
                     val thisLB = this.lowerBound
                     val thisUB = this.upperBound
                     val thatLB = thatValues.firstKey
@@ -167,12 +167,12 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (
                 other match {
-                    case other: BaseTypesBasedSet ⇒
+                    case other: BaseTypesBasedSet =>
                         lowerBound <= other.lowerBound && upperBound >= other.upperBound
-                    case that: IntegerSet ⇒
+                    case that: IntegerSet =>
                         lowerBound <= that.values.firstKey && upperBound >= that.values.lastKey
 
-                    case _ ⇒ false
+                    case _ => false
                 }
             )
         }
@@ -183,9 +183,9 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: BaseTypesBasedSet ⇒
+                case that: BaseTypesBasedSet =>
                     this.lowerBound == that.lowerBound && this.upperBound == that.upperBound
-                case _ ⇒
+                case _ =>
                     false
             }
         }
@@ -198,14 +198,14 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     def U7BitSet(): DomainTypedValue[CTIntType] = new U7BitSet
 
-    class U7BitSet extends super.U7BitSet with BaseTypesBasedSet { this: DomainValue ⇒
+    class U7BitSet extends super.U7BitSet with BaseTypesBasedSet { this: DomainValue =>
         override def name = "Unsigned7BitValue"
         override def newInstance = new U7BitSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
-                case isv: IntegerSetValues   ⇒ isv.U7BitSet()
-                case irv: IntegerRangeValues ⇒ irv.IntegerRange(lowerBound, upperBound)
-                case _                       ⇒ target.ByteValue(pc)
+                case isv: IntegerSetValues   => isv.U7BitSet()
+                case irv: IntegerRangeValues => irv.IntegerRange(lowerBound, upperBound)
+                case _                       => target.ByteValue(pc)
             }
             result.asInstanceOf[target.DomainValue]
         }
@@ -214,14 +214,14 @@ trait DefaultIntegerSetValues extends DefaultSpecialDomainValuesBinding with Int
 
     def U15BitSet(): DomainTypedValue[CTIntType] = new U15BitSet()
 
-    class U15BitSet extends super.U15BitSet with BaseTypesBasedSet { this: DomainValue ⇒
+    class U15BitSet extends super.U15BitSet with BaseTypesBasedSet { this: DomainValue =>
         override def name = "Unsigned15BitValue"
         override def newInstance = new U15BitSet
         override def adapt(target: TargetDomain, pc: Int): target.DomainValue = {
             val result = target match {
-                case isv: IntegerSetValues   ⇒ isv.U15BitSet()
-                case irv: IntegerRangeValues ⇒ irv.IntegerRange(lowerBound, upperBound)
-                case _                       ⇒ target.ByteValue(pc)
+                case isv: IntegerSetValues   => isv.U15BitSet()
+                case irv: IntegerRangeValues => irv.IntegerRange(lowerBound, upperBound)
+                case _                       => target.ByteValue(pc)
             }
             result.asInstanceOf[target.DomainValue]
         }

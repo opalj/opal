@@ -20,7 +20,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         // Step 1
         // Find all methods that create "java.io.File(<String>)" objects.
@@ -37,7 +37,7 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
                                 ObjectType("java/io/File"), false /* = isInterface*/ ,
                                 "<init>",
                                 SingleArgumentMethodDescriptor((ObjectType.String, VoidType)))
-                            ) ⇒ pc
+                            ) => pc
                     }
                 (m, pcs)
             }).filter(_._2.size > 0)
@@ -70,8 +70,8 @@ object IdentifyResourcesAnalysis extends ProjectAnalysisApplication {
             for {
                 (m, pcs) ← callSites
                 result = BaseAI(m, new AnalysisDomain(theProject, m))
-                (pc, value) ← pcs.map(pc ⇒ (pc, result.operandsArray(pc))).collect {
-                    case (pc, result.domain.StringValue(value) :&: _) ⇒ (pc, value)
+                (pc, value) ← pcs.map(pc => (pc, result.operandsArray(pc))).collect {
+                    case (pc, result.domain.StringValue(value) :&: _) => (pc, value)
                 }
             } yield (m, pc, value)
 

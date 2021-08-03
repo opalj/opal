@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import scala.collection.generic.Growable
 import scala.collection.mutable
 import scala.collection.JavaConverters._
-import scala.concurrent.Await.{result ⇒ await}
+import scala.concurrent.Await.{result => await}
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration.Inf
 import scala.concurrent.ExecutionContext
@@ -179,7 +179,7 @@ class ClassHierarchy private (
      */
     def rootClassTypesIterator: Iterator[ObjectType] = {
         // TODO Use RefIterator.fromNonNullValues(....)
-        knownTypesMap.iterator filter { objectType ⇒
+        knownTypesMap.iterator filter { objectType =>
             (objectType ne null) && {
                 val oid = objectType.id
                 (superclassTypeMap(oid) eq null) && !isInterfaceTypeMap(oid)
@@ -188,7 +188,7 @@ class ClassHierarchy private (
     }
 
     def leafClassTypesIterator: Iterator[ObjectType] = {
-        leafTypes.iterator filterNot { objectType ⇒ isInterfaceTypeMap(objectType.id) }
+        leafTypes.iterator filterNot { objectType => isInterfaceTypeMap(objectType.id) }
     }
 
     /**
@@ -197,7 +197,7 @@ class ClassHierarchy private (
      * over all interfaces which are at the top of the interface inheritance hierarchy.
      */
     def rootInterfaceTypes(collection: Growable[ObjectType]): collection.type = {
-        superinterfaceTypesMap.iterator.zipWithIndex foreach { si ⇒
+        superinterfaceTypesMap.iterator.zipWithIndex foreach { si =>
             val (superinterfaceTypes, id) = si
             if (superinterfaceTypes != null && superinterfaceTypes.isEmpty && isInterface(id)) {
                 collection += knownTypesMap(id)
@@ -253,7 +253,7 @@ class ClassHierarchy private (
 
         val rootTypes = this.rootTypes.toSet
         val typeInfos =
-            (0 until knownTypesMap.length) filter { i ⇒ knownTypesMap(i) ne null } map { i ⇒
+            (0 until knownTypesMap.length) filter { i => knownTypesMap(i) ne null } map { i =>
                 val t = knownTypesMap(i)
                 TypeInfo(
                     t,
@@ -393,7 +393,7 @@ class ClassHierarchy private (
      * ifKnown(ObjectType.Serializable){isDirectSupertypeInformationComplete}
      * }}}
      */
-    @inline final def ifKnown[T](objectType: ObjectType)(f: ObjectType ⇒ T): Option[T] = {
+    @inline final def ifKnown[T](objectType: ObjectType)(f: ObjectType => T): Option[T] = {
         if (isKnown(objectType))
             Some(f(objectType))
         else
@@ -403,8 +403,8 @@ class ClassHierarchy private (
     /**
      * Calls the given function `f` for each type that is known to the class hierarchy.
      */
-    def foreachKnownType[T](f: ObjectType ⇒ T): Unit = {
-        foreachNonNullValue(knownTypesMap)((_ /*index*/ , t) ⇒ f(t))
+    def foreachKnownType[T](f: ObjectType => T): Unit = {
+        foreachNonNullValue(knownTypesMap)((_ /*index*/ , t) => f(t))
     }
 
     /**
@@ -440,9 +440,9 @@ class ClassHierarchy private (
      */
     @inline def isKnownToBeFinal(referenceType: ReferenceType): Boolean = {
         referenceType match {
-            case objectType: ObjectType ⇒
+            case objectType: ObjectType =>
                 isKnownToBeFinal(objectType)
-            case arrayType: ArrayType ⇒
+            case arrayType: ArrayType =>
                 val elementType = arrayType.elementType
                 elementType.isBaseType || isKnownToBeFinal(elementType.asObjectType)
         }
@@ -587,7 +587,7 @@ class ClassHierarchy private (
      *        current value of type `t` or if the subtypes of the current subtype should be
      *        traversed. The commented signature of `f` is:
      *        {{{
-     *        f: (T, ObjectType) ⇒ (T /*result*/ , Boolean /*skip subtypes*/ , Boolean /*abort*/ )
+     *        f: (T, ObjectType) => (T /*result*/ , Boolean /*skip subtypes*/ , Boolean /*abort*/ )
      *        }}}
      */
     def processSubtypes[@specialized(Boolean) T](
@@ -596,7 +596,7 @@ class ClassHierarchy private (
     )(
         initial: T
     )(
-        f: (T, ObjectType) ⇒ (T /*result*/ , Boolean /*skip subtypes*/ , Boolean /*abort*/ )
+        f: (T, ObjectType) => (T /*result*/ , Boolean /*skip subtypes*/ , Boolean /*abort*/ )
     ): T = {
         if (isUnknown(objectType))
             return initial;
@@ -607,10 +607,10 @@ class ClassHierarchy private (
             val oid = objectType.id
             var t: T = initial
             val continue = {
-                subclassTypesMap(oid).forall { subtype ⇒
+                subclassTypesMap(oid).forall { subtype =>
                     val (newT, continue) = process(t, subtype); t = newT; continue
                 } &&
-                    subinterfaceTypesMap(oid).forall { subtype ⇒
+                    subinterfaceTypesMap(oid).forall { subtype =>
                         val (newT, continue) = process(t, subtype); t = newT; continue
                     }
             }
@@ -648,7 +648,7 @@ class ClassHierarchy private (
      * *
      * @param   objectType An `ObjectType`.
      */
-    def foreachSubtype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
+    def foreachSubtype(objectType: ObjectType)(f: ObjectType => Unit): Unit = {
         val oid = objectType.id
         if (isKnown(oid)) {
             subtypeInformationMap(oid).foreach(f)
@@ -671,7 +671,7 @@ class ClassHierarchy private (
         objectType: ObjectType,
         reflexive:  Boolean    = false
     )(
-        process: ObjectType ⇒ Boolean
+        process: ObjectType => Boolean
     ): Unit = {
         var processed = UIDSet.empty[ObjectType]
         def foreachSubtype(objectType: ObjectType): Unit = {
@@ -693,7 +693,7 @@ class ClassHierarchy private (
                     return ;
             };
 
-            rootTypes foreach { rootType ⇒
+            rootTypes foreach { rootType =>
                 if (rootType ne ObjectType.Object) {
                     foreachSubtype(rootType)
                 } else {
@@ -722,15 +722,15 @@ class ClassHierarchy private (
         objectType: ObjectType,
         reflexive:  Boolean    = false
     )(
-        process: ClassFile ⇒ Boolean
+        process: ClassFile => Boolean
     )(
         implicit
         project: ClassFileRepository
     ): Unit = {
-        foreachSubtype(objectType, reflexive) { subtype ⇒
+        foreachSubtype(objectType, reflexive) { subtype =>
             project.classFile(subtype) match {
-                case Some(classFile) ⇒ process(classFile)
-                case _ /* None */    ⇒ true
+                case Some(classFile) => process(classFile)
+                case _ /* None */    => true
             }
         }
     }
@@ -751,9 +751,9 @@ class ClassHierarchy private (
         objectType: ObjectType,
         project:    ClassFileRepository
     )(
-        f: ClassFile ⇒ Unit
+        f: ClassFile => Unit
     ): Unit = {
-        foreachSubtype(objectType) { subtype ⇒ project.classFile(subtype).foreach(f) }
+        foreachSubtype(objectType) { subtype => project.classFile(subtype).foreach(f) }
     }
 
     /**
@@ -788,14 +788,14 @@ class ClassHierarchy private (
         objectType: ObjectType,
         project:    ClassFileRepository
     )(
-        f: ClassFile ⇒ T
+        f: ClassFile => T
     ): Unit = {
         val oid = objectType.id
         if (isUnknown(oid))
             return ;
 
         import project.classFile
-        subclassTypesMap(oid) foreach { subtype ⇒ classFile(subtype).foreach(f) }
+        subclassTypesMap(oid) foreach { subtype => classFile(subtype).foreach(f) }
     }
 
     def directSubtypesCount(objectType: ObjectType): Int = {
@@ -822,9 +822,9 @@ class ClassHierarchy private (
         objectType: ObjectType,
         project:    ClassFileRepository
     )(
-        p: ClassFile ⇒ Boolean
+        p: ClassFile => Boolean
     ): Boolean = {
-        foreachSubtype(objectType) { objectType ⇒
+        foreachSubtype(objectType) { objectType =>
             val cfOption = project.classFile(objectType) // IMPROVE implement Project.classFile(ObjectTypeID:Int)
             if (cfOption.isDefined && p(cfOption.get))
                 return true;
@@ -835,7 +835,7 @@ class ClassHierarchy private (
     def foreachDirectSupertypeCF[U](
         objectType: ObjectType
     )(
-        f: ClassFile ⇒ U
+        f: ClassFile => U
     )(
         implicit
         project: ClassFileRepository
@@ -846,7 +846,7 @@ class ClassHierarchy private (
 
         val superinterfaceTypes = superinterfaceTypesMap(oid)
         if (superinterfaceTypes ne null) {
-            superinterfaceTypes foreach { t ⇒ project.classFile(t).foreach(f) }
+            superinterfaceTypes foreach { t => project.classFile(t).foreach(f) }
         }
 
         val superclassType = superclassTypeMap(oid)
@@ -854,7 +854,7 @@ class ClassHierarchy private (
 
     }
 
-    def foreachDirectSupertype(objectType: ObjectType)(f: ObjectType ⇒ Unit): Unit = {
+    def foreachDirectSupertype(objectType: ObjectType)(f: ObjectType => Unit): Unit = {
         if (isUnknown(objectType))
             return ;
 
@@ -872,7 +872,7 @@ class ClassHierarchy private (
         ot:        ObjectType,
         reflexive: Boolean    = false
     )(
-        f: ObjectType ⇒ Unit
+        f: ObjectType => Unit
     ): Unit = {
         val oid = ot.id
         if (reflexive) f(ot)
@@ -1006,7 +1006,7 @@ class ClassHierarchy private (
         val allClassTypes = UIDSet.empty[ObjectType] ++ allSuperclassTypesInInitializationOrder(o).s
 
         var allInterfaceTypes = UIDSet.empty[ObjectType]
-        foreachSuperinterfaceType(o) { supertype ⇒ allInterfaceTypes += supertype; true }
+        foreachSuperinterfaceType(o) { supertype => allInterfaceTypes += supertype; true }
 
         SupertypeInformation.forSubtypesOfObject(
             isKnownTypeMap,
@@ -1034,9 +1034,9 @@ class ClassHierarchy private (
         objectType: ObjectType,
         project:    ClassFileRepository
     )(
-        f: ClassFile ⇒ Unit
+        f: ClassFile => Unit
     ): Unit = {
-        foreachSupertype(objectType) { supertype ⇒ project.classFile(supertype).foreach(f) }
+        foreachSupertype(objectType) { supertype => project.classFile(supertype).foreach(f) }
     }
 
     /**
@@ -1047,18 +1047,18 @@ class ClassHierarchy private (
      *          `objectType` that pass the given filter and for which the class file
      *          is available.
      * @note    It may be more efficient to use `foreachSuperclass(ObjectType,
-     *          ObjectType ⇒ Option[ClassFile])(ClassFile => Unit)`
+     *          ObjectType => Option[ClassFile])(ClassFile => Unit)`
      */
     def superclasses(
         objectType: ObjectType,
         project:    ClassFileRepository
     )(
-        classFileFilter: ClassFile ⇒ Boolean = { _ ⇒ true }
+        classFileFilter: ClassFile => Boolean = { _ => true }
     ): Iterable[ClassFile] = {
         // We want to make sure that every class file is returned only once,
         // but we want to avoid equals calls on `ClassFile` objects.
         var classFiles = Map[ObjectType, ClassFile]()
-        foreachSuperclass(objectType, project) { classFile ⇒
+        foreachSuperclass(objectType, project) { classFile =>
             if (classFileFilter(classFile))
                 classFiles = classFiles.updated(classFile.thisType, classFile)
         }
@@ -1086,8 +1086,8 @@ class ClassHierarchy private (
         val allTypes = if (reflexive) baseTypes ++ Iterator(ot) else baseTypes
 
         allTypes
-            .filter(t ⇒ project.classFile(t).isDefined)
-            .map(t ⇒ project.classFile(t).get)
+            .filter(t => project.classFile(t).isDefined)
+            .map(t => project.classFile(t).get)
     }
 
     /**
@@ -1141,14 +1141,14 @@ class ClassHierarchy private (
     // TODO Rename => directSupertypes
     def supertypes(objectType: ObjectType): UIDSet[ObjectType] = {
         superinterfaceTypes(objectType) match {
-            case None ⇒
+            case None =>
                 superclassType(objectType).map(UIDSet1.apply).getOrElse(UIDSet.empty)
-            case Some(superinterfaceTypes) ⇒
+            case Some(superinterfaceTypes) =>
                 superinterfaceTypes ++ superclassType(objectType)
         }
     }
 
-    def foreachDirectSubtypeOf[U](objectType: ObjectType)(f: ObjectType ⇒ U): Unit = {
+    def foreachDirectSubtypeOf[U](objectType: ObjectType)(f: ObjectType => U): Unit = {
         val oid = objectType.id
         if (isUnknown(oid))
             return ;
@@ -1196,7 +1196,7 @@ class ClassHierarchy private (
      * Iterates over all subinterfaces of the given interface type (or java.lang.Object) until
      * the callback function returns "false".
      */
-    def foreachSubinterfaceType(interfaceType: ObjectType)(f: ObjectType ⇒ Boolean): Unit = {
+    def foreachSubinterfaceType(interfaceType: ObjectType)(f: ObjectType => Boolean): Unit = {
         var processedTypes = UIDSet.empty[ObjectType]
         var typesToProcess = directSubinterfacesOf(interfaceType)
         while (typesToProcess.nonEmpty) {
@@ -1204,7 +1204,7 @@ class ClassHierarchy private (
             typesToProcess = typesToProcess.tail
             processedTypes += subInterfaceType
             if (f(subInterfaceType)) {
-                directSubinterfacesOf(subInterfaceType) foreach { i ⇒
+                directSubinterfacesOf(subInterfaceType) foreach { i =>
                     if (!processedTypes.contains(i))
                         typesToProcess += i
                 }
@@ -1216,7 +1216,7 @@ class ClassHierarchy private (
      * Iterates over all direct and indirect (also by means of super classes) superinterfaces
      * of the type  until the callback function returns "false".
      */
-    def foreachSuperinterfaceType(t: ObjectType)(f: ObjectType ⇒ Boolean): Unit = {
+    def foreachSuperinterfaceType(t: ObjectType)(f: ObjectType => Boolean): Unit = {
         if (isUnknown(t))
             return ;
 
@@ -1233,7 +1233,7 @@ class ClassHierarchy private (
                     } else {
                         directSuperinterfacesOf(superType).iterator
                     }
-                (superInterfaces ++ superclassType(superType).iterator) foreach { i ⇒
+                (superInterfaces ++ superclassType(superType).iterator) foreach { i =>
                     if (!processedTypes.contains(i))
                         typesToProcess += i
                 }
@@ -1334,8 +1334,8 @@ class ClassHierarchy private (
         if (subtypes.isEmpty /*the upper type bound of "null" values*/ || subtypes == supertypes)
             return true;
 
-        supertypes forall { supertype: ReferenceType ⇒
-            subtypes exists { subtype: ReferenceType ⇒
+        supertypes forall { supertype: ReferenceType =>
+            subtypes exists { subtype: ReferenceType =>
                 this.isSubtypeOf(subtype, supertype)
             }
         }
@@ -1349,14 +1349,14 @@ class ClassHierarchy private (
         if (supertypes.isEmpty /*the upper type bound of "null" values*/ )
             return false;
 
-        supertypes forall { supertype: ReferenceType ⇒ isSubtypeOf(subtype, supertype) }
+        supertypes forall { supertype: ReferenceType => isSubtypeOf(subtype, supertype) }
     }
 
     def isSubtypeOf(subtypes: UIDSet[_ <: ReferenceType], supertype: ReferenceType): Boolean = {
         if (subtypes.isEmpty) /*the upper type bound of "null" values*/
             return true;
 
-        subtypes exists { subtype: ReferenceType ⇒ this.isSubtypeOf(subtype, supertype) }
+        subtypes exists { subtype: ReferenceType => this.isSubtypeOf(subtype, supertype) }
     }
 
     /**
@@ -1400,9 +1400,9 @@ class ClassHierarchy private (
                 // Recall that `isSubtypeOf` completely handles all cases that make
                 // it possible to store an array in a value of type ObjectType.
                 isASubtypeOf(elementValueType.asArrayType, componentObjectType) match {
-                    case Yes ⇒ if (arrayTypeIsPrecise) Yes else Unknown
-                    case No  ⇒ No
-                    case _   ⇒ throw new AssertionError("some array type <: some object type failed")
+                    case Yes => if (arrayTypeIsPrecise) Yes else Unknown
+                    case No  => No
+                    case _   => throw new AssertionError("some array type <: some object type failed")
                 }
             }
         } else /* the type of the element value is an ObjectType*/ {
@@ -1412,17 +1412,17 @@ class ClassHierarchy private (
                 val elementValueObjectType = elementValueType.asObjectType
                 val arrayComponentReferenceType = arrayType.componentType.asReferenceType
                 isASubtypeOf(elementValueObjectType, arrayComponentReferenceType) match {
-                    case Yes ⇒
+                    case Yes =>
                         if (arrayTypeIsPrecise || isKnownToBeFinal(elementValueObjectType))
                             Yes
                         else
                             Unknown
-                    case No ⇒
+                    case No =>
                         if (elementValueTypeIsPrecise && arrayTypeIsPrecise)
                             No
                         else
                             Unknown
-                    case unknown ⇒ unknown
+                    case unknown => unknown
                 }
             }
         }
@@ -1573,15 +1573,15 @@ class ClassHierarchy private (
             return Yes;
 
         Answer(
-            supertypes forall { supertype: ReferenceType ⇒
+            supertypes forall { supertype: ReferenceType =>
                 var subtypingRelationUnknown = false
                 val subtypeExists =
-                    subtypes exists { subtype: ReferenceType ⇒
+                    subtypes exists { subtype: ReferenceType =>
                         val isSubtypeOf = this.isASubtypeOf(subtype, supertype)
                         isSubtypeOf match {
-                            case Yes     ⇒ true
-                            case Unknown ⇒ { subtypingRelationUnknown = true; false /* continue */ }
-                            case No      ⇒ false
+                            case Yes     => true
+                            case Unknown => { subtypingRelationUnknown = true; false /* continue */ }
+                            case No      => false
                         }
                     }
                 if (subtypeExists)
@@ -1602,11 +1602,11 @@ class ClassHierarchy private (
         if (supertypes.isEmpty /* <=> upper type bound of "null" values */ )
             return No;
 
-        supertypes foreach { supertype: ReferenceType ⇒
+        supertypes foreach { supertype: ReferenceType =>
             isASubtypeOf(subtype, supertype) match {
-                case Yes     ⇒ /*Nothing to do*/
-                case Unknown ⇒ return Unknown; // FIXME No should have precedence over Unknown even if some supertypes are Unknown...
-                case No      ⇒ return No;
+                case Yes     => /*Nothing to do*/
+                case Unknown => return Unknown; // FIXME No should have precedence over Unknown even if some supertypes are Unknown...
+                case No      => return No;
             }
         }
         // subtype is a subtype of all supertypes
@@ -1619,11 +1619,11 @@ class ClassHierarchy private (
 
         var subtypeRelationUnknown = false
         val subtypeExists =
-            subtypes exists { subtype: ReferenceType ⇒
+            subtypes exists { subtype: ReferenceType =>
                 this.isASubtypeOf(subtype, supertype) match {
-                    case Yes     ⇒ true
-                    case Unknown ⇒ { subtypeRelationUnknown = true; false /* continue search */ }
-                    case No      ⇒ false
+                    case Yes     => true
+                    case Unknown => { subtypeRelationUnknown = true; false /* continue search */ }
+                    case No      => false
                 }
             }
         if (subtypeExists)
@@ -1670,17 +1670,17 @@ class ClassHierarchy private (
             val candidateType = typesToProcess.dequeue
             processedTypes += candidateType
             val isCommonSubtype =
-                remainingTypeBounds.forall { otherTypeBound: ObjectType ⇒
+                remainingTypeBounds.forall { otherTypeBound: ObjectType =>
                     isASubtypeOf(candidateType, otherTypeBound).isYesOrUnknown
                 }
             if (isCommonSubtype) {
                 directSubtypes =
-                    directSubtypes.filter { candidateDirectSubtype ⇒
+                    directSubtypes.filter { candidateDirectSubtype =>
                         isASubtypeOf(candidateDirectSubtype, candidateType).isNoOrUnknown
                     } +
                         candidateType
             } else {
-                directSubtypesOf(candidateType).foreach { candidateType ⇒
+                directSubtypesOf(candidateType).foreach { candidateType =>
                     if (!processedTypes.contains(candidateType))
                         typesToProcess += candidateType
                 }
@@ -1713,27 +1713,27 @@ class ClassHierarchy private (
         p: ClassFileRepository
     ): Answer = {
         (subtype, supertype) match {
-            case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt)) ⇒ Answer(et eq superEt)
-            case (ConcreteTypeArgument(et), UpperTypeBound(superEt))       ⇒ isASubtypeOf(et, superEt)
-            case (ConcreteTypeArgument(et), LowerTypeBound(superEt))       ⇒ isASubtypeOf(superEt, et)
-            case (_, Wildcard)                                             ⇒ Yes
-            case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) ⇒
+            case (ConcreteTypeArgument(et), ConcreteTypeArgument(superEt)) => Answer(et eq superEt)
+            case (ConcreteTypeArgument(et), UpperTypeBound(superEt))       => isASubtypeOf(et, superEt)
+            case (ConcreteTypeArgument(et), LowerTypeBound(superEt))       => isASubtypeOf(superEt, et)
+            case (_, Wildcard)                                             => Yes
+            case (GenericTypeArgument(varInd, cts), GenericTypeArgument(supVarInd, supCts)) =>
                 (varInd, supVarInd) match {
-                    case (None, None) ⇒
+                    case (None, None) =>
                         if (cts.objectType eq supCts.objectType) isASubtypeOf(cts, supCts) else No
-                    case (None, Some(CovariantIndicator)) ⇒
+                    case (None, Some(CovariantIndicator)) =>
                         isASubtypeOf(cts, supCts)
-                    case (None, Some(ContravariantIndicator)) ⇒
+                    case (None, Some(ContravariantIndicator)) =>
                         isASubtypeOf(supCts, cts)
-                    case (Some(CovariantIndicator), Some(CovariantIndicator)) ⇒
+                    case (Some(CovariantIndicator), Some(CovariantIndicator)) =>
                         isASubtypeOf(cts, supCts)
-                    case (Some(ContravariantIndicator), Some(ContravariantIndicator)) ⇒
+                    case (Some(ContravariantIndicator), Some(ContravariantIndicator)) =>
                         isASubtypeOf(supCts, cts)
-                    case _ ⇒ No
+                    case _ => No
                 }
-            case (UpperTypeBound(et), UpperTypeBound(superEt)) ⇒ isASubtypeOf(et, superEt)
-            case (LowerTypeBound(et), LowerTypeBound(superEt)) ⇒ isASubtypeOf(superEt, et)
-            case _                                             ⇒ No
+            case (UpperTypeBound(et), UpperTypeBound(superEt)) => isASubtypeOf(et, superEt)
+            case (LowerTypeBound(et), LowerTypeBound(superEt)) => isASubtypeOf(superEt, et)
+            case _                                             => No
         }
     }
 
@@ -1746,9 +1746,9 @@ class ClassHierarchy private (
     ): Answer = {
 
         (subtypeArgs, supertypeArgs) match {
-            case (Nil, Nil)          ⇒ Yes
-            case (Nil, _) | (_, Nil) ⇒ No
-            case (arg :: tail, supArg :: supTail) ⇒
+            case (Nil, Nil)          => Yes
+            case (Nil, _) | (_, Nil) => No
+            case (arg :: tail, supArg :: supTail) =>
                 // IMPROVE Consider implementing an "isSubtypeOfByTypeArgument:Boolean" method.
                 val isASubtypeOf = isASubtypeOfByTypeArgument(arg, supArg)
                 if (isASubtypeOf.isNoOrUnknown)
@@ -1809,7 +1809,7 @@ class ClassHierarchy private (
         implicit
         p: ClassFileRepository
     ): Option[ClassSignature] = {
-        p.classFile(ot).flatMap(cf ⇒ cf.classSignature)
+        p.classFile(ot).flatMap(cf => cf.classSignature)
     }
 
     /**
@@ -1898,32 +1898,32 @@ class ClassHierarchy private (
             if (suffix.isEmpty && superSuffix.isEmpty)
                 return Yes;
 
-            suffix.zip(superSuffix).foldLeft(Yes: Answer)((acc, value) ⇒
+            suffix.zip(superSuffix).foldLeft(Yes: Answer)((acc, value) =>
                 (acc, compareTypeArguments(value._1.typeArguments, value._2.typeArguments)) match {
-                    case (_, Unknown)     ⇒ return Unknown;
-                    case (x, y) if x ne y ⇒ No
-                    case (x, _ /*x*/ )    ⇒ x
+                    case (_, Unknown)     => return Unknown;
+                    case (x, y) if x ne y => No
+                    case (x, _ /*x*/ )    => x
                 })
         }
         if (subtype.objectType eq supertype.objectType) {
             (subtype, supertype) match {
-                case (ConcreteType(_), ConcreteType(_)) ⇒
+                case (ConcreteType(_), ConcreteType(_)) =>
                     Yes
 
-                case (GenericType(_, _), ConcreteType(_)) ⇒
+                case (GenericType(_, _), ConcreteType(_)) =>
                     isASubtypeOf(subtype.objectType, supertype.objectType)
 
-                case (GenericType(_, elements), GenericType(_, superElements)) ⇒
+                case (GenericType(_, elements), GenericType(_, superElements)) =>
                     compareTypeArguments(elements, superElements)
 
-                case (GenericTypeWithClassSuffix(_, elements, suffix), GenericTypeWithClassSuffix(_, superElements, superSuffix)) ⇒ {
+                case (GenericTypeWithClassSuffix(_, elements, suffix), GenericTypeWithClassSuffix(_, superElements, superSuffix)) => {
                     compareTypeArguments(elements, superElements) match {
-                        case Yes    ⇒ compareTypeArgumentsOfClassSuffixes(suffix, superSuffix)
-                        case answer ⇒ answer
+                        case Yes    => compareTypeArgumentsOfClassSuffixes(suffix, superSuffix)
+                        case answer => answer
                     }
                 }
 
-                case _ ⇒ No
+                case _ => No
             }
         } else {
             val isASubtype = isASubtypeOf(subtype.objectType, supertype.objectType)
@@ -1935,8 +1935,8 @@ class ClassHierarchy private (
                     supertypeArguments: List[TypeArgument],
                     isInnerClass:       Boolean            = false
                 ): Answer = {
-                    getClassSignature(subtype).map { cs ⇒
-                        getSupertypeDeclaration(cs, supertype).map { matchingType ⇒
+                    getClassSignature(subtype).map { cs =>
+                        getSupertypeDeclaration(cs, supertype).map { matchingType =>
                             val classSuffix = matchingType.classTypeSignatureSuffix
                             if (isInnerClass && classSuffix.nonEmpty)
                                 compareTypeArguments(classSuffix.last.typeArguments, supertypeArguments)
@@ -1983,38 +1983,38 @@ class ClassHierarchy private (
 
                 }
                 (subtype, supertype) match {
-                    case (ConcreteType(_), ConcreteType(_))   ⇒ Yes
-                    case (GenericType(_, _), ConcreteType(_)) ⇒ Yes
+                    case (ConcreteType(_), ConcreteType(_))   => Yes
+                    case (GenericType(_, _), ConcreteType(_)) => Yes
 
-                    case (ConcreteType(_), GenericType(_, supertypeArguments)) ⇒
+                    case (ConcreteType(_), GenericType(_, supertypeArguments)) =>
                         haveSameTypeBinding(subtype.objectType, supertype.objectType, supertypeArguments)
 
-                    case (GenericType(containerType, elements), GenericType(superContainerType, superElements)) ⇒
+                    case (GenericType(containerType, elements), GenericType(superContainerType, superElements)) =>
                         compareSharedTypeArguments(containerType, elements, superContainerType, superElements)
 
-                    case (GenericTypeWithClassSuffix(_, _, _), ConcreteType(_)) ⇒ Yes
+                    case (GenericTypeWithClassSuffix(_, _, _), ConcreteType(_)) => Yes
 
-                    case (GenericTypeWithClassSuffix(containerType, elements, _), GenericType(superContainerType, superElements)) ⇒
+                    case (GenericTypeWithClassSuffix(containerType, elements, _), GenericType(superContainerType, superElements)) =>
                         compareSharedTypeArguments(containerType, elements, superContainerType, superElements)
 
-                    case (GenericTypeWithClassSuffix(containerType, _ /*typeArguments*/ , suffix), GenericTypeWithClassSuffix(superContainerType, _ /*supertypeArguments*/ , superSuffix)) ⇒ {
+                    case (GenericTypeWithClassSuffix(containerType, _ /*typeArguments*/ , suffix), GenericTypeWithClassSuffix(superContainerType, _ /*supertypeArguments*/ , superSuffix)) => {
                         compareSharedTypeArguments(containerType, subtype.classTypeSignatureSuffix.last.typeArguments,
                             superContainerType, supertype.classTypeSignatureSuffix.last.typeArguments) match {
-                            case Yes ⇒ compareTypeArgumentsOfClassSuffixes(suffix.dropRight(1), superSuffix.dropRight(1)) match {
-                                case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.isEmpty ⇒ Yes
-                                case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.nonEmpty ⇒ {
-                                    val ss = getClassSignature(containerType).flatMap { cs ⇒ getSupertypeDeclaration(cs, superContainerType) }
-                                    if (ss.get.classTypeSignatureSuffix.last.typeArguments.collectFirst { case x @ ProperTypeArgument(_, TypeVariableSignature(_)) ⇒ x }.size > 0)
+                            case Yes => compareTypeArgumentsOfClassSuffixes(suffix.dropRight(1), superSuffix.dropRight(1)) match {
+                                case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.isEmpty => Yes
+                                case Yes if suffix.last.typeArguments.isEmpty && superSuffix.last.typeArguments.nonEmpty => {
+                                    val ss = getClassSignature(containerType).flatMap { cs => getSupertypeDeclaration(cs, superContainerType) }
+                                    if (ss.get.classTypeSignatureSuffix.last.typeArguments.collectFirst { case x @ ProperTypeArgument(_, TypeVariableSignature(_)) => x }.size > 0)
                                         compareTypeArgumentsOfClassSuffixes(List(subtype.simpleClassTypeSignature), List(superSuffix.last))
                                     else compareTypeArgumentsOfClassSuffixes(List(ss.get.classTypeSignatureSuffix.last), List(superSuffix.last))
                                 }
-                                case Yes    ⇒ compareTypeArgumentsOfClassSuffixes(List(suffix.last), List(superSuffix.last))
-                                case answer ⇒ answer
+                                case Yes    => compareTypeArgumentsOfClassSuffixes(List(suffix.last), List(superSuffix.last))
+                                case answer => answer
                             }
-                            case answer ⇒ answer
+                            case answer => answer
                         }
                     }
-                    case _ ⇒ No
+                    case _ => No
                 }
             } else isASubtype
         }
@@ -2048,12 +2048,12 @@ class ClassHierarchy private (
 
         // IMPROVE Avoid creating the list by using an inner function (def).
         (supertype.classBound.toList ++ supertype.interfaceBound)
-            .collect { case s: ClassTypeSignature ⇒ s }
-            .foldLeft(Yes: Answer) { (a, superCTS) ⇒
+            .collect { case s: ClassTypeSignature => s }
+            .foldLeft(Yes: Answer) { (a, superCTS) =>
                 (a, isASubtypeOf(subtype, superCTS)) match {
-                    case (_, Unknown)     ⇒ return Unknown;
-                    case (x, y) if x ne y ⇒ No
-                    case (x, _ /*x*/ )    ⇒ x
+                    case (_, Unknown)     => return Unknown;
+                    case (x, y) if x ne y => No
+                    case (x, _ /*x*/ )    => x
                 }
             }
     }
@@ -2064,7 +2064,7 @@ class ClassHierarchy private (
     def statistics: String = {
         "Class Hierarchy Statistics:"+
             "\n\tKnown types: "+knownTypesMap.count(_ != null)+
-            "\n\tInterface types: "+isInterfaceTypeMap.count(isInterface ⇒ isInterface)+
+            "\n\tInterface types: "+isInterfaceTypeMap.count(isInterface => isInterface)+
             "\n\tIdentified Superclasses: "+superclassTypeMap.count(_ != null)+
             "\n\tSuperinterfaces: "+
             superinterfaceTypesMap.filter(_ != null).foldLeft(0)(_ + _.size)+
@@ -2084,7 +2084,7 @@ class ClassHierarchy private (
         private val nodes: mutable.Map[ObjectType, Node] = {
             val nodes = mutable.HashMap.empty[ObjectType, Node]
 
-            foreachNonNullValue(knownTypesMap) { (id, aType) ⇒
+            foreachNonNullValue(knownTypesMap) { (id, aType) =>
                 val entry: (ObjectType, Node) = (
                     aType,
                     new Node {
@@ -2092,15 +2092,15 @@ class ClassHierarchy private (
                         override def nodeId: Int = aType.id
                         override def toHRR: Option[String] = Some(aType.toJava)
                         override val visualProperties: Map[String, String] = {
-                            Map("shape" → "box") ++ (
+                            Map("shape" -> "box") ++ (
                                 if (isInterface(aType).isYes)
-                                    Map("fillcolor" → "aliceblue", "style" → "filled")
+                                    Map("fillcolor" -> "aliceblue", "style" -> "filled")
                                 else
                                     Map.empty
                             )
                         }
-                        def foreachSuccessor(f: Node ⇒ Unit): Unit = {
-                            directSubtypes foreach { subtype ⇒ f(nodes(subtype)) }
+                        def foreachSuccessor(f: Node => Unit): Unit = {
+                            directSubtypes foreach { subtype => f(nodes(subtype)) }
                         }
                         def hasSuccessors: Boolean = directSubtypes.nonEmpty
                     }
@@ -2113,13 +2113,13 @@ class ClassHierarchy private (
         // a virtual root node
         override def nodeId: Int = -1
         override def toHRR: Option[String] = None
-        override def foreachSuccessor(f: Node ⇒ Unit): Unit = {
+        override def foreachSuccessor(f: Node => Unit): Unit = {
             /*
              * We may not see the class files of all classes that are referred
              * to in the class files that we did see. Hence, we have to be able
              * to handle partial class hierarchies.
              */
-            val rootTypes = nodes filter { case (t, _) ⇒ superclassTypeMap(t.id) eq null }
+            val rootTypes = nodes filter { case (t, _) => superclassTypeMap(t.id) eq null }
             rootTypes.values.foreach(f)
         }
         override def hasSuccessors: Boolean = nodes.nonEmpty
@@ -2137,7 +2137,7 @@ class ClassHierarchy private (
      */
     def allSupertypesOf(types: UIDSet[ObjectType], reflexive: Boolean): UIDSet[ObjectType] = {
         var allSupertypesOf: UIDSet[ObjectType] = UIDSet.empty
-        types foreach { t: ObjectType ⇒
+        types foreach { t: ObjectType =>
             if (!allSupertypesOf.contains(t)) {
                 if (isKnown(t))
                     allSupertypesOf ++= allSupertypes(t, reflexive)
@@ -2169,10 +2169,10 @@ class ClassHierarchy private (
         if (types.isSingletonSet)
             return types;
 
-        types filter { aType ⇒
+        types filter { aType =>
             isUnknown(aType) ||
-                //!(directSubtypesOf(aType) exists { t ⇒ types.contains(t) })
-                !(types exists { t ⇒ (t ne aType) && isSubtypeOf(t, aType) })
+                //!(directSubtypesOf(aType) exists { t => types.contains(t) })
+                !(types exists { t => (t ne aType) && isSubtypeOf(t, aType) })
         }
     }
 
@@ -2215,10 +2215,10 @@ class ClassHierarchy private (
         assert(upperTypeBoundsB.nonEmpty)
 
         upperTypeBoundsA.compare(upperTypeBoundsB) match {
-            case StrictSubset   ⇒ upperTypeBoundsA
-            case EqualSets      ⇒ upperTypeBoundsA /* or upperTypeBoundsB */
-            case StrictSuperset ⇒ upperTypeBoundsB
-            case UncomparableSets ⇒
+            case StrictSubset   => upperTypeBoundsA
+            case EqualSets      => upperTypeBoundsA /* or upperTypeBoundsB */
+            case StrictSuperset => upperTypeBoundsB
+            case UncomparableSets =>
                 val allSupertypesOfA = allSupertypesOf(upperTypeBoundsA, reflexive)
                 val allSupertypesOfB = allSupertypesOf(upperTypeBoundsB, reflexive)
                 val commonSupertypes = allSupertypesOfA intersect allSupertypesOfB
@@ -2290,17 +2290,17 @@ class ClassHierarchy private (
         upperTypeBoundB: UIDSet[_ <: ReferenceType]
     ): UIDSet[_ <: ReferenceType] = {
         upperTypeBoundB match {
-            case UIDSet1(utbB: ArrayType) ⇒
+            case UIDSet1(utbB: ArrayType) =>
                 if (utbB eq upperTypeBoundA)
                     return upperTypeBoundB;
                 else
                     joinArrayTypes(upperTypeBoundA, utbB) match {
-                        case Left(newUTB)  ⇒ new UIDSet1(newUTB)
-                        case Right(newUTB) ⇒ newUTB
+                        case Left(newUTB)  => new UIDSet1(newUTB)
+                        case Right(newUTB) => newUTB
                     }
-            case UIDSet1(utbB: ObjectType) ⇒
+            case UIDSet1(utbB: ObjectType) =>
                 joinAnyArrayTypeWithObjectType(utbB)
-            case _ ⇒
+            case _ =>
                 val utbB = upperTypeBoundB.asInstanceOf[UIDSet[ObjectType]]
                 joinAnyArrayTypeWithMultipleTypesBound(utbB)
         }
@@ -2314,11 +2314,11 @@ class ClassHierarchy private (
             joinArrayType(upperTypeBoundA.asArrayType, upperTypeBoundB)
         else
             upperTypeBoundB match {
-                case UIDSet1(_: ArrayType) ⇒
+                case UIDSet1(_: ArrayType) =>
                     joinAnyArrayTypeWithObjectType(upperTypeBoundA.asObjectType)
-                case UIDSet1(utbB: ObjectType) ⇒
+                case UIDSet1(utbB: ObjectType) =>
                     joinObjectTypes(upperTypeBoundA.asObjectType, utbB, true)
-                case _ ⇒
+                case _ =>
                     val utbB = upperTypeBoundB.asInstanceOf[UIDSet[ObjectType]]
                     joinObjectTypes(upperTypeBoundA.asObjectType, utbB, true)
             }
@@ -2418,9 +2418,9 @@ class ClassHierarchy private (
             thatUpperTypeBound
         else {
             val isSerializable =
-                thatUpperTypeBound exists { thatType ⇒ isSubtypeOf(thatType, Serializable) }
+                thatUpperTypeBound exists { thatType => isSubtypeOf(thatType, Serializable) }
             val isCloneable =
-                thatUpperTypeBound exists { thatType ⇒ isSubtypeOf(thatType, Cloneable) }
+                thatUpperTypeBound exists { thatType => isSubtypeOf(thatType, Cloneable) }
             if (isSerializable) {
                 if (isCloneable)
                     SerializableAndCloneable
@@ -2540,7 +2540,7 @@ class ClassHierarchy private (
             if (newUpperTypeBound.isSingletonSet)
                 newUpperTypeBound.head
             else
-                newUpperTypeBound reduce { (c, n) ⇒
+                newUpperTypeBound reduce { (c, n) =>
                     // We are already one level up in the class hierarchy. Hence,
                     // we now certainly want to be reflexive!
                     joinObjectTypesUntilSingleUpperBound(c, n, true)
@@ -2559,7 +2559,7 @@ class ClassHierarchy private (
         if (upperTypeBound.isSingletonSet)
             upperTypeBound.head
         else
-            upperTypeBound reduce { (c, n) ⇒ joinObjectTypesUntilSingleUpperBound(c, n, true) }
+            upperTypeBound reduce { (c, n) => joinObjectTypesUntilSingleUpperBound(c, n, true) }
     }
 
     def joinReferenceTypesUntilSingleUpperBound(
@@ -2593,8 +2593,8 @@ class ClassHierarchy private (
                             utbA.head.asInstanceOf[ArrayType]
                         )
                     joinedArrayType match {
-                        case Left(arrayType)       ⇒ new UIDSet1(arrayType)
-                        case Right(upperTypeBound) ⇒ upperTypeBound
+                        case Left(arrayType)       => new UIDSet1(arrayType)
+                        case Right(upperTypeBound) => upperTypeBound
                     }
                 } else {
                     joinAnyArrayTypeWithObjectType(utbB.head.asInstanceOf[ObjectType])
@@ -2645,7 +2645,7 @@ class ClassHierarchy private (
             s += "subtype statistics=\n\t"
             s += " subtypes count   / frequency of occurrence (without java.lang.Object)\n\t"
             s +=
-                subtypesCounts.map { subtypesCount ⇒
+                subtypesCounts.map { subtypesCount =>
                     val i: Int = subtypesCount.intValue()
                     val frequency = subtypesToFrequency.get(i)
                     overallDepth += i * frequency
@@ -2673,7 +2673,7 @@ class ClassHierarchy private (
             s += "supertype statistics=\n\t"
             s += " supertypes count / frequency of occurrence (without java.lang.Object)\n\t"
             s +=
-                supertypesCounts.map { supertypesCount ⇒
+                supertypesCounts.map { supertypesCount =>
                     val i: Int = supertypesCount.intValue()
                     val frequency = supertypesToFrequency.get(i)
                     overallDepth += i * frequency
@@ -2711,12 +2711,12 @@ object ClassHierarchy {
         apply(classFiles = Traversable.empty, defaultTypeHierarchyDefinitions)(GlobalLogContext)
     }
 
-    def noDefaultTypeHierarchyDefinitions(): List[() ⇒ java.io.InputStream] = List.empty
+    def noDefaultTypeHierarchyDefinitions(): List[() => java.io.InputStream] = List.empty
 
-    def defaultTypeHierarchyDefinitions(): List[() ⇒ java.io.InputStream] = List(
-        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
-        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
-        () ⇒ { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
+    def defaultTypeHierarchyDefinitions(): List[() => java.io.InputStream] = List(
+        () => { getClass.getResourceAsStream("ClassHierarchyJLS.ths") },
+        () => { getClass.getResourceAsStream("ClassHierarchyJVMExceptions.ths") },
+        () => { getClass.getResourceAsStream("ClassHierarchyJava7-java.lang.reflect.ths") }
     )
 
     def parseTypeHierarchyDefinition(
@@ -2724,7 +2724,7 @@ object ClassHierarchy {
     )(
         implicit
         logContext: LogContext
-    ): Seq[TypeDeclaration] = process(in) { in ⇒
+    ): Seq[TypeDeclaration] = process(in) { in =>
 
         if (in eq null) {
             OPALLogger.error(
@@ -2737,20 +2737,20 @@ object ClassHierarchy {
         } else {
             val typeRegExp =
                 """(class|interface)\s+(\S+)(\s+extends\s+(\S+)(\s+implements\s+(.+))?)?""".r
-            processSource(new BufferedSource(in)) { source ⇒
+            processSource(new BufferedSource(in)) { source =>
                 source.getLines.
                     map(_.trim).
-                    filterNot { l ⇒ l.startsWith("#") || l.length == 0 }.
-                    map { l ⇒
+                    filterNot { l => l.startsWith("#") || l.length == 0 }.
+                    map { l =>
                         val typeRegExp(typeKind, theType, _, superclassType, _, superinterfaceTypes) = l
                         TypeDeclaration(
                             ObjectType(theType),
                             typeKind == "interface",
                             Option(superclassType).map(ObjectType(_)),
-                            Option(superinterfaceTypes).map { superinterfaceTypes ⇒
+                            Option(superinterfaceTypes).map { superinterfaceTypes =>
                                 superinterfaceTypes.
                                     split(',').
-                                    map(t ⇒ ObjectType(t.trim))(UIDSet.canBuildUIDSet[ObjectType])
+                                    map(t => ObjectType(t.trim))(UIDSet.canBuildUIDSet[ObjectType])
                             }.getOrElse(UIDSet.empty)
                         )
                     }.
@@ -2761,7 +2761,7 @@ object ClassHierarchy {
 
     def apply(
         classFiles:               Traversable[ClassFile],
-        typeHierarchyDefinitions: Seq[() ⇒ InputStream]  = defaultTypeHierarchyDefinitions
+        typeHierarchyDefinitions: Seq[() => InputStream]  = defaultTypeHierarchyDefinitions
     )(
         implicit
         logContext: LogContext
@@ -2770,7 +2770,7 @@ object ClassHierarchy {
         // the arrays to store the information about the types!
         create(
             classFiles,
-            typeHierarchyDefinitions flatMap { inputStreamFactory ⇒
+            typeHierarchyDefinitions flatMap { inputStreamFactory =>
                 val in = inputStreamFactory.apply()
                 parseTypeHierarchyDefinition(in)
             }
@@ -2877,7 +2877,7 @@ object ClassHierarchy {
             // Update the class hierarchy from the point of view of the new type's super types
             // For each super(class|interface)type make sure that it is "known"
             //
-            theSuperclassType foreach { superclassType ⇒
+            theSuperclassType foreach { superclassType =>
                 val superclassTypeId = superclassType.id
                 knownTypesMap(superclassTypeId) = superclassType
 
@@ -2889,7 +2889,7 @@ object ClassHierarchy {
                     ensureHasSet(subinterfaceTypesMap, superclassTypeId)
                 }
             }
-            theSuperinterfaceTypes foreach { aSuperinterfaceType ⇒
+            theSuperinterfaceTypes foreach { aSuperinterfaceType =>
                 val aSuperinterfaceTypeId = aSuperinterfaceType.id
 
                 if (knownTypesMap(aSuperinterfaceTypeId) eq null) {
@@ -2919,7 +2919,7 @@ object ClassHierarchy {
 
         // Analyzes the given class files and extends the current class hierarchy.
         val processedClassType: Array[Boolean] = new Array[Boolean](objectTypesCount)
-        classFiles.seq foreach { classFile ⇒
+        classFiles.seq foreach { classFile =>
             if (!classFile.isModuleDeclaration) {
                 // We always keep the FIRST class file which defines a type this is inline
                 // with the behavior of the class Project which prioritizes a project class file
@@ -2940,7 +2940,7 @@ object ClassHierarchy {
 
         val processedTypeDeclaration: Array[Boolean] = new Array[Boolean](objectTypesCount)
         var duplicateTypeDeclarations: Set[String] = Set.empty
-        typeDeclarations.seq foreach { typeDeclaration ⇒
+        typeDeclarations.seq foreach { typeDeclaration =>
             val objectType = typeDeclaration.objectType
             val oid = objectType.id
             if (processedTypeDeclaration(oid)) {
@@ -2994,7 +2994,7 @@ object ClassHierarchy {
         assert(knownTypesMap.length == subclassTypesMap.length)
         assert(knownTypesMap.length == subinterfaceTypesMap.length)
         assert(
-            knownTypesMap.indices forall { i ⇒
+            knownTypesMap.indices forall { i =>
                 (knownTypesMap(i) ne null) ||
                     ((subclassTypesMap(i) eq null) && (subinterfaceTypesMap(i) eq null))
             }
@@ -3009,7 +3009,7 @@ object ClassHierarchy {
         val isKnownTypeMap: Array[Boolean] = knownTypesMap.map(_ != null)
 
         val rootTypesFuture = Future[UIDSet[ObjectType]] {
-            knownTypesMap.foldLeft(UIDSet.empty[ObjectType]) { (rootTypes, objectType) ⇒
+            knownTypesMap.foldLeft(UIDSet.empty[ObjectType]) { (rootTypes, objectType) =>
                 if ((objectType ne null) && {
                     val oid = objectType.id
                     (superclassTypeMap(oid) eq null) &&
@@ -3026,7 +3026,7 @@ object ClassHierarchy {
         }
 
         val subtypesFuture = Future[(UIDSet[ObjectType], Array[SubtypeInformation])] {
-            val leafTypes = knownTypesMap.foldLeft(UIDSet.empty[ObjectType]) { (leafTypes, t) ⇒
+            val leafTypes = knownTypesMap.foldLeft(UIDSet.empty[ObjectType]) { (leafTypes, t) =>
                 if ((t ne null) && {
                     val tid = t.id
                     subclassTypesMap(tid).isEmpty && subinterfaceTypesMap(tid).isEmpty
@@ -3054,7 +3054,7 @@ object ClassHierarchy {
                 }
             }
 
-            leafTypes foreach { leafType ⇒
+            leafTypes foreach { leafType =>
                 subtypes(leafType.id) = SubtypeInformation.None
                 scheduleSupertypes(leafType)
             }
@@ -3069,22 +3069,22 @@ object ClassHierarchy {
                     var allSubclassTypes = UIDSet.empty[ObjectType]
                     var allSubtypes = UIDSet.empty[ObjectType]
                     val done =
-                        subinterfaceTypesMap(tid).forall { subtype ⇒
+                        subinterfaceTypesMap(tid).forall { subtype =>
                             subtypes(subtype.id) match {
-                                case null ⇒
+                                case null =>
                                     false
-                                case subSubtypes ⇒
+                                case subSubtypes =>
                                     allSubinterfaceTypes ++= subSubtypes.interfaceTypes
                                     allSubclassTypes ++= subSubtypes.classTypes
                                     allSubinterfaceTypes += subtype
                                     allSubtypes ++= (subSubtypes.allTypes + subtype)
                                     true
                             }
-                        } && subclassTypesMap(tid).forall { subtype ⇒
+                        } && subclassTypesMap(tid).forall { subtype =>
                             subtypes(subtype.id) match {
-                                case null ⇒
+                                case null =>
                                     false
-                                case subSubtypes ⇒
+                                case subSubtypes =>
                                     // There will be no sub interface types!
                                     // (java.lang.Object is not considered)
                                     allSubclassTypes ++= subSubtypes.classTypes
@@ -3118,7 +3118,7 @@ object ClassHierarchy {
                         // 1. Do we have a cycle in the extracted type information ?
                         {
                             val ns = knownTypesMap.length
-                            val es: Int ⇒ IntIterator = (oid: Int) ⇒ {
+                            val es: Int => IntIterator = (oid: Int) => {
                                 if (knownTypesMap(oid) ne null) {
                                     val it =
                                         subinterfaceTypesMap(oid).map(_.id).iterator ++
@@ -3136,8 +3136,8 @@ object ClassHierarchy {
                             if (cyclicTypeDependencies.nonEmpty) {
                                 OPALLogger.error(
                                     "project configuration",
-                                    cyclicTypeDependencies.map { scc ⇒
-                                        scc.map { oid ⇒
+                                    cyclicTypeDependencies.map { scc =>
+                                        scc.map { oid =>
                                             if (knownTypesMap(oid) ne null)
                                                 knownTypesMap(oid).toJava
                                             else
@@ -3202,11 +3202,11 @@ object ClassHierarchy {
             // Selects all interfaces which either have no superinterfaces or where we have no
             // information about all implemented superinterfaces.
             def rootInterfaceTypes: Iterator[ObjectType] = {
-                superinterfaceTypesMap.iterator.zipWithIndex.filter { si ⇒
+                superinterfaceTypesMap.iterator.zipWithIndex.filter { si =>
                     val (superinterfaceTypes, id) = si
                     isInterfaceTypeMap(id) &&
                         ((superinterfaceTypes eq null) || superinterfaceTypes.isEmpty)
-                }.map { ts ⇒ knownTypesMap(ts._2) }
+                }.map { ts => knownTypesMap(ts._2) }
             }
 
             val supertypes = new Array[SupertypeInformation](knownTypesMap.length)
@@ -3233,10 +3233,10 @@ object ClassHierarchy {
                 // let's check if we already have complete information about all supertypes
                 var allSuperSuperinterfaceTypes = UIDSet.empty[ObjectType]
                 var allSupertypes = UIDSet.empty[ObjectType]
-                if (superinterfaceTypes.forall { supertype ⇒
+                if (superinterfaceTypes.forall { supertype =>
                     val supertypeId = supertype.id
                     supertypes(supertypeId) match {
-                        case null ⇒
+                        case null =>
                             // It may happen that we we will never have complete information about a
                             // superinterface type, because we have an incomplete project OR
                             // that the class hierarchy is totally broken in the sense that
@@ -3244,7 +3244,7 @@ object ClassHierarchy {
                             // In that case, we just ignore it...
                             superinterfaceTypesMap(supertypeId) == null ||
                                 classesWithBrokenInterfaceInheritance(t).containsId(supertypeId)
-                        case supertypes ⇒
+                        case supertypes =>
                             allSuperSuperinterfaceTypes ++= supertypes.interfaceTypes
                             allSupertypes ++= supertypes.allTypes
                             true
@@ -3267,7 +3267,7 @@ object ClassHierarchy {
 
             // 2. process all class types
             val rootTypes = await(rootTypesFuture, Inf) // we may have to wait...
-            typesToProcess ++= rootTypes.iterator.filterNot(t ⇒ isInterfaceTypeMap(t.id))
+            typesToProcess ++= rootTypes.iterator.filterNot(t => isInterfaceTypeMap(t.id))
             while (typesToProcess.nonEmpty) {
                 val t = typesToProcess.dequeue
                 val tid = t.id
@@ -3288,10 +3288,10 @@ object ClassHierarchy {
                             } else {
                                 UIDSet.empty[ObjectType]
                             }
-                        ) { (allInterfaceTypes, nextSuperinterfacetype) ⇒
+                        ) { (allInterfaceTypes, nextSuperinterfacetype) =>
                                 (supertypes(nextSuperinterfacetype.id) match {
-                                    case null       ⇒ allInterfaceTypes
-                                    case supertypes ⇒ allInterfaceTypes ++ supertypes.interfaceTypes
+                                    case null       => allInterfaceTypes
+                                    case supertypes => allInterfaceTypes ++ supertypes.interfaceTypes
                                 }) + nextSuperinterfacetype
                             }
                     supertypes(tid) =
@@ -3332,7 +3332,7 @@ object ClassHierarchy {
                 if rootType ne ObjectType.Object
             } {
                 isSupertypeInformationCompleteMap(rootType.id) = false
-                subtypes(rootType.id).foreach(t ⇒ isSupertypeInformationCompleteMap(t.id) = false)
+                subtypes(rootType.id).foreach(t => isSupertypeInformationCompleteMap(t.id) = false)
             }
             isSupertypeInformationCompleteMap
         }
@@ -3348,7 +3348,7 @@ object ClassHierarchy {
                 OPALLogger.warn(
                     "project configuration - class hierarchy",
                     unexpectedRootTypes
-                        .map { t ⇒
+                        .map { t =>
                             (if (isInterfaceTypeMap(t.id)) "interface " else "class ") + t.toJava
                         }
                         .toList.sorted
@@ -3361,7 +3361,7 @@ object ClassHierarchy {
                 )
             }
 
-            isKnownToBeFinalMap.iterator.zipWithIndex foreach { e ⇒
+            isKnownToBeFinalMap.iterator.zipWithIndex foreach { e =>
                 val (isFinal, oid) = e
                 if (isFinal) {
                     if (subclassTypesMap(oid).nonEmpty) {

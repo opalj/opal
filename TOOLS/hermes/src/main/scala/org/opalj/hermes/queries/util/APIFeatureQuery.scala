@@ -74,18 +74,18 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
 
         def getClassFileLocation(objectType: ObjectType): Option[ClassFileLocation[S]] = {
             val classFile = project.classFile(objectType)
-            classFile.flatMap { cf ⇒ project.source(cf).map(src ⇒ ClassFileLocation(src, cf)) }
+            classFile.flatMap { cf => project.source(cf).map(src => ClassFileLocation(src, cf)) }
         }
 
         var occurrencesCount = apiFeatures.foldLeft(Map.empty[String, Int])(
-            (result, feature) ⇒ result + ((feature.featureID, 0))
+            (result, feature) => result + ((feature.featureID, 0))
         )
 
         // TODO Use LocationsContainer
         val locations = mutable.Map.empty[String, Chain[Location[S]]]
 
         for {
-            classFeature ← apiFeatures.collect { case ce: ClassExtension ⇒ ce }
+            classFeature ← apiFeatures.collect { case ce: ClassExtension => ce }
             featureID = classFeature.featureID
             subtypes = allSubtypes(classFeature.declClass, reflexive = false).filter(isProjectType)
             size = subtypes.size
@@ -113,7 +113,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             if !isInterrupted()
             source ← project.source(cf)
             m @ MethodWithBody(code) ← cf.methods
-            pcAndInvocation ← code collect { case mii: MethodInvocationInstruction ⇒ mii }
+            pcAndInvocation ← code collect { case mii: MethodInvocationInstruction => mii }
             pc = pcAndInvocation.pc
             mii = pcAndInvocation.value
             declClass = mii.declaringClass
@@ -130,7 +130,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             occurrencesCount = occurrencesCount + ((featureID, count))
         }
 
-        apiFeatures.map { apiFeature ⇒
+        apiFeatures.map { apiFeature =>
             val featureID = apiFeature.featureID
             Feature(
                 featureID,

@@ -50,35 +50,35 @@ case class Module_attribute(
             <summary class="attribute">{ module }</summary>
             <div>
                 {
-                    requires.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    requires.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r =>
                         <span>{ r }</span><br/>
                     }
                 }
             </div>
             <div>
                 {
-                    exports.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    exports.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r =>
                         <span>{ r }</span><br/>
                     }
                 }
             </div>
             <div>
                 {
-                    opens.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    opens.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r =>
                         <span>{ r }</span><br/>
                     }
                 }
             </div>
             <div>
                 {
-                    uses.map(cp(_).toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    uses.map(cp(_).toString)._UNSAFE_sorted.map[NodeBuffer] { r =>
                         <span>{ s"uses $r" }</span><br/>
                     }
                 }
             </div>
             <div>
                 {
-                    provides.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r ⇒
+                    provides.map[String](_.toString)._UNSAFE_sorted.map[NodeBuffer] { r =>
                         <span>{ r }</span><br/>
                     }
                 }

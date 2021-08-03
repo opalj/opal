@@ -41,15 +41,15 @@ object StringConstantsInformationKey
         val estimatedSize = project.methodsCount
         val map = new ConcurrentHashMap[String, ConcurrentLinkedQueue[PCInMethod]](estimatedSize)
 
-        project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo ⇒
+        project.parForeachMethodWithBody(defaultIsInterrupted) { methodInfo =>
             val method = methodInfo.method
 
-            method.body.get foreach { i: PCAndInstruction ⇒
+            method.body.get foreach { i: PCAndInstruction =>
                 val pc = i.pc
                 val instruction = i.instruction
                 if (instruction.opcode == LDC.opcode || instruction.opcode == LDC_W.opcode) {
                     instruction match {
-                        case LDCString(value) ⇒
+                        case LDCString(value) =>
                             var list: ConcurrentLinkedQueue[PCInMethod] = map.get(value)
                             if (list eq null) {
                                 list = new ConcurrentLinkedQueue[PCInMethod]()
@@ -57,14 +57,14 @@ object StringConstantsInformationKey
                                 if (previousList != null) list = previousList
                             }
                             list.add(PCInMethod(method, pc))
-                        case _ ⇒ /*other type of constant*/
+                        case _ => /*other type of constant*/
                     }
                 }
             }
         }
 
         var result: Map[String, ConstArray[PCInMethod]] = Map.empty
-        map.asScala foreach { kv ⇒
+        map.asScala foreach { kv =>
             val (name, locations) = kv
             result += ((name, ConstArray._UNSAFE_from(locations.asScala.toArray)))
         }

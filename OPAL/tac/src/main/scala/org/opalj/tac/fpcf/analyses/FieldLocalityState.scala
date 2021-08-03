@@ -63,7 +63,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
         declaredMethodsDependees += ep
 
     def removeMethodDependee(ep: EOptionP[DeclaredMethod, Property]): Unit =
-        declaredMethodsDependees = declaredMethodsDependees.filter(other ⇒ (other.e ne ep.e) || other.pk != ep.pk)
+        declaredMethodsDependees = declaredMethodsDependees.filter(other => (other.e ne ep.e) || other.pk != ep.pk)
 
     def updateMethodDependee(ep: EOptionP[DeclaredMethod, Property]): Unit = {
         removeMethodDependee(ep)
@@ -79,7 +79,7 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
         ep:                   EOptionP[DefinitionSiteLike, EscapeProperty],
         isGetFieldOfReceiver: Boolean
     ): Unit = {
-        definitionSitesDependees += ep.e → ((ep, isGetFieldOfReceiver))
+        definitionSitesDependees += ep.e -> ((ep, isGetFieldOfReceiver))
     }
 
     def removeDefinitionSiteDependee(ep: EOptionP[DefinitionSiteLike, EscapeProperty]): Unit = {
@@ -97,12 +97,12 @@ class FieldLocalityState(val field: Field, val thisIsCloneable: Boolean) {
     }
 
     def addTACDependee(ep: EOptionP[Method, TACAI]): Unit = {
-        tacDependees += ep.e → ep
+        tacDependees += ep.e -> ep
     }
 
     def addTACDependee(ep: EOptionP[Method, TACAI], pcs: PCs): Unit = {
-        tacDependees += ep.e → ep
-        tacFieldAccessPCs += ep.e → (tacFieldAccessPCs.getOrElse(ep.e, IntTrieSet.empty) ++ pcs)
+        tacDependees += ep.e -> ep
+        tacFieldAccessPCs += ep.e -> (tacFieldAccessPCs.getOrElse(ep.e, IntTrieSet.empty) ++ pcs)
     }
 
     def removeTACDependee(ep: EOptionP[Method, TACAI]): Unit = {

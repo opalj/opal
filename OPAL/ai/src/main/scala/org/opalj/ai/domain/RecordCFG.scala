@@ -3,7 +3,7 @@ package org.opalj
 package ai
 package domain
 
-import java.lang.ref.{SoftReference ⇒ SRef}
+import java.lang.ref.{SoftReference => SRef}
 
 import scala.collection.BitSet
 import scala.collection.mutable
@@ -12,8 +12,8 @@ import scala.collection.JavaConverters._
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
 import org.opalj.collection.mutable.IntArrayStack
-import org.opalj.collection.immutable.{Chain ⇒ List}
-import org.opalj.collection.immutable.{Naught ⇒ Nil}
+import org.opalj.collection.immutable.{Chain => List}
+import org.opalj.collection.immutable.{Naught => Nil}
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.collection.immutable.IntTrieSet1
 import org.opalj.collection.immutable.IntRefPair
@@ -60,7 +60,7 @@ trait RecordCFG
     extends CoreDomainFunctionality
     with CustomInitialization
     with ai.ReturnInstructionsDomain {
-    cfgDomain: ValuesDomain with TheCode ⇒
+    cfgDomain: ValuesDomain with TheCode =>
 
     //
     // DIRECTLY RECORDED INFORMATION
@@ -321,8 +321,8 @@ trait RecordCFG
     ): Unit = {
         super.abstractInterpretationEnded(aiResult)
 
-        assert(exceptionHandlerSuccessors.forall(s ⇒ (s eq null) || s.nonEmpty))
-        assert(regularSuccessors.forall(s ⇒ (s eq null) || s.nonEmpty))
+        assert(exceptionHandlerSuccessors.forall(s => (s eq null) || s.nonEmpty))
+        assert(regularSuccessors.forall(s => (s eq null) || s.nonEmpty))
     }
 
     // ==================================== BASIC QUERIES ==========================================
@@ -389,7 +389,7 @@ trait RecordCFG
      */
     final def allExecuted: BitSet = {
         val wasExecuted = new mutable.BitSet(code.codeSize)
-        code.foreachProgramCounter { pc ⇒ if (unsafeWasExecuted(pc)) wasExecuted += pc }
+        code.foreachProgramCounter { pc => if (unsafeWasExecuted(pc)) wasExecuted += pc }
         wasExecuted
     }
 
@@ -456,7 +456,7 @@ trait RecordCFG
         (exceptionHandlerSuccessors(pc) ne null) && (regularSuccessors(pc) eq null)
     }
 
-    def foreachSuccessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
+    def foreachSuccessorOf(pc: Int)(f: PC => Unit): Unit = {
         regularSuccessorsOf(pc).foreach(f)
         exceptionHandlerSuccessorsOf(pc).foreach(f)
     }
@@ -468,19 +468,19 @@ trait RecordCFG
     def hasSuccessor(
         pc:                    Int,
         regularSuccessorsOnly: Boolean,
-        p:                     Int /*PC*/ ⇒ Boolean
+        p:                     Int /*PC*/ => Boolean
     ): Boolean = {
         var visitedSuccessors: IntTrieSet = IntTrieSet1(pc)
         var successorsToVisit = successorsOf(pc, regularSuccessorsOnly)
         while (successorsToVisit.nonEmpty) {
-            if (successorsToVisit.exists { succPC ⇒ p(succPC) })
+            if (successorsToVisit.exists { succPC => p(succPC) })
                 return true;
 
             visitedSuccessors ++!= successorsToVisit
             successorsToVisit =
-                successorsToVisit.foldLeft(IntTrieSet.empty) { (l, r) ⇒
+                successorsToVisit.foldLeft(IntTrieSet.empty) { (l, r) =>
                     var newL = l
-                    successorsOf(r, regularSuccessorsOnly) foreach { pc ⇒
+                    successorsOf(r, regularSuccessorsOnly) foreach { pc =>
                         if (!visitedSuccessors.contains(pc)) newL +!= pc
                     }
                     newL
@@ -511,7 +511,7 @@ trait RecordCFG
                 return true;
 
             visitedSuccessors += nextPC
-            regularSuccessorsOf(nextPC).foreach { nextSuccessor ⇒
+            regularSuccessorsOf(nextPC).foreach { nextSuccessor =>
                 if (!visitedSuccessors.contains(nextSuccessor))
                     successorsToVisit.push(nextSuccessor)
             }
@@ -574,7 +574,7 @@ trait RecordCFG
      * instructions.
      */
     def allReachable(pcs: IntTrieSet): IntTrieSet = {
-        pcs.foldLeft(IntTrieSet.empty) { (c, pc) ⇒ c ++! allReachable(pc) }
+        pcs.foldLeft(IntTrieSet.empty) { (c, pc) => c ++! allReachable(pc) }
     }
 
     // ==================== METHODS WHICH COMPUTE DERIVED DATA-STRUCTURES ==========================
@@ -583,11 +583,11 @@ trait RecordCFG
     //
 
     private[this] def getOrInitField[T >: Null <: AnyRef](
-        getFieldValue: () ⇒ SRef[T], // executed concurrently
-        setFieldValue: SRef[T] ⇒ Unit, // never executed concurrently
+        getFieldValue: () => SRef[T], // executed concurrently
+        setFieldValue: SRef[T] => Unit, // never executed concurrently
         lock:          AnyRef
     )(
-        computeFieldValue: ⇒ T // never executed concurrently
+        computeFieldValue: => T // never executed concurrently
     ): T = {
         val ref = getFieldValue()
         if (ref eq null) {
@@ -624,13 +624,13 @@ trait RecordCFG
 
     private[this] def predecessors: Array[IntTrieSet] = {
         getOrInitField[Array[IntTrieSet]](
-            () ⇒ this.thePredecessors,
-            (predecessors) ⇒ this.thePredecessors = predecessors, // to cache the result
+            () => this.thePredecessors,
+            (predecessors) => this.thePredecessors = predecessors, // to cache the result
             this
         ) {
                 val predecessors = new Array[IntTrieSet](regularSuccessors.length)
-                code.foreachPC { pc ⇒
-                    foreachSuccessorOf(pc) { successorPC ⇒
+                code.foreachPC { pc =>
+                    foreachSuccessorOf(pc) { successorPC =>
                         val oldPredecessorsOfSuccessor = predecessors(successorPC)
                         predecessors(successorPC) =
                             if (oldPredecessorsOfSuccessor eq null) {
@@ -663,7 +663,7 @@ trait RecordCFG
      */
     final def hasMultiplePredecessors(pc: Int): Boolean = predecessorsOf(pc).hasMultipleElements
 
-    final def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
+    final def foreachPredecessorOf(pc: Int)(f: PC => Unit): Unit = {
         predecessorsOf(pc).foreach(f)
     }
 
@@ -680,13 +680,13 @@ trait RecordCFG
      */
     def dominatorTree: DominatorTree = {
         getOrInitField[DominatorTree](
-            () ⇒ this.theDominatorTree,
-            dt ⇒ this.theDominatorTree = dt,
+            () => this.theDominatorTree,
+            dt => this.theDominatorTree = dt,
             regularSuccessors
         ) {
                 // We want to keep a non-soft reference and avoid any further useless synchronization.
                 val predecessors = this.predecessors
-                def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
+                def foreachPredecessorOf(pc: Int)(f: PC => Unit): Unit = {
                     val s = predecessors(pc)
                     if (s ne null)
                         s.foreach(f)
@@ -729,7 +729,7 @@ trait RecordCFG
             visitedNodes(nextPC) = true
             val nextPredecessors = predecessors(nextPC)
             if (nextPredecessors ne null) {
-                nextPredecessors.foreach { predPC ⇒
+                nextPredecessors.foreach { predPC =>
                     remainingPotentialInfiniteLoopHeaders -= predPC
                     if (remainingPotentialInfiniteLoopHeaders.isEmpty) {
                         return IntTrieSet.empty;
@@ -746,7 +746,7 @@ trait RecordCFG
             val dt = dominatorTree
             val df = DominanceFrontiers(dt, wasExecuted)
 
-            remainingPotentialInfiniteLoopHeaders.foreachPair { (pc1, pc2) ⇒
+            remainingPotentialInfiniteLoopHeaders.foreachPair { (pc1, pc2) =>
 
                 if (df.transitiveDF(pc1).contains(pc2)) {
                     // 1.a) check if a loop with header pc1 belongs to the (forward)
@@ -787,7 +787,7 @@ trait RecordCFG
 
     def bbCFG: CFG[Instruction, Code] = {
         getOrInitField[CFG[Instruction, Code]](
-            () ⇒ theBBCFG, cfg ⇒ theBBCFG = cfg, exceptionHandlerSuccessors
+            () => theBBCFG, cfg => theBBCFG = cfg, exceptionHandlerSuccessors
         ) { computeBBCFG }
     }
 
@@ -812,7 +812,7 @@ trait RecordCFG
 
         // OLD val exceptionHandlers = mutable.HashMap.empty[Int, CatchNode]
         val exceptionHandlers = new Int2ObjectOpenHashMap[CatchNode](code.exceptionHandlers.size)
-        code.exceptionHandlers foreachWithIndex { (exceptionHandler, index) ⇒
+        code.exceptionHandlers foreachWithIndex { (exceptionHandler, index) =>
             val handlerPC = exceptionHandler.handlerPC
             if ( // 1.1.    Let's check if the handler was executed at all.
             unsafeWasExecuted(handlerPC) &&
@@ -895,7 +895,7 @@ trait RecordCFG
                 } else {
                     // ... also handles the case where the last instruction is, e.g., a goto
                     if (endRunningBB || theRegularSuccessors.exists(_ != nextInstructionPC)) {
-                        theRegularSuccessors.foreach { targetPC ⇒ connect(runningBB, targetPC) }
+                        theRegularSuccessors.foreach { targetPC => connect(runningBB, targetPC) }
                         endRunningBB = true
                         connectedWithNextBBs = true
                     }
@@ -908,7 +908,7 @@ trait RecordCFG
                         connectedWithNextBBs = true
                     }
                     endRunningBB = true
-                    theExceptionHandlerSuccessors.foreach { handlerPC ⇒
+                    theExceptionHandlerSuccessors.foreach { handlerPC =>
                         val catchNode: CatchNode = exceptionHandlers(handlerPC)
                         catchNode.addPredecessor(runningBB)
                         runningBB.addSuccessor(catchNode)
@@ -931,7 +931,7 @@ trait RecordCFG
         }
 
         if (theSubroutineStartPCs.nonEmpty) {
-            theSubroutineStartPCs.foreach { pc ⇒ bbs(pc).setIsStartOfSubroutine() }
+            theSubroutineStartPCs.foreach { pc => bbs(pc).setIsStartOfSubroutine() }
         }
 
         // 3. create CFG class
@@ -959,7 +959,7 @@ trait RecordCFG
                 None
         // We want to keep a non-soft reference and avoid any further useless synchronization.
         val predecessors = this.predecessors
-        def foreachPredecessorOf(pc: Int)(f: PC ⇒ Unit): Unit = {
+        def foreachPredecessorOf(pc: Int)(f: PC => Unit): Unit = {
             val s = predecessors(pc)
             if (s ne null)
                 s.foreach(f)
@@ -968,8 +968,8 @@ trait RecordCFG
         val infiniteLoopHeaders = this.infiniteLoopHeaders
         if (infiniteLoopHeaders.nonEmpty) {
             val dominatorTree = this.dominatorTree
-            var additionalExitNodes = infiniteLoopHeaders flatMap { loopHeaderPC ⇒
-                predecessors(loopHeaderPC).withFilter { predecessorPC ⇒
+            var additionalExitNodes = infiniteLoopHeaders flatMap { loopHeaderPC =>
+                predecessors(loopHeaderPC).withFilter { predecessorPC =>
                     // 1. let's ensure that the predecessor actually belongs to the loop...
                     loopHeaderPC == predecessorPC ||
                         dominatorTree.strictlyDominates(loopHeaderPC, predecessorPC)
@@ -977,7 +977,7 @@ trait RecordCFG
             }
             // Now we have to ensure to select the outer most exit pcs which are dominated by
             // other additional exit nodes...
-            additionalExitNodes foreachPair { (exitPC1, exitPC2) ⇒
+            additionalExitNodes foreachPair { (exitPC1, exitPC2) =>
                 if (dominatorTree.strictlyDominates(exitPC1, exitPC2))
                     additionalExitNodes -= exitPC1
                 else if (dominatorTree.strictlyDominates(exitPC2, exitPC1))
@@ -1029,7 +1029,7 @@ trait RecordCFG
      * @note This implementation is for debugging purposes only. It is NOT performance optimized!
      */
     def cfgAsGraph(): DefaultMutableNode[List[Int /*PC*/ ]] = {
-        import scala.collection.immutable.{List ⇒ ScalaList}
+        import scala.collection.immutable.{List => ScalaList}
         val instructions = code.instructions
         val codeSize = instructions.length
         val nodes = new Array[DefaultMutableNode[List[Int /*PC*/ ]]](codeSize)
@@ -1037,47 +1037,47 @@ trait RecordCFG
         // 1. create nodes
         val exitNode = new DefaultMutableNode[List[Int /*PC*/ ]](
             Nil,
-            (n) ⇒ "Exit",
+            (n) => "Exit",
             Map(
-                "shape" → "doubleoctagon",
-                "fillcolor" → "black",
-                "color" → "white",
-                "labelloc" → "l"
+                "shape" -> "doubleoctagon",
+                "fillcolor" -> "black",
+                "color" -> "white",
+                "labelloc" -> "l"
             ),
             ScalaList.empty[DefaultMutableNode[List[Int /*PC*/ ]]]
         )
         for (pc ← code.programCounters) {
             nodes(pc) = {
-                var visualProperties = Map("shape" → "box", "labelloc" → "l")
+                var visualProperties = Map("shape" -> "box", "labelloc" -> "l")
 
                 if (instructions(pc).isReturnInstruction) {
-                    visualProperties += "fillcolor" → "green"
-                    visualProperties += "style" → "filled"
+                    visualProperties += "fillcolor" -> "green"
+                    visualProperties += "style" -> "filled"
                 } else if (instructions(pc).isInstanceOf[ATHROW.type]) {
                     if (abnormalExitPCs.contains(pc)) {
-                        visualProperties += "fillcolor" → "red"
-                        visualProperties += "style" → "filled"
+                        visualProperties += "fillcolor" -> "red"
+                        visualProperties += "style" -> "filled"
                     } else {
-                        visualProperties += "fillcolor" → "yellow"
-                        visualProperties += "style" → "filled"
+                        visualProperties += "fillcolor" -> "yellow"
+                        visualProperties += "style" -> "filled"
                     }
                 } else if (allSuccessorsOf(pc).isEmpty && !isExitPC(pc)) {
-                    visualProperties += "fillcolor" → "red"
-                    visualProperties += "style" → "filled"
-                    visualProperties += "shape" → "octagon"
+                    visualProperties += "fillcolor" -> "red"
+                    visualProperties += "style" -> "filled"
+                    visualProperties += "shape" -> "octagon"
                 }
 
                 if (code.exceptionHandlersFor(pc).nonEmpty) {
-                    visualProperties += "color" → "orange"
+                    visualProperties += "color" -> "orange"
                 }
 
-                if (code.exceptionHandlers.exists { eh ⇒ eh.handlerPC == pc }) {
-                    visualProperties += "peripheries" → "2"
+                if (code.exceptionHandlers.exists { eh => eh.handlerPC == pc }) {
+                    visualProperties += "peripheries" -> "2"
                 }
 
                 def pcsToString(pcs: List[Int /*PC*/ ]): String = {
                     def pcToString(pc: Int): String = {
-                        val ln = code.lineNumber(pc).map(ln ⇒ s"[ln=$ln]").getOrElse("")
+                        val ln = code.lineNumber(pc).map(ln => s"[ln=$ln]").getOrElse("")
                         pc + ln+": "+cfgDomain.code.instructions(pc).toString(pc)
                     }
                     pcs.map(pcToString).mkString("", "\\l\\l", "\\l")

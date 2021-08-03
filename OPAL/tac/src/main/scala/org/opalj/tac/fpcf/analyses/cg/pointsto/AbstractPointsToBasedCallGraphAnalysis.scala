@@ -46,7 +46,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
         state: State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
+            case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) =>
                 val relevantCallSites = state.dependersOf(e)
 
                 // ensures, that we only add new calls
@@ -58,7 +58,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                 // perform the update for the new types
                 for (callSite ← relevantCallSites) {
                     val typesLeft = state.typesForCallSite(callSite)
-                    ub.forNewestNTypes(ub.numTypes - seenTypes) { newType ⇒
+                    ub.forNewestNTypes(ub.numTypes - seenTypes) { newType =>
                         val theType =
                             if (newType.isObjectType) newType.asObjectType else ObjectType.Object
                         if (typesLeft.contains(theType.id)) {
@@ -89,7 +89,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
 
                 returnResult(calls)(state)
 
-            case _ ⇒
+            case _ =>
                 super.c(state)(eps)
         }
     }
@@ -103,7 +103,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     @inline override protected[this] def currentPointsTo(
         depender:   DependerType,
         dependee:   Entity,
-        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+        typeFilter: ReferenceType => Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
         if (state.hasPointsToDependee(dependee)) {
             val p2s = state.getPointsToProperty(dependee)
@@ -126,7 +126,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     @inline override protected[this] def canResolveCall(
         localTypeInformation: LocalTypeInformation,
         state:                State
-    ): ObjectType ⇒ Boolean = { newType ⇒
+    ): ObjectType => Boolean = { newType =>
         (localTypeInformation.types.contains(newType) ||
             (newType eq ObjectType.Object) && localTypeInformation.types.exists(_.isArrayType))
     }
@@ -143,7 +143,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
     )(implicit state: State): LocalTypeInformation = {
         // get the upper bound of the pointsToSet and creates a dependency if needed
         val currentPointsToSets = currentPointsToOfDefSites(callSite, call.receiver.asVar.definedBy)
-        currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) ⇒ r.included(l) }
+        currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) => r.included(l) }
     }
 
 }

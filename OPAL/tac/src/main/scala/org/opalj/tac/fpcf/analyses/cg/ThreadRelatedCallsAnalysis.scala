@@ -138,7 +138,7 @@ class ThreadStartAnalysis private[analyses] (
         expr: Expr[V], defSite: Int, stmts: Array[Stmt[V]]
     ): Iterator[NonVirtualMethodCall[V]] = {
         var r = List.empty[NonVirtualMethodCall[V]]
-        expr.asVar.usedBy.foreach { use ⇒
+        expr.asVar.usedBy.foreach { use =>
             val stmt = stmts(use)
             if (stmt.isInstanceOf[NonVirtualMethodCall[V]]) {
                 val call = stmt.asNonVirtualMethodCall
@@ -172,7 +172,7 @@ class ThreadStartAnalysis private[analyses] (
                 indirectCalls.addIncompleteCallSite(pc)
             } else {
                 stmts(threadDefSite) match {
-                    case Assignment(_, thread, New(_, _)) ⇒
+                    case Assignment(_, thread, New(_, _)) =>
                         for {
                             NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) ← getConstructorCalls(thread, threadDefSite, stmts)
                         } {
@@ -199,7 +199,7 @@ class ThreadStartAnalysis private[analyses] (
                                 }
                             }
                         }
-                    case _ ⇒
+                    case _ =>
                         // the thread object is not newly allocated
                         indirectCalls.addIncompleteCallSite(pc)
                 }
@@ -403,7 +403,7 @@ class ThreadRelatedCallsAnalysis private[analyses] (
             ObjectType.Thread, "", ObjectType.Thread, "start", MethodDescriptor.NoArgsAndReturnVoid
         ))
 
-        classHierarchy.foreachSubclass(ObjectType.Thread, project) { cf ⇒
+        classHierarchy.foreachSubclass(ObjectType.Thread, project) { cf =>
             val setUncaughtExcpetionHandlerOpt = cf.findMethod(
                 "setUncaughtExceptionHandler", setUncaughtExceptionHandlerDescriptor
             ).map(declaredMethods.apply)
@@ -419,11 +419,11 @@ class ThreadRelatedCallsAnalysis private[analyses] (
                 threadStartMethods ::= threadStartOpt.get
         }
 
-        val uncaughtExceptionHandlerResults = setUncaughtExceptionHandlerMethods.iterator.map { m ⇒
+        val uncaughtExceptionHandlerResults = setUncaughtExceptionHandlerMethods.iterator.map { m =>
             new UncaughtExceptionHandlerAnalysis(p, m).registerAPIMethod()
         }
 
-        val threadStartResults = threadStartMethods.iterator.map { m ⇒
+        val threadStartResults = threadStartMethods.iterator.map { m =>
             new ThreadStartAnalysis(p, m).registerAPIMethod()
         }
 

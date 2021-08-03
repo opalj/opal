@@ -79,45 +79,45 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             state.includeSharedPointsToSet(
                 state.method,
                 emptyPointsToSet,
-                t ⇒ classHierarchy.isSubtypeOf(t, method.returnType.asReferenceType)
+                t => classHierarchy.isSubtypeOf(t, method.returnType.asReferenceType)
             )
         }
 
-        tac.cfg.abnormalReturnNode.predecessors.foreach { throwingBB ⇒
+        tac.cfg.abnormalReturnNode.predecessors.foreach { throwingBB =>
             val throwingStmt = tac.stmts(throwingBB.asBasicBlock.endPC)
             throwingStmt match {
-                case Throw(_, UVar(_, defSites)) ⇒
+                case Throw(_, UVar(_, defSites)) =>
                     val entity = MethodExceptions(state.method)
-                    val filter = { t: ReferenceType ⇒
+                    val filter = { t: ReferenceType =>
                         classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
                     }
                     state.includeSharedPointsToSets(
                         entity, currentPointsToOfDefSites(entity, defSites, filter), filter
                     )
 
-                case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] ⇒
+                case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] =>
                     val entity = MethodExceptions(state.method)
                     val callSite = definitionSites(state.method.definedMethod, throwingStmt.pc)
-                    val filter = { t: ReferenceType ⇒
+                    val filter = { t: ReferenceType =>
                         classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
                     }
                     state.includeSharedPointsToSet(
                         entity, currentPointsTo(entity, CallExceptions(callSite), filter), filter
                     )
 
-                case _ ⇒
+                case _ =>
                 // TODO handle implicit exceptions (do that for Throw and Calls, too (NPE!))
             }
         }
 
         for (stmt ← tac.stmts) stmt match {
-            case Assignment(pc, _, New(_, tpe)) ⇒
+            case Assignment(pc, _, New(_, tpe)) =>
                 handleAllocation(pc, tpe)
 
-            case Assignment(pc, _, NewArray(_, counts, tpe)) ⇒
+            case Assignment(pc, _, NewArray(_, counts, tpe)) =>
                 handleArrayAllocation(pc, counts, tpe)
 
-            case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue ⇒
+            case Assignment(pc, targetVar, const: Const) if targetVar.value.isReferenceValue =>
                 val defSite = definitionSites(method, pc)
                 state.setAllocationSitePointsToSet(
                     defSite,
@@ -131,13 +131,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 )
 
             // that case should not happen
-            case Assignment(pc, DVar(_: IsReferenceValue, _), UVar(_, defSites)) ⇒
+            case Assignment(pc, DVar(_: IsReferenceValue, _), UVar(_, defSites)) =>
                 val defSiteObject = definitionSites(method, pc)
                 val index = tac.properStmtIndexForPC(pc)
                 val nextStmt = tac.stmts(index + 1)
                 val filter = nextStmt match {
-                    case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒ t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
-                    case _ ⇒ PointsToSetLike.noFilter
+                    case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) => t: ReferenceType => classHierarchy.isSubtypeOf(t, cmpTpe)
+                    case _ => PointsToSetLike.noFilter
                 }
                 state.includeSharedPointsToSets(
                     defSiteObject,
@@ -145,7 +145,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     filter
                 )
 
-            case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) ⇒
+            case Assignment(pc, _, GetField(_, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites))) =>
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
                     handleGetField(fieldOpt, pc, objRefDefSites)
@@ -153,7 +153,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) ⇒
+            case Assignment(pc, _, GetStatic(_, declaringClass, name, fieldType: ReferenceType)) =>
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
                     handleGetStatic(fieldOpt.get, pc)
@@ -161,15 +161,15 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) ⇒
+            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsSArrayValue, arrayDefSites))) =>
                 val arrayType = av.theUpperTypeBound
                 handleArrayLoad(arrayType, pc, arrayDefSites)
 
-            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsMultipleReferenceValue, arrayDefSites))) ⇒
+            case Assignment(pc, DVar(_: IsReferenceValue, _), ArrayLoad(_, _, UVar(av: IsMultipleReferenceValue, arrayDefSites))) =>
                 val arrayType = av.leastUpperType.get.asArrayType
                 handleArrayLoad(arrayType, pc, arrayDefSites)
 
-            case Assignment(pc, _, call: FunctionCall[DUVar[ValueInformation]]) ⇒
+            case Assignment(pc, _, call: FunctionCall[DUVar[ValueInformation]]) =>
                 val callees: Callees = state.callees(ps)
                 val targets = callees.callees(pc)
                 val defSiteObject = definitionSites(method, pc)
@@ -178,9 +178,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     val index = tac.properStmtIndexForPC(pc)
                     val nextStmt = tac.stmts(index + 1)
                     val filter = nextStmt match {
-                        case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) ⇒
-                            t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, cmpTpe)
-                        case _ ⇒
+                        case Checkcast(_, value, cmpTpe) if value.asVar.definedBy.contains(index) =>
+                            t: ReferenceType => classHierarchy.isSubtypeOf(t, cmpTpe)
+                        case _ =>
                             PointsToSetLike.noFilter
                     }
                     if (state.hasCalleesDepenedee) {
@@ -190,7 +190,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     state.includeSharedPointsToSets(
                         defSiteObject,
                         targets.collect {
-                            case target if target.descriptor.returnType.isReferenceType ⇒
+                            case target if target.descriptor.returnType.isReferenceType =>
                                 currentPointsTo(defSiteObject, target, filter)
                         },
                         filter
@@ -198,34 +198,34 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 }
                 handleCall(call, pc)
 
-            case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) ⇒
+            case Assignment(pc, _, idc: InvokedynamicFunctionCall[_]) =>
                 state.addIncompletePointsToInfo(pc)
                 logOnce(
                     Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
                 )
 
-            case ExprStmt(pc, idc: InvokedynamicFunctionCall[V]) ⇒
+            case ExprStmt(pc, idc: InvokedynamicFunctionCall[V]) =>
                 state.addIncompletePointsToInfo(pc)
                 logOnce(
                     Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
                 )
 
-            case idc: InvokedynamicMethodCall[_] ⇒
+            case idc: InvokedynamicMethodCall[_] =>
                 state.addIncompletePointsToInfo(idc.pc)
                 logOnce(
                     Warn("analysis - points-to analysis", s"unresolved invokedynamic: $idc")
                 )
 
-            case Assignment(_, DVar(_: IsReferenceValue, _), _) ⇒
+            case Assignment(_, DVar(_: IsReferenceValue, _), _) =>
                 throw new IllegalArgumentException(s"unexpected assignment: $stmt")
 
-            case call: Call[_] ⇒
+            case call: Call[_] =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], call.pc)
 
-            case ExprStmt(pc, call: Call[_]) ⇒
+            case ExprStmt(pc, call: Call[_]) =>
                 handleCall(call.asInstanceOf[Call[DUVar[ValueInformation]]], pc)
 
-            case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) ⇒
+            case PutField(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, objRefDefSites), UVar(_, defSites)) =>
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
                     handlePutField(fieldOpt, objRefDefSites, defSites)
@@ -233,7 +233,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case PutStatic(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) ⇒
+            case PutStatic(pc, declaringClass, name, fieldType: ReferenceType, UVar(_, defSites)) =>
                 val fieldOpt = p.resolveFieldReference(declaringClass, name, fieldType)
                 if (fieldOpt.isDefined) {
                     handlePutStatic(fieldOpt.get, defSites)
@@ -241,16 +241,16 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     state.addIncompletePointsToInfo(pc)
                 }
 
-            case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) ⇒
+            case ArrayStore(_, UVar(av: IsSArrayValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) =>
                 val arrayType = av.theUpperTypeBound
                 handleArrayStore(arrayType, arrayDefSites, defSites)
 
-            case ArrayStore(_, UVar(av: IsMultipleReferenceValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) ⇒
+            case ArrayStore(_, UVar(av: IsMultipleReferenceValue, arrayDefSites), _, UVar(_: IsReferenceValue, defSites)) =>
                 val arrayType = av.leastUpperType.get.asArrayType
                 handleArrayStore(arrayType, arrayDefSites, defSites)
 
-            case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) ⇒
-                val filter = { t: ReferenceType ⇒
+            case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) =>
+                val filter = { t: ReferenceType =>
                     classHierarchy.isSubtypeOf(
                         t, state.method.descriptor.returnType.asReferenceType
                     )
@@ -259,7 +259,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     state.method, currentPointsToOfDefSites(state.method, defSites, filter), filter
                 )
 
-            case _ ⇒
+            case _ =>
         }
 
         // TODO: we have to handle the exceptions that might implicitly be thrown by this method
@@ -285,7 +285,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         val defSite = definitionSites(state.method.definedMethod, pc)
         if (!state.hasAllocationSitePointsToSet(defSite)) {
             @inline def countIsZero(theCounts: Seq[Expr[V]]): Boolean = {
-                theCounts.head.asVar.definedBy.forall { ds ⇒
+                theCounts.head.asVar.definedBy.forall { ds =>
                     ds >= 0 &&
                         state.tac.stmts(ds).asAssignment.expr.isIntConst &&
                         state.tac.stmts(ds).asAssignment.expr.asIntConst.value == 0
@@ -320,7 +320,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 state.includeSharedPointsToSet(
                     arrayEntity,
                     arrayReferencePTS,
-                    { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, theType) }
+                    { t: ReferenceType => classHierarchy.isSubtypeOf(t, theType) }
                 )
 
                 remainingCounts = remainingCounts.tail
@@ -345,7 +345,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         }
 
         val callExceptions = CallExceptions(definitionSites(state.method.definedMethod, pc))
-        val filter = { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
+        val filter = { t: ReferenceType => classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
         for (target ← callees.callees(pc)) {
             val targetExceptions = MethodExceptions(target)
             state.includeSharedPointsToSet(
@@ -373,8 +373,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             // handle receiver for non static methods
             if (receiverOpt.isDefined) {
                 val isNonVirtualCall = call match {
-                    case _: NonVirtualFunctionCall[V] | _: NonVirtualMethodCall[V] ⇒ true
-                    case _ ⇒ false
+                    case _: NonVirtualFunctionCall[V] | _: NonVirtualMethodCall[V] => true
+                    case _ => false
                 }
                 handleCallReceiver(receiverOpt.get.asVar.definedBy, target, isNonVirtualCall)
             }
@@ -467,16 +467,16 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     }
 
     override protected[this] def continuationForShared(
-        e: Entity, dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType ⇒ Boolean)]
+        e: Entity, dependees: Map[SomeEPK, (SomeEOptionP, ReferenceType => Boolean)]
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         // The shared entities are not affected by changes of the tac and use partial results.
         // Thus, we could simply recompute them on updates for the tac
         eps match {
-            case UBP(callees: Callees) ⇒
+            case UBP(callees: Callees) =>
                 // this will never happen for method return values or method exceptions
                 val (defSite, dependeeIsExceptions) = e match {
-                    case ds: DefinitionSite ⇒ (ds, false)
-                    case ce: CallExceptions ⇒ (ce.defSite, true)
+                    case ds: DefinitionSite => (ds, false)
+                    case ce: CallExceptions => (ce.defSite, true)
                 }
                 // TODO: Only handle new callees
                 val tgts = callees.callees(defSite.pc)
@@ -485,7 +485,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 var newDependees = updatedDependees(eps, dependees)
                 var newPointsToSet = emptyPointsToSet
-                tgts.foreach { target ⇒
+                tgts.foreach { target =>
                     val entity = if (dependeeIsExceptions) MethodExceptions(target) else target
                     // if we already have a dependency to that method, we do not need to process it
                     // otherwise, it might still be the case that we processed it before but it is
@@ -494,7 +494,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                         if (!dependees.contains(EPK(entity, pointsToPropertyKey))) {
                             val p2s = ps(entity, pointsToPropertyKey)
                             if (p2s.isRefinable) {
-                                newDependees += (p2s.toEPK → ((p2s, typeFilter)))
+                                newDependees += (p2s.toEPK -> ((p2s, typeFilter)))
                             }
                             newPointsToSet = newPointsToSet.included(pointsToUB(p2s), typeFilter)
                         }
@@ -505,7 +505,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     e,
                     newPointsToSet,
                     newDependees,
-                    { old ⇒
+                    { old =>
                         old.included(newPointsToSet, typeFilter)
                     },
                     true
@@ -513,7 +513,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 Results(results)
 
-            case _ ⇒ super.continuationForShared(e, dependees)(eps)
+            case _ => super.continuationForShared(e, dependees)(eps)
         }
     }
 
@@ -522,7 +522,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         state:          State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case UBP(newCallees: Callees) ⇒
+            case UBP(newCallees: Callees) =>
                 val tac = state.tac
                 val oldCallees = if (oldCalleeEOptP.hasUBP) oldCalleeEOptP.ub else NoCallees
                 for {
@@ -531,13 +531,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 } {
                     if (!oldCallees.containsDirectCall(pc, target)) {
                         val call = tac.stmts(tac.properStmtIndexForPC(pc)) match {
-                            case call: Call[DUVar[ValueInformation]] @unchecked ⇒
+                            case call: Call[DUVar[ValueInformation]] @unchecked =>
                                 call
-                            case Assignment(_, _, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
+                            case Assignment(_, _, call: Call[DUVar[ValueInformation]] @unchecked) =>
                                 call
-                            case ExprStmt(_, call: Call[DUVar[ValueInformation]] @unchecked) ⇒
+                            case ExprStmt(_, call: Call[DUVar[ValueInformation]] @unchecked) =>
                                 call
-                            case e ⇒
+                            case e =>
                                 throw new IllegalArgumentException(s"unexpected stmt $e")
                         }
                         handleDirectCall(call, pc, target)(state)
@@ -555,14 +555,14 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 state.setCalleesDependee(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])
 
                 Results(createResults(state))
-            case _ ⇒ throw new IllegalArgumentException(s"unexpected eps $eps")
+            case _ => throw new IllegalArgumentException(s"unexpected eps $eps")
         }
     }
 }
 
 trait AbstractPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
-    def createAnalysis: SomeProject ⇒ AbstractPointsToAnalysis
+    def createAnalysis: SomeProject => AbstractPointsToAnalysis
 
     override type InitializationData = Null
 

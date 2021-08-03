@@ -58,7 +58,7 @@ sealed trait AllocationSitePointsToSet
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             val oldAllocationSites = newAllocationSites
             newAllocationSites += allocationSite
@@ -77,7 +77,7 @@ sealed trait AllocationSitePointsToSet
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other);
@@ -85,7 +85,7 @@ sealed trait AllocationSitePointsToSet
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
+        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val newAllocationSites = r + allocationSite
@@ -110,7 +110,7 @@ sealed trait AllocationSitePointsToSet
     override def included(
         other:        AllocationSitePointsToSet,
         seenElements: Int,
-        typeFilter:   ReferenceType ⇒ Boolean
+        typeFilter:   ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other, seenElements);
@@ -119,7 +119,7 @@ sealed trait AllocationSitePointsToSet
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val oldAllocationSites = newAllocationSites
@@ -139,7 +139,7 @@ sealed trait AllocationSitePointsToSet
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
+    override def filter(typeFilter: ReferenceType => Boolean): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return this;
 
@@ -147,7 +147,7 @@ sealed trait AllocationSitePointsToSet
         var newOrderedTypes = Chain.empty[ReferenceType]
 
         val newAllocationSites =
-            elements.foldLeft(LongTrieSetWithList.empty) { (r, allocationSite) ⇒
+            elements.foldLeft(LongTrieSetWithList.empty) { (r, allocationSite) =>
                 val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
                 if (typeFilter(tpe)) {
                     val newAllocationSites = r + allocationSite
@@ -171,11 +171,11 @@ sealed trait AllocationSitePointsToSet
 
     assert {
         var asTypes = IntTrieSet.empty
-        elements.foreach { allocationSite ⇒
+        elements.foreach { allocationSite =>
             asTypes += allocationSiteLongToTypeId(allocationSite)
         }
 
-        val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) ⇒ r + t.id }
+        val typeIds = types.foldLeft(IntTrieSet.empty) { (r, t) => r + t.id }
         typeIds == asTypes
     }
     assert(numElements >= numTypes)
@@ -223,9 +223,9 @@ object AllocationSitePointsToSet extends AllocationSitePointsToSetPropertyMetaIn
         val name = "opalj.AllocationSitePointsToSet"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoAllocationSites
-                case _ ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoAllocationSites
+                case _ =>
                     throw new IllegalStateException(s"no analysis is scheduled for property: $name")
             }
         )
@@ -241,18 +241,18 @@ case class AllocationSitePointsToSetN private[pointsto] (
     override def numTypes: Int = types.size
     override def numElements: Int = elements.size
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
         orderedTypes.forFirstN(n)(f)
     }
 
-    override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = {
+    override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
         elements.forFirstN(n)(f)
     }
 
     // TODO: should the order matter?
     override def equals(obj: Any): Boolean = {
         obj match {
-            case that: AllocationSitePointsToSetN ⇒
+            case that: AllocationSitePointsToSetN =>
                 (this eq that) || {
                     that.elements.size == this.elements.size &&
                         that.numTypes == this.numTypes &&
@@ -260,7 +260,7 @@ case class AllocationSitePointsToSetN private[pointsto] (
                         //  that.elements == this.elements => that.orderedTypes == this.orderedTypes
                         that.elements == this.elements
                 }
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -282,12 +282,12 @@ object NoAllocationSites extends AllocationSitePointsToSet {
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         other.filter(typeFilter)
     }
 
-    override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
+    override def filter(typeFilter: ReferenceType => Boolean): AllocationSitePointsToSet = {
         this
     }
 
@@ -301,11 +301,11 @@ object NoAllocationSites extends AllocationSitePointsToSet {
 
     override def elements: LongLinkedSet = LongTrieSetWithList.empty
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
         assert(n == 0)
     }
 
-    override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = {
+    override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
         assert(n == 0)
     }
 
@@ -328,19 +328,19 @@ case class AllocationSitePointsToSet1(
 
     override def included(other: AllocationSitePointsToSet): AllocationSitePointsToSet = {
         other match {
-            case AllocationSitePointsToSet1(`allocationSite`, `allocatedType`) ⇒
+            case AllocationSitePointsToSet1(`allocationSite`, `allocatedType`) =>
                 this
 
-            case AllocationSitePointsToSet1(otherAllocationSite, otherAllocatedType) ⇒
+            case AllocationSitePointsToSet1(otherAllocationSite, otherAllocatedType) =>
                 AllocationSitePointsToSet(
                     otherAllocationSite, otherAllocatedType, allocationSite, allocatedType
                 )
 
-            case NoAllocationSites ⇒
+            case NoAllocationSites =>
                 this
 
-            case AllocationSitePointsToSetN(otherAllocationSites, otherTypes, otherOrderedTypes) ⇒
-                val newAllocations = otherAllocationSites.foldLeft(elements) { (l, as) ⇒
+            case AllocationSitePointsToSetN(otherAllocationSites, otherTypes, otherOrderedTypes) =>
+                val newAllocations = otherAllocationSites.foldLeft(elements) { (l, as) =>
                     if (as != allocationSite) {
                         l + as
                     } else {
@@ -348,7 +348,7 @@ case class AllocationSitePointsToSet1(
                     }
                 }
 
-                val newOrderedTypes = otherOrderedTypes.foldLeft(allocatedType :&: Naught) { (l, at) ⇒
+                val newOrderedTypes = otherOrderedTypes.foldLeft(allocatedType :&: Naught) { (l, at) =>
                     if (at != allocatedType) at :&: l else l
                 }
 
@@ -357,7 +357,7 @@ case class AllocationSitePointsToSet1(
                     otherTypes + allocatedType,
                     newOrderedTypes
                 )
-            case _ ⇒
+            case _ =>
                 throw new IllegalArgumentException(s"unexpected list $other")
         }
     }
@@ -372,7 +372,7 @@ case class AllocationSitePointsToSet1(
     }
 
     override def included(
-        other: AllocationSitePointsToSet, typeFilter: ReferenceType ⇒ Boolean
+        other: AllocationSitePointsToSet, typeFilter: ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other);
@@ -380,7 +380,7 @@ case class AllocationSitePointsToSet1(
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) ⇒
+        val newAllocationSites = other.elements.foldLeft(elements) { (r, allocationSite) =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val newAllocationSites = r + allocationSite
@@ -405,7 +405,7 @@ case class AllocationSitePointsToSet1(
     override def included(
         other:        AllocationSitePointsToSet,
         seenElements: Int,
-        typeFilter:   ReferenceType ⇒ Boolean
+        typeFilter:   ReferenceType => Boolean
     ): AllocationSitePointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other, seenElements);
@@ -414,7 +414,7 @@ case class AllocationSitePointsToSet1(
         var newTypes = types
         var newOrderedTypes = orderedTypes
 
-        other.forNewestNElements(other.numElements - seenElements) { allocationSite ⇒
+        other.forNewestNElements(other.numElements - seenElements) { allocationSite =>
             val tpe = ReferenceType.lookup(allocationSiteLongToTypeId(allocationSite))
             if (typeFilter(tpe)) {
                 val oldAllocationSites = newAllocationSites
@@ -434,7 +434,7 @@ case class AllocationSitePointsToSet1(
         AllocationSitePointsToSet(newAllocationSites, newTypes, newOrderedTypes)
     }
 
-    override def filter(typeFilter: ReferenceType ⇒ Boolean): AllocationSitePointsToSet = {
+    override def filter(typeFilter: ReferenceType => Boolean): AllocationSitePointsToSet = {
         if ((typeFilter eq PointsToSetLike.noFilter) || typeFilter(allocatedType)) {
             this
         } else {
@@ -442,13 +442,13 @@ case class AllocationSitePointsToSet1(
         }
     }
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
         assert(n == 0 || n == 1)
         if (n == 1)
             f(allocatedType)
     }
 
-    override def forNewestNElements[U](n: Int)(f: AllocationSite ⇒ U): Unit = {
+    override def forNewestNElements[U](n: Int)(f: AllocationSite => U): Unit = {
         assert(n == 0 || n == 1)
         if (n == 1)
             f(allocationSite)
@@ -456,10 +456,10 @@ case class AllocationSitePointsToSet1(
 
     override def equals(obj: Any): Boolean = {
         obj match {
-            case that: AllocationSitePointsToSet1 ⇒
+            case that: AllocationSitePointsToSet1 =>
                 that.allocationSite == this.allocationSite
 
-            case _ ⇒ false
+            case _ => false
         }
     }
 

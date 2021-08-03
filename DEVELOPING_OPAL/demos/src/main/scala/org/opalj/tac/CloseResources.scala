@@ -21,14 +21,14 @@ object CloseResources extends ProjectAnalysisApplication {
     override def doAnalyze(
         p:             Project[URL],
         params:        Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         // implicit val logContext = p.logContext
         // val tacaiKey = p.get(ComputeTACAIKey)
 
         val issues = new java.util.concurrent.ConcurrentLinkedQueue[String]()
 
-        /* p.parForeachMethodWithBody(isInterrupted) { m ⇒
+        /* p.parForeachMethodWithBody(isInterrupted) { m =>
             val taCode = tacaiKey(m)
             val cfg = taCode.cfg
 
@@ -39,9 +39,9 @@ object CloseResources extends ProjectAnalysisApplication {
             val seed = Set.empty[F]
             def t(newFacts: Fs, stmt: Stmt[_], pc: PC, succId: CFG.SuccessorId) = {
                 stmt match {
-                    case Assignment(_, _, e: BinaryExpr[_]) if succId >= 0 /*completes normally?*/ ⇒
+                    case Assignment(_, _, e: BinaryExpr[_]) if succId >= 0 /*completes normally?*/ =>
                         newFacts + ((e.op, e.left, e.right))
-                    case _ ⇒ newFacts
+                    case _ => newFacts
                 }
             }
             def cfJoin(oldFacts: Fs, newFacts: Fs) = {

@@ -52,7 +52,7 @@ case class TABLESWITCH(
             InstructionLabel(currentPC + defaultOffset),
             low,
             high,
-            jumpOffsets.map(jumpOffset ⇒ InstructionLabel(currentPC + jumpOffset))
+            jumpOffsets.map(jumpOffset => InstructionLabel(currentPC + jumpOffset))
         )
     }
 
@@ -68,7 +68,7 @@ case class TABLESWITCH(
     }
 
     override def caseValues: IntIterator = {
-        IntIterator.upTo(low, high).filter(cv ⇒ jumpOffsets(cv - low) != defaultOffset)
+        IntIterator.upTo(low, high).filter(cv => jumpOffsets(cv - low) != defaultOffset)
     }
 
     final def nextInstructions(
@@ -82,7 +82,7 @@ case class TABLESWITCH(
         val defaultTarget = currentPC + defaultOffset
         var pcs = Chain.singleton(defaultTarget)
         var seen: IntArraySet = IntArraySet1(defaultTarget)
-        jumpOffsets foreach { offset ⇒
+        jumpOffsets foreach { offset =>
             val newPC = currentPC + offset
             if (!seen.contains(newPC)) {
                 seen += newPC
@@ -97,7 +97,7 @@ case class TABLESWITCH(
 
         code.instructions(otherPC) match {
 
-            case TABLESWITCH(otherDefaultOffset, `low`, `high`, otherJumpOffsets) ⇒
+            case TABLESWITCH(otherDefaultOffset, `low`, `high`, otherJumpOffsets) =>
                 (this.defaultOffset + paddingOffset == otherDefaultOffset) && {
                     val tIt = this.jumpOffsets.iterator
                     val oIt = otherJumpOffsets.iterator
@@ -110,20 +110,20 @@ case class TABLESWITCH(
                     doesMatch
                 }
 
-            case _ ⇒ false
+            case _ => false
         }
     }
 
     override def toString: String = {
         s"TABLESWITCH($low -> $high; "+
-            (low to high).zip(jumpOffsets).map(e ⇒ e._1+"⤼"+e._2).mkString(",")+
+            (low to high).zip(jumpOffsets).map(e => e._1+"⤼"+e._2).mkString(",")+
             ";default⤼"+defaultOffset+
             ")"
     }
 
     override def toString(pc: PC): String = {
         s"TABLESWITCH($low -> $high; "+
-            (low to high).zip(jumpOffsets).map { keyOffset ⇒
+            (low to high).zip(jumpOffsets).map { keyOffset =>
                 val (key, offset) = keyOffset
                 key+"="+(pc + offset) + (if (offset >= 0) "↓" else "↑")
             }.mkString(", ")+
@@ -180,7 +180,7 @@ case class LabeledTABLESWITCH(
             asShortBranchoffset(pcs(defaultBranchTarget) - currentPC),
             low,
             high,
-            jumpTargets.map(target ⇒ asShortBranchoffset(pcs(target) - currentPC))
+            jumpTargets.map(target => asShortBranchoffset(pcs(target) - currentPC))
         )
     }
 
@@ -200,7 +200,7 @@ case class LabeledTABLESWITCH(
     }
 
     override def caseValues: IntIterator = {
-        IntIterator.upTo(low, high).filter(cv ⇒ jumpTargets(cv - low) != defaultBranchTarget)
+        IntIterator.upTo(low, high).filter(cv => jumpTargets(cv - low) != defaultBranchTarget)
     }
 
     final def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
@@ -209,7 +209,7 @@ case class LabeledTABLESWITCH(
     }
 
     override def toString(pc: Int): String = {
-        (low to high).zip(jumpTargets).map { keyOffset ⇒
+        (low to high).zip(jumpTargets).map { keyOffset =>
             val (key, target) = keyOffset
             key+"="+target
         }.mkString("TABLESWITCH(", ", ", "; ifNoMatch="+defaultBranchTarget+")")

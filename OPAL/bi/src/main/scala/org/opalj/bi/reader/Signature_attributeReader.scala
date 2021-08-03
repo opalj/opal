@@ -90,7 +90,7 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
                 cp, ap, ap_name_index, ap_descriptor_index, attribute_name_index, signature_index
             )
         } catch {
-            case iae: IllegalArgumentException ⇒
+            case iae: IllegalArgumentException =>
                 OPALLogger.error(
                     "parsing bytecode",
                     s"skipping ${ap.toString().toLowerCase()} signature: "+iae.getMessage
@@ -99,5 +99,5 @@ trait Signature_attributeReader extends AttributeReader with ClassFileReaderConf
         }
     }
 
-    registerAttributeReader(SignatureAttribute.Name → parser)
+    registerAttributeReader(SignatureAttribute.Name -> parser)
 }

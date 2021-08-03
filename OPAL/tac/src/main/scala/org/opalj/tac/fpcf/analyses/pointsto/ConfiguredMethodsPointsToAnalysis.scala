@@ -54,16 +54,16 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[PointsToRelation]]] = {
         ConfiguredMethods.reader.read(
             p.config, "org.opalj.fpcf.analyses.ConfiguredNativeMethodsAnalysis"
-        ).nativeMethods.map { v ⇒ (v.method, v.pointsTo) }.toMap
+        ).nativeMethods.map { v => (v.method, v.pointsTo) }.toMap
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
         (propertyStore(dm, Callers.key): @unchecked) match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 return NoResult;
 
-            case eps: EPS[_, _] ⇒
+            case eps: EPS[_, _] =>
                 if (eps.ub eq NoCallers) {
                     // we can not create a dependency here, so the analysis is not allowed to create
                     // such a result
@@ -104,7 +104,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
     )(implicit state: State): Int = {
         val defSiteObject = definitionSites(state.method.definedMethod, pc)
         rhs match {
-            case md: MethodDescription ⇒
+            case md: MethodDescription =>
                 val method = md.method(declaredMethods)
                 state.includeSharedPointsToSet(
                     defSiteObject,
@@ -112,12 +112,12 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     PointsToSetLike.noFilter
                 )
 
-            case sfd: StaticFieldDescription ⇒
+            case sfd: StaticFieldDescription =>
                 val fieldOption = sfd.fieldOption(p)
                 if (fieldOption.isDefined)
                     handleGetStatic(fieldOption.get, pc, checkForCast = false)
 
-            case pd: ParameterDescription ⇒
+            case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
                 val fp = pd.fp(method, virtualFormalParameters)
                 if (fp ne null) {
@@ -128,7 +128,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     )
                 }
 
-            case asd: AllocationSiteDescription ⇒
+            case asd: AllocationSiteDescription =>
                 val method = asd.method(declaredMethods)
                 if (asd.instantiatedType.startsWith("[")) {
                     val theInstantiatedType = FieldType(asd.instantiatedType).asArrayType
@@ -138,7 +138,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     if (asd.arrayComponentTypes.nonEmpty) {
                         val arrayEntity = ArrayEntity(pts.getNewestElement())
                         var arrayPTS: PointsToSet = emptyPointsToSet
-                        asd.arrayComponentTypes.foreach { componentTypeString ⇒
+                        asd.arrayComponentTypes.foreach { componentTypeString =>
                             val componentType = ObjectType(componentTypeString)
                             arrayPTS = arrayPTS.included(
                                 createPointsToSet(pc, method, componentType, isConstant = false)
@@ -157,7 +157,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     )
                 }
 
-            case ArrayDescription(array, arrayType) ⇒
+            case ArrayDescription(array, arrayType) =>
                 val arrayPC = nextPC
                 val theNextPC = handleGet(array, arrayPC, nextPC) + 1
                 handleArrayLoad(
@@ -172,10 +172,10 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
         lhs: EntityDescription, pc: Int, nextPC: Int
     )(implicit state: State): Int = {
         lhs match {
-            case md: MethodDescription ⇒
+            case md: MethodDescription =>
                 val method = md.method(declaredMethods)
                 val returnType = method.descriptor.returnType.asReferenceType
-                val filter = { t: ReferenceType ⇒
+                val filter = { t: ReferenceType =>
                     classHierarchy.isSubtypeOf(t, returnType)
                 }
                 state.includeSharedPointsToSet(
@@ -184,12 +184,12 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     filter
                 )
 
-            case sfd: StaticFieldDescription ⇒
+            case sfd: StaticFieldDescription =>
                 val fieldOption = sfd.fieldOption(p)
                 if (fieldOption.isDefined)
                     handlePutStatic(fieldOption.get, IntTrieSet(0))
 
-            case pd: ParameterDescription ⇒
+            case pd: ParameterDescription =>
                 val method = pd.method(declaredMethods)
                 val fp = pd.fp(method, virtualFormalParameters)
                 if (fp ne null) {
@@ -200,10 +200,10 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
                     }
                 }
 
-            case _: AllocationSiteDescription ⇒
+            case _: AllocationSiteDescription =>
                 throw new RuntimeException("AllocationSites must not be assigned to")
 
-            case ArrayDescription(array, arrayType) ⇒
+            case ArrayDescription(array, arrayType) =>
                 val arrayPC = nextPC
                 val theNextPC = handleGet(array, arrayPC, nextPC) + 1
                 handleArrayStore(
@@ -217,7 +217,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
 trait ConfiguredMethodsPointsToAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
     def propertyKind: PropertyMetaInformation
-    def createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis
+    def createAnalysis: SomeProject => ConfiguredMethodsPointsToAnalysis
 
     override type InitializationData = Null
 
@@ -267,7 +267,7 @@ object TypeBasedConfiguredMethodsPointsToAnalysisScheduler
     extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
+    override val createAnalysis: SomeProject => ConfiguredMethodsPointsToAnalysis =
         new ConfiguredMethodsPointsToAnalysis(_) with TypeBasedAnalysis
 }
 
@@ -275,6 +275,6 @@ object AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
     extends ConfiguredMethodsPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
-    override val createAnalysis: SomeProject ⇒ ConfiguredMethodsPointsToAnalysis =
+    override val createAnalysis: SomeProject => ConfiguredMethodsPointsToAnalysis =
         new ConfiguredMethodsPointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

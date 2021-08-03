@@ -16,7 +16,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEDYNAMIC
 import org.opalj.br.analyses.ProjectAnalysisApplication
-import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig ⇒ invokedynamicRewritingConfig}
+import org.opalj.br.reader.InvokedynamicRewriting.{defaultConfig => invokedynamicRewritingConfig}
 
 /**
  * Prints out the immediately available information about invokedynamic instructions.
@@ -47,16 +47,16 @@ object InvokedynamicPrinter extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         val invokedynamics = new ConcurrentLinkedQueue[String]()
-        project.parForeachMethodWithBody(isInterrupted) { mi ⇒
+        project.parForeachMethodWithBody(isInterrupted) { mi =>
             val method = mi.method
             val classFile = method.classFile
             val body = method.body.get
             invokedynamics.addAll(
                 body.collectWithIndex {
-                    case PCAndInstruction(pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) ⇒
+                    case PCAndInstruction(pc, INVOKEDYNAMIC(bootstrap, name, descriptor)) =>
                         classFile.thisType.toJava+" {\n  "+method.signatureToJava()+"{ "+pc+": \n"+
                             s"    ${bootstrap.toJava}\n"+
                             bootstrap.arguments.mkString("    Arguments: {", ",", "}\n") +

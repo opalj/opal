@@ -41,7 +41,7 @@ object IDLTestsFixtures {
     }
 
     private[issues] def relevanceToIDL(name: String, value: Int): JsObject = {
-        Json.obj("name" → name, "value" → value)
+        Json.obj("name" -> name, "value" -> value)
     }
 
     val simplePackageLocation = new PackageLocation(Option("foo"), null, "bar/baz")
@@ -53,24 +53,24 @@ object IDLTestsFixtures {
     val codeWithLineNumbers = Code(0, 0, Array(new IFEQ(0)), attributes = attributes)
 
     val simplePackageLocationIDL: JsObject = Json.obj(
-        "location" → Json.obj("package" → "bar.baz"),
-        "description" → "foo",
-        "details" → Json.arr()
+        "location" -> Json.obj("package" -> "bar.baz"),
+        "description" -> "foo",
+        "details" -> Json.arr()
     )
 
     val classFileIDL: JsObject = Json.obj(
-        "fqn" → "foo/Bar",
-        "type" → Json.obj("ot" → "foo.Bar", "simpleName" → "Bar"),
-        "accessFlags" → "public"
+        "fqn" -> "foo/Bar",
+        "type" -> Json.obj("ot" -> "foo.Bar", "simpleName" -> "Bar"),
+        "accessFlags" -> "public"
     )
 
     val methodReturnVoidNoParametersIDL: JsObject = Json.obj(
-        "accessFlags" → "public",
-        "name" → "test0p",
-        "returnType" → Json.obj("vt" → "void"),
-        "parameters" → Json.arr(),
-        "signature" → "test0p()V",
-        "firstLine" → JsNull
+        "accessFlags" -> "public",
+        "name" -> "test0p",
+        "returnType" -> Json.obj("vt" -> "void"),
+        "parameters" -> Json.arr(),
+        "signature" -> "test0p()V",
+        "firstLine" -> JsNull
     )
     private[this] val methodTemplateReturnVoidNoParameters = {
         Method(ACC_PUBLIC.mask, "test0p", NoFieldTypes, VoidType, Attributes(code))
@@ -81,15 +81,15 @@ object IDLTestsFixtures {
     }
 
     val methodReturnIntTwoParametersIDL: JsObject = Json.obj(
-        "accessFlags" → "public static",
-        "name" → "test2p",
-        "returnType" → Json.obj("bt" → "int"),
-        "parameters" → Json.arr(
-            Json.obj("at" → Json.obj("bt" → "byte"), "dimensions" → 2),
-            Json.obj("ot" → "foo.Bar", "simpleName" → "Bar")
+        "accessFlags" -> "public static",
+        "name" -> "test2p",
+        "returnType" -> Json.obj("bt" -> "int"),
+        "parameters" -> Json.arr(
+            Json.obj("at" -> Json.obj("bt" -> "byte"), "dimensions" -> 2),
+            Json.obj("ot" -> "foo.Bar", "simpleName" -> "Bar")
         ),
-        "signature" → "test2p([[BLfoo/Bar;)I",
-        "firstLine" → "8"
+        "signature" -> "test2p([[BLfoo/Bar;)I",
+        "firstLine" -> "8"
     )
     private[issues] val methodTemplateReturnIntTwoParameters = Method(
         ACC_PUBLIC.mask | ACC_STATIC.mask,
@@ -123,16 +123,16 @@ object IDLTestsFixtures {
     val simpleOperands = new Operands(code, 0, Chain("foo"), null)
 
     val simpleOperandsIDL: JsObject = Json.obj(
-        "type" → "SimpleConditionalBranchInstruction",
-        "operator" → "== 0",
-        "value" → "foo",
-        "value2" → JsNull
+        "type" -> "SimpleConditionalBranchInstruction",
+        "operator" -> "== 0",
+        "value" -> "foo",
+        "value2" -> JsNull
     )
 
     val simpleLocalVariables = new LocalVariables(code, 0, Locals.empty)
 
     val simpleLocalVariablesIDL: JsObject = {
-        Json.obj("type" → "LocalVariables", "values" → Json.arr())
+        Json.obj("type" -> "LocalVariables", "values" -> Json.arr())
     }
 
 }

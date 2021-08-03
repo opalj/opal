@@ -20,7 +20,7 @@ import org.opalj.br.reader.Java7LibraryFramework.ClassFiles
 object ClassHierarchyVisualizer {
 
     def main(args: Array[String]): Unit = {
-        if (!args.forall(arg ⇒ arg.endsWith(".jar") || arg.endsWith(".jmod"))) {
+        if (!args.forall(arg => arg.endsWith(".jar") || arg.endsWith(".jmod"))) {
             Console.err.println("Usage: java …ClassHierarchy <.jar|.jmod file>+")
             sys.exit(-1)
         }
@@ -31,10 +31,10 @@ object ClassHierarchyVisualizer {
                 ClassHierarchy.PreInitializedClassHierarchy
             } else {
                 val classFiles =
-                    args.foldLeft(List.empty[ClassFile]) { (classFiles, filename) ⇒
+                    args.foldLeft(List.empty[ClassFile]) { (classFiles, filename) =>
                         classFiles ++ ClassFiles(new File(filename)).iterator.map(_._1)
                     }
-                if (classFiles.forall(cf ⇒ cf.thisType != ObjectType.Object))
+                if (classFiles.forall(cf => cf.thisType != ObjectType.Object))
                     // load pre-configured class hierarchy...
                     ClassHierarchy(classFiles)(GlobalLogContext)
                 else

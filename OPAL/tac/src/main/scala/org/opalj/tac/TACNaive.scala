@@ -170,55 +170,55 @@ object TACNaive {
 
             def loadConstant(instr: LoadConstantInstruction[_]): Unit = {
                 instr match {
-                    case LDCInt(value) ⇒
+                    case LDCInt(value) =>
                         val newVar = OperandVar(ComputationalTypeInt, stack)
                         val stmt = Assignment[IdBasedVar](pc, newVar, IntConst(pc, value))
                         statements(pc) = List(stmt)
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
-                    case LDCFloat(value) ⇒
+                    case LDCFloat(value) =>
                         val newVar = OperandVar(ComputationalTypeFloat, stack)
                         val floatConst = FloatConst(pc, value)
                         statements(pc) = List(Assignment[IdBasedVar](pc, newVar, floatConst))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
-                    case LDCClass(value) ⇒
+                    case LDCClass(value) =>
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         val stmt = Assignment[IdBasedVar](pc, newVar, ClassConst(pc, value))
                         statements(pc) = List(stmt)
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
-                    case LDCString(value) ⇒
+                    case LDCString(value) =>
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         val stmt = Assignment[IdBasedVar](pc, newVar, StringConst(pc, value))
                         statements(pc) = List(stmt)
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
-                    case LDCMethodHandle(value) ⇒
+                    case LDCMethodHandle(value) =>
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         statements(pc) =
                             List(Assignment[IdBasedVar](pc, newVar, MethodHandleConst(pc, value)))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
-                    case LDCMethodType(value) ⇒
+                    case LDCMethodType(value) =>
                         val newVar = OperandVar(ComputationalTypeReference, stack)
                         val methodTypeConst = MethodTypeConst(pc, value)
                         statements(pc) = List(Assignment[IdBasedVar](pc, newVar, methodTypeConst))
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
-                    case LoadDouble(value) ⇒
+                    case LoadDouble(value) =>
                         val newVar = OperandVar(ComputationalTypeDouble, stack)
                         val stmt = Assignment[IdBasedVar](pc, newVar, DoubleConst(pc, value))
                         statements(pc) = List(stmt)
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
-                    case LoadLong(value) ⇒
+                    case LoadLong(value) =>
                         val newVar = OperandVar(ComputationalTypeLong, stack)
                         val stmt = Assignment[IdBasedVar](pc, newVar, LongConst(pc, value))
                         statements(pc) = List(stmt)
                         schedule(pcOfNextInstruction(pc), newVar :: stack)
 
-                    case _ ⇒
+                    case _ =>
                         val message = s"unexpected constant $instr"
                         throw BytecodeProcessingFailedException(message)
                 }
@@ -235,104 +235,104 @@ object TACNaive {
             def as[T <: Instruction](i: Instruction): T = i.asInstanceOf[T]
 
             (opcode: @scala.annotation.switch) match {
-                case ALOAD_0.opcode ⇒ loadInstruction(0, ComputationalTypeReference)
-                case ALOAD_1.opcode ⇒ loadInstruction(1, ComputationalTypeReference)
-                case ALOAD_2.opcode ⇒ loadInstruction(2, ComputationalTypeReference)
-                case ALOAD_3.opcode ⇒ loadInstruction(3, ComputationalTypeReference)
-                case ALOAD.opcode ⇒
+                case ALOAD_0.opcode => loadInstruction(0, ComputationalTypeReference)
+                case ALOAD_1.opcode => loadInstruction(1, ComputationalTypeReference)
+                case ALOAD_2.opcode => loadInstruction(2, ComputationalTypeReference)
+                case ALOAD_3.opcode => loadInstruction(3, ComputationalTypeReference)
+                case ALOAD.opcode =>
                     val lvIndex = as[ALOAD](instruction).lvIndex
                     loadInstruction(lvIndex, ComputationalTypeReference)
 
-                case ASTORE_0.opcode ⇒ storeInstruction(0)
-                case ASTORE_1.opcode ⇒ storeInstruction(1)
-                case ASTORE_2.opcode ⇒ storeInstruction(2)
-                case ASTORE_3.opcode ⇒ storeInstruction(3)
-                case ASTORE.opcode   ⇒ storeInstruction(as[ASTORE](instruction).lvIndex)
+                case ASTORE_0.opcode => storeInstruction(0)
+                case ASTORE_1.opcode => storeInstruction(1)
+                case ASTORE_2.opcode => storeInstruction(2)
+                case ASTORE_3.opcode => storeInstruction(3)
+                case ASTORE.opcode   => storeInstruction(as[ASTORE](instruction).lvIndex)
 
-                case ILOAD_0.opcode  ⇒ loadInstruction(0, ComputationalTypeInt)
-                case ILOAD_1.opcode  ⇒ loadInstruction(1, ComputationalTypeInt)
-                case ILOAD_2.opcode  ⇒ loadInstruction(2, ComputationalTypeInt)
-                case ILOAD_3.opcode  ⇒ loadInstruction(3, ComputationalTypeInt)
-                case ILOAD.opcode ⇒
+                case ILOAD_0.opcode  => loadInstruction(0, ComputationalTypeInt)
+                case ILOAD_1.opcode  => loadInstruction(1, ComputationalTypeInt)
+                case ILOAD_2.opcode  => loadInstruction(2, ComputationalTypeInt)
+                case ILOAD_3.opcode  => loadInstruction(3, ComputationalTypeInt)
+                case ILOAD.opcode =>
                     loadInstruction(as[ILOAD](instruction).lvIndex, ComputationalTypeInt)
 
-                case ISTORE_0.opcode ⇒ storeInstruction(0)
-                case ISTORE_1.opcode ⇒ storeInstruction(1)
-                case ISTORE_2.opcode ⇒ storeInstruction(2)
-                case ISTORE_3.opcode ⇒ storeInstruction(3)
-                case ISTORE.opcode   ⇒ storeInstruction(as[ISTORE](instruction).lvIndex)
+                case ISTORE_0.opcode => storeInstruction(0)
+                case ISTORE_1.opcode => storeInstruction(1)
+                case ISTORE_2.opcode => storeInstruction(2)
+                case ISTORE_3.opcode => storeInstruction(3)
+                case ISTORE.opcode   => storeInstruction(as[ISTORE](instruction).lvIndex)
 
-                case DLOAD_0.opcode  ⇒ loadInstruction(0, ComputationalTypeDouble)
-                case DLOAD_1.opcode  ⇒ loadInstruction(1, ComputationalTypeDouble)
-                case DLOAD_2.opcode  ⇒ loadInstruction(2, ComputationalTypeDouble)
-                case DLOAD_3.opcode  ⇒ loadInstruction(3, ComputationalTypeDouble)
-                case DLOAD.opcode ⇒
+                case DLOAD_0.opcode  => loadInstruction(0, ComputationalTypeDouble)
+                case DLOAD_1.opcode  => loadInstruction(1, ComputationalTypeDouble)
+                case DLOAD_2.opcode  => loadInstruction(2, ComputationalTypeDouble)
+                case DLOAD_3.opcode  => loadInstruction(3, ComputationalTypeDouble)
+                case DLOAD.opcode =>
                     loadInstruction(as[DLOAD](instruction).lvIndex, ComputationalTypeDouble)
 
-                case DSTORE_0.opcode ⇒ storeInstruction(0)
-                case DSTORE_1.opcode ⇒ storeInstruction(1)
-                case DSTORE_2.opcode ⇒ storeInstruction(2)
-                case DSTORE_3.opcode ⇒ storeInstruction(3)
-                case DSTORE.opcode   ⇒ storeInstruction(as[DSTORE](instruction).lvIndex)
+                case DSTORE_0.opcode => storeInstruction(0)
+                case DSTORE_1.opcode => storeInstruction(1)
+                case DSTORE_2.opcode => storeInstruction(2)
+                case DSTORE_3.opcode => storeInstruction(3)
+                case DSTORE.opcode   => storeInstruction(as[DSTORE](instruction).lvIndex)
 
-                case FLOAD_0.opcode  ⇒ loadInstruction(0, ComputationalTypeFloat)
-                case FLOAD_1.opcode  ⇒ loadInstruction(1, ComputationalTypeFloat)
-                case FLOAD_2.opcode  ⇒ loadInstruction(2, ComputationalTypeFloat)
-                case FLOAD_3.opcode  ⇒ loadInstruction(3, ComputationalTypeFloat)
-                case FLOAD.opcode ⇒
+                case FLOAD_0.opcode  => loadInstruction(0, ComputationalTypeFloat)
+                case FLOAD_1.opcode  => loadInstruction(1, ComputationalTypeFloat)
+                case FLOAD_2.opcode  => loadInstruction(2, ComputationalTypeFloat)
+                case FLOAD_3.opcode  => loadInstruction(3, ComputationalTypeFloat)
+                case FLOAD.opcode =>
                     loadInstruction(as[FLOAD](instruction).lvIndex, ComputationalTypeFloat)
 
-                case FSTORE_0.opcode ⇒ storeInstruction(0)
-                case FSTORE_1.opcode ⇒ storeInstruction(1)
-                case FSTORE_2.opcode ⇒ storeInstruction(2)
-                case FSTORE_3.opcode ⇒ storeInstruction(3)
-                case FSTORE.opcode   ⇒ storeInstruction(as[FSTORE](instruction).lvIndex)
+                case FSTORE_0.opcode => storeInstruction(0)
+                case FSTORE_1.opcode => storeInstruction(1)
+                case FSTORE_2.opcode => storeInstruction(2)
+                case FSTORE_3.opcode => storeInstruction(3)
+                case FSTORE.opcode   => storeInstruction(as[FSTORE](instruction).lvIndex)
 
-                case LLOAD_0.opcode  ⇒ loadInstruction(0, ComputationalTypeLong)
-                case LLOAD_1.opcode  ⇒ loadInstruction(1, ComputationalTypeLong)
-                case LLOAD_2.opcode  ⇒ loadInstruction(2, ComputationalTypeLong)
-                case LLOAD_3.opcode  ⇒ loadInstruction(3, ComputationalTypeLong)
-                case LLOAD.opcode ⇒
+                case LLOAD_0.opcode  => loadInstruction(0, ComputationalTypeLong)
+                case LLOAD_1.opcode  => loadInstruction(1, ComputationalTypeLong)
+                case LLOAD_2.opcode  => loadInstruction(2, ComputationalTypeLong)
+                case LLOAD_3.opcode  => loadInstruction(3, ComputationalTypeLong)
+                case LLOAD.opcode =>
                     loadInstruction(as[LLOAD](instruction).lvIndex, ComputationalTypeLong)
 
-                case LSTORE_0.opcode ⇒ storeInstruction(0)
-                case LSTORE_1.opcode ⇒ storeInstruction(1)
-                case LSTORE_2.opcode ⇒ storeInstruction(2)
-                case LSTORE_3.opcode ⇒ storeInstruction(3)
-                case LSTORE.opcode   ⇒ storeInstruction(as[LSTORE](instruction).lvIndex)
+                case LSTORE_0.opcode => storeInstruction(0)
+                case LSTORE_1.opcode => storeInstruction(1)
+                case LSTORE_2.opcode => storeInstruction(2)
+                case LSTORE_3.opcode => storeInstruction(3)
+                case LSTORE.opcode   => storeInstruction(as[LSTORE](instruction).lvIndex)
 
-                case IRETURN.opcode  ⇒ returnInstruction(OperandVar.IntReturnValue)
-                case LRETURN.opcode  ⇒ returnInstruction(OperandVar.LongReturnValue)
-                case FRETURN.opcode  ⇒ returnInstruction(OperandVar.FloatReturnValue)
-                case DRETURN.opcode  ⇒ returnInstruction(OperandVar.DoubleReturnValue)
-                case ARETURN.opcode  ⇒ returnInstruction(OperandVar.ReferenceReturnValue)
-                case RETURN.opcode   ⇒ statements(pc) = List(Return(pc))
+                case IRETURN.opcode  => returnInstruction(OperandVar.IntReturnValue)
+                case LRETURN.opcode  => returnInstruction(OperandVar.LongReturnValue)
+                case FRETURN.opcode  => returnInstruction(OperandVar.FloatReturnValue)
+                case DRETURN.opcode  => returnInstruction(OperandVar.DoubleReturnValue)
+                case ARETURN.opcode  => returnInstruction(OperandVar.ReferenceReturnValue)
+                case RETURN.opcode   => statements(pc) = List(Return(pc))
 
-                case AALOAD.opcode   ⇒ arrayLoad(ComputationalTypeReference)
-                case DALOAD.opcode   ⇒ arrayLoad(ComputationalTypeDouble)
-                case FALOAD.opcode   ⇒ arrayLoad(ComputationalTypeFloat)
-                case IALOAD.opcode   ⇒ arrayLoad(ComputationalTypeInt)
-                case LALOAD.opcode   ⇒ arrayLoad(ComputationalTypeLong)
-                case SALOAD.opcode   ⇒ arrayLoad(ComputationalTypeInt)
-                case BALOAD.opcode   ⇒ arrayLoad(ComputationalTypeInt)
-                case CALOAD.opcode   ⇒ arrayLoad(ComputationalTypeInt)
+                case AALOAD.opcode   => arrayLoad(ComputationalTypeReference)
+                case DALOAD.opcode   => arrayLoad(ComputationalTypeDouble)
+                case FALOAD.opcode   => arrayLoad(ComputationalTypeFloat)
+                case IALOAD.opcode   => arrayLoad(ComputationalTypeInt)
+                case LALOAD.opcode   => arrayLoad(ComputationalTypeLong)
+                case SALOAD.opcode   => arrayLoad(ComputationalTypeInt)
+                case BALOAD.opcode   => arrayLoad(ComputationalTypeInt)
+                case CALOAD.opcode   => arrayLoad(ComputationalTypeInt)
 
                 case AASTORE.opcode | DASTORE.opcode |
                     FASTORE.opcode | IASTORE.opcode |
                     LASTORE.opcode | SASTORE.opcode |
-                    BASTORE.opcode | CASTORE.opcode ⇒
+                    BASTORE.opcode | CASTORE.opcode =>
                     val operandVar :: index :: arrayRef :: rest = stack
                     statements(pc) = List(ArrayStore(pc, arrayRef, index, operandVar))
                     schedule(pcOfNextInstruction(pc), rest)
 
-                case ARRAYLENGTH.opcode ⇒
+                case ARRAYLENGTH.opcode =>
                     val arrayRef :: rest = stack
                     val lengthVar = OperandVar(ComputationalTypeInt, rest)
                     val lengthExpr = ArrayLength(pc, arrayRef)
                     statements(pc) = List(Assignment[IdBasedVar](pc, lengthVar, lengthExpr))
                     schedule(pcOfNextInstruction(pc), lengthVar :: rest)
 
-                case BIPUSH.opcode | SIPUSH.opcode ⇒
+                case BIPUSH.opcode | SIPUSH.opcode =>
                     val value = as[LoadConstantInstruction[Int]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeInt, stack)
                     val stmt = Assignment[IdBasedVar](pc, targetVar, IntConst(pc, value))
@@ -341,7 +341,7 @@ object TACNaive {
 
                 case IF_ICMPEQ.opcode | IF_ICMPNE.opcode |
                     IF_ICMPLT.opcode | IF_ICMPLE.opcode |
-                    IF_ICMPGT.opcode | IF_ICMPGE.opcode ⇒
+                    IF_ICMPGT.opcode | IF_ICMPGE.opcode =>
                     val ifInstr = instruction.asIFICMPInstruction
                     val value2 :: value1 :: rest = stack
                     // let's calculate the final address
@@ -353,7 +353,7 @@ object TACNaive {
 
                 case IFEQ.opcode | IFNE.opcode |
                     IFLT.opcode | IFLE.opcode |
-                    IFGT.opcode | IFGE.opcode ⇒
+                    IFGT.opcode | IFGE.opcode =>
                     val ifInstr = instruction.asIF0Instruction
                     val value :: rest = stack
                     // let's calculate the final address
@@ -363,7 +363,7 @@ object TACNaive {
                     schedule(targetPC, rest)
                     statements(pc) = List(stmt)
 
-                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode ⇒
+                case IF_ACMPEQ.opcode | IF_ACMPNE.opcode =>
                     val ifInstr = instruction.asIFACMPInstruction
                     val value2 :: value1 :: rest = stack
                     // let's calculate the final address
@@ -373,7 +373,7 @@ object TACNaive {
                     schedule(pcOfNextInstruction(pc), rest)
                     schedule(targetPC, rest)
 
-                case IFNONNULL.opcode | IFNULL.opcode ⇒
+                case IFNONNULL.opcode | IFNULL.opcode =>
                     val ifInstr = instruction.asIFXNullInstruction
                     val value :: rest = stack
                     // let's calculate the final address
@@ -383,11 +383,11 @@ object TACNaive {
                     schedule(pcOfNextInstruction(pc), rest)
                     schedule(targetPC, rest)
 
-                case DCMPG.opcode | FCMPG.opcode ⇒ compareValues(CMPG)
-                case DCMPL.opcode | FCMPL.opcode ⇒ compareValues(CMPL)
-                case LCMP.opcode                 ⇒ compareValues(CMP)
+                case DCMPG.opcode | FCMPG.opcode => compareValues(CMPG)
+                case DCMPL.opcode | FCMPL.opcode => compareValues(CMPL)
+                case LCMP.opcode                 => compareValues(CMP)
 
-                case SWAP.opcode ⇒
+                case SWAP.opcode =>
                     val value2 :: value1 :: rest = stack
                     val tempVar = TempVar(value2.cTpe)
                     val newValue2 = value2.updated(value1.cTpe)
@@ -399,21 +399,21 @@ object TACNaive {
                     )
                     schedule(pcOfNextInstruction(pc), newValue2 :: newValue1 :: rest)
 
-                case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode ⇒
+                case DADD.opcode | FADD.opcode | IADD.opcode | LADD.opcode =>
                     binaryArithmeticOperation(Add)
-                case DDIV.opcode | FDIV.opcode | IDIV.opcode | LDIV.opcode ⇒
+                case DDIV.opcode | FDIV.opcode | IDIV.opcode | LDIV.opcode =>
                     binaryArithmeticOperation(Divide)
 
-                case DNEG.opcode | FNEG.opcode | INEG.opcode | LNEG.opcode ⇒
+                case DNEG.opcode | FNEG.opcode | INEG.opcode | LNEG.opcode =>
                     prefixArithmeticOperation(Negate)
-                case DMUL.opcode | FMUL.opcode | IMUL.opcode | LMUL.opcode ⇒
+                case DMUL.opcode | FMUL.opcode | IMUL.opcode | LMUL.opcode =>
                     binaryArithmeticOperation(Multiply)
-                case DREM.opcode | FREM.opcode | IREM.opcode | LREM.opcode ⇒
+                case DREM.opcode | FREM.opcode | IREM.opcode | LREM.opcode =>
                     binaryArithmeticOperation(Modulo)
-                case DSUB.opcode | FSUB.opcode | ISUB.opcode | LSUB.opcode ⇒
+                case DSUB.opcode | FSUB.opcode | ISUB.opcode | LSUB.opcode =>
                     binaryArithmeticOperation(Subtract)
 
-                case IINC.opcode ⇒
+                case IINC.opcode =>
                     val IINC(index, const) = instruction
                     val indexReg = RegisterVar(ComputationalTypeInt, index)
                     val incVal = IntConst(pc, const)
@@ -421,55 +421,55 @@ object TACNaive {
                     statements(pc) = List(Assignment(pc, indexReg, iinc))
                     schedule(pcOfNextInstruction(pc), stack)
 
-                case IAND.opcode | LAND.opcode   ⇒ binaryArithmeticOperation(And)
-                case IOR.opcode | LOR.opcode     ⇒ binaryArithmeticOperation(Or)
-                case ISHL.opcode | LSHL.opcode   ⇒ binaryArithmeticOperation(ShiftLeft)
-                case ISHR.opcode | LSHR.opcode   ⇒ binaryArithmeticOperation(ShiftRight)
-                case IUSHR.opcode | LUSHR.opcode ⇒ binaryArithmeticOperation(UnsignedShiftRight)
-                case IXOR.opcode | LXOR.opcode   ⇒ binaryArithmeticOperation(XOr)
+                case IAND.opcode | LAND.opcode   => binaryArithmeticOperation(And)
+                case IOR.opcode | LOR.opcode     => binaryArithmeticOperation(Or)
+                case ISHL.opcode | LSHL.opcode   => binaryArithmeticOperation(ShiftLeft)
+                case ISHR.opcode | LSHR.opcode   => binaryArithmeticOperation(ShiftRight)
+                case IUSHR.opcode | LUSHR.opcode => binaryArithmeticOperation(UnsignedShiftRight)
+                case IXOR.opcode | LXOR.opcode   => binaryArithmeticOperation(XOr)
 
                 case ICONST_0.opcode | ICONST_1.opcode |
                     ICONST_2.opcode | ICONST_3.opcode |
                     ICONST_4.opcode | ICONST_5.opcode |
-                    ICONST_M1.opcode ⇒
+                    ICONST_M1.opcode =>
                     val value = as[LoadConstantInstruction[Int]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeInt, stack)
                     val stmt = Assignment[IdBasedVar](pc, targetVar, IntConst(pc, value))
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
-                case ACONST_NULL.opcode ⇒
+                case ACONST_NULL.opcode =>
                     val targetVar = OperandVar(ComputationalTypeReference, stack)
                     statements(pc) = List(Assignment[IdBasedVar](pc, targetVar, NullExpr(pc)))
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
-                case DCONST_0.opcode | DCONST_1.opcode ⇒
+                case DCONST_0.opcode | DCONST_1.opcode =>
                     val value = as[LoadConstantInstruction[Double]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeDouble, stack)
                     val stmt = Assignment[IdBasedVar](pc, targetVar, DoubleConst(pc, value))
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
-                case FCONST_0.opcode | FCONST_1.opcode | FCONST_2.opcode ⇒
+                case FCONST_0.opcode | FCONST_1.opcode | FCONST_2.opcode =>
                     val value = as[LoadConstantInstruction[Float]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeFloat, stack)
                     val stmt = Assignment[IdBasedVar](pc, targetVar, FloatConst(pc, value))
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
-                case LCONST_0.opcode | LCONST_1.opcode ⇒
+                case LCONST_0.opcode | LCONST_1.opcode =>
                     val value = as[LoadConstantInstruction[Long]](instruction).value
                     val targetVar = OperandVar(ComputationalTypeLong, stack)
                     val stmt = Assignment[IdBasedVar](pc, targetVar, LongConst(pc, value))
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), targetVar :: stack)
 
-                case LDC.opcode | LDC_W.opcode | LDC2_W.opcode ⇒
+                case LDC.opcode | LDC_W.opcode | LDC2_W.opcode =>
                     loadConstant(as[LoadConstantInstruction[_]](instruction))
 
-                case INVOKESPECIAL.opcode ⇒
+                case INVOKESPECIAL.opcode =>
                     val invoke = as[MethodInvocationInstruction](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
+                    val numOps = invoke.numberOfPoppedOperands { x => stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
                     val (paramsInOperandsOrder, List(receiver)) = operands.splitAt(numOps - 1)
                     val params = paramsInOperandsOrder.reverse
@@ -500,9 +500,9 @@ object TACNaive {
                         schedule(pcOfNextInstruction(pc), newVar :: rest)
                     }
 
-                case INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode ⇒
+                case INVOKEINTERFACE.opcode | INVOKEVIRTUAL.opcode =>
                     val invoke = as[MethodInvocationInstruction](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
+                    val numOps = invoke.numberOfPoppedOperands { x => stack(x).cTpe.category }
                     val (operands, rest) = stack.splitAt(numOps)
                     val (paramsInOperandsOrder, List(receiver)) = operands.splitAt(numOps - 1)
                     val params = paramsInOperandsOrder.reverse
@@ -533,9 +533,9 @@ object TACNaive {
                         schedule(pcOfNextInstruction(pc), newVar :: rest)
                     }
 
-                case INVOKESTATIC.opcode ⇒
+                case INVOKESTATIC.opcode =>
                     val invoke = as[INVOKESTATIC](instruction)
-                    val numOps = invoke.numberOfPoppedOperands { x ⇒ stack(x).cTpe.category }
+                    val numOps = invoke.numberOfPoppedOperands { x => stack(x).cTpe.category }
                     val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
                     val params = paramsInOperandsOrder.reverse
                     import invoke.{declaringClass, methodDescriptor, name, isInterface}
@@ -561,9 +561,9 @@ object TACNaive {
                         schedule(pcOfNextInstruction(pc), newVar :: rest)
                     }
 
-                case INVOKEDYNAMIC.opcode ⇒
+                case INVOKEDYNAMIC.opcode =>
                     val call @ INVOKEDYNAMIC(bootstrapMethod, name, descriptor) = instruction
-                    val numOps = call.numberOfPoppedOperands(x ⇒ stack.drop(x).head.cTpe.category)
+                    val numOps = call.numberOfPoppedOperands(x => stack.drop(x).head.cTpe.category)
                     val (paramsInOperandsOrder, rest) = stack.splitAt(numOps)
                     val params = paramsInOperandsOrder.reverse
                     val returnType = descriptor.returnType
@@ -580,28 +580,28 @@ object TACNaive {
                         schedule(pcOfNextInstruction(pc), newVar :: rest)
                     }
 
-                case PUTSTATIC.opcode ⇒
+                case PUTSTATIC.opcode =>
                     val value :: rest = stack
                     val PUTSTATIC(declaringClass, name, fieldType) = instruction
                     val putStatic = PutStatic(pc, declaringClass, name, fieldType, value)
                     statements(pc) = List(putStatic)
                     schedule(pcOfNextInstruction(pc), rest)
 
-                case PUTFIELD.opcode ⇒
+                case PUTFIELD.opcode =>
                     val value :: objRef :: rest = stack
                     val PUTFIELD(declaringClass, name, fieldType) = instruction
                     val stmt = PutField(pc, declaringClass, name, fieldType, objRef, value)
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), rest)
 
-                case GETSTATIC.opcode ⇒
+                case GETSTATIC.opcode =>
                     val GETSTATIC(declaringClass, name, fieldType) = instruction
                     val getStatic = GetStatic(pc, declaringClass, name, fieldType)
                     val newVal = OperandVar(ComputationalTypeReference, stack)
                     statements(pc) = List(Assignment[IdBasedVar](pc, newVal, getStatic))
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
-                case GETFIELD.opcode ⇒
+                case GETFIELD.opcode =>
                     val objRef :: rest = stack
                     val GETFIELD(declaringClass, name, fieldType) = instruction
                     val getField = GetField(pc, declaringClass, name, fieldType, objRef)
@@ -609,20 +609,20 @@ object TACNaive {
                     statements(pc) = List(Assignment(pc, newVal, getField))
                     schedule(pcOfNextInstruction(pc), newVal :: rest)
 
-                case NEW.opcode ⇒
+                case NEW.opcode =>
                     val instr = as[NEW](instruction)
                     val newVal = OperandVar(ComputationalTypeReference, stack)
                     val stmt = Assignment[IdBasedVar](pc, newVal, New(pc, instr.objectType))
                     statements(pc) = List(stmt)
                     schedule(pcOfNextInstruction(pc), newVal :: stack)
 
-                case NEWARRAY.opcode ⇒
+                case NEWARRAY.opcode =>
                     newArray(ArrayType(as[NEWARRAY](instruction).elementType))
 
-                case ANEWARRAY.opcode ⇒
+                case ANEWARRAY.opcode =>
                     newArray(ArrayType(as[ANEWARRAY](instruction).componentType))
 
-                case MULTIANEWARRAY.opcode ⇒
+                case MULTIANEWARRAY.opcode =>
                     val instr = as[MULTIANEWARRAY](instruction)
                     val (counts, rest) = stack.splitAt(instr.dimensions)
                     val newArray = NewArray(pc, counts, instr.arrayType)
@@ -630,24 +630,24 @@ object TACNaive {
                     statements(pc) = List(Assignment(pc, newVal, newArray))
                     schedule(pcOfNextInstruction(pc), newVal :: rest)
 
-                case GOTO.opcode | GOTO_W.opcode ⇒
+                case GOTO.opcode | GOTO_W.opcode =>
                     val targetPC = pc + as[GotoInstruction](instruction).branchoffset
                     statements(pc) = List(Goto(pc, targetPC))
                     schedule(targetPC, stack)
 
-                case br.instructions.JSR.opcode | JSR_W.opcode ⇒
+                case br.instructions.JSR.opcode | JSR_W.opcode =>
                     val targetPC = pc + as[JSRInstruction](instruction).branchoffset
                     val retVar = OperandVar(ComputationalTypeReturnAddress, stack)
                     statements(pc) = List(JSR(pc, targetPC))
                     schedule(targetPC, retVar :: stack)
 
-                case RET.opcode ⇒
+                case RET.opcode =>
                     var successors = IntTrieSet.empty
-                    cfg.bb(pc).successors foreach { successorNode ⇒
+                    cfg.bb(pc).successors foreach { successorNode =>
                         val successor = successorNode match {
-                            case cn: CatchNode  ⇒ cn.handlerPC
-                            case bb: BasicBlock ⇒ bb.startPC
-                            case cfgNode ⇒
+                            case cn: CatchNode  => cn.handlerPC
+                            case bb: BasicBlock => bb.startPC
+                            case cfgNode =>
                                 // in these cases something went terribly wrong...
                                 val message = "the cfg has an unexpected shape: "+cfgNode
                                 throw new AnalysisException(message)
@@ -658,25 +658,25 @@ object TACNaive {
 
                     statements(pc) = List(Ret(pc, successors))
 
-                case NOP.opcode ⇒
+                case NOP.opcode =>
                     statements(pc) = List(Nop(pc))
                     schedule(pcOfNextInstruction(pc), stack)
 
-                case POP.opcode ⇒
+                case POP.opcode =>
                     val _ :: rest = stack
                     statements(pc) = List(Nop(pc))
                     schedule(pcOfNextInstruction(pc), rest)
 
-                case POP2.opcode ⇒
+                case POP2.opcode =>
                     statements(pc) = List(Nop(pc))
                     stack match {
-                        case CTC1() :: _ :: rest ⇒
+                        case CTC1() :: _ :: rest =>
                             schedule(pcOfNextInstruction(pc), rest)
-                        case _ :: rest ⇒
+                        case _ :: rest =>
                             schedule(pcOfNextInstruction(pc), rest)
                     }
 
-                case INSTANCEOF.opcode ⇒
+                case INSTANCEOF.opcode =>
                     val value1 :: rest = stack
                     val resultVar = OperandVar(ComputationalTypeInt, rest)
                     val tpe = as[INSTANCEOF](instruction).referenceType
@@ -684,7 +684,7 @@ object TACNaive {
                     statements(pc) = List(Assignment(pc, resultVar, instanceOf))
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
-                case CHECKCAST.opcode ⇒
+                case CHECKCAST.opcode =>
                     val value1 :: rest = stack
                     val resultVar = OperandVar(ComputationalTypeReference, rest)
                     val targetType = as[CHECKCAST](instruction).referenceType
@@ -692,22 +692,22 @@ object TACNaive {
                     statements(pc) = List(checkcast)
                     schedule(pcOfNextInstruction(pc), resultVar :: rest)
 
-                case MONITORENTER.opcode ⇒
+                case MONITORENTER.opcode =>
                     val objRef :: rest = stack
                     statements(pc) = List(MonitorEnter(pc, objRef))
                     schedule(pcOfNextInstruction(pc), rest)
 
-                case MONITOREXIT.opcode ⇒
+                case MONITOREXIT.opcode =>
                     val objRef :: rest = stack
                     statements(pc) = List(MonitorExit(pc, objRef))
                     schedule(pcOfNextInstruction(pc), rest)
 
-                case TABLESWITCH.opcode ⇒
+                case TABLESWITCH.opcode =>
                     val index :: rest = stack
                     val tableSwitch = as[TABLESWITCH](instruction)
                     val defaultTarget = pc + tableSwitch.defaultOffset
                     var caseValue = tableSwitch.low
-                    val npairs = tableSwitch.jumpOffsets.map[IntIntPair /*(Int, PC)*/ ] { jo ⇒
+                    val npairs = tableSwitch.jumpOffsets.map[IntIntPair /*(Int, PC)*/ ] { jo =>
                         val caseTarget = pc + jo
                         val npair = IntIntPair(caseValue, caseTarget)
                         schedule(caseTarget, rest)
@@ -717,11 +717,11 @@ object TACNaive {
                     schedule(defaultTarget, rest)
                     statements(pc) = List(Switch(pc, defaultTarget, index, npairs))
 
-                case LOOKUPSWITCH.opcode ⇒
+                case LOOKUPSWITCH.opcode =>
                     val index :: rest = stack
                     val lookupSwitch = as[LOOKUPSWITCH](instruction)
                     val defaultTarget = pc + lookupSwitch.defaultOffset
-                    val npairs = lookupSwitch.npairs.map[IntIntPair /*(Int, PC)*/ ] { npair ⇒
+                    val npairs = lookupSwitch.npairs.map[IntIntPair /*(Int, PC)*/ ] { npair =>
                         val IntIntPair(caseValue, branchOffset) = npair
                         val caseTarget = pc + branchOffset
                         schedule(caseTarget, rest)
@@ -730,72 +730,72 @@ object TACNaive {
                     schedule(defaultTarget, rest)
                     statements(pc) = List(Switch(pc, defaultTarget, index, npairs))
 
-                case DUP.opcode ⇒
+                case DUP.opcode =>
                     statements(pc) = List(Nop(pc))
                     schedule(pcOfNextInstruction(pc), stack.head :: stack)
 
-                case DUP_X1.opcode ⇒
+                case DUP_X1.opcode =>
                     val val1 :: val2 :: rest = stack
                     statements(pc) = List(Nop(pc))
                     schedule(pcOfNextInstruction(pc), val1 :: val2 :: val1 :: rest)
 
-                case DUP_X2.opcode ⇒
+                case DUP_X2.opcode =>
                     statements(pc) = List(Nop(pc))
                     stack match {
-                        case v1 :: (v2 @ CTC1()) :: v3 :: rest ⇒
+                        case v1 :: (v2 @ CTC1()) :: v3 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
-                        case v1 :: v2 :: rest ⇒
+                        case v1 :: v2 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
                     }
 
-                case DUP2.opcode ⇒
+                case DUP2.opcode =>
                     statements(pc) = List(Nop(pc))
                     stack match {
-                        case (v1 @ CTC1()) :: v2 :: rest ⇒
+                        case (v1 @ CTC1()) :: v2 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: v2 :: rest)
-                        case v1 :: rest ⇒
+                        case v1 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v1 :: rest)
                     }
 
-                case DUP2_X1.opcode ⇒
+                case DUP2_X1.opcode =>
                     statements(pc) = List(Nop(pc))
                     stack match {
-                        case (v1 @ CTC1()) :: v2 :: v3 :: rest ⇒
+                        case (v1 @ CTC1()) :: v2 :: v3 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
-                        case v1 :: v2 :: rest ⇒
+                        case v1 :: v2 :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
                     }
 
-                case DUP2_X2.opcode ⇒
+                case DUP2_X2.opcode =>
                     statements(pc) = List(Nop(pc))
                     stack match {
-                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: v4 :: rest ⇒
+                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: v4 :: rest =>
                             val newStack = v1 :: v2 :: v3 :: v4 :: v1 :: v2 :: rest
                             schedule(pcOfNextInstruction(pc), newStack)
-                        case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest ⇒
+                        case (v1 @ CTC2()) :: (v2 @ CTC1()) :: (v3 @ CTC1()) :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: rest)
-                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest ⇒
+                        case (v1 @ CTC1()) :: (v2 @ CTC1()) :: (v3 @ CTC2()) :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v3 :: v1 :: v2 :: rest)
-                        case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest ⇒
+                        case (v1 /*@ CTC2()*/ ) :: (v2 /*@ CTC1()*/ ) :: rest =>
                             schedule(pcOfNextInstruction(pc), v1 :: v2 :: v1 :: rest)
                     }
 
-                case D2F.opcode | I2F.opcode | L2F.opcode ⇒ primitiveCastOperation(FloatType)
-                case D2I.opcode | F2I.opcode | L2I.opcode ⇒ primitiveCastOperation(IntegerType)
-                case D2L.opcode | I2L.opcode | F2L.opcode ⇒ primitiveCastOperation(LongType)
-                case F2D.opcode | I2D.opcode | L2D.opcode ⇒ primitiveCastOperation(DoubleType)
-                case I2C.opcode                           ⇒ primitiveCastOperation(CharType)
-                case I2B.opcode                           ⇒ primitiveCastOperation(ByteType)
-                case I2S.opcode                           ⇒ primitiveCastOperation(ShortType)
+                case D2F.opcode | I2F.opcode | L2F.opcode => primitiveCastOperation(FloatType)
+                case D2I.opcode | F2I.opcode | L2I.opcode => primitiveCastOperation(IntegerType)
+                case D2L.opcode | I2L.opcode | F2L.opcode => primitiveCastOperation(LongType)
+                case F2D.opcode | I2D.opcode | L2D.opcode => primitiveCastOperation(DoubleType)
+                case I2C.opcode                           => primitiveCastOperation(CharType)
+                case I2B.opcode                           => primitiveCastOperation(ByteType)
+                case I2S.opcode                           => primitiveCastOperation(ShortType)
 
-                case ATHROW.opcode ⇒
+                case ATHROW.opcode =>
                     statements(pc) = List(Throw(pc, stack.head))
 
-                case WIDE.opcode ⇒
+                case WIDE.opcode =>
                     statements(pc) = List(Nop(pc))
                     schedule(pcOfNextInstruction(pc), stack)
 
-                case opcode ⇒ throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
+                case opcode => throw BytecodeProcessingFailedException(s"unknown opcode: $opcode")
             }
         }
 
@@ -820,7 +820,7 @@ object TACNaive {
             registerIndex += 1
         }
         var tacIndex = 1
-        parameterTypes foreach { parameterType ⇒
+        parameterTypes foreach { parameterType =>
             val varName = code.localVariable(0, registerIndex).map(_.name).getOrElse("p_"+tacIndex)
             val cTpe = parameterType.computationalType
             val targetVar = RegisterVar(cTpe, registerIndex)
@@ -860,14 +860,14 @@ object TACNaive {
         // single instruction and that instruction was transformed such that we have multiple
         // instructions now. In such a case (e.g., the rewriting of swap...) the additional
         // instructions will never cause any exceptions.
-        finalStatements foreach { stmt ⇒
-            stmt.remapIndexes(pcToIndex, _ ⇒ false /*CaughtException is not used by TACNaive*/ )
+        finalStatements foreach { stmt =>
+            stmt.remapIndexes(pcToIndex, _ => false /*CaughtException is not used by TACNaive*/ )
         }
         val tacCode = finalStatements.toArray
         val tacCFG = cfg.mapPCsToIndexes[Stmt[IdBasedVar], TACStmts[IdBasedVar]](
             TACStmts(tacCode),
             pcToIndex,
-            i ⇒ i,
+            i => i,
             lastIndex = index - 1
         )
         def getStartAndEndIndex(
@@ -911,7 +911,7 @@ object TACNaive {
             exceptionHandlers: ExceptionHandlers,
             newIndexes:        Array[Int]
         ): ExceptionHandlers = {
-            exceptionHandlers map { old ⇒
+            exceptionHandlers map { old =>
                 // Recall, that the endPC is not inclusive and - therefore - if the last instruction is
                 // included in the handler block, the endPC is equal to `(pc of last instruction) +
                 // instruction.size`; however, this is already handled by the caller!
@@ -936,7 +936,7 @@ object TACNaive {
         if (optimizations.nonEmpty) {
             val initialTAC = new NaiveTACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs)
             val base = TACOptimizationResult[Param, IdBasedVar, NaiveTACode[Param]](initialTAC, wasTransformed = false)
-            optimizations.foldLeft(base)((tac, optimization) ⇒ optimization(tac)).code
+            optimizations.foldLeft(base)((tac, optimization) => optimization(tac)).code
         } else {
             new NaiveTACode(taCodeParams, tacCode, pcToIndex, tacCFG, tacEHs)
         }

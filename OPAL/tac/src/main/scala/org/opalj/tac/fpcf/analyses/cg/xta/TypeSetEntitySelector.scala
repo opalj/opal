@@ -19,7 +19,7 @@ import org.opalj.fpcf.Entity
  *
  * @author Andreas Bauer
  */
-trait TypeSetEntitySelector extends (Entity ⇒ TypeSetEntity)
+trait TypeSetEntitySelector extends (Entity => TypeSetEntity)
 
 /**
  * XTA type propagation uses a separate set for each method and each field.
@@ -28,12 +28,12 @@ trait TypeSetEntitySelector extends (Entity ⇒ TypeSetEntity)
  */
 object XTASetEntitySelector extends TypeSetEntitySelector {
     override def apply(e: Entity): TypeSetEntity = e match {
-        case dm: DefinedMethod          ⇒ dm
-        case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
-        case f: Field                   ⇒ f
-        case ef: ExternalField          ⇒ ExternalWorld
-        case at: ArrayType              ⇒ at
-        case _                          ⇒ sys.error("unexpected entity: "+e)
+        case dm: DefinedMethod          => dm
+        case vdm: VirtualDeclaredMethod => ExternalWorld
+        case f: Field                   => f
+        case ef: ExternalField          => ExternalWorld
+        case at: ArrayType              => at
+        case _                          => sys.error("unexpected entity: "+e)
 
     }
 }
@@ -45,12 +45,12 @@ object XTASetEntitySelector extends TypeSetEntitySelector {
  */
 object MTASetEntitySelector extends TypeSetEntitySelector {
     override def apply(e: Entity): TypeSetEntity = e match {
-        case dm: DefinedMethod          ⇒ dm.definedMethod.classFile
-        case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
-        case f: Field                   ⇒ f
-        case ef: ExternalField          ⇒ ExternalWorld
-        case at: ArrayType              ⇒ at
-        case _                          ⇒ sys.error("unexpected entity: "+e)
+        case dm: DefinedMethod          => dm.definedMethod.classFile
+        case vdm: VirtualDeclaredMethod => ExternalWorld
+        case f: Field                   => f
+        case ef: ExternalField          => ExternalWorld
+        case at: ArrayType              => at
+        case _                          => sys.error("unexpected entity: "+e)
 
     }
 }
@@ -62,12 +62,12 @@ object MTASetEntitySelector extends TypeSetEntitySelector {
  */
 object FTASetEntitySelector extends TypeSetEntitySelector {
     override def apply(e: Entity): TypeSetEntity = e match {
-        case dm: DefinedMethod          ⇒ dm
-        case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
-        case f: Field                   ⇒ f.classFile
-        case ef: ExternalField          ⇒ ExternalWorld
-        case at: ArrayType              ⇒ at
-        case _                          ⇒ sys.error("unexpected entity: "+e)
+        case dm: DefinedMethod          => dm
+        case vdm: VirtualDeclaredMethod => ExternalWorld
+        case f: Field                   => f.classFile
+        case ef: ExternalField          => ExternalWorld
+        case at: ArrayType              => at
+        case _                          => sys.error("unexpected entity: "+e)
 
     }
 }
@@ -79,11 +79,11 @@ object FTASetEntitySelector extends TypeSetEntitySelector {
  */
 object CTASetEntitySelector extends TypeSetEntitySelector {
     override def apply(e: Entity): TypeSetEntity = e match {
-        case dm: DefinedMethod          ⇒ dm.definedMethod.classFile
-        case vdm: VirtualDeclaredMethod ⇒ ExternalWorld
-        case f: Field                   ⇒ f.classFile
-        case ef: ExternalField          ⇒ ExternalWorld
-        case at: ArrayType              ⇒ at
-        case _                          ⇒ sys.error("unexpected entity: "+e)
+        case dm: DefinedMethod          => dm.definedMethod.classFile
+        case vdm: VirtualDeclaredMethod => ExternalWorld
+        case f: Field                   => f.classFile
+        case ef: ExternalField          => ExternalWorld
+        case at: ArrayType              => at
+        case _                          => sys.error("unexpected entity: "+e)
     }
 }

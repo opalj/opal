@@ -29,7 +29,7 @@ case class Exceptions_attribute(
             <span class="throws">
                 throws
                 {
-                    exception_index_table.map(cp(_).asInstructionParameter).reduce[Seq[Node]] { (r, e) ⇒
+                    exception_index_table.map(cp(_).asInstructionParameter).reduce[Seq[Node]] { (r, e) =>
                         (r.theSeq :+ Text(", ")) ++ e.theSeq
                     }
                 }
@@ -44,7 +44,7 @@ case class Exceptions_attribute(
             <summary class="attribute_name">Exceptions [size: { exception_index_table.size } item(s)]</summary>
             <ol>
                 {
-                    exception_index_table.map[Node, Seq[Node]] { cpIndex ⇒
+                    exception_index_table.map[Node, Seq[Node]] { cpIndex =>
                         <li>{ cp(cpIndex).asInstructionParameter }</li>
                     }
                 }

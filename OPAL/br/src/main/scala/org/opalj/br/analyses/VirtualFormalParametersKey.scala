@@ -73,7 +73,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
                 formalParameters(p) = new VirtualFormalParameter(dm, -p - 1)
                 p += 1
             }
-            sites += (dm → ConstArray(formalParameters))
+            sites += (dm -> ConstArray(formalParameters))
         }
 
         new VirtualFormalParameters(sites)
@@ -84,8 +84,8 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
     // PROPERTYSTORE AND TO ENSURE THAT VIRTUAL FORMAL PARAMETERS AND THE PROPERTYSTORE CONTAIN THE SAME
     // OBJECTS!
     //
-    final val entityDerivationFunction: (SomeProject) ⇒ (Traversable[AnyRef], VirtualFormalParameters) = {
-        (p: SomeProject) ⇒
+    final val entityDerivationFunction: (SomeProject) => (Traversable[AnyRef], VirtualFormalParameters) = {
+        (p: SomeProject) =>
             {
                 // this will collect the formal parameters of the project if not yet collected...
                 val formalParameters = p.get(VirtualFormalParametersKey)

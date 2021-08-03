@@ -37,7 +37,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String]  = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         // In a real application we should take this from a parameter
@@ -50,20 +50,20 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                 method ← classFile.methods
                 body ← method.body.toSeq
                 descriptor = method.descriptor
-                if descriptor.parameterTypes.forall { t ⇒
+                if descriptor.parameterTypes.forall { t =>
                     // we don't have (as of Jan 1st 2015) a domain that enables a meaningful
                     // tracking of Float and Double values
                     t.isReferenceType || t.isLongType || t.isIntegerType
                 }
                 classType = classFile.thisType
                 name = method.name
-                pcs = body.foldLeft(Chain.empty[Int /*PC*/ ]) { (invokes, pc, instruction) ⇒
+                pcs = body.foldLeft(Chain.empty[Int /*PC*/ ]) { (invokes, pc, instruction) =>
                     instruction match {
-                        case INVOKEVIRTUAL(`classType`, `name`, `descriptor`)    ⇒ pc :&: invokes
-                        case INVOKESTATIC(`classType`, _, `name`, `descriptor`)  ⇒ pc :&: invokes
-                        case INVOKESPECIAL(`classType`, _, `name`, `descriptor`) ⇒ pc :&: invokes
-                        case INVOKEINTERFACE(`classType`, `name`, `descriptor`)  ⇒ pc :&: invokes
-                        case _                                                   ⇒ invokes
+                        case INVOKEVIRTUAL(`classType`, `name`, `descriptor`)    => pc :&: invokes
+                        case INVOKESTATIC(`classType`, _, `name`, `descriptor`)  => pc :&: invokes
+                        case INVOKESPECIAL(`classType`, _, `name`, `descriptor`) => pc :&: invokes
+                        case INVOKEINTERFACE(`classType`, `name`, `descriptor`)  => pc :&: invokes
+                        case _                                                   => invokes
                     }
                 }
                 if pcs.nonEmpty
@@ -128,7 +128,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
             val operandsArray = aiResult.operandsArray
             val localsArray = aiResult.localsArray
             val callOperandsList =
-                reduceCallOperands(operandsArray) filter { callOperands ⇒
+                reduceCallOperands(operandsArray) filter { callOperands =>
                     if (previousCallOperandsList.contains(callOperands)) {
 
                         // let's check if we have a potential recursive call...
@@ -137,26 +137,26 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                         // in the same manner; the idea is to reduce false positives
                         // due to non-infinite recursions due to side effects
                         if (callOperands.forall {
-                            case domain.DomainSingleOriginReferenceValueTag(v) ⇒
+                            case domain.DomainSingleOriginReferenceValueTag(v) =>
                                 if (v.origin < 0 /* === the value is a parameter*/ ||
                                     // the value is always created anew (no sideeffect)
                                     body.instructions(v.origin).opcode == NEW.opcode)
                                     true
                                 else
                                     false
-                            case v: domain.AnIntegerValue ⇒
+                            case v: domain.AnIntegerValue =>
                                 if (localsArray(0).exists(_ eq v))
                                     true // the value is parameter
                                 else
                                     false
-                            case v: domain.ALongValue ⇒
+                            case v: domain.ALongValue =>
                                 if (localsArray(0).exists(_ eq v))
                                     true // the value is parameter
                                 else
                                     false
-                            case _: domain.LongSet      ⇒ true
-                            case _: domain.IntegerRange ⇒ true
-                            case _                      ⇒ false
+                            case _: domain.LongSet      => true
+                            case _: domain.IntegerRange => true
+                            case _                      => false
                         })
                             return Some(InfiniteRecursion(method, callOperands));
 
@@ -167,7 +167,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
                     }
                 }
 
-            callOperandsList foreach { callOperands ⇒
+            callOperandsList foreach { callOperands =>
                 val result = analyze(depth + 1, callOperands)
                 if (result.nonEmpty)
                     return result;
@@ -175,7 +175,7 @@ object InfiniteRecursions extends ProjectAnalysisApplication {
             None
         }
 
-        previousCallOperandsList foreach { callOperands ⇒
+        previousCallOperandsList foreach { callOperands =>
             val result = analyze(0, callOperands)
             if (result.nonEmpty)
                 return result;

@@ -99,7 +99,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
         state: State
     )(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
-            case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
+            case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) =>
                 val relevantCallSites = state.dependersOf(e)
 
                 // ensures, that we only add new vm reachable methods
@@ -113,7 +113,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
                     val receiver = state.tac.stmts(
                         state.tac.properStmtIndexForPC(pc)
                     ).asInstanceMethodCall.receiver
-                    ub.forNewestNTypes(ub.numTypes - seenTypes) { newType ⇒
+                    ub.forNewestNTypes(ub.numTypes - seenTypes) { newType =>
                         val theType = newType.asObjectType
                         handleType(
                             theType, state.method, state.tac.stmts, receiver, pc, indirectCalls
@@ -180,9 +180,9 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
 
         // get the upper bound of the pointsToSet and creates a dependency if needed
         val currentPointsToSets = currentPointsToOfDefSites(callSite, receiver.asVar.definedBy)
-        val pointsToSet = currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) ⇒ r.included(l) }
+        val pointsToSet = currentPointsToSets.foldLeft(emptyPointsToSet) { (r, l) => r.included(l) }
 
-        pointsToSet.forNewestNTypes(pointsToSet.numTypes) { tpe ⇒
+        pointsToSet.forNewestNTypes(pointsToSet.numTypes) { tpe =>
             if (classHierarchy.isSubtypeOf(tpe, ObjectType.Thread) ||
                 classHierarchy.isSubtypeOf(tpe, ObjectType.Runnable))
                 handleType(
@@ -235,7 +235,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
         expr: Expr[V], defSite: Int, stmts: Array[Stmt[V]]
     ): Iterator[NonVirtualMethodCall[V]] = {
         var r = List.empty[NonVirtualMethodCall[V]]
-        expr.asVar.usedBy.foreach { use ⇒
+        expr.asVar.usedBy.foreach { use =>
             val stmt = stmts(use)
             if (stmt.isInstanceOf[NonVirtualMethodCall[V]]) {
                 val call = stmt.asNonVirtualMethodCall
@@ -269,7 +269,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
                 indirectCalls.addIncompleteCallSite(pc)
             } else {
                 stmts(threadDefSite) match {
-                    case Assignment(_, thread, New(_, _)) ⇒
+                    case Assignment(_, thread, New(_, _)) =>
                         for {
                             NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) ← getConstructorCalls(thread, threadDefSite, stmts)
                         } {
@@ -296,7 +296,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
                                 }
                             }
                         }
-                    case _ ⇒
+                    case _ =>
                         // the thread object is not newly allocated
                         indirectCalls.addIncompleteCallSite(pc)
                 }
@@ -379,7 +379,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
     @inline protected[this] def currentPointsTo(
         depender:   CallSite,
         dependee:   Entity,
-        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+        typeFilter: ReferenceType => Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
         if (state.hasPointsToDependee(dependee)) {
             val p2s = state.getPointsToProperty(dependee)
@@ -411,7 +411,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
  */
 class PointsToBasedThreadRelatedCallsAnalysis private[cg] (
         val project:        SomeProject,
-        val createAnalysis: (SomeProject, DeclaredMethod) ⇒ PointsToBasedThreadStartAnalysis
+        val createAnalysis: (SomeProject, DeclaredMethod) => PointsToBasedThreadStartAnalysis
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
@@ -434,7 +434,7 @@ class PointsToBasedThreadRelatedCallsAnalysis private[cg] (
             ObjectType.Thread, "", ObjectType.Thread, "start", MethodDescriptor.NoArgsAndReturnVoid
         ))
 
-        classHierarchy.foreachSubclass(ObjectType.Thread, project) { cf ⇒
+        classHierarchy.foreachSubclass(ObjectType.Thread, project) { cf =>
             val setUncaughtExcpetionHandlerOpt = cf.findMethod(
                 "setUncaughtExceptionHandler", setUncaughtExceptionHandlerDescriptor
             ).map(declaredMethods.apply)
@@ -450,11 +450,11 @@ class PointsToBasedThreadRelatedCallsAnalysis private[cg] (
                 threadStartMethods ::= threadStartOpt.get
         }
 
-        val uncaughtExceptionHandlerResults = setUncaughtExceptionHandlerMethods.iterator.map { m ⇒
+        val uncaughtExceptionHandlerResults = setUncaughtExceptionHandlerMethods.iterator.map { m =>
             new UncaughtExceptionHandlerAnalysis(p, m).registerAPIMethod()
         }
 
-        val threadStartResults = threadStartMethods.iterator.map { m ⇒
+        val threadStartResults = threadStartMethods.iterator.map { m =>
             createAnalysis(p, m).registerAPIMethod()
         }
 
@@ -464,7 +464,7 @@ class PointsToBasedThreadRelatedCallsAnalysis private[cg] (
 
 trait PointsToBasedThreadRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     val propertyKind: PropertyMetaInformation
-    val createAnalysis: SomeProject ⇒ PointsToBasedThreadRelatedCallsAnalysis
+    val createAnalysis: SomeProject => PointsToBasedThreadRelatedCallsAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
@@ -491,10 +491,10 @@ object TypeBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
 
-    val createAnalysis: SomeProject ⇒ PointsToBasedThreadRelatedCallsAnalysis =
-        p ⇒ new PointsToBasedThreadRelatedCallsAnalysis(
+    val createAnalysis: SomeProject => PointsToBasedThreadRelatedCallsAnalysis =
+        p => new PointsToBasedThreadRelatedCallsAnalysis(
             p,
-            (p, m) ⇒ new PointsToBasedThreadStartAnalysis(p, m) with TypeBasedAnalysis
+            (p, m) => new PointsToBasedThreadStartAnalysis(p, m) with TypeBasedAnalysis
         )
 }
 
@@ -503,9 +503,9 @@ object AllocationSiteBasedPointsToBasedThreadRelatedCallsAnalysisScheduler
 
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
 
-    val createAnalysis: SomeProject ⇒ PointsToBasedThreadRelatedCallsAnalysis =
-        p ⇒ new PointsToBasedThreadRelatedCallsAnalysis(
+    val createAnalysis: SomeProject => PointsToBasedThreadRelatedCallsAnalysis =
+        p => new PointsToBasedThreadRelatedCallsAnalysis(
             p,
-            (p, m) ⇒ new PointsToBasedThreadStartAnalysis(p, m) with AllocationSiteBasedAnalysis
+            (p, m) => new PointsToBasedThreadStartAnalysis(p, m) with AllocationSiteBasedAnalysis
         )
 }

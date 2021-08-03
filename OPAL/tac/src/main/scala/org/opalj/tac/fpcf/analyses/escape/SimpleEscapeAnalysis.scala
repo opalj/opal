@@ -65,12 +65,12 @@ class SimpleEscapeAnalysis( final val project: SomeProject)
         fp: VirtualFormalParameter
     ): ProperPropertyComputationResult = {
         fp match {
-            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
                 Result(fp, AtMost(NoEscape))
-            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, -1) if dm.definedMethod.isInitializer =>
                 val ctx = createContext(fp, -1, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
-            case VirtualFormalParameter(_, _) ⇒
+            case VirtualFormalParameter(_, _) =>
                 Result(fp, AtMost(NoEscape))
         }
     }

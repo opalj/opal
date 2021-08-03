@@ -19,7 +19,7 @@ import scala.collection.AbstractIterator
  *
  * @author Michael Eichberg
  */
-abstract class IntIterator extends AbstractIterator[Int] { self ⇒
+abstract class IntIterator extends AbstractIterator[Int] { self =>
 
     /**
      * Returns the next value if `hasNext` has returned `true`; if hasNext has returned `false`
@@ -29,12 +29,12 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
      */
     override def next(): Int
 
-    override def exists(p: Int ⇒ Boolean): Boolean = {
+    override def exists(p: Int => Boolean): Boolean = {
         while (this.hasNext) { if (p(this.next())) return true; }
         false
     }
 
-    override def forall(p: Int ⇒ Boolean): Boolean = {
+    override def forall(p: Int => Boolean): Boolean = {
         while (this.hasNext) { if (!p(this.next())) return false; }
         true
     }
@@ -44,19 +44,19 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         false
     }
 
-    def foldLeft(start: Int)(f: (Int, Int) ⇒ Int): Int = {
+    def foldLeft(start: Int)(f: (Int, Int) => Int): Int = {
         var c = start
         while (this.hasNext) { c = f(c, next()) }
         c
     }
 
-    def foldLeft(start: Long)(f: (Long, Int) ⇒ Long): Long = {
+    def foldLeft(start: Long)(f: (Long, Int) => Long): Long = {
         var c = start
         while (this.hasNext) { c = f(c, next()) }
         c
     }
 
-    override def foldLeft[T](start: T)(f: (T, Int) ⇒ T): T = {
+    override def foldLeft[T](start: T)(f: (T, Int) => T): T = {
         var c = start
         while (this.hasNext) { c = f(c, next()) }
         c
@@ -66,7 +66,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
      * Executes the given function `f` until an element is found for which `p` evaluates to `false`
      * or all elements have been processed.
      */
-    def foreachWhile[U](p: Int ⇒ Boolean)(f: Int ⇒ U): Unit = {
+    def foreachWhile[U](p: Int => Boolean)(f: Int => U): Unit = {
         while (this.hasNext) {
             val e = this.next()
             if (p(e)) {
@@ -77,24 +77,24 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         }
     }
 
-    def map(f: Int ⇒ Int): IntIterator = new IntIterator {
+    def map(f: Int => Int): IntIterator = new IntIterator {
         def hasNext: Boolean = self.hasNext
         def next(): Int = f(self.next())
     }
 
-    def map(f: Int ⇒ Long): LongIterator = new LongIterator {
+    def map(f: Int => Long): LongIterator = new LongIterator {
         def hasNext: Boolean = self.hasNext
         def next(): Long = f(self.next())
     }
 
-    override def map[T](f: Int ⇒ T): RefIterator[T] = new RefIterator[T] {
+    override def map[T](f: Int => T): RefIterator[T] = new RefIterator[T] {
         def hasNext: Boolean = self.hasNext
         def next(): T = f(self.next())
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = while (this.hasNext) f(this.next())
+    override def foreach[U](f: Int => U): Unit = while (this.hasNext) f(this.next())
 
-    def flatMap(f: Int ⇒ IntIterator): IntIterator = new IntIterator {
+    def flatMap(f: Int => IntIterator): IntIterator = new IntIterator {
         private[this] var it: IntIterator = IntIterator.empty
         private[this] def advanceIterator(): Unit = {
             while (!it.hasNext) {
@@ -111,7 +111,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         def next(): Int = { val e = it.next(); advanceIterator(); e }
     }
 
-    def flatMap[T](f: Int ⇒ RefIterator[T]): RefIterator[T] = new RefIterator[T] {
+    def flatMap[T](f: Int => RefIterator[T]): RefIterator[T] = new RefIterator[T] {
         private[this] var it: RefIterator[T] = RefIterator.empty
         private[this] def advanceIterator(): Unit = {
             while (!it.hasNext) {
@@ -128,7 +128,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         def next(): T = { val e = it.next(); advanceIterator(); e }
     }
 
-    override def withFilter(p: Int ⇒ Boolean): IntIterator = new IntIterator {
+    override def withFilter(p: Int => Boolean): IntIterator = new IntIterator {
         private[this] var hasNextValue: Boolean = true
         private[this] var v: Int = 0
         private[this] def goToNextValue(): Unit = {
@@ -145,7 +145,7 @@ abstract class IntIterator extends AbstractIterator[Int] { self ⇒
         def next(): Int = { val v = this.v; goToNextValue(); v }
     }
 
-    final override def filter(p: Int ⇒ Boolean): IntIterator = withFilter(p)
+    final override def filter(p: Int => Boolean): IntIterator = withFilter(p)
 
     /**
      * @note This method, as well as the generic `toArray` should be overwritten when the size is

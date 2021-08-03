@@ -111,44 +111,44 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         stmt: Stmt[V]
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         (stmt.astID: @switch) match {
-            case PutStatic.ASTID ⇒
+            case PutStatic.ASTID =>
                 val value = stmt.asPutStatic.value
                 if (state.usesDefSite(value)) {
                     state.meetMostRestrictive(EscapeViaStaticField)
                 }
 
-            case ReturnValue.ASTID ⇒
+            case ReturnValue.ASTID =>
                 if (state.usesDefSite(stmt.asReturnValue.expr))
                     state.meetMostRestrictive(EscapeViaReturn)
 
-            case PutField.ASTID ⇒
+            case PutField.ASTID =>
                 handlePutField(stmt.asPutField)
 
-            case ArrayStore.ASTID ⇒
+            case ArrayStore.ASTID =>
                 handleArrayStore(stmt.asArrayStore)
 
-            case Throw.ASTID ⇒
+            case Throw.ASTID =>
                 handleThrow(stmt.asThrow)
 
-            case StaticMethodCall.ASTID ⇒
+            case StaticMethodCall.ASTID =>
                 handleStaticMethodCall(stmt.asStaticMethodCall)
 
-            case VirtualMethodCall.ASTID ⇒
+            case VirtualMethodCall.ASTID =>
                 handleVirtualMethodCall(stmt.asVirtualMethodCall)
 
-            case NonVirtualMethodCall.ASTID ⇒
+            case NonVirtualMethodCall.ASTID =>
                 handleNonVirtualMethodCall(stmt.asNonVirtualMethodCall)
 
-            case InvokedynamicMethodCall.ASTID ⇒
+            case InvokedynamicMethodCall.ASTID =>
                 handleInvokedynamicMethodCall(stmt.asInvokedynamicMethodCall)
 
-            case ExprStmt.ASTID ⇒
+            case ExprStmt.ASTID =>
                 handleExprStmt(stmt.asExprStmt)
 
-            case Assignment.ASTID ⇒
+            case Assignment.ASTID =>
                 handleAssignment(stmt.asAssignment)
 
-            case _ ⇒ /* The other statements are irrelevant. */
+            case _ => /* The other statements are irrelevant. */
         }
     }
 
@@ -280,16 +280,16 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         expr: Expr[V], hasAssignment: Boolean
     )(implicit context: AnalysisContext, state: AnalysisState): Unit = {
         (expr.astID: @switch) match {
-            case NonVirtualFunctionCall.ASTID ⇒
+            case NonVirtualFunctionCall.ASTID =>
                 handleNonVirtualFunctionCall(expr.asNonVirtualFunctionCall, hasAssignment)
-            case VirtualFunctionCall.ASTID ⇒
+            case VirtualFunctionCall.ASTID =>
                 handleVirtualFunctionCall(expr.asVirtualFunctionCall, hasAssignment)
-            case StaticFunctionCall.ASTID ⇒
+            case StaticFunctionCall.ASTID =>
                 handleStaticFunctionCall(expr.asStaticFunctionCall, hasAssignment)
-            case InvokedynamicFunctionCall.ASTID ⇒
+            case InvokedynamicFunctionCall.ASTID =>
                 handleInvokedynamicFunctionCall(expr.asInvokedynamicFunctionCall, hasAssignment)
 
-            case _ ⇒ handleOtherKindsOfExpressions(expr)
+            case _ => handleOtherKindsOfExpressions(expr)
         }
     }
 
@@ -383,7 +383,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
         state:   AnalysisState
     ): ProperPropertyComputationResult = {
         someEPS match {
-            case UBP(ub: TACAI) ⇒
+            case UBP(ub: TACAI) =>
                 state.removeDependency(someEPS)
                 if (someEPS.isRefinable) {
                     state.addDependency(someEPS)
@@ -400,7 +400,7 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
                         c
                     )
                 }
-            case _ ⇒
+            case _ =>
                 throw new UnknownError(s"unhandled escape property (${someEPS.ub} for ${someEPS.e}")
         }
     }
@@ -410,9 +410,9 @@ trait AbstractEscapeAnalysis extends FPCFAnalysis {
      * For some entities a result might be returned immediately.
      */
     def determineEscape(e: Entity): ProperPropertyComputationResult = e match {
-        case dsl: DefinitionSiteLike     ⇒ determineEscapeOfDS(dsl)
-        case vfp: VirtualFormalParameter ⇒ determineEscapeOfFP(vfp)
-        case _                           ⇒ throw new IllegalArgumentException(s"$e is unsupported")
+        case dsl: DefinitionSiteLike     => determineEscapeOfDS(dsl)
+        case vfp: VirtualFormalParameter => determineEscapeOfFP(vfp)
+        case _                           => throw new IllegalArgumentException(s"$e is unsupported")
     }
 
     protected[this] def determineEscapeOfDS(

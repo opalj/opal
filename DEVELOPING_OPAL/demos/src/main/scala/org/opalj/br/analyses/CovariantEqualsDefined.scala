@@ -36,13 +36,13 @@ object CovariantEqualsMethodDefined extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val mutex = new Object
         var reports = List[Issue]()
 
-        project.parForeachClassFile(isInterrupted) { classFile ⇒
+        project.parForeachClassFile(isInterrupted) { classFile =>
             var definesEqualsMethod = false
             var definesCovariantEqualsMethod = false
             for (Method(_, "equals", MethodDescriptor(Seq(ot), BooleanType)) ← classFile.methods)

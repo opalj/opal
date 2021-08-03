@@ -29,7 +29,7 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licen
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-scalaVersion in ThisBuild := "2.12.14"
+scalaVersion in ThisBuild := "2.13.6"
 
 ScalacConfiguration.globalScalacOptions
 
@@ -46,7 +46,7 @@ javacOptions in ThisBuild ++= Seq("-encoding", "utf8", "-source", "1.8")
 
 testOptions in ThisBuild := {
   baseDirectory
-    .map(bd ⇒ Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
+    .map(bd => Seq(Tests.Argument("-u", bd.getAbsolutePath + "/shippable/testresults")))
     .value
 }
 
@@ -56,7 +56,7 @@ testOptions in ThisBuild += Tests.Argument("-o")
 
 // Required to get relative links in the generated source code documentation.
 scalacOptions in (ScalaUnidoc, unidoc) := {
-  baseDirectory.map(bd ⇒ Seq("-sourcepath", bd.getAbsolutePath)).value
+  baseDirectory.map(bd => Seq("-sourcepath", bd.getAbsolutePath)).value
 }
 
 scalacOptions in (ScalaUnidoc, unidoc) ++=

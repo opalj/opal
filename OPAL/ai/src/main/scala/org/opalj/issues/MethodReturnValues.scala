@@ -26,23 +26,23 @@ class MethodReturnValues(
     private[this] def operandsArray = result.operandsArray
 
     def collectMethodReturnValues: Chain[PCAndAnyRef[String]] = {
-        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (returnValues, pc, instruction) ⇒
+        code.foldLeft(Chain.empty[PCAndAnyRef[String]]) { (returnValues, pc, instruction) =>
             instruction match {
                 case instr @ MethodInvocationInstruction(declaringClassType, _, name, descriptor) if !descriptor.returnType.isVoidType && {
                     val nextPC = instr.indexOfNextInstruction(pc)
                     val operands = operandsArray(nextPC)
                     operands != null &&
                         operands.head.isMorePreciseThan(result.domain.TypedValue(pc, descriptor.returnType))
-                } ⇒
+                } =>
                     val modifier = if (instr.isInstanceOf[INVOKESTATIC]) "static " else ""
                     val nextPCOperandHead = operandsArray(instr.indexOfNextInstruction(pc)).head
 
                     PCAndAnyRef(
                         pc,
-                        s"$nextPCOperandHead ← ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
+                        s"$nextPCOperandHead <- ${declaringClassType.toJava}{ $modifier ${descriptor.toJava(name)} }"
                     ) :&: returnValues
 
-                case _ ⇒ returnValues
+                case _ => returnValues
             }
 
         }
@@ -51,7 +51,7 @@ class MethodReturnValues(
     def toXHTML(basicInfoOnly: Boolean): Node = {
         import PCLineComprehension.{pcNode, lineNode, line}
         val methodReturnValues =
-            collectMethodReturnValues.map { methodData ⇒
+            collectMethodReturnValues.map { methodData =>
                 val pc = methodData.pc
                 val details = methodData.value
                 <li>
@@ -79,17 +79,17 @@ class MethodReturnValues(
         import PCLineComprehension.line
 
         Json.obj(
-            "type" → "MethodReturnValues",
-            "values" → collectMethodReturnValues.map { methodData ⇒
+            "type" -> "MethodReturnValues",
+            "values" -> collectMethodReturnValues.map { methodData =>
                 val pc = methodData.pc
                 val details = methodData.value
 
                 Json.obj(
-                    "classFileFQN" → classFileFQN,
-                    "methodJVMSignature" → methodJVMSignature,
-                    "pc" → pc,
-                    "line" → line(pc),
-                    "details" → details
+                    "classFileFQN" -> classFileFQN,
+                    "methodJVMSignature" -> methodJVMSignature,
+                    "pc" -> pc,
+                    "line" -> line(pc),
+                    "details" -> details
                 )
             }.toIterable
         )

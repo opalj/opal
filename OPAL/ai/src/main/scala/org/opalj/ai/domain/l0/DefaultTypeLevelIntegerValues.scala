@@ -26,7 +26,7 @@ import org.opalj.br.ComputationalTypeInt
 trait DefaultTypeLevelIntegerValues
     extends DefaultSpecialDomainValuesBinding
     with TypeLevelIntegerValues {
-    this: Configuration ⇒
+    this: Configuration =>
 
     //
     // IMPLEMENTATION NOTE
@@ -41,8 +41,8 @@ trait DefaultTypeLevelIntegerValues
 
         override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] =
             value match {
-                case ABooleanValue ⇒ NoUpdate
-                case _             ⇒ StructuralUpdate(AnIntegerValue)
+                case ABooleanValue => NoUpdate
+                case _             => StructuralUpdate(AnIntegerValue)
             }
 
         override def abstractsOver(other: DomainValue): Boolean = other eq this
@@ -54,8 +54,8 @@ trait DefaultTypeLevelIntegerValues
 
         override def doJoin(pc: Int, value: DomainValue): Update[DomainValue] =
             value match {
-                case ABooleanValue | AByteValue ⇒ NoUpdate
-                case _                          ⇒ StructuralUpdate(AnIntegerValue)
+                case ABooleanValue | AByteValue => NoUpdate
+                case _                          => StructuralUpdate(AnIntegerValue)
             }
 
         override def abstractsOver(other: DomainValue): Boolean = {
@@ -70,9 +70,9 @@ trait DefaultTypeLevelIntegerValues
 
         override def doJoin(pc: Int, that: DomainValue): Update[DomainValue] =
             that match {
-                case ABooleanValue | AByteValue | AShortValue ⇒
+                case ABooleanValue | AByteValue | AShortValue =>
                     NoUpdate
-                case _ ⇒
+                case _ =>
                     StructuralUpdate(AnIntegerValue)
             }
 
@@ -87,8 +87,8 @@ trait DefaultTypeLevelIntegerValues
 
         override def doJoin(pc: Int, that: DomainValue): Update[DomainValue] =
             that match {
-                case ABooleanValue | ACharValue ⇒ NoUpdate
-                case _                          ⇒ StructuralUpdate(AnIntegerValue)
+                case ABooleanValue | ACharValue => NoUpdate
+                case _                          => StructuralUpdate(AnIntegerValue)
             }
 
         override def abstractsOver(other: DomainValue): Boolean = {

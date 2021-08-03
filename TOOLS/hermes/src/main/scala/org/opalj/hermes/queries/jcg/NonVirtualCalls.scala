@@ -46,8 +46,8 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation ← body collect {
-                case spec: INVOKESPECIAL ⇒ spec
-                case stat: INVOKESTATIC  ⇒ stat
+                case spec: INVOKESPECIAL => spec
+                case stat: INVOKESTATIC  => stat
             }
         } {
             val pc = pcAndInvocation.pc
@@ -57,7 +57,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
             val l = InstructionLocation(methodLocation, pc)
 
             val kindID = invokeKind match {
-                case _@ INVOKESTATIC(declaringClass, _, _, _) ⇒ {
+                case _@ INVOKESTATIC(declaringClass, _, _, _) => {
                     val cf = project.classFile(declaringClass)
                     if (cf.isEmpty)
                         -1
@@ -66,7 +66,7 @@ class NonVirtualCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery
                     else
                         0 /* static call to class type*/
                 }
-                case invSpec @ INVOKESPECIAL(declaringClass, _, name, _) ⇒ {
+                case invSpec @ INVOKESPECIAL(declaringClass, _, name, _) => {
                     if (name != "<init>") {
                         val callTargetResult = project.specialCall(classFile.thisType, invSpec)
                         if (callTargetResult.isEmpty) {

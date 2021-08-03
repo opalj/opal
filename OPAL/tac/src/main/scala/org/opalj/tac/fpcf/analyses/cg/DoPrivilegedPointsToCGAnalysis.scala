@@ -94,7 +94,7 @@ abstract class AbstractDoPrivilegedMethodPointsToCGAnalysis private[cg] (
 
         val pointsToSets = currentPointsToOfDefSites(callSite, actualParamDefSites)
 
-        pointsToSets.foreach(pts ⇒ processNewTypes(call, pts, 0))
+        pointsToSets.foreach(pts => processNewTypes(call, pts, 0))
 
         returnResult(call)
     }
@@ -113,7 +113,7 @@ abstract class AbstractDoPrivilegedMethodPointsToCGAnalysis private[cg] (
         call: StaticFunctionCall[V], pts: PointsToSet, seenTypes: Int
     )(implicit state: State, calleesAndCallers: IndirectCalls): Unit = {
         val caller = state.method
-        pts.forNewestNTypes(pts.numTypes - seenTypes) { t ⇒
+        pts.forNewestNTypes(pts.numTypes - seenTypes) { t =>
             val callR = p.instanceCall(
                 caller.declaringClassType,
                 t,
@@ -134,7 +134,7 @@ abstract class AbstractDoPrivilegedMethodPointsToCGAnalysis private[cg] (
         state: State,
         call:  StaticFunctionCall[V]
     )(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) ⇒
+        case EUBPS(e, ub: PointsToSetLike[_, _, _], isFinal) =>
             // TODO: shouldn't we just delete the partial results?
             val calls = new IndirectCalls()
             val oldEOptP = state.getPointsToProperty(e)
@@ -146,7 +146,7 @@ abstract class AbstractDoPrivilegedMethodPointsToCGAnalysis private[cg] (
             }
             processNewTypes(call, ub.asInstanceOf[PointsToSet], seenTypes)(state, calls)
             returnResult(call)(calls, state)
-        case _ ⇒ throw new IllegalArgumentException(s"unexpected update $eps")
+        case _ => throw new IllegalArgumentException(s"unexpected update $eps")
     }
 
     override val apiMethod: DeclaredMethod = doPrivilegedMethod
@@ -154,12 +154,12 @@ abstract class AbstractDoPrivilegedMethodPointsToCGAnalysis private[cg] (
 
 abstract class DoPrivilegedPointsToCGAnalysis private[cg] (
         final val project: SomeProject
-) extends AbstractPointsToBasedAnalysis { self ⇒
+) extends AbstractPointsToBasedAnalysis { self =>
 
     @inline override protected[this] def currentPointsTo(
         depender:   DependerType,
         dependee:   Entity,
-        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+        typeFilter: ReferenceType => Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
         if (state.hasPointsToDependee(dependee)) {
             val p2s = state.getPointsToProperty(dependee)
@@ -206,7 +206,7 @@ abstract class DoPrivilegedPointsToCGAnalysis private[cg] (
         @inline override protected[this] def currentPointsTo(
             depender:   DependerType,
             dependee:   Entity,
-            typeFilter: ReferenceType ⇒ Boolean
+            typeFilter: ReferenceType => Boolean
         )(implicit state: State): PointsToSet = {
             self.currentPointsTo(depender, dependee, typeFilter)
         }

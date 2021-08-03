@@ -59,13 +59,13 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
     @inline protected[this] def currentPointsTo(
         depender:   DependerType,
         dependee:   Entity,
-        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+        typeFilter: ReferenceType => Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet
 
     @inline protected[this] def currentPointsToOfDefSites(
         depender:   DependerType,
         defSites:   IntTrieSet,
-        typeFilter: ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+        typeFilter: ReferenceType => Boolean = PointsToSetLike.noFilter
     )(implicit state: State): Iterator[PointsToSet] = {
         defSites.iterator.map[PointsToSet](currentPointsToOfDefSite(depender, _, typeFilter))
     }
@@ -73,7 +73,7 @@ trait AbstractPointsToBasedAnalysis extends FPCFAnalysis {
     @inline protected[this] def currentPointsToOfDefSite(
         depender:        DependerType,
         dependeeDefSite: Int,
-        typeFilter:      ReferenceType ⇒ Boolean = PointsToSetLike.noFilter
+        typeFilter:      ReferenceType => Boolean = PointsToSetLike.noFilter
     )(implicit state: State): PointsToSet = {
         if (ai.isImmediateVMException(dependeeDefSite)) {
             // FIXME -  we need to get the actual exception type here

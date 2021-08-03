@@ -36,7 +36,7 @@ trait MethodAnalysisDemo extends AnalysisDemo {
         implicit
         project: Project[URL]
     ): Traversable[String] = {
-        entities map { eps ⇒
+        entities map { eps =>
             val method = eps.e.asInstanceOf[Method]
             val methodString = getVisibilityModifier(method)+" "+method.name
             val classFile = method.classFile
@@ -49,6 +49,6 @@ trait MethodAnalysisDemo extends AnalysisDemo {
     }
 
     private[this] def getVisibilityModifier(method: Method): String = {
-        method.visibilityModifier.map(v ⇒ v.javaName.get).getOrElse("")
+        method.visibilityModifier.map(v => v.javaName.get).getOrElse("")
     }
 }

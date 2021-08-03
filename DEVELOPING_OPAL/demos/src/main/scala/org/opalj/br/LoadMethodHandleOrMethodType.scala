@@ -22,7 +22,7 @@ object LoadMethodHandleOrMethodType extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val loads =
@@ -30,10 +30,10 @@ object LoadMethodHandleOrMethodType extends ProjectAnalysisApplication {
                 classFile ← project.allProjectClassFiles.par
                 method ← classFile.methodsWithBody
                 pcAndInstruction ← method.body.get collect {
-                    case LoadMethodHandle(mh)   ⇒ mh
-                    case LoadMethodHandle_W(mh) ⇒ mh
-                    case LoadMethodType(md)     ⇒ md
-                    case LoadMethodType_W(md)   ⇒ md
+                    case LoadMethodHandle(mh)   => mh
+                    case LoadMethodHandle_W(mh) => mh
+                    case LoadMethodType(md)     => md
+                    case LoadMethodType_W(md)   => md
                 }
             } yield {
                 val pc = pcAndInstruction.pc

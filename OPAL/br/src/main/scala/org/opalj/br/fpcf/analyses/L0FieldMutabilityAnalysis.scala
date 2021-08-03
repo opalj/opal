@@ -39,8 +39,8 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
      */
     def determineFieldMutabilityLazy(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case field: Field ⇒ determineFieldMutability(field)
-            case _            ⇒ throw new IllegalArgumentException(s"$e is not a Field")
+            case field: Field => determineFieldMutability(field)
+            case _            => throw new IllegalArgumentException(s"$e is not a Field")
         }
     }
 
@@ -77,7 +77,7 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
             pc ← pcs
         } {
             method.body.get.instructions(pc) match {
-                case PUTSTATIC(`thisType`, fieldName, fieldType) ⇒
+                case PUTSTATIC(`thisType`, fieldName, fieldType) =>
                     // We don't need to lookup the field in the class
                     // hierarchy since we are only concerned about private
                     // fields so far... so we don't have to do a full
@@ -87,7 +87,7 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
                         return Result(field.get, NonFinalFieldByAnalysis);
                     }
 
-                case _ ⇒
+                case _ =>
             }
         }
 
@@ -127,7 +127,7 @@ object EagerL0FieldMutabilityAnalysis
             else
                 p.allClassFiles
         val fields = {
-            classFileCandidates.filter(cf ⇒ cf.methods.forall(m ⇒ !m.isNative)).flatMap(_.fields)
+            classFileCandidates.filter(cf => cf.methods.forall(m => !m.isNative)).flatMap(_.fields)
         }
         ps.scheduleEagerComputationsForEntities(fields)(analysis.determineFieldMutability)
         analysis
@@ -144,7 +144,7 @@ object LazyL0FieldMutabilityAnalysis
         val analysis = new L0FieldMutabilityAnalysis(p)
         ps.registerLazyPropertyComputation(
             FieldMutability.key,
-            (field: Field) ⇒ analysis.determineFieldMutabilityLazy(field)
+            (field: Field) => analysis.determineFieldMutabilityLazy(field)
         )
         analysis
     }

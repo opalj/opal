@@ -54,7 +54,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val classHierarchy = project.classHierarchy
 
         val hasCustomClassLoaders =
-            project.allClassFiles exists { cf ⇒
+            project.allClassFiles exists { cf =>
                 classHierarchy.isSubtypeOf(cf.thisType, ClassLoaderT) &&
                     !(cf.thisType.fqn.startsWith("java/") ||
                         cf.thisType.fqn.startsWith("sun/") ||
@@ -70,7 +70,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
             pcAndInvocation ← body collect {
-                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) ⇒ i
+                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
             }
             TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {

@@ -56,7 +56,7 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisApplication {
         def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
+            isInterrupted: () => Boolean
         ) = {
             val methods =
                 (

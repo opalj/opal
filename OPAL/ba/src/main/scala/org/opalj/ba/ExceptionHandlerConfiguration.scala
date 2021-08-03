@@ -32,9 +32,9 @@ class ExceptionHandlerTableBuilder {
     def add(element: ExceptionHandlerElement, pc: br.PC): this.type = {
         val handler = getExceptionHandlerBuilder(element.id)
         element match {
-            case TRY(_)    ⇒ handler.startPC = pc
-            case TRYEND(_) ⇒ handler.endPC = pc
-            case CATCH(_, position, catchType) ⇒
+            case TRY(_)    => handler.startPC = pc
+            case TRYEND(_) => handler.endPC = pc
+            case CATCH(_, position, catchType) =>
                 handler.handlerPC = pc
                 handler.position = position
                 handler.catchType = catchType
@@ -49,8 +49,8 @@ class ExceptionHandlerTableBuilder {
      */
     def result(): br.ExceptionHandlers = {
         RefArray.from(map).
-            _UNSAFE_sortedWith((left, right) ⇒ left._2.position < right._2.position).
-            map[br.ExceptionHandler] { e ⇒
+            _UNSAFE_sortedWith((left, right) => left._2.position < right._2.position).
+            map[br.ExceptionHandler] { e =>
                 val (id, ehBuilder) = e
                 val errorMsg = s"invalid exception handler ($id): %s"
                 require(ehBuilder.startPC >= 0, errorMsg.format(s"startPC = ${ehBuilder.startPC}"))

@@ -27,8 +27,8 @@ class EscapeAnalysisTests extends PropertiesTest {
         val performInvocationsDomain = classOf[DefaultPerformInvocationsDomainWithCFGAndDefUse[_]]
 
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               ⇒ Set(performInvocationsDomain)
-            case Some(requirements) ⇒ requirements + performInvocationsDomain
+            case None               => Set(performInvocationsDomain)
+            case Some(requirements) => requirements + performInvocationsDomain
         }
 
         p.get(RTACallGraphKey)

@@ -25,13 +25,13 @@ trait Locking {
      * Acquires the write lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    @inline protected[this] final def withWriteLock[B](f: ⇒ B): B = Locking.withWriteLock(rwLock)(f)
+    @inline protected[this] final def withWriteLock[B](f: => B): B = Locking.withWriteLock(rwLock)(f)
 
     /**
      * Acquires the read lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    @inline protected[this] final def withReadLock[B](f: ⇒ B): B = Locking.withReadLock(rwLock)(f)
+    @inline protected[this] final def withReadLock[B](f: => B): B = Locking.withReadLock(rwLock)(f)
 }
 /**
  * Defines several convenience methods related to using `(Reentrant(ReadWrite))Lock`s.
@@ -42,7 +42,7 @@ object Locking {
      * Acquires the write lock associated with this instance and then executes the function `f`.
      * Afterwards, the lock is released.
      */
-    @inline final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+    @inline final def withWriteLock[B](rwLock: ReentrantReadWriteLock)(f: => B): B = {
         val lock = rwLock.writeLock()
         var isLocked = false
         try {
@@ -61,19 +61,19 @@ object Locking {
     @inline final def withWriteLocks[T](
         rwLocks: TraversableOnce[ReentrantReadWriteLock]
     )(
-        f: ⇒ T
+        f: => T
     ): T = {
         var acquiredRWLocks: Chain[WriteLock] = Naught
         var error: Throwable = null
         val allLocked =
-            rwLocks.forall { rwLock ⇒
+            rwLocks.forall { rwLock =>
                 try {
                     val l = rwLock.writeLock
                     l.lock
                     acquiredRWLocks :&:= l
                     true
                 } catch {
-                    case t: Throwable ⇒
+                    case t: Throwable =>
                         error = t
                         false
                 }
@@ -90,8 +90,8 @@ object Locking {
                 throw error;
             }
         } finally {
-            acquiredRWLocks foreach { rwLock ⇒
-                try { rwLock.unlock() } catch { case t: Throwable ⇒ if (error eq null) error = t }
+            acquiredRWLocks foreach { rwLock =>
+                try { rwLock.unlock() } catch { case t: Throwable => if (error eq null) error = t }
             }
             if (error ne null) throw error;
         }
@@ -101,7 +101,7 @@ object Locking {
      * Acquires the read lock and then executes the function `f`.
      * Before returning the lock is always released.
      */
-    @inline final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): B = {
+    @inline final def withReadLock[B](rwLock: ReentrantReadWriteLock)(f: => B): B = {
         val lock = rwLock.readLock()
         try {
             lock.lock()
@@ -117,7 +117,7 @@ object Locking {
      *
      * If lock was acquired, it will always be released before the method returns.
      */
-    final def tryWithReadLock[B](rwLock: ReentrantReadWriteLock)(f: ⇒ B): Option[B] = {
+    final def tryWithReadLock[B](rwLock: ReentrantReadWriteLock)(f: => B): Option[B] = {
         var isLocked = false
         try {
             isLocked = rwLock.readLock().tryLock(100L, TimeUnit.MILLISECONDS)
@@ -134,7 +134,7 @@ object Locking {
      * Acquires the lock and then executes the function `f`.
      * Before returning the lock is always released.
      */
-    @inline final def withLock[B](lock: ReentrantLock)(f: ⇒ B): B = {
+    @inline final def withLock[B](lock: ReentrantLock)(f: => B): B = {
         try {
             lock.lock()
             f

@@ -60,12 +60,12 @@ object BaseAIResult extends BaseAIResultPropertyMetaInformation {
      */
     final val key: PropertyKey[BaseAIResult] = PropertyKey.create[Method, BaseAIResult](
         "opalj.BaseAIResult",
-        (ps: PropertyStore, r: FallbackReason, m: Method) ⇒ {
+        (ps: PropertyStore, r: FallbackReason, m: Method) => {
             r match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
                     NoAIResult
 
-                case PropertyIsNotComputedByAnyAnalysis ⇒
+                case PropertyIsNotComputedByAnyAnalysis =>
                     // we may still have requirements on the domain that we are going to use...
                     val p = ps.context(classOf[SomeProject])
                     AnAIResult(p.get(AIDomainFactoryKey)(m))

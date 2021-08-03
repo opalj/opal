@@ -140,7 +140,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         )
 
         var foundNestedTypes: Set[ObjectType] = Set.empty
-        outerClass.foreachNestedClass({ nc ⇒ foundNestedTypes += nc.thisType })(innerclassesProject)
+        outerClass.foreachNestedClass({ nc => foundNestedTypes += nc.thisType })(innerclassesProject)
 
         foundNestedTypes.size should be(expectedNestedTypes.size)
         foundNestedTypes should be(expectedNestedTypes)
@@ -155,15 +155,15 @@ class ClassFileTest extends AnyFunSuite with Matchers {
                 // should not time out or crash...
                 classFile.nestedClasses(project)
                 var nestedClasses: List[Type] = Nil
-                classFile.foreachNestedClass({ c ⇒
+                classFile.foreachNestedClass({ c =>
                     nestedClasses = c.thisType :: nestedClasses
                     innerClassesCount += 1
                 })(project)
                 innerClassesCount += 1
                 Some((classFile.thisType, nestedClasses))
             } catch {
-                case ct: ControlThrowable ⇒ throw ct
-                case t: Throwable ⇒
+                case ct: ControlThrowable => throw ct
+                case t: Throwable =>
                     failures =
                         s"cannot calculate inner classes for ${classFile.fqn}: ${t.getClass().getSimpleName()} - ${t.getMessage()}" ::
                             failures

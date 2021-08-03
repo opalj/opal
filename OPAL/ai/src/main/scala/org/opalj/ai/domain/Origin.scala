@@ -31,7 +31,7 @@ import org.opalj.collection.immutable.EmptyIntTrieSet
  *       an exception) must be the same!
  * @author Michael Eichberg
  */
-trait Origin { domain: ValuesDomain ⇒
+trait Origin { domain: ValuesDomain =>
 
     /**
      * Implementers are expected to "override" this method and to call
@@ -85,19 +85,19 @@ trait Origin { domain: ValuesDomain ⇒
      */
     def originsIterator(value: DomainValue): ValueOriginsIterator = {
         value match {
-            case vo: ValueWithOriginInformation ⇒ vo.originsIterator
-            case _                              ⇒ IntIterator.empty
+            case vo: ValueWithOriginInformation => vo.originsIterator
+            case _                              => IntIterator.empty
         }
     }
 
     /**
      * Iterates over the origin(s) of the given value if the information is available.
      */
-    def foreachOrigin(value: DomainValue, f: (ValueOrigin) ⇒ Unit): Unit = {
+    def foreachOrigin(value: DomainValue, f: (ValueOrigin) => Unit): Unit = {
         value match {
-            case sov: SingleOriginValue    ⇒ f(sov.origin)
-            case mov: MultipleOriginsValue ⇒ mov.originsIterator.foreach(f)
-            case _                         ⇒ /* nothing to do */
+            case sov: SingleOriginValue    => f(sov.origin)
+            case mov: MultipleOriginsValue => mov.originsIterator.foreach(f)
+            case _                         => /* nothing to do */
         }
     }
 
@@ -106,8 +106,8 @@ trait Origin { domain: ValuesDomain ⇒
      */
     def origins(value: DomainValue): ValueOrigins = {
         value match {
-            case vo: ValueWithOriginInformation ⇒ vo.origins
-            case _                              ⇒ EmptyIntTrieSet
+            case vo: ValueWithOriginInformation => vo.origins
+            case _                              => EmptyIntTrieSet
         }
     }
 

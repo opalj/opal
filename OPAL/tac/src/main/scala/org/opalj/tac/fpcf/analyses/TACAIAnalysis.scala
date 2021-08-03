@@ -10,7 +10,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.AIResult
 import org.opalj.ai.Domain
 import org.opalj.ai.domain.RecordDefUse
-import org.opalj.tac.{TACAI ⇒ TACAIFactory}
+import org.opalj.tac.{TACAI => TACAIFactory}
 import org.opalj.tac.fpcf.properties.TheTACAI
 
 object TACAIAnalysis {

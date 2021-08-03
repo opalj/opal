@@ -5,12 +5,12 @@ package da
 import java.io.File
 import java.nio.file.Files
 
-import org.apache.commons.text.similarity.LevenshteinDistance.{getDefaultInstance ⇒ getLevenshteinDistance}
+import org.apache.commons.text.similarity.LevenshteinDistance.{getDefaultInstance => getLevenshteinDistance}
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
-import org.opalj.log.{Error ⇒ ErrorLogLevel}
+import org.opalj.log.{Error => ErrorLogLevel}
 import org.opalj.bytecode.JRELibraryFolder
 
 /**
@@ -83,18 +83,18 @@ object Disassembler {
         }
         while (i < args.length) {
             args(i) match {
-                case "-help" | "--help" ⇒ { Console.out.println(Usage); return }
-                case "-o"               ⇒ { toFile = Some(readNextArg()); toStdOut = false }
-                case "-open"            ⇒ { openHTMLFile = true; toStdOut = false }
-                case "-noDefaultCSS"    ⇒ noDefaultCSS = true
-                case "-noMethodsFilter" ⇒ noMethodsFilter = true
-                case "-noHeader"        ⇒ { noHeader = true; noMethodsFilter = true; noDefaultCSS = true }
-                case "-css"             ⇒ css = Some(readNextArg())
-                case "-js"              ⇒ js = Some(readNextArg())
-                case "-source"          ⇒ sources ::= readNextArg()
-                case "-sourceJDK"       ⇒ sources ::= JRELibraryFolder.toString
-                case "-showProgress"    ⇒ showProgress = true
-                case cName              ⇒ className = cName.replace('/', '.')
+                case "-help" | "--help" => { Console.out.println(Usage); return }
+                case "-o"               => { toFile = Some(readNextArg()); toStdOut = false }
+                case "-open"            => { openHTMLFile = true; toStdOut = false }
+                case "-noDefaultCSS"    => noDefaultCSS = true
+                case "-noMethodsFilter" => noMethodsFilter = true
+                case "-noHeader"        => { noHeader = true; noMethodsFilter = true; noDefaultCSS = true }
+                case "-css"             => css = Some(readNextArg())
+                case "-js"              => js = Some(readNextArg())
+                case "-source"          => sources ::= readNextArg()
+                case "-sourceJDK"       => sources ::= JRELibraryFolder.toString
+                case "-showProgress"    => showProgress = true
+                case cName              => className = cName.replace('/', '.')
             }
             i += 1
         }
@@ -106,7 +106,7 @@ object Disassembler {
         }
 
         if (sources.isEmpty) sources = List(System.getProperty("user.dir"))
-        val sourceFiles = sources map { src ⇒
+        val sourceFiles = sources map { src =>
             val f = new File(src)
             if (!f.exists()) handleError("file does not exist: "+src, false)
             if (!f.canRead) handleError("cannot read: "+src, false)
@@ -115,25 +115,25 @@ object Disassembler {
 
         val classFileFilter =
             if (className == null)
-                (cf: ClassFile) ⇒ true // just take the first one...
+                (cf: ClassFile) => true // just take the first one...
             else
-                (cf: ClassFile) ⇒ cf.thisType.asJava == className
+                (cf: ClassFile) => cf.thisType.asJava == className
 
         val (classFile, source) =
             ClassFileReader.findClassFile(
-                sourceFiles, (if (showProgress) println else (f) ⇒ {}),
-                classFileFilter, (cf: ClassFile) ⇒ cf.thisType.asJava
+                sourceFiles, (if (showProgress) println else (f) => {}),
+                classFileFilter, (cf: ClassFile) => cf.thisType.asJava
             ) match {
-                case Left(cfSource) ⇒ cfSource
-                case Right(altClassNames) ⇒
+                case Left(cfSource) => cfSource
+                case Right(altClassNames) =>
                     if (altClassNames.isEmpty) {
                         handleError(sources.mkString("cannot find class files in: ", ", ", ""))
                     } else {
                         val allClassNames: List[(Int, String)] =
-                            altClassNames.map { cf ⇒
+                            altClassNames.map { cf =>
                                 (getLevenshteinDistance()(className, cf).intValue, cf)
                             }.toList
-                        val mostRelated = allClassNames.sortWith((l, r) ⇒ l._1 < r._1).map(_._2).take(15)
+                        val mostRelated = allClassNames.sortWith((l, r) => l._1 < r._1).map(_._2).take(15)
                         val ending = if (mostRelated.length > 15) ", ...)" else ")"
                         val messageHeader = "can't find: "+className
                         val message = mostRelated.mkString(s"$messageHeader (similar: ", ", ", ending)
@@ -169,11 +169,11 @@ object Disassembler {
                 classFile.toXHTML(Some(source), htmlCSS, css, js, !noMethodsFilter).toString
 
         targetFile match {
-            case Some(f) ⇒
+            case Some(f) =>
                 Files.write(f.toPath, xHTML.toString.getBytes("UTF-8"))
                 println("wrote: "+f)
                 if (openHTMLFile) org.opalj.io.open(f)
-            case None ⇒
+            case None =>
                 Console.out.println(xHTML)
         }
 

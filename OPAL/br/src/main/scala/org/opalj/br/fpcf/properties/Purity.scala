@@ -167,9 +167,9 @@ sealed abstract class Purity
      */
     override def meet(other: Purity): Purity = {
         other match {
-            case _: ClassifiedImpure           ⇒ other
-            case _ if other.modifiesParameters ⇒ other.meet(this)
-            case _ ⇒
+            case _: ClassifiedImpure           => other
+            case _ if other.modifiesParameters => other.meet(this)
+            case _ =>
                 Purity(this.flags | other.flags)
         }
     }
@@ -206,31 +206,31 @@ object Purity extends PurityPropertyMetaInformation {
      * This will not return Impure/LBImpure as they have to be handled seperately.
      */
     private def apply(flags: Int): Purity = (flags: @switch) match {
-        case CompileTimePure.flags ⇒ CompileTimePure
-        case Pure.flags            ⇒ Pure
+        case CompileTimePure.flags => CompileTimePure
+        case Pure.flags            => Pure
         // For non-pure levels, we don't have compile-time purity anymore
-        case _ ⇒ (flags | NotCompileTimePure: @switch) match {
-            case SideEffectFree.flags  ⇒ SideEffectFree
-            case DPure.flags           ⇒ DPure
-            case DSideEffectFree.flags ⇒ DSideEffectFree
+        case _ => (flags | NotCompileTimePure: @switch) match {
+            case SideEffectFree.flags  => SideEffectFree
+            case DPure.flags           => DPure
+            case DSideEffectFree.flags => DSideEffectFree
         }
     }
 
     def apply(name: String): Option[Purity] = name match {
-        case "CompileTimePure" ⇒ Some(CompileTimePure)
-        case "Pure"            ⇒ Some(Pure)
-        case "SideEffectFree"  ⇒ Some(SideEffectFree)
-        case "DPure"           ⇒ Some(DPure)
-        case "DSideEffectFree" ⇒ Some(DSideEffectFree)
-        case _ if name.startsWith("ContextuallyPure{") ⇒
+        case "CompileTimePure" => Some(CompileTimePure)
+        case "Pure"            => Some(Pure)
+        case "SideEffectFree"  => Some(SideEffectFree)
+        case "DPure"           => Some(DPure)
+        case "DSideEffectFree" => Some(DSideEffectFree)
+        case _ if name.startsWith("ContextuallyPure{") =>
             Some(ContextuallyPure(parseParams(name.substring(17, name.length - 1))))
-        case _ if name.startsWith("ContextuallySideEffectFree{") ⇒
+        case _ if name.startsWith("ContextuallySideEffectFree{") =>
             Some(ContextuallySideEffectFree(parseParams(name.substring(27, name.length - 1))))
-        case _ if name.startsWith("DContextuallyPure{") ⇒
+        case _ if name.startsWith("DContextuallyPure{") =>
             Some(DContextuallyPure(parseParams(name.substring(18, name.length - 1))))
-        case _ if name.startsWith("DContextuallySideEffectFree{") ⇒
+        case _ if name.startsWith("DContextuallySideEffectFree{") =>
             Some(DContextuallySideEffectFree(parseParams(name.substring(28, name.length - 1))))
-        case _ ⇒ None
+        case _ => None
     }
 
     def parseParams(s: String): IntTrieSet = {
@@ -312,19 +312,19 @@ case class ContextuallyPure(override val modifiedParams: IntTrieSet) extends Pur
     final val flags = ContextuallyPureFlags
 
     override def meet(other: Purity): Purity = other match {
-        case _: ClassifiedImpure            ⇒ other
-        case ContextuallyPure(p)            ⇒ ContextuallyPure(this.modifiedParams ++ p)
-        case ContextuallySideEffectFree(p)  ⇒ ContextuallySideEffectFree(this.modifiedParams ++ p)
-        case DContextuallyPure(p)           ⇒ DContextuallyPure(this.modifiedParams ++ p)
-        case DContextuallySideEffectFree(p) ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ ⇒
+        case _: ClassifiedImpure            => other
+        case ContextuallyPure(p)            => ContextuallyPure(this.modifiedParams ++ p)
+        case ContextuallySideEffectFree(p)  => ContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallyPure(p)           => DContextuallyPure(this.modifiedParams ++ p)
+        case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case _ =>
             (other.flags: @switch) match {
-                case CompileTimePure.flags | Pure.flags ⇒ this
+                case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore
-                case _ ⇒ (other.flags | NotCompileTimePure: @switch) match {
-                    case SideEffectFree.flags  ⇒ ContextuallySideEffectFree(modifiedParams)
-                    case DPure.flags           ⇒ DContextuallyPure(modifiedParams)
-                    case DSideEffectFree.flags ⇒ DContextuallySideEffectFree(modifiedParams)
+                case _ => (other.flags | NotCompileTimePure: @switch) match {
+                    case SideEffectFree.flags  => ContextuallySideEffectFree(modifiedParams)
+                    case DPure.flags           => DContextuallyPure(modifiedParams)
+                    case DSideEffectFree.flags => DContextuallySideEffectFree(modifiedParams)
                 }
             }
     }
@@ -343,18 +343,18 @@ case class ContextuallySideEffectFree(override val modifiedParams: IntTrieSet) e
     final val flags = ContextuallySideEffectFreeFlags
 
     override def meet(other: Purity): Purity = other match {
-        case _: ClassifiedImpure            ⇒ other
-        case ContextuallyPure(p)            ⇒ ContextuallySideEffectFree(this.modifiedParams ++ p)
-        case ContextuallySideEffectFree(p)  ⇒ ContextuallySideEffectFree(this.modifiedParams ++ p)
-        case DContextuallyPure(p)           ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case DContextuallySideEffectFree(p) ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ ⇒
+        case _: ClassifiedImpure            => other
+        case ContextuallyPure(p)            => ContextuallySideEffectFree(this.modifiedParams ++ p)
+        case ContextuallySideEffectFree(p)  => ContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallyPure(p)           => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case _ =>
             (other.flags: @switch) match {
-                case CompileTimePure.flags | Pure.flags ⇒ this
+                case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore
-                case _ ⇒ (other.flags | NotCompileTimePure: @switch) match {
-                    case SideEffectFree.flags ⇒ this
-                    case DPure.flags | DSideEffectFree.flags ⇒
+                case _ => (other.flags | NotCompileTimePure: @switch) match {
+                    case SideEffectFree.flags => this
+                    case DPure.flags | DSideEffectFree.flags =>
                         DContextuallySideEffectFree(modifiedParams)
                 }
             }
@@ -413,19 +413,19 @@ case class DContextuallyPure(override val modifiedParams: IntTrieSet) extends Pu
     final val flags = ContextuallyPureFlags | PerformsDomainSpecificOperations
 
     override def meet(other: Purity): Purity = other match {
-        case _: ClassifiedImpure            ⇒ other
-        case ContextuallyPure(p)            ⇒ DContextuallyPure(this.modifiedParams ++ p)
-        case ContextuallySideEffectFree(p)  ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case DContextuallyPure(p)           ⇒ DContextuallyPure(this.modifiedParams ++ p)
-        case DContextuallySideEffectFree(p) ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _ ⇒
+        case _: ClassifiedImpure            => other
+        case ContextuallyPure(p)            => DContextuallyPure(this.modifiedParams ++ p)
+        case ContextuallySideEffectFree(p)  => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallyPure(p)           => DContextuallyPure(this.modifiedParams ++ p)
+        case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case _ =>
             (other.flags: @switch) match {
-                case CompileTimePure.flags | Pure.flags ⇒ this
+                case CompileTimePure.flags | Pure.flags => this
                 // For non-pure levels, we don't have compile-time purity anymore
-                case _ ⇒ (other.flags | NotCompileTimePure: @switch) match {
-                    case SideEffectFree.flags | DSideEffectFree.flags ⇒
+                case _ => (other.flags | NotCompileTimePure: @switch) match {
+                    case SideEffectFree.flags | DSideEffectFree.flags =>
                         DContextuallySideEffectFree(modifiedParams)
-                    case DPure.flags ⇒ this
+                    case DPure.flags => this
                 }
             }
     }
@@ -441,12 +441,12 @@ case class DContextuallySideEffectFree(override val modifiedParams: IntTrieSet) 
     final val flags = ContextuallySideEffectFreeFlags | PerformsDomainSpecificOperations
 
     override def meet(other: Purity): Purity = other match {
-        case _: ClassifiedImpure            ⇒ other
-        case ContextuallyPure(p)            ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case ContextuallySideEffectFree(p)  ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case DContextuallyPure(p)           ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case DContextuallySideEffectFree(p) ⇒ DContextuallySideEffectFree(this.modifiedParams ++ p)
-        case _                              ⇒ this
+        case _: ClassifiedImpure            => other
+        case ContextuallyPure(p)            => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case ContextuallySideEffectFree(p)  => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallyPure(p)           => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case DContextuallySideEffectFree(p) => DContextuallySideEffectFree(this.modifiedParams ++ p)
+        case _                              => this
     }
 }
 
@@ -466,8 +466,8 @@ sealed abstract class ClassifiedImpure extends Purity {
 case object ImpureByAnalysis extends ClassifiedImpure {
     override def meet(other: Purity): Purity = {
         other match {
-            case ImpureByLackOfInformation ⇒ ImpureByLackOfInformation
-            case _                         ⇒ this
+            case ImpureByLackOfInformation => ImpureByLackOfInformation
+            case _                         => this
         }
     }
 }

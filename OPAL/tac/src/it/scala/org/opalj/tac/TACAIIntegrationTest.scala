@@ -31,7 +31,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
 
     def checkProject(
         project:               SomeProject,
-        domainFactory:         (SomeProject, Method) ⇒ Domain with RecordDefUse,
+        domainFactory:         (SomeProject, Method) => Domain with RecordDefUse,
         performanceEvaluation: PerformanceEvaluation
     ): Unit = {
         import performanceEvaluation.time
@@ -40,7 +40,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
         var errors: List[(String, Throwable)] = Nil
         val successfullyCompleted = new java.util.concurrent.atomic.AtomicInteger(0)
         val ch = project.classHierarchy
-        project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi =>
             val m = mi.method
             val body = m.body.get
             val aiResult = time('ai) { BaseAI(m, domainFactory(project, m)) }
@@ -55,7 +55,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
 
                 // Some additional consistency tests...
 
-                tacAICode.iterator.zipWithIndex foreach { stmtIndex ⇒
+                tacAICode.iterator.zipWithIndex foreach { stmtIndex =>
                     val (stmt, index) = stmtIndex
                     val bb = cfg.bb(index)
                     if (bb.endPC == index && bb.mayThrowException && stmt.isSideEffectFree) {
@@ -68,7 +68,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
 
                 successfullyCompleted.incrementAndGet()
             } catch {
-                case e: Throwable ⇒ this.synchronized {
+                case e: Throwable => this.synchronized {
                     val methodSignature = m.toJava
 
                     println(methodSignature+" - size: "+body.instructions.length)
@@ -98,18 +98,18 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
     }
 
     protected def domainFactories = {
-        Seq[(String, (SomeProject, Method) ⇒ Domain with RecordDefUse)](
+        Seq[(String, (SomeProject, Method) => Domain with RecordDefUse)](
             (
                 "l0.PrimitiveTACAIDomain",
-                (p: SomeProject, m: Method) ⇒ new PrimitiveTACAIDomain(p.classHierarchy, m)
+                (p: SomeProject, m: Method) => new PrimitiveTACAIDomain(p.classHierarchy, m)
             ),
             (
                 "l1.DefaultDomainWithCFGAndDefUse",
-                (p: SomeProject, m: Method) ⇒ new DefaultDomainWithCFGAndDefUse(p, m)
+                (p: SomeProject, m: Method) => new DefaultDomainWithCFGAndDefUse(p, m)
             ),
             (
                 "l2.DefaultPerformInvocationsDomainWithCFGAndDefUse",
-                (p: SomeProject, m: Method) ⇒ {
+                (p: SomeProject, m: Method) => {
                     new DefaultPerformInvocationsDomainWithCFGAndDefUse(p, m)
                 }
             )
@@ -122,12 +122,12 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
 
         def computeTACAIForAllDomains(initialProject: SomeProject): Unit = {
             var p = initialProject
-            domainFactories foreach { domainInformation ⇒
+            domainFactories foreach { domainInformation =>
                 val performanceEvaluation = new PerformanceEvaluation()
                 val (domainName, domainFactory) = domainInformation
                 time {
                     checkProject(p, domainFactory, performanceEvaluation)
-                } { t ⇒
+                } { t =>
                     val aiTime = performanceEvaluation.getTime('ai).toSeconds
                     val tacodeTime = performanceEvaluation.getTime('tacode).toSeconds
                     val totxtTime = performanceEvaluation.getTime('totxt).toSeconds
@@ -138,7 +138,7 @@ class TACAIIntegrationTest extends AnyFunSpec with Matchers {
             }
         }
 
-        TestSupport.allBIProjects() foreach { biProject ⇒
+        TestSupport.allBIProjects() foreach { biProject =>
             val (name, projectFactory) = biProject
             it(s"for $name") {
                 computeTACAIForAllDomains(projectFactory())

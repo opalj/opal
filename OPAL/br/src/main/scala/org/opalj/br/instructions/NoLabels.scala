@@ -5,7 +5,7 @@ package instructions
 
 import org.opalj.collection.ForeachRefIterator
 
-private[instructions] trait NoLabels extends LabeledInstruction { this: Instruction ⇒
+private[instructions] trait NoLabels extends LabeledInstruction { this: Instruction =>
 
     final override def branchTargets: ForeachRefIterator[InstructionLabel] = {
         ForeachRefIterator.empty
