@@ -41,7 +41,7 @@ class ConfiguredPurity(
 
     private val methods: Set[DeclaredMethod] =
         for {
-            PurityValue(className, methodName, descriptor, property, conditions) ← toSet.toSet
+            PurityValue(className, methodName, descriptor, property, conditions) <- toSet.toSet
 
             po = Purity(property)
             if po.isDefined
@@ -73,7 +73,7 @@ class ConfiguredPurity(
                 }
             }
 
-            dm ← ms
+            dm <- ms
         } yield {
             propertyStore.set(dm, po.get)
             dm

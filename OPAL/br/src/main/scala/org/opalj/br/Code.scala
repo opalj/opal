@@ -1599,7 +1599,7 @@ final class Code private (
         // We have to make sure, that all exception handlers are evaluated for
         // max_stack, if an exception is caught, the stack size is always 1 -
         // containing the exception itself.
-        for (exceptionHandler ← exceptionHandlers) {
+        for (exceptionHandler <- exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
             if (visitedPCs.add(handlerPC)) paths :&:= ((handlerPC, 1))
         }
@@ -1955,7 +1955,7 @@ object Code {
         // We have to make sure, that all exception handlers are evaluated for
         // max_stack, if an exception is caught, the stack size is always 1 -
         // containing the exception itself.
-        for (exceptionHandler ← exceptionHandlers) {
+        for (exceptionHandler <- exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
             if (visitedPCs.add(handlerPC)) paths :&:= IntIntPair(handlerPC, 1)
         }

@@ -118,7 +118,7 @@ class CodeAttributeTest extends AnyFlatSpec with Matchers {
     behavior of "the \"Code\" attribute's associateWithIndex method"
 
     it should "be able to associate all instructions with the correct index" in {
-        val instructions: Seq[PCAndInstruction] = for { i ← codeOfGet } yield i
+        val instructions: Seq[PCAndInstruction] = for { i <- codeOfGet } yield i
         instructions should be(
             Seq(
                 PCAndInstruction(0, ALOAD_0),

@@ -24,7 +24,7 @@ object ClassFileInformation {
             sys.exit(-1)
         }
 
-        for (classFileName ← args.drop(1) /* drop the name of the jar file */ ) {
+        for (classFileName <- args.drop(1) /* drop the name of the jar file */ ) {
 
             // Load class file (the class file name has to correspond to the name of
             // the file inside the archive.)
