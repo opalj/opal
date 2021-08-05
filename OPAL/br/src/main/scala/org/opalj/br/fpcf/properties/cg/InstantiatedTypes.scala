@@ -50,7 +50,7 @@ case class InstantiatedTypes private[properties] (
 
     def updated(newTypes: TraversableOnce[ReferenceType]): InstantiatedTypes = {
         var newOrderedTypes = orderedTypes
-        for { t ← newTypes if !types.contains(t) } {
+        for { t <- newTypes if !types.contains(t) } {
             newOrderedTypes ::= t
         }
         new InstantiatedTypes(newOrderedTypes, types ++ newTypes)
