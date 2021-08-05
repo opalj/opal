@@ -54,7 +54,7 @@ object GetReceivers extends ProjectAnalysisApplication {
             val m = mi.method
             lazy val aiResult = performAI(m).asInstanceOf[AIResult { val domain: Domain with Origin }]
             for {
-                PCAndInstruction(pc, i) ← m.body.get
+                PCAndInstruction(pc, i) <- m.body.get
                 if i.isMethodInvocationInstruction
                 invocationInstruction = i.asMethodInvocationInstruction
                 if invocationInstruction.isVirtualMethodCall
