@@ -234,7 +234,7 @@ trait AnalysisApplication {
             return ;
 
         implicit val logContext: LogContext = project.logContext
-        for (exception ← exceptions) {
+        for (exception <- exceptions) {
             error("creating project", "ignoring invalid class file", exception)
         }
     }

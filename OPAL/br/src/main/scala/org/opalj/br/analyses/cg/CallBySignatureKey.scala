@@ -39,8 +39,8 @@ object CallBySignatureKey extends ProjectInformationKey[CallBySignatureTargets, 
         val isOverridableMethod = p.get(IsOverridableMethodKey)
 
         for {
-            classFile ← p.allClassFiles if classFile.isInterfaceDeclaration
-            method ← classFile.methods
+            classFile <- p.allClassFiles if classFile.isInterfaceDeclaration
+            method <- classFile.methods
             if !method.isPrivate &&
                 !method.isStatic &&
                 (classFile.isPublic || isOverridableMethod(method).isYesOrUnknown)

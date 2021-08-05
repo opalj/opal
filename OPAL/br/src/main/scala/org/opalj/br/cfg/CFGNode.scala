@@ -102,7 +102,7 @@ trait CFGNode extends Node {
             remainingSuccessors = remainingSuccessors.tail
             if (reachable.add(successor)) {
                 for {
-                    nextSuccessor ← successor.successors
+                    nextSuccessor <- successor.successors
                     if !remainingSuccessors.contains(nextSuccessor)
                     if !reachable.contains(nextSuccessor)
                 } {

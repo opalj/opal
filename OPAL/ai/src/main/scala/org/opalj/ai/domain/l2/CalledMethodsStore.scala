@@ -62,7 +62,7 @@ trait CalledMethodsStore { rootStore =>
         calledMethods.get(method) match {
             case None => Some(updated(method, List(adaptedOperands)))
             case Some(previousOperandsList) =>
-                for (previousOperands ← previousOperandsList) {
+                for (previousOperands <- previousOperandsList) {
                     try {
                         val previousOperandsIterator = previousOperands.iterator
                         val operandsIterator = adaptedOperands.iterator
