@@ -50,7 +50,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     type State <: CGState
     type LocalTypeInformation
 
-    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
+    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
     private[this] lazy val getCBSTargets = project.get(CallBySignatureKey)
     private[this] val resovleCallBySignature =
         project.config.getBoolean("org.opalj.br.analyses.cg.callBySignatureResolution")
@@ -65,13 +65,13 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
      * @see [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis.c]] for an example.
      */
     def c(state: State)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case UBP(tacai: TACAI) if tacai.tac.isDefined =>
+        case UBP(tacai: TACAI) if tacai.tac.isDefined ⇒
             state.updateTACDependee(eps.asInstanceOf[EPS[Method, TACAI]])
 
             // we only want to add the new calls, so we create a fresh object
             processMethod(state, new DirectCalls())
 
-        case UBP(_: TACAI) =>
+        case UBP(_: TACAI) ⇒
             throw new IllegalStateException("there was already a tac defined")
     }
 
@@ -172,7 +172,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         val tac = state.tac
 
         tac.stmts.foreach {
-            case stmt @ StaticFunctionCallStatement(call) =>
+            case stmt @ StaticFunctionCallStatement(call) ⇒
                 handleCall(
                     state.method,
                     call.name,
@@ -183,7 +183,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     calls
                 )
 
-            case call: StaticMethodCall[V] =>
+            case call: StaticMethodCall[V] ⇒
                 handleCall(
                     state.method,
                     call.name,
@@ -194,7 +194,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     calls
                 )
 
-            case stmt @ NonVirtualFunctionCallStatement(call) =>
+            case stmt @ NonVirtualFunctionCallStatement(call) ⇒
                 handleCall(
                     state.method,
                     call.name,
@@ -205,7 +205,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     calls
                 )
 
-            case call: NonVirtualMethodCall[V] =>
+            case call: NonVirtualMethodCall[V] ⇒
                 handleCall(
                     state.method,
                     call.name,
@@ -216,31 +216,31 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     calls
                 )
 
-            case VirtualFunctionCallStatement(call) =>
+            case VirtualFunctionCallStatement(call) ⇒
                 handleVirtualCall(state.method, call, call.pc, calls)(state)
 
-            case call: VirtualMethodCall[V] =>
+            case call: VirtualMethodCall[V] ⇒
                 handleVirtualCall(state.method, call, call.pc, calls)(state)
 
-            case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) =>
+            case Assignment(_, _, idc: InvokedynamicFunctionCall[V]) ⇒
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
-            case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) =>
+            case ExprStmt(_, idc: InvokedynamicFunctionCall[V]) ⇒
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
-            case idc: InvokedynamicMethodCall[_] =>
+            case idc: InvokedynamicMethodCall[_] ⇒
                 calls.addIncompleteCallSite(idc.pc)
                 logOnce(
                     Warn("analysis - call graph construction", s"unresolved invokedynamic: $idc")
                 )
 
-            case _ => //nothing to do
+            case _ ⇒ //nothing to do
         }
 
         returnResult(calls)(state)
@@ -313,7 +313,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         if (declTgt.isVirtualOrHasSingleDefinedMethod) {
             calleesAndCallers.addCall(caller, declTgt, pc)
         } else {
-            declTgt.definedMethods foreach { m =>
+            declTgt.definedMethods foreach { m ⇒
                 val dm = declaredMethods(m)
                 calleesAndCallers.addCall(caller, dm, pc)
             }
@@ -336,28 +336,28 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     )(implicit state: State): Unit = {
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
         for (rv ← rvs) rv match {
-            case _: IsSArrayValue =>
+            case _: IsSArrayValue ⇒
                 handlePreciseCall(ObjectType.Object, caller, call, pc, calleesAndCallers)
 
-            case ov: IsSObjectValue =>
+            case ov: IsSObjectValue ⇒
                 if (ov.isPrecise) {
                     handlePreciseCall(ov.theUpperTypeBound, caller, call, pc, calleesAndCallers)
                 } else {
                     handleImpreciseCall(ov.theUpperTypeBound, caller, call, pc, calleesAndCallers)
                 }
 
-            case mv: IsMObjectValue =>
+            case mv: IsMObjectValue ⇒
                 val typeBounds = mv.upperTypeBound
                 val remainingTypeBounds = typeBounds.tail
                 val firstTypeBound = typeBounds.head
                 val potentialTypes = ch.allSubtypesForeachIterator(
                     firstTypeBound, reflexive = true
-                ).filter { subtype =>
+                ).filter { subtype ⇒
                     val cfOption = project.classFile(subtype)
                     cfOption.isDefined && {
                         val cf = cfOption.get
                         !cf.isInterfaceDeclaration && !cf.isAbstract &&
-                            remainingTypeBounds.forall { supertype =>
+                            remainingTypeBounds.forall { supertype ⇒
                                 ch.isSubtypeOf(subtype, supertype)
                             }
                     }
@@ -373,7 +373,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
                     calleesAndCallers
                 )
 
-            case _: IsNullValue =>
+            case _: IsNullValue ⇒
             // TODO: do not ignore the implicit calls to NullPointerException.<init>
         }
     }
@@ -405,7 +405,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     )(implicit state: State): Unit = {
         val potentialTypes = classHierarchy.allSubtypesForeachIterator(
             calleeType, reflexive = true
-        ).filter { subtype =>
+        ).filter { subtype ⇒
             val cfOption = project.classFile(subtype)
             cfOption.isDefined && {
                 val cf = cfOption.get
@@ -430,7 +430,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
     @inline protected[this] def canResolveCall(
         localTypeInformation: LocalTypeInformation,
         state:                State
-    ): ObjectType => Boolean
+    ): ObjectType ⇒ Boolean
 
     /**
      * Handles a call that is not immediately resolved by this call graph implementation.

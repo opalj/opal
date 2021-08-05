@@ -7,7 +7,7 @@ package graphs
  *
  * @author Michael Eichberg
  */
-trait AbstractGraph[@specialized(Int) N] extends (N => TraversableOnce[N]) {
+trait AbstractGraph[@specialized(Int) N] extends (N ⇒ TraversableOnce[N]) {
 
     def vertices: Traversable[N]
 
@@ -66,19 +66,19 @@ trait AbstractGraph[@specialized(Int) N] extends (N => TraversableOnce[N]) {
     //
 
     override def toString: String = {
-        val vertices = this.vertices map { v => this(v).mkString(v.toString()+" => {", ",", "}") }
+        val vertices = this.vertices map { v ⇒ this(v).mkString(v.toString()+" => {", ",", "}") }
         vertices.mkString("Graph{\n\t", "\n\t", "\n}")
     }
 
     def toNodes: Iterable[Node] = {
 
         val nodesMap: Map[N, DefaultMutableNode[String]] = {
-            vertices.map(v => (v, new DefaultMutableNode(v.toString()))).toMap
+            vertices.map(v ⇒ (v, new DefaultMutableNode(v.toString()))).toMap
         }
 
-        vertices.foreach { v =>
+        vertices.foreach { v ⇒
             val node = nodesMap(v)
-            val successors = this(v).map(v => nodesMap(v)).toList
+            val successors = this(v).map(v ⇒ nodesMap(v)).toList
             node.addChildren(successors)
         }
 

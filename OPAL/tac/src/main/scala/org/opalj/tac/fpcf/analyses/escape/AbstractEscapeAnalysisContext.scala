@@ -41,5 +41,5 @@ trait VirtualFormalParametersContainer {
 }
 
 trait IsMethodOverridableContainer {
-    val isMethodOverridable: Method => Answer
+    val isMethodOverridable: Method ⇒ Answer
 }
