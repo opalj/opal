@@ -36,10 +36,10 @@ class MethodTypes(implicit hermes: HermesConfig) extends FeatureQuery {
         val methodLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classLocation = ClassFileLocation(source, classFile)
-            m ← classFile.methods
+            m <- classFile.methods
         } {
             val location = MethodLocation(classLocation, m)
             if (m.isNative) methodLocations(0) += location
@@ -62,7 +62,7 @@ class MethodTypes(implicit hermes: HermesConfig) extends FeatureQuery {
             }
         }
 
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, methodLocations(featureIDIndex))
         }
     }

@@ -78,7 +78,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
 
         val microPatternLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
         } {
             val location = ClassFileLocation(source, classFile)
@@ -111,7 +111,7 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
             if (isOverrider(classFile, project)) microPatternLocations(25) += location
             if (isExtender(classFile)) microPatternLocations(26) += location
         }
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, microPatternLocations(featureIDIndex))
         }
     }
