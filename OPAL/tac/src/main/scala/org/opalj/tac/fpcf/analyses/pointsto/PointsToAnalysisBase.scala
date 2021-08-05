@@ -533,11 +533,11 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
     ): ArrayBuffer[ProperPropertyComputationResult] = {
         val results = ArrayBuffer.empty[ProperPropertyComputationResult]
 
-        for ((e, pointsToSet) ← state.allocationSitePointsToSetsIterator) {
+        for ((e, pointsToSet) <- state.allocationSitePointsToSetsIterator) {
             results += Result(e, pointsToSet)
         }
 
-        for ((e, pointsToSet) ← state.sharedPointsToSetsIterator) {
+        for ((e, pointsToSet) <- state.sharedPointsToSetsIterator) {
             results ++= createPartialResults(
                 e,
                 pointsToSet,
@@ -546,7 +546,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             )
         }
 
-        for (fakeEntity ← state.getFieldsIterator) {
+        for (fakeEntity <- state.getFieldsIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSite, fieldOpt, filter) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
@@ -559,7 +559,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             }
         }
 
-        for (fakeEntity ← state.putFieldsIterator) {
+        for (fakeEntity <- state.putFieldsIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, fieldOpt) = fakeEntity
                 val defSitesWithoutExceptions =
@@ -584,7 +584,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             }
         }
 
-        for (fakeEntity ← state.arrayLoadsIterator) {
+        for (fakeEntity <- state.arrayLoadsIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSite, arrayType, filter) = fakeEntity
                 val dependees = state.dependeesOf(fakeEntity)
@@ -597,7 +597,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
             }
         }
 
-        for (fakeEntity ← state.arrayStoresIterator) {
+        for (fakeEntity <- state.arrayStoresIterator) {
             if (state.hasDependees(fakeEntity)) {
                 val (defSites, arrayType) = fakeEntity
                 val defSitesWithoutExceptions =
