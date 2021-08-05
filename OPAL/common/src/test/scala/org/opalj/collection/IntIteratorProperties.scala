@@ -76,18 +76,18 @@ object IntIteratorProperties extends Properties("IntIterator") {
     property("map[AnyRef]") = forAll { is: IntArraySet =>
         val setBased =
             for {
-                i ← is.toArray
+                i <- is.toArray
                 p = (i, i + 1)
-                j ← 0 until 3
+                j <- 0 until 3
                 q = (i, j)
             } yield {
                 (p, q)
             }
         val iteratorBased =
             for {
-                i ← is.iterator // here, we generate the IntIterator
+                i <- is.iterator // here, we generate the IntIterator
                 p = (i, i + 1)
-                j ← 0 until 3
+                j <- 0 until 3
                 q = (i, j)
             } yield {
                 (p, q)
@@ -98,16 +98,16 @@ object IntIteratorProperties extends Properties("IntIterator") {
     property("flatMap[AnyRef]") = forAll { is: IntArraySet =>
         val setBased =
             for {
-                i ← is.toArray
-                j ← is.toArray
+                i <- is.toArray
+                j <- is.toArray
                 q = (i, j)
             } yield {
                 q
             }
         val iteratorBased =
             for {
-                i ← is.iterator // here, we generate the IntIterator
-                j ← is.iterator // here, we generate the IntIterator
+                i <- is.iterator // here, we generate the IntIterator
+                j <- is.iterator // here, we generate the IntIterator
                 q = (i, j)
             } yield {
                 q

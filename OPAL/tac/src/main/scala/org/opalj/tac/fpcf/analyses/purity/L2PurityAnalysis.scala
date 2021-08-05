@@ -646,27 +646,27 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         var newFieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
-        for ((dependee, (eop, data)) ← state.fieldLocalityDependees) {
+        for ((dependee, (eop, data)) <- state.fieldLocalityDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
             if (newData.nonEmpty) newFieldLocalityDependees += ((dependee, (eop, newData)))
         }
         state.fieldLocalityDependees = newFieldLocalityDependees
 
         var newRVFCallsites: IntMap[(Option[Expr[V]], Purity)] = IntMap.empty
-        for ((callsite, data) ← state.rvfCallSites) {
+        for ((callsite, data) <- state.rvfCallSites) {
             if (data._2 meet state.ubPurity ne state.ubPurity) newRVFCallsites += ((callsite, data))
         }
         state.rvfCallSites = newRVFCallsites
 
         var newRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
-        for ((dependee, (eop, data)) ← state.rvfDependees) {
+        for ((dependee, (eop, data)) <- state.rvfDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
             if (newData.nonEmpty) newRVFDependees += ((dependee, (eop, newData)))
         }
         state.rvfDependees = newRVFDependees
 
         var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
-        for ((dependee, eAndD) ← state.purityDependees) {
+        for ((dependee, eAndD) <- state.purityDependees) {
             if (eAndD._1.isEPK || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
                 newPurityDependees += ((dependee, eAndD))
         }
@@ -684,7 +684,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         if (state.tacai.isDefined) return ; // Nothing to be done, lower bound is still LBImpure
 
-        for ((eop, _) ← state.purityDependees.valuesIterator) {
+        for ((eop, _) <- state.purityDependees.valuesIterator) {
             eop match {
                 case LBP(lb) => newLowerBound = newLowerBound meet lb
                 case _ =>
@@ -701,21 +701,21 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         for {
-            (_, data) ← state.fieldLocalityDependees.valuesIterator
-            (_, purity) ← data
+            (_, data) <- state.fieldLocalityDependees.valuesIterator
+            (_, purity) <- data
         } {
             newLowerBound = newLowerBound meet purity
         }
 
         for {
-            (_, purity) ← state.rvfCallSites.valuesIterator
+            (_, purity) <- state.rvfCallSites.valuesIterator
         } {
             newLowerBound = newLowerBound meet purity
         }
 
         for {
-            (_, data) ← state.rvfDependees.valuesIterator
-            (_, purity) ← data
+            (_, data) <- state.rvfDependees.valuesIterator
+            (_, purity) <- data
         } {
             newLowerBound = newLowerBound meet purity
         }
@@ -875,7 +875,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
         for {
-            bb ← bbsCausingExceptions
+            bb <- bbsCausingExceptions
         } {
             val pc = bb.asBasicBlock.endPC
             if (isSourceOfImmediateException(pc)) {
