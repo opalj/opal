@@ -106,7 +106,7 @@ abstract class LongSetTest extends AnyFunSpec {
             List[Long](8192, 16384, 32768, 65536, 131072)
         )
 
-        for { fixture ← fixtures } {
+        for { fixture <- fixtures } {
             val oLongSet = fixture.foldLeft(empty())((c, n) => c + n)
             val otherValues = fixture.map(~_).filter(v => !fixture.contains(v))
 

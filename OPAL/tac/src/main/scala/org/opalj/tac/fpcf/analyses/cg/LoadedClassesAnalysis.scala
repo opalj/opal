@@ -202,7 +202,7 @@ class LoadedClassesAnalysis(
             newLoadedClasses ++= getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
         }
 
-        for (stmt ← stmts) {
+        for (stmt <- stmts) {
             stmt match {
                 //TODO is dc sufficient?
                 case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) =>
