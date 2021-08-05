@@ -32,12 +32,12 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
         val classHierarchy = project.classHierarchy
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction ← body
+            pcAndInstruction <- body
             if pcAndInstruction.instruction.opcode == INVOKEINTERFACE.opcode
         } {
             val INVOKEINTERFACE(declaringClass, name, desc) = pcAndInstruction.instruction
