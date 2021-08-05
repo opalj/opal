@@ -29,8 +29,8 @@ object PrivateMethodsWithObjectTypeParameterCounter extends ProjectAnalysisAppli
         val overallPotential = new java.util.concurrent.atomic.AtomicInteger(0)
         val methods = (
             for {
-                classFile ← project.allClassFiles.par
-                method ← classFile.methods
+                classFile <- project.allClassFiles.par
+                method <- classFile.methods
                 if method.isPrivate //|| method.isPackagePrivate
                 if method.name != "readObject" && method.name != "writeObject"
                 potential = (method.descriptor.parameterTypes.collect {

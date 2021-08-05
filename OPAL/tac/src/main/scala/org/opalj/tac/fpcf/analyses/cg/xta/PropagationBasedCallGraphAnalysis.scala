@@ -131,7 +131,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
         unresolvedTypes: IntTrieSet,
         callSite:        CallSite
     )(implicit state: PropagationBasedCGState): Unit = {
-        for (typeId ← unresolvedTypes)
+        for (typeId <- unresolvedTypes)
             state.addVirtualCallSite(typeId.toLong, callSite)
     }
 
