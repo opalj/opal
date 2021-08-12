@@ -120,12 +120,12 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             project.get(LazyTACUsingAIKey)
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction ← body collect {
+            pcAndInstruction <- body collect {
                 case i: LoadClass => i
                 case i: LoadClass_W => i
                 case i @ INVOKEVIRTUAL(MethodT, "invoke", Invoke) => i
