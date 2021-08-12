@@ -137,14 +137,14 @@ case object Yes extends Answer {
     override def isNotYes: Boolean = false
     override def isYesOrNo: Boolean = true
 
-    override def ifUnknown(f: => Answer): Answer = this
+    override def ifUnknown(f: ⇒ Answer): Answer = this
 
     override def negate: No.type = No
     override def &&(other: Answer): Answer = {
         other match {
-            case Yes => this
-            case No  => No
-            case _   => Unknown
+            case Yes ⇒ this
+            case No  ⇒ No
+            case _   ⇒ Unknown
         }
     }
     override def ||(other: Answer): Yes.type = this
@@ -166,15 +166,15 @@ case object No extends Answer {
     override def isNotYes: Boolean = true
     override def isYesOrNo: Boolean = true
 
-    override def ifUnknown(f: => Answer): Answer = this
+    override def ifUnknown(f: ⇒ Answer): Answer = this
 
     override def negate: Yes.type = Yes
     override def &&(other: Answer): No.type = this
     override def ||(other: Answer): Answer = {
         other match {
-            case Yes => Yes
-            case No  => this
-            case _   => Unknown
+            case Yes ⇒ Yes
+            case No  ⇒ this
+            case _   ⇒ Unknown
         }
     }
     override def join(other: Answer): Answer = if (other eq this) this else Unknown
@@ -195,7 +195,7 @@ case object Unknown extends Answer {
     override def isNotYes: Boolean = true
     override def isYesOrNo: Boolean = false
 
-    override def ifUnknown(f: => Answer): Answer = f
+    override def ifUnknown(f: ⇒ Answer): Answer = f
 
     override def negate: Unknown.type = this
 
