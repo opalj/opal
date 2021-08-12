@@ -69,7 +69,7 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
             }
         )
 
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, features(featureIDIndex))
         }
 
