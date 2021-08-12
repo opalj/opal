@@ -53,7 +53,7 @@ package object ai {
             assert(false) // <= tests whether assertions are on or off...
             info(FrameworkName, "Production Build")
         } catch {
-            case _: AssertionError ⇒ info(FrameworkName, "Development Build with Assertions")
+            case _: AssertionError => info(FrameworkName, "Development Build with Assertions")
         }
     }
 
@@ -382,11 +382,11 @@ package object ai {
         // THIS METHOD IS NOT PERFORMANCE SENSITIVE!
         val operandsAndLocals =
             for {
-                ((operands, locals), pc) ← operandsArray.zip(localsArray).zipWithIndex
+                ((operands, locals), pc) <- operandsArray.zip(localsArray).zipWithIndex
                 if operands != null /*|| locals != null*/
             } yield {
                 val localsWithIndex =
-                    for { (l, idx) ← locals.zipWithIndex if l ne null } yield { s"($idx:$l)" }
+                    for { (l, idx) <- locals.zipWithIndex if l ne null } yield { s"($idx:$l)" }
 
                 operands.mkString(s"PC: $pc\n\tOperands: ", " <- ", "") +
                     localsWithIndex.mkString("\n\tLocals: [", ",", "]")
@@ -443,7 +443,7 @@ package object ai {
             localsIndex = 1
         }
         var paramIndex = 1
-        descriptor.parameterTypes foreach { t ⇒
+        descriptor.parameterTypes foreach { t =>
             params(paramIndex) = locals(localsIndex)
             localsIndex += t.computationalType.operandSize
             paramIndex += 1
@@ -532,7 +532,7 @@ package object ai {
         var localVariableIndex = 0
         var processedOperands = 0
         val operandsInParameterOrder = operands.reverse
-        operandsInParameterOrder foreach { operand ⇒
+        operandsInParameterOrder foreach { operand =>
             val parameter = {
                 // Was the same value (determined by "eq") already adapted?
                 // If so, we reuse it to facilitate correlation analyses
@@ -634,7 +634,7 @@ package object ai {
     )(
         code: Code, operandsArray: domain.OperandsArray
     )(
-        f: (Int /*PC*/ , Instruction, domain.Operands) ⇒ U
+        f: (Int /*PC*/ , Instruction, domain.Operands) => U
     ): Unit = {
         val instructions = code.instructions
         val max_pc = instructions.size

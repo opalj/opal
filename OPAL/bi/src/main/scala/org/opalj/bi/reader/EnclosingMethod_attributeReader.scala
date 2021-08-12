@@ -46,7 +46,7 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt
         EnclosingMethod_attribute(
             cp,
@@ -58,5 +58,5 @@ trait EnclosingMethod_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(EnclosingMethodAttribute.Name → parserFactory())
+    registerAttributeReader(EnclosingMethodAttribute.Name -> parserFactory())
 }

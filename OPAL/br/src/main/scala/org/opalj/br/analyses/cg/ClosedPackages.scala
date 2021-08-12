@@ -34,7 +34,7 @@ import org.opalj.log.OPALLogger.warn
  *
  * @author Michael Reif
  */
-abstract class ClosedPackages extends (String ⇒ Boolean) {
+abstract class ClosedPackages extends (String => Boolean) {
 
     def project: SomeProject
 

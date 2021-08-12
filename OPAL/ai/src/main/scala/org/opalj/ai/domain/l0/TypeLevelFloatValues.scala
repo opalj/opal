@@ -17,7 +17,7 @@ import org.opalj.br.FloatType
  * @author David Becker
  */
 trait TypeLevelFloatValues extends FloatValuesDomain {
-    domain: IntegerValuesFactory ⇒
+    domain: IntegerValuesFactory =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -29,7 +29,7 @@ trait TypeLevelFloatValues extends FloatValuesDomain {
      * Abstracts over all values with computational type `float`.
      */
     trait FloatValue extends TypedValue[FloatType] with IsFloatValue {
-        this: DomainTypedValue[FloatType] ⇒
+        this: DomainTypedValue[FloatType] =>
 
         final override def leastUpperType: Option[FloatType] = Some(FloatType)
 

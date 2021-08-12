@@ -36,16 +36,16 @@ sealed trait ClassImmutabilityPropertyMetaInformation extends PropertyMetaInform
 sealed trait ClassImmutability extends ClassImmutabilityPropertyMetaInformation with OrderedProperty {
     def meet(other: ClassImmutability): ClassImmutability = {
         (this, other) match {
-            case (TransitivelyImmutableClass, _)       ⇒ other
-            case (_, TransitivelyImmutableClass)       ⇒ this
-            case (MutableClass, _) | (_, MutableClass) ⇒ MutableClass
-            case (_, _)                                ⇒ this
+            case (TransitivelyImmutableClass, _)       => other
+            case (_, TransitivelyImmutableClass)       => this
+            case (MutableClass, _) | (_, MutableClass) => MutableClass
+            case (_, _)                                => this
         }
     }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: ClassImmutability): Unit = {
         if (meet(other) != other) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 
@@ -94,9 +94,9 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
             dependencies -= value.e
             if (value.hasUBP)
                 value.ub match {
-                    case TransitivelyImmutableField    ⇒ /* Nothing to do here */
-                    case NonTransitivelyImmutableField ⇒ immutability = NonTransitivelyImmutableClass
-                    case MutableField                  ⇒ immutability = MutableClass
+                    case TransitivelyImmutableField    => /* Nothing to do here */
+                    case NonTransitivelyImmutableField => immutability = NonTransitivelyImmutableClass
+                    case MutableField                  => immutability = MutableClass
                 }
             if (value.isRefinable)
                 dependencies += value.e -> value
@@ -108,8 +108,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
         def continuation(updatedValue: SomeEPS): ProperPropertyComputationResult = {
             updatedValue.e match {
-                case _: ClassFile ⇒ checkSuperclass(updatedValue.asInstanceOf[EOptionP[ClassFile, ClassImmutability]])
-                case _: Field     ⇒ checkField(updatedValue.asInstanceOf[EOptionP[Field, FieldImmutability]])
+                case _: ClassFile => checkSuperclass(updatedValue.asInstanceOf[EOptionP[ClassFile, ClassImmutability]])
+                case _: Field     => checkField(updatedValue.asInstanceOf[EOptionP[Field, FieldImmutability]])
             }
 
             result()
@@ -127,8 +127,8 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     def lazilyAnalyzeClassImmutability(entity: Entity): ProperPropertyComputationResult = {
         entity match {
-            case classfile: ClassFile ⇒ analyzeClassImmutability(classfile)
-            case _                    ⇒ throw new IllegalArgumentException("Class Immutability Analysis can only process classfiles!")
+            case classfile: ClassFile => analyzeClassImmutability(classfile)
+            case _                    => throw new IllegalArgumentException("Class Immutability Analysis can only process classfiles!")
         }
     }
 }
@@ -168,7 +168,7 @@ object LazyClassImmutabilityAnalysis extends ClassImmutabilityAnalysisScheduler 
 /* RUNNER */
 
 object ClassImmutabilityRunner extends ProjectAnalysisApplication {
-    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
             EagerClassImmutabilityAnalysis,
             LazyFieldImmutabilityAnalysis
@@ -196,16 +196,16 @@ sealed trait FieldImmutabilityPropertyMetaInformation extends PropertyMetaInform
 sealed trait FieldImmutability extends FieldImmutabilityPropertyMetaInformation with OrderedProperty {
     def meet(other: FieldImmutability): FieldImmutability = {
         (this, other) match {
-            case (TransitivelyImmutableField, _)       ⇒ other
-            case (_, TransitivelyImmutableField)       ⇒ this
-            case (MutableField, _) | (_, MutableField) ⇒ MutableField
-            case (_, _)                                ⇒ this
+            case (TransitivelyImmutableField, _)       => other
+            case (_, TransitivelyImmutableField)       => this
+            case (MutableField, _) | (_, MutableField) => MutableField
+            case (_, _)                                => this
         }
     }
 
     override def checkIsEqualOrBetterThan(e: Entity, other: FieldImmutability): Unit = {
         if (meet(other) != other) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 
@@ -221,11 +221,11 @@ case object MutableField extends FieldImmutability
 object FieldImmutability extends FieldImmutabilityPropertyMetaInformation {
     final val key: PropertyKey[FieldImmutability] = PropertyKey.create(
         "FieldImmutability",
-        (_: PropertyStore, _: FallbackReason, e: Entity) ⇒ {
+        (_: PropertyStore, _: FallbackReason, e: Entity) => {
             e match {
-                case f: Field ⇒
+                case f: Field =>
                     if (f.isFinal) NonTransitivelyImmutableField else MutableField
-                case x ⇒
+                case x =>
                     throw new IllegalArgumentException(s"$x is not a Field")
             }
         }
@@ -236,13 +236,13 @@ class FieldImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def analyzeFieldImmutability(field: Field): ProperPropertyComputationResult = {
         val immutability =
             if (field.isFinal) field.fieldType match {
-                case bt if bt.isBaseType ⇒
+                case bt if bt.isBaseType =>
                     TransitivelyImmutableField
-                case wt: ObjectType if ObjectType.isPrimitiveTypeWrapper(wt) ⇒
+                case wt: ObjectType if ObjectType.isPrimitiveTypeWrapper(wt) =>
                     TransitivelyImmutableField
-                case st if st == ObjectType.String ⇒
+                case st if st == ObjectType.String =>
                     TransitivelyImmutableField
-                case _ ⇒
+                case _ =>
                     NonTransitivelyImmutableField
             }
             else MutableField
@@ -252,8 +252,8 @@ class FieldImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
 
     def lazilyAnalyzeFieldImmutability(entity: Entity): ProperPropertyComputationResult = {
         entity match {
-            case field: Field ⇒ analyzeFieldImmutability(field)
-            case _            ⇒ throw new IllegalArgumentException("Field Immutability Analysis can only process Fields!")
+            case field: Field => analyzeFieldImmutability(field)
+            case _            => throw new IllegalArgumentException("Field Immutability Analysis can only process Fields!")
         }
     }
 }

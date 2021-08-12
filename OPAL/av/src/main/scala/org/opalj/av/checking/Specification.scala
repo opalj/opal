@@ -6,8 +6,8 @@ package checking
 import scala.language.implicitConversions
 import java.net.URL
 import scala.util.matching.Regex
-import scala.collection.{Map ⇒ AMap, Set ⇒ ASet}
-import scala.collection.mutable.{Map ⇒ MutableMap, HashSet}
+import scala.collection.{Map => AMap, Set => ASet}
+import scala.collection.mutable.{Map => MutableMap, HashSet}
 import scala.Console.{GREEN, RED, RESET}
 import scala.io.Source
 import org.opalj.util.PerformanceEvaluation.{time, run}
@@ -53,7 +53,7 @@ import org.opalj.de.DependencyTypes.toUsageDescription
  * @author Samuel Beracasa
  * @author Marco Torsello
  */
-class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spec ⇒
+class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spec =>
 
     /**
      * Creates a new `Specification` for the given `Project`. Error messages will
@@ -73,7 +73,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     projectClassFilesWithSources = classFiles,
                     Traversable.empty,
                     libraryClassFilesAreInterfacesOnly = true /*actually not relevant*/ )
-            } { (t, project) ⇒
+            } { (t, project) =>
                 import project.logContext
                 val logMessage = "1. reading "+project.classFilesCount+" class files took "+t.toSeconds
                 val message = if (useAnsiColors) GREEN + logMessage + RESET else logMessage
@@ -229,9 +229,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 sourceEnsembles.foldLeft(Set[VirtualSourceElement]())(_ ++ ensembles(_)._2)
             val (_, targetEnsembleElements) = ensembles(targetEnsemble)
             for {
-                targetEnsembleElement ← targetEnsembleElements
+                targetEnsembleElement <- targetEnsembleElements
                 if incomingDependencies.contains(targetEnsembleElement)
-                (incomingElement, dependencyType) ← incomingDependencies(targetEnsembleElement)
+                (incomingElement, dependencyType) <- incomingDependencies(targetEnsembleElement)
                 if !(
                     sourceEnsembleElements.contains(incomingElement) ||
                     targetEnsembleElements.contains(incomingElement)
@@ -288,11 +288,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 targetEnsembles.foldLeft(Set.empty[VirtualSourceElement])(_ ++ ensembles(_)._2)
 
             for {
-                sourceElement ← sourceEnsembleElements
+                sourceElement <- sourceEnsembleElements
                 targets = outgoingDependencies.get(sourceElement)
                 if targets.isDefined
-                (targetElement, currentDependencyTypes) ← targets.get
-                currentDependencyType ← currentDependencyTypes
+                (targetElement, currentDependencyTypes) <- targets.get
+                currentDependencyType <- currentDependencyTypes
                 if ((notAllowedTargetSourceElements contains targetElement) &&
                     ((dependencyTypes equals USE) || (dependencyTypes contains currentDependencyType)))
             } yield {
@@ -313,7 +313,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             } else {
                 val start =
                     s"$sourceEnsemble is_not_allowed_to ${
-                        dependencyTypes.map(d ⇒ toUsageDescription(d)).mkString(" and ")
+                        dependencyTypes.map(d => toUsageDescription(d)).mkString(" and ")
                     } ("
                 targetEnsembles.mkString(start, ",", ")")
             }
@@ -357,11 +357,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 targetEnsembles.foldLeft(sourceEnsembleElements)(_ ++ ensembles(_)._2)
 
             for {
-                sourceElement ← sourceEnsembleElements
+                sourceElement <- sourceEnsembleElements
                 targets = outgoingDependencies.get(sourceElement)
                 if targets.isDefined
-                (targetElement, currentDependencyTypes) ← targets.get
-                currentDependencyType ← currentDependencyTypes
+                (targetElement, currentDependencyTypes) <- targets.get
+                currentDependencyType <- currentDependencyTypes
                 if (!(allAllowedLocalTargetSourceElements contains targetElement) &&
                     ((dependencyTypes equals USE) || (dependencyTypes contains currentDependencyType)))
                 // references to unmatched source elements are ignored
@@ -384,7 +384,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             } else {
                 val start =
                     s"$sourceEnsemble is_only_allowed_to ${
-                        dependencyTypes.map(d ⇒ toUsageDescription(d)).mkString(" and ")
+                        dependencyTypes.map(d => toUsageDescription(d)).mkString(" and ")
                     } ("
                 targetEnsembles.mkString(start, ",", ")")
             }
@@ -431,34 +431,34 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
 
             for {
-                sourceElement ← sourceEnsembleElements
-                classFile ← project.classFile(sourceElement.classType.asObjectType)
+                sourceElement <- sourceEnsembleElements
+                classFile <- project.classFile(sourceElement.classType.asObjectType)
                 annotations = sourceElement match {
-                    case _: VirtualClass ⇒ classFile.annotations
+                    case _: VirtualClass => classFile.annotations
 
-                    case vf: VirtualField ⇒
+                    case vf: VirtualField =>
                         classFile.fields collectFirst {
-                            case f if f.asVirtualField(classFile).compareTo(vf) == 0 ⇒ f
+                            case f if f.asVirtualField(classFile).compareTo(vf) == 0 => f
                         } match {
-                            case Some(f) ⇒ f.annotations
-                            case _       ⇒ IndexedSeq.empty
+                            case Some(f) => f.annotations
+                            case _       => IndexedSeq.empty
                         }
 
-                    case vm: VirtualMethod ⇒
+                    case vm: VirtualMethod =>
                         classFile.methods collectFirst {
-                            case m if m.asVirtualMethod(classFile.thisType).compareTo(vm) == 0 ⇒ m
+                            case m if m.asVirtualMethod(classFile.thisType).compareTo(vm) == 0 => m
                         } match {
-                            case Some(m) ⇒ m.annotations
-                            case _       ⇒ IndexedSeq.empty
+                            case Some(m) => m.annotations
+                            case _       => IndexedSeq.empty
                         }
 
-                    case _ ⇒ IndexedSeq.empty
+                    case _ => IndexedSeq.empty
                 }
 
                 //              if !annotations.foldLeft(false) {
-                //                  (v: Boolean, a: Annotation) ⇒
+                //                  (v: Boolean, a: Annotation) =>
                 //                      v || annotationPredicates.foldLeft(!matchAny) {
-                //                          (matched: Boolean, m: AnnotationPredicate) ⇒
+                //                          (matched: Boolean, m: AnnotationPredicate) =>
                 //                              if (matchAny) {
                 //                                  matched || m(a)
                 //                              } else {
@@ -467,11 +467,11 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 //                      }
                 //              }
                 if !annotationPredicates.foldLeft(!matchAny) {
-                    (v: Boolean, m: AnnotationPredicate) ⇒
+                    (v: Boolean, m: AnnotationPredicate) =>
                         if (!matchAny) {
-                            v && annotations.exists { a ⇒ m(a) }
+                            v && annotations.exists { a => m(a) }
                         } else {
-                            v || annotations.exists { a ⇒ m(a) }
+                            v || annotations.exists { a => m(a) }
                         }
                 }
             } yield {
@@ -512,12 +512,12 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
             val (_ /*ensembleName*/ , sourceEnsembleElements) = spec.ensembles(sourceEnsemble)
 
             for {
-                sourceElement ← sourceEnsembleElements
+                sourceElement <- sourceEnsembleElements
                 sourceClassFile = sourceElement match {
-                    case s: VirtualClass ⇒ project.classFile(s.classType.asObjectType).get
-                    case _               ⇒ throw SpecificationError(sourceElement.toJava+" is not a class")
+                    case s: VirtualClass => project.classFile(s.classType.asObjectType).get
+                    case _               => throw SpecificationError(sourceElement.toJava+" is not a class")
                 }
-                if sourceClassFile.methods.forall(m ⇒ !methodPredicate(m))
+                if sourceClassFile.methods.forall(m => !methodPredicate(m))
             } yield {
                 PropertyViolation(
                     project,
@@ -559,13 +559,13 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 targetEnsembles.foldLeft(sourceEnsembleElements)(_ ++ spec.ensembles(_)._2)
 
             for {
-                sourceElement ← sourceEnsembleElements
+                sourceElement <- sourceEnsembleElements
                 sourceClassFile = sourceElement match {
-                    case s: VirtualClass ⇒ project.classFile(s.classType.asObjectType).get
-                    case _               ⇒ throw SpecificationError(sourceElement.toJava+" is not a class")
+                    case s: VirtualClass => project.classFile(s.classType.asObjectType).get
+                    case _               => throw SpecificationError(sourceElement.toJava+" is not a class")
                 }
-                if sourceClassFile.superclassType.map(s ⇒
-                    !allLocalTargetSourceElements.exists(v ⇒
+                if sourceClassFile.superclassType.map(s =>
+                    !allLocalTargetSourceElements.exists(v =>
                         v.classType.asObjectType.equals(s))).getOrElse(false)
             } yield {
                 PropertyViolation(
@@ -703,7 +703,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                 if (extension.isEmpty)
                     "/* NO ELEMENTS */ "
                 else {
-                    extension.tail.foldLeft("\n\t//"+extension.head.toString+"\n")((s, vse) ⇒ s+"\t//"+vse.toJava+"\n")
+                    extension.tail.foldLeft("\n\t//"+extension.head.toString+"\n")((s, vse) => s+"\t//"+vse.toJava+"\n")
                 }
             }+"}"
     }
@@ -714,9 +714,9 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
      */
     def ensembleExtentsToString: String = {
         var s = ""
-        for ((ensemble, (_, elements)) ← theEnsembles) {
+        for ((ensemble, (_, elements)) <- theEnsembles) {
             s += ensemble+"\n"
-            for (element ← elements) {
+            for (element <- elements) {
                 s += "\t\t\t"+element.toJava+"\n"
             }
         }
@@ -726,7 +726,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     def analyze(): Set[SpecificationViolation] = {
         val dependencyStore = time {
             project.get(DependencyStoreWithoutSelfDependenciesKey)
-        } { ns ⇒ logProgress("2.1. preprocessing dependencies took "+ns.toSeconds) }
+        } { ns => logProgress("2.1. preprocessing dependencies took "+ns.toSeconds) }
 
         logInfo("Dependencies between source elements: "+dependencyStore.dependencies.size)
         logInfo("Dependencies on primitive types: "+dependencyStore.dependenciesOnBaseTypes.size)
@@ -734,15 +734,15 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
         time {
             for {
-                (source, targets) ← dependencyStore.dependencies
-                (target, dTypes) ← targets
+                (source, targets) <- dependencyStore.dependencies
+                (target, dTypes) <- targets
             } {
                 allSourceElements += source
                 allSourceElements += target
 
                 theOutgoingDependencies.update(source, targets)
 
-                for { dType ← dTypes } {
+                for { dType <- dTypes } {
                     theIncomingDependencies.update(
                         target,
                         theIncomingDependencies.getOrElse(target, Set.empty) +
@@ -750,7 +750,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
                     )
                 }
             }
-        } { ns ⇒ logProgress("2.2. postprocessing dependencies took "+ns.toSeconds) }
+        } { ns => logProgress("2.2. postprocessing dependencies took "+ns.toSeconds) }
         logInfo("Number of source elements: "+allSourceElements.size)
         logInfo("Outgoing dependencies: "+theOutgoingDependencies.size)
         logInfo("Incoming dependencies: "+theIncomingDependencies.size)
@@ -759,7 +759,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         //
         time {
             val instantiatedEnsembles =
-                theEnsembles.par map { ensemble ⇒
+                theEnsembles.par map { ensemble =>
                     val (ensembleSymbol, (sourceElementMatcher, _)) = ensemble
                     // if a sourceElementMatcher is reused!
                     sourceElementMatcher.synchronized {
@@ -779,7 +779,7 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
 
             logInfo("   => Matched source elements: "+matchedSourceElements.size)
             logInfo("   => Other source elements: "+unmatchedSourceElements.size)
-        } { ns ⇒
+        } { ns =>
             logProgress("3. determing the extension of the ensembles took "+ns.toSeconds)
         }
 
@@ -787,12 +787,12 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
         //
         time {
             val result =
-                for { architectureChecker ← architectureCheckers.par } yield {
+                for { architectureChecker <- architectureCheckers.par } yield {
                     logProgress("   checking: "+architectureChecker)
-                    for (violation ← architectureChecker.violations) yield violation
+                    for (violation <- architectureChecker.violations) yield violation
                 }
             Set.empty ++ (result.filter(_.nonEmpty).flatten)
-        } { ns ⇒
+        } { ns =>
             logProgress("4. checking the specified dependency constraints took "+ns.toSeconds)
         }
     }
@@ -875,7 +875,7 @@ object Specification {
         fileName:          String,
         pathSeparatorChar: Char   = java.io.File.pathSeparatorChar
     ): Iterable[String] = {
-        processSource(Source.fromFile(new java.io.File(fileName))) { s ⇒
+        processSource(Source.fromFile(new java.io.File(fileName))) { s =>
             s.getLines().map(_.split(pathSeparatorChar)).flatten.toSet
         }
     }
@@ -885,7 +885,7 @@ object Specification {
      * regular expression from the given list of paths.
      */
     def PathToJARs(paths: Iterable[String], jarName: Regex): Iterable[String] = {
-        val matchedPaths = paths.collect { case p @ (jarName(_)) ⇒ p }
+        val matchedPaths = paths.collect { case p @ (jarName(_)) => p }
         if (matchedPaths.isEmpty)
             throw SpecificationError(s"no path is matched by: $jarName.");
         matchedPaths
@@ -896,6 +896,6 @@ object Specification {
      * regular expressions from the given list of paths.
      */
     def PathToJARs(paths: Iterable[String], jarNames: Iterable[Regex]): Iterable[String] = {
-        jarNames.foldLeft(Set.empty[String])((c, n) ⇒ c ++ PathToJARs(paths, n))
+        jarNames.foldLeft(Set.empty[String])((c, n) => c ++ PathToJARs(paths, n))
     }
 }

@@ -18,9 +18,9 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.tac.fpcf.properties.TACAI
-import java.util.{HashSet ⇒ JHashSet}
-import java.util.{HashMap ⇒ JHashMap}
-import java.util.{Set ⇒ JSet}
+import java.util.{HashSet => JHashSet}
+import java.util.{HashMap => JHashMap}
+import java.util.{Set => JSet}
 
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
@@ -255,6 +255,6 @@ final class TypePropagationState(
         if (types.size <= 1)
             return types;
 
-        types.filter(t1 ⇒ !types.exists(t2 ⇒ t1 != t2 && classHierarchy.isSubtypeOf(t1, t2)))
+        types.filter(t1 => !types.exists(t2 => t1 != t2 && classHierarchy.isSubtypeOf(t1, t2)))
     }
 }

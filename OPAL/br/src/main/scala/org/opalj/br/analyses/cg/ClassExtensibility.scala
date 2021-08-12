@@ -20,7 +20,7 @@ import org.opalj.collection.mutable.ArrayMap
  * @author Michael Reif
  * @author Michael Eichberg
  */
-abstract class ClassExtensibility extends (ObjectType ⇒ Answer) {
+abstract class ClassExtensibility extends (ObjectType => Answer) {
 
     /** See [[isClassExtensible]]. */
     final override def apply(t: ObjectType): Answer = this.isClassExtensible(t)
@@ -61,7 +61,7 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
 
         import project.classHierarchy
 
-        fqns.flatMap { fqn ⇒
+        fqns.flatMap { fqn =>
             // We chose "/." to identify all subtypes, because we can only use a character
             // (sequence) that contains an invalid character in a JVM identifier.
             if (fqn.endsWith("/.")) {
@@ -77,14 +77,14 @@ abstract class AbstractClassExtensibility extends ClassExtensibility {
 
         val isClosedPackage = project.get(ClosedPackagesKey)
 
-        val configuredTypes = mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e ⇒
+        val configuredTypes = mutable.LongMap.empty[Answer] ++ configuredExtensibleClasses.map { e =>
             val (ot, answer) = e
             (ot.id, answer)
         }
 
         val allClassFiles = project.allClassFiles
         val entries = ObjectType.objectTypesCount
-        val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](entries)) { (r, classFile) ⇒
+        val extensibility = allClassFiles.foldLeft(ArrayMap[Answer](entries)) { (r, classFile) =>
             val objectType = classFile.thisType
             val isExtensible = {
                 val configured = configuredTypes.get(objectType.id.toLong)
@@ -139,7 +139,7 @@ class ConfiguredExtensibleClasses(val project: SomeProject) extends AbstractClas
      * Returns the types which are extensible.
      */
     override def configuredExtensibleClasses: Iterator[(ObjectType, Yes.type)] = {
-        parseSpecifiedClassesList("extensibleClasses").iterator.map(t ⇒ (t, Yes))
+        parseSpecifiedClassesList("extensibleClasses").iterator.map(t => (t, Yes))
     }
 }
 
@@ -166,7 +166,7 @@ class ConfiguredFinalClasses(val project: SomeProject) extends AbstractClassExte
      * Returns the types which are not extensible/which are final.
      */
     override def configuredExtensibleClasses: Iterator[(ObjectType, No.type)] = {
-        parseSpecifiedClassesList("finalClasses").iterator.map(t ⇒ (t, No))
+        parseSpecifiedClassesList("finalClasses").iterator.map(t => (t, No))
     }
 }
 

@@ -13,8 +13,8 @@ case class BootstrapMethodTable(methods: BootstrapMethods) extends Attribute {
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: BootstrapMethodTable ⇒ this.similar(that)
-            case _                          ⇒ false
+            case that: BootstrapMethodTable => this.similar(that)
+            case _                          => false
         }
     }
 

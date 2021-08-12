@@ -8,7 +8,7 @@ package seq
  *
  * @author Michael Eichberg
  */
-sealed abstract class QualifiedTask extends (() ⇒ Unit) {
+sealed abstract class QualifiedTask extends (() => Unit) {
 
     /**
      * Returns `true` if and only if this task was definitively triggered
@@ -30,8 +30,8 @@ final case class HandleResultTask[E <: Entity, P <: Property](
 
     override def isTriggeredByFinalProperty: Boolean = {
         r match {
-            case NoResult | _: FinalPropertyComputationResult ⇒ true
-            case _                                            ⇒ false
+            case NoResult | _: FinalPropertyComputationResult => true
+            case _                                            => false
         }
     }
 }

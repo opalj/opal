@@ -56,10 +56,10 @@ sealed trait CalleesAndCallers {
         dm: DeclaredMethod
     ): PartialResult[DeclaredMethod, Callees] = {
         PartialResult[DeclaredMethod, Callees](dm, Callees.key, {
-            case InterimUBP(_) if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty ⇒
+            case InterimUBP(_) if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty =>
                 None
 
-            case InterimUBP(ub: Callees) ⇒
+            case InterimUBP(ub: Callees) =>
                 Some(InterimEUBP(
                     dm,
                     ub.updateWithCallees(
@@ -67,12 +67,12 @@ sealed trait CalleesAndCallers {
                     )
                 ))
 
-            case _: EPK[_, _] if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty ⇒
+            case _: EPK[_, _] if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty =>
                 Some(InterimEUBP(
                     dm, NoCallees
                 ))
 
-            case _: EPK[_, _] ⇒
+            case _: EPK[_, _] =>
                 Some(InterimEUBP(
                     dm,
                     new ConcreteCallees(
@@ -80,7 +80,7 @@ sealed trait CalleesAndCallers {
                     )
                 ))
 
-            case r ⇒
+            case r =>
                 throw new IllegalStateException(s"unexpected previous result $r")
         })
     }
@@ -105,7 +105,7 @@ trait Calls extends CalleesAndCallers {
         pc:     Int
     ): PartialResult[DeclaredMethod, Callers] = {
         PartialResult[DeclaredMethod, Callers](callee, Callers.key, {
-            case InterimUBP(ub: Callers) ⇒
+            case InterimUBP(ub: Callers) =>
                 val newCallers = ub.updated(caller, pc, isDirect)
                 // here we assert that update returns the identity if there is no change
                 if (ub ne newCallers)
@@ -113,14 +113,14 @@ trait Calls extends CalleesAndCallers {
                 else
                     None
 
-            case _: EPK[_, _] ⇒
+            case _: EPK[_, _] =>
                 val set = LongLinkedTrieSet(Callers.toLong(caller.id, pc, isDirect))
                 Some(InterimEUBP(
                     callee,
                     new CallersOnlyWithConcreteCallers(set)
                 ))
 
-            case r ⇒
+            case r =>
                 throw new IllegalStateException(s"unexpected previous result $r")
         })
     }
@@ -232,18 +232,18 @@ trait VMReachableMethodsBase extends CalleesAndCallers {
         vmReachableMethods += declaredMethod
 
     override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
-        vmReachableMethods.iterator.map { m ⇒
+        vmReachableMethods.iterator.map { m =>
             PartialResult[DeclaredMethod, Callers](m, Callers.key, {
-                case _: EPK[_, _] ⇒
+                case _: EPK[_, _] =>
                     Some(InterimEUBP(m, OnlyVMLevelCallers))
 
-                case InterimUBP(ub: Callers) ⇒
+                case InterimUBP(ub: Callers) =>
                     if (ub.hasVMLevelCallers)
                         None
                     else
                         Some(InterimEUBP(m, ub.updatedWithVMLevelCall()))
 
-                case r ⇒
+                case r =>
                     throw new IllegalStateException(s"unexpected previous result $r")
 
             })

@@ -10,7 +10,7 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait MethodCallResults { domain: ValuesDomain ⇒
+trait MethodCallResults { domain: ValuesDomain =>
 
     /**
      * `true` if the method returned due to a `("void"|a|i|l|f|d)return` instruction.

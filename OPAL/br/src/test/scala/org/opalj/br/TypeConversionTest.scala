@@ -116,7 +116,7 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
         }
 
         describe("boxing primitive types") {
-            BaseType.baseTypes foreach { t ⇒
+            BaseType.baseTypes foreach { t =>
                 it(s"should convert ${t.toJava} to ${t.WrapperType.toJava}") {
                     val instructions = t.boxValue
                     val descriptor = MethodDescriptor(t, t.WrapperType)
@@ -131,7 +131,7 @@ class TypeConversionTest extends AnyFunSpec with Matchers {
         }
 
         describe("unboxing to primitive types") {
-            BaseType.baseTypes foreach { t ⇒
+            BaseType.baseTypes foreach { t =>
                 it(s"should convert ${t.WrapperType.toJava} to ${t.toJava}") {
                     val instructions = t.WrapperType.unboxValue
                     instructions should be(Array(

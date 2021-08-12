@@ -74,16 +74,16 @@ class FieldBuilderTest extends AnyFlatSpec {
     val rawClassFile = Assembler(daClassFile)
     val javaClassName = binaryClassName.replace('/', '.')
     val loader = new InMemoryClassLoader(
-        Map(javaClassName → rawClassFile),
+        Map(javaClassName -> rawClassFile),
         this.getClass.getClassLoader
     )
 
     val fieldInstance = loader.loadClass(javaClassName).getDeclaredConstructor().newInstance()
     val mirror = runtimeMirror(loader).reflect(fieldInstance)
 
-    val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(rawClassFile)).head
+    val brClassFile = Java8Framework.ClassFile(() => new ByteArrayInputStream(rawClassFile)).head
 
-    def getField(name: String) = brClassFile.fields.find(f ⇒ f.name == name).get
+    def getField(name: String) = brClassFile.fields.find(f => f.name == name).get
 
     "the fields in `FieldClass`" should "have the correct visibility modifiers" in {
         assert(getField("privateField").accessFlags == ACC_PRIVATE.mask)

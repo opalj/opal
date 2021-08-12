@@ -15,7 +15,7 @@ import org.opalj.br.ObjectType
  *
  * @author Michael Eichberg
  */
-trait ConstantFieldValuesResolution extends Domain { domain: TheProject ⇒
+trait ConstantFieldValuesResolution extends Domain { domain: TheProject =>
 
     abstract override def getstatic(
         pc:        Int,
@@ -26,13 +26,13 @@ trait ConstantFieldValuesResolution extends Domain { domain: TheProject ⇒
 
         project.resolveFieldReference(classType, fieldName, fieldType) match {
             case Some(field) if field.isFinal && field.isStatic &&
-                (field.fieldType.isBaseType || (field.fieldType eq ObjectType.String)) ⇒
-                field.constantFieldValue.map(cv ⇒
+                (field.fieldType.isBaseType || (field.fieldType eq ObjectType.String)) =>
+                field.constantFieldValue.map(cv =>
                     ComputedValue(ConstantFieldValue(pc, cv))).getOrElse(
                     super.getstatic(pc, classType, fieldName, fieldType)
                 )
 
-            case _ ⇒
+            case _ =>
                 super.getstatic(pc, classType, fieldName, fieldType)
         }
     }

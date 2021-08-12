@@ -21,7 +21,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
-import org.opalj.br.fpcf.properties.{Purity ⇒ PurityProperty}
+import org.opalj.br.fpcf.properties.{Purity => PurityProperty}
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VCompileTimePure
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VPure
 import org.opalj.br.fpcf.properties.VirtualMethodPurity.VSideEffectFree
@@ -64,7 +64,7 @@ object UnusedResults extends ProjectAnalysisApplication {
     }
 
     override def doAnalyze(
-        project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean
+        project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean
     ): BasicReport = {
 
         val issues = new ConcurrentLinkedQueue[String]
@@ -72,7 +72,7 @@ object UnusedResults extends ProjectAnalysisApplication {
         implicit val p: SomeProject = project
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
-        implicit val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+        implicit val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
 
         project.get(RTACallGraphKey)
 
@@ -86,9 +86,9 @@ object UnusedResults extends ProjectAnalysisApplication {
             EagerL2PurityAnalysis
         )
 
-        project.parForeachMethodWithBody() { mi ⇒
+        project.parForeachMethodWithBody() { mi =>
             val method = mi.method
-            val tacai = (m: Method) ⇒ { val FinalP(taCode) = ps(method, TACAI.key); taCode.tac }
+            val tacai = (m: Method) => { val FinalP(taCode) = ps(method, TACAI.key); taCode.tac }
             issues.addAll(analyzeMethod(method, tacai = tacai).asJava)
         }
 
@@ -97,13 +97,13 @@ object UnusedResults extends ProjectAnalysisApplication {
 
     def analyzeMethod(
         method: Method,
-        tacai:  Method ⇒ Option[TACode[_, V]]
+        tacai:  Method => Option[TACode[_, V]]
     )(
         implicit
         project:             SomeProject,
         propertyStore:       PropertyStore,
         declaredMethods:     DeclaredMethods,
-        isMethodOverridable: Method ⇒ Answer
+        isMethodOverridable: Method => Answer
     ): Seq[String] = {
         val taCodeOption = tacai(method)
         if (taCodeOption.isEmpty)
@@ -112,17 +112,17 @@ object UnusedResults extends ProjectAnalysisApplication {
         val code = taCodeOption.get.stmts
 
         val issues = code collect {
-            case ExprStmt(_, call: StaticFunctionCall[V]) ⇒
+            case ExprStmt(_, call: StaticFunctionCall[V]) =>
                 val callee = call.resolveCallTarget(method.classFile.thisType)
                 handleCall(method, callee, call.pc)
-            case ExprStmt(_, call: NonVirtualFunctionCall[V]) ⇒
+            case ExprStmt(_, call: NonVirtualFunctionCall[V]) =>
                 val callee = call.resolveCallTarget(method.classFile.thisType)
                 handleCall(method, callee, call.pc)
-            case ExprStmt(_, call: VirtualFunctionCall[V]) ⇒
+            case ExprStmt(_, call: VirtualFunctionCall[V]) =>
                 handleVirtualCall(call, method)
         }
 
-        issues collect { case Some(issue) ⇒ issue }
+        issues collect { case Some(issue) => issue }
     }
 
     def handleCall(
@@ -136,9 +136,9 @@ object UnusedResults extends ProjectAnalysisApplication {
     ): Option[String] = {
         if (callee.hasValue) {
             propertyStore(declaredMethods(callee.value), PurityProperty.key) match {
-                case FinalP(CompileTimePure | Pure | SideEffectFree) ⇒
+                case FinalP(CompileTimePure | Pure | SideEffectFree) =>
                     createIssue(caller, callee.value, pc)
-                case _ ⇒ None
+                case _ => None
             }
         } else {
             None
@@ -153,7 +153,7 @@ object UnusedResults extends ProjectAnalysisApplication {
         project:             SomeProject,
         propertyStore:       PropertyStore,
         declaredMethods:     DeclaredMethods,
-        isMethodOverridable: Method ⇒ Answer
+        isMethodOverridable: Method => Answer
     ): Option[String] = {
         val callerType = caller.classFile.thisType
         val VirtualFunctionCall(_, dc, _, name, descr, receiver, _) = call
@@ -182,9 +182,9 @@ object UnusedResults extends ProjectAnalysisApplication {
                 None // We don't know all overrides, ignore the call (it may be impure)
             } else {
                 propertyStore(callee, VirtualMethodPurity.key) match {
-                    case FinalP(VCompileTimePure | VPure | VSideEffectFree) ⇒
+                    case FinalP(VCompileTimePure | VPure | VSideEffectFree) =>
                         createIssue(caller, callee.definedMethod, call.pc)
-                    case _ ⇒ None
+                    case _ => None
                 }
             }
         }

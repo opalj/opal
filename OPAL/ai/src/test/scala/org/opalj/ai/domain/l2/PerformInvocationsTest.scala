@@ -46,8 +46,8 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         val exs = domain.thrownExceptions(result.domain, -1)
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
-            case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒ true
-            case _ ⇒ false
+            case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) => true
+            case _ => false
         } should be(true)
     }
 
@@ -60,8 +60,8 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         val exs = domain.thrownExceptions(result.domain, -1)
         if (exs.size != 1) fail(exs.mkString("expected one exception: ", ", ", "."))
         exs forall {
-            case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒ true
-            case _ ⇒ false
+            case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) => true
+            case _ => false
         } should be(true)
     }
 
@@ -104,21 +104,21 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
         var foundNullPointerException = false
         var foundIllegalArgumentException = false
 
-        exs forall { ex ⇒
+        exs forall { ex =>
             ex match {
-                case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) ⇒
+                case domain.SObjectValue(ObjectType("java/lang/UnsupportedOperationException")) =>
                     foundUnsupportedOperationException = true
                     true
-                case domain.SObjectValue(ObjectType.NullPointerException) ⇒
+                case domain.SObjectValue(ObjectType.NullPointerException) =>
                     foundNullPointerException = true
                     true
-                case domain.SObjectValue(ObjectType("java/lang/UnknownError")) ⇒
+                case domain.SObjectValue(ObjectType("java/lang/UnknownError")) =>
                     foundUnknownError = true
                     true
-                case domain.SObjectValue(ObjectType("java/lang/IllegalArgumentException")) ⇒
+                case domain.SObjectValue(ObjectType("java/lang/IllegalArgumentException")) =>
                     foundIllegalArgumentException = true
                     true
-                case _ ⇒
+                case _ =>
                     fail("unexpected exception: "+ex)
             }
         } should be(true)
@@ -148,7 +148,7 @@ class PerformInvocationsTest extends AnyFlatSpec with Matchers {
 
         domain.allReturnedValues.size should be(2)
         if (!domain.allReturnedValues.forall {
-            e ⇒ domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
+            e => domain.intValueOption(e._2).map(_ == 1).getOrElse(false)
         }) fail("unexpected result: "+domain.allReturnedValues)
     }
 
@@ -224,7 +224,7 @@ object PerformInvocationsTestFixture {
         with IgnoreSynchronization
         with l0.DefaultTypeLevelHandlingOfMethodResults
         with DefaultRecordMethodCallResults {
-        domain: ValuesFactory with Configuration with TheProject with TheMethod ⇒
+        domain: ValuesFactory with Configuration with TheProject with TheMethod =>
 
         override def throwExceptionsOnMethodCall: ExceptionsRaisedByCalledMethod = {
             ExceptionsRaisedByCalledMethods.AllExplicitlyHandled

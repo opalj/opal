@@ -15,12 +15,12 @@ package l1
  * @author David Becker
  */
 trait LongSetValuesShiftOperators extends LongValuesDomain {
-    this: LongSetValues with ConcreteIntegerValues ⇒
+    this: LongSetValues with ConcreteIntegerValues =>
 
     /*override*/ def lshl(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         value match {
-            case LongSet(leftValues) ⇒
-                intValue[DomainValue](shift) { s ⇒
+            case LongSet(leftValues) =>
+                intValue[DomainValue](shift) { s =>
                     LongSet(leftValues.map(_ << s))
                 } {
                     if (leftValues.size == 1 && leftValues.head == 0)
@@ -29,8 +29,8 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
                         LongValue(origin = pc)
                 }
 
-            case _ ⇒
-                intValue(shift) { s ⇒
+            case _ =>
+                intValue(shift) { s =>
                     if (s == 0) value else LongValue(origin = pc)
                 } {
                     LongValue(origin = pc)
@@ -40,8 +40,8 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
 
     /*override*/ def lshr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         value match {
-            case LongSet(leftValues) ⇒
-                intValue[DomainValue](shift) { s ⇒
+            case LongSet(leftValues) =>
+                intValue[DomainValue](shift) { s =>
                     LongSet(leftValues.map(_ >> s))
                 } {
                     if (leftValues.size == 1 && leftValues.head == 0)
@@ -50,8 +50,8 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
                         LongValue(origin = pc)
                 }
 
-            case _ ⇒
-                intValue(shift) { s ⇒
+            case _ =>
+                intValue(shift) { s =>
                     if (s == 0) value else LongValue(origin = pc)
                 } {
                     LongValue(origin = pc)
@@ -61,8 +61,8 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
 
     /*override*/ def lushr(pc: Int, value: DomainValue, shift: DomainValue): DomainValue = {
         value match {
-            case value @ LongSet(leftValues) ⇒
-                intValue[DomainValue](shift) { s ⇒
+            case value @ LongSet(leftValues) =>
+                intValue[DomainValue](shift) { s =>
                     LongSet(leftValues.map(_ >>> s))
                 } {
                     if (leftValues.size == 1 && leftValues.head == 0)
@@ -71,8 +71,8 @@ trait LongSetValuesShiftOperators extends LongValuesDomain {
                         LongValue(origin = pc)
                 }
 
-            case _ ⇒
-                intValue(shift) { s ⇒
+            case _ =>
+                intValue(shift) { s =>
                     if (s == 0) value else LongValue(origin = pc)
                 } {
                     LongValue(origin = pc)

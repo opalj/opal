@@ -19,7 +19,7 @@ case class Record_attribute(
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
             <summary>Record</summary>
-            <ol>{ components.map[Node, Seq[Node]] { c ⇒ <li>{ c.toXHTML(cp) }</li> } }</ol>
+            <ol>{ components.map[Node, Seq[Node]] { c => <li>{ c.toXHTML(cp) }</li> } }</ol>
         </details>
     }
 

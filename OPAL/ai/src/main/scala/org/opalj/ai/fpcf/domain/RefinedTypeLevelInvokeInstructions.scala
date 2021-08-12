@@ -26,7 +26,7 @@ import org.opalj.ai.fpcf.properties.MethodReturnValue
 trait RefinedTypeLevelInvokeInstructions
     extends MethodCallsDomainWithMethodLockup
     with PropertyStoreBased {
-    domain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
+    domain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode =>
 
     abstract override def usesProperties: Set[PropertyKind] = {
         super.usesProperties ++ Set(MethodReturnValue)
@@ -60,7 +60,7 @@ trait RefinedTypeLevelInvokeInstructions
         invokeMethodDescriptor: MethodDescriptor,
         method:                 Method,
         operands:               Operands,
-        fallback:               () ⇒ MethodCallResult
+        fallback:               () => MethodCallResult
     ): MethodCallResult = {
         val returnType = method.returnType
         if (!returnType.isObjectType ||
@@ -70,18 +70,18 @@ trait RefinedTypeLevelInvokeInstructions
         }
 
         dependees.getOrQueryAndUpdate(method, MethodReturnValue.key) match {
-            case UsedPropertiesBound(mrvProperty) ⇒
+            case UsedPropertiesBound(mrvProperty) =>
                 mrvProperty.returnValue match {
-                    case Some(mrvi) ⇒
+                    case Some(mrvi) =>
                         val vi = domain.InitializedDomainValue(pc, mrvi)
                         val result = MethodCallResult(vi, getPotentialExceptions(pc))
                         doInvokeWithRefinedReturnValue(method, result)
-                    case None ⇒
+                    case None =>
                         // the method always throws an exception... but we don't know which one
                         val potentialExceptions = getPotentialExceptions(pc)
                         ThrowsException(potentialExceptions)
                 }
-            case _ ⇒
+            case _ =>
                 fallback()
         }
     }
@@ -92,7 +92,7 @@ trait RefinedTypeLevelInvokeInstructions
  * @author Michael Eichberg
  */
 trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode =>
 
     /**
      * Invokes the specified method.
@@ -106,7 +106,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         invokeMethodDescriptor: MethodDescriptor,
         method:                 Method,
         operands:               Operands,
-        fallback:               () ⇒ MethodCallResult
+        fallback:               () => MethodCallResult
     ): MethodCallResult
 
     /**
@@ -120,7 +120,7 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         name:          String,
         descriptor:    MethodDescriptor,
         operands:      Operands,
-        fallback:      () ⇒ MethodCallResult
+        fallback:      () => MethodCallResult
     ): MethodCallResult = {
 
         val DomainReferenceValueTag(receiver) = operands.last
@@ -135,19 +135,19 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         if (receiver.isPrecise) {
             // IMPROVE Use project.instanceMethods ....
             classHierarchy.isInterface(receiverType) match {
-                case Yes ⇒
+                case Yes =>
                     doNonVirtualInvoke(
                         pc, receiverType, true, name, descriptor, operands, fallback
                     )
-                case No ⇒
+                case No =>
                     doNonVirtualInvoke(
                         pc, receiverType, false, name, descriptor, operands, fallback
                     )
-                case Unknown ⇒
+                case Unknown =>
                     fallback()
             }
         } else {
-            project.classFile(receiverType).map { receiverClassFile ⇒
+            project.classFile(receiverType).map { receiverClassFile =>
                 val targetMethod =
                     if (receiverClassFile.isInterfaceDeclaration)
                         project.resolveInterfaceMethodReference(receiverType, name, descriptor)
@@ -155,9 +155,9 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
                         project.resolveMethodReference(receiverType, name, descriptor)
 
                 targetMethod match {
-                    case Some(method) if method.isFinal ⇒
+                    case Some(method) if method.isFinal =>
                         doInvoke(pc, descriptor, method, operands, fallback)
-                    case _ ⇒
+                    case _ =>
                         fallback()
                 }
             }.getOrElse {
@@ -173,28 +173,28 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
         name:          String,
         descriptor:    MethodDescriptor,
         operands:      Operands,
-        fallback:      () ⇒ MethodCallResult
+        fallback:      () => MethodCallResult
     ): MethodCallResult = {
 
         try {
             val resolvedMethod =
                 project.classFile(declaringType) match {
-                    case Some(classFile) ⇒
+                    case Some(classFile) =>
                         if (classFile.isInterfaceDeclaration)
                             project.resolveInterfaceMethodReference(declaringType, name, descriptor)
                         else
                             project.resolveMethodReference(declaringType, name, descriptor)
-                    case _ ⇒
+                    case _ =>
                         return fallback();
                 }
 
             resolvedMethod match {
-                case Some(method) ⇒
+                case Some(method) =>
                     if (method.body.isDefined)
                         doInvoke(pc, descriptor, method, operands, fallback)
                     else
                         fallback() // only happens if the project is incomplete/broken
-                case _ ⇒
+                case _ =>
                     OPALLogger.logOnce(Warn(
                         "project configuration",
                         "method reference cannot be resolved: "+
@@ -204,12 +204,12 @@ trait MethodCallsDomainWithMethodLockup extends MethodCallsHandling {
                     fallback()
             }
         } catch {
-            case ct: ControlThrowable ⇒ throw ct
-            case t: Throwable ⇒
+            case ct: ControlThrowable => throw ct
+            case t: Throwable =>
                 OPALLogger.error(
                     "internal, project configuration",
                     "resolving the method reference resulted in an exception: "+
-                        project.classFile(declaringType).map(cf ⇒ if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
+                        project.classFile(declaringType).map(cf => if (cf.isInterfaceDeclaration) "interface " else "class ").getOrElse("") +
                         declaringType.toJava+"{ /*non virtual*/ "+descriptor.toJava(name)+"}",
                     t
                 )

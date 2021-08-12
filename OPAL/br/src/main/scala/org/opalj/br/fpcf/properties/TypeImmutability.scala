@@ -82,7 +82,7 @@ case object ImmutableContainerType extends TypeImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == ImmutableType) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
         }
     }
 }
@@ -97,7 +97,7 @@ case object MutableType extends TypeImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other != MutableType) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
         }
     }
 }

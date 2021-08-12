@@ -23,10 +23,10 @@ import org.opalj.br.analyses.VirtualFormalParameters
 
 case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])
 object ConfiguredMethods {
-    implicit val reader: ValueReader[ConfiguredMethods] = (config: Config, path: String) ⇒ {
+    implicit val reader: ValueReader[ConfiguredMethods] = (config: Config, path: String) => {
         val c = config.getConfig(path)
         val configs = c.getConfigList("nativeMethods").asScala.toArray
-        val data = configs.map(c ⇒ ConfiguredMethodData.reader.read(c, ""))
+        val data = configs.map(c => ConfiguredMethodData.reader.read(c, ""))
         ConfiguredMethods(data)
     }
 }
@@ -49,20 +49,20 @@ case class ConfiguredMethodData(
 }
 
 object ConfiguredMethodData {
-    implicit val reader: ValueReader[ConfiguredMethodData] = (config: Config, path: String) ⇒ {
+    implicit val reader: ValueReader[ConfiguredMethodData] = (config: Config, path: String) => {
         val c = if (path.nonEmpty) config.getConfig(path) else config
         val cf = c.as[String]("cf")
         val name = c.getString("name")
         val desc = c.getString("desc")
         val pointsTo =
             if (c.hasPath("pointsTo"))
-                Some(c.getConfigList("pointsTo").asScala.toArray.map(c ⇒ PointsToRelation.reader.read(c, "")))
+                Some(c.getConfigList("pointsTo").asScala.toArray.map(c => PointsToRelation.reader.read(c, "")))
             else
                 None
 
         val methodInvocations =
             if (c.hasPath("methodInvocations"))
-                Some(c.getConfigList("methodInvocations").asScala.toArray.map(c ⇒ MethodDescription.reader.read(c, "")))
+                Some(c.getConfigList("methodInvocations").asScala.toArray.map(c => MethodDescription.reader.read(c, "")))
             else
                 None
 
@@ -72,7 +72,7 @@ object ConfiguredMethodData {
 
 case class PointsToRelation(lhs: EntityDescription, rhs: EntityDescription)
 object PointsToRelation {
-    implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) ⇒ {
+    implicit val reader: ValueReader[PointsToRelation] = (config: Config, path: String) => {
         val c = if (path.nonEmpty) config.getConfig(path) else config
         val lhs = EntityDescription.reader.read(c.getConfig("lhs"), "")
         val rhs = EntityDescription.reader.read(c.getConfig("rhs"), "")
@@ -83,7 +83,7 @@ object PointsToRelation {
 sealed trait EntityDescription
 
 object EntityDescription {
-    implicit val reader: ValueReader[EntityDescription] = (c: Config, path: String) ⇒ {
+    implicit val reader: ValueReader[EntityDescription] = (c: Config, path: String) => {
         if (c.hasPath("array")) {
             val arrayType = c.getString("arrayType")
             val array = reader.read(c.getConfig("array"), "")
@@ -126,7 +126,7 @@ case class MethodDescription(
 }
 
 object MethodDescription {
-    implicit val reader: ValueReader[MethodDescription] = (c: Config, path: String) ⇒ {
+    implicit val reader: ValueReader[MethodDescription] = (c: Config, path: String) => {
         val cf = c.getString("cf")
         val name = c.getString("name")
         val desc = c.getString("desc")

@@ -23,17 +23,17 @@ sealed abstract class TypeHierarchyInformation {
 
     final def size: Int = allTypes.size
 
-    def foreach[T](f: ObjectType ⇒ T): Unit = allTypes.foreach(f)
+    def foreach[T](f: ObjectType => T): Unit = allTypes.foreach(f)
 
     def iterator: RefIterator[ObjectType]
 
     def foreachIterator: ForeachRefIterator[ObjectType] = allTypes.foreachIterator
 
-    def forall(f: ObjectType ⇒ Boolean): Boolean = allTypes.forall(f)
+    def forall(f: ObjectType => Boolean): Boolean = allTypes.forall(f)
 
-    def exists(f: ObjectType ⇒ Boolean): Boolean = allTypes.exists(f)
+    def exists(f: ObjectType => Boolean): Boolean = allTypes.exists(f)
 
-    def foldLeft[B](z: B)(op: (B, ObjectType) ⇒ B): B = allTypes.foldLeft(z)(op)
+    def foldLeft[B](z: B)(op: (B, ObjectType) => B): B = allTypes.foldLeft(z)(op)
 
     /**
      * Tests if the given type belongs to the super/subtype of `this` type; this

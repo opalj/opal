@@ -14,7 +14,7 @@ package l0
 trait DefaultTypeLevelFloatValues
     extends DefaultSpecialDomainValuesBinding
     with TypeLevelFloatValues {
-    domain: IntegerValuesFactory ⇒
+    domain: IntegerValuesFactory =>
 
     case object AFloatValue extends super.FloatValue {
 

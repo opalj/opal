@@ -50,18 +50,18 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val relevantTypes = threadSubtypes + Runtime
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method ← classFile.methods
+            method <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
         } {
             if (method.isNotStatic && method.isPublic && method.name == "finalize") {
                 locations(1) += methodLocation
             } else if (method.body.nonEmpty) {
                 val body = method.body.get
-                val pcAndInvocation = body collect { case mii: VirtualMethodInvocationInstruction ⇒ mii }
-                pcAndInvocation.foreach { pcAndInvocation ⇒
+                val pcAndInvocation = body collect { case mii: VirtualMethodInvocationInstruction => mii }
+                pcAndInvocation.foreach { pcAndInvocation =>
                     val pc = pcAndInvocation.pc
                     val mii = pcAndInvocation.value
                     val declClass = mii.declaringClass

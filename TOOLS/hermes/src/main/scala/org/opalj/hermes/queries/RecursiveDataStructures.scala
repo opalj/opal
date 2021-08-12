@@ -39,10 +39,10 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
 
         // 1. create graph
         for {
-            classFile ← project.allProjectClassFiles
+            classFile <- project.allProjectClassFiles
             if !isInterrupted()
             classType = classFile.thisType
-            field ← classFile.fields
+            field <- classFile.fields
             fieldType = field.fieldType
         } {
             if (fieldType.isObjectType) {
@@ -57,17 +57,17 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
 
         // 2. search for strongly connected components
         for {
-            scc ← g.sccs(filterSingletons = true)
+            scc <- g.sccs(filterSingletons = true)
             if !isInterrupted()
             /* An scc is never empty! */
             sccCategory = Math.min(scc.size, 5) - 1
-            objectTypeID ← scc
+            objectTypeID <- scc
             objectType = getObjectType(objectTypeID)
         } {
             locations(sccCategory) += ClassFileLocation(project, objectType)
         }
 
-        for { (locations, index) ← locations.iterator.zipWithIndex } yield {
+        for { (locations, index) <- locations.iterator.zipWithIndex } yield {
             Feature[S](featureIDs(index), locations)
         }
     }

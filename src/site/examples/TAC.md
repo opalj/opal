@@ -38,8 +38,8 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
  E.g., to set the domain to the simplest/most basic supported domain, you can use:
 
     p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-      case None               ⇒ Set(classOf[domain.l0.BaseDomainWithDefUse[_]])
-      case Some(requirements) ⇒ requirements + classOf[domain.l0.BaseDomainWithDefUse[_]]
+      case None               => Set(classOf[domain.l0.BaseDomainWithDefUse[_]])
+      case Some(requirements) => requirements + classOf[domain.l0.BaseDomainWithDefUse[_]]
     }
 
  For example, creating the TAC using the simplest domain – and a production build of OPAL – takes roughly one third of the time of using the default domain. However, the default domain provides much more information and is therefore the recommended base analysis. To be more precise, on a Core i7 (4 Cores - Sandy Bridge, 2011) generating the standard TAC for the rt.jar of the JDK 8u121 using the simplest possible domain takes 13 seconds and for the default domain 33 seconds.
@@ -65,16 +65,16 @@ Given the following very simple loop implemented in Java.
 The three-address code will be:
 
     static void endless(){
-         // <start>, 3 →
+         // <start>, 3 ->
          0:/*pc=0:*/ lv0 = java.lang.System.out
          1:/*pc=3:*/ lv1 = java.lang.System.nanoTime()
          // ! - potentially uncaught exception/abnormal return
 
-         // 1 →
+         // 1 ->
          2:/*pc=6:*/ {lv0}/*java.io.PrintStream*/.println({lv1})
          // ! - potentially uncaught exception/abnormal return
 
-         // 2 →
+         // 2 ->
          3:/*pc=9:*/ goto 0
     }
 
@@ -102,25 +102,25 @@ In this case the initial three-address code will be:
 
         0:/*pc=1:*/ if({param1} == 0) goto 3
 
-        // 0 →
+        // 0 ->
         1:/*pc=4:*/ lv1 = java.lang.System.err
         2:/*pc=7:*/ goto 4
 
-        // 0 →
+        // 0 ->
         3:/*pc=10:*/ lv3 = java.lang.System.out
 
-        // 2, 3 →
+        // 2, 3 ->
         4:/*pc=13:*/ ; // <= NOP can be optimized away
 
-        // 7, 4 →
+        // 7, 4 ->
         5:/*pc=15:*/ lv5 = java.lang.System.nanoTime()
         // ! - potentially uncaught exception/abnormal return
 
-        // 5 →
+        // 5 ->
         6:/*pc=18:*/ {lv1, lv3}/*java.io.PrintStream*/.println({lv5})
         // ! - potentially uncaught exception/abnormal return
 
-        // 6 →
+        // 6 ->
         7:/*pc=21:*/ goto 5
     }
 
@@ -159,15 +159,15 @@ The 3-address code of the above method is shown next:
          0:/*pc=1:*/ lv0 = {param1} instanceof java.io.FileNotFoundException
          1:/*pc=4:*/ if({lv0} != 0) goto 4
 
-         // 1 →
+         // 1 ->
          2:/*pc=7:*/ lv2 = null
          3:/*pc=8:*/ return {lv2}
 
-         // 1 →
+         // 1 ->
          4:/*pc=10:*/ (java.io.FileNotFoundException) {param1}
          // ! - potentially uncaught exception/abnormal return
 
-         // 4 →
+         // 4 ->
          5:/*pc=13:*/ return {param1}
     }
 

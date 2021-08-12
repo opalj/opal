@@ -15,7 +15,7 @@ import org.opalj.br.Method
  * @author Michael Eichberg
  */
 trait MethodCallsHandling extends MethodCallsDomain {
-    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
+    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode =>
 
     protected[this] def getPotentialExceptions(pc: Int): List[ExceptionValue] = {
         var exceptionTypes: Set[ObjectType] = Set.empty
@@ -32,17 +32,17 @@ trait MethodCallsHandling extends MethodCallsDomain {
         }
 
         throwExceptionsOnMethodCall match {
-            case ExceptionsRaisedByCalledMethods.Any ⇒
+            case ExceptionsRaisedByCalledMethods.Any =>
                 add(ObjectType.Throwable)
 
-            case ExceptionsRaisedByCalledMethods.AllExplicitlyHandled ⇒
-                code.handlersFor(pc) foreach { h ⇒
+            case ExceptionsRaisedByCalledMethods.AllExplicitlyHandled =>
+                code.handlersFor(pc) foreach { h =>
                     h.catchType match {
-                        case None     ⇒ add(ObjectType.Throwable)
-                        case Some(ex) ⇒ add(ex)
+                        case None     => add(ObjectType.Throwable)
+                        case Some(ex) => add(ex)
                     }
                 }
-            case ExceptionsRaisedByCalledMethods.Known ⇒
+            case ExceptionsRaisedByCalledMethods.Known =>
             // we basically know nothing..
         }
 
@@ -94,14 +94,14 @@ trait MethodCallsHandling extends MethodCallsDomain {
     ): MethodCallResult = {
         val potentialExceptions =
             receiverIsNull match {
-                case Yes ⇒
+                case Yes =>
                     // That's it!
                     return justThrows(VMNullPointerException(pc));
 
-                case Unknown if throwNullPointerExceptionOnMethodCall ⇒
+                case Unknown if throwNullPointerExceptionOnMethodCall =>
                     VMNullPointerException(pc) :: getPotentialExceptions(pc)
 
-                case /*No or Unknown & DoNotThrowNullPointerException*/ _ ⇒
+                case /*No or Unknown & DoNotThrowNullPointerException*/ _ =>
                     getPotentialExceptions(pc)
             }
         val returnType = methodDescriptor.returnType

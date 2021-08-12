@@ -81,7 +81,7 @@ package object io {
      *      try {
      *          util.writeAndOpen("The Message", "Result", ".txt")
      *      } catch {
-     *          case OpeningFileFailedException(file, _) ⇒
+     *          case OpeningFileFailedException(file, _) =>
      *              Console.err.println("Details can be found in: "+file.toString)
      *      }}}
      */
@@ -101,7 +101,7 @@ package object io {
         try {
             Desktop.getDesktop.open(file)
         } catch {
-            case t: Throwable ⇒ throw OpeningFileFailedException(file, t)
+            case t: Throwable => throw OpeningFileFailedException(file, t)
         }
     }
 
@@ -190,7 +190,7 @@ package object io {
      * @param closable The `Closeable` resource.
      * @param r The function that processes the `resource`.
      */
-    def process[C <: Closeable, T](closable: C)(r: C ⇒ T): T = {
+    def process[C <: Closeable, T](closable: C)(r: C => T): T = {
         // Implementation Note
         // Creating the closeable (I) in the try block doesn't make sense, hence
         // we don't need a by-name parameter. (If creating the closable fails,
@@ -211,7 +211,7 @@ package object io {
      *
      * @note If `source` is `null`, `null` is passed to `r`.
      */
-    def processSource[C <: Source, T](source: C)(r: C ⇒ T): T = {
+    def processSource[C <: Source, T](source: C)(r: C => T): T = {
         try {
             r(source)
         } finally {

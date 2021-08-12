@@ -57,7 +57,7 @@ trait NestMembers_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt
         val numberOfClasses = in.readUnsignedShort()
         if (numberOfClasses > 0 || reifyEmptyAttributes) {
@@ -74,6 +74,6 @@ trait NestMembers_attributeReader extends AttributeReader {
         }
     }: NestMembers_attribute
 
-    registerAttributeReader(NestMembersAttribute.Name → parserFactory())
+    registerAttributeReader(NestMembersAttribute.Name -> parserFactory())
 
 }

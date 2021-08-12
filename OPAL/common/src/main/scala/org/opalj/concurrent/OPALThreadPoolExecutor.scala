@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.{Future ⇒ JFuture}
+import java.util.concurrent.{Future => JFuture}
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicLong
@@ -53,11 +53,11 @@ class OPALBoundedThreadPoolExecutor(
             try {
                 r.asInstanceOf[JFuture[_]].get()
             } catch {
-                case ce: CancellationException ⇒
+                case ce: CancellationException =>
                     e = ce
-                case ee: ExecutionException ⇒
+                case ee: ExecutionException =>
                     e = ee.getCause()
-                case ie: InterruptedException ⇒
+                case ie: InterruptedException =>
                     e = ie
                     Thread.currentThread().interrupt(); // ignore/reset
             }

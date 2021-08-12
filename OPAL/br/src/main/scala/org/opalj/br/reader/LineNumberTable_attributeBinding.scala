@@ -61,7 +61,7 @@ trait CompactLineNumberTable_attributeBinding
     /**
      * Merge all line number tables and create a single sorted line number table.
      */
-    registerAttributesPostProcessor { attributes ⇒
+    registerAttributesPostProcessor { attributes =>
         if (attributes.count(_.isInstanceOf[CompactLineNumberTable]) <= 1)
             // we have at most one line number table
             attributes

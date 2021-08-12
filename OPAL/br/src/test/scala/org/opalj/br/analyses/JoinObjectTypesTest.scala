@@ -27,7 +27,7 @@ class JoinObjectTypesTest extends AnyFunSpec with Matchers {
             throw new UnknownError("class hierarchy could not be loaded")
         ClassHierarchy(
             Traversable.empty,
-            List(() ⇒ in)
+            List(() => in)
         )(GlobalLogContext)
     }
 

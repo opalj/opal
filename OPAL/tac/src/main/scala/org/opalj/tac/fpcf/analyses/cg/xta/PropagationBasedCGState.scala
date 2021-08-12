@@ -33,7 +33,7 @@ class PropagationBasedCGState(
 
     private[this] val _instantiatedTypesDependeeMap = new java.util.HashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]]()
 
-    for (dependee ← _instantiatedTypesDependees) {
+    for (dependee <- _instantiatedTypesDependees) {
         _instantiatedTypesDependeeMap.put(dependee.e, dependee)
     }
 
@@ -60,7 +60,7 @@ class PropagationBasedCGState(
     }
 
     def instantiatedTypesContains(tpe: ReferenceType): Boolean = {
-        _instantiatedTypesDependeeMap.values().iterator().asScala.exists { eOptP ⇒
+        _instantiatedTypesDependeeMap.values().iterator().asScala.exists { eOptP =>
             instantiatedTypes(eOptP.e).contains(tpe)
         }
     }
@@ -87,7 +87,7 @@ class PropagationBasedCGState(
         if (oldValOpt.isDefined)
             oldValOpt.get += callSite
         else {
-            _virtualCallSites += (typeId → mutable.Set(callSite))
+            _virtualCallSites += (typeId -> mutable.Set(callSite))
         }
     }
 

@@ -23,11 +23,11 @@ class InMemoryClassLoader(
     @throws[ClassNotFoundException]
     override def findClass(name: String): Class[_] = {
         rawClasses.get(name) match {
-            case Some(data) ⇒
+            case Some(data) =>
                 val clazz = defineClass(name, data, 0, data.length)
                 rawClasses -= name
                 clazz
-            case None ⇒
+            case None =>
                 throw new ClassNotFoundException(name)
         }
     }

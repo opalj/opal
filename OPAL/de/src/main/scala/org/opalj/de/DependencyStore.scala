@@ -28,7 +28,7 @@ object DependencyStore {
 
     def apply[Source](
         classFiles:                Traversable[ClassFile],
-        createDependencyExtractor: (DependencyProcessor) ⇒ DependencyExtractor
+        createDependencyExtractor: (DependencyProcessor) => DependencyExtractor
     )(
         implicit
         logContext: LogContext
@@ -39,13 +39,13 @@ object DependencyStore {
             val de = createDependencyExtractor(dc)
             classFiles.par.foreach { de.process(_) }
             dc
-        } { ns ⇒
+        } { ns =>
             OPALLogger.info("progress", "collecting dependencies took "+ns.toSeconds)
         }
 
         time {
             dc.toStore
-        } { ns ⇒
+        } { ns =>
             OPALLogger.info("progress", "creating the dependencies store took "+ns.toSeconds)
         }
     }
@@ -56,7 +56,7 @@ object DependencyStore {
         implicit
         logContext: LogContext
     ): DependencyStore = {
-        val createDependencyExtractor = (dp) ⇒ new DependencyExtractor(dp)
+        val createDependencyExtractor = (dp) => new DependencyExtractor(dp)
         apply(classFiles, createDependencyExtractor)
     }
 }

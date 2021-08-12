@@ -15,16 +15,16 @@ trait LineNumberTable extends CodeAttribute {
 
     def firstLineNumber(): Option[Int]
 
-    override def remapPCs(codeSize: PC, f: PC ⇒ PC): LineNumberTable = {
-        UnpackedLineNumberTable(lineNumbers.flatMap[LineNumber](ln ⇒ ln.remapPCs(codeSize, f)))
+    override def remapPCs(codeSize: PC, f: PC => PC): LineNumberTable = {
+        UnpackedLineNumberTable(lineNumbers.flatMap[LineNumber](ln => ln.remapPCs(codeSize, f)))
     }
 
     override def kindId: Int = LineNumberTable.KindId
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: LineNumberTable ⇒ this.similar(that)
-            case _                     ⇒ false
+            case that: LineNumberTable => this.similar(that)
+            case _                     => false
         }
     }
 

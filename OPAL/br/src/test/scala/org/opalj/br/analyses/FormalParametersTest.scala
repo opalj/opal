@@ -30,7 +30,7 @@ class FormalParametersTest extends AnyFlatSpec with Matchers {
         val declaredMethods = methodsProject.get(DeclaredMethodsKey)
 
         val fps = methodsProject.get(VirtualFormalParametersKey)
-        methodsProject.allMethods foreach { m ⇒
+        methodsProject.allMethods foreach { m =>
             val dm = declaredMethods(m)
             assert(m.isStatic || fps(dm)(0) != null)
             assert(fps(dm).size >= m.descriptor.parametersCount + (if (m.isStatic) 0 else 1))

@@ -8,7 +8,7 @@ package ai
  * @author Michael Eichberg
  * @author David Becker
  */
-trait IntegerRangeValuesFactory extends IntegerValuesFactory { domain ⇒
+trait IntegerRangeValuesFactory extends IntegerValuesFactory { domain =>
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or implicitly)

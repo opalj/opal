@@ -113,8 +113,8 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
             ): (Attributes, Attributes) = {
                 val (newLeft, newRight) = super.compareAttributes(leftContext, left, right)
                 (
-                    newLeft.filter(a ⇒ a.isInstanceOf[SourceFile]),
-                    newRight.filter(a ⇒ a.isInstanceOf[SourceFile])
+                    newLeft.filter(a => a.isInstanceOf[SourceFile]),
+                    newRight.filter(a => a.isInstanceOf[SourceFile])
                 )
             }
         }
@@ -143,8 +143,8 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
             ): (Attributes, Attributes) = {
                 val (superNewLeft, superNewRight) = super.compareAttributes(leftContext, left, right)
                 val (newLeft, newRight) = (
-                    superNewLeft.filter(a ⇒ a != Deprecated),
-                    superNewRight.filter(a ⇒ a != Deprecated)
+                    superNewLeft.filter(a => a != Deprecated),
+                    superNewRight.filter(a => a != Deprecated)
                 )
                 (newLeft, newRight)
             }
@@ -173,8 +173,8 @@ class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
                 right:       Iterable[JVMField]
             ): (Iterable[JVMField], Iterable[JVMField]) = {
                 (
-                    left.filter(a ⇒ a.accessFlags == 1),
-                    right.filter(a ⇒ a.accessFlags == 1)
+                    left.filter(a => a.accessFlags == 1),
+                    right.filter(a => a.accessFlags == 1)
                 )
             }
         }

@@ -15,7 +15,7 @@ import org.opalj.br.ComputationalTypeLong
  * @author David Becker
  */
 trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValues {
-    domain: IntegerValuesFactory with ExceptionsFactory with Configuration ⇒
+    domain: IntegerValuesFactory with ExceptionsFactory with Configuration =>
 
     /**
      * Represents an unspecific, unknown long value.
@@ -47,20 +47,20 @@ trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValue
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case ConcreteLongValue(thatValue) ⇒
+                case ConcreteLongValue(thatValue) =>
                     if (this.value == thatValue) {
                         NoUpdate
                     } else {
                         StructuralUpdate(LongValue(pc))
                     }
-                case _ ⇒ StructuralUpdate(other)
+                case _ => StructuralUpdate(other)
             }
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
-                case ConcreteLongValue(`value`) ⇒ true
-                case _                          ⇒ false
+                case ConcreteLongValue(`value`) => true
+                case _                          => false
             }
         }
 
@@ -72,8 +72,8 @@ trait DefaultLongValues extends DefaultSpecialDomainValuesBinding with LongValue
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: TheLongValue ⇒ that.value == this.value
-                case _                  ⇒ false
+                case that: TheLongValue => that.value == this.value
+                case _                  => false
             }
         }
 

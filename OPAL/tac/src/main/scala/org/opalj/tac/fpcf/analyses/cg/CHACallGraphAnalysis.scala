@@ -44,8 +44,8 @@ class CHACallGraphAnalysis private[analyses] (
     @inline override protected[this] def canResolveCall(
         localTypeInformation: LocalTypeInformation,
         state:                CHAState
-    ): ObjectType ⇒ Boolean = {
-        _ ⇒ true
+    ): ObjectType => Boolean = {
+        _ => true
     }
 
     @inline protected[this] def handleUnresolvedCall(

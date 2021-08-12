@@ -14,7 +14,7 @@ import scala.collection.GenTraversableOnce
  *
  * @author Michael Eichberg
  */
-abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
+abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
 
     def ++[X >: T <: AnyRef](other: GenTraversableOnce[X]): RefIterator[X] = {
         val that = other.toIterator
@@ -29,7 +29,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
         def next(): X = if (self.hasNext) self.next() else that.next()
     }
 
-    def sum(f: T ⇒ Int): Int = {
+    def sum(f: T => Int): Int = {
         var sum = 0
         while (hasNext) sum += f(next())
         sum
@@ -71,7 +71,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
         def next(): T = { taken += 1; self.next() }
     }
 
-    override def filter(p: T ⇒ Boolean): RefIterator[T] = new RefIterator[T] {
+    override def filter(p: T => Boolean): RefIterator[T] = new RefIterator[T] {
         private[this] var hasNextValue: Boolean = true
         private[this] var v: T = _
         private[this] def gotoNextValue(): Unit = {
@@ -88,14 +88,14 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
         def next(): T = { val v = this.v; gotoNextValue(); v }
     }
 
-    override def filterNot(p: T ⇒ Boolean): RefIterator[T] = filter(e ⇒ !p(e))
+    override def filterNot(p: T => Boolean): RefIterator[T] = filter(e => !p(e))
 
     // TODO Introduce AnyRefCollection!
-    // def flatMap[X](f: T ⇒ AnyRefCollection[X]): RefIterator[X] = {
+    // def flatMap[X](f: T => AnyRefCollection[X]): RefIterator[X] = {
     //    ???
     // }
 
-    def flatMapOptions[X](f: T ⇒ Option[X]): RefIterator[X] = {
+    def flatMapOptions[X](f: T => Option[X]): RefIterator[X] = {
         new RefIterator[X] {
             private[this] var it: Option[X] = _
             private[this] def move(): Unit = {
@@ -114,7 +114,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
         }
     }
 
-    def flatMap[X](f: T ⇒ TraversableOnce[X]): RefIterator[X] = {
+    def flatMap[X](f: T => TraversableOnce[X]): RefIterator[X] = {
         new RefIterator[X] {
             private[this] var it: Iterator[X] = Iterator.empty
             private[this] def advanceIterator(): Unit = {
@@ -134,7 +134,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
     }
 
     /*
-    def flatMap[X](f: T ⇒ RefIterator[X]): RefIterator[X] = {
+    def flatMap[X](f: T => RefIterator[X]): RefIterator[X] = {
         new RefIterator[X] {
             private[this] var it: Iterator[X] = Iterator.empty
             private[this] def advanceIterator(): Unit = {
@@ -154,7 +154,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
     }
     */
 
-    def flatMap(f: T ⇒ IntIterator): IntIterator = new IntIterator {
+    def flatMap(f: T => IntIterator): IntIterator = new IntIterator {
         private[this] var it: IntIterator = IntIterator.empty
         private[this] def advanceIterator(): Unit = {
             while (!it.hasNext) {
@@ -171,7 +171,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
         def next(): Int = { val e = it.next(); advanceIterator(); e }
     }
 
-    def flatMap(f: T ⇒ LongIterator): LongIterator = new LongIterator {
+    def flatMap(f: T => LongIterator): LongIterator = new LongIterator {
         private[this] var it: LongIterator = LongIterator.empty
         private[this] def advanceIterator(): Unit = {
             while (!it.hasNext) {
@@ -188,34 +188,34 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self ⇒
         def next(): Long = { val e = it.next(); advanceIterator(); e }
     }
 
-    def foldLeft(z: Int)(op: (Int, T) ⇒ Int): Int = {
+    def foldLeft(z: Int)(op: (Int, T) => Int): Int = {
         var v = z
         while (hasNext) v = op(v, next())
         v
     }
 
-    def foldLeft(z: Long)(op: (Long, T) ⇒ Long): Long = {
+    def foldLeft(z: Long)(op: (Long, T) => Long): Long = {
         var v = z
         while (hasNext) v = op(v, next())
         v
     }
 
-    override def map[X](f: T ⇒ X): RefIterator[X] = new RefIterator[X] {
+    override def map[X](f: T => X): RefIterator[X] = new RefIterator[X] {
         def hasNext: Boolean = self.hasNext
         def next(): X = f(self.next())
     }
 
-    def map(f: T ⇒ Int): IntIterator = new IntIterator {
+    def map(f: T => Int): IntIterator = new IntIterator {
         def hasNext: Boolean = self.hasNext
         def next(): Int = f(self.next())
     }
 
-    def map(f: T ⇒ Long): LongIterator = new LongIterator {
+    def map(f: T => Long): LongIterator = new LongIterator {
         def hasNext: Boolean = self.hasNext
         def next(): Long = f(self.next())
     }
 
-    override def withFilter(p: T ⇒ Boolean): RefIterator[T] = filter(p)
+    override def withFilter(p: T => Boolean): RefIterator[T] = filter(p)
 
     def zip[X <: AnyRef](that: RefIterator[X]): RefIterator[(T, X)] = new RefIterator[(T, X)] {
         def hasNext: Boolean = self.hasNext && that.hasNext

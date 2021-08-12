@@ -33,7 +33,7 @@ class PerformanceEvaluation extends Locking {
      * @param f The function that will be evaluated and for which the execution
      *      time will be measured.
      */
-    final def time[T](s: Symbol)(f: ⇒ T): T = {
+    final def time[T](s: Symbol)(f: => T): T = {
         val startTime = System.nanoTime
         try {
             f
@@ -141,9 +141,9 @@ object PerformanceEvaluation {
      *          then it may happen that the used amount of memory is negative.
      */
     def memory[T](
-        f: ⇒ T
+        f: => T
     )(
-        mu: Long ⇒ Unit
+        mu: Long => Unit
     )(
         implicit
         logContext: Option[LogContext] = None
@@ -165,7 +165,7 @@ object PerformanceEvaluation {
      * @param   r A function that is passed the time (in nanoseconds) that it
      *          took to evaluate `f`. `r` is called even if `f` fails with an exception.
      */
-    def time[T](f: ⇒ T)(r: Nanoseconds ⇒ Unit): T = {
+    def time[T](f: => T)(r: Nanoseconds => Unit): T = {
         val startTime: Long = System.nanoTime
         val result =
             try {
@@ -177,7 +177,7 @@ object PerformanceEvaluation {
         result
     }
 
-    def timed[T](f: ⇒ T): (Nanoseconds, T) = {
+    def timed[T](f: => T): (Nanoseconds, T) = {
         val startTime: Long = System.nanoTime
         val result = f
         (Nanoseconds.TimeSpan(startTime, System.nanoTime), result)
@@ -270,10 +270,10 @@ object PerformanceEvaluation {
         epsilon:                     Int,
         consideredRunsEpsilon:       Int,
         minimalNumberOfRelevantRuns: Int,
-        f:                           ⇒ T,
+        f:                           => T,
         runGC:                       Boolean = false
     )(
-        r: (Nanoseconds, Seq[Nanoseconds]) ⇒ Unit
+        r: (Nanoseconds, Seq[Nanoseconds]) => Unit
     ): T = {
 
         require(minimalNumberOfRelevantRuns >= 3)
@@ -290,7 +290,7 @@ object PerformanceEvaluation {
         var runsSinceLastUpdate = 0
         var times = List.empty[Nanoseconds]
         if (runGC) gc()
-        time { result = f } { t ⇒
+        time { result = f } { t =>
             times = t :: times
             if (t.timeSpan <= 999 /*ns*/ ) {
                 r(t, times)
@@ -308,7 +308,7 @@ object PerformanceEvaluation {
             if (runGC) gc()
             time {
                 result = f
-            } { t ⇒
+            } { t =>
                 if (t.timeSpan <= avg * filterE) {
                     // let's throw away all runs that are significantly slower than the last run
                     times = t :: times.filter(_.timeSpan <= t.timeSpan * filterE)
@@ -338,7 +338,7 @@ object PerformanceEvaluation {
      * @param    r A function that is passed the time that it took to evaluate `f` and the result
      *             produced by `f`; `r` is only called if `f` succeeds.
      */
-    def run[T, X](f: ⇒ T)(r: (Nanoseconds, T) ⇒ X): X = {
+    def run[T, X](f: => T)(r: (Nanoseconds, T) => X): X = {
         val startTime: Long = System.nanoTime
         val result = f
         val endTime: Long = System.nanoTime

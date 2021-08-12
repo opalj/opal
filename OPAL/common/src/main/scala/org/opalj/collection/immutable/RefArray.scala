@@ -3,12 +3,12 @@ package org.opalj
 package collection
 package immutable
 
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 
 import scala.collection.Map
 import scala.collection.mutable.Builder
 import org.opalj.collection.mutable.RefArrayBuffer
-import org.opalj.control.{find ⇒ findInArray}
+import org.opalj.control.{find => findInArray}
 
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
@@ -21,7 +21,7 @@ import org.opalj.control.{find ⇒ findInArray}
  */
 class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory methods to facilitate integration with the scala collection API */ ] private[collection] (
         private var data: Array[AnyRef]
-) extends scala.collection.immutable.Seq[T] { self ⇒ // TODO [Scala 2.13] make it extend IndexedSeq.
+) extends scala.collection.immutable.Seq[T] { self => // TODO [Scala 2.13] make it extend IndexedSeq.
 
     //
     //
@@ -57,7 +57,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
      * '''This method is only to be used if no aliases have been created that assume that this array is not mutated.'''
      */
     // IMPROVE Design annotation (+Analysis) that ensures that this operation is only performed if – after the usage of this method - the reference to this data-structure will not be used anymore.
-    def _UNSAFE_mapped[X <: AnyRef](f: T ⇒ X): RefArray[X] = {
+    def _UNSAFE_mapped[X <: AnyRef](f: T => X): RefArray[X] = {
         var i = 0
         val max = data.length
         while (i < max) {
@@ -73,7 +73,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
      * '''This method is only to be used if `this` instance is no longer used afterwards!'''
      */
     // IMPROVE Design annotation (+Analysis) that ensures that this operation is only performed if – after the usage of this method - the reference to this data-structure will not be used anymore.
-    def _UNSAFE_sortedWith(compare: (T, T) ⇒ Boolean): this.type = {
+    def _UNSAFE_sortedWith(compare: (T, T) => Boolean): this.type = {
         JArrays.parallelSort[AnyRef](
             data,
             Ordering.fromLessThan(compare).asInstanceOf[java.util.Comparator[AnyRef]]
@@ -116,13 +116,13 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
 
     /*
     class WithFilter {
-        def withFilter(p: T ⇒ Boolean): WithFilter
+        def withFilter(p: T => Boolean): WithFilter
         def map
         def flatMap
         def foreach
     }
 
-    def withFilter(p: T ⇒ Boolean): WithFilter = {
+    def withFilter(p: T => Boolean): WithFilter = {
         ???
     }
     */
@@ -148,7 +148,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         val thisLength = this.data.length
         val newData = JArrays.copyOf(data, thisLength + that.length)
         var i = thisLength
-        that.foreach { v ⇒
+        that.foreach { v =>
             newData(i) = v
             i += 1
         }
@@ -163,7 +163,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         new RefArray(newData)
     }
 
-    def map[X <: AnyRef](f: T ⇒ X): RefArray[X] = {
+    def map[X <: AnyRef](f: T => X): RefArray[X] = {
         val newData = new Array[AnyRef](data.length)
         var i = 0
         val max = data.length
@@ -174,7 +174,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         new RefArray[X](newData)
     }
 
-    def map(f: T ⇒ Int): IntArray = {
+    def map(f: T => Int): IntArray = {
         val newData = new Array[Int](data.length)
         var i = 0
         val max = data.length
@@ -185,7 +185,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         IntArray._UNSAFE_from(newData)
     }
 
-    def flatMap[X <: AnyRef](f: T ⇒ TraversableOnce[X]): RefArray[X] = {
+    def flatMap[X <: AnyRef](f: T => TraversableOnce[X]): RefArray[X] = {
         val b = RefArray.newBuilder[X]
         var i = 0
         val max = data.length
@@ -209,7 +209,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
 
     def apply(idx: Int): T = data(idx).asInstanceOf[T]
 
-    def sortWith[X >: T](compare: (X, X) ⇒ Boolean): RefArray[T] = {
+    def sortWith[X >: T](compare: (X, X) => Boolean): RefArray[T] = {
         val newData = data.clone
         JArrays.parallelSort(newData, Ordering.fromLessThan(compare).asInstanceOf[Ordering[AnyRef]])
         new RefArray[T](newData)
@@ -281,7 +281,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         new RefArray(JArrays.copyOfRange(data, 1, data.length))
     }
 
-    override def foreach[U](f: T ⇒ U): Unit = {
+    override def foreach[U](f: T => U): Unit = {
         val data = this.data
         val max = data.length
         var i = 0
@@ -291,7 +291,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         }
     }
 
-    override def partition(p: T ⇒ Boolean): (RefArray[T], RefArray[T]) = {
+    override def partition(p: T => Boolean): (RefArray[T], RefArray[T]) = {
         val max = data.length
         val left = RefArrayBuffer.withInitialSize[AnyRef](Math.max(8, max / 2))
         val right = RefArrayBuffer.withInitialSize[AnyRef](Math.min(8, max / 2))
@@ -339,7 +339,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
     }
 
     def foreachIterator: ForeachRefIterator[T] = new ForeachRefIterator[T] {
-        override def foreach[U](f: T ⇒ U): Unit = {
+        override def foreach[U](f: T => U): Unit = {
             val data = self.data
             val max = data.length
             var i = 0
@@ -350,7 +350,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         }
     }
 
-    override def filter(f: T ⇒ Boolean): RefArray[T] = {
+    override def filter(f: T => Boolean): RefArray[T] = {
         // IMPROVE Only create new array if required!
         val b = RefArray.newUnconstrainedBuilder[T]
         val data = this.data
@@ -372,9 +372,9 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
             b.result()
     }
 
-    def foldLeft(z: Int)(op: (Int, T) ⇒ Int): Int = iterator.foldLeft(z)(op)
+    def foldLeft(z: Int)(op: (Int, T) => Int): Int = iterator.foldLeft(z)(op)
 
-    override def foldLeft[X](z: X)(op: (X, T) ⇒ X): X = {
+    override def foldLeft[X](z: X)(op: (X, T) => X): X = {
         var result = z
         var i = 0
         val max = data.length
@@ -433,7 +433,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
             b.result()
     }
 
-    override def filterNot(f: T ⇒ Boolean): RefArray[T] = filter(e ⇒ !f(e))
+    override def filterNot(f: T => Boolean): RefArray[T] = filter(e => !f(e))
 
     /**
      * Creates a new `RefArray` where the value at the given index is replaced by
@@ -445,8 +445,8 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         new RefArray(newData)
     }
 
-    def binarySearch(comparator: T ⇒ Int): Option[T] = {
-        findInArray(data)(e ⇒ comparator(e.asInstanceOf[T])).asInstanceOf[Option[T]]
+    def binarySearch(comparator: T => Int): Option[T] = {
+        findInArray(data)(e => comparator(e.asInstanceOf[T])).asInstanceOf[Option[T]]
     }
 
     def binarySearch[X >: T <: Comparable[X]](key: X): Int = {
@@ -477,7 +477,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         new RefArray(newData)
     }
 
-    def foreachWithIndex[U](f: (T, Int) ⇒ U): Unit = {
+    def foreachWithIndex[U](f: (T, Int) => U): Unit = {
         val data = self.data
         val max = data.length
         var i = 0
@@ -487,7 +487,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         }
     }
 
-    def sum(f: T ⇒ Int): Int = {
+    def sum(f: T => Int): Int = {
         var sum = 0
         val data = self.data
         val max = data.length
@@ -501,8 +501,8 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: RefArray[_] ⇒ JArrays.equals(this.data, that.data)
-            case _                 ⇒ false
+            case that: RefArray[_] => JArrays.equals(this.data, that.data)
+            case _                 => false
         }
     }
 
@@ -568,7 +568,7 @@ object RefArray {
         new RefArray(Array[AnyRef](e1, e2, e3))
     }
 
-    def fill[T <: AnyRef](n: Int)(f: ⇒ T): RefArray[T] = {
+    def fill[T <: AnyRef](n: Int)(f: => T): RefArray[T] = {
         val data = new Array[AnyRef](n)
         var i = 0
         while (i < n) {
@@ -622,14 +622,14 @@ object RefArray {
         b.result()
     }
 
-    def mapFrom[T, X <: AnyRef](data: Seq[T])(f: T ⇒ X): RefArray[X] = {
+    def mapFrom[T, X <: AnyRef](data: Seq[T])(f: T => X): RefArray[X] = {
         val max = data.size
         val newData = new Array[AnyRef](max)
         var i = 0; while (i < max) { newData(i) = f(data(i)); i += 1 }
         new RefArray[X](newData)
     }
 
-    def mapFrom[T <: AnyRef](data: Array[Int])(f: Int ⇒ T): RefArray[T] = {
+    def mapFrom[T <: AnyRef](data: Array[Int])(f: Int => T): RefArray[T] = {
         val max = data.length
         val newData = new Array[AnyRef](max)
         var i = 0; while (i < max) { newData(i) = f(data(i)); i += 1 }

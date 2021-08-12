@@ -14,20 +14,20 @@ trait OneStepAnalysis[Source, +AnalysisResult] extends Analysis[Source, Analysis
     /*abstract*/ def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): AnalysisResult
 
     final override def analyze(
         project:                Project[Source],
         parameters:             Seq[String]              = List.empty,
-        initProgressManagement: Int ⇒ ProgressManagement = ProgressManagement.None
+        initProgressManagement: Int => ProgressManagement = ProgressManagement.None
     ): AnalysisResult = {
 
         val pm = initProgressManagement(1 /* number of steps */ )
         pm.progress(1, ProgressEvents.Start, Some(title))
         var wasKilled = false
         val result = doAnalyze(
-            project, parameters, () ⇒ { wasKilled = pm.isInterrupted(); wasKilled }
+            project, parameters, () => { wasKilled = pm.isInterrupted(); wasKilled }
         )
 
         if (wasKilled)

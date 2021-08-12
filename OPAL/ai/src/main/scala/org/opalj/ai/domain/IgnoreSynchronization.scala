@@ -9,18 +9,18 @@ package domain
  * @author Michael Eichberg
  */
 trait IgnoreSynchronization extends MonitorInstructionsDomain {
-    this: ValuesDomain with ReferenceValuesDomain with ExceptionsFactory with Configuration ⇒
+    this: ValuesDomain with ReferenceValuesDomain with ExceptionsFactory with Configuration =>
 
     protected[this] def sideEffectOnlyOrExceptions(
         pc:    Int,
         value: DomainValue
     ): Computation[Nothing, ExceptionValue] = {
         refIsNull(pc, value) match {
-            case Yes ⇒
+            case Yes =>
                 ThrowsException(VMNullPointerException(pc))
-            case Unknown if throwNullPointerExceptionOnMonitorAccess ⇒
+            case Unknown if throwNullPointerExceptionOnMonitorAccess =>
                 ComputationWithSideEffectOrException(VMNullPointerException(pc))
-            case _ /* No OR Unknown but throwNullPointerExceptionOnMonitorAccess is No */ ⇒
+            case _ /* No OR Unknown but throwNullPointerExceptionOnMonitorAccess is No */ =>
                 ComputationWithSideEffectOnly
         }
     }

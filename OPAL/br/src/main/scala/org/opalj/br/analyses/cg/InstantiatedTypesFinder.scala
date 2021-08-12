@@ -41,9 +41,9 @@ trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
     override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
         val closedPackages = project.get(ClosedPackagesKey)
-        project.allClassFiles.iterator.filter { cf ⇒
+        project.allClassFiles.iterator.filter { cf =>
             (cf.isPublic || !closedPackages.isClosed(cf.thisType.packageName)) &&
-                cf.constructors.exists { ctor ⇒
+                cf.constructors.exists { ctor =>
                     ctor.isPublic ||
                         !ctor.isPrivate && !closedPackages.isClosed(cf.thisType.packageName)
                 }
@@ -101,7 +101,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
             try {
                 project.config.as[List[String]](additionalInstantiatedTypesKey)
             } catch {
-                case e: Throwable ⇒
+                case e: Throwable =>
                     OPALLogger.error(
                         "project configuration - recoverable",
                         s"configuration key $additionalInstantiatedTypesKey is invalid; "+
@@ -111,7 +111,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
                     return instantiatedTypes;
             }
 
-        configInstantiatedTypes foreach { configuredType ⇒
+        configInstantiatedTypes foreach { configuredType =>
             val considerSubtypes = configuredType.endsWith("+")
             val typeName = if (considerSubtypes) {
                 configuredType.substring(0, configuredType.size - 1)

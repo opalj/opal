@@ -23,13 +23,13 @@ trait StringValues
     with DefaultJavaObjectToDomainValueConversion
     with MethodCallsDomain
     with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: CorrelationalDomainSupport with IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
     type DomainStringValue <: StringValue with DomainObjectValue
     val DomainStringValueTag: ClassTag[DomainStringValue]
 
     protected trait StringValue extends SObjectValue with IsStringValue {
-        this: DomainStringValue ⇒
+        this: DomainStringValue =>
 
         /**
          * The represented string. `value` will be `null` if and only if the [[StringValue]] is not
@@ -45,7 +45,7 @@ trait StringValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainStringValueTag(that) ⇒
+                case DomainStringValueTag(that) =>
                     if (this.value == that.value) {
                         if (this.refId == that.refId)
                             NoUpdate
@@ -64,7 +64,7 @@ trait StringValues
                         StructuralUpdate(newValue)
                     }
 
-                case _ ⇒
+                case _ =>
                     val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
                     if (result.isStructuralUpdate) {
                         result
@@ -82,8 +82,8 @@ trait StringValues
                 return true;
 
             other match {
-                case that: StringValue ⇒ that.value == this.value
-                case _                 ⇒ false
+                case that: StringValue => that.value == this.value
+                case _                 => false
             }
         }
 
@@ -97,8 +97,8 @@ trait StringValues
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: StringValue ⇒ that.value == this.value && super.equals(other)
-                case _                 ⇒ false
+                case that: StringValue => that.value == this.value && super.equals(other)
+                case _                 => false
             }
         }
 
@@ -122,23 +122,23 @@ trait StringValues
     object StringValue {
         def unapply(value: DomainValue): Option[String] = {
             value match {
-                case s: StringValue ⇒ Some(s.value)
-                case _              ⇒ None
+                case s: StringValue => Some(s.value)
+                case _              => None
             }
         }
     }
 
     abstract override def toJavaObject(pc: Int, value: DomainValue): Option[Object] = {
         value match {
-            case StringValue(value) ⇒ Some(value)
-            case _                  ⇒ super.toJavaObject(pc, value)
+            case StringValue(value) => Some(value)
+            case _                  => super.toJavaObject(pc, value)
         }
     }
 
     abstract override def toDomainValue(pc: Int, value: Object): DomainReferenceValue = {
         value match {
-            case s: String ⇒ StringValue(pc, s)
-            case _         ⇒ super.toDomainValue(pc, value)
+            case s: String => StringValue(pc, s)
+            case _         => super.toDomainValue(pc, value)
         }
     }
 
@@ -186,14 +186,14 @@ trait StringValues
                 } else if (methodDescriptor == StringValues.ConstructorWithString) {
                     operands.head match {
                         // Let's test if we know the parameter ...
-                        case StringValue(s) ⇒
+                        case StringValue(s) =>
                             updateAfterEvaluation(
                                 newStringValue,
                                 StringValue(newStringValue.origin, s, newStringValue.refId)
                             )
                             return ComputationWithSideEffectOnly
 
-                        case _ ⇒ /* we can do nothing special */
+                        case _ => /* we can do nothing special */
                     }
                 }
                 // We don't know the precise value, but we still assume that the value

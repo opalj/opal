@@ -13,8 +13,8 @@ case class UnknownAttribute(attributeName: String, info: Array[Byte]) extends At
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: UnknownAttribute ⇒ this.similar(that)
-            case _                      ⇒ false
+            case that: UnknownAttribute => this.similar(that)
+            case _                      => false
         }
     }
 

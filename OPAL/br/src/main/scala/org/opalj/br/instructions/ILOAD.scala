@@ -16,8 +16,8 @@ case class ILOAD(lvIndex: Int) extends ILoadInstruction with ExplicitLocalVariab
 
     override def equals(other: Any): Boolean =
         other match {
-            case that: ILOAD ⇒ that.lvIndex == this.lvIndex
-            case _           ⇒ false
+            case that: ILOAD => that.lvIndex == this.lvIndex
+            case _           => false
         }
 
     override def hashCode: Int = ILOAD.opcode * 71 + lvIndex
@@ -31,11 +31,11 @@ object ILOAD extends InstructionMetaInformation {
 
     def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction =
         (lvIndex: @scala.annotation.switch) match {
-            case 0 ⇒ ILOAD_0
-            case 1 ⇒ ILOAD_1
-            case 2 ⇒ ILOAD_2
-            case 3 ⇒ ILOAD_3
-            case _ ⇒ new ILOAD(lvIndex)
+            case 0 => ILOAD_0
+            case 1 => ILOAD_1
+            case 2 => ILOAD_2
+            case 3 => ILOAD_3
+            case _ => new ILOAD(lvIndex)
         }
 
 }

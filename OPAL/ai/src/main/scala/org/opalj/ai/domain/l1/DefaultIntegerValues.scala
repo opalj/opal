@@ -15,7 +15,7 @@ import org.opalj.br.ComputationalTypeInt
  * @author Michael Eichberg
  */
 trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with IntegerValues {
-    domain: Configuration with ExceptionsFactory ⇒
+    domain: Configuration with ExceptionsFactory =>
 
     /**
      * Represents an unspecific, unknown Integer value.
@@ -38,8 +38,8 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: AnyRef ⇒ that eq this
-                case _            ⇒ false
+                case that: AnyRef => that eq this
+                case _            => false
             }
         }
 
@@ -60,8 +60,8 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
 
         override def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case AnIntegerValue ⇒ StructuralUpdate(AnIntegerValue)
-                case that: TheIntegerValue ⇒
+                case AnIntegerValue => StructuralUpdate(AnIntegerValue)
+                case that: TheIntegerValue =>
                     if (that.value == this.value)
                         NoUpdate
                     else
@@ -72,8 +72,8 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
         override def abstractsOver(other: DomainValue): Boolean = {
             (this eq other) || (
                 other match {
-                    case that: TheIntegerValue ⇒ this.value == that.value
-                    case _                     ⇒ false
+                    case that: TheIntegerValue => this.value == that.value
+                    case _                     => false
                 }
             )
         }
@@ -88,8 +88,8 @@ trait DefaultIntegerValues extends DefaultSpecialDomainValuesBinding with Intege
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: TheIntegerValue ⇒ this.value == that.value
-                case _                     ⇒ false
+                case that: TheIntegerValue => this.value == that.value
+                case _                     => false
             }
         }
 

@@ -12,13 +12,13 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait ConcreteLongValues { this: ValuesDomain ⇒
+trait ConcreteLongValues { this: ValuesDomain =>
 
     /**
      * If the given value represents one specific long value then the function
      * `ifThen` is called with the respective value otherwise `orElse` is called.
      */
-    def longValue[T](value: DomainValue)(ifThen: Long ⇒ T)(orElse: ⇒ T): T
+    def longValue[T](value: DomainValue)(ifThen: Long => T)(orElse: => T): T
 
     /**
      * Returns the current `Long` value represented by the domain value if it exists.

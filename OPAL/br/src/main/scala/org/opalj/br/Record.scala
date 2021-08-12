@@ -9,7 +9,7 @@ package br
  */
 case class Record(components: RecordComponents)
     extends Attribute
-    with (Int ⇒ RecordComponent) {
+    with (Int => RecordComponent) {
 
     override def kindId: Int = Record.KindId
 

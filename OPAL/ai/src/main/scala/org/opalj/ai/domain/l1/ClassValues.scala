@@ -48,7 +48,7 @@ trait ClassValues
     with FieldAccessesDomain
     with DynamicLoadsDomain
     with MethodCallsDomain {
-    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration =>
 
     type DomainClassValue <: ClassValue with DomainObjectValue
     val DomainClassValueTag: ClassTag[DomainClassValue]
@@ -57,7 +57,7 @@ trait ClassValues
      * All values (`Class<...> c`) that represent the same type (e.g. `java.lang.String`)
      * are actually represented by the same class (object) value at runtime.
      */
-    protected trait ClassValue extends SObjectValue with IsClassValue { this: DomainClassValue ⇒
+    protected trait ClassValue extends SObjectValue with IsClassValue { this: DomainClassValue =>
 
         def value: Type
 
@@ -67,14 +67,14 @@ trait ClassValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case that: ClassValue ⇒
+                case that: ClassValue =>
                     if (this.value eq that.value)
                         // Recall: all instances are the same; i.e.,
                         // String.class "is reference equal to" Class.forName("java.lang.String")
                         NoUpdate
                     else
                         StructuralUpdate(ObjectValue(origin, No, true, ObjectType.Class, nextRefId()))
-                case _ ⇒
+                case _ =>
                     val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
                     if (result.isStructuralUpdate) {
                         result
@@ -96,8 +96,8 @@ trait ClassValues
                 return true;
 
             other match {
-                case that: ClassValue ⇒ that.value eq this.value
-                case _                ⇒ false
+                case that: ClassValue => that.value eq this.value
+                case _                => false
             }
         }
 
@@ -105,8 +105,8 @@ trait ClassValues
 
         override def equals(other: Any): Boolean =
             other match {
-                case cv: ClassValue ⇒ super.equals(other) && cv.value == this.value
-                case _              ⇒ false
+                case cv: ClassValue => super.equals(other) && cv.value == this.value
+                case _              => false
             }
 
         override protected def canEqual(other: SObjectValue): Boolean = {
@@ -129,7 +129,7 @@ trait ClassValues
             try {
                 ReferenceType(className.replace('.', '/'))
             } catch {
-                case _: IllegalArgumentException ⇒
+                case _: IllegalArgumentException =>
                     // if "className" is not a valid descriptor
                     return justThrows(ClassNotFoundException(pc));
             }
@@ -171,18 +171,18 @@ trait ClassValues
         if ((declaringClass eq ObjectType.Class) && (name == "forName") && operands.nonEmpty) {
 
             operands.last match {
-                case sv: StringValue ⇒
+                case sv: StringValue =>
                     val value = sv.value
                     methodDescriptor match {
-                        case `forName_String`                     ⇒ simpleClassForNameCall(pc, value)
-                        case `forName_String_boolean_ClassLoader` ⇒ simpleClassForNameCall(pc, value)
-                        case _ ⇒
+                        case `forName_String`                     => simpleClassForNameCall(pc, value)
+                        case `forName_String_boolean_ClassLoader` => simpleClassForNameCall(pc, value)
+                        case _ =>
                             throw new DomainException(
                                 s"unsupported Class { ${methodDescriptor.toJava("forName")} }"
                             )
                     }
 
-                case _ ⇒
+                case _ =>
                     // call default handler (the first argument is not a string)
                     super.invokestatic(pc, declaringClass, isInterface, name, methodDescriptor, operands)
 
@@ -201,16 +201,16 @@ trait ClassValues
     ): Computation[DomainValue, Nothing] = {
         if (name == "TYPE") {
             declaringClass match {
-                case ObjectType.Boolean   ⇒ ComputedValue(ClassValue(pc, BooleanType))
-                case ObjectType.Byte      ⇒ ComputedValue(ClassValue(pc, ByteType))
-                case ObjectType.Character ⇒ ComputedValue(ClassValue(pc, CharType))
-                case ObjectType.Short     ⇒ ComputedValue(ClassValue(pc, ShortType))
-                case ObjectType.Integer   ⇒ ComputedValue(ClassValue(pc, IntegerType))
-                case ObjectType.Long      ⇒ ComputedValue(ClassValue(pc, LongType))
-                case ObjectType.Float     ⇒ ComputedValue(ClassValue(pc, FloatType))
-                case ObjectType.Double    ⇒ ComputedValue(ClassValue(pc, DoubleType))
+                case ObjectType.Boolean   => ComputedValue(ClassValue(pc, BooleanType))
+                case ObjectType.Byte      => ComputedValue(ClassValue(pc, ByteType))
+                case ObjectType.Character => ComputedValue(ClassValue(pc, CharType))
+                case ObjectType.Short     => ComputedValue(ClassValue(pc, ShortType))
+                case ObjectType.Integer   => ComputedValue(ClassValue(pc, IntegerType))
+                case ObjectType.Long      => ComputedValue(ClassValue(pc, LongType))
+                case ObjectType.Float     => ComputedValue(ClassValue(pc, FloatType))
+                case ObjectType.Double    => ComputedValue(ClassValue(pc, DoubleType))
 
-                case _                    ⇒ super.getstatic(pc, declaringClass, name, fieldType)
+                case _                    => super.getstatic(pc, declaringClass, name, fieldType)
             }
         } else {
             super.getstatic(pc, declaringClass, name, fieldType)
@@ -225,9 +225,9 @@ trait ClassValues
     ): Computation[DomainValue, Nothing] = {
 
         bootstrapMethod match {
-            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), RefArray()) ⇒
+            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), RefArray()) =>
                 ComputedValue(ClassValue(pc, FieldType(name)))
-            case _ ⇒
+            case _ =>
                 super.loadDynamic(pc, bootstrapMethod, name, descriptor)
         }
     }
@@ -235,8 +235,8 @@ trait ClassValues
     object ClassValue {
         def unapply(value: DomainValue): Option[Type] = {
             value match {
-                case classValue: ClassValue ⇒ Some(classValue.value)
-                case _                      ⇒ None
+                case classValue: ClassValue => Some(classValue.value)
+                case _                      => None
             }
         }
     }

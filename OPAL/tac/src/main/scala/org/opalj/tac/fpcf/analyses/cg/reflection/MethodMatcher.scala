@@ -55,7 +55,7 @@ class ClassBasedMethodMatcher(
 
     // TODO use a ProjectInformationKey or WeakHashMap to cache methods per project
     // (for the contains check)
-    private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c ⇒
+    private[this] def methods(implicit p: SomeProject): Set[Method] = possibleClasses.flatMap { c =>
         // todo what about "inherited" static methods?
         val methodsInClassFile = p.classFile(c).map(_.methods).getOrElse(RefArray.empty)
         if (onlyMethodsExactlyInClass)
@@ -77,7 +77,7 @@ class DescriptorBasedMethodMatcher(
 ) extends MethodMatcher {
 
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {
-        p.allMethods.iterator.filter(m ⇒ possibleDescriptors.contains(m.descriptor))
+        p.allMethods.iterator.filter(m => possibleDescriptors.contains(m.descriptor))
     }
 
     override def contains(m: Method)(implicit p: SomeProject): Boolean =
@@ -113,29 +113,29 @@ class ActualParameterBasedMethodMatcher(val actualParams: Seq[V]) extends Method
             // therefor, we need to actualParams.map(...) as RefIterator
             m.descriptor.parameterTypes.zip(actualParams.map(_.value)).forall {
                 // the actual type is null and the declared type is a ref type
-                case (_: ReferenceType, _: IsNullValue) ⇒
+                case (_: ReferenceType, _: IsNullValue) =>
                     // TODO here we would need the declared type information
                     true
                 // declared type and actual type are reference types and assignable
-                case (pType: ReferenceType, v: IsReferenceValue) ⇒
+                case (pType: ReferenceType, v: IsReferenceValue) =>
                     v.isValueASubtypeOf(pType).isYesOrUnknown
 
                 // declared type and actual type are base types and the same type
-                case (pType: BaseType, v: IsPrimitiveValue[_]) ⇒ v.primitiveType eq pType
+                case (pType: BaseType, v: IsPrimitiveValue[_]) => v.primitiveType eq pType
 
                 // the actual type is null and the declared type is a base type
-                case (_: BaseType, _: IsNullValue) ⇒
+                case (_: BaseType, _: IsNullValue) =>
                     false
 
                 // declared type is base type, actual type might be a boxed value
-                case (pType: BaseType, v: IsReferenceValue) ⇒
+                case (pType: BaseType, v: IsReferenceValue) =>
                     v.asReferenceValue.isValueASubtypeOf(pType.WrapperType).isYesOrUnknown
 
                 // actual type is base type, declared type might be a boxed type
-                case (pType: ObjectType, v: IsPrimitiveValue[_]) ⇒
+                case (pType: ObjectType, v: IsPrimitiveValue[_]) =>
                     pType.isPrimitiveTypeWrapperOf(v.primitiveType)
 
-                case _ ⇒
+                case _ =>
                     false
             }
     }
@@ -146,7 +146,7 @@ class ActualParameterBasedMethodMatcher(val actualParams: Seq[V]) extends Method
 class ActualReceiverBasedMethodMatcher(val receiver: IsReferenceValue) extends MethodMatcher {
     override def initialMethods(implicit p: SomeProject): Iterator[Method] = {
         implicit val ch: ClassHierarchy = p.classHierarchy
-        p.allClassFiles.iterator.flatMap { cf ⇒
+        p.allClassFiles.iterator.flatMap { cf =>
             var r = RefArray.empty[Method]
             if (receiver.isNull.isNoOrUnknown && receiver.isValueASubtypeOf(cf.thisType).isYesOrUnknown)
                 r ++= cf.methods
@@ -228,7 +228,7 @@ object MethodMatching {
             Iterator.empty
         } else {
             val sortedMatchers = filters.sortBy(_.priority)
-            sortedMatchers.head.initialMethods.filter(m ⇒ sortedMatchers.tail.forall(_.contains(m)))
+            sortedMatchers.head.initialMethods.filter(m => sortedMatchers.tail.forall(_.contains(m)))
         }
     }
 }

@@ -22,7 +22,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override val featureIDs: Seq[String] = {
         featureId(Java1MajorVersion) +: (
-            for (majorVersion ← Java5MajorVersion to LatestSupportedJavaMajorVersion)
+            for (majorVersion <- Java5MajorVersion to LatestSupportedJavaMajorVersion)
                 yield featureId(majorVersion)
         )
     }
@@ -36,7 +36,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
         val data = ArrayMap[LocationsContainer[S]](LatestSupportedJavaMajorVersion)
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
         } {
             val version = classFile.majorVersion
@@ -57,7 +57,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
             else
                 Feature[S](java1MajorVersionFeatureId, extensions.size, extensions)
         } +: (
-            for (majorVersion ← Java5MajorVersion to LatestSupportedJavaMajorVersion) yield {
+            for (majorVersion <- Java5MajorVersion to LatestSupportedJavaMajorVersion) yield {
                 val featureId = this.featureId(majorVersion)
                 val extensions = data(majorVersion)
                 if (extensions ne null) {

@@ -17,7 +17,7 @@ class DefaultDomain[Source](
     with PerformInvocationsWithRecursionDetection
     with RecordCFG
     with TheMemoryLayout {
-    callingDomain ⇒
+    callingDomain =>
 
     type CalledMethodDomain = ChildDefaultDomain[Source]
 
@@ -43,7 +43,7 @@ class DefaultDomain[Source](
     // hence, before the first usage of the CalledMethodsStore by the AI)
     lazy val calledMethodsStore: CalledMethodsStore { val domain: coordinatingDomain.type } = {
         val operands =
-            localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) ⇒
+            localsArray(0).foldLeft(Chain.empty[DomainValue])((l, n) =>
                 if (n ne null) n :&: l else l)
         CalledMethodsStore(
             coordinatingDomain, callingDomain.frequentEvaluationWarningLevel
@@ -61,7 +61,7 @@ class ChildDefaultDomain[Source](
         val maxCallChainLength: Int
 ) extends SharedDefaultDomain[Source](project, method)
     with ChildPerformInvocationsWithRecursionDetection
-    with DefaultRecordMethodCallResults { callingDomain ⇒
+    with DefaultRecordMethodCallResults { callingDomain =>
 
     type CalledMethodDomain = callerDomain.CalledMethodDomain
 

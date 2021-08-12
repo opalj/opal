@@ -49,7 +49,7 @@ package object l1 {
 
         collectPCWithOperands(domain)(code, operandsArray) {
             case (pc, INVOKESPECIAL(_, _, "<init>", md), operands) if operands.size >= md.parametersCount &&
-                domain.asObjectValue(operands(md.parametersCount)).origin == receiverOriginPC ⇒ pc
+                domain.asObjectValue(operands(md.parametersCount)).origin == receiverOriginPC => pc
         }
     }
 }

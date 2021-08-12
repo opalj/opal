@@ -135,7 +135,7 @@ case object ImmutableContainer extends ClassImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == ImmutableObject) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this");
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this");
         }
     }
 
@@ -149,7 +149,7 @@ sealed trait MutableObject extends ClassImmutability {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = {
         if (other == ImmutableObject || other == ImmutableContainer) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 

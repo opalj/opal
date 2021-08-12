@@ -4,7 +4,7 @@ package ai
 package domain
 package l1
 
-import java.lang.{StringBuilder ⇒ JStringBuilder}
+import java.lang.{StringBuilder => JStringBuilder}
 
 import org.opalj.br.ObjectType
 
@@ -38,7 +38,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait StringBuilderValues extends StringValues {
-    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory ⇒
+    domain: Domain with CorrelationalDomainSupport with Configuration with IntegerValuesDomain with TypedValuesFactory =>
 
     // TODO Move concrete class to DefaultBindingClass...
     protected class StringBuilderValue(
@@ -47,7 +47,7 @@ trait StringBuilderValues extends StringValues {
             val builder:     JStringBuilder,
             val refId:       RefId
     ) extends SObjectValue {
-        this: DomainStringValue ⇒
+        this: DomainStringValue =>
 
         assert(builder != null)
         assert((builderType eq ObjectType.StringBuffer) || (builderType eq ObjectType.StringBuilder))
@@ -62,7 +62,7 @@ trait StringBuilderValues extends StringValues {
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case that: StringBuilderValue ⇒
+                case that: StringBuilderValue =>
                     if (this.builder == that.builder && this.refId == that.refId) {
                         NoUpdate
                     } else {
@@ -70,7 +70,7 @@ trait StringBuilderValues extends StringValues {
                         // we are no longer able to track a concrete instance
                         StructuralUpdate(this.update())
                     }
-                case _ ⇒
+                case _ =>
                     val result = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
                     if (result.isStructuralUpdate) {
                         result
@@ -89,30 +89,30 @@ trait StringBuilderValues extends StringValues {
                 return true;
 
             other match {
-                case that: StringBuilderValue ⇒
+                case that: StringBuilderValue =>
                     that.builder == this.builder && (this.builderType eq that.builderType)
-                case _ ⇒
+                case _ =>
                     false
             }
         }
 
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue =
             target match {
-                case that: StringBuilderValues ⇒
+                case that: StringBuilderValues =>
                     that.StringBuilderValue(
                         this.origin,
                         this.builderType,
                         this.builder
                     ).asInstanceOf[target.DomainValue]
-                case _ ⇒
+                case _ =>
                     super.adapt(target, vo)
             }
 
         override def equals(other: Any): Boolean = {
             other match {
-                case that: StringBuilderValue ⇒
+                case that: StringBuilderValue =>
                     that.builder == this.builder && (this.builderType eq that.builderType)
-                case _ ⇒ false
+                case _ => false
             }
         }
 

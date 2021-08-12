@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.support.debug
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
+import org.opalj.collection.immutable.{Chain => List}
 import org.opalj.br.Code
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.AITracer
@@ -30,7 +30,7 @@ trait ConsoleEvaluationTracer extends AITracer {
     import Console._
 
     private[this] var indent = 0
-    private[this] def printIndent(): Unit = { (0 until indent) foreach (i ⇒ print("\t")) }
+    private[this] def printIndent(): Unit = { (0 until indent) foreach (i => print("\t")) }
 
     def reset(): Unit = { indent = 0 }
 
@@ -155,7 +155,7 @@ trait ConsoleEvaluationTracer extends AITracer {
     override def domainMessage(
         domain: Domain,
         source: Class[_], typeID: String,
-        pc: Option[Int], message: ⇒ String
+        pc: Option[Int], message: => String
     ): Unit = { /*EMPTY*/ }
 
     override def deadLocalVariable(domain: Domain)(pc: Int, lvIndex: Int): Unit = { /*EMPTY*/ }

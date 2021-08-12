@@ -8,7 +8,7 @@ package immutable
  *
  * @author Michael Eichberg
  */
-trait IntWorkSet[T <: IntWorkSet[T]] { intSet: T ⇒
+trait IntWorkSet[T <: IntWorkSet[T]] { intSet: T =>
 
     /**
      * Gets a value and returns the new set without that value.

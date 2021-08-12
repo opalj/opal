@@ -70,15 +70,15 @@ final class TypeCheckingDomain(
     protected case class InitializedObjectValue(
             override val theUpperTypeBound: ObjectType
     ) extends SObjectValue with Value {
-        this: DomainObjectValue ⇒
+        this: DomainObjectValue =>
 
         override def isNull: Answer = No
 
         // WIDENING OPERATION
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case _: UninitializedObjectValue ⇒ MetaInformationUpdateIllegalValue
-                case that                        ⇒ super.doJoin(pc, that)
+                case _: UninitializedObjectValue => MetaInformationUpdateIllegalValue
+                case that                        => super.doJoin(pc, that)
             }
         }
     }
@@ -90,7 +90,7 @@ final class TypeCheckingDomain(
             override val theUpperTypeBound: ObjectType,
             origin:                         ValueOrigin
     ) extends SObjectValue {
-        this: DomainObjectValue ⇒
+        this: DomainObjectValue =>
 
         override def isPrecise: Boolean = {
             origin != -1 /* "-1" means that we are talking about "uninitialized this" */ ||
@@ -110,17 +110,17 @@ final class TypeCheckingDomain(
         // WIDENING OPERATION
         override protected def doJoin(pc: Int, other: DomainValue): Update[DomainValue] = {
             other match {
-                case UninitializedObjectValue(`theUpperTypeBound`, `origin`) ⇒ NoUpdate
+                case UninitializedObjectValue(`theUpperTypeBound`, `origin`) => NoUpdate
                 // this value is not completely useable...
-                case _ ⇒ MetaInformationUpdateIllegalValue
+                case _ => MetaInformationUpdateIllegalValue
             }
         }
 
         override def abstractsOver(other: DomainValue): Boolean = {
             other match {
-                case that: UninitializedObjectValue ⇒
+                case that: UninitializedObjectValue =>
                     (that.theUpperTypeBound eq this.theUpperTypeBound) && this.origin == that.origin
-                case _ ⇒
+                case _ =>
                     false
             }
         }

@@ -21,7 +21,7 @@ case class NestMembers_attribute(
         <details class="attribute">
             <summary>NestMembers</summary>
             {
-                classes_array.map[String](p ⇒ cp(p).toString).sorted.map[NodeBuffer] { p ⇒
+                classes_array.map[String](p => cp(p).toString).sorted.map[NodeBuffer] { p =>
                     <span>{ p }</span><br/>
                 }
             }

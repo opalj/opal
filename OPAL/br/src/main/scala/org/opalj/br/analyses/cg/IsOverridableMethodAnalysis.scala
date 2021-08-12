@@ -25,9 +25,9 @@ import scala.collection.mutable
  */
 private[analyses] class IsOverridableMethodAnalysis(
         project:           SomeProject,
-        isClassExtensible: ObjectType ⇒ Answer,
-        isTypeExtensible:  ObjectType ⇒ Answer
-) extends (Method ⇒ Answer) {
+        isClassExtensible: ObjectType => Answer,
+        isTypeExtensible:  ObjectType => Answer
+) extends (Method => Answer) {
 
     //private[this] val cache: ConcurrentHashMap[Method, Answer] = new ConcurrentHashMap()
 
@@ -64,19 +64,19 @@ private[analyses] class IsOverridableMethodAnalysis(
                             // ... the original method is package private
                             // ... both methods are defined in different packages
                             // ... the subtypeMethod is protected or public
-                            val candidateMethods = instanceMethods(ot).iterator.filter(mdc ⇒
+                            val candidateMethods = instanceMethods(ot).iterator.filter(mdc =>
                                 mdc.name == methodName && mdc.descriptor == methodDescriptor)
                             // if we still have the original method in the list then this method
                             // does not override that method...
-                            candidateMethods.exists(mdc ⇒ mdc.packageName == methodPackageName)
+                            candidateMethods.exists(mdc => mdc.packageName == methodPackageName)
                         }
                     )) {
                     // the type as a whole is extensible and
                     // the method is not (finally) overridden by this type...
                     isClassExtensible(ot) match {
-                        case Yes     ⇒ return No;
-                        case Unknown ⇒ return Unknown;
-                        case No      ⇒ addDirectSubclasses(ot)
+                        case Yes     => return No;
+                        case Unknown => return Unknown;
+                        case No      => addDirectSubclasses(ot)
                     }
                 }
                 // ... if the method is final we do not need to consider further subtypes

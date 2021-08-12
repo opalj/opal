@@ -33,6 +33,6 @@ class TypeBasedPointsToAnalysis private[analyses] (
 object TypeBasedPointsToAnalysisScheduler extends AbstractPointsToAnalysisScheduler {
 
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject ⇒ TypeBasedPointsToAnalysis =
+    override val createAnalysis: SomeProject => TypeBasedPointsToAnalysis =
         new TypeBasedPointsToAnalysis(_)
 }

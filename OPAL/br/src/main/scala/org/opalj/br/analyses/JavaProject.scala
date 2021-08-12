@@ -47,7 +47,7 @@ class JavaProject( final val project: Project[java.net.URL]) {
         project
             .classHierarchy
             .allSubtypes(ObjectType(objectType), reflexive = false)
-            .map(ot ⇒ ot.toJava)
+            .map(ot => ot.toJava)
             .toList
             .asJava
     }

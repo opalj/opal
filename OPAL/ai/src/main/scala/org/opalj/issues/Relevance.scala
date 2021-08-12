@@ -54,7 +54,7 @@ final case class Relevance(value: Int) extends AnyVal {
             Relevance.toCategoryName(this)
     }
 
-    def toIDL: JsValue = Json.obj("name" → name, "value" → value)
+    def toIDL: JsValue = Json.obj("name" -> name, "value" -> value)
 
 }
 

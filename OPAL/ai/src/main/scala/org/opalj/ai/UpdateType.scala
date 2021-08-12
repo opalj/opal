@@ -22,7 +22,7 @@ sealed abstract class UpdateType {
      * Lift this update type to an [[Update]] of the corresponding type which contains
      * the given value.
      */
-    def apply[V](value: ⇒ V): Update[V]
+    def apply[V](value: => V): Update[V]
 
     /**
      * Returns `true` if `this` `UpdateType` represents the `NoUpdateType`.
@@ -51,7 +51,7 @@ sealed abstract class UpdateType {
 
 case object NoUpdateType extends UpdateType {
 
-    override def apply[V](value: ⇒ V): Update[V] = NoUpdate
+    override def apply[V](value: => V): Update[V] = NoUpdate
 
     override def noUpdate: Boolean = true
 
@@ -66,7 +66,7 @@ case object NoUpdateType extends UpdateType {
 // TODO Rename to HeapShapeUpdate
 sealed trait MetaInformationUpdateType extends UpdateType {
 
-    override def apply[V](value: ⇒ V): Update[V] = MetaInformationUpdate(value)
+    override def apply[V](value: => V): Update[V] = MetaInformationUpdate(value)
 
     override def noUpdate: Boolean = false
 
@@ -85,7 +85,7 @@ case object MetaInformationUpdateType extends MetaInformationUpdateType
 
 case object StructuralUpdateType extends UpdateType {
 
-    override def apply[V](value: ⇒ V): Update[V] = StructuralUpdate(value)
+    override def apply[V](value: => V): Update[V] = StructuralUpdate(value)
 
     override def noUpdate: Boolean = false
 

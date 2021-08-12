@@ -21,8 +21,8 @@ class AbstractClassImmutabilityMatcher(
         properties: Traversable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case `property` ⇒ true
-            case _          ⇒ false
+            case `property` => true
+            case _          => false
         }) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
@@ -46,8 +46,8 @@ class MutableObjectMatcher extends AbstractPropertyMatcher {
         properties: Traversable[Property]
     ): Option[String] = {
         if (properties.exists {
-            case _: MutableObject ⇒ true
-            case _                ⇒ false
+            case _: MutableObject => true
+            case _                => false
         })
             Some(a.elementValuePairs.head.value.asStringValue.value)
         else

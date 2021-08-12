@@ -2,7 +2,7 @@
 package org.opalj.collection.mutable
 
 import scala.reflect.ClassTag
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 
 import org.opalj.collection.RefIterator
 import org.opalj.collection.immutable.RefArray
@@ -24,7 +24,7 @@ import org.opalj.collection.immutable.RefArray
 final class RefArrayBuffer[N >: Null <: AnyRef] private (
         private var data:  Array[N],
         private var size0: Int
-) { buffer ⇒
+) { buffer =>
 
     /**
      * Resets the size of the buffer, but does not clear the underlying array; hence,
@@ -73,7 +73,7 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
 
     def toSet[T >: N <: AnyRef]: Set[T] = {
         val b = Set.newBuilder[T]
-        this.foreach(e ⇒ b += e)
+        this.foreach(e => b += e)
         b.result()
     }
 
@@ -157,7 +157,7 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
         this.data(size0 - 1)
     }
 
-    def foreach[U](f: N ⇒ U): Unit = {
+    def foreach[U](f: N => U): Unit = {
         val data = this.data
         val size = this.size0
         var i = 0

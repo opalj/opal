@@ -2,7 +2,7 @@
 package org.opalj
 package tac
 
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 
 import org.opalj.value.ValueInformation
 import org.opalj.br.Attribute
@@ -79,7 +79,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: TACode[_, _] ⇒
+            case that: TACode[_, _] =>
                 // Recall that the CFG is derived from the stmts and therefore necessarily
                 // equal when the statements are equal; this is true independent of the
                 // concrete of 3-address code that we have!
@@ -90,7 +90,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
                     JArrays.equals(this.pcToIndex, that.pcToIndex) &&
                     this.exceptionHandlers == that.exceptionHandlers
 
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -105,7 +105,7 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
 
     protected[this] def toString(taCodeType: String, additionalParameters: String): String = {
         val txtParams = s"params=($params)"
-        val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e ⇒ val (s, i) = e; s"$i: $s" }
+        val stmtsWithIndex = stmts.iterator.zipWithIndex.map { e => val (s, i) = e; s"$i: $s" }
         val txtStmts = stmtsWithIndex.mkString("stmts=(\n\t", ",\n\t", "\n)")
         val txtExceptionHandlers =
             if (exceptionHandlers.nonEmpty)

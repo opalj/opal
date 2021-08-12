@@ -42,13 +42,13 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         var memoryUsage = ""
         val accessInformation = memory {
             project.get(FieldAccessInformationKey)
-        } { m ⇒ memoryUsage = asMB(m) }
+        } { m => memoryUsage = asMB(m) }
 
         if (parameters.nonEmpty) {
             val Array(declaringClassName, fieldName) =
@@ -59,7 +59,7 @@ object FieldAccessInformationAnalysis extends ProjectAnalysisApplication {
 
             def accessInformationToString(data: Seq[(Method, PCs)]): String = {
                 (
-                    data.map { e ⇒
+                    data.map { e =>
                         val (method, pcs) = e
                         method.toJava(pcs.mkString("pcs: ", ", ", ""))
                     }

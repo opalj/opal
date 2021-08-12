@@ -2,8 +2,8 @@
 package org.opalj
 package ai
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
-import org.opalj.collection.immutable.{Naught ⇒ Nil}
+import org.opalj.collection.immutable.{Chain => List}
+import org.opalj.collection.immutable.{Naught => Nil}
 import org.opalj.br.instructions.Instruction
 import org.opalj.ai.util.containsInPrefix
 import org.opalj.collection.mutable.IntArrayStack
@@ -22,7 +22,7 @@ import org.opalj.collection.mutable.IntArrayStack
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { coreDomain ⇒
+trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { coreDomain =>
 
     /**
      * Replaces all occurrences of `oldValue` (using reference-quality) with `newValue`. If no
@@ -36,8 +36,8 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
         locals:   Locals
     ): (Operands, Locals) = {
         (
-            operands.mapConserve(o ⇒ if (o eq oldValue) newValue else o),
-            locals.mapConserve(l ⇒ if (l eq oldValue) newValue else l)
+            operands.mapConserve(o => if (o eq oldValue) newValue else o),
+            locals.mapConserve(l => if (l eq oldValue) newValue else l)
         )
     }
 
@@ -421,7 +421,7 @@ trait CoreDomainFunctionality extends ValuesDomain with SubroutinesDomain { core
             var header: List[Int /*PC*/ ] = Nil
             val relevantWorklist = {
                 var subroutinesToTerminate = abruptSubroutineTerminationCount
-                worklist.dropWhile { pc ⇒
+                worklist.dropWhile { pc =>
                     if (pc == SUBROUTINE) {
                         subroutinesToTerminate -= 1
                         if (subroutinesToTerminate > 0) {

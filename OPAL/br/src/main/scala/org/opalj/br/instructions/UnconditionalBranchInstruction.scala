@@ -13,7 +13,7 @@ import org.opalj.collection.immutable.Chain
  */
 trait UnconditionalBranchInstructionLike extends SimpleBranchInstructionLike {
 
-    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final override def readsLocal: Boolean = false
 

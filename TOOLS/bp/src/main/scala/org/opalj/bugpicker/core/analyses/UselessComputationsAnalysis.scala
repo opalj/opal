@@ -83,7 +83,7 @@ object UselessComputationsAnalysis {
                 pc,
                 instr @ StackBasedBinaryArithmeticInstruction(ComputationalTypeInt),
                 Seq(ConcreteIntegerValue(a), ConcreteIntegerValue(b), _*)
-                ) ⇒
+                ) =>
                 // The java "~" operator has no direct representation in bytecode.
                 // Instead, compilers generate an "ixor" with "-1" as the
                 // second value.
@@ -95,32 +95,32 @@ object UselessComputationsAnalysis {
                     createIssue(pc, message, defaultRelevance)
                 }
 
-            case (pc, IOR, Seq(ConcreteIntegerValue(0), _*)) ⇒
+            case (pc, IOR, Seq(ConcreteIntegerValue(0), _*)) =>
                 createIssue(pc, "0 | x will always evaluate to x", Relevance.High)
-            case (pc, IOR, Seq(_, ConcreteIntegerValue(0), _*)) ⇒
+            case (pc, IOR, Seq(_, ConcreteIntegerValue(0), _*)) =>
                 createIssue(pc, "x | 0 will always evaluate to x", Relevance.High)
-            case (pc, IOR, Seq(ConcreteIntegerValue(-1), _*)) ⇒
+            case (pc, IOR, Seq(ConcreteIntegerValue(-1), _*)) =>
                 createIssue(pc, "-1 | x will always evaluate to -1", Relevance.High)
-            case (pc, IOR, Seq(_, ConcreteIntegerValue(-1))) ⇒
+            case (pc, IOR, Seq(_, ConcreteIntegerValue(-1))) =>
                 createIssue(pc, "x | -1 will always evaluate to -1", Relevance.High)
 
-            case (pc, IAND, Seq(ConcreteIntegerValue(0), _*)) ⇒
+            case (pc, IAND, Seq(ConcreteIntegerValue(0), _*)) =>
                 createIssue(pc, "0 & x will always evaluate to 0", Relevance.High)
-            case (pc, IAND, Seq(ConcreteIntegerValue(-1), _*)) ⇒
+            case (pc, IAND, Seq(ConcreteIntegerValue(-1), _*)) =>
                 createIssue(pc, "-1 & x will always evaluate to -1", Relevance.High)
-            case (pc, IAND, Seq(_, ConcreteIntegerValue(0), _*)) ⇒
+            case (pc, IAND, Seq(_, ConcreteIntegerValue(0), _*)) =>
                 createIssue(pc, "x & 0 will always evaluate to 0", Relevance.High)
-            case (pc, IAND, Seq(_, ConcreteIntegerValue(-1), _*)) ⇒
+            case (pc, IAND, Seq(_, ConcreteIntegerValue(-1), _*)) =>
                 createIssue(pc, s"x & -1 will always evaluate to x", Relevance.High)
 
-            case (pc, INEG, Seq(ConcreteIntegerValue(a), _*)) ⇒
+            case (pc, INEG, Seq(ConcreteIntegerValue(a), _*)) =>
                 createIssue(pc, s"constant computation: -${a}", defaultRelevance)
 
             case (
                 pc,
                 IINC(index, increment),
                 _
-                ) if domain.intValueOption(result.localsArray(pc)(index)).isDefined ⇒
+                ) if domain.intValueOption(result.localsArray(pc)(index)).isDefined =>
                 val v = domain.intValueOption(result.localsArray(pc)(index)).get
                 val relevance =
                     if (increment == 1 || increment == -1)
@@ -135,18 +135,18 @@ object UselessComputationsAnalysis {
                 pc,
                 instr @ StackBasedBinaryArithmeticInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteLongValue(b), _*)
-                ) ⇒
+                ) =>
                 val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
                 createIssue(pc, message, defaultRelevance)
             case (
                 pc,
                 instr @ ShiftInstruction(ComputationalTypeLong),
                 Seq(ConcreteLongValue(a), ConcreteIntegerValue(b), _*)
-                ) ⇒
+                ) =>
                 val message = s"constant computation: ${b}l ${instr.operator} ${a}l."
                 createIssue(pc, message, defaultRelevance)
 
-            case (pc, LNEG, Seq(ConcreteLongValue(a), _*)) ⇒
+            case (pc, LNEG, Seq(ConcreteLongValue(a), _*)) =>
                 createIssue(pc, s"constant computation: -${a}l", defaultRelevance)
 
             // HANDLING REFERENCE VALUES
@@ -158,7 +158,7 @@ object UselessComputationsAnalysis {
                 Seq(rv: domain.ReferenceValue, _*)
                 ) if domain.intValueOption(
                 operandsArray(pc + INSTANCEOF.length).head
-            ).isDefined ⇒
+            ).isDefined =>
                 val utb = rv.upperTypeBound.map(_.toJava)
                 val targetType = " instanceof "+referenceType.toJava
                 val message = utb.mkString("useless type test: ", " with ", targetType)

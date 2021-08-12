@@ -26,9 +26,9 @@ final class RefAccumulator[A <: AnyRef] private (
 
     def ++=(is: TraversableOnce[A]): Unit = {
         is match {
-            case it: Iterator[A] ⇒
+            case it: Iterator[A] =>
                 if (it.hasNext) data ::= it
-            case is /*not a traversable once...*/ ⇒
+            case is /*not a traversable once...*/ =>
                 if (is.nonEmpty) data ::= is.toIterator
         }
     }
@@ -38,11 +38,11 @@ final class RefAccumulator[A <: AnyRef] private (
      */
     def pop(): A = {
         data.head match {
-            case it: Iterator[A @unchecked] ⇒
+            case it: Iterator[A @unchecked] =>
                 val v = it.next()
                 if (!it.hasNext) data = data.tail
                 v
-            case v: A @unchecked ⇒
+            case v: A @unchecked =>
                 data = data.tail
                 v
         }

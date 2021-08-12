@@ -16,7 +16,7 @@ import org.opalj.br.LongType
  * @author Michael Eichberg
  */
 trait TypeLevelLongValues extends LongValuesDomain {
-    this: IntegerValuesFactory with ExceptionsFactory with Configuration ⇒
+    this: IntegerValuesFactory with ExceptionsFactory with Configuration =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -28,7 +28,7 @@ trait TypeLevelLongValues extends LongValuesDomain {
      * Common supertrait of all `DomainValue`s that represent long values.
      */
     trait LongValue extends TypedValue[LongType] with IsLongValue {
-        this: DomainTypedValue[LongType] ⇒
+        this: DomainTypedValue[LongType] =>
 
         final override def leastUpperType: Option[LongType] = Some(LongType)
 

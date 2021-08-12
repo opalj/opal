@@ -14,7 +14,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
-    domain: ReferenceValuesDomain ⇒
+    domain: ReferenceValuesDomain =>
 
     /**
      * Converts the given Java object to a corresponding `DomainValue` by creating an `DomainValue`
@@ -30,10 +30,10 @@ trait DefaultJavaObjectToDomainValueConversion extends AsDomainValue {
             val arrayType = FieldType(fqnInBinaryNotation).asArrayType
             val array: Array[_] = value.asInstanceOf[Array[_]]
             this match {
-                case rv: ArrayValues ⇒
+                case rv: ArrayValues =>
                     val domainValue = rv.InitializedArrayValue(pc, arrayType, array.length)
                     domainValue.asInstanceOf[domain.DomainReferenceValue]
-                case _ ⇒ ReferenceValue(pc, arrayType)
+                case _ => ReferenceValue(pc, arrayType)
             }
         } else /*if (!clazz.isPrimitive()) */ {
             InitializedObjectValue(pc, ObjectType(fqnInBinaryNotation))

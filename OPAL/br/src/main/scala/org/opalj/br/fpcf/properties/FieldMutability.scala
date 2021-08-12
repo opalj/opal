@@ -83,9 +83,9 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
     final val key: PropertyKey[FieldMutability] = {
         PropertyKey.create(
             PropertyKeyName,
-            (ps: PropertyStore, _: FallbackReason, e: Entity) ⇒ {
+            (ps: PropertyStore, _: FallbackReason, e: Entity) => {
                 e match {
-                    case f: Field ⇒
+                    case f: Field =>
                         if (f.isStatic) {
                             if (f.isFinal) DeclaredFinalField else NonFinalFieldByLackOfInformation
                         } else if (f.isFinal) {
@@ -96,7 +96,7 @@ object FieldMutability extends FieldMutabilityPropertyMetaInformation {
                         } else {
                             NonFinalFieldByLackOfInformation
                         }
-                    case x ⇒
+                    case x =>
                         val m = x.getClass.getSimpleName+" is not an org.opalj.br.Field"
                         throw new IllegalArgumentException(m)
                 }

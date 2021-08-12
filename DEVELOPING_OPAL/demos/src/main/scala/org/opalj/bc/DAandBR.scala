@@ -212,16 +212,16 @@ object DAandBR extends App {
 
     val assembledCF = Assembler(cf)
 
-    val brClassFile = Java8Framework.ClassFile(() ⇒ new ByteArrayInputStream(assembledCF)).head
+    val brClassFile = Java8Framework.ClassFile(() => new ByteArrayInputStream(assembledCF)).head
     val newBRMethods =
         brClassFile.methods.
-            filter(m ⇒ /*due some sophisticated analysis...*/ m.name == "<init>").
-            map[MethodTemplate](m ⇒ m.copy())
+            filter(m => /*due some sophisticated analysis...*/ m.name == "<init>").
+            map[MethodTemplate](m => m.copy())
     val newBRClassFile = brClassFile.copy(methods = newBRMethods)
 
-    val newDAClassFile = cf.copy(methods = cf.methods.filter { daM ⇒
+    val newDAClassFile = cf.copy(methods = cf.methods.filter { daM =>
         implicit val cp = cf.constant_pool
-        brClassFile.methods.exists { brM ⇒
+        brClassFile.methods.exists { brM =>
             brM.name == daM.name && brM.descriptor.toJVMDescriptor == daM.descriptor
         }
     })

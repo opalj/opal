@@ -3,8 +3,8 @@ package org.opalj
 package ai
 package domain
 
-import org.opalj.collection.immutable.{Chain ⇒ List}
-import org.opalj.collection.immutable.{Naught ⇒ Nil}
+import org.opalj.collection.immutable.{Chain => List}
+import org.opalj.collection.immutable.{Naught => Nil}
 import org.opalj.collection.mutable.IntArrayStack
 
 /**
@@ -20,7 +20,7 @@ import org.opalj.collection.mutable.IntArrayStack
  */
 trait PerInstructionPostProcessing extends CoreDomainFunctionality {
 
-    type DomainValueUpdater = (DomainValue) ⇒ DomainValue
+    type DomainValueUpdater = (DomainValue) => DomainValue
 
     private[this] var onExceptionalControlFlow: List[DomainValueUpdater] = Nil
 
@@ -44,8 +44,8 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         def doUpdate(updaters: List[DomainValueUpdater]): Unit = {
             val oldOperands = operandsArray(successorPC)
             val newOperands =
-                oldOperands mapConserve { op ⇒
-                    updaters.tail.foldLeft(updaters.head(op)) { (updatedOp, updater) ⇒
+                oldOperands mapConserve { op =>
+                    updaters.tail.foldLeft(updaters.head(op)) { (updatedOp, updater) =>
                         updater(updatedOp)
                     }
                 }
@@ -53,9 +53,9 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
                 operandsArray(successorPC) = newOperands
 
             val locals: Locals = localsArray(successorPC)
-            localsArray(successorPC) = locals.mapConserve { l ⇒
+            localsArray(successorPC) = locals.mapConserve { l =>
                 if (l ne null)
-                    updaters.tail.foldLeft(updaters.head.apply(l))((c, u) ⇒ u.apply(c))
+                    updaters.tail.foldLeft(updaters.head.apply(l))((c, u) => u.apply(c))
                 else
                     null
             }
@@ -86,11 +86,11 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
         )
     }
 
-    def registerOnRegularControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
+    def registerOnRegularControlFlowUpdater(f: DomainValue => DomainValue): Unit = {
         onRegularControlFlow :&:= f
     }
 
-    def registerOnExceptionalControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
+    def registerOnExceptionalControlFlowUpdater(f: DomainValue => DomainValue): Unit = {
         onExceptionalControlFlow :&:= f
     }
 
@@ -98,7 +98,7 @@ trait PerInstructionPostProcessing extends CoreDomainFunctionality {
      * @see [[registerOnRegularControlFlowUpdater]]
      * @see [[registerOnExceptionalControlFlowUpdater]]
      */
-    def registerOnControlFlowUpdater(f: DomainValue ⇒ DomainValue): Unit = {
+    def registerOnControlFlowUpdater(f: DomainValue => DomainValue): Unit = {
         registerOnRegularControlFlowUpdater(f)
         registerOnExceptionalControlFlowUpdater(f)
     }

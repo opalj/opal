@@ -24,9 +24,9 @@ case class INSTANCEOF(
 
     final def length: Int = INSTANCEOF.length
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = 0
 

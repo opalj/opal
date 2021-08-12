@@ -18,11 +18,11 @@ object ShowInnerClassesInformation extends ProjectAnalysisApplication {
 
     override def description: String = "Prints out the inner classes tables."
 
-    def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+    def doAnalyze(p: Project[URL], params: Seq[String], isInterrupted: () => Boolean): BasicReport = {
 
         val messages =
             for {
-                classFile ← p.allClassFiles.par
+                classFile <- p.allClassFiles.par
                 if classFile.innerClasses.isDefined
             } yield {
                 val header =

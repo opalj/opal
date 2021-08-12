@@ -143,7 +143,7 @@ final class InterimResult[P >: Null <: Property] private (
         val eps:       InterimEP[Entity, P],
         val dependees: Set[SomeEOptionP], //IMPROVE: require EOptionPSets?
         val c:         ProperOnUpdateContinuation
-) extends ProperPropertyComputationResult { result ⇒
+) extends ProperPropertyComputationResult { result =>
 
     def key: PropertyKey[P] = eps.pk
 
@@ -160,7 +160,7 @@ final class InterimResult[P >: Null <: Property] private (
             throw new IllegalArgumentException(m)
         }
 
-        if (dependees.exists(eOptP ⇒ eOptP.e == eps.e && eOptP.pk == result.key)) {
+        if (dependees.exists(eOptP => eOptP.e == eps.e && eOptP.pk == result.key)) {
             throw new IllegalArgumentException(
                 s"intermediate result with an illegal self-dependency: "+this
             )
@@ -176,12 +176,12 @@ final class InterimResult[P >: Null <: Property] private (
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: InterimResult[_] if this.eps == that.eps ⇒
+            case that: InterimResult[_] if this.eps == that.eps =>
                 val dependees = this.dependees
                 dependees.size == that.dependees.size &&
-                    dependees.forall(thisDependee ⇒ that.dependees.contains(thisDependee))
+                    dependees.forall(thisDependee => that.dependees.contains(thisDependee))
 
-            case _ ⇒
+            case _ =>
                 false
         }
     }
@@ -293,7 +293,7 @@ sealed abstract class Results extends ProperPropertyComputationResult {
 
     private[fpcf] final override def asResults: Results = this
 
-    def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit
+    def foreach(f: ProperPropertyComputationResult => Unit): Unit
 
 }
 object Results {
@@ -303,18 +303,18 @@ object Results {
     def unapply(r: Results): Some[Results] = Some(r)
 
     def apply(results: ProperPropertyComputationResult*): Results = new Results {
-        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+        def foreach(f: ProperPropertyComputationResult => Unit): Unit = results.foreach(f)
     }
 
     def apply(results: TraversableOnce[ProperPropertyComputationResult]): Results = new Results {
-        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+        def foreach(f: ProperPropertyComputationResult => Unit): Unit = results.foreach(f)
     }
 
     def apply(
         result:  ProperPropertyComputationResult,
         results: TraversableOnce[ProperPropertyComputationResult]
     ): Results = new Results {
-        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
+        def foreach(f: ProperPropertyComputationResult => Unit): Unit = {
             f(result)
             results.foreach(f)
         }
@@ -324,7 +324,7 @@ object Results {
         results: TraversableOnce[ProperPropertyComputationResult],
         result:  ProperPropertyComputationResult
     ): Results = new Results {
-        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
+        def foreach(f: ProperPropertyComputationResult => Unit): Unit = {
             results.foreach(f)
             f(result)
         }
@@ -338,15 +338,15 @@ object Results {
             NoResult
         else
             new Results {
-                def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = {
-                    resultOption.foreach(r ⇒ f(r))
+                def foreach(f: ProperPropertyComputationResult => Unit): Unit = {
+                    resultOption.foreach(r => f(r))
                     results.foreach(f)
                 }
             }
     }
 
     def apply(results: ForeachRefIterator[ProperPropertyComputationResult]): Results = new Results {
-        def foreach(f: ProperPropertyComputationResult ⇒ Unit): Unit = results.foreach(f)
+        def foreach(f: ProperPropertyComputationResult => Unit): Unit = results.foreach(f)
     }
 }
 

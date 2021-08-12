@@ -65,8 +65,8 @@ case class DefaultClassMatcher(
                 return true;
 
             project.classFile(sourceClassFile.superclassType.get) match {
-                case Some(cf) ⇒ sourceClassFile = cf
-                case None ⇒
+                case Some(cf) => sourceClassFile = cf
+                case None =>
                     return false;
             }
         }
@@ -75,7 +75,7 @@ case class DefaultClassMatcher(
     }
 
     def implementsInterface(classFile: ClassFile, project: SomeProject): Boolean = {
-        classFile.interfaceTypes.exists(i ⇒ namePredicate(i.fqn))
+        classFile.interfaceTypes.exists(i => namePredicate(i.fqn))
     }
 
     def doesAnnotationMatch(classFile: ClassFile): Boolean = {

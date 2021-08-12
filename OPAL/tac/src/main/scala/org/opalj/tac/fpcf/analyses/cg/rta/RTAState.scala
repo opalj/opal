@@ -78,7 +78,7 @@ class RTAState(
         if (oldValOpt.isDefined)
             oldValOpt.get += callSite
         else {
-            _virtualCallSites += (typeId → mutable.Set(callSite))
+            _virtualCallSites += (typeId -> mutable.Set(callSite))
         }
     }
 

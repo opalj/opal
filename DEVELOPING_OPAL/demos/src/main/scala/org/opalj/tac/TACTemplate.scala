@@ -72,13 +72,13 @@ object TACTemplate {
         }
         while (i < args.length) {
             args(i) match {
-                case "-cp"     ⇒ cp ::= readNextArg()
-                case "-libJDK" ⇒ libcp ::= JRELibraryFolder.toString
-                case "-libcp"  ⇒ libcp ::= readNextArg()
-                case "-class"  ⇒ className = Some(readNextArg().replace('/', '.'))
-                case "-method" ⇒ methodSignature = Some(readNextArg())
-                case "-domain" ⇒ domainName = readNextArg() // overwrites default domain
-                case unknown   ⇒ handleError(s"unknown parameter: $unknown")
+                case "-cp"     => cp ::= readNextArg()
+                case "-libJDK" => libcp ::= JRELibraryFolder.toString
+                case "-libcp"  => libcp ::= readNextArg()
+                case "-class"  => className = Some(readNextArg().replace('/', '.'))
+                case "-method" => methodSignature = Some(readNextArg())
+                case "-domain" => domainName = readNextArg() // overwrites default domain
+                case unknown   => handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
@@ -106,7 +106,7 @@ object TACTemplate {
         val constructor = domainClass.getConstructor(classOf[Project[URL]], classOf[Method])
         p.getOrCreateProjectInformationKeyInitializationData(
             SimpleAIKey,
-            (m: Method) ⇒ constructor.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
+            (m: Method) => constructor.newInstance(p, m).asInstanceOf[Domain with RecordDefUse]
         )
         p.get(SimpleAIKey) // used by the LazyTACUsingAIKey
         val tac = p.get(LazyTACUsingAIKey)
@@ -116,13 +116,13 @@ object TACTemplate {
         // As part of this template, we just demonstrate how to print the virtual methods
         // calls of a selected set of methods.
         for {
-            cf ← p.allProjectClassFiles.par // OPAL is generally, thread safe and facilitates parallelization
+            cf <- p.allProjectClassFiles.par // OPAL is generally, thread safe and facilitates parallelization
             if className.isEmpty || cf.thisType.toJava.contains(className.get)
-            m ← cf.methods
+            m <- cf.methods
             if m.body.isDefined
             if methodSignature.isEmpty || m.signature.toJava.contains(methodSignature.get)
             c = tac(m)
-            VirtualFunctionCallStatement(VirtualFunctionCall(pc, declaringClass: ObjectType, _, name, descriptor, receiver, _)) ← c.stmts
+            VirtualFunctionCallStatement(VirtualFunctionCall(pc, declaringClass: ObjectType, _, name, descriptor, receiver, _)) <- c.stmts
         } {
             println(m.toJava(s"$pc: virtual function call of $receiver.${descriptor.toJava(declaringClass.toJava, name)}"))
         }

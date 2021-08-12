@@ -39,7 +39,7 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         var analysisTime: Seconds = Seconds.None
@@ -48,7 +48,7 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
             val results = new ConcurrentLinkedQueue[String]
             val ai = new InterruptableAI[Domain]
 
-            theProject.parForeachMethodWithBody() { m ⇒
+            theProject.parForeachMethodWithBody() { m =>
                 val method = m.method
                 if (!method.isSynthetic) {
                     val domain = new DefaultDomainWithCFGAndDefUse(theProject, method)
@@ -58,7 +58,7 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                     if (unused.nonEmpty) {
                         var values = ListSet.empty[String]
                         val implicitParameterOffset = if (!method.isStatic) 1 else 0
-                        unused.foreach { vo ⇒
+                        unused.foreach { vo =>
                             if (vo < 0) {
                                 // we have to make sure that we do not create an issue report
                                 // for instance methods that can be/are inherited
@@ -76,14 +76,14 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
                                 val instruction = instructions(vo)
                                 instruction.opcode match {
                                     case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode |
-                                        INVOKESTATIC.opcode | INVOKESPECIAL.opcode ⇒
+                                        INVOKESTATIC.opcode | INVOKESPECIAL.opcode =>
                                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
                                         values +=
                                             vo.toString+": invoke "+invoke.declaringClass.toJava+
                                             "{ "+
                                             invoke.methodDescriptor.toJava(invoke.name)+
                                             " }"
-                                    case _ ⇒
+                                    case _ =>
                                         values += vo.toString+": "+instruction.toString(vo)
                                 }
 
@@ -97,7 +97,7 @@ object SimpleDefUseAnalysis extends ProjectAnalysisApplication {
             }
             results.asScala
 
-        } { t ⇒ analysisTime = t.toSeconds }
+        } { t => analysisTime = t.toSeconds }
 
         BasicReport(
             unusedDefUseNodes.mkString("Methods with unused values:\n", "\n", "\n")+

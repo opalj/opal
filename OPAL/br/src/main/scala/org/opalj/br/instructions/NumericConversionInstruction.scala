@@ -37,9 +37,9 @@ abstract class NumericConversionInstruction
         Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = {
         -sourceType.computationalType.operandSize + targetType.computationalType.operandSize

@@ -4,7 +4,7 @@ package br
 package fpcf
 package analyses
 
-import org.opalj.log.OPALLogger.{debug ⇒ trace}
+import org.opalj.log.OPALLogger.{debug => trace}
 import org.opalj.fpcf.ELBP
 import org.opalj.fpcf.ELUBP
 import org.opalj.fpcf.Entity
@@ -82,26 +82,26 @@ class L0SelfReferenceLeakageAnalysis(
             while (pc < max) {
                 val instruction = instructions(pc)
                 instruction.opcode match {
-                    case AASTORE.opcode ⇒
+                    case AASTORE.opcode =>
                         return true;
-                    case ATHROW.opcode if thisIsSubtypeOf(ObjectType.Throwable) ⇒
+                    case ATHROW.opcode if thisIsSubtypeOf(ObjectType.Throwable) =>
                         // the exception may throw itself...
                         return true;
-                    case INVOKEDYNAMIC.opcode ⇒
+                    case INVOKEDYNAMIC.opcode =>
                         return true;
                     case INVOKEINTERFACE.opcode |
                         INVOKESPECIAL.opcode |
                         INVOKESTATIC.opcode |
-                        INVOKEVIRTUAL.opcode ⇒
+                        INVOKEVIRTUAL.opcode =>
                         val invoke = instruction.asInstanceOf[MethodInvocationInstruction]
                         val parameterTypes = invoke.methodDescriptor.parameterTypes
-                        if (parameterTypes.exists { pt ⇒ pt.isObjectType && thisIsSubtypeOf(pt.asObjectType) })
+                        if (parameterTypes.exists { pt => pt.isObjectType && thisIsSubtypeOf(pt.asObjectType) })
                             return true;
-                    case PUTSTATIC.opcode | PUTFIELD.opcode ⇒
+                    case PUTSTATIC.opcode | PUTFIELD.opcode =>
                         val fieldType = instruction.asInstanceOf[FieldWriteAccess].fieldType
                         if (fieldType.isObjectType && thisIsSubtypeOf(fieldType.asObjectType))
                             return true;
-                    case _ ⇒ /*nothing to do*/
+                    case _ => /*nothing to do*/
                 }
                 pc = instruction.indexOfNextInstruction(pc)
             }
@@ -110,7 +110,7 @@ class L0SelfReferenceLeakageAnalysis(
         }
 
         val doesLeakSelfReference =
-            classFile.methods exists { m ⇒
+            classFile.methods exists { m =>
                 if (m.isNative || (
                     m.isNotStatic && m.isNotAbstract && potentiallyLeaksSelfReference(m)
                 )) {
@@ -172,10 +172,10 @@ class L0SelfReferenceLeakageAnalysis(
             )
         var dependees = Map.empty[Entity, EOptionP[Entity, Property]]
         propertyStore(superTypes, SelfReferenceLeakageKey) foreach {
-            case epk @ EPK(e, _)                   ⇒ dependees += ((e, epk))
-            case UBP(LeaksSelfReference)           ⇒ return Result(classFile, LeaksSelfReference);
-            case ELBP(e, DoesNotLeakSelfReference) ⇒ // nothing to do ...
-            case eps @ EPS(e)                      ⇒ dependees += ((e, eps))
+            case epk @ EPK(e, _)                   => dependees += ((e, epk))
+            case UBP(LeaksSelfReference)           => return Result(classFile, LeaksSelfReference);
+            case ELBP(e, DoesNotLeakSelfReference) => // nothing to do ...
+            case eps @ EPS(e)                      => dependees += ((e, eps))
         }
 
         // First, let's wait for the results for the supertypes...

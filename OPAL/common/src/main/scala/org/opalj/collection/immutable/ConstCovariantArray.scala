@@ -4,9 +4,9 @@ package immutable
 
 import scala.reflect.ClassTag
 
-import java.util.{Arrays ⇒ JArrays}
+import java.util.{Arrays => JArrays}
 
-import org.opalj.control.{find ⇒ findInArray}
+import org.opalj.control.{find => findInArray}
 
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
@@ -18,7 +18,7 @@ final class ConstCovariantArray[+T <: AnyRef] private (private[this] val data: A
 
     def size: Int = data.length
 
-    def foreach[U](f: T ⇒ U): Unit = {
+    def foreach[U](f: T => U): Unit = {
         val data = this.data
         var i = 0
         val max = data.length
@@ -28,7 +28,7 @@ final class ConstCovariantArray[+T <: AnyRef] private (private[this] val data: A
         }
     }
 
-    def binarySearch(comparator: T ⇒ Int): Option[T] = findInArray(data)(comparator)
+    def binarySearch(comparator: T => Int): Option[T] = findInArray(data)(comparator)
 
     def iterator: RefIterator[T] = new RefIterator[T] {
         private[this] var i = 0
@@ -38,14 +38,14 @@ final class ConstCovariantArray[+T <: AnyRef] private (private[this] val data: A
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: ConstCovariantArray[_] ⇒
+            case that: ConstCovariantArray[_] =>
                 this.size == that.size && {
                     val thisIt = this.iterator
                     val thatIt = that.iterator
                     while (thisIt.hasNext && thisIt.next == thatIt.next) { /*continue*/ }
                     !thisIt.hasNext // <=> all elements are equal
                 }
-            case _ ⇒
+            case _ =>
                 false
         }
     }

@@ -44,19 +44,19 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
         def transfer(inFacts: Facts, stmt: Stmt[_], index: PC, succId: CFG.SuccessorId): Facts = {
             // Recall that we work on a flat SSA like representation.
             stmt match {
-                case Assignment(_, _, expr) ⇒
+                case Assignment(_, _, expr) =>
                     // Kill... those (binary) expressions where one of the variables is defined
                     //         by this assignment. For that, we simply check the def-sites.
-                    val outFacts = inFacts.filter { f ⇒
+                    val outFacts = inFacts.filter { f =>
                         val (_, leftFacts, rightFacts) = f
                         !leftFacts.contains(index) && !rightFacts.contains(index)
                     }
                     // Gen...
                     expr match {
-                        case BinaryExpr(_, _, op, UVar(_, l), UVar(_, r)) ⇒ outFacts + ((op, l, r))
-                        case _                                            ⇒ outFacts
+                        case BinaryExpr(_, _, op, UVar(_, l), UVar(_, r)) => outFacts + ((op, l, r))
+                        case _                                            => outFacts
                     }
-                case _ ⇒ inFacts
+                case _ => inFacts
             }
         }
 
@@ -78,7 +78,7 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
         val (taCode, stmtFacts, initFacts) = r
 
         def factsToString(f: Facts): Iterable[String] = {
-            f.map { e ⇒
+            f.map { e =>
                 val (op, l, r) = e
                 val lUVar = DefSites.toString(l).mkString("{", ",", "}")
                 val rUVar = DefSites.toString(r).mkString("{", ",", "}")
@@ -90,7 +90,7 @@ object VeryBusyExpressions extends MethodAnalysisApplication {
             stmtFacts
             .map(factsToString)
             .zipWithIndex
-            .map({ e ⇒ val (f, index) = e; s"$index: $f" })
+            .map({ e => val (f, index) = e; s"$index: $f" })
             .mkString("Very busy expressions (on exit):\n\t", "\n\t", "\n\n")+
             "\tInit: "+factsToString(initFacts)
     }

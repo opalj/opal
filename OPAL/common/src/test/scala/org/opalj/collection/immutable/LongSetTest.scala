@@ -106,24 +106,24 @@ abstract class LongSetTest extends AnyFunSpec {
             List[Long](8192, 16384, 32768, 65536, 131072)
         )
 
-        for { fixture ← fixtures } {
-            val oLongSet = fixture.foldLeft(empty())((c, n) ⇒ c + n)
-            val otherValues = fixture.map(~_).filter(v ⇒ !fixture.contains(v))
+        for { fixture <- fixtures } {
+            val oLongSet = fixture.foldLeft(empty())((c, n) => c + n)
+            val otherValues = fixture.map(~_).filter(v => !fixture.contains(v))
 
             it("should return true for all added values: "+fixture) {
                 var notFound = List.empty[Long]
-                fixture.foreach(v ⇒ if (!oLongSet.contains(v)) notFound ::= v)
+                fixture.foreach(v => if (!oLongSet.contains(v)) notFound ::= v)
                 if (notFound.nonEmpty) {
-                    val unexpected = notFound.map(v ⇒ s"$v(${v.toBinaryString})")
+                    val unexpected = notFound.map(v => s"$v(${v.toBinaryString})")
                     fail(unexpected.mkString(s"the set $oLongSet didn't contain: ", ", ", ""))
                 }
             }
 
             it("should return false for values which are not added: "+otherValues) {
                 var found = List.empty[Long]
-                otherValues.foreach(v ⇒ if (oLongSet.contains(v)) found ::= v)
+                otherValues.foreach(v => if (oLongSet.contains(v)) found ::= v)
                 if (found.nonEmpty) {
-                    val unexpected = found.map(v ⇒ s"$v(${v.toBinaryString})")
+                    val unexpected = found.map(v => s"$v(${v.toBinaryString})")
                     fail(unexpected.mkString(s"the set $oLongSet contains: ", ", ", ""))
                 }
             }

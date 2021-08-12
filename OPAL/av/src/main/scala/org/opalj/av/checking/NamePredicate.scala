@@ -10,7 +10,7 @@ import scala.util.matching.Regex
  *
  * @author Michael Eichberg
  */
-trait NamePredicate extends (String ⇒ Boolean)
+trait NamePredicate extends (String => Boolean)
 
 /**
  * @author Marco Torsello

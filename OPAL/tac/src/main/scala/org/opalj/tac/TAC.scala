@@ -16,7 +16,7 @@ import org.opalj.br.Method
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.ConsoleOPALLogger
 import org.opalj.log.OPALLogger
-import org.opalj.log.{Error ⇒ ErrorLogLevel}
+import org.opalj.log.{Error => ErrorLogLevel}
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.BaseConfig
 import org.opalj.br.reader.InvokedynamicRewriting
@@ -109,31 +109,31 @@ object TAC {
 
         while (i < args.length) {
             args(i) match {
-                case "-naive" ⇒
+                case "-naive" =>
                     naive = true
                     if (domainName.nonEmpty) handleError("-naive and -domain cannot be combined")
 
-                case "-domainValueInformation" ⇒ DUVar.printDomainValue = true
-                case "-domain" ⇒
+                case "-domainValueInformation" => DUVar.printDomainValue = true
+                case "-domain" =>
                     domainName = Some(readNextArg())
                     if (naive) handleError("-naive and -domain cannot be combined")
 
-                case "-JDK"                        ⇒ cp ::= JRELibraryFolder.toString
-                case "-cp"                         ⇒ cp ::= readNextArg()
-                case "-libcp"                      ⇒ libcp ::= readNextArg()
-                case "-cfg"                        ⇒ printCFG = true
-                case "-open"                       ⇒ doOpen = true
-                case "-class"                      ⇒ className = Some(readNextArg())
-                case "-method"                     ⇒ methodSignature = Some(readNextArg())
-                case "-toString"                   ⇒ toString = true
-                case "-performConstantPropagation" ⇒ performConstantPropagation = true
-                case "-rewriteInvokeDynamic"       ⇒ rewriteInvokeDynamic = true
-                case "-rewriteDynamicConstants"    ⇒ rewriteDynamicConstants = true
-                case "-rewriteAll" ⇒
+                case "-JDK"                        => cp ::= JRELibraryFolder.toString
+                case "-cp"                         => cp ::= readNextArg()
+                case "-libcp"                      => libcp ::= readNextArg()
+                case "-cfg"                        => printCFG = true
+                case "-open"                       => doOpen = true
+                case "-class"                      => className = Some(readNextArg())
+                case "-method"                     => methodSignature = Some(readNextArg())
+                case "-toString"                   => toString = true
+                case "-performConstantPropagation" => performConstantPropagation = true
+                case "-rewriteInvokeDynamic"       => rewriteInvokeDynamic = true
+                case "-rewriteDynamicConstants"    => rewriteDynamicConstants = true
+                case "-rewriteAll" =>
                     rewriteInvokeDynamic = true
                     rewriteDynamicConstants = true
 
-                case unknown ⇒ handleError(s"unknown parameter: $unknown")
+                case unknown => handleError(s"unknown parameter: $unknown")
             }
             i += 1
         }
@@ -159,16 +159,16 @@ object TAC {
 
         val ch = project.classHierarchy
         for {
-            cf ← project.allClassFiles
+            cf <- project.allClassFiles
             if className.isEmpty || className.get == cf.thisType.toJava
         } {
             val methodsAsTAC = new StringBuilder()
 
             for {
-                m ← cf.methods
+                m <- cf.methods
                 mSig = (if (m.isStatic) "static " else "") + m.descriptor.toJava(m.name)
                 if methodSignature.isEmpty || mSig.contains(methodSignature.get)
-                code ← m.body
+                code <- m.body
             } {
                 val (tac: String, cfg: String, ehs: Option[String]) =
                     if (naive) {

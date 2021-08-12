@@ -17,7 +17,7 @@ import scala.collection.immutable.LongMap
  * @author Michael Eichberg
  */
 trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain =>
 
     /**
      * This type determines in which way thrown exceptions are recorded.
@@ -79,9 +79,9 @@ trait RecordThrownExceptions extends ai.ReturnInstructionsDomain {
             thrownExceptions.updated(
                 longPC,
                 thrownExceptions.get(longPC) match {
-                    case Some(previouslyThrownException) ⇒
+                    case Some(previouslyThrownException) =>
                         joinThrownExceptions(pc, previouslyThrownException, exception)
-                    case None ⇒
+                    case None =>
                         recordThrownException(pc, exception)
                 }
             )

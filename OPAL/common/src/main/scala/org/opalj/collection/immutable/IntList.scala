@@ -18,7 +18,7 @@ package immutable
  *
  * @author Michael Eichberg
  */
-sealed trait IntList extends Serializable { self ⇒
+sealed trait IntList extends Serializable { self =>
 
     def isEmpty: Boolean
     def nonEmpty: Boolean
@@ -26,10 +26,10 @@ sealed trait IntList extends Serializable { self ⇒
     def head: Int
     def tail: IntList
 
-    def foreach[U](f: Int ⇒ U): Unit
+    def foreach[U](f: Int => U): Unit
 
     /** Iterates over the first N values. */
-    def forFirstN[U](n: Int)(f: Int ⇒ U): Unit
+    def forFirstN[U](n: Int)(f: Int => U): Unit
 
     def iterator: IntIterator
 
@@ -38,8 +38,8 @@ sealed trait IntList extends Serializable { self ⇒
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case l: IntList ⇒ equals(l)
-            case _          ⇒ false
+            case l: IntList => equals(l)
+            case _          => false
         }
     }
     def equals(that: IntList): Boolean
@@ -70,9 +70,9 @@ case object EmptyIntList extends IntList {
     override def isEmpty: Boolean = true
     override def nonEmpty: Boolean = false
 
-    override def foreach[U](f: Int ⇒ U): Unit = {}
+    override def foreach[U](f: Int => U): Unit = {}
     /** Iterates over the first N values. */
-    override def forFirstN[U](n: Int)(f: Int ⇒ U): Unit = {}
+    override def forFirstN[U](n: Int)(f: Int => U): Unit = {}
     override def iterator: IntIterator = IntIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2 +: l`. */
     override def +:(v: Int): IntList = new IntListNode(v, this)
@@ -89,14 +89,14 @@ case object EmptyIntList extends IntList {
 final case class IntListNode(
         head:                        Int,
         private[immutable] var rest: IntList = EmptyIntList
-) extends IntList { list ⇒
+) extends IntList { list =>
 
     override def tail: IntList = rest
 
     override def isEmpty: Boolean = false
     override def nonEmpty: Boolean = true
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach[U](f: Int => U): Unit = {
         var list: IntList = this
         do {
             f(list.head)
@@ -104,7 +104,7 @@ final case class IntListNode(
         } while (list.nonEmpty)
     }
 
-    override def forFirstN[U](n: Int)(f: Int ⇒ U): Unit = {
+    override def forFirstN[U](n: Int)(f: Int => U): Unit = {
         if (n == 0) return ;
 
         var i = 0

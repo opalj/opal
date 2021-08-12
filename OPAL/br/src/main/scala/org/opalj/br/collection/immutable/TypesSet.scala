@@ -19,9 +19,9 @@ case class TypesSet(
 
     def ++(tpes: Traversable[ObjectType]): TypesSet = {
         var newConcreteTypes = concreteTypes
-        tpes foreach { tpe ⇒
+        tpes foreach { tpe =>
             if (!newConcreteTypes.contains(tpe) &&
-                !upperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb))) {
+                !upperTypeBounds.exists(utb => isSubtypeOf(tpe, utb))) {
                 newConcreteTypes += tpe
             }
         }

@@ -29,9 +29,9 @@ case class DefinitionSite(method: Method, pc: Int) extends DefinitionSiteLike {
             IntTrieSet.empty
         } else {
             tacode.stmts(defSite) match {
-                case Assignment(_, dvar, _) ⇒ dvar.usedBy
-                case _: ExprStmt[_]         ⇒ IntTrieSet.empty
-                case stmt ⇒
+                case Assignment(_, dvar, _) => dvar.usedBy
+                case _: ExprStmt[_]         => IntTrieSet.empty
+                case stmt =>
                     throw new RuntimeException(s"unexpected stmt ($stmt) at definition site $this")
             }
         }

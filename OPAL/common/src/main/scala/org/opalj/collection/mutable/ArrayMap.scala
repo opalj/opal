@@ -21,7 +21,7 @@ import scala.collection.AbstractIterator
  *
  * @author Michael Eichberg
  */
-class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T]) { self ⇒
+class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T]) { self =>
 
     /**
      * Clears, but does not resize/shrink the map.
@@ -57,7 +57,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         }
     }
 
-    def getOrElse(key: Int, f: ⇒ T): T = {
+    def getOrElse(key: Int, f: => T): T = {
         val data = this.data
         if (key >= 0 && key < data.length) {
             val entry = data(key)
@@ -67,7 +67,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         f
     }
 
-    def getOrElseUpdate(key: Int, f: ⇒ T): T = {
+    def getOrElseUpdate(key: Int, f: => T): T = {
         val data = this.data
         if (key >= 0 && key < data.length) {
             val entry = data(key)
@@ -101,7 +101,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         }
     }
 
-    def foreachValue(f: T ⇒ Unit): Unit = {
+    def foreachValue(f: T => Unit): Unit = {
         val data = this.data
         var i = 0
         val max = data.length
@@ -113,7 +113,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         }
     }
 
-    def foreach(f: (Int, T) ⇒ Unit): Unit = {
+    def foreach(f: (Int, T) => Unit): Unit = {
         val data = this.data
         var i = 0
         val max = data.length
@@ -125,7 +125,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         }
     }
 
-    def forall(f: T ⇒ Boolean): Boolean = {
+    def forall(f: T => Boolean): Boolean = {
         val data = this.data
         var i = 0
         val max = data.length
@@ -169,7 +169,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
         }
     }
 
-    def map[X](f: (Int, T) ⇒ X): List[X] = {
+    def map[X](f: (Int, T) => X): List[X] = {
         val data = this.data
         var rs = List.empty[X]
         var i = 0
@@ -184,7 +184,7 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: ArrayMap[_] ⇒
+            case that: ArrayMap[_] =>
                 val thisData = this.data.asInstanceOf[Array[Object]]
                 val thisLength = thisData.length
                 val thatData = that.data.asInstanceOf[Array[Object]]
@@ -198,13 +198,13 @@ class ArrayMap[T >: Null <: AnyRef: ClassTag] private (private var data: Array[T
                     thisData.startsWith(thatData) &&
                         (thisData.view(thatLength, thisLength).forall { _ eq null })
                 }
-            case _ ⇒ false
+            case _ => false
         }
     }
 
     override def hashCode: Int = {
         var hc = 1
-        foreachValue { e ⇒
+        foreachValue { e =>
             hc = hc * 41 + { if (e ne null) e.hashCode else 0 /* === identityHashCode(null) */ }
         }
         hc

@@ -17,8 +17,8 @@ import org.opalj.ai.common.DomainRegistry
 class ProjectSpecificAIExecutor(
         val project:       SomeProject,
         val domainClass:   Class[_ <: Domain],
-        val domainFactory: (SomeProject, Method) ⇒ Domain
-) extends (Method ⇒ AIResult) {
+        val domainFactory: (SomeProject, Method) => Domain
+) extends (Method => AIResult) {
 
     def apply(m: Method): AIResult = { BaseAI(m, domainFactory(project, m)) }
 }
@@ -62,7 +62,7 @@ object AIDomainFactoryKey
 
     def compute(
         project:         SomeProject,
-        domainFactories: Traversable[Class[_ <: AnyRef]] ⇒ Set[Class[_ <: Domain]]
+        domainFactories: Traversable[Class[_ <: AnyRef]] => Set[Class[_ <: Domain]]
     ): ProjectSpecificAIExecutor = {
         implicit val logContext: LogContext = project.logContext
 

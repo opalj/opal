@@ -12,7 +12,7 @@ import org.opalj.br.ReferenceType
  *
  * @author Michael Eichberg
  */
-trait MethodCallsDomain { this: ValuesDomain ⇒
+trait MethodCallsDomain { this: ValuesDomain =>
 
     type MethodCallResult = Computation[DomainValue, ExceptionValues]
 

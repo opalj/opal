@@ -11,7 +11,7 @@ import org.opalj.br.FloatType
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait FloatValuesFactory extends ValuesDomain { domain ⇒
+trait FloatValuesFactory extends ValuesDomain { domain =>
 
     /**
      * Factory method to create a `DomainValue` with the specified origin.

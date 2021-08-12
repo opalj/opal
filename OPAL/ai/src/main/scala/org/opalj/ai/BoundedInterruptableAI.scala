@@ -27,7 +27,7 @@ import org.opalj.util.Milliseconds
 class BoundedInterruptableAI[D <: Domain](
         maxEvaluationCount:    Int,
         val maxEvaluationTime: Nanoseconds,
-        val doInterrupt:       () ⇒ Boolean,
+        val doInterrupt:       () => Boolean,
         IdentifyDeadVariables: Boolean
 ) extends InstructionCountBoundedAI[D](maxEvaluationCount, IdentifyDeadVariables) {
 
@@ -37,7 +37,7 @@ class BoundedInterruptableAI[D <: Domain](
         code:                  Code,
         maxEvaluationFactor:   Double,
         maxEvaluationTime:     Milliseconds,
-        doInterrupt:           () ⇒ Boolean,
+        doInterrupt:           () => Boolean,
         identifyDeadVariables: Boolean      = true
     )(
         implicit

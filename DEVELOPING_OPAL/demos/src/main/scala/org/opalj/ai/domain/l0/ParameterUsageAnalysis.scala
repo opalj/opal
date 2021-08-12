@@ -34,7 +34,7 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         var analysisTime: Seconds = Seconds.None
@@ -44,7 +44,7 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
             val returnedParameters = new ConcurrentLinkedQueue[String]
             val ai = new InterruptableAI[Domain]
 
-            theProject.parForeachMethodWithBody() { m ⇒
+            theProject.parForeachMethodWithBody() { m =>
                 val method = m.method
                 val psCount = method.actualArgumentsCount // includes "this" in case of instance methods
                 if (psCount > 0) {
@@ -60,7 +60,7 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
                             val use = s" the value with origin $valueOrigin is not used"
                             unusedParameters.add(methodSignature + use)
                         } else {
-                            usedBy.foreach { usage ⇒
+                            usedBy.foreach { usage =>
                                 if (instructions(usage).isReturnInstruction) {
                                     val use = s" the argument with origin $valueOrigin is returned by $usage"
                                     returnedParameters.add(methodSignature + use)
@@ -83,7 +83,7 @@ object ParameterUsageAnalysis extends ProjectAnalysisApplication {
 
             (returnedParameters.asScala.toList.sorted, unusedParameters.asScala.toList.sorted)
 
-        } { t ⇒ analysisTime = t.toSeconds }
+        } { t => analysisTime = t.toSeconds }
 
         val occurences = returnedParameters.size
         BasicReport(

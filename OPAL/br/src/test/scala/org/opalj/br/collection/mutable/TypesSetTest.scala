@@ -23,13 +23,13 @@ class TypesSetTest extends AnyFlatSpec with Matchers {
     // Setup
     //
     val jlsCHFile = "ClassHierarchyJLS.ths"
-    val jlsCHCreator = List(() ⇒ classOf[Project[_]].getResourceAsStream(jlsCHFile))
+    val jlsCHCreator = List(() => classOf[Project[_]].getResourceAsStream(jlsCHFile))
     val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
 
     val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
     val javaLangCHFile = "JavaLangClassHierarchy.ths"
-    val javaLangCHCreator = List(() ⇒ classOf[Project[_]].getResourceAsStream(javaLangCHFile))
+    val javaLangCHCreator = List(() => classOf[Project[_]].getResourceAsStream(javaLangCHFile))
     val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object

@@ -73,7 +73,7 @@ object GuardedAndUnguardedAccessAnalysis {
         // TODO We should also log those that are assertions related!
 
         for {
-            (pc, instr: IFXNullInstruction[_]) ← code
+            (pc, instr: IFXNullInstruction[_]) <- code
             if operandsArray(pc) ne null
         } {
 
@@ -82,20 +82,20 @@ object GuardedAndUnguardedAccessAnalysis {
             // let's check if the guard is related to an assert statement
             val isAssertionRelated: Boolean =
                 (instr match {
-                    case _: IFNONNULL         ⇒ Some(instructions(pcOfNextInstruction(pc)))
-                    case IFNULL(branchOffset) ⇒ Some(instructions(pc + branchOffset))
-                    case _                    ⇒ None
+                    case _: IFNONNULL         => Some(instructions(pcOfNextInstruction(pc)))
+                    case IFNULL(branchOffset) => Some(instructions(pc + branchOffset))
+                    case _                    => None
                 }) match {
-                    case Some(NEW(AssertionError)) ⇒ true
-                    case _                         ⇒ false
+                    case Some(NEW(AssertionError)) => true
+                    case _                         => false
                 }
 
             if (!isAssertionRelated)
                 operandsArray(pc).head match {
-                    case domain.DomainSingleOriginReferenceValue(sov) ⇒
+                    case domain.DomainSingleOriginReferenceValue(sov) =>
                         origins += ((sov.origin, pc))
                         refIds += ((sov.refId, pc))
-                    case domain.DomainMultipleReferenceValues(mov) ⇒
+                    case domain.DomainMultipleReferenceValues(mov) =>
                         refIds += ((mov.refId, pc))
                 }
 
@@ -107,29 +107,29 @@ object GuardedAndUnguardedAccessAnalysis {
 
         val unguardedAccesses =
             for {
-                (pc, domain.AReferenceValue(receiver)) ← code.collectWithIndex {
-                    case (pc, ARRAYLENGTH | MONITORENTER) if operandsArray(pc) != null ⇒
+                (pc, domain.AReferenceValue(receiver)) <- code.collectWithIndex {
+                    case (pc, ARRAYLENGTH | MONITORENTER) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc).head)
 
-                    case (pc, AASTORE) if operandsArray(pc) != null ⇒
+                    case (pc, AASTORE) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc)(2))
 
-                    case (pc, AALOAD) if operandsArray(pc) != null ⇒
+                    case (pc, AALOAD) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc)(1))
 
-                    case (pc, _: GETFIELD) if operandsArray(pc) != null ⇒
+                    case (pc, _: GETFIELD) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc).head)
 
-                    case (pc, _: PUTFIELD) if operandsArray(pc) != null ⇒
+                    case (pc, _: PUTFIELD) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc)(1))
 
-                    case (pc, i: INVOKEVIRTUAL) if operandsArray(pc) != null ⇒
+                    case (pc, i: INVOKEVIRTUAL) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc)(i.methodDescriptor.parametersCount))
 
-                    case (pc, i: INVOKEINTERFACE) if operandsArray(pc) != null ⇒
+                    case (pc, i: INVOKEINTERFACE) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc)(i.methodDescriptor.parametersCount))
 
-                    case (pc, i: INVOKESPECIAL) if operandsArray(pc) != null ⇒
+                    case (pc, i: INVOKESPECIAL) if operandsArray(pc) != null =>
                         (pc, operandsArray(pc)(i.methodDescriptor.parametersCount))
                 }
                 if receiver.isNull.isUnknown
@@ -153,12 +153,12 @@ object GuardedAndUnguardedAccessAnalysis {
 
         val unguardedAccessesIssues =
             for {
-                (guardPC, unguardedAccesses) ← unguardedAccesses.groupBy(f ⇒ f._1 /*by guard*/ )
+                (guardPC, unguardedAccesses) <- unguardedAccesses.groupBy(f => f._1 /*by guard*/ )
             } yield {
                 val relevance = unguardedAccesses.toIterator.map(_._2.value).max
 
                 val unguardedLocations: Seq[IssueLocation] =
-                    unguardedAccesses.map { ua ⇒
+                    unguardedAccesses.map { ua =>
                         val unguardedAccessPC = ua._3
                         new InstructionLocation(
                             Some("unguarded access"), theProject, method, unguardedAccessPC

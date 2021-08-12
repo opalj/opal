@@ -22,7 +22,7 @@ import org.opalj.br.MethodDescriptor
  * @author Michael Eichberg
  */
 trait PerformInvocations extends MethodCallsHandling {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with Configuration with TheProject with TheCode =>
 
     /**
      * If `true` the exceptions thrown by the called method will be used
@@ -135,7 +135,7 @@ trait PerformInvocations extends MethodCallsHandling {
         pc:       Int,
         method:   Method,
         operands: Operands,
-        fallback: () ⇒ MethodCallResult
+        fallback: () => MethodCallResult
     ): MethodCallResult = {
 
         assert(
@@ -158,7 +158,7 @@ trait PerformInvocations extends MethodCallsHandling {
         pc:       Int,
         method:   Method,
         operands: Operands,
-        fallback: () ⇒ MethodCallResult
+        fallback: () => MethodCallResult
     ): MethodCallResult = {
 
         if (project.libraryClassFilesAreInterfacesOnly &&
@@ -193,7 +193,7 @@ trait PerformInvocations extends MethodCallsHandling {
         name:           String,
         descriptor:     MethodDescriptor,
         operands:       Operands,
-        fallback:       () ⇒ MethodCallResult
+        fallback:       () => MethodCallResult
     ): MethodCallResult = {
 
         val resolvedMethod =
@@ -203,8 +203,8 @@ trait PerformInvocations extends MethodCallsHandling {
                 project.resolveMethodReference(declaringClass, name, descriptor)
 
         resolvedMethod match {
-            case Some(method) ⇒ testAndDoInvoke(pc, method, operands, fallback)
-            case _ ⇒
+            case Some(method) => testAndDoInvoke(pc, method, operands, fallback)
+            case _ =>
                 OPALLogger.logOnce(Warn(
                     "project configuration",
                     "method reference cannot be resolved: "+
@@ -225,34 +225,34 @@ trait PerformInvocations extends MethodCallsHandling {
         name:           String,
         descriptor:     MethodDescriptor,
         operands:       Operands,
-        fallback:       () ⇒ MethodCallResult
+        fallback:       () => MethodCallResult
     ): MethodCallResult = {
         val receiver = operands(descriptor.parametersCount)
         receiver match {
             case DomainReferenceValueTag(refValue) if refValue.isPrecise &&
                 refValue.isNull.isNo && // IMPROVE support the case that null is unknown
                 refValue.upperTypeBound.isSingletonSet &&
-                refValue.upperTypeBound.head.isObjectType ⇒
+                refValue.upperTypeBound.head.isObjectType =>
 
                 val receiverClass = refValue.upperTypeBound.head.asObjectType
                 classHierarchy.isInterface(receiverClass) match {
-                    case Yes ⇒
+                    case Yes =>
                         doInvokeNonVirtual(
                             pc,
                             receiverClass, true, name, descriptor,
                             operands, fallback
                         )
-                    case No ⇒
+                    case No =>
                         doInvokeNonVirtual(
                             pc,
                             receiverClass, false, name, descriptor,
                             operands, fallback
                         )
-                    case Unknown ⇒
+                    case Unknown =>
                         fallback()
                 }
 
-            case _ ⇒
+            case _ =>
                 val resolvedMethod =
                     if (isInterface)
                         if (declaringClass.isObjectType)
@@ -264,9 +264,9 @@ trait PerformInvocations extends MethodCallsHandling {
                         project.resolveMethodReference(declaringClass, name, descriptor)
 
                 resolvedMethod match {
-                    case Some(method) if method.isPrivate ⇒
+                    case Some(method) if method.isPrivate =>
                         testAndDoInvoke(pc, method, operands, fallback)
-                    case _ ⇒ fallback()
+                    case _ => fallback()
                 }
         }
 

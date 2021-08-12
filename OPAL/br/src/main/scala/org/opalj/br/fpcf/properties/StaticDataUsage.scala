@@ -67,12 +67,12 @@ case object UsesConstantDataOnly extends NoVaryingDataUse {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: StaticDataUsage): Unit = {
         if (other eq UsesNoStaticData)
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 
     override def meet(other: StaticDataUsage): StaticDataUsage = other match {
-        case UsesVaryingData ⇒ other
-        case _               ⇒ this
+        case UsesVaryingData => other
+        case _               => this
     }
 }
 
@@ -83,7 +83,7 @@ case object UsesVaryingData extends StaticDataUsage {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: StaticDataUsage): Unit = {
         if (other ne UsesVaryingData)
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 
     override def meet(other: StaticDataUsage): StaticDataUsage = this

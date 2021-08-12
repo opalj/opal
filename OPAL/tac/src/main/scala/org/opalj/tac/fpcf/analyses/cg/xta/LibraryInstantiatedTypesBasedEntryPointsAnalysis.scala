@@ -71,13 +71,13 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         numProcessedTypes: Int
     ): PropertyComputationResult = {
         val (newReachableMethods, isFinal, size) = instantiatedTypes match {
-            case UBPS(initialTypes: InstantiatedTypes, isFinal) ⇒
+            case UBPS(initialTypes: InstantiatedTypes, isFinal) =>
                 (
                     analyzeTypes(initialTypes.dropOldest(numProcessedTypes)),
                     isFinal,
                     initialTypes.types.size
                 )
-            case _ ⇒ (Iterator.empty, false, 0)
+            case _ => (Iterator.empty, false, 0)
         }
 
         val c = if (!isFinal)
@@ -98,40 +98,40 @@ class LibraryInstantiatedTypesBasedEntryPointsAnalysis private[analyses] (
         eps: SomeEPS
     ): PropertyComputationResult = {
         eps match {
-            case UBP(_: InstantiatedTypes) ⇒
+            case UBP(_: InstantiatedTypes) =>
                 handleInstantiatedTypes(
                     eps.asInstanceOf[EOptionP[TypeSetEntity, InstantiatedTypes]],
                     numProcessedTypes
                 )
-            case _ ⇒ throw new UnknownError("Unexpected update: "+eps)
+            case _ => throw new UnknownError("Unexpected update: "+eps)
         }
     }
 
     def analyzeTypes(types: Iterator[ReferenceType]): Iterator[DeclaredMethod] = {
         types.flatMap {
-            case ot: ObjectType if !globallySeenTypes.containsKey(ot) ⇒
+            case ot: ObjectType if !globallySeenTypes.containsKey(ot) =>
                 globallySeenTypes.put(ot, true)
-                project.classFile(ot).map { cf ⇒
-                    cf.methodsWithBody.filter(m ⇒ !m.isStatic && m.isPublic)
+                project.classFile(ot).map { cf =>
+                    cf.methodsWithBody.filter(m => !m.isStatic && m.isPublic)
                 }.getOrElse(RefIterator.empty)
-            case _ ⇒ RefIterator.empty
+            case _ => RefIterator.empty
         }.map(declaredMethods(_))
     }
 
     def resultsForReachableMethods(
         reachableMethods: Iterator[DeclaredMethod]
     ): Iterator[ProperPropertyComputationResult] = {
-        reachableMethods.map { method ⇒
+        reachableMethods.map { method =>
             PartialResult[DeclaredMethod, Callers](method, Callers.key, {
-                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext ⇒
+                case InterimUBP(ub) if !ub.hasCallersWithUnknownContext =>
                     Some(InterimEUBP(method, ub.updatedWithUnknownContext()))
 
-                case _: InterimEP[_, _] ⇒ None
+                case _: InterimEP[_, _] => None
 
-                case _: EPK[_, _] ⇒
+                case _: EPK[_, _] =>
                     Some(InterimEUBP(method, OnlyCallersWithUnknownContext))
 
-                case r ⇒
+                case r =>
                     throw new IllegalStateException(s"unexpected previous result $r")
             })
         }

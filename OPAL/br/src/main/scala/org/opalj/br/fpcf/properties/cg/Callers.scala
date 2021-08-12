@@ -146,7 +146,7 @@ sealed trait CallersImplementation extends Callers {
         implicit
         declaredMethods: DeclaredMethods
     ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
-        encodedCallers.iterator.map { encodedPair ⇒
+        encodedCallers.iterator.map { encodedPair =>
             val (mId, pc, isDirect) = Callers.toMethodPcAndIsDirect(encodedPair)
             (declaredMethods(mId), pc, isDirect)
         }
@@ -246,9 +246,9 @@ object Callers extends CallersPropertyMetaInformation {
         val name = "opalj.CallersProperty"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoCallers
-                case _ ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoCallers
+                case _ =>
                     throw new IllegalStateException(s"analysis required for property: $name")
             }
         )

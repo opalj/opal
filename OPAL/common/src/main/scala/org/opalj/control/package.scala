@@ -24,7 +24,7 @@ package object control {
     final def foreachNonNullValue[T <: AnyRef](
         a: Array[T]
     )(
-        f: (Int, T) ⇒ Unit
+        f: (Int, T) => Unit
     ): Unit = macro ControlAbstractionsImplementation.foreachNonNullValue[T]
 
     /**
@@ -35,7 +35,7 @@ package object control {
     final def foreachWithIndex[T <: AnyRef](
         a: Array[T]
     )(
-        f: (T, Int) ⇒ Unit
+        f: (T, Int) => Unit
     ): Unit = macro ControlAbstractionsImplementation.foreachWithIndex[T]
 
     /**
@@ -47,7 +47,7 @@ package object control {
     final def forFirstN[T <: AnyRef](
         l: List[T], n: Int
     )(
-        f: T ⇒ Unit
+        f: T => Unit
     ): Unit = macro ControlAbstractionsImplementation.forFirstN[T]
 
     /**
@@ -75,11 +75,11 @@ package object control {
     def fillRefArray[T <: AnyRef](
         times: Int
     )(
-        f: ⇒ T
+        f: => T
     ): RefArray[T] = macro ControlAbstractionsImplementation.fillRefArray[T]
     // OLD IMPLEMENTATION USING HIGHER-ORDER FUNCTIONS
     // (DO NOT DELETE - TO DOCUMENT THE DESIGN DECISION FOR MACROS)
-    //        def repeat[T](times: Int)(f: ⇒ T): IndexedSeq[T] = {
+    //        def repeat[T](times: Int)(f: => T): IndexedSeq[T] = {
     //            val array = new scala.collection.mutable.ArrayBuffer[T](times)
     //            var i = 0
     //            while (i < times) {
@@ -135,7 +135,7 @@ package object control {
     def iterateTo(
         from: Int, to: Int
     )(
-        f: Int ⇒ Unit
+        f: Int => Unit
     ): Unit = macro ControlAbstractionsImplementation.iterateTo
 
     /**
@@ -147,7 +147,7 @@ package object control {
     def iterateUntil(
         from: Int, until: Int
     )(
-        f: Int ⇒ Unit
+        f: Int => Unit
     ): Unit = macro ControlAbstractionsImplementation.iterateUntil
 
     /**
@@ -175,7 +175,7 @@ package object control {
     }
 
     // TODO Rename: binarySearch
-    def find[T <: AnyRef](data: Array[T])(compareTo: T ⇒ Int): Option[T] = {
+    def find[T <: AnyRef](data: Array[T])(compareTo: T => Int): Option[T] = {
         @tailrec @inline def find(low: Int, high: Int): Option[T] = {
             if (high < low)
                 return None;
@@ -210,7 +210,7 @@ package control {
         )(
             a: c.Expr[Array[T]]
         )(
-            f: c.Expr[(Int, T) ⇒ Unit]
+            f: c.Expr[(Int, T) => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -231,7 +231,7 @@ package control {
         )(
             a: c.Expr[Array[T]]
         )(
-            f: c.Expr[(T, Int) ⇒ Unit]
+            f: c.Expr[(T, Int) => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -252,7 +252,7 @@ package control {
         )(
             l: c.Expr[List[T]], n: c.Expr[Int]
         )(
-            f: c.Expr[T ⇒ Unit]
+            f: c.Expr[T => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -341,7 +341,7 @@ package control {
             from: c.Expr[Int],
             to:   c.Expr[Int]
         )(
-            f: c.Expr[(Int) ⇒ Unit]
+            f: c.Expr[(Int) => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 
@@ -361,7 +361,7 @@ package control {
             from:  c.Expr[Int],
             until: c.Expr[Int]
         )(
-            f: c.Expr[(Int) ⇒ Unit]
+            f: c.Expr[(Int) => Unit]
         ): c.Expr[Unit] = {
             import c.universe._
 

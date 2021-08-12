@@ -17,17 +17,17 @@ sealed abstract class PropertyBounds(val pk: PropertyKind) {
 
     def toSpecification: String = {
         ((lowerBound, upperBound) match {
-            case (true, true)   ⇒ "LBP+UBP"
-            case (true, false)  ⇒ "LBP"
-            case (false, true)  ⇒ "UBP"
-            case (false, false) ⇒ "FinalP" // Intended to be used only by transformers
+            case (true, true)   => "LBP+UBP"
+            case (true, false)  => "LBP"
+            case (false, true)  => "UBP"
+            case (false, false) => "FinalP" // Intended to be used only by transformers
         }) + '(' + PropertyKey.name(pk) + ')'
     }
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: PropertyBounds ⇒ this.pk == that.pk
-            case _                    ⇒ false
+            case that: PropertyBounds => this.pk == that.pk
+            case _                    => false
         }
     }
 
@@ -42,19 +42,19 @@ object PropertyBounds {
 
     def apply(pbt: PropertiesBoundType, pks: Array[PropertyKind]): Set[PropertyBounds] = {
         pbt match {
-            case LBProperties    ⇒ lbs(pks: _*)
-            case UBProperties    ⇒ ubs(pks: _*)
-            case LUBProperties   ⇒ lubs(pks: _*)
-            case FinalProperties ⇒ finalPs(pks: _*)
+            case LBProperties    => lbs(pks: _*)
+            case UBProperties    => ubs(pks: _*)
+            case LUBProperties   => lubs(pks: _*)
+            case FinalProperties => finalPs(pks: _*)
         }
     }
 
     def apply(pbt: PropertiesBoundType, pk: PropertyKind): PropertyBounds = {
         pbt match {
-            case LBProperties    ⇒ lb(pk)
-            case UBProperties    ⇒ ub(pk)
-            case LUBProperties   ⇒ lub(pk)
-            case FinalProperties ⇒ finalP(pk)
+            case LBProperties    => lb(pk)
+            case UBProperties    => ub(pk)
+            case LUBProperties   => lub(pk)
+            case FinalProperties => finalP(pk)
         }
     }
 

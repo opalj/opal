@@ -32,9 +32,9 @@ case class IINC(lvIndex: Int, constValue: Int) extends ArithmeticInstruction {
 
     final def isShiftInstruction: Boolean = false
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final def stackSlotsChange: Int = 0
 

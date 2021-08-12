@@ -42,7 +42,7 @@ case class TypeAnnotationPathElements(
     final override def attribute_length: Int = 1 + path.length * 2
 
     def toXHTML(implicit cp: Constant_Pool): Node = {
-        val path = <ol>{ this.path.map(pe ⇒ <li>{ pe.toXHTML(cp) }</li>) }</ol>
+        val path = <ol>{ this.path.map(pe => <li>{ pe.toXHTML(cp) }</li>) }</ol>
 
         // return node (this comment is a necessary technical artifact...)
         <div class="type_annotation_path"><b>Path</b>{ path }</div>

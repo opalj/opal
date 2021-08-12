@@ -46,24 +46,24 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
             TACAITransformer.register(p, ps, null)
 
             try {
-                p.allMethodsWithBody foreach { method ⇒
+                p.allMethodsWithBody foreach { method =>
                     counter.incrementAndGet() % 3 match {
-                        case 0 ⇒
+                        case 0 =>
                             ps.force(method, BaseAIResult.key)
-                        case 1 ⇒
+                        case 1 =>
                             ps.force(method, TACAI.key)
-                        case 2 ⇒
+                        case 2 =>
                             ps.force(method, BaseAIResult.key)
                             ps.force(method, TACAI.key)
                     }
                 }
             } catch {
-                case t: ConcurrentExceptions ⇒
+                case t: ConcurrentExceptions =>
                     t.getSuppressed.foreach(_.printStackTrace())
                     throw t;
             }
             ps.waitOnPhaseCompletion()
-            p.allMethodsWithBody foreach { method ⇒
+            p.allMethodsWithBody foreach { method =>
                 val aiResultProperty = ps(method, BaseAIResult.key)
                 val Some(aiResult) = aiResultProperty.asFinal.p.aiResult
                 // ... smoke test...
@@ -75,14 +75,14 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
 
             ps.shutdown()
             info(s"lazily performed AI and generated TAC for ${counter.get / 2} method(s)")
-        } { t ⇒ info(s"lazy analysis took ${t.toSeconds}") }
+        } { t => info(s"lazy analysis took ${t.toSeconds}") }
 
         time { // Test eager analysis...
             val p = theProject.recreate()
             val counter = new AtomicInteger()
             val fpcfManager = p.get(FPCFAnalysesManagerKey)
             val (ps, _ /*executed analyses*/ ) = fpcfManager.runAll(EagerL0TACAIAnalysis)
-            p.allMethodsWithBody foreach { method ⇒
+            p.allMethodsWithBody foreach { method =>
                 val aiResultProperty = ps(method, BaseAIResult.key)
                 val Some(aiResult) = aiResultProperty.asFinal.p.aiResult
                 // ... smoke test...
@@ -93,7 +93,7 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
             }
             ps.shutdown()
             info(s"eagerly performed AI and generated TAC for ${counter.get} method(s)")
-        } { t ⇒ info(s"eager analysis took ${t.toSeconds}") }
+        } { t => info(s"eager analysis took ${t.toSeconds}") }
 
     }
 
@@ -101,8 +101,8 @@ class TACAIAnalysisIntegrationTest extends AnyFunSpec with Matchers {
 
     describe(s"creating the 3-address code using the PropertyStore") {
 
-        //TestSupport.allManagedBITestProjects() foreach { biProject ⇒
-        TestSupport.allBIProjects() foreach { biProject ⇒
+        //TestSupport.allManagedBITestProjects() foreach { biProject =>
+        TestSupport.allBIProjects() foreach { biProject =>
             val (name, projectFactory) = biProject
             it(s"for $name") {
                 analyzeProject(projectFactory())

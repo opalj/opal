@@ -58,18 +58,18 @@ object ThirdInstrumentation extends App {
     implicit val classHierarchy = p.classHierarchy // STRICTLY REQUIRED WHEN A StackMapTable NEEDS TO BE COMPUTED!
     val cf = p.classFile(TheType).get
     // let's transform the methods
-    val newMethods = for (m ← cf.methods) yield {
+    val newMethods = for (m <- cf.methods) yield {
         m.body match {
-            case None ⇒
+            case None =>
                 m.copy() // these are native and abstract methods
 
-            case Some(code) ⇒
+            case Some(code) =>
                 val cfg = CFGFactory(code, classHierarchy)
                 val lCode = LabeledCode(code)
                 var removeDeadCode = false
                 if (m.name == "killMe1") {
                     for {
-                        PCAndInstruction(pc, LoadString("kill me")) ← code // the search can be done either based on the original code or the lcode
+                        PCAndInstruction(pc, LoadString("kill me")) <- code // the search can be done either based on the original code or the lcode
                     } {
                         val stackDepth = code.stackDepthAt(pc, cfg)
                         val cleanStackAndReturn = new Array[CodeElement[AnyRef]](stackDepth + 1)
@@ -84,7 +84,7 @@ object ThirdInstrumentation extends App {
                     removeDeadCode = true
                 } else if (m.name == "killMe2") {
                     for {
-                        PCAndInstruction(pc, LoadString("kill me")) ← code
+                        PCAndInstruction(pc, LoadString("kill me")) <- code
                     } {
                         // NOTE: when we throw an exception, we don't have to take of the
                         //       size of the stack!
@@ -124,13 +124,13 @@ object ThirdInstrumentation extends App {
                 lazy val aiResult = BaseAI(m, new TypeCheckingDomain(p, m))
 
                 for {
-                    PCAndInstruction(pc, GETSTATIC(SystemType, "out", _)) ← code
+                    PCAndInstruction(pc, GETSTATIC(SystemType, "out", _)) <- code
                 } {
                     lCode.replace(pc, Seq(GETSTATIC(SystemType, "err", PrintStreamType)))
                 }
 
                 for {
-                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
+                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
                     if aiResult.operandsArray(pc).head.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes
                 } {
                     lCode.insert(
@@ -146,7 +146,7 @@ object ThirdInstrumentation extends App {
 
                 // Let's write out whether a value is positive (0...Int.MaxValue) or negative;
                 // i.e., let's see how we add conditional logic.
-                for (PCAndInstruction(pc, IRETURN) ← code) {
+                for (PCAndInstruction(pc, IRETURN) <- code) {
                     val gtTarget = Symbol(pc+":>")
                     val printlnTarget = Symbol(pc+":println")
                     lCode.insert(
@@ -181,11 +181,11 @@ object ThirdInstrumentation extends App {
     //
 
     // Let's see the old file...
-    val oldCFHTML = ClassFile(() ⇒ p.source(TheType).get.openConnection().getInputStream).head.toXHTML(None)
+    val oldCFHTML = ClassFile(() => p.source(TheType).get.openConnection().getInputStream).head.toXHTML(None)
     println("original: "+writeAndOpen(oldCFHTML, "SimpleInstrumentationDemo", ".html"))
 
     // Let's see the new file...
-    val newCFHTML = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
+    val newCFHTML = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
     val newCFFile = writeAndOpen(newCFHTML, "NewSimpleInstrumentationDemo", ".html")
     println("instrumented: "+newCFFile)
 
@@ -216,7 +216,7 @@ object ThirdInstrumentation extends App {
     try {
         newClass.getMethod("killMe2", classOf[Boolean]).invoke(instance, java.lang.Boolean.TRUE)
     } catch {
-        case ite: java.lang.reflect.InvocationTargetException ⇒
+        case ite: java.lang.reflect.InvocationTargetException =>
             if (!ite.getCause.isInstanceOf[RuntimeException]) {
                 Console.err.println("Big Bug!")
             } else {

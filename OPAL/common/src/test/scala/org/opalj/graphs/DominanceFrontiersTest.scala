@@ -38,7 +38,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
             startNode,
             g,
             maxNode,
-            (n: Int) ⇒ n >= startNode && n <= maxNode,
+            (n: Int) => n >= startNode && n <= maxNode,
             startNodeHasPredecessors
         )
     }
@@ -47,24 +47,24 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
         startNode:                Int,
         g:                        Graph[Int],
         maxNode:                  Int,
-        isValidNode:              Int ⇒ Boolean,
+        isValidNode:              Int => Boolean,
         startNodeHasPredecessors: Boolean
     ): DominanceFrontiers = {
         val dominatorTree =
             DominatorTree(
                 startNode, startNodeHasPredecessors,
-                (n: Int) ⇒ { f: (Int ⇒ Unit) ⇒
-                    g.successors.getOrElse(n, List.empty).foreach[Unit](e ⇒ f(e))
+                (n: Int) => { f: (Int => Unit) =>
+                    g.successors.getOrElse(n, List.empty).foreach[Unit](e => f(e))
                 },
-                (n: Int) ⇒ { f: (Int ⇒ Unit) ⇒
-                    g.predecessors.getOrElse(n, List.empty).foreach[Unit](e ⇒ f(e))
+                (n: Int) => { f: (Int => Unit) =>
+                    g.predecessors.getOrElse(n, List.empty).foreach[Unit](e => f(e))
                 },
                 maxNode
             )
         try {
             DominanceFrontiers(dominatorTree, isValidNode)
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 writeAndOpen(dominatorTree.toDot(), "FailedComputingDominaceFrontierFor", ".dt.gv")
                 throw t
         }
@@ -78,7 +78,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
     }
 
     "a graph a single cyclic node" should "result in a reflexive dominance frontier" in {
-        val graph = Graph.empty[Int] += (0 → 0)
+        val graph = Graph.empty[Int] += (0 -> 0)
         val df = setUpDominanceFrontiers(0, graph, 0, startNodeHasPredecessors = true)
 
         //        org.opalj.io.writeAndOpen(df.toDot(), "graph", ".dt.gv")
@@ -88,7 +88,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
     }
 
     "a graph with a single graph" should "result in no dominance frontiers" in {
-        val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (3 → 4)
+        val graph = Graph.empty[Int] += (0 -> 1) += (1 -> 2) += (2 -> 3) += (3 -> 4)
 
         val df = setUpDominanceFrontiers(0, graph, 4)
 
@@ -103,7 +103,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
     }
 
     "a diamond-shaped graph (e.g., from an if statement)" should "be handled properly" in {
-        val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (1 → 3) += (2 → 4) += (3 → 4)
+        val graph = Graph.empty[Int] += (0 -> 1) += (1 -> 2) += (1 -> 3) += (2 -> 4) += (3 -> 4)
 
         val df = setUpDominanceFrontiers(0, graph, 4)
 
@@ -118,7 +118,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
 
     "a graph modeling a simple if" should
         "result in a dominance frontier grpah which correctly represents the if-block" in {
-            val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 3) += (1 → 3)
+            val graph = Graph.empty[Int] += (0 -> 1) += (1 -> 2) += (2 -> 3) += (1 -> 3)
 
             val df = setUpDominanceFrontiers(0, graph, 3)
 
@@ -130,8 +130,8 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
     "a graph which models nested if-statements" should "be handled properly" in {
         val graph =
             Graph.empty[Int] +=
-                (0 → 1) += (1 → 2) += (1 → 6) += (2 → 3) += (2 → 4) += (3 → 5) +=
-                (4 → 5) += (5 → 7) += (6 → 7)
+                (0 -> 1) += (1 -> 2) += (1 -> 6) += (2 -> 3) += (2 -> 4) += (3 -> 5) +=
+                (4 -> 5) += (5 -> 7) += (6 -> 7)
 
         val df = setUpDominanceFrontiers(0, graph, 7)
 
@@ -146,7 +146,7 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
     }
 
     "a non-trivial, cyclic graph" should "be handled properly" in {
-        val graph = Graph.empty[Int] += (0 → 1) += (1 → 2) += (2 → 0)
+        val graph = Graph.empty[Int] += (0 -> 1) += (1 -> 2) += (2 -> 0)
 
         val df = setUpDominanceFrontiers(0, graph, 2, startNodeHasPredecessors = true)
 
@@ -160,9 +160,9 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
 
             val graph =
                 org.opalj.graphs.Graph.empty[Int] +=
-                    (0 → 1) += (1 → 2) += (2 → 3) += (2 → 7) += (3 → 4) += (3 → 5) += (5 → 6) +=
-                    (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) +=
-                    (11 → 9) += (11 → 12) += (12 → 13) += (12 → 2) += (0 → 13)
+                    (0 -> 1) += (1 -> 2) += (2 -> 3) += (2 -> 7) += (3 -> 4) += (3 -> 5) += (5 -> 6) +=
+                    (4 -> 6) += (6 -> 8) += (7 -> 8) += (8 -> 9) += (9 -> 10) += (9 -> 11) += (10 -> 11) +=
+                    (11 -> 9) += (11 -> 12) += (12 -> 13) += (12 -> 2) += (0 -> 13)
 
             val df = setUpDominanceFrontiers(0, graph, 13)
 
@@ -190,11 +190,11 @@ class DominanceFrontiersTest extends AnyFlatSpec with Matchers {
 
         val graph =
             org.opalj.graphs.Graph.empty[Int] +=
-                (0 → 1) += (1 → 2) += (2 → 77) += (2 → 7) += (77 → 4) += (77 → 55) += (55 → 6) +=
-                (4 → 6) += (6 → 8) += (7 → 8) += (8 → 9) += (9 → 10) += (9 → 11) += (10 → 11) +=
-                (11 → 9) += (11 → 12) += (12 → 22) += (12 → 2) += (0 → 22)
+                (0 -> 1) += (1 -> 2) += (2 -> 77) += (2 -> 7) += (77 -> 4) += (77 -> 55) += (55 -> 6) +=
+                (4 -> 6) += (6 -> 8) += (7 -> 8) += (8 -> 9) += (9 -> 10) += (9 -> 11) += (10 -> 11) +=
+                (11 -> 9) += (11 -> 12) += (12 -> 22) += (12 -> 2) += (0 -> 22)
 
-        val isValidNode = (n: Int) ⇒ Set(0, 1, 2, 77, 4, 55, 6, 7, 8, 9, 10, 11, 12, 22).contains(n)
+        val isValidNode = (n: Int) => Set(0, 1, 2, 77, 4, 55, 6, 7, 8, 9, 10, 11, 12, 22).contains(n)
 
         val df = setUpDominanceFrontiers(0, graph, 77, isValidNode, false)
 

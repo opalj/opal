@@ -52,7 +52,7 @@ sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedAnalysis {
         val activated = try {
             project.config.getBoolean(ReflectionRelatedCallsAnalysis.ConfigKey)
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 logOnce(Error(
                     "analysis configuration - reflection analysis",
                     s"couldn't read: ${ReflectionRelatedCallsAnalysis.ConfigKey}",
@@ -74,7 +74,7 @@ sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedAnalysis {
         actualReceiver: Option[(ValueInformation, IntTrieSet)],
         actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Traversable[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls): Unit = {
-        MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m ⇒
+        MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m =>
             indirectCalls.addCall(
                 caller,
                 declaredMethods(m),
@@ -104,7 +104,7 @@ class ClassForNameAnalysis private[analyses] (
         def loadedClassesPartialResult: PartialResult[SomeProject, LoadedClasses] = {
             assert(hasNewLoadedClasses)
             PartialResult[SomeProject, LoadedClasses](project, LoadedClasses.key, {
-                case InterimEUBP(p, ub) ⇒
+                case InterimEUBP(p, ub) =>
                     val newUb = ub.classes ++ _newLoadedClasses
                     // due to monotonicity:
                     // the size check sufficiently replaces the subset check
@@ -113,10 +113,10 @@ class ClassForNameAnalysis private[analyses] (
                     else
                         None
 
-                case EPK(p, _) ⇒
+                case EPK(p, _) =>
                     Some(InterimEUBP(p, org.opalj.br.fpcf.properties.cg.LoadedClasses(_newLoadedClasses)))
 
-                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+                case r => throw new IllegalStateException(s"unexpected previous result $r")
             })
         }
     }
@@ -155,8 +155,8 @@ class ClassForNameAnalysis private[analyses] (
 
         // the upper bound for loaded classes, seen so far
         val loadedClassesUB: UIDSet[ObjectType] = loadedClassesEOptP match {
-            case eps: EPS[_, _] ⇒ eps.ub.classes
-            case _              ⇒ UIDSet.empty
+            case eps: EPS[_, _] => eps.ub.classes
+            case _              => UIDSet.empty
         }
 
         loadedClassesUB
@@ -283,18 +283,18 @@ class ConstructorNewInstanceAnalysis private[analyses] (
         val persistentActualParams =
             actualParamsNewInstanceOpt.map(_.map(persistentUVar(_)(stmts))).getOrElse(Seq.empty)
 
-        constructor.asVar.definedBy.foreach { index ⇒
+        constructor.asVar.definedBy.foreach { index =>
             var matchers: Set[MethodMatcher] = Set(
                 MatcherUtil.constructorMatcher,
                 MatcherUtil.retrieveSuitableNonEssentialMatcher[Seq[V]](
                     actualParamsNewInstanceOpt,
-                    v ⇒ new ActualParameterBasedMethodMatcher(v)
+                    v => new ActualParameterBasedMethodMatcher(v)
                 )
             )
 
             if (index > 0) {
                 stmts(index).asAssignment.expr match {
-                    case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor" | "getDeclaredConstructor", _, receiver, params) ⇒
+                    case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getConstructor" | "getDeclaredConstructor", _, receiver, params) =>
 
                         if (call.name == "getConstructor") {
                             matchers += PublicMethodMatcher
@@ -308,10 +308,10 @@ class ConstructorNewInstanceAnalysis private[analyses] (
                         )
 
                     /*
-                     * TODO: case ArrayLoad(_, _, arrayRef) ⇒ // here we could handle getConstructors
+                     * TODO: case ArrayLoad(_, _, arrayRef) => // here we could handle getConstructors
                      */
 
-                    case _ ⇒
+                    case _ =>
                         if (HighSoundnessMode) {
                             matchers += AllMethodsMatcher
                         } else {
@@ -375,33 +375,33 @@ class MethodInvokeAnalysis private[analyses] (
         val (methodInvokeReceiver, methodInvokeActualParamsOpt) = if (methodParams.size == 2) {
             (
                 methodParams.head.map(_.asVar),
-                methodParams(1).flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, stmts, cfg))
+                methodParams(1).flatMap(p => VarargsUtil.getParamsFromVararg(p, stmts, cfg))
             )
         } else {
             (None, None)
         }
-        val persistentMethodInvokeReceiver = methodInvokeReceiver.flatMap(r ⇒ persistentUVar(r)(stmts))
+        val persistentMethodInvokeReceiver = methodInvokeReceiver.flatMap(r => persistentUVar(r)(stmts))
         val persistentMethodInvokeActualParamsOpt =
             methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(stmts)))
 
-        method.asVar.definedBy.foreach { index ⇒
+        method.asVar.definedBy.foreach { index =>
             var matchers: Set[MethodMatcher] = Set(
                 MatcherUtil.retrieveSuitableMatcher[Seq[V]](
                     methodInvokeActualParamsOpt,
                     pc,
-                    v ⇒ new ActualParameterBasedMethodMatcher(v)
+                    v => new ActualParameterBasedMethodMatcher(v)
                 ),
                 MatcherUtil.retrieveSuitableMatcher[V](
                     methodInvokeReceiver,
                     pc,
-                    v ⇒ new ActualReceiverBasedMethodMatcher(v.value.asReferenceValue)
+                    v => new ActualReceiverBasedMethodMatcher(v.value.asReferenceValue)
                 )
             )
 
             if (index >= 0) {
                 val definition = stmts(index).asAssignment.expr
                 definition match {
-                    case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredMethod" | "getMethod", _, receiver, params) ⇒
+                    case call @ VirtualFunctionCall(_, ObjectType.Class, _, "getDeclaredMethod" | "getMethod", _, receiver, params) =>
                         if (call.name == "getMethod") {
                             matchers += PublicMethodMatcher
                             matchers += MatcherUtil.retrieveClassBasedMethodMatcher(
@@ -421,10 +421,10 @@ class MethodInvokeAnalysis private[analyses] (
                             params(1), pc, stmts, cfg
                         )
 
-                    /*case ArrayLoad(_, _, arrayRef) ⇒*/
+                    /*case ArrayLoad(_, _, arrayRef) =>*/
                     // TODO here we can handle getMethods
 
-                    case _ ⇒
+                    case _ =>
                         if (HighSoundnessMode) {
                             matchers += AllMethodsMatcher
                         } else {
@@ -476,8 +476,8 @@ class MethodHandleInvokeAnalysis private[analyses] (
         implicit val indirectCalls: IndirectCalls = new IndirectCalls()
         val descriptorOpt = if (isDirect && apiMethod.name == "invokeExact") {
             tac.stmts(tac.properStmtIndexForPC(pc)) match {
-                case vmc: VirtualMethodCall[V]          ⇒ Some(vmc.descriptor)
-                case VirtualFunctionCallStatement(call) ⇒ Some(call.descriptor)
+                case vmc: VirtualMethodCall[V]          => Some(vmc.descriptor)
+                case VirtualFunctionCallStatement(call) => Some(call.descriptor)
             }
         } else {
             None
@@ -509,16 +509,16 @@ class MethodHandleInvokeAnalysis private[analyses] (
         val actualInvokeParamsOpt =
             if (isSignaturePolymorphic) Some(invokeParams.map(_.map(_.asVar)))
             else if (invokeParams.nonEmpty)
-                invokeParams.head.flatMap(p ⇒ VarargsUtil.getParamsFromVararg(p, stmts, cfg).map(_.map(Some(_))))
+                invokeParams.head.flatMap(p => VarargsUtil.getParamsFromVararg(p, stmts, cfg).map(_.map(Some(_))))
             else
                 None
 
-        methodHandle.asVar.definedBy.foreach { index ⇒
+        methodHandle.asVar.definedBy.foreach { index =>
             // TODO here we need to peel of the 1. actual parameter for non static ones
             var matchers: Set[MethodMatcher] = Set.empty /*Set(
                 retrieveSuitableNonEssentialMatcher[Seq[V]](
                     actualInvokeParamsOpt,
-                    v ⇒ new ActualParamBasedMethodMatcher(v, project)
+                    v => new ActualParamBasedMethodMatcher(v, project)
                 )
             )*/
 
@@ -527,28 +527,28 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 if (definition.isMethodHandleConst) {
                     // TODO do we need to distinguish the cases below?
                     definition.asMethodHandleConst.value match {
-                        case InvokeStaticMethodHandle(receiver, _, name, desc) ⇒
+                        case InvokeStaticMethodHandle(receiver, _, name, desc) =>
                             matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = true, isConstructor = false)
 
-                        case InvokeVirtualMethodHandle(receiver, name, desc) ⇒
+                        case InvokeVirtualMethodHandle(receiver, name, desc) =>
                             matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = false, isConstructor = false)
 
-                        case InvokeInterfaceMethodHandle(receiver, name, desc) ⇒
+                        case InvokeInterfaceMethodHandle(receiver, name, desc) =>
                             matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = false, isConstructor = false)
 
-                        case InvokeSpecialMethodHandle(receiver, _, name, desc) ⇒
+                        case InvokeSpecialMethodHandle(receiver, _, name, desc) =>
                             // TODO does this work for super?
                             matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, name, desc, isStatic = false, isConstructor = false)
 
-                        case NewInvokeSpecialMethodHandle(receiver, desc) ⇒
+                        case NewInvokeSpecialMethodHandle(receiver, desc) =>
                             matchers ++= MethodHandlesUtil.retrieveMatchersForMethodHandleConst(receiver, "<init>", desc, isStatic = false, isConstructor = true)
 
-                        case _ ⇒
+                        case _ =>
                         // getters and setters are not relevant for the call graph
                     }
                 } else if (definition.isVirtualFunctionCall) {
                     definition.asVirtualFunctionCall match {
-                        case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStatic", _, _, params) ⇒
+                        case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findStatic", _, _, params) =>
                             matchers += StaticMethodMatcher
 
                             val Seq(refc, name, methodType) = params
@@ -565,7 +565,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                                 project
                             )
 
-                        case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findVirtual", _, _, params) ⇒
+                        case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findVirtual", _, _, params) =>
                             matchers += NonStaticMethodMatcher
 
                             val Seq(refc, name, methodType) = params
@@ -582,7 +582,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                                 project
                             )
 
-                        case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSpecial", _, _, params) ⇒
+                        case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findSpecial", _, _, params) =>
                             matchers += NonStaticMethodMatcher
 
                             // TODO we can ignore the 4ths param? Does it work for super calls?
@@ -600,7 +600,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                                 project
                             )
 
-                        case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findConstructor", _, _, params) ⇒
+                        case VirtualFunctionCall(_, ObjectType.MethodHandles$Lookup, _, "findConstructor", _, _, params) =>
                             matchers += NonStaticMethodMatcher
 
                             val Seq(refc, methodType) = params
@@ -621,7 +621,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                                 cfg,
                                 project
                             )
-                        case _ ⇒
+                        case _ =>
                         // getters and setters are not relevant for the call graph
                     }
                 } else if (HighSoundnessMode) {
@@ -659,7 +659,7 @@ class MethodHandleInvokeAnalysis private[analyses] (
                 actualInvokeParamsOpt.map(_.map(_.flatMap(persistentUVar(_)(stmts)))).getOrElse(Seq.empty)
 
             // TODO refactor this handling
-            MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m ⇒
+            MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m =>
                 val (receiver, params) = if (m.isStatic || persistentActualParams.isEmpty)
                     (None, persistentActualParams)
                 else

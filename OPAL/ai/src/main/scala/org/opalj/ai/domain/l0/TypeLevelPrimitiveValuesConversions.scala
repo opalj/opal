@@ -11,7 +11,7 @@ package l0
  * @author Michael Eichberg
  */
 trait TypeLevelPrimitiveValuesConversions extends PrimitiveValuesConversionsDomain {
-    this: ValuesDomain with PrimitiveValuesFactory ⇒
+    this: ValuesDomain with PrimitiveValuesFactory =>
 
     override def i2d(pc: Int, value: DomainValue): DomainValue = DoubleValue(pc)
     override def i2f(pc: Int, value: DomainValue): DomainValue = FloatValue(pc)

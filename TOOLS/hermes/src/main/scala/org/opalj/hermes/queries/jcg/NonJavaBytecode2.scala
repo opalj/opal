@@ -60,12 +60,12 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
         } {
             val methodMap = mutable.Map.empty[String, Int]
-            classFile.methods.filterNot(_.isSynthetic).foreach { m ⇒
+            classFile.methods.filterNot(_.isSynthetic).foreach { m =>
                 val jvmDescriptor = m.descriptor.toJVMDescriptor
                 val mdWithoutReturn = jvmDescriptor.substring(0, jvmDescriptor.lastIndexOf(')') + 1)
                 val key = m.name + mdWithoutReturn

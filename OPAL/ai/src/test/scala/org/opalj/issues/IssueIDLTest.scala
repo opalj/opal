@@ -32,13 +32,13 @@ class IssueIDLTest extends AnyFlatSpec with Matchers {
         )
 
         issue.toIDL should be(Json.obj(
-            "analysis" → JsString(null),
-            "relevance" → toIDL(Relevance.OfNoRelevance),
-            "summary" → "foo",
-            "categories" → Json.arr(),
-            "kinds" → Json.arr(),
-            "details" → Json.arr(),
-            "locations" → Json.arr(simplePackageLocationIDL)
+            "analysis" -> JsString(null),
+            "relevance" -> toIDL(Relevance.OfNoRelevance),
+            "summary" -> "foo",
+            "categories" -> Json.arr(),
+            "kinds" -> Json.arr(),
+            "details" -> Json.arr(),
+            "locations" -> Json.arr(simplePackageLocationIDL)
         ))
     }
 
@@ -53,13 +53,13 @@ class IssueIDLTest extends AnyFlatSpec with Matchers {
         )
 
         issue.toIDL should be(Json.obj(
-            "analysis" → "bar",
-            "relevance" → toIDL(Relevance.OfNoRelevance),
-            "summary" → "foo",
-            "categories" → Json.arr(),
-            "kinds" → Json.arr(),
-            "details" → Json.arr(),
-            "locations" → Json.arr(simplePackageLocationIDL)
+            "analysis" -> "bar",
+            "relevance" -> toIDL(Relevance.OfNoRelevance),
+            "summary" -> "foo",
+            "categories" -> Json.arr(),
+            "kinds" -> Json.arr(),
+            "details" -> Json.arr(),
+            "locations" -> Json.arr(simplePackageLocationIDL)
         ))
     }
 
@@ -74,13 +74,13 @@ class IssueIDLTest extends AnyFlatSpec with Matchers {
         )
 
         issue.toIDL should be(Json.obj(
-            "analysis" → JsString(null),
-            "relevance" → toIDL(Relevance.OfNoRelevance),
-            "summary" → "bar",
-            "categories" → Json.arr("a", "b"),
-            "kinds" → Json.arr(),
-            "details" → Json.arr(),
-            "locations" → Json.arr(simplePackageLocationIDL)
+            "analysis" -> JsString(null),
+            "relevance" -> toIDL(Relevance.OfNoRelevance),
+            "summary" -> "bar",
+            "categories" -> Json.arr("a", "b"),
+            "kinds" -> Json.arr(),
+            "details" -> Json.arr(),
+            "locations" -> Json.arr(simplePackageLocationIDL)
         ))
     }
 
@@ -95,13 +95,13 @@ class IssueIDLTest extends AnyFlatSpec with Matchers {
         )
 
         issue.toIDL should be(Json.obj(
-            "analysis" → JsString(null),
-            "relevance" → toIDL(Relevance.OfNoRelevance),
-            "summary" → "foo",
-            "categories" → Json.arr(),
-            "kinds" → Json.arr("c", "d"),
-            "details" → Json.arr(),
-            "locations" → Json.arr(simplePackageLocationIDL)
+            "analysis" -> JsString(null),
+            "relevance" -> toIDL(Relevance.OfNoRelevance),
+            "summary" -> "foo",
+            "categories" -> Json.arr(),
+            "kinds" -> Json.arr("c", "d"),
+            "details" -> Json.arr(),
+            "locations" -> Json.arr(simplePackageLocationIDL)
         ))
     }
 
@@ -117,13 +117,13 @@ class IssueIDLTest extends AnyFlatSpec with Matchers {
         )
 
         issue.toIDL should be(Json.obj(
-            "analysis" → JsString(null),
-            "relevance" → toIDL(Relevance.OfNoRelevance),
-            "summary" → "foo",
-            "categories" → Json.arr(),
-            "kinds" → Json.arr(),
-            "details" → Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL),
-            "locations" → Json.arr(simplePackageLocationIDL)
+            "analysis" -> JsString(null),
+            "relevance" -> toIDL(Relevance.OfNoRelevance),
+            "summary" -> "foo",
+            "categories" -> Json.arr(),
+            "kinds" -> Json.arr(),
+            "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL),
+            "locations" -> Json.arr(simplePackageLocationIDL)
         ))
     }
 
@@ -139,13 +139,13 @@ class IssueIDLTest extends AnyFlatSpec with Matchers {
         )
 
         issue.toIDL should be(Json.obj(
-            "analysis" → "foo",
-            "relevance" → toIDL(Relevance.OfUtmostRelevance),
-            "summary" → "bar",
-            "categories" → Json.arr("b", "a"),
-            "kinds" → Json.arr("d", "c"),
-            "details" → Json.arr(simpleLocalVariablesIDL, simpleOperandsIDL),
-            "locations" → Json.arr(simplePackageLocationIDL)
+            "analysis" -> "foo",
+            "relevance" -> toIDL(Relevance.OfUtmostRelevance),
+            "summary" -> "bar",
+            "categories" -> Json.arr("b", "a"),
+            "kinds" -> Json.arr("d", "c"),
+            "details" -> Json.arr(simpleLocalVariablesIDL, simpleOperandsIDL),
+            "locations" -> Json.arr(simplePackageLocationIDL)
         ))
     }
 }

@@ -16,8 +16,8 @@ case class FLOAD(lvIndex: Int) extends FLoadInstruction with ExplicitLocalVariab
 
     override def equals(other: Any): Boolean =
         other match {
-            case that: FLOAD ⇒ that.lvIndex == this.lvIndex
-            case _           ⇒ false
+            case that: FLOAD => that.lvIndex == this.lvIndex
+            case _           => false
         }
 
     override def hashCode: Int = FLOAD.opcode * 53 + lvIndex
@@ -31,10 +31,10 @@ object FLOAD extends InstructionMetaInformation {
 
     def canonicalRepresentation(lvIndex: Int): LoadLocalVariableInstruction =
         (lvIndex: @scala.annotation.switch) match {
-            case 0 ⇒ FLOAD_0
-            case 1 ⇒ FLOAD_1
-            case 2 ⇒ FLOAD_2
-            case 3 ⇒ FLOAD_3
-            case _ ⇒ new FLOAD(lvIndex)
+            case 0 => FLOAD_0
+            case 1 => FLOAD_1
+            case 2 => FLOAD_2
+            case 3 => FLOAD_3
+            case _ => new FLOAD(lvIndex)
         }
 }

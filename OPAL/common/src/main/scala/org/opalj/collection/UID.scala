@@ -35,8 +35,8 @@ trait UIDValue extends UID {
      */
     final override def equals(other: Any): Boolean = {
         other match {
-            case that: UID ⇒ (this eq that) || this.id == that.id
-            case _         ⇒ false
+            case that: UID => (this eq that) || this.id == that.id
+            case _         => false
         }
     }
 
@@ -61,7 +61,7 @@ object UID {
      * returns that value.
      */
     @inline
-    final def getOrElseUpdate[T <: AnyRef](array: Array[T], uid: UID, orElse: ⇒ T): T = {
+    final def getOrElseUpdate[T <: AnyRef](array: Array[T], uid: UID, orElse: => T): T = {
         val id = uid.id
         val t = array(id)
         if (t eq null) {

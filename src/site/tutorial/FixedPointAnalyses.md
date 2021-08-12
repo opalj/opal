@@ -24,7 +24,7 @@ sealed trait ClassImmutability extends ClassImmutabilityPropertyMetaInformation 
 
     override def checkIsEqualOrBetterThan(e: Entity, other: ClassImmutability): Unit = {
         if (meet(other) != other) {
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
         }
     }
 
@@ -57,10 +57,10 @@ Now we can implement the `meet` function that we defined earlier:
 ```scala
 def meet(other: ClassImmutability): ClassImmutability = {
     (this, other) match {
-        case (TransitivelyImmutableClass, _)       ⇒ other
-        case (_, TransitivelyImmutableClass)       ⇒ this
-        case (MutableClass, _) | (_, MutableClass) ⇒ MutableClass
-        case (_, _)                                ⇒ this
+        case (TransitivelyImmutableClass, _)       => other
+        case (_, TransitivelyImmutableClass)       => this
+        case (MutableClass, _) | (_, MutableClass) => MutableClass
+        case (_, _)                                => this
     }
 }
 ```
@@ -339,13 +339,13 @@ Finally it is time to try our analysis.
 To do so easily, we extend [ProjectAnalysisApplication]() which provides us with an implicit `main` method that parses parameters for us, most importantly the "-cp=<some path>" parameter that lets users specify the path to a project that they want to analyze.
 ```scala
 object ClassImmutabilityRunner extends ProjectAnalysisApplication { 
-    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = { [...] }
+    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = { [...] }
 }
 ```
 
 There is only on method that we need to implement, and that is `doAnalyze`:
 ```scala
-override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
     val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
         EagerClassImmutabilityAnalysis,
         LazyFieldImmutabilityAnalysis
@@ -361,7 +361,7 @@ As long as that doesn't exist, you can remove that line and OPAL will use the fa
 
 The `runAll` method returns the property store that we can then use to query the results of our analyses:
 ```scala
-override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
     [...]
 
     val transitivelyImmutableClasses    = propertyStore.finalEntities(TransitivelyImmutableClass).size
@@ -376,7 +376,7 @@ Here we use `finalEntities` to get all entities that have the given final proper
 
 Finally, the `doAnalyze` method requires us to return a [`BasicReport`](/library/api/SNAPSHOT/org/opalj/br/analyses/BasicReport.html), which is a simple way to return some string that will ultimate be printed to the console:
 ```scala
-override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
     [...]
 
     BasicReport(

@@ -56,9 +56,9 @@ case class TypeBasedPointsToSet private[properties] (
 
     override def equals(obj: Any): Boolean = {
         obj match {
-            case that: TypeBasedPointsToSet ⇒
+            case that: TypeBasedPointsToSet =>
                 that.numTypes == this.numTypes && that.orderedTypes == this.orderedTypes
-            case _ ⇒ false
+            case _ => false
         }
     }
 
@@ -72,7 +72,7 @@ case class TypeBasedPointsToSet private[properties] (
         var newOrderedTypes = orderedTypes
         var typesUnion = types
 
-        other.orderedTypes.forFirstN(other.numElements - seenElements) { t ⇒
+        other.orderedTypes.forFirstN(other.numElements - seenElements) { t =>
             if (!types.contains(t)) {
                 newOrderedTypes :&:= t
                 typesUnion += t
@@ -85,17 +85,17 @@ case class TypeBasedPointsToSet private[properties] (
         new TypeBasedPointsToSet(newOrderedTypes, typesUnion)
     }
 
-    override def forNewestNTypes[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+    override def forNewestNTypes[U](n: Int)(f: ReferenceType => U): Unit = {
         orderedTypes.forFirstN(n)(f)
     }
 
     // here, the elements are the types
-    override def forNewestNElements[U](n: Int)(f: ReferenceType ⇒ U): Unit = {
+    override def forNewestNElements[U](n: Int)(f: ReferenceType => U): Unit = {
         orderedTypes.forFirstN(n)(f)
     }
 
     override def included(
-        other: TypeBasedPointsToSet, typeFilter: ReferenceType ⇒ Boolean
+        other: TypeBasedPointsToSet, typeFilter: ReferenceType => Boolean
     ): TypeBasedPointsToSet = {
         included(other, 0, typeFilter)
     }
@@ -103,7 +103,7 @@ case class TypeBasedPointsToSet private[properties] (
     override def included(
         other:        TypeBasedPointsToSet,
         seenElements: Int,
-        typeFilter:   ReferenceType ⇒ Boolean
+        typeFilter:   ReferenceType => Boolean
     ): TypeBasedPointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return included(other, seenElements);
@@ -111,7 +111,7 @@ case class TypeBasedPointsToSet private[properties] (
         var newOrderedTypes = orderedTypes
         var typesUnion = types
 
-        other.orderedTypes.forFirstN(other.numElements - seenElements) { t ⇒
+        other.orderedTypes.forFirstN(other.numElements - seenElements) { t =>
             if (typeFilter(t) && !types.contains(t)) {
                 newOrderedTypes :&:= t
                 typesUnion += t
@@ -125,13 +125,13 @@ case class TypeBasedPointsToSet private[properties] (
     }
 
     override def filter(
-        typeFilter: ReferenceType ⇒ Boolean
+        typeFilter: ReferenceType => Boolean
     ): TypeBasedPointsToSet = {
         if (typeFilter eq PointsToSetLike.noFilter)
             return this;
 
         var newTypes = UIDSet.empty[ReferenceType]
-        val newOrderedTypes = orderedTypes.foldLeft(Chain.empty[ReferenceType]) { (r, t) ⇒
+        val newOrderedTypes = orderedTypes.foldLeft(Chain.empty[ReferenceType]) { (r, t) =>
             if (typeFilter(t)) {
                 newTypes += t
                 t :&: r
@@ -155,7 +155,7 @@ object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation 
         initialPointsTo: UIDSet[ReferenceType]
     ): TypeBasedPointsToSet = {
         new TypeBasedPointsToSet(
-            initialPointsTo.foldLeft(Chain.empty[ReferenceType])((l, t) ⇒ t :&: l),
+            initialPointsTo.foldLeft(Chain.empty[ReferenceType])((l, t) => t :&: l),
             initialPointsTo
         )
     }
@@ -164,9 +164,9 @@ object TypeBasedPointsToSet extends TypeBasedPointsToSetPropertyMetaInformation 
         val name = "opalj.TypeBasedPointsToSet"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoTypes
-                case _ ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoTypes
+                case _ =>
                     throw new IllegalStateException(s"no analysis is scheduled for property: $name")
             }
         )

@@ -40,7 +40,7 @@ object CovariantEquals {
      */
     private def hasEqualsButNotEqualsObject(classFile: ClassFile): Boolean = {
         val paramTypes = classFile.methods.collect {
-            case Method(_, "equals", MethodDescriptor(Seq(paramType), BooleanType)) ⇒ paramType
+            case Method(_, "equals", MethodDescriptor(Seq(paramType), BooleanType)) => paramType
         }
 
         paramTypes.size > 0 && !paramTypes.exists(_ == ObjectType.Object)
@@ -48,8 +48,8 @@ object CovariantEquals {
 
     private def hasHashCode(classFile: ClassFile): Boolean = {
         classFile.methods.exists {
-            case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType)) ⇒ true
-            case _ ⇒ false
+            case Method(_, "hashCode", MethodDescriptor(Seq(), IntegerType)) => true
+            case _ => false
         }
     }
 
@@ -69,8 +69,8 @@ object CovariantEquals {
 
         import MethodDescriptor.JustReturnsInteger
         project.resolveClassMethodReference(superclassType, "hashCode", JustReturnsInteger) match {
-            case Success(m) ⇒ m.classFile.thisType ne ObjectType.Object
-            case _          ⇒ false
+            case Success(m) => m.classFile.thisType ne ObjectType.Object
+            case _          => false
         }
     }
 

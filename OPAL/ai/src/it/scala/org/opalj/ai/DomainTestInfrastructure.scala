@@ -17,7 +17,7 @@ import org.opalj.io.writeAndOpen
 import org.opalj.log.LogContext
 import org.opalj.log.GlobalLogContext
 import org.opalj.bi.TestResources
-import org.opalj.br.{TestSupport ⇒ BRTestSupport}
+import org.opalj.br.{TestSupport => BRTestSupport}
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
 import org.opalj.br.analyses.Project
@@ -55,8 +55,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
     ): Unit = {
         // validate that we can get the computational type of each value stored on the stack
         // (this test will fail by throwing an exception)
-        result.operandsArray.forall { ops ⇒
-            (ops eq null) || { ops.foreach(op ⇒ op.computationalType); true }
+        result.operandsArray.forall { ops =>
+            (ops eq null) || { ops.foreach(op => op.computationalType); true }
         }
     }
 
@@ -96,8 +96,8 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 methodsCount.incrementAndGet()
                 None
             } catch {
-                case ct: ControlThrowable ⇒ throw ct
-                case t: Throwable ⇒
+                case ct: ControlThrowable => throw ct
+                case t: Throwable =>
                     // basically, we want to catch everything!
                     Some((project.source(classFile).get.toString, classFile, method, t))
             }
@@ -107,7 +107,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
         //
         val collectedExceptions = time('OVERALL) {
             val exceptions = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
-            project.parForeachMethodWithBody() { (m) ⇒
+            project.parForeachMethodWithBody() { (m) =>
                 val MethodInfo(source, method) = m
                 analyzeClassFile(source.toString, method) foreach { exceptions.add(_) }
             }
@@ -119,9 +119,9 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
         //
         if (collectedExceptions.nonEmpty) {
             val body =
-                for ((exResource, exInstances) ← collectedExceptions.groupBy(e ⇒ e._1)) yield {
+                for ((exResource, exInstances) <- collectedExceptions.groupBy(e => e._1)) yield {
                     val exDetails =
-                        exInstances.map { ex ⇒
+                        exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex
                             <div>
                                 <b>{ classFile.thisType.fqn }</b>

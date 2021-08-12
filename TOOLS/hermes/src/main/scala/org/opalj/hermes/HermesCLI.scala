@@ -19,13 +19,13 @@ import org.opalj.io.processSource
 object HermesCLI {
 
     object Hermes extends HermesCore {
-        override def updateProjectData(f: ⇒ Unit): Unit = Hermes.synchronized { f }
-        override def reportProgress(f: ⇒ Double): Unit = Hermes.synchronized { f }
+        override def updateProjectData(f: => Unit): Unit = Hermes.synchronized { f }
+        override def reportProgress(f: => Double): Unit = Hermes.synchronized { f }
     }
 
     final val usage = {
         val hermesCLIInputStream = this.getClass.getResourceAsStream("HermesCLI.txt")
-        processSource(Source.fromInputStream(hermesCLIInputStream)) { s ⇒
+        processSource(Source.fromInputStream(hermesCLIInputStream)) { s =>
             s.getLines().mkString("\n")
         }
     }
@@ -42,27 +42,27 @@ object HermesCLI {
         var i = 0
         while (i < args.length) {
             args(i) match {
-                case "-config" ⇒
+                case "-config" =>
                     i += 1
                     configFile = args(i)
 
-                case "-statistics" ⇒
+                case "-statistics" =>
                     i += 1
                     statisticsFile = args(i)
 
-                case "-mapping" ⇒
+                case "-mapping" =>
                     i += 1
                     mappingFile = Some(args(i))
 
-                case "-noProjectStatistics" ⇒
+                case "-noProjectStatistics" =>
                     i += 1
                     noProjectStatistics = true
 
-                case "-writeLocations" ⇒
+                case "-writeLocations" =>
                     i += 1
                     locationsDir = args(i)
 
-                case arg ⇒
+                case arg =>
                     Console.err.println(s"Unknown parameter $arg.")
                     showUsage()
                     System.exit(2)
@@ -76,7 +76,7 @@ object HermesCLI {
         }
 
         val waitOnFinished = new CountDownLatch(1)
-        Hermes.analysesFinished.addListener { (_, _, isFinished) ⇒
+        Hermes.analysesFinished.addListener { (_, _, isFinished) =>
             if (isFinished) {
                 val theStatisticsFile = new File(statisticsFile).getAbsoluteFile()
                 Hermes.exportStatistics(theStatisticsFile, !noProjectStatistics)
@@ -90,7 +90,7 @@ object HermesCLI {
                     println("Skip writing locations, not specified.")
                 }
 
-                mappingFile.foreach { mappingFile ⇒
+                mappingFile.foreach { mappingFile =>
                     val theMappingFile = new File(mappingFile).getAbsoluteFile()
                     Hermes.exportMapping(theMappingFile)
                     println("Wrote mapping: "+theMappingFile)

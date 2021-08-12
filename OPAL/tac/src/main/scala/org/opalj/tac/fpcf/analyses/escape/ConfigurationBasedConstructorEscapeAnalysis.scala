@@ -34,7 +34,7 @@ trait ConfigurationBasedConstructorEscapeAnalysis extends AbstractEscapeAnalysis
      * @note The reflective code assumes that every [[EscapeProperty]] is an object and not a class.
      */
     private[this] val predefinedConstructors: Map[ObjectType, EscapeProperty] = {
-        project.config.as[Seq[PredefinedResult]](ConfigKey).map { r ⇒
+        project.config.as[Seq[PredefinedResult]](ConfigKey).map { r =>
             import scala.reflect.runtime._
             val rootMirror = universe.runtimeMirror(getClass.getClassLoader)
             val module = rootMirror.staticModule(r.escape_of_this)

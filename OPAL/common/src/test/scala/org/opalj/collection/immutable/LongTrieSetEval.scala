@@ -6,12 +6,12 @@ object LongTrieSetEval extends LongSetEval {
 
     def main(args: Array[String]): Unit = {
         eval[LongTrieSet](
-            () ⇒ LongTrieSet.empty,
-            (set: LongTrieSet) ⇒ set.size,
-            (set: LongTrieSet) ⇒ set.+,
-            (set: LongTrieSet) ⇒ set.contains,
-            (set: LongTrieSet) ⇒ set.foreach,
-            (set: LongTrieSet) ⇒ set.foldLeft[Long]
+            () => LongTrieSet.empty,
+            (set: LongTrieSet) => set.size,
+            (set: LongTrieSet) => set.+,
+            (set: LongTrieSet) => set.contains,
+            (set: LongTrieSet) => set.foreach,
+            (set: LongTrieSet) => set.foldLeft[Long]
         )
     }
 

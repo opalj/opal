@@ -26,18 +26,18 @@ object StringConstants extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         val data = project.get(StringConstantsInformationKey)
-        val mappedData: Iterable[String] = data.map { kv ⇒
+        val mappedData: Iterable[String] = data.map { kv =>
             val (string, locations) = kv
             val escapedString = string.
                 replace("\u001b", "\\u001b").
                 replace("\n", "\\n").
                 replace("\t", "\\t").
                 replace("\"", "\\\"")
-            locations.map { pcInMethod ⇒
+            locations.map { pcInMethod =>
                 val pc = pcInMethod.pc
                 val method = pcInMethod.method
                 method.toJava(s"pc=$pc")

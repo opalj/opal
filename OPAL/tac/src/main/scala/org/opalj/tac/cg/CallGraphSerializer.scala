@@ -34,7 +34,7 @@ object CallGraphSerializer {
         writer.write(s"""{"reachableMethods":[""")
         var firstRM = true
         for {
-            rm ← cg.reachableMethods()
+            rm <- cg.reachableMethods()
             callees = cg.calleesOf(rm)
         } {
             if (firstRM) {
@@ -62,19 +62,19 @@ object CallGraphSerializer {
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         val bodyO = if (method.hasSingleDefinedMethod) method.definedMethod.body else None
         var first = true
-        for ((pc, targets) ← callees) {
+        for ((pc, targets) <- callees) {
             bodyO match {
-                case None ⇒
-                    for (tgt ← targets) {
+                case None =>
+                    for (tgt <- targets) {
                         if (first) first = false
                         else out.write(",")
                         writeCallSite(tgt, -1, pc, Iterator(tgt), out)
                     }
 
-                case Some(body) ⇒
+                case Some(body) =>
                     val declaredTgtO = body.instructions(pc) match {
-                        case MethodInvocationInstruction(dc, _, name, desc) ⇒ Some((dc, name, desc))
-                        case _                                              ⇒ None
+                        case MethodInvocationInstruction(dc, _, name, desc) => Some((dc, name, desc))
+                        case _                                              => None
                     }
 
                     val line = body.lineNumber(pc).getOrElse(-1)
@@ -91,12 +91,12 @@ object CallGraphSerializer {
                             declaredType, declaredType.packageName, declaredType, name, desc
                         )
 
-                        val (directCallees, indirectCallees) = targets.partition { callee ⇒
+                        val (directCallees, indirectCallees) = targets.partition { callee =>
                             callee.name == name && // TODO check descriptor correctly for refinement
                                 callee.descriptor.parametersCount == desc.parametersCount
                         }
 
-                        for (tgt ← indirectCallees) {
+                        for (tgt <- indirectCallees) {
                             if (first) first = false
                             else out.write(",")
                             writeCallSite(tgt, line, pc, Iterator(tgt), out)
@@ -108,7 +108,7 @@ object CallGraphSerializer {
                         }
 
                     } else {
-                        for (tgt ← targets) {
+                        for (tgt <- targets) {
                             if (first) first = false
                             else out.write(",")
                             writeCallSite(tgt, line, pc, Iterator(tgt), out)
@@ -133,7 +133,7 @@ object CallGraphSerializer {
         out.write(pc.toString)
         out.write(",\"targets\":[")
         var first = true
-        for (tgt ← targets) {
+        for (tgt <- targets) {
             if (first) first = false
             else out.write(",")
             writeMethodObject(tgt, out)

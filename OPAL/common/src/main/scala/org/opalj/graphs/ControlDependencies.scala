@@ -44,6 +44,6 @@ trait ControlDependencies {
      * Calls the function `f` with those nodes on which the given node `x` is control
      * dependent on.
      */
-    def xIsControlDependentOn(x: Int)(f: Int ⇒ Unit): Unit
+    def xIsControlDependentOn(x: Int)(f: Int => Unit): Unit
 
 }

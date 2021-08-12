@@ -47,20 +47,20 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
         val classLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if classFile.staticInitializer.isDefined
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
         } {
             val hasStaticField = classFile.fields.exists(_.isStatic)
-            val hasStaticMethod = classFile.methods.exists(m ⇒ m.isStatic && !m.isStaticInitializer)
+            val hasStaticMethod = classFile.methods.exists(m => m.isStatic && !m.isStaticInitializer)
 
             if (classFile.isInterfaceDeclaration) { // index 0 - 3
 
                 if (hasStaticMethod) {
                     classLocations(1) += classFileLocation
                 }
-                val hasDefaultMethod = classFile.instanceMethods.exists { m ⇒
+                val hasDefaultMethod = classFile.instanceMethods.exists { m =>
                     m.body.nonEmpty && m.isPublic
                 }
 
@@ -71,12 +71,12 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
 
                     val si = classFile.staticInitializer.get
                     val putStaticPCs = si.body.get.collectInstructionsWithPC {
-                        case pci @ PCAndInstruction(_, PUTSTATIC(_, _, _)) ⇒ pci
+                        case pci @ PCAndInstruction(_, PUTSTATIC(_, _, _)) => pci
                     }
 
                     val domain = new DefaultDomainWithCFGAndDefUse(project, si)
 
-                    putStaticPCs.foreach { pci ⇒
+                    putStaticPCs.foreach { pci =>
                         val pc = pci.pc
 
                         val ai = BaseAI

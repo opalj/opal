@@ -25,7 +25,7 @@ object TypesUtil {
         project:   SomeProject
     ): Option[Set[ObjectType]] = {
         val classNamesOpt = StringUtil.getPossibleStrings(className, pc, stmts)
-        classNamesOpt.map(_.map(cls ⇒
+        classNamesOpt.map(_.map(cls =>
             ObjectType(cls.replace('.', '/'))).filter(project.classFile(_).isDefined))
     }
 

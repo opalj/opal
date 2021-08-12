@@ -18,7 +18,7 @@ import org.opalj.br.BootstrapMethod
  * @author Michael Eichberg
  */
 trait TypeLevelInvokeInstructions extends MethodCallsHandling {
-    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode ⇒
+    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration with TheCode =>
 
     /*override*/ def invokevirtual(
         pc:               Int,
