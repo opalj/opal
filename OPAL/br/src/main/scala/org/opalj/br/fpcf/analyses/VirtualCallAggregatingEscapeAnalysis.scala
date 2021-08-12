@@ -67,7 +67,7 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
                 dm.descriptor
             )
 
-        for (method ← methods) {
+        for (method <- methods) {
             val vfp = formalParameters(declaredMethods(method))(-1 - fp.origin)
             handleEscapeState(propertyStore(vfp, EscapeProperty.key))
         }

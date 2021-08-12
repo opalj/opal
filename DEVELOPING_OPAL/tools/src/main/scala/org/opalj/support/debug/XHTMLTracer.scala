@@ -94,9 +94,9 @@ trait XHTMLTracer extends AITracer {
         val inOrderFlow = flow.map(_.reverse).reverse
         var pathsCount = 0
         var pcs = SortedSet.empty[Int /*PC*/ ]
-        for (path ← flow) {
+        for (path <- flow) {
             pathsCount += 1
-            for (entity ← path) {
+            for (entity <- path) {
                 pcs += entity.pc
             }
         }
@@ -114,15 +114,15 @@ trait XHTMLTracer extends AITracer {
         }
         val dialogSetup =
             (for {
-                path ← inOrderFlow
-                entity ← path
+                path <- inOrderFlow
+                entity <- path
             } yield {
                 xml.Unparsed("$(function() { $( \"#dialog"+entity.flowId+"\" ).dialog({autoOpen:false}); });\n")
             }).toIterable
         val dialogs: Iterable[Node] =
             (for {
-                (path, index) ← inOrderFlow.zipWithIndex
-                flowEntity ← path
+                (path, index) <- inOrderFlow.zipWithIndex
+                flowEntity <- path
             } yield {
                 val dialogId = "dialog"+flowEntity.flowId
                 <div id={ dialogId } title={ (index + 1)+" - "+flowEntity.pc+" ("+flowEntity.instruction.mnemonic+")" }>
@@ -133,7 +133,7 @@ trait XHTMLTracer extends AITracer {
                 </div>
             }).toIterable
         def row(pc: Int) =
-            (for (path ← inOrderFlow) yield {
+            (for (path <- inOrderFlow) yield {
                 val flowEntity = path.find(_.pc == pc)
                 <td>
                     {
@@ -145,7 +145,7 @@ trait XHTMLTracer extends AITracer {
             }).toIterable
         val cfJoins = code.cfJoins
         val flowTable =
-            for ((pc, rowIndex) ← pcsToRowIndex) yield {
+            for ((pc, rowIndex) <- pcsToRowIndex) yield {
                 <tr>
                     <td>{ if (cfJoins.contains(pc)) "⇶ " else "" } <b>{ pc }</b></td>
                     { row(pc) }

@@ -58,8 +58,8 @@ object UselessComputations extends ProjectAnalysisApplication {
 
         val results = {
             val results = for {
-                classFile ← theProject.allProjectClassFiles.par
-                method @ MethodWithBody(body) ← classFile.methods
+                classFile <- theProject.allProjectClassFiles.par
+                method @ MethodWithBody(body) <- classFile.methods
                 result = BaseAI(method, new AnalysisDomain(theProject, method))
             } yield {
                 import result._

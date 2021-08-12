@@ -210,7 +210,7 @@ object UIDSetDemo extends App {
         )
     }
 
-    for { i ← 0 until 5 } {
+    for { i <- 0 until 5 } {
         org.opalj.util.gc()
         eval(scala.collection.immutable.Set.empty)
         org.opalj.util.gc()

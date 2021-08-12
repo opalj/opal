@@ -59,7 +59,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
         val sites = new OpenHashMap[DeclaredMethod, ConstArray[VirtualFormalParameter]]
 
         for {
-            dm ← p.get(DeclaredMethodsKey).declaredMethods
+            dm <- p.get(DeclaredMethodsKey).declaredMethods
             if (dm.hasSingleDefinedMethod)
         } {
             val md = dm.descriptor
