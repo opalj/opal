@@ -41,7 +41,7 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
         val classHierarchy = project.classHierarchy
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
+            (classFile, source) ← project.projectClassFilesWithSources
             classLocation = ClassFileLocation(source, classFile)
         } {
             // fpc
@@ -106,7 +106,7 @@ class Metrics(implicit hermes: HermesConfig) extends FeatureQuery {
             }
         }
 
-        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, classLocations(featureIDIndex))
         }
     }

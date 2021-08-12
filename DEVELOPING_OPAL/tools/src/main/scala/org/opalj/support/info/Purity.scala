@@ -222,7 +222,7 @@ object Purity {
         val declaredMethods = project.get(DeclaredMethodsKey)
 
         val allMethods: Traversable[DefinedMethod] =
-            for (cf <- project.allProjectClassFiles; m <- cf.methodsWithBody)
+            for (cf ← project.allProjectClassFiles; m ← cf.methodsWithBody)
                 yield declaredMethods(m)
 
         val projMethods = allMethods.filter { m =>
@@ -369,46 +369,46 @@ object Purity {
                             s"${lbImpure.size};${projectEntitiesWithPurity.size}"
                     )
                 } else {
-                    for (m <- compileTimePure) {
+                    for (m ← compileTimePure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => compile time pure")
                     }
-                    for (m <- pure) {
+                    for (m ← pure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => pure")
                     }
-                    for (m <- dPure) {
+                    for (m ← dPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific pure")
                     }
-                    for (m <- sideEffectFree) {
+                    for (m ← sideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => side-effect free")
                     }
-                    for (m <- dSideEffectFree) {
+                    for (m ← dSideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific side-effect free")
                     }
-                    for (m <- externallyPure) {
+                    for (m ← externallyPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => externally pure")
                     }
-                    for (m <- dExternallyPure) {
+                    for (m ← dExternallyPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific externally pure")
                     }
-                    for (m <- externallySideEffectFree) {
+                    for (m ← externallySideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => externally side-effect free")
                     }
-                    for (m <- dExternallySideEffectFree) {
+                    for (m ← dExternallySideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific externally side-effect free")
                     }
-                    for ((m, p) <- contextuallyPure) {
+                    for ((m, p) ← contextuallyPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually pure: $p")
                     }
-                    for ((m, p) <- dContextuallyPure) {
+                    for ((m, p) ← dContextuallyPure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific contextually pure: $p")
                     }
-                    for ((m, p) <- contextuallySideEffectFree) {
+                    for ((m, p) ← contextuallySideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => contextually side-effect free: $p")
                     }
-                    for ((m, p) <- dContextuallySideEffectFree) {
+                    for ((m, p) ← dContextuallySideEffectFree) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => domain-specific contextually side-effect free: $p")
                     }
-                    for (m <- lbImpure) {
+                    for (m ← lbImpure) {
                         resultsWriter.println(s"${m.definedMethod.toJava} => impure")
                     }
                 }
@@ -628,7 +628,7 @@ object Purity {
 
         time {
             if (multiProjects) {
-                for (subp <- cp.listFiles().filter(_.isDirectory)) {
+                for (subp ← cp.listFiles().filter(_.isDirectory)) {
                     println(s"${subp.getName}: ${Calendar.getInstance().getTime}")
                     evaluate(
                         subp,

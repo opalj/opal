@@ -83,7 +83,7 @@ object TACNaive {
 
         processed += 0
         var worklist: List[(PC, Stack)] = List((0, Nil))
-        for (exceptionHandler <- code.exceptionHandlers) {
+        for (exceptionHandler ← code.exceptionHandlers) {
             worklist ::= ((exceptionHandler.handlerPC, List(OperandVar.HandledException)))
         }
 
@@ -837,7 +837,7 @@ object TACNaive {
         while (currentPC < codeSize) {
             val currentStatements = statements(currentPC)
             if (currentStatements ne null) {
-                for (stmt <- currentStatements) {
+                for (stmt ← currentStatements) {
                     finalStatements += stmt
                     if (pcToIndex(currentPC) == 0 /* <=> no mapping so far; we don't care about the remapping of 0 to 0... */ )
                         pcToIndex(currentPC) = index

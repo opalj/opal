@@ -4,6 +4,7 @@
 resolvers += Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(
   Resolver.ivyStylePatterns
 )
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.29")
 addSbtPlugin("org.scoverage"   %% "sbt-scoverage"         % "1.6.0")
 addSbtPlugin("org.scalastyle"  %% "scalastyle-sbt-plugin" % "1.0.0")
 addSbtPlugin("org.scalariform" % "sbt-scalariform"        % "1.8.3")

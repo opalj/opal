@@ -30,7 +30,7 @@ object DependencyMatrix {
             sys.exit(1)
         }
 
-        for (arg <- args) {
+        for (arg ← args) {
             val file = new java.io.File(arg)
             if (!file.canRead() || file.isDirectory()) {
                 println(arg+" is not a valid ZIP/Jar file.");
@@ -68,8 +68,8 @@ object DependencyMatrix {
         var count = 0
         time {
             for {
-                jarFile <- jarFiles
-                (classFile, _ /*drop urls*/ ) <- ClassFiles(new java.io.File(jarFile))
+                jarFile ← jarFiles
+                (classFile, _ /*drop urls*/ ) ← ClassFiles(new java.io.File(jarFile))
             } {
                 count += 1
                 dependencyExtractor.process(classFile)

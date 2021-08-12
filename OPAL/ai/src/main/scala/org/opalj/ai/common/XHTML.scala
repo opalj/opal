@@ -193,7 +193,7 @@ object XHTML {
         val indexedExceptionHandlers = indexExceptionHandlers(code).toSeq.sortWith(_._2 < _._2)
         val exceptionHandlers =
             (
-                for ((eh, index) <- indexedExceptionHandlers) yield {
+                for ((eh, index) ← indexedExceptionHandlers) yield {
                     "⚡: "+index+" "+eh.catchType.map(_.toJava).getOrElse("<finally>")+
                         " ["+eh.startPC+","+eh.endPC+")"+" => "+eh.handlerPC
                 }
@@ -276,7 +276,7 @@ object XHTML {
         val belongsToSubroutine = code.belongsToSubroutine()
         val indexedExceptionHandlers = indexExceptionHandlers(code)
         val instrs = code.instructions.zipWithIndex.zip(operandsArray zip localsArray).filter(_._1._1 ne null)
-        for (((instruction, pc), (operands, locals)) <- instrs) yield {
+        for (((instruction, pc), (operands, locals)) ← instrs) yield {
             var exceptionHandlers = code.handlersFor(pc).map(indexedExceptionHandlers(_)).mkString(",")
             if (exceptionHandlers.nonEmpty) exceptionHandlers = "⚡: "+exceptionHandlers
             dumpInstruction(

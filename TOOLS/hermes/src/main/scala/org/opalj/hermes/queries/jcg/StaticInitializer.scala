@@ -47,7 +47,7 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
         val classLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
+            (classFile, source) ← project.projectClassFilesWithSources
             if classFile.staticInitializer.isDefined
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)

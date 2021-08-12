@@ -54,8 +54,8 @@ object CipherGetInstanceStringUsage extends ProjectAnalysisApplication {
             val result = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
             val code = result.domain.code
             for {
-                PCAndInstruction(pc, INVOKESTATIC(Cipher, false, "getInstance", _)) <- code
-                vos <- result.domain.operandOrigin(pc, 0)
+                PCAndInstruction(pc, INVOKESTATIC(Cipher, false, "getInstance", _)) ← code
+                vos ← result.domain.operandOrigin(pc, 0)
             } {
                 // getInstance is static, algorithm is first param
                 code.instructions(vos) match {

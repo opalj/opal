@@ -44,34 +44,34 @@ object ChainProperties extends Properties("Chain") {
      * Generates a list and an int value in the range [0,length of list ].
      */
     val listAndIndexGen = for {
-        n <- Gen.choose(0, 20)
-        m <- Gen.listOfN(n, Arbitrary.arbString.arbitrary)
-        i <- Gen.choose(0, n)
+        n ← Gen.choose(0, 20)
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
+        i ← Gen.choose(0, n)
     } yield (m, i)
 
     val listOfListGen = for {
-        n <- Gen.choose(0, 20)
-        m <- Gen.listOfN(n, Arbitrary.arbitrary[List[String]])
+        n ← Gen.choose(0, 20)
+        m ← Gen.listOfN(n, Arbitrary.arbitrary[List[String]])
     } yield m
 
     val smallListsGen = for {
-        m <- Gen.listOfN(5, Arbitrary.arbString.arbitrary)
+        m ← Gen.listOfN(5, Arbitrary.arbString.arbitrary)
     } yield (m)
 
     /**
      * Generates a list and an int value in the range [0,length of list +2 ].
      */
     val listAndIntGen = for {
-        n <- Gen.choose(0, 20)
-        m <- Gen.listOfN(n, Arbitrary.arbString.arbitrary)
-        i <- Gen.choose(0, n + 2)
+        n ← Gen.choose(0, 20)
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
+        i ← Gen.choose(0, n + 2)
     } yield (m, i)
 
     val listsOfSingleCharStringsGen = for {
-        n <- Gen.choose(0, 3)
-        m <- Gen.choose(0, 3)
-        l1 <- Gen.listOfN(n, Gen.oneOf("a", "b", "c"))
-        l2 <- Gen.listOfN(m, Gen.oneOf("a", "b", "c"))
+        n ← Gen.choose(0, 3)
+        m ← Gen.choose(0, 3)
+        l1 ← Gen.listOfN(n, Gen.oneOf("a", "b", "c"))
+        l2 ← Gen.listOfN(m, Gen.oneOf("a", "b", "c"))
     } yield (l1, l2)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -203,7 +203,7 @@ object ChainProperties extends Properties("Chain") {
         // In the following we, have an implicit foreach call
         var newL = List.empty[String]
         for {
-            e <- Chain(orig: _*)
+            e ← Chain(orig: _*)
             if e != null
         } { newL ::= e }
         newL == orig.reverse
@@ -213,18 +213,18 @@ object ChainProperties extends Properties("Chain") {
         forAll(listOfListGen) { orig: List[List[String]] =>
             // In the following we, have an implicit withFilter, map and flatMap call!
             val cl = for {
-                es <- Chain(orig: _*)
+                es ← Chain(orig: _*)
                 if es.length > 1
                 if es.length < 10
-                e <- es
+                e ← es
                 r = e.capitalize
             } yield r+":"+r.length
 
             val l = for {
-                es <- orig
+                es ← orig
                 if es.length > 1
                 if es.length < 10
-                e <- es
+                e ← es
                 r = e.capitalize
             } yield r+":"+r.length
 
@@ -235,7 +235,7 @@ object ChainProperties extends Properties("Chain") {
     property("a for-comprehension constructs specialized lists when possible") = {
         forAll { orig: List[List[Int]] =>
             // In the following we, have an implicit withFilter, map and flatMap call!
-            val cl = for { es <- Chain(orig: _*) } yield Chain(es: _*)
+            val cl = for { es ← Chain(orig: _*) } yield Chain(es: _*)
             cl.forall(icl => isSpecialized(icl))
         }
     }

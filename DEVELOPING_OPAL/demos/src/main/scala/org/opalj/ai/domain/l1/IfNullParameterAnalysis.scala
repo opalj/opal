@@ -77,8 +77,8 @@ object IfNullParameterAnalysis extends ProjectAnalysisApplication {
 
         val methodsWithDifferentExceptions = time {
             for {
-                classFile <- theProject.allProjectClassFiles.par
-                method <- classFile.methods
+                classFile ← theProject.allProjectClassFiles.par
+                method ← classFile.methods
                 if method.body.isDefined
                 if method.descriptor.parameterTypes.exists { _.isReferenceType }
                 originalType = method.returnType

@@ -3,11 +3,10 @@ package org.opalj
 package issues
 
 import scala.xml.Node
-
+import scala.collection._
 import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import play.api.libs.json.JsNull
-
 import org.opalj.collection.mutable.Locals
 import org.opalj.collection.immutable.Chain
 import org.opalj.br.PC
@@ -17,6 +16,7 @@ import org.opalj.br.instructions.CompoundConditionalBranchInstruction
 import org.opalj.br.instructions.StackManagementInstruction
 import org.opalj.br.instructions.IINC
 
+import scala.::
 class Operands(
         val code:           Code,
         val pc:             PC,
@@ -48,11 +48,10 @@ class Operands(
                     <span class="value">{ operands.head } </span>,
                     <span> (case values: { cbi.caseValues.mkString(", ") } )</span>
                 )
-
             case smi: StackManagementInstruction =>
                 val representation =
                     <span class="keyword">{ smi.mnemonic } </span> ::
-                        (operands.map(op => <span class="value">{ op } </span>).to[List])
+                        (operands.map(op => <span class="value">{ op } </span>).to(List))
                 representation
 
             case IINC(lvIndex, constValue) =>

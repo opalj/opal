@@ -72,9 +72,9 @@ class L0FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         val thisType = classFile.thisType
 
         for {
-            (method, pcs) <- fieldAccessInformation.writeAccesses(field)
+            (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             if !method.isStaticInitializer
-            pc <- pcs
+            pc ← pcs
         } {
             method.body.get.instructions(pc) match {
                 case PUTSTATIC(`thisType`, fieldName, fieldType) =>

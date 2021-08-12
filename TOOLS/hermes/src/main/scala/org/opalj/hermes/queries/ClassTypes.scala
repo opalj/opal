@@ -38,7 +38,7 @@ class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
         val functionalInterfaces = project.functionalInterfaces
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
+            (classFile, source) ← project.projectClassFilesWithSources
             if !isInterrupted()
         } {
             val location = ClassFileLocation(source, classFile)
@@ -89,7 +89,7 @@ class ClassTypes(implicit hermes: HermesConfig) extends FeatureQuery {
             }
         }
 
-        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, classTypesLocations(featureIDIndex))
         }
     }

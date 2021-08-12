@@ -139,7 +139,7 @@ object ToTxt {
             case Switch.ASTID =>
                 val Switch(_, defaultTarget, index, npairs) = stmt
                 var result = "\n"
-                for (x <- npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
+                for (x ← npairs) { result = result+"    "+x._1+": goto "+x._2+";\n" }
                 result = result+"    default: goto "+defaultTarget+"\n"
                 s"$pc switch(${toTxtExpr(index)}){$result}"
 

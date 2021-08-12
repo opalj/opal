@@ -506,7 +506,7 @@ class Project[Source] private (
     def availableProjectInformation: List[AnyRef] = {
         var pis = List.empty[AnyRef]
         val projectInformation = this.projectInformation
-        for (i <- (0 until projectInformation.length())) {
+        for (i ← (0 until projectInformation.length())) {
             val pi = projectInformation.get(i)
             if (pi != null) {
                 pis = pi :: pis
@@ -539,7 +539,7 @@ class Project[Source] private (
             else if (className.endsWith("Key$"))
                 className = className.substring(0, className.length - 4)
 
-            for (requiredProjectInformationKey <- pik.requirements(this)) {
+            for (requiredProjectInformationKey ← pik.requirements(this)) {
                 get(requiredProjectInformationKey)
             }
             val pi = time {
@@ -821,7 +821,7 @@ class Project[Source] private (
             new ArrayBuffer[ClassFile](methodsCount / groupsCount)
         }
         for {
-            classFile <- projectClassFiles
+            classFile ← projectClassFiles
             if classFile.methods.exists(_.body.isDefined)
         } {
             // we distribute the classfiles among the different bins
@@ -958,7 +958,7 @@ class Project[Source] private (
      */
     def toJavaMap(): java.util.HashMap[ObjectType, ClassFile] = {
         val map = new java.util.HashMap[ObjectType, ClassFile]
-        for (classFile <- allClassFiles) map.put(classFile.thisType, classFile)
+        for (classFile ← allClassFiles) map.put(classFile.thisType, classFile)
         map
     }
 
@@ -1026,7 +1026,7 @@ class Project[Source] private (
         }
 
         var result = SortedMap.empty[Int, (Int, Set[String])]
-        for ((typeName, membersCount) <- data) {
+        for ((typeName, membersCount) ← data) {
             val (count, typeNames) = result.getOrElse(membersCount, (0, Set.empty[String]))
             result += ((membersCount, (count + 1, typeNames + typeName)))
         }
@@ -1387,9 +1387,9 @@ object Project {
             var uniqueInterfaceMethods: Set[Method] = Set.empty
             var uniqueInterfaceMethodSignatures: Set[MethodSignature] = Set.empty
             for {
-                superinterfaceType <- superinterfaceTypes
-                superinterfaceClassfile <- objectTypeToClassFile(superinterfaceType)
-                superinterfaceTypeMethod <- superinterfaceClassfile.methods
+                superinterfaceType ← superinterfaceTypes
+                superinterfaceClassfile ← objectTypeToClassFile(superinterfaceType)
+                superinterfaceTypeMethod ← superinterfaceClassfile.methods
                 if superinterfaceTypeMethod.isPublic &&
                     !superinterfaceTypeMethod.isStatic &&
                     !superinterfaceTypeMethod.isInitializer
@@ -1434,7 +1434,7 @@ object Project {
 
             objectTypeToClassFile(objectType) match {
                 case Some(classFile) =>
-                    for { declaredMethod <- classFile.methods } {
+                    for { declaredMethod ← classFile.methods } {
                         if (declaredMethod.isVirtualMethodDeclaration) {
                             val declaredMethodContext = MethodDeclarationContext(declaredMethod)
                             // We have to filter multiple methods when we inherit (w.r.t. the
@@ -1591,8 +1591,8 @@ object Project {
             // instanceMethods will also just reuse the information derived from the superclasses.
             try {
                 for {
-                    cf <- objectTypeToClassFile.get(objectType)
-                    declaredMethod <- cf.methods
+                    cf ← objectTypeToClassFile.get(objectType)
+                    declaredMethod ← cf.methods
                     if declaredMethod.isVirtualMethodDeclaration
                 } {
                     if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
@@ -2025,7 +2025,7 @@ object Project {
                     projectTypes += projectType
                     projectClassFiles = classFile :: projectClassFiles
                     projectClassFilesCount += 1
-                    for (method <- classFile.methods) {
+                    for (method ← classFile.methods) {
                         projectMethodsCount += 1
                         method.body.foreach(codeSize += _.instructions.length)
                     }
@@ -2036,18 +2036,18 @@ object Project {
                 }
             }
 
-            for ((classFile, source) <- projectClassFilesWithSources) {
+            for ((classFile, source) ← projectClassFilesWithSources) {
                 processProjectClassFile(classFile, Some(source))
             }
 
-            for (classFile <- virtualClassFiles) {
+            for (classFile ← virtualClassFiles) {
                 processProjectClassFile(classFile, None)
             }
 
             // The set `libraryTypes` is only used to improve the identification of
             // inconsistent projects while loading libraries.
             val libraryTypes = Set.empty[ObjectType]
-            for ((libClassFile, source) <- libraryClassFilesWithSources) {
+            for ((libClassFile, source) ← libraryClassFilesWithSources) {
                 val libraryType = libClassFile.thisType
 
                 if (libClassFile.isModuleDeclaration) {
@@ -2094,7 +2094,7 @@ object Project {
                     libraryClassFiles ::= libClassFile
                     libraryTypes += libraryType
                     libraryClassFilesCount += 1
-                    for (method <- libClassFile.methods) {
+                    for (method ← libClassFile.methods) {
                         libraryMethodsCount += 1
                         method.body.foreach(codeSize += _.instructions.length)
                     }

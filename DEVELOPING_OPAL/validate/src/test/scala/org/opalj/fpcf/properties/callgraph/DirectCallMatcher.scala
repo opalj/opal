@@ -99,8 +99,8 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
 
         // Retrieve all calls resolved by the call graph algorithm.
         val callees = for {
-            pc <- calleesP.callSitePCs
-            callee <- calleesP.callees(pc)
+            pc ← calleesP.callSitePCs
+            callee ← calleesP.callees(pc)
             lineNr = callsiteCode.lineNumber(pc)
         } yield {
             (

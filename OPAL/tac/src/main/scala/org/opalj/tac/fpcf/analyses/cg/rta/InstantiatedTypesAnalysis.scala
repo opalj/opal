@@ -110,7 +110,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         }
 
         for {
-            (caller, _, isDirect) <- callersUB.callers
+            (caller, _, isDirect) ← callersUB.callers
             // if we already analyzed the caller, we do not need to do it twice
             // note, that this is only needed for the continuation
             if !newSeenCallers.contains(caller)

@@ -86,7 +86,7 @@ object CFGFactory {
         // BBs is a sparse array; only those fields are used that are related to an instruction
 
         var exceptionHandlers = HashMap.empty[ExceptionHandler, CatchNode]
-        for ((exceptionHandler, index) <- code.exceptionHandlers.iterator.zipWithIndex) {
+        for ((exceptionHandler, index) ← code.exceptionHandlers.iterator.zipWithIndex) {
             val catchNode = new CatchNode(exceptionHandler, index)
             exceptionHandlers += (exceptionHandler -> catchNode)
             val handlerPC = exceptionHandler.handlerPC
@@ -366,7 +366,7 @@ object CFGFactory {
         // instructions with their correct target addresses.
         if (subroutineReturnPCs.nonEmpty) {
             subroutineReturnPCs.foreach(subroutine => bbs(subroutine._1).setIsStartOfSubroutine())
-            for ((subroutinePC, returnToAddresses) <- subroutineReturnPCs) {
+            for ((subroutinePC, returnToAddresses) ← subroutineReturnPCs) {
                 val returnBBs = returnToAddresses.transform[CFGNode, Set[CFGNode]](
                     ra => bbs(ra),
                     Set.newBuilder[CFGNode]

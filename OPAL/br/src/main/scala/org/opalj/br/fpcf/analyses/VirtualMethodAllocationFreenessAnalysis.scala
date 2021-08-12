@@ -57,7 +57,7 @@ class VirtualMethodAllocationFreenessAnalysis private[analyses] (
                 dm.descriptor
             )
 
-        for (method <- methods) {
+        for (method ← methods) {
             propertyStore(declaredMethods(method), AllocationFreeness.key) match {
                 case FinalP(AllocationFreeMethod)  =>
                 case FinalP(MethodWithAllocations) => return Result(dm, VMethodWithAllocations);

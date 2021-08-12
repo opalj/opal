@@ -33,7 +33,7 @@ class PropagationBasedCGState(
 
     private[this] val _instantiatedTypesDependeeMap = new java.util.HashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]]()
 
-    for (dependee <- _instantiatedTypesDependees) {
+    for (dependee ← _instantiatedTypesDependees) {
         _instantiatedTypesDependeeMap.put(dependee.e, dependee)
     }
 

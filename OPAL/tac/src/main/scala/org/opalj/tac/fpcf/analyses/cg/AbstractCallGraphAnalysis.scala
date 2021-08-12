@@ -107,7 +107,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
 
         val localTypeInformation = getLocalTypeInformation(callSite, call)
 
-        for (possibleTgtType <- targetTypes) {
+        for (possibleTgtType ← targetTypes) {
             if (canResolveCall(localTypeInformation, state)(possibleTgtType)) {
                 val tgtR = project.instanceCall(
                     callerType, possibleTgtType, call.name, call.descriptor
@@ -335,7 +335,7 @@ trait AbstractCallGraphAnalysis extends ReachableMethodAnalysis {
         calleesAndCallers: DirectCalls
     )(implicit state: State): Unit = {
         val rvs = call.receiver.asVar.value.asReferenceValue.allValues
-        for (rv <- rvs) rv match {
+        for (rv ← rvs) rv match {
             case _: IsSArrayValue =>
                 handlePreciseCall(ObjectType.Object, caller, call, pc, calleesAndCallers)
 

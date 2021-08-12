@@ -21,8 +21,8 @@ class EscapePropertyTest extends AnyFlatSpec with Matchers {
     behavior of "the meet operator"
 
     it should "be symmetric in its arguments, the result should be less or equal" in {
-        for (prop1 <- allProperties) {
-            for (prop2 <- allProperties) {
+        for (prop1 ← allProperties) {
+            for (prop2 ← allProperties) {
                 val meet12 = prop1 meet prop2
                 val meet21 = prop2 meet prop1
                 assert(meet12 eq meet21, s"meet should be symmetric for $prop1 and $prop2")
@@ -33,7 +33,7 @@ class EscapePropertyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be the identity if both arguments are the same" in {
-        for (prop <- allProperties) {
+        for (prop ← allProperties) {
             val m = prop meet prop
             assert(prop meet prop eq prop, s"$prop meet $prop should be $prop but was $m")
         }
@@ -233,8 +233,8 @@ class EscapePropertyTest extends AnyFlatSpec with Matchers {
 
     behavior of "the less or equal restrictive relation"
     it should "be antisymmetric" in {
-        for (prop1 <- allProperties) {
-            for (prop2 <- allProperties) {
+        for (prop1 ← allProperties) {
+            for (prop2 ← allProperties) {
                 if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop1)) {
                     if (prop1.isBottom)
                         assert(prop2.isBottom, s"$prop1 <= $prop2 and $prop2 <= $prop1 and $prop1 is bottom, so $prop2 should be bottom")
@@ -245,9 +245,9 @@ class EscapePropertyTest extends AnyFlatSpec with Matchers {
         }
     }
     it should "be transitive" in {
-        for (prop1 <- allProperties) {
-            for (prop2 <- allProperties) {
-                for (prop3 <- allProperties) {
+        for (prop1 ← allProperties) {
+            for (prop2 ← allProperties) {
+                for (prop3 ← allProperties) {
                     if ((prop1 lessOrEqualRestrictive prop2) && (prop2 lessOrEqualRestrictive prop3))
                         assert(prop1 lessOrEqualRestrictive prop3, s"$prop1 <= $prop2 and $prop2 <= $prop3, so $prop1 should be <= $prop3")
                 }
@@ -257,8 +257,8 @@ class EscapePropertyTest extends AnyFlatSpec with Matchers {
 
     behavior of "the property value id"
     it should "be unique" in {
-        for (prop1 <- allProperties) {
-            for (prop2 <- allProperties) {
+        for (prop1 ← allProperties) {
+            for (prop2 ← allProperties) {
                 assert((prop1.propertyValueID != prop2.propertyValueID) || (prop1 eq prop2), s"$prop1 and $prop2 should not have the same property id")
             }
         }

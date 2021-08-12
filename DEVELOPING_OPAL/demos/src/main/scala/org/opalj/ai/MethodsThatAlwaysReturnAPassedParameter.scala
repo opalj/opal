@@ -32,8 +32,8 @@ object MethodsThatAlwaysReturnAPassedParameter extends ProjectAnalysisApplicatio
     ): BasicReport = {
 
         val methods = for {
-            classFile <- theProject.allClassFiles.par
-            method <- classFile.methods
+            classFile ← theProject.allClassFiles.par
+            method ← classFile.methods
             if method.body.isDefined
             if method.descriptor.returnType.isReferenceType
             if (

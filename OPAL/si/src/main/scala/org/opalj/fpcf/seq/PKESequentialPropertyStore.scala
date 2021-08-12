@@ -129,8 +129,8 @@ final class PKESequentialPropertyStore protected (
     override def toString(printProperties: Boolean): String = {
         if (printProperties) {
             val properties = for {
-                (epks, pkId) <- ps.iterator.zipWithIndex
-                (e, eOptionP) <- epks.iterator
+                (epks, pkId) ← ps.iterator.zipWithIndex
+                (e, eOptionP) ← epks.iterator
             } yield {
                 val propertyKindName = PropertyKey.name(pkId)
                 s"$e -> $propertyKindName[$pkId] = $eOptionP"
@@ -155,7 +155,7 @@ final class PKESequentialPropertyStore protected (
     override def properties[E <: Entity](e: E): Iterator[EPS[E, Property]] = {
         require(e ne null)
         for {
-            epks <- ps.iterator
+            epks ← ps.iterator
             eOptionPOption = epks.get(e)
             if eOptionPOption.isDefined
             eOptionP = eOptionPOption.get
@@ -168,9 +168,9 @@ final class PKESequentialPropertyStore protected (
     override def entities(propertyFilter: SomeEPS => Boolean): Iterator[Entity] = {
         // We have no further EPKs when we are quiescent!
         for {
-            epks <- ps.iterator
-            (e, eOptionP) <- epks.iterator
-            eps <- eOptionP.toEPS
+            epks ← ps.iterator
+            (e, eOptionP) ← epks.iterator
+            eps ← eOptionP.toEPS
             if propertyFilter(eps)
         } yield {
             e
@@ -181,17 +181,17 @@ final class PKESequentialPropertyStore protected (
         require(lb ne null)
         require(ub ne null)
         assert(lb.key == ub.key)
-        for { ELUBP(e, `lb`, `ub`) <- ps(lb.id).valuesIterator } yield { e }
+        for { ELUBP(e, `lb`, `ub`) ← ps(lb.id).valuesIterator } yield { e }
     }
 
     override def entitiesWithLB[P <: Property](lb: P): Iterator[Entity] = {
         require(lb ne null)
-        for { ELBP(e, `lb`) <- ps(lb.id).valuesIterator } yield { e }
+        for { ELBP(e, `lb`) ← ps(lb.id).valuesIterator } yield { e }
     }
 
     override def entitiesWithUB[P <: Property](ub: P): Iterator[Entity] = {
         require(ub ne null)
-        for { EUBP(e, `ub`) <- ps(ub.id).valuesIterator } yield { e }
+        for { EUBP(e, `ub`) ← ps(ub.id).valuesIterator } yield { e }
     }
 
     override def entities[P <: Property](pk: PropertyKey[P]): Iterator[EPS[Entity, P]] = {
@@ -338,10 +338,10 @@ final class PKESequentialPropertyStore protected (
         val dependerPKId = dependerEPK.pk.id
         val e = dependerEPK.e
         for {
-            epkDependees <- dependees(dependerPKId).remove(e)
-            EOptionP(oldDependeeE, oldDependeePK) <- epkDependees // <= the old ones
+            epkDependees ← dependees(dependerPKId).remove(e)
+            EOptionP(oldDependeeE, oldDependeePK) ← epkDependees // <= the old ones
             oldDependeePKId = oldDependeePK.id
-            dependeeDependers <- dependers(oldDependeePKId).get(oldDependeeE)
+            dependeeDependers ← dependers(oldDependeePKId).get(oldDependeeE)
         } {
             dependeeDependers -= dependerEPK
             if (dependeeDependers.isEmpty) {
@@ -768,12 +768,12 @@ final class PKESequentialPropertyStore protected (
                 }
                 val cSCCs = graphs.closedSCCs(interimEPs, successors)
                 continueComputation = cSCCs.nonEmpty
-                for (cSCC <- cSCCs) {
+                for (cSCC ← cSCCs) {
                     // Clear all dependees of all members of a cycle to avoid inner cycle
                     // notifications!
-                    for (interimEP <- cSCC) { removeDependerFromDependees(interimEP.toEPK) }
+                    for (interimEP ← cSCC) { removeDependerFromDependees(interimEP.toEPK) }
                     // 2. set all values
-                    for (interimEP <- cSCC) { update(interimEP.toFinalEP, Nil) }
+                    for (interimEP ← cSCC) { update(interimEP.toFinalEP, Nil) }
                 }
             }
 

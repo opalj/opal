@@ -87,7 +87,7 @@ abstract class ConfiguredMethodsPointsToAnalysis private[analyses] (
 
         var nextPC = 1
         // for each configured points to relation, add all points-to info from the rhs to the lhs
-        for (PointsToRelation(lhs, rhs) <- data) {
+        for (PointsToRelation(lhs, rhs) ← data) {
             nextPC = handleGet(rhs, 0, nextPC)
             nextPC = handlePut(lhs, 0, nextPC)
         }

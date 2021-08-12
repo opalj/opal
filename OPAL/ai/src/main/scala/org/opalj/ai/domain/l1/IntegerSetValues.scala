@@ -749,7 +749,7 @@ trait IntegerSetValues
             case (IntegerSet(leftValues), IntegerSet(rightValues)) =>
                 // {1,2,3}+{0,1} => {1,2,3,4}
                 val results =
-                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue + rightValue
                     }
                 IntegerSet(pc, results)
@@ -769,7 +769,7 @@ trait IntegerSetValues
         (left, right) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) =>
                 val results =
-                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue - rightValue
                     }
                 IntegerSet(pc, results)
@@ -788,7 +788,7 @@ trait IntegerSetValues
                 else value2 match {
                     case (IntegerSet(rightValues)) =>
                         val results =
-                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
                                 leftValue * rightValue
                             }
                         IntegerSet(pc, results)
@@ -840,7 +840,7 @@ trait IntegerSetValues
             case (IntegerSet(leftValues), IntegerSet(rightValues)) =>
                 var results: SortedSet[Int] = SortedSet.empty
                 var exception: Boolean = false
-                for (leftValue <- leftValues; rightValue <- rightValues) {
+                for (leftValue ← leftValues; rightValue ← rightValues) {
                     if (rightValue == 0)
                         exception = true
                     else
@@ -875,7 +875,7 @@ trait IntegerSetValues
             case (IntegerSet(leftValues), IntegerSet(rightValues)) =>
                 var results: SortedSet[Int] = SortedSet.empty
                 var exception: Boolean = false
-                for (leftValue <- leftValues; rightValue <- rightValues) {
+                for (leftValue ← leftValues; rightValue ← rightValues) {
                     if (rightValue == 0)
                         exception = true
                     else
@@ -910,7 +910,7 @@ trait IntegerSetValues
                 else value2 match {
                     case (IntegerSet(rightValues)) =>
                         val results =
-                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
                                 leftValue & rightValue
                             }
                         IntegerSet(pc, results)
@@ -944,7 +944,7 @@ trait IntegerSetValues
                 else value2 match {
                     case (IntegerSet(rightValues)) =>
                         val results =
-                            for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                            for (leftValue ← leftValues; rightValue ← rightValues) yield {
                                 leftValue | rightValue
                             }
                         IntegerSet(pc, results)
@@ -971,7 +971,7 @@ trait IntegerSetValues
     /*override*/ def ishl(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) =>
-                val results = for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue << rightValue
                 }
                 IntegerSet(pc, results)
@@ -984,7 +984,7 @@ trait IntegerSetValues
     /*override*/ def ishr(pc: PC, value: DomainValue, shift: DomainValue): DomainValue = {
         (value, shift) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) =>
-                val results = for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                val results = for (leftValue ← leftValues; rightValue ← rightValues) yield {
                     leftValue >> rightValue
                 }
                 IntegerSet(pc, results)
@@ -998,7 +998,7 @@ trait IntegerSetValues
         (value, shift) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) =>
                 val results =
-                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue >>> rightValue
                     }
                 IntegerSet(pc, results)
@@ -1012,7 +1012,7 @@ trait IntegerSetValues
         (value1, value2) match {
             case (IntegerSet(leftValues), IntegerSet(rightValues)) =>
                 val results =
-                    for (leftValue <- leftValues; rightValue <- rightValues) yield {
+                    for (leftValue ← leftValues; rightValue ← rightValues) yield {
                         leftValue ^ rightValue
                     }
                 IntegerSet(pc, results)

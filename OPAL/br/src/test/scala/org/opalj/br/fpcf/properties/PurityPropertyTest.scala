@@ -35,7 +35,7 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
     )
 
     "purity levels" should "have the right properties" in {
-        for (prop <- allPurities) {
+        for (prop ← allPurities) {
             assert(
                 prop.isCompileTimePure == (prop == CompileTimePure),
                 s"$prop.isCompileTimePure was ${prop.isCompileTimePure}"
@@ -46,7 +46,7 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
             CompileTimePure, Pure, contextuallyPure, DPure, dContextuallyPure
         )
 
-        for (prop <- allPurities) {
+        for (prop ← allPurities) {
             assert(
                 prop.isDeterministic == deterministic.contains(prop),
                 s"$prop.isDeterministic was ${prop.isDeterministic}"
@@ -57,7 +57,7 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
             CompileTimePure, Pure, SideEffectFree, contextuallyPure, contextuallySideEffectFree
         )
 
-        for (prop <- allPurities) {
+        for (prop ← allPurities) {
             assert(
                 prop.usesDomainSpecificActions != doesntUseDomainSpecificActions.contains(prop),
                 s"$prop.usesDomainSpecicifActions was ${prop.usesDomainSpecificActions}"
@@ -66,7 +66,7 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
     }
 
     they should "be converted correctly" in {
-        for { prop <- allPurities } {
+        for { prop ← allPurities } {
             if (doesntModifyParams.contains(prop) || prop.isInstanceOf[ClassifiedImpure])
                 assert(
                     prop.withoutContextual == prop,
@@ -81,9 +81,9 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
     }
 
     "the meet operator" should "be reflexive and symmetric" in {
-        for (prop1 <- allPurities) {
+        for (prop1 ← allPurities) {
             assert((prop1 meet prop1) == prop1, s"meet was not reflexive for $prop1")
-            for (prop2 <- allPurities) {
+            for (prop2 ← allPurities) {
                 val meet12 = prop1 meet prop2
                 val meet21 = prop2 meet prop1
                 assert(
@@ -95,7 +95,7 @@ class PurityPropertyTest extends AnyFlatSpec with Matchers {
     }
 
     it should "return the correct purity levels" in {
-        for (prop <- allPurities) {
+        for (prop ← allPurities) {
             val result = CompileTimePure meet prop
             assert(
                 result == prop,

@@ -85,7 +85,7 @@ object DependencyExtractorsHelper {
                 }
             )
         def resources() = locateTestResources(jarFile, folder)
-        for ((classFile, _) <- ClassFiles(resources())) {
+        for ((classFile, _) ← ClassFiles(resources())) {
             dependencyExtractor.process(classFile)
         }
         dependencies

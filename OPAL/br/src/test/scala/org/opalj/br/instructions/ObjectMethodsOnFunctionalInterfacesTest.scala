@@ -31,9 +31,9 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
 
     private def testMethod(classFile: ClassFile, name: String): Unit = {
         for {
-            method <- classFile.findMethod(name)
-            body <- method.body
-            invokevirtual <- body.instructions.view.collect { case i: INVOKEVIRTUAL => i }
+            method ← classFile.findMethod(name)
+            body ← method.body
+            invokevirtual ← body.instructions.view.collect { case i: INVOKEVIRTUAL => i }
             annotations = method.runtimeVisibleAnnotations
         } {
             val invokedMethod = getInvokedMethod(annotations)
@@ -73,11 +73,11 @@ class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
      */
     private def getInvokedMethod(annotations: Annotations): Option[Method] = {
         val candidates: RefArray[Option[Method]] = for {
-            invokedMethod <- annotations.filter(_.annotationType == InvokedMethod)
+            invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
-            ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
-            ElementValuePair("name", StringValue(methodName)) <- pairs
-            classFile <- project.classFile(ObjectType(receiverType))
+            ElementValuePair("receiverType", StringValue(receiverType)) ← pairs
+            ElementValuePair("name", StringValue(methodName)) ← pairs
+            classFile ← project.classFile(ObjectType(receiverType))
         } yield {
             val parameterTypes = getParameterTypes(pairs)
             val returnType = getReturnType(pairs)

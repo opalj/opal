@@ -344,7 +344,7 @@ class L1PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // but it may be ignored as domain-specific
         val bbsCausingExceptions = cfg.abnormalReturnNode.predecessors
         for {
-            bb <- bbsCausingExceptions
+            bb ← bbsCausingExceptions
             pc = bb.asBasicBlock.endPC
             if isSourceOfImmediateException(pc)
         } {

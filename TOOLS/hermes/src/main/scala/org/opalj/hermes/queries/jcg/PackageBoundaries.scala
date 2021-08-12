@@ -38,14 +38,14 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
         val instructionsLocations = Array.fill(2)(new LocationsContainer[S])
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
+            (classFile, source) ← project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
             callerType = classFile.thisType
             callerPackage = callerType.packageName
-            method @ MethodWithBody(body) <- classFile.methods
+            method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation ← body collect {
                 case iv: INVOKEVIRTUAL => iv
             }
         } {

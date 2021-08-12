@@ -32,7 +32,7 @@ trait ExceptionAwareEscapeAnalysis extends AbstractEscapeAnalysis {
 
             var isCaught = false
             var abnormalReturned = false
-            for (pc <- successors) {
+            for (pc ← successors) {
                 if (pc.isCatchNode) {
                     val exceptionType = context.entity match {
                         case defSite: DefinitionSiteLike =>

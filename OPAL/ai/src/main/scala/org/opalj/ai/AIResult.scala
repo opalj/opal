@@ -158,7 +158,7 @@ sealed abstract class AIResult {
             else "Worklist: empty\n"
         }
         if (memoryLayoutBeforeSubroutineCall.nonEmpty) {
-            for ((subroutineId, operandsArray, localsArray) <- memoryLayoutBeforeSubroutineCall) {
+            for ((subroutineId, operandsArray, localsArray) ← memoryLayoutBeforeSubroutineCall) {
                 result += s"Memory Layout Before Calling Subroutine $subroutineId:\n"
                 result += memoryLayoutToText(domain)(operandsArray, localsArray)
             }

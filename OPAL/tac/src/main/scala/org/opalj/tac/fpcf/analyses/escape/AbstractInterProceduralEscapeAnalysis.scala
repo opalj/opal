@@ -128,7 +128,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
         }
 
         for {
-            i <- params.indices
+            i ← params.indices
             if state.usesDefSite(params(i))
         } handleCallForParameter(pc, i + 1, hasAssignment)
 
@@ -160,7 +160,7 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
             if (callees.isIncompleteCallSite(pc)) {
                 state.meetMostRestrictive(AtMost(EscapeInCallee))
             }
-            for (callee <- callees.directCallees(pc)) {
+            for (callee ← callees.directCallees(pc)) {
                 val fps = context.virtualFormalParameters(callee)
 
                 // there is a call to a method out of the analysis' scope
@@ -188,10 +188,10 @@ trait AbstractInterProceduralEscapeAnalysis extends AbstractEscapeAnalysis {
              * support any array or field, and handle them conservatively.
              */
             for {
-                indirectCallee <- callees.indirectCallees(pc)
+                indirectCallee ← callees.indirectCallees(pc)
                 indirectCallReceiver = callees.indirectCallReceiver(pc, indirectCallee)
                 indirectCallParams = callees.indirectCallParameters(pc, indirectCallee)
-                (Some(uvar), i) <- (indirectCallReceiver +: indirectCallParams).zipWithIndex
+                (Some(uvar), i) ← (indirectCallReceiver +: indirectCallParams).zipWithIndex
                 indirectCallParam = uVarForDefSites(uvar, state.tacai.get.pcToIndex)
                 if state.usesDefSite(indirectCallParam)
             } {

@@ -243,7 +243,7 @@ sealed class ConcreteCallees(
     ): IntMap[Iterator[DeclaredMethod]] = {
         var res = IntMap(directCallSites().toStream: _*)
 
-        for ((pc, indirect) <- indirectCallSites()) {
+        for ((pc, indirect) ← indirectCallSites()) {
             res = res.updateWith(pc, indirect, (direct, indirect) => direct ++ indirect)
         }
 

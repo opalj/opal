@@ -111,7 +111,7 @@ object ProjectIndex {
         val fieldsFuture: Future[AnyRefMap[String, AnyRefMap[FieldType, List[Field]]]] = Future {
             val estimatedFieldsCount = project.fieldsCount
             val fields = new AnyRefMap[String, AnyRefMap[FieldType, List[Field]]](estimatedFieldsCount)
-            for (field <- project.allFields) {
+            for (field ← project.allFields) {
                 val fieldName = field.name
                 val fieldType = field.fieldType
                 fields.get(fieldName) match {
@@ -136,7 +136,7 @@ object ProjectIndex {
         val methods: AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]] = {
             val estimatedMethodsCount = project.methodsCount
             val methods = new AnyRefMap[String, AnyRefMap[MethodDescriptor, List[Method]]](estimatedMethodsCount)
-            for (method <- project.allMethods) {
+            for (method ← project.allMethods) {
                 val methodName = method.name
                 val methodDescriptor = method.descriptor
                 methods.get(methodName) match {

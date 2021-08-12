@@ -60,7 +60,7 @@ class VirtualMethodStaticDataUsageAnalysis private[analyses] (
                 dm.descriptor
             )
 
-        for (method <- methods) {
+        for (method ← methods) {
             propertyStore(declaredMethods(method), StaticDataUsage.key) match {
                 case FinalP(UsesNoStaticData)     =>
                 case FinalP(UsesConstantDataOnly) => maxLevel = UsesConstantDataOnly

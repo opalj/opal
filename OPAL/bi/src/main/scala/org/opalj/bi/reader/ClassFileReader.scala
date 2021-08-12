@@ -683,7 +683,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             def traversePath(p: Path): Unit = {
                 if (Files.isDirectory(p)) {
                     try {
-                        for (subPath <- Files.newDirectoryStream(p, "*").asScala) {
+                        for (subPath ← Files.newDirectoryStream(p, "*").asScala) {
                             traversePath(subPath)
                         }
                     } catch {
@@ -706,7 +706,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         val allModulesPath = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("/modules")
         for {
-            modulePath <- Files.newDirectoryStream(allModulesPath, "*").asScala
+            modulePath ← Files.newDirectoryStream(allModulesPath, "*").asScala
             if Files.isDirectory(modulePath)
         } yield {
             (modulePath.getFileName.toString, traverseModule(modulePath))

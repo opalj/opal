@@ -187,9 +187,9 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             as.map(a => ObjectType(a.getClass.getName.replace('.', '/'))).toSet
 
         for {
-            (e, entityIdentifier, annotations) <- eas
+            (e, entityIdentifier, annotations) ← eas
             augmentedAnnotations = annotations.flatMap(getPropertyMatcher(p, propertyKinds))
-            (annotation, propertyKind, matcherType) <- augmentedAnnotations
+            (annotation, propertyKind, matcherType) ← augmentedAnnotations
         } {
             val annotationTypeName = annotation.annotationType.asObjectType.simpleName
             val matcherClass = Class.forName(matcherType.toJava)
@@ -232,7 +232,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         recreatedFixtureProject: SomeProject
     ): Traversable[(Field, String => String, Annotations)] = {
         for {
-            f <- recreatedFixtureProject.allFields // cannot be parallelized; "it" is not thread safe
+            f ← recreatedFixtureProject.allFields // cannot be parallelized; "it" is not thread safe
             annotations = f.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -245,7 +245,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     ): Traversable[(Method, String => String, Annotations)] = {
         for {
             // cannot be parallelized; "it" is not thread safe
-            m <- recreatedFixtureProject.allMethods
+            m ← recreatedFixtureProject.allMethods
             annotations = m.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -259,7 +259,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         val declaredMethods = recreatedFixtureProject.get(DeclaredMethodsKey)
         for {
             // cannot be parallelized; "it" is not thread safe
-            m <- recreatedFixtureProject.allMethods
+            m ← recreatedFixtureProject.allMethods
             dm = declaredMethods(m)
             annotations = m.runtimeInvisibleAnnotations
             if annotations.nonEmpty
@@ -277,7 +277,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     ): Traversable[(ClassFile, String => String, Annotations)] = {
         for {
             // cannot be parallelized; "it" is not thread safe
-            cf <- recreatedFixtureProject.allClassFiles
+            cf ← recreatedFixtureProject.allClassFiles
             annotations = cf.runtimeInvisibleAnnotations
             if annotations.nonEmpty
         } yield {
@@ -293,9 +293,9 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
         val declaredMethods = recreatedFixtureProject.get(DeclaredMethodsKey)
         for {
             // cannot be parallelized; "it" is not thread safe
-            m <- recreatedFixtureProject.allMethods
+            m ← recreatedFixtureProject.allMethods
             parameterAnnotations = m.runtimeInvisibleParameterAnnotations
-            i <- parameterAnnotations.indices
+            i ← parameterAnnotations.indices
             annotations = parameterAnnotations(i)
             if annotations.nonEmpty
             dm = declaredMethods(m)
@@ -315,7 +315,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     ): Traversable[(DefinitionSite, String => String, Traversable[AnnotationLike])] = {
         val allocationSites = recreatedFixtureProject.get(DefinitionSitesKey).getAllocationSites
         for {
-            as <- allocationSites
+            as ← allocationSites
             m = as.method
             pc = as.pc
             code = m.body.get

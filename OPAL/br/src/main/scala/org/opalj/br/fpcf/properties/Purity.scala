@@ -236,7 +236,7 @@ object Purity extends PurityPropertyMetaInformation {
     def parseParams(s: String): IntTrieSet = {
         val params = s.split(',')
         var result: IntTrieSet = EmptyIntTrieSet
-        for (p <- params)
+        for (p ← params)
             result = result + Integer.valueOf(p)
         result
     }

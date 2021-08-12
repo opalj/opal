@@ -175,7 +175,7 @@ final class TypePropagationAnalysis private[analyses] (
         val unseenTypes = UIDSet(eps.ub.dropOldest(previouslySeenTypes).toSeq: _*)
 
         implicit val partialResults: RefArrayBuffer[SomePartialResult] = RefArrayBuffer.empty[SomePartialResult]
-        for (fpe <- state.forwardPropagationEntities.iterator().asScala) {
+        for (fpe ← state.forwardPropagationEntities.iterator().asScala) {
             val filters = state.forwardPropagationFilters(fpe)
             val propagation = propagateTypes(fpe, unseenTypes, filters)
             if (propagation.isDefined)
@@ -211,7 +211,7 @@ final class TypePropagationAnalysis private[analyses] (
         state:          State,
         partialResults: RefArrayBuffer[SomePartialResult]
     ): Unit = {
-        for (t <- unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
+        for (t ← unseenTypes if t.isArrayType; at = t.asArrayType if at.elementType.isReferenceType) {
             if (state.methodWritesArrays) {
                 registerEntityForForwardPropagation(at, UIDSet(at.componentType.asReferenceType))
             }
@@ -239,8 +239,8 @@ final class TypePropagationAnalysis private[analyses] (
     ): Unit = {
         val bytecode = state.method.definedMethod.body.get
         for {
-            pc <- callees.callSitePCs
-            callee <- callees.callees(pc)
+            pc ← callees.callSitePCs
+            callee ← callees.callees(pc)
             if !state.isSeenCallee(pc, callee) && !isIgnoredCallee(callee)
         } {
             // Some sanity checks ...
@@ -271,7 +271,7 @@ final class TypePropagationAnalysis private[analyses] (
     ): Unit = {
         val params = UIDSet.newBuilder[ReferenceType]
 
-        for (param <- callee.descriptor.parameterTypes) {
+        for (param ← callee.descriptor.parameterTypes) {
             if (param.isReferenceType) {
                 params += param.asReferenceType
             }

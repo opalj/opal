@@ -192,9 +192,9 @@ object MethodHandlesUtil {
             }
 
             val possibleTypes = for {
-                otherParamTypes <- possibleOtherParamTypes.iterator // empty seq. if None
-                returnType <- returnTypes
-                firstParamType <- firstParamTypesOpt.get.asInstanceOf[Iterator[FieldType]]
+                otherParamTypes ← possibleOtherParamTypes.iterator // empty seq. if None
+                returnType ← returnTypes
+                firstParamType ← firstParamTypesOpt.get.asInstanceOf[Iterator[FieldType]]
             } yield MethodDescriptor(firstParamType +: otherParamTypes, returnType)
 
             Some(possibleTypes)
@@ -210,8 +210,8 @@ object MethodHandlesUtil {
 
                 val possibleMethodDescriptorsIterator =
                     for {
-                        otherParamTypes <- possibleOtherParamTypes.get.iterator
-                        returnType <- returnTypes
+                        otherParamTypes ← possibleOtherParamTypes.get.iterator
+                        returnType ← returnTypes
                     } yield MethodDescriptor(otherParamTypes, returnType)
                 Some(possibleMethodDescriptorsIterator)
             } else if (secondParamType == ObjectType.Class) { // methodType(T1, T2) => (T2)T2
@@ -221,8 +221,8 @@ object MethodHandlesUtil {
                 }
                 val paramTypes = paramTypesOpt.get.asInstanceOf[Iterator[FieldType]]
                 Some(for {
-                    returnType <- returnTypes
-                    paramType <- paramTypes
+                    returnType ← returnTypes
+                    paramType ← paramTypes
                 } yield MethodDescriptor(paramType, returnType))
             } else { // we don't handle methodType(T1, List(T2, ...)) and methodType(T1, MethodType)
                 None

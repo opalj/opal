@@ -42,7 +42,7 @@ object OwnershipAnalysis extends ProjectAnalysisApplication {
         val Private___Not_Static = (AccessFlagsMatcher.NOT_STATIC && ACC_PRIVATE)
 
         val classes = for {
-            classFile <- theProject.allProjectClassFiles.par
+            classFile ← theProject.allProjectClassFiles.par
             classType = classFile.thisType
             arrayFields = classFile.fields.collect {
                 case Field(Private___Not_Static(), name, ArrayType(_)) => name

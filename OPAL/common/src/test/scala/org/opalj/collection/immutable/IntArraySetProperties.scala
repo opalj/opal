@@ -24,7 +24,7 @@ import org.scalacheck.Arbitrary
 @RunWith(classOf[JUnitRunner])
 object IntArraySetProperties extends Properties("IntArraySet") {
 
-    val smallListsGen = for { m <- Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
+    val smallListsGen = for { m ← Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                             P R O P E R T I E S

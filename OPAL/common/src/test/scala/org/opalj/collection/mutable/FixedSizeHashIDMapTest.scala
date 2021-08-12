@@ -90,7 +90,7 @@ class FixedSizeHashIDMapTest extends AnyFlatSpec with Matchers {
         m.put(Node(8), 8)
         var node1Found = false
         var node8Found = false
-        for (e <- m) {
+        for (e ← m) {
             val (n, id) = e
             if (n == Node(1) && id == 1) node1Found = true
             if (n == Node(8) && id == 8) node8Found = true

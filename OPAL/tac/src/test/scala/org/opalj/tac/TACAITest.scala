@@ -33,7 +33,7 @@ class TACAITest extends AnyFunSpec with Matchers {
         val rawConfigs = configLines.filterNot(l => l.trim.isEmpty || l.trim.startsWith("#"))
         val configs = rawConfigs.map(c => /* get values: */ c.split(':')(1).trim).sliding(6, 6)
         for {
-            ((projectName, jdk), tests) <- configs.toList.groupBy(c => (c(0), c(1)))
+            ((projectName, jdk), tests) ← configs.toList.groupBy(c => (c(0), c(1)))
         } {
             describe(s"analysis of $projectName with jdk: $jdk") {
                 val p = jdk match {
@@ -41,7 +41,7 @@ class TACAITest extends AnyFunSpec with Matchers {
                     case "complete" => biProjectWithJDK(projectName, jdkAPIOnly = false)
                     case "api"      => biProjectWithJDK(projectName, jdkAPIOnly = true)
                 }
-                for { Seq(_, _, className, methodName, test, domainName) <- tests } {
+                for { Seq(_, _, className, methodName, test, domainName) ← tests } {
                     it(test + s" ($className.$methodName using $domainName)") {
 
                         val cfOption = p.classFile(ObjectType(className.replace('.', '/')))

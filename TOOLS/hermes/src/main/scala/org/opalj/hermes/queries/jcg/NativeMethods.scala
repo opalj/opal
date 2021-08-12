@@ -25,8 +25,8 @@ class NativeMethods(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val locations = new LocationsContainer[S]
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
-            method <- classFile.methods
+            (classFile, source) ← project.projectClassFilesWithSources
+            method ← classFile.methods
             if method.isNative
         } {
             locations += MethodLocation(source, method)

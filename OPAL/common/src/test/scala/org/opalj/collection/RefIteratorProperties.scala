@@ -21,7 +21,7 @@ object RefIteratorProperties extends Properties("RefIterator") {
         val r = new java.util.Random()
         Gen.sized { l =>
             val a = RefArray._UNSAFE_from[String](new Array[AnyRef](l))
-            for { i <- 0 until l } {
+            for { i ← 0 until l } {
                 a._UNSAFE_replaced(i, (r.nextInt(100) - 50).toString)
             }
             a
@@ -29,9 +29,9 @@ object RefIteratorProperties extends Properties("RefIterator") {
     }
 
     val listAndIntGen = for {
-        n <- Gen.choose(0, 20)
-        m <- Gen.listOfN(n, Arbitrary.arbString.arbitrary)
-        i <- Gen.choose(0, n + 2)
+        n ← Gen.choose(0, 20)
+        m ← Gen.listOfN(n, Arbitrary.arbString.arbitrary)
+        i ← Gen.choose(0, n + 2)
     } yield (m, i)
 
     //
@@ -181,8 +181,8 @@ object RefIteratorProperties extends Properties("RefIterator") {
     }
 
     property("zipWithIndex in for comprehension") = forAll { a: RefArray[String] =>
-        val aZipped = for { (s, i) <- a.zipWithIndex } yield { s+" "+i }
-        val itZipped = for { (s, i) <- a.iterator.zipWithIndex } yield { s+" "+i }
+        val aZipped = for { (s, i) ← a.zipWithIndex } yield { s+" "+i }
+        val itZipped = for { (s, i) ← a.iterator.zipWithIndex } yield { s+" "+i }
         itZipped.isInstanceOf[RefIterator[String]] &&
             (a.isEmpty && itZipped.isEmpty) || (a.nonEmpty && itZipped.nonEmpty) &&
             aZipped.sameElements(itZipped.toArray[String]) &&

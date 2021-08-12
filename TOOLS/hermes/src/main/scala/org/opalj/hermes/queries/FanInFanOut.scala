@@ -208,7 +208,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
         @inline def getObjectTypeID = project.classHierarchy.getObjectType _
 
         for {
-            (classFile, source) <- rawClassFiles
+            (classFile, source) ← rawClassFiles
             classFileType = classFile.thisType.asJVMType
             objectTypeId = ObjectType(classFileType).id
             location = ClassFileLocation(Some(source), classFileType)
@@ -274,7 +274,7 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
             features(ratioFeatureIndex) += l
         }
 
-        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, features(featureIDIndex))
         }
     }

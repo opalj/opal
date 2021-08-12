@@ -232,10 +232,10 @@ object CallGraph extends ProjectAnalysisApplication {
         println(calleesSigs.mkString("\n"))
         println(callersSigs.mkString("\n"))
 
-        for (m <- allMethods) {
+        for (m ← allMethods) {
             val mSig = m.descriptor.toJava(m.name)
 
-            for (methodSignature <- calleesSigs) {
+            for (methodSignature ← calleesSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callees of ${m.toJava}:")
                     println(ps(m, Callees.key).ub.callSites().map {
@@ -243,7 +243,7 @@ object CallGraph extends ProjectAnalysisApplication {
                     }.mkString("\t", "\n\t", "\n"))
                 }
             }
-            for (methodSignature <- callersSigs) {
+            for (methodSignature ← callersSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callers of ${m.toJava}:")
                     println(ps(m, Callers.key).ub.callers.map {

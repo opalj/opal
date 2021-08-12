@@ -26,7 +26,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     val r = new Random()
 
-    val smallListsGen = for { m <- Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
+    val smallListsGen = for { m ← Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
 
     val frequencies = List(
         (1, Gen.choose(1, 31)),

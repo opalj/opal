@@ -203,7 +203,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     /*override*/ def ladd(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (LongSet(leftValues), LongSet(rightValues)) =>
-                val results = for (l <- leftValues; r <- rightValues) yield l + r
+                val results = for (l ← leftValues; r ← rightValues) yield l + r
                 if (results.size <= maxCardinalityOfLongSets)
                     LongSet(results)
                 else
@@ -216,7 +216,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     /*override*/ def lsub(pc: PC, left: DomainValue, right: DomainValue): DomainValue = {
         (left, right) match {
             case (LongSet(leftValues), LongSet(rightValues)) =>
-                val results = for (l <- leftValues; r <- rightValues) yield l - r
+                val results = for (l ← leftValues; r ← rightValues) yield l - r
                 if (results.size <= maxCardinalityOfLongSets)
                     LongSet(results)
                 else
@@ -235,7 +235,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                     value2
                 else value2 match {
                     case (LongSet(rightValues)) =>
-                        val results = for (l <- leftValues; r <- rightValues) yield l * r
+                        val results = for (l ← leftValues; r ← rightValues) yield l * r
 
                         if (results.size <= maxCardinalityOfLongSets)
                             LongSet(results)
@@ -297,7 +297,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
             case (LongSet(leftValues), LongSet(rightValues)) =>
                 var results: SortedSet[Long] = SortedSet.empty
                 var exception: Boolean = false
-                for (l <- leftValues; r <- rightValues) {
+                for (l ← leftValues; r ← rightValues) {
                     if (r == 0L)
                         exception = true
                     else
@@ -338,7 +338,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
             case (LongSet(leftValues), LongSet(rightValues)) =>
                 var results: SortedSet[Long] = SortedSet.empty
                 var exception: Boolean = false
-                for (leftValue <- leftValues; rightValue <- rightValues) {
+                for (leftValue ← leftValues; rightValue ← rightValues) {
                     if (rightValue == 0L)
                         exception = true
                     else
@@ -378,7 +378,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                     value1
                 else value2 match {
                     case (LongSet(rightValues)) =>
-                        val results = for (l <- leftValues; r <- rightValues) yield l & r
+                        val results = for (l ← leftValues; r ← rightValues) yield l & r
                         if (results.size <= maxCardinalityOfLongSets)
                             LongSet(results)
                         else
@@ -410,7 +410,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
                     value2
                 else value2 match {
                     case (LongSet(rightValues)) =>
-                        val results = for (l <- leftValues; r <- rightValues) yield l | r
+                        val results = for (l ← leftValues; r ← rightValues) yield l | r
                         if (results.size <= maxCardinalityOfLongSets)
                             LongSet(results)
                         else
@@ -436,7 +436,7 @@ trait LongSetValues extends LongValuesDomain with ConcreteLongValues {
     /*override*/ def lxor(pc: PC, value1: DomainValue, value2: DomainValue): DomainValue = {
         (value1, value2) match {
             case (LongSet(leftValues), LongSet(rightValues)) =>
-                val results = for (l <- leftValues; r <- rightValues) yield l ^ r
+                val results = for (l ← leftValues; r ← rightValues) yield l ^ r
                 if (results.size <= maxCardinalityOfLongSets)
                     LongSet(results)
                 else

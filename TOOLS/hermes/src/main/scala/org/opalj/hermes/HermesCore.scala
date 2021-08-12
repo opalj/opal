@@ -61,8 +61,8 @@ trait HermesCore extends HermesConfig {
         var featureIDs: List[(String, FeatureQuery)] = List.empty
 
         for {
-            featureQuery <- featureQueries
-            featureID <- featureQuery.featureIDs
+            featureQuery ← featureQueries
+            featureID ← featureQuery.featureIDs
         } {
             if (!featureIDs.exists(_._1 == featureID))
                 featureIDs :+= ((featureID, featureQuery))
@@ -97,7 +97,7 @@ trait HermesCore extends HermesConfig {
     /** The matrix containing for each project the extensions of all features. */
     lazy val featureMatrix: ObservableList[ProjectFeatures[URL]] = {
         val featureMatrix = FXCollections.observableArrayList[ProjectFeatures[URL]]
-        for { projectConfiguration <- projectConfigurations } {
+        for { projectConfiguration ← projectConfigurations } {
             val features = featureQueries map { fe => (fe, fe.createInitialFeatures[URL]) }
             featureMatrix.add(ProjectFeatures(projectConfiguration, features))
         }
@@ -163,7 +163,7 @@ trait HermesCore extends HermesConfig {
                 val stepsDone = new AtomicInteger(0)
                 for {
                     // Using an iterator is required to avoid eager initialization of all projects!
-                    projectFeatures <- featureMatrix.iterator.asScala
+                    projectFeatures ← featureMatrix.iterator.asScala
                     if !Thread.currentThread.isInterrupted()
                     projectConfiguration = projectFeatures.projectConfiguration
                     projectAnalysisStartTime = System.nanoTime()
@@ -171,7 +171,7 @@ trait HermesCore extends HermesConfig {
                     project = projectInstantiation.project
                     rawClassFiles = projectInstantiation.rawClassFiles
                     if isValid(projectFeatures, project, projectAnalysisStartTime)
-                    (featureQuery, features) <- projectFeatures.featureGroups.par
+                    (featureQuery, features) ← projectFeatures.featureGroups.par
                     featuresMap = features.map(f => (f.getValue.id, f)).toMap
                     if !Thread.currentThread.isInterrupted()
                 } {

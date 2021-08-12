@@ -64,7 +64,7 @@ class VirtualReturnValueFreshnessAnalysis private[analyses] (
 
         var temporary: VirtualMethodReturnValueFreshness = VFreshReturnValue
 
-        for (method <- methods) {
+        for (method ← methods) {
             val rvf = propertyStore(declaredMethods(method), ReturnValueFreshness.key)
             handleReturnValueFreshness(rvf).foreach(return _)
         }

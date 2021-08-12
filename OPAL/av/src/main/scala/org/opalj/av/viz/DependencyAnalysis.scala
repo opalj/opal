@@ -192,7 +192,7 @@ object DependencyAnalysis extends AnalysisApplication {
 
             pm.progress(2, ProgressEvents.Start, Some("extracting dependencies"))
             for {
-                classFile <- project.allClassFiles
+                classFile ← project.allClassFiles
                 packageName = classFile.thisType.packageName
             } {
                 dependencyExtractor.process(classFile)

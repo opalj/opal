@@ -107,7 +107,7 @@ class InstantiatedTypesAnalysis private[analyses] (
         var newSeenCallers = seenCallers
         val partialResults = RefArrayBuffer.empty[PartialResult[TypeSetEntity, InstantiatedTypes]]
         for {
-            (caller, _, _) <- callersUB.callers
+            (caller, _, _) ← callersUB.callers
             // if we already analyzed the caller, we do not need to do it twice
             // note, that this is only needed for the continuation
             if !seenCallers.contains(caller)
@@ -304,7 +304,7 @@ class InstantiatedTypesAnalysisScheduler(
         // For each method which is also an entry point, we assume that the caller has passed all subtypes of the
         // method's parameter types to the method.
         for (
-            ep <- entryPoints;
+            ep ← entryPoints;
             dm = declaredMethods(ep)
         ) {
             val typeFilters = UIDSet.newBuilder[ReferenceType]
@@ -314,7 +314,7 @@ class InstantiatedTypesAnalysisScheduler(
                 typeFilters += dm.declaringClassType
             }
 
-            for (pt <- dm.descriptor.parameterTypes) {
+            for (pt ← dm.descriptor.parameterTypes) {
                 if (pt.isObjectType) {
                     typeFilters += pt.asObjectType
                 } else if (isRelevantArrayType(pt)) {
@@ -369,14 +369,14 @@ class InstantiatedTypesAnalysisScheduler(
         }
 
         for (
-            iit <- initialInstantiatedTypes;
+            iit ← initialInstantiatedTypes;
             // Only object types should be initially instantiated.
             ot = iit.asObjectType
         ) {
             // Assign initial types to all accessable fields.
             p.classFile(ot) match {
                 case Some(cf) =>
-                    for (f <- cf.fields if f.isNotFinal && fieldIsRelevant(f) && fieldIsAccessible(f)) {
+                    for (f ← cf.fields if f.isNotFinal && fieldIsRelevant(f) && fieldIsAccessible(f)) {
                         val fieldType = f.fieldType.asReferenceType
                         import p.classHierarchy
 

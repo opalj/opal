@@ -50,10 +50,10 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val relevantTypes = threadSubtypes + Runtime
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
+            (classFile, source) ← project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method <- classFile.methods
+            method ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
         } {
             if (method.isNotStatic && method.isPublic && method.name == "finalize") {

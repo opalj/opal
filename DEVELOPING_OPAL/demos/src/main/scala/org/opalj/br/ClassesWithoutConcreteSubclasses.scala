@@ -25,7 +25,7 @@ object ClassesWithoutConcreteSubclasses extends ProjectAnalysisApplication {
         val classHierarchy = project.classHierarchy
         val abstractTypes =
             for {
-                classFile <- project.allClassFiles.par
+                classFile ← project.allClassFiles.par
                 if classFile.isAbstract
                 thisType = classFile.thisType
                 if classHierarchy.directSubtypesOf(thisType).isEmpty

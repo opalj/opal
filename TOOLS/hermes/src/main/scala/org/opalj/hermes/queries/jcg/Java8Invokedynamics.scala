@@ -63,8 +63,8 @@ class Java8Invokedynamics(
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            m @ MethodWithBody(code) <- project.allMethodsWithBody
-            pcAndInvocation <- code collect {
+            m @ MethodWithBody(code) ← project.allMethodsWithBody
+            pcAndInvocation ← code collect {
                 case dynInv: INVOKEDYNAMIC => dynInv
             }
         } {

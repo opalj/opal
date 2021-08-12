@@ -159,7 +159,7 @@ object DomainRegistry {
      * the domain. Useful to show the (end-users) some meaningful descriptions.
      */
     def domainDescriptions(): Iterable[String] = this.synchronized {
-        for ((d, c) <- descriptions) yield s"[${c.getName}] $d"
+        for ((d, c) ← descriptions) yield s"[${c.getName}] $d"
     }
 
     /**

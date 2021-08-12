@@ -64,12 +64,12 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
+            (classFile, source) ← project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation ← body collect {
                 case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
             }
             TACode(_, stmts, pcToIndex, _, _) = tacai(method)

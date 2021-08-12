@@ -219,7 +219,7 @@ object InterpretMethodsAnalysis {
             val header = <p>Generated { new java.util.Date() }</p>
 
             val body = Seq(header) ++
-                (for ((exResource, exInstances) <- collectedExceptions.groupBy(e => e._1)) yield {
+                (for ((exResource, exInstances) ← collectedExceptions.groupBy(e => e._1)) yield {
                     val exDetails =
                         exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex

@@ -292,9 +292,9 @@ object ConstantsBuffer {
 
     def collectLDCs(classFile: ClassFile): Set[LDC[_]] = {
         val allLDC = for {
-            method <- classFile.methods.iterator
+            method ← classFile.methods.iterator
             if method.body.isDefined
-            ldc <- method.body.get.iterator.collect { case ldc: LDC[_] => ldc }
+            ldc ← method.body.get.iterator.collect { case ldc: LDC[_] => ldc }
         } yield {
             ldc
         }

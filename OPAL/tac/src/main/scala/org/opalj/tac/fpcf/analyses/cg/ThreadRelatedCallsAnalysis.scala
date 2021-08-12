@@ -93,7 +93,7 @@ class ThreadStartAnalysis private[analyses] (
         // a call to Thread.start will trigger a call to the underlying run method
         val rvs = receiver.asVar.value.asReferenceValue.allValues
         for {
-            rv <- rvs
+            rv ← rvs
             if rv.isNull.isNoOrUnknown
         } {
             if (rv.isPrecise) {
@@ -165,7 +165,7 @@ class ThreadStartAnalysis private[analyses] (
         indirectCalls: IndirectCalls
     ): Unit = {
         for {
-            threadDefSite <- receiver.asVar.definedBy
+            threadDefSite ← receiver.asVar.definedBy
         } {
             if (threadDefSite < 0) {
                 // the thread is given as a parameter
@@ -174,7 +174,7 @@ class ThreadStartAnalysis private[analyses] (
                 stmts(threadDefSite) match {
                     case Assignment(_, thread, New(_, _)) =>
                         for {
-                            NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <- getConstructorCalls(thread, threadDefSite, stmts)
+                            NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) ← getConstructorCalls(thread, threadDefSite, stmts)
                         } {
                             val indexOfRunnableParameter = descriptor.parameterTypes.indexWhere {
                                 _ == ObjectType.Runnable
@@ -183,7 +183,7 @@ class ThreadStartAnalysis private[analyses] (
                             // if there is no runnable passed as parameter, we are sound
                             if (indexOfRunnableParameter != -1) {
                                 val theReceiver = params(indexOfRunnableParameter).asVar
-                                for (runnableValue <- theReceiver.value.asReferenceValue.allValues) {
+                                for (runnableValue ← theReceiver.value.asReferenceValue.allValues) {
                                     if (runnableValue.isPrecise) {
                                         addMethod(
                                             definedMethod,
@@ -321,7 +321,7 @@ class UncaughtExceptionHandlerAnalysis private[analyses] (
     ): Unit = {
         val rvs = receiver.asVar.value.asReferenceValue.allValues
         for {
-            rv <- rvs
+            rv ← rvs
             if rv.isNull.isNoOrUnknown
         } {
             // for precise types we can directly add the call edge here

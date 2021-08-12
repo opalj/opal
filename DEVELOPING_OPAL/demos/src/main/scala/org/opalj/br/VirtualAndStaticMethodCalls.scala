@@ -30,10 +30,10 @@ object VirtualAndStaticMethodCalls extends ProjectAnalysisApplication {
         var executionTime = Nanoseconds.None
         time {
             for {
-                classFile <- project.allClassFiles
-                method <- classFile.methods
-                code <- method.body
-                instruction <- code.instructions.collect { case mii: MethodInvocationInstruction => mii }
+                classFile ← project.allClassFiles
+                method ← classFile.methods
+                code ← method.body
+                instruction ← code.instructions.collect { case mii: MethodInvocationInstruction => mii }
             } {
                 if (instruction.isVirtualMethodCall)
                     virtualCalls += 1

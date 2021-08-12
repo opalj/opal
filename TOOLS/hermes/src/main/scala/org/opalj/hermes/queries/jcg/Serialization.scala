@@ -97,12 +97,12 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val notExternalizableTypes = serializableTypes diff externalizableTypes
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
+            (classFile, source) ← project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation <- body collect {
+            pcAndInvocation ← body collect {
                 case i @ INVOKEVIRTUAL(declClass, "writeObject", OOSwriteObject) if classHierarchy.isSubtypeOf(declClass, OOS)               => i
                 case i @ INVOKEVIRTUAL(declClass, "readObject", JustReturnsObject) if classHierarchy.isSubtypeOf(declClass, OIS)             => i
                 case i @ INVOKEVIRTUAL(declClass, "registerValidation", OISregisterValidation) if classHierarchy.isSubtypeOf(declClass, OIS) => i

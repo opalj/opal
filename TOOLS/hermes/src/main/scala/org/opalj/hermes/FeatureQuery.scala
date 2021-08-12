@@ -128,7 +128,7 @@ abstract class DefaultFeatureQuery(
         rawClassFiles:        Traversable[(da.ClassFile, S)]
     ): TraversableOnce[Feature[S]] = {
         val locations = evaluate(projectConfiguration, project, rawClassFiles)
-        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, locations(featureIDIndex))
         }
     }

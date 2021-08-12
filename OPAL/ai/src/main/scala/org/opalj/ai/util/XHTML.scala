@@ -86,7 +86,7 @@ object XHTML {
                 <div>{ throwable.getClass.getSimpleName+" "+throwable.getMessage }</div>
             } else {
                 val stackElements =
-                    for { stackElement <- throwable.getStackTrace } yield {
+                    for { stackElement ← throwable.getStackTrace } yield {
                         <tr>
                             <td>{ stackElement.getClassName }</td>
                             <td>{ stackElement.getMethodName }</td>

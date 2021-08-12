@@ -83,14 +83,14 @@ class TasksTest extends AnyFunSpec with Matchers {
                     fail(s"the value $i was already processed")
                 }
                 if (i == 0) {
-                    for (i <- 1 until 100000) tasks.submit(i)
+                    for (i ← 1 until 100000) tasks.submit(i)
                 } else {
                     Thread.sleep(1)
                 }
             }
             tasks.submit(0)
             tasks.join()
-            for (i <- 0 until 100000) processedValues.get(i) should be(1)
+            for (i ← 0 until 100000) processedValues.get(i) should be(1)
         }
 
         it("it should be possible to submit tasks with a significant delay") {
@@ -107,14 +107,14 @@ class TasksTest extends AnyFunSpec with Matchers {
         }
 
         it("it should be possible to create thousands of tasks in multiple steps multiple times") {
-            for { r <- 1 to 3 } {
+            for { r ← 1 to 3 } {
                 val processedValues = new AtomicInteger(0)
                 val subsequentlyScheduled = new AtomicInteger(0)
                 val nextValue = new AtomicInteger(100000)
                 val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) =>
                     processedValues.incrementAndGet()
                     if ((i % 1000) == 0) {
-                        for (t <- 1 until 10) {
+                        for (t ← 1 until 10) {
                             subsequentlyScheduled.incrementAndGet()
                             tasks.submit(nextValue.incrementAndGet())
                         }
@@ -122,7 +122,7 @@ class TasksTest extends AnyFunSpec with Matchers {
                         Thread.sleep(1)
                     }
                 }
-                for (i <- 0 until 100000) tasks.submit(i)
+                for (i ← 0 until 100000) tasks.submit(i)
                 tasks.join()
                 processedValues.get() should be(100000 + subsequentlyScheduled.get)
                 info(s"run $r succeeded")
@@ -137,7 +137,7 @@ class TasksTest extends AnyFunSpec with Matchers {
             val nextValue = new AtomicInteger(100000)
             val tasks: Tasks[Int] = Tasks { (tasks: Tasks[Int], i: Int) =>
                 if (i % 1000 == 0) {
-                    for (i <- 1 until 10) {
+                    for (i ← 1 until 10) {
                         subsequentlyScheduled.incrementAndGet()
                         tasks.submit(nextValue.incrementAndGet())
                     }
@@ -149,7 +149,7 @@ class TasksTest extends AnyFunSpec with Matchers {
                 }
                 processedValues.incrementAndGet()
             }
-            for (i <- 0 until 100000) tasks.submit(i)
+            for (i ← 0 until 100000) tasks.submit(i)
 
             var exceptions: Array[Throwable] = null
             try {

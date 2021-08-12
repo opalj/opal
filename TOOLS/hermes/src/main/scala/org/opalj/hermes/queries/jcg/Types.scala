@@ -49,12 +49,12 @@ class Types(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) <- project.projectClassFilesWithSources
+            (classFile, source) ← project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) <- classFile.methods
+            method @ MethodWithBody(body) ← classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction <- body
+            pcAndInstruction ← body
         } {
             val instruction = pcAndInstruction.instruction
             val pc = pcAndInstruction.pc

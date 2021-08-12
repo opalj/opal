@@ -56,7 +56,7 @@ class VirtualMethodPurityAnalysis private[analyses] ( final val project: SomePro
                 dm.descriptor
             )
 
-        for (method <- methods) {
+        for (method ← methods) {
             propertyStore(declaredMethods(method), Purity.key) match {
                 case eps @ UBP(ub) =>
                     maxPurity = maxPurity meet ub

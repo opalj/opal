@@ -83,7 +83,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                 TACAITransformer /* LazyL0TACAIAnalysis */ )
         } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
         for {
-            as <- ass
+            as ← ass
             pc = as.pc
             m = as.method
             body = m.body.get
@@ -97,7 +97,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
             stmts(index) match {
                 case Assignment(`pc`, DVar(_, uses), New(`pc`, _) | NewArray(`pc`, _, _)) =>
                     nonDeadAllocations += 1
-                    for (use <- uses) {
+                    for (use ← uses) {
                         stmts(use) match {
                             case PutField(_, _, name, _, objRef, value) =>
                                 if (value.isVar && value.asVar.definedBy.contains(index)) {
@@ -113,7 +113,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                             } else false
                                         }) {
                                             putFieldsOfAllocation += 1
-                                            for (stmt <- stmts) {
+                                            for (stmt ← stmts) {
                                                 stmt match {
                                                     case Assignment(_, DVar(_, _), GetField(_, _, `name`, _, objRef2)) if objRef2.isVar =>
                                                         if (objRef2.asVar.definedBy.exists(defSitesOfObjRef.contains)) {
@@ -148,7 +148,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
 
                                         if (pcsOfNewArrays.nonEmpty) {
                                             arrayStoresOfAllocation += 1
-                                            for (pc <- pcsOfNewArrays) {
+                                            for (pc ← pcsOfNewArrays) {
                                                 val as = defSites(m, pc)
                                                 propertyStore(as, EscapeProperty.key) match {
                                                     case FinalP(NoEscape | AtMost(NoEscape)) =>
@@ -167,7 +167,7 @@ object FieldAndArrayUsageAnalysis extends ProjectAnalysisApplication {
                                             }
 
                                             for {
-                                                Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) <- stmts
+                                                Assignment(_, DVar(_, _), ArrayLoad(_, _, arrayRef2)) ← stmts
                                                 if arrayRef2.isVar
                                                 if arrayRef2.asVar.definedBy.exists(defSitesOfArray.contains)
                                             } {

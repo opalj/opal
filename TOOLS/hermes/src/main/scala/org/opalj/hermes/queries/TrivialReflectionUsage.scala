@@ -48,7 +48,7 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
                 val aiResult = BaseAI(m, new DefaultDomainWithCFGAndDefUse(project, m))
                 val methodLocation = MethodLocation(source, m)
                 for {
-                    pcAndInstruction <- classForNameCalls
+                    pcAndInstruction ← classForNameCalls
                     instruction = pcAndInstruction.value
                     pc = pcAndInstruction.pc
                     classNameParameterIndex = instruction.parametersCount - 1

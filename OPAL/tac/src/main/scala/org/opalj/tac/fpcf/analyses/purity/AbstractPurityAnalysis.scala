@@ -227,7 +227,7 @@ trait AbstractPurityAnalysis extends FPCFAnalysis {
             // but it may be ignored as domain-specific
             case CaughtException.ASTID =>
                 for {
-                    origin <- stmt.asCaughtException.origins
+                    origin ← stmt.asCaughtException.origins
                     if isImmediateVMException(origin)
                 } {
                     val baseOrigin = state.tac.stmts(ai.underlyingPC(origin))

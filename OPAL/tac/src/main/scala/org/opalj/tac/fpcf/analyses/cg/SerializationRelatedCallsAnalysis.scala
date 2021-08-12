@@ -95,7 +95,7 @@ class OOSWriteObjectAnalysis private[analyses] (
             outputStream.flatMap(os => persistentUVar(os.asVar))
         )
 
-        for (rv <- param.value.asReferenceValue.allValues) {
+        for (rv ← param.value.asReferenceValue.allValues) {
             if (rv.isPrecise && rv.isNull.isNo) {
                 val rt = rv.leastUpperType.get
                 if (rt.isObjectType || rt.asArrayType.elementType.isObjectType) {
@@ -240,13 +240,13 @@ class OISReadObjectAnalysis private[analyses] (
     ): Unit = {
         var foundCast = false
         val parameterList = Seq(inputStream.flatMap(is => persistentUVar(is.asVar)))
-        for { Checkcast(_, _, ElementReferenceType(castType)) <- stmts } {
+        for { Checkcast(_, _, ElementReferenceType(castType)) ← stmts } {
             foundCast = true
 
             // for each subtype of the type declared at cast we add calls to the relevant methods
             for {
-                t <- ch.allSubtypes(castType.asObjectType, reflexive = true)
-                cf <- project.classFile(t) // we ignore cases were no class file exists
+                t ← ch.allSubtypes(castType.asObjectType, reflexive = true)
+                cf ← project.classFile(t) // we ignore cases were no class file exists
                 if !cf.isInterfaceDeclaration
                 if ch.isSubtypeOf(castType, ObjectType.Serializable)
             } {

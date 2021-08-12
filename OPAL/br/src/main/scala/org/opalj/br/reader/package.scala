@@ -58,7 +58,7 @@ package object reader {
             exceptionsMutex.synchronized { exceptions ::= e }
         }
 
-        val allClassFiles = for (file <- files.par) yield {
+        val allClassFiles = for (file ← files.par) yield {
             try {
                 perFile(file)
                 classFilesReader(file, handleException)

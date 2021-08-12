@@ -1787,13 +1787,13 @@ class ClassHierarchy private (
 
         val signaturesToCheck = subtype.superClassSignature :: subtype.superInterfacesSignature
         for {
-            cts <- signaturesToCheck if cts.objectType eq supertype
+            cts ← signaturesToCheck if cts.objectType eq supertype
         } { return Some(cts) }
 
         for {
-            cts <- signaturesToCheck
-            superCs <- getClassSignature(cts.objectType)
-            matchingType <- getSupertypeDeclaration(superCs, supertype)
+            cts ← signaturesToCheck
+            superCs ← getClassSignature(cts.objectType)
+            matchingType ← getSupertypeDeclaration(superCs, supertype)
         } { return Some(matchingType) }
 
         None
@@ -3151,8 +3151,8 @@ object ClassHierarchy {
                         // 2. Which type(s) cause the problem?
                         val allIssues =
                             for {
-                                dt <- deferredTypes
-                                subtype <- subinterfaceTypesMap(dt.id) ++ subclassTypesMap(dt.id)
+                                dt ← deferredTypes
+                                subtype ← subinterfaceTypesMap(dt.id) ++ subclassTypesMap(dt.id)
                                 if subtypes(subtype.id) != null
                                 if !deferredTypes.contains(subtype)
                             } yield {
@@ -3176,7 +3176,7 @@ object ClassHierarchy {
             var allInterfaceType = UIDSet.empty[ObjectType]
             var allNoneObjectTypes = UIDSet.empty[ObjectType]
             for {
-                t <- knownTypesMap
+                t ← knownTypesMap
                 if t ne null
             } {
                 val tid = t.id
@@ -3328,7 +3328,7 @@ object ClassHierarchy {
             // java.lang.Object is still not necessarily complete as the type may implement an
             // unknown interface.
             for {
-                rootType <- await(rootTypesFuture, Inf) // we may have to wait...
+                rootType ← await(rootTypesFuture, Inf) // we may have to wait...
                 if rootType ne ObjectType.Object
             } {
                 isSupertypeInformationCompleteMap(rootType.id) = false

@@ -35,8 +35,8 @@ object MaxLocalsEvaluation extends ProjectAnalysisApplication {
         var maxLocalsDistrbution: Map[Int, Int] = TreeMap.empty
 
         for {
-            classFile <- project.allProjectClassFiles
-            method @ MethodWithBody(body) <- classFile.methods
+            classFile ← project.allProjectClassFiles
+            method @ MethodWithBody(body) ← classFile.methods
             descriptor = method.descriptor
         } {
             val parametersCount = descriptor.parametersCount + (if (method.isStatic) 0 else 1)

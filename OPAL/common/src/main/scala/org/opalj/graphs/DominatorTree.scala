@@ -260,7 +260,7 @@ object DominatorTree {
             val wParent = parent(w)
             val wParentBucket = bucket(wParent)
             if (wParentBucket != null) {
-                for (v <- wParentBucket) {
+                for (v ← wParentBucket) {
                     val u = eval(v)
                     dom(v) = if (semi(u) < semi(v)) u else wParent
                 }

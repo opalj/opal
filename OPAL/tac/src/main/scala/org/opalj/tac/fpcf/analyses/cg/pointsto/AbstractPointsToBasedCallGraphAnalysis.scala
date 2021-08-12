@@ -56,7 +56,7 @@ trait AbstractPointsToBasedCallGraphAnalysis[PointsToSet <: PointsToSetLike[_, _
                 val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
                 // perform the update for the new types
-                for (callSite <- relevantCallSites) {
+                for (callSite ← relevantCallSites) {
                     val typesLeft = state.typesForCallSite(callSite)
                     ub.forNewestNTypes(ub.numTypes - seenTypes) { newType =>
                         val theType =

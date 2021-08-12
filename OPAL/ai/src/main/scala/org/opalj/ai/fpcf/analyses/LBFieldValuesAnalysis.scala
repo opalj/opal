@@ -109,7 +109,7 @@ class LBFieldValuesAnalysis private[analyses] (
     def relevantFieldsIterable(classFile: ClassFile): Iterable[Field] = {
         val thisClassType = classFile.thisType
         for {
-            field <- classFile.fields
+            field ← classFile.fields
             if field.fieldType.isObjectType
 
             // Test that the initialization can be made by the declaring class only:

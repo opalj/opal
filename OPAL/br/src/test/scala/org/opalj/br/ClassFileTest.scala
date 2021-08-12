@@ -150,7 +150,7 @@ class ClassFileTest extends AnyFunSuite with Matchers {
         val project = analyses.Project(jarFile)
         var innerClassesCount = 0
         var failures: List[String] = List.empty
-        val nestedTypes = for (classFile <- project.allClassFiles) yield {
+        val nestedTypes = for (classFile ← project.allClassFiles) yield {
             try {
                 // should not time out or crash...
                 classFile.nestedClasses(project)

@@ -29,9 +29,9 @@ object MethodAnnotationsPrinter extends AnalysisApplication {
         def doAnalyze(project: Project[URL], params: Seq[String], isInterrupted: () => Boolean) = {
             val annotations =
                 for {
-                    classFile <- project.allClassFiles.par
-                    method <- classFile.methods
-                    annotation <- method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
+                    classFile ← project.allClassFiles.par
+                    method ← classFile.methods
+                    annotation ← method.runtimeVisibleAnnotations ++ method.runtimeInvisibleAnnotations
                 } yield {
                     method.toJava +
                         annotation.elementValuePairs.

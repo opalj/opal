@@ -159,16 +159,16 @@ object TAC {
 
         val ch = project.classHierarchy
         for {
-            cf <- project.allClassFiles
+            cf ← project.allClassFiles
             if className.isEmpty || className.get == cf.thisType.toJava
         } {
             val methodsAsTAC = new StringBuilder()
 
             for {
-                m <- cf.methods
+                m ← cf.methods
                 mSig = (if (m.isStatic) "static " else "") + m.descriptor.toJava(m.name)
                 if methodSignature.isEmpty || mSig.contains(methodSignature.get)
-                code <- m.body
+                code ← m.body
             } {
                 val (tac: String, cfg: String, ehs: Option[String]) =
                     if (naive) {
