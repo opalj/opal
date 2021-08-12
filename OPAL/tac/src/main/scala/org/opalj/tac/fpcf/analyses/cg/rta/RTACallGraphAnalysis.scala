@@ -126,7 +126,7 @@ class RTACallGraphAnalysis private[analyses] (
         unresovedTypes: IntTrieSet,
         callSite:       CallSite
     )(implicit state: RTAState): Unit = {
-        for (typeId ← unresovedTypes)
+        for (typeId <- unresovedTypes)
             state.addVirtualCallSite(typeId.toLong, callSite)
     }
 
