@@ -1099,14 +1099,14 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 var count = -1
                 val nodeEntitiesPermutations = nodeEntities.toList.permutations
                 for {
-                    nodeEntitiesPermutations ← List(
+                    nodeEntitiesPermutations <- List(
                         nodeEntitiesPermutations.drop(dropCount).take(1000).toList,
                         nodeEntitiesPermutations.drop(dropCount).take(1000).toList,
                         nodeEntitiesPermutations.drop(dropCount).take(1000).toList,
                         nodeEntitiesPermutations.drop(dropCount).take(1000).toList,
                         nodeEntitiesPermutations.drop(dropCount).take(1000).toList
                     )
-                    nodeEntitiesPermutation ← nodeEntitiesPermutations
+                    nodeEntitiesPermutation <- nodeEntitiesPermutations
                 } {
                     count += 1
                     if (count % 100 == 0) {
@@ -1177,7 +1177,7 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
                 val dropCount = (System.nanoTime() % 10000).toInt
                 var count = -1
                 val nodeEntitiesPermutations = nodeEntities.toList.permutations
-                for (nodeEntitiesPermutation ← nodeEntitiesPermutations.drop(dropCount).take(1000)) {
+                for (nodeEntitiesPermutation <- nodeEntitiesPermutations.drop(dropCount).take(1000)) {
                     count += 1
                     if (count % 99 == 0) {
                         val ps = createPropertyStore()
@@ -1749,12 +1749,12 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
             import scala.collection.mutable
 
             val testSizes = Set(1, 5, 50000)
-            for (testSize ← testSizes) {
+            for (testSize <- testSizes) {
                 // 1. we create a ((very) long) chain
                 val firstNode = Node(0.toString)
                 val allNodes = mutable.Set(firstNode)
                 var prevNode = firstNode
-                for { i ← 1 to testSize } {
+                for { i <- 1 to testSize } {
                     val nextNode = Node(i.toString)
                     allNodes += nextNode
                     prevNode.targets += nextNode
@@ -1817,12 +1817,12 @@ sealed abstract class PropertyStoreTest[PS <: PropertyStore]
             import scala.collection.mutable
 
             val testSizes = Set(1, 5, 50, 1000)
-            for (testSize ← testSizes) {
+            for (testSize <- testSizes) {
                 // 1. we create a ((very) long) chain
                 val firstNode = Node(0.toString)
                 val allNodes = mutable.Set(firstNode)
                 var prevNode = firstNode
-                for { i ← 1 to testSize } {
+                for { i <- 1 to testSize } {
                     val nextNode = Node(i.toString)
                     allNodes += nextNode
                     prevNode.targets += nextNode
