@@ -86,53 +86,59 @@ trait TypeProvider {
         use: V, context: ContextType, depender: Entity, stmts: Array[Stmt[V]]
     )(implicit state: TypeProviderState): InformationType
 
-    def foreachType(use: V, typesProperty: InformationType)(handleType: ReferenceType ⇒ Unit): Unit
+    def foreachType(
+        use:             V,
+        typesProperty:   InformationType,
+        additionalTypes: Set[ReferenceType] = Set.empty
+    )(handleType: ReferenceType ⇒ Unit): Unit
 
     def foreachAllocation(
-        use: V, typesProperty: InformationType
+        use: V, typesProperty: InformationType, additionalTypes: Set[ReferenceType] = Set.empty
     )(
         handleAllocation: (ReferenceType, ContextType, Int) ⇒ Unit
     ): Unit = {
         throw new UnsupportedOperationException
     }
 
-    /*def containsType(typesProperty: InformationType, tpe: ReferenceType): Boolean
-
-    def containsArrayTypes(typesProperty: InformationType): Boolean*/
-
     def continuation(
-        use: V, updatedEPS: EPS[Entity, PropertyType]
+        use:             V,
+        updatedEPS:      EPS[Entity, PropertyType],
+        additionalTypes: Set[ReferenceType]        = Set.empty
     )(
         handleNewType: ReferenceType ⇒ Unit
     )(implicit state: TypeProviderState): Unit = {
         val epk = updatedEPS.toEPK
         val oldEOptP = state.getProperty(epk)
 
-        continuation(use, updatedEPS, oldEOptP, handleNewType)
+        continuation(use, updatedEPS, oldEOptP, additionalTypes, handleNewType)
     }
 
     @inline protected[this] def continuation(
-        use:           V,
-        updatedEPS:    EPS[Entity, PropertyType],
-        oldEOptP:      EOptionP[Entity, PropertyType],
-        handleNewType: ReferenceType ⇒ Unit
+        use:             V,
+        updatedEPS:      EPS[Entity, PropertyType],
+        oldEOptP:        EOptionP[Entity, PropertyType],
+        additionalTypes: Set[ReferenceType],
+        handleNewType:   ReferenceType ⇒ Unit
     ): Unit
 
     def continuationForAllocations(
-        use: V, updatedEPS: EPS[Entity, PropertyType]
+        use:             V,
+        updatedEPS:      EPS[Entity, PropertyType],
+        additionalTypes: Set[ReferenceType]        = Set.empty
     )(
         handleNewAllocation: (ReferenceType, ContextType, Int) ⇒ Unit
     )(implicit state: TypeProviderState): Unit = {
         val epk = updatedEPS.toEPK
-        val oldEOptP = state.getProperty(epk).asInstanceOf[EOptionP[Entity, PropertyType]]
+        val oldEOptP = state.getProperty(epk)
 
-        continuationForAllocations(use, updatedEPS, oldEOptP, handleNewAllocation)
+        continuationForAllocations(use, updatedEPS, oldEOptP, additionalTypes, handleNewAllocation)
     }
 
     @inline protected[this] def continuationForAllocations(
         use:                 V,
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
+        additionalTypes:     Set[ReferenceType],
         handleNewAllocation: (ReferenceType, ContextType, Int) ⇒ Unit
     ): Unit = {
         throw new UnsupportedOperationException
@@ -142,29 +148,30 @@ trait TypeProvider {
         val rv = use.value.asReferenceValue
         val lut = rv.leastUpperType
         if (lut.isDefined && !project.classHierarchy.isSubtypeOf(tpe, lut.get))
-            return false;
-        rv.allValues.exists {
-            case sv: IsSReferenceValue[_] ⇒
-                val tub = sv.theUpperTypeBound
-                if (sv.isPrecise) {
-                    tpe eq tub
-                } else {
-                    project.classHierarchy.isSubtypeOf(tpe, tub) &&
-                        // Exclude unknown types even if the upper bound is Object for consistency
-                        // with CHA and bounds != Object
-                        ((tub ne ObjectType.Object) || tpe.isArrayType ||
-                            project.classFile(tpe.asObjectType).isDefined)
-                }
+            false
+        else
+            rv.allValues.exists {
+                case sv: IsSReferenceValue[_] ⇒
+                    val tub = sv.theUpperTypeBound
+                    if (sv.isPrecise) {
+                        tpe eq tub
+                    } else {
+                        project.classHierarchy.isSubtypeOf(tpe, tub) &&
+                            // Exclude unknown types even if the upper bound is Object for
+                            // consistency with CHA and bounds != Object
+                            ((tub ne ObjectType.Object) || tpe.isArrayType ||
+                                project.classFile(tpe.asObjectType).isDefined)
+                    }
 
-            case mv: IsMObjectValue ⇒
-                val typeBounds = mv.upperTypeBound
-                typeBounds.forall { supertype ⇒
-                    project.classHierarchy.isSubtypeOf(tpe, supertype)
-                }
+                case mv: IsMObjectValue ⇒
+                    val typeBounds = mv.upperTypeBound
+                    typeBounds.forall { supertype ⇒
+                        project.classHierarchy.isSubtypeOf(tpe, supertype)
+                    }
 
-            case _: IsNullValue ⇒
-                false
-        }
+                case _: IsNullValue ⇒
+                    false
+            }
     }
 }
 
@@ -184,7 +191,10 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider {
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
     )(implicit state: TypeProviderState): Null = null
 
-    def foreachType(use: V, typesProperty: Null)(handleType: ReferenceType ⇒ Unit): Unit = {
+    def foreachType(
+        use: V, typesProperty: Null, additionalTypes: Set[ReferenceType]
+    )(handleType: ReferenceType ⇒ Unit): Unit = {
+        additionalTypes.foreach(handleType)
         val rvs = use.value.asReferenceValue.allValues
         for (rv ← rvs) rv match {
             case sv: IsSReferenceValue[_] ⇒
@@ -228,23 +238,12 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider {
         }
     }
 
-    /*@inline def containsType(typesProperty: Null, tpe: ReferenceType): Boolean = {
-        val rvs = typesProperty.value.asReferenceValue.allValues
-        rvs.exists { rv ⇒ project.classHierarchy.isSubtypeOf(tpe, rv.upperTypeBound) }
-    }
-
-    @inline def containsArrayTypes(typesProperty: Null): Boolean = {
-        typesProperty.value.asReferenceValue.upperTypeBound.forall { typeBound ⇒
-            typeBound.isArrayType || typeBound == ObjectType.Object ||
-                typeBound == ObjectType.Serializable || typeBound == ObjectType.Cloneable
-        }
-    }*/
-
-    @inline protected[this] def continuation(
-        use:           V,
-        updatedEPS:    EPS[Entity, Nothing],
-        oldEOptP:      EOptionP[Entity, Nothing],
-        handleNewType: ReferenceType ⇒ Unit
+    @inline protected[this] override def continuation(
+        use:             V,
+        updatedEPS:      EPS[Entity, Nothing],
+        oldEOptP:        EOptionP[Entity, Nothing],
+        additionalTypes: Set[ReferenceType],
+        handleNewType:   ReferenceType ⇒ Unit
     ): Unit = {
         throw new UnsupportedOperationException
     }
@@ -280,7 +279,7 @@ class RTATypeProvider(val project: SomeProject) extends TypeProvider {
     }
 
     @inline override def foreachType(
-        use: V, typesProperty: InstantiatedTypes
+        use: V, typesProperty: InstantiatedTypes, additionalTypes: Set[ReferenceType]
     )(
         handleType: ReferenceType ⇒ Unit
     ): Unit = {
@@ -290,25 +289,22 @@ class RTATypeProvider(val project: SomeProject) extends TypeProvider {
                 handleType(av.theUpperTypeBound)
             case _ ⇒
         }
-        typesProperty.types.iterator.filter(isPossibleType(use, _)).foreach(handleType)
+        typesProperty.types.iterator.filter { tpe ⇒
+            isPossibleType(use, tpe) || additionalTypes.contains(tpe)
+        }.foreach(handleType)
     }
-
-    /*@inline override def containsType(
-        typesProperty: InstantiatedTypes, tpe: ReferenceType
-    ): Boolean = {
-        typesProperty.types.contains(tpe)
-    }
-
-    @inline override def containsArrayTypes(typesProperty: InstantiatedTypes): Boolean = true*/
 
     @inline protected[this] def continuation(
-        use:           V,
-        updatedEPS:    EPS[Entity, InstantiatedTypes],
-        oldEOptP:      EOptionP[Entity, InstantiatedTypes],
-        handleNewType: ReferenceType ⇒ Unit
+        use:             V,
+        updatedEPS:      EPS[Entity, InstantiatedTypes],
+        oldEOptP:        EOptionP[Entity, InstantiatedTypes],
+        additionalTypes: Set[ReferenceType],
+        handleNewType:   ReferenceType ⇒ Unit
     ): Unit = {
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-        updatedEPS.ub.dropOldest(seenTypes).filter(isPossibleType(use, _)).foreach(handleNewType)
+        updatedEPS.ub.dropOldest(seenTypes).filter { tpe ⇒
+            isPossibleType(use, tpe) || additionalTypes.contains(tpe)
+        }.foreach(handleNewType)
     }
 }
 
@@ -354,36 +350,31 @@ class PropagationBasedTypeProvider(
     }
 
     @inline override def foreachType(
-        use: V, typesProperty: (InstantiatedTypes, InstantiatedTypes)
+        use:             V,
+        typesProperty:   (InstantiatedTypes, InstantiatedTypes),
+        additionalTypes: Set[ReferenceType]
     )(
         handleType: ReferenceType ⇒ Unit
     ): Unit = {
-        typesProperty._1.types.iterator.filter(isPossibleType(use, _)).foreach(handleType)
-        typesProperty._2.types.iterator.filter(isPossibleType(use, _)).foreach(handleType)
+        typesProperty._1.types.iterator.filter { tpe ⇒
+            isPossibleType(use, tpe) || additionalTypes.contains(tpe)
+        }.foreach(handleType)
+        typesProperty._2.types.iterator.filter { tpe ⇒
+            isPossibleType(use, tpe) || additionalTypes.contains(tpe)
+        }.foreach(handleType)
     }
-
-    /*@inline override def containsType(
-        typesProperty: (InstantiatedTypes, InstantiatedTypes), tpe: ReferenceType
-    ): Boolean = {
-        typesProperty._1.types.contains(tpe) ||
-            typesProperty._2.types.contains(tpe)
-    }
-
-    @inline override def containsArrayTypes(
-        typesProperty: (InstantiatedTypes, InstantiatedTypes)
-    ): Boolean = {
-        typesProperty._1.types.exists(_.isArrayType) ||
-            typesProperty._2.types.exists(_.isArrayType)
-    }*/
 
     @inline protected[this] def continuation(
-        use:           V,
-        updatedEPS:    EPS[Entity, InstantiatedTypes],
-        oldEOptP:      EOptionP[Entity, InstantiatedTypes],
-        handleNewType: ReferenceType ⇒ Unit
+        use:             V,
+        updatedEPS:      EPS[Entity, InstantiatedTypes],
+        oldEOptP:        EOptionP[Entity, InstantiatedTypes],
+        additionalTypes: Set[ReferenceType],
+        handleNewType:   ReferenceType ⇒ Unit
     ): Unit = {
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
-        updatedEPS.ub.dropOldest(seenTypes).filter(isPossibleType(use, _)).foreach(handleNewType)
+        updatedEPS.ub.dropOldest(seenTypes).filter { tpe ⇒
+            isPossibleType(use, tpe) || additionalTypes.contains(tpe)
+        }.foreach(handleNewType)
     }
 }
 
@@ -440,35 +431,28 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     @inline protected[this] def combine(pts1: PointsToSet, pts2: PointsToSet): PointsToSet
 
     @inline override def foreachType(
-        use: V, typesProperty: PointsToSet
+        use: V, typesProperty: PointsToSet, additionalTypes: Set[ReferenceType]
     )(
         handleType: ReferenceType ⇒ Unit
     ): Unit = {
         typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe ⇒
-            if (isPossibleType(use, tpe)) handleType(tpe)
+            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe)) handleType(tpe)
         }
     }
 
     @inline protected[this] def continuation(
-        use:           V,
-        updatedEPS:    EPS[Entity, PointsToSet],
-        oldEOptP:      EOptionP[Entity, PointsToSet],
-        handleNewType: ReferenceType ⇒ Unit
+        use:             V,
+        updatedEPS:      EPS[Entity, PointsToSet],
+        oldEOptP:        EOptionP[Entity, PointsToSet],
+        additionalTypes: Set[ReferenceType],
+        handleNewType:   ReferenceType ⇒ Unit
     ): Unit = {
         val ub = updatedEPS.ub
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
         ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe ⇒
-            if (isPossibleType(use, tpe)) handleNewType(tpe)
+            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe)) handleNewType(tpe)
         }
     }
-
-    /*@inline def containsType(typesProperty: PointsToSet, tpe: ReferenceType): Boolean = {
-        typesProperty.types.contains(tpe)
-    }
-
-    @inline def containsArrayTypes(typesProperty: PointsToSet): Boolean = {
-        typesProperty.types.exists(_.isArrayType)
-    }*/
 
     @inline private[this] def currentPointsTo(
         depender: Entity,
@@ -565,14 +549,14 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
     override val providesAllocations: Boolean = true
 
     @inline override def foreachAllocation(
-        use: V, typesProperty: AllocationSitePointsToSet
+        use: V, typesProperty: AllocationSitePointsToSet, additionalTypes: Set[ReferenceType]
     )(
         handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
         typesProperty.forNewestNElements(typesProperty.numElements) { as ⇒
             val (method, pc, typeId) = longToAllocationSite(as)
             val tpe = ReferenceType.lookup(typeId)
-            if (isPossibleType(use, tpe))
+            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
                 handleAllocation(
                     tpe,
                     method.map(new SimpleContext(_)).getOrElse(NoContext),
@@ -585,6 +569,7 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
         use:                 V,
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
+        additionalTypes:     Set[ReferenceType],
         handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
     ): Unit = {
         val ub = updatedEPS.ub
@@ -592,7 +577,7 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
         ub.forNewestNElements(ub.numElements - seenElements) { as ⇒
             val (method, pc, typeId) = longToAllocationSite(as)
             val tpe = ReferenceType.lookup(typeId)
-            if (isPossibleType(use, tpe))
+            if (isPossibleType(use, tpe) || additionalTypes.contains(tpe))
                 handleNewAllocation(
                     tpe,
                     method.map(new SimpleContext(_)).getOrElse(NoContext),

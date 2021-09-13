@@ -35,6 +35,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKeys
+import org.opalj.br.analyses.cg.CallBySignatureKey
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
@@ -59,9 +60,9 @@ class CallGraphAnalysis private[cg] (
     type LocalTypeInformation
 
     private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
-    /*private[this] lazy val getCBSTargets = project.get(CallBySignatureKey)
+    private[this] lazy val getCBSTargets = project.get(CallBySignatureKey)
     private[this] val resovleCallBySignature =
-        project.config.getBoolean("org.opalj.br.analyses.cg.callBySignatureResolution")*/
+        project.config.getBoolean("org.opalj.br.analyses.cg.callBySignatureResolution")
 
     def c(state: CGState[ContextType])(eps: SomeEPS): ProperPropertyComputationResult = {
         eps match {
@@ -81,8 +82,10 @@ class CallGraphAnalysis private[cg] (
                 val calls = new DirectCalls()
 
                 for (cs ← relevantCallSites) {
-                    val receiver = state.receiverForCallSite(cs)
-                    typeProvider.continuation(receiver, eps.asInstanceOf[EPS[Entity, PropertyType]]) {
+                    val (receiver, cbsTargets) = state.callSiteData(cs)
+                    typeProvider.continuation(
+                        receiver, eps.asInstanceOf[EPS[Entity, PropertyType]], cbsTargets
+                    ) {
                         newType ⇒
                             val CallSite(pc, name, descriptor, declaredType) = cs
                             val tgtR = project.instanceCall(
@@ -133,24 +136,20 @@ class CallGraphAnalysis private[cg] (
         val callerType = callContext.method.declaringClassType
         val callSite = CallSite(pc, call.name, call.descriptor, call.declaringClass)
 
-        /*val cbsTargets =
+        val cbsTargets: Set[ReferenceType] =
             if (!isPrecise && resovleCallBySignature && call.isInterface &&
                 call.declaringClass.isObjectType) {
                 val cf = project.classFile(call.declaringClass.asObjectType)
                 cf.flatMap { _.findMethod(call.name, call.descriptor) }.map {
-                    getCBSTargets(_)
-                }.getOrElse(RefArray.empty)
-            } else RefArray.empty
-
-        val targetTypes = potentialTargets ++ cbsTargets.foreachIterator
-
-        var unresolvedTypes = IntTrieSet.empty*/
+                    getCBSTargets(_).toSet[ReferenceType]
+                }.getOrElse(Set.empty)
+            } else Set.empty
 
         val actualTypes = typeProvider.typesProperty(
             call.receiver.asVar, state.callContext, callSite, state.tac.stmts
         )
 
-        typeProvider.foreachType(call.receiver.asVar, actualTypes) { possibleTgtType ⇒
+        typeProvider.foreachType(call.receiver.asVar, actualTypes, cbsTargets) { possibleTgtType ⇒
             val tgtR = project.instanceCall(
                 callerType, possibleTgtType, call.name, call.descriptor
             )
@@ -168,7 +167,7 @@ class CallGraphAnalysis private[cg] (
             )
         }
 
-        state.addCallSite(callSite, call.receiver.asVar)
+        state.addCallSite(callSite, call.receiver.asVar, cbsTargets)
 
         // Deal with the fact that there may be unknown subtypes of the receiver type that might
         // override the method
