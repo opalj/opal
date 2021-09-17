@@ -144,7 +144,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
     protected def effectiveUTB(utb: UIDSet[_ <: ReferenceType]): UIDSet[_ <: ReferenceType] = {
         val it = utb.iterator
         while (it.hasNext) {
-            val t: ReferenceType = it.next
+            val t: ReferenceType = it()
             if (t.isArrayType)
                 return utb;
 
@@ -1058,7 +1058,7 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
         with MultipleOriginsValue {
         this: DomainMultipleReferenceValues =>
 
-        def this(values: UIDSet[DomainSingleOriginReferenceValue]) {
+        def this(values: UIDSet[DomainSingleOriginReferenceValue]) = {
             this(
                 values,
                 values.idSet,

@@ -6,6 +6,7 @@ import java.util.{Arrays => JArrays}
 
 import org.opalj.collection.RefIterator
 import org.opalj.collection.immutable.RefArray
+import scala.Iterable
 
 /**
  * An array based implementation of a mutable buffer. This implementation offers highly
@@ -90,7 +91,7 @@ final class RefArrayBuffer[N >: Null <: AnyRef] private (
         RefArray._UNSAFE_from[N](JArrays.copyOfRange(data, from, until, classOf[Array[AnyRef]]))
     }
 
-    def ++=(is: Traversable[N]): this.type = {
+    def ++=(is: Iterable[N]): this.type = {
         is.foreach(+=)
         this
     }

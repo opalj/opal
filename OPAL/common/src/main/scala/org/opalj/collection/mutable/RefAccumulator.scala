@@ -13,6 +13,7 @@ package org.opalj.collection.mutable
  *
  * @author Michael Eichberg
  */
+import scala.compat._
 final class RefAccumulator[A <: AnyRef] private (
         private var data: List[AnyRef] // either a value of type A or a non-empty iterator of A
 ) extends {
@@ -24,7 +25,7 @@ final class RefAccumulator[A <: AnyRef] private (
         data ::= i
     }
 
-    def ++=(is: TraversableOnce[A]): Unit = {
+    def ++=(is: IterableOnce[A]): Unit = {
         is match {
             case it: Iterator[A] =>
                 if (it.hasNext) data ::= it

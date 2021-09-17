@@ -245,8 +245,8 @@ class ReturnValueFreshnessAnalysis private[analyses] (
 
         // for every return-value statement check the def-sites
         for {
-            ReturnValue(_, expr) ← code
-            defSite ← expr.asVar.definedBy
+            ReturnValue(_, expr) <- code
+            defSite <- expr.asVar.definedBy
         } {
 
             // parameters are not fresh by definition

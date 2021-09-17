@@ -6,6 +6,7 @@ import java.util.{Arrays => JArrays}
 
 import scala.collection.mutable
 import scala.collection.generic
+import scala.compat._
 
 /**
  * An array based implementation of a mutable stack of `ref` values which has a
@@ -27,9 +28,9 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
     with mutable.Cloneable[RefArrayStack[N]]
     with Serializable { stack =>
 
-    def this(initialSize: Int = 4) { this(new Array[AnyRef](initialSize), 0) }
+    def this(initialSize: Int = 4) = { this(new Array[AnyRef](initialSize), 0) }
 
-    def this(e: N, initialSize: Int) {
+    def this(e: N, initialSize: Int) = {
         this(new Array[AnyRef](Math.max(initialSize, 1)), 1)
         data(0) = e
     }
@@ -80,7 +81,7 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
         this
     }
 
-    final def ++=(is: TraversableOnce[N]): this.type = {
+    final def ++=(is: IterableOnce[N]): this.type = {
         is foreach { push }
         this
     }
@@ -221,6 +222,8 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
 /**
  * Factory to create [[RefArrayStack]]s.
  */
+
+//TODO solve the following problem
 object RefArrayStack {
 
     implicit def canBuildFrom[N >: Null <: AnyRef]: generic.CanBuildFrom[RefArrayStack[N], N, RefArrayStack[N]] = {
@@ -238,7 +241,7 @@ object RefArrayStack {
      * Creates a new stack based on a given sequence. The last value of the sequence will
      * be the top value of the stack.
      */
-    def fromSeq[N >: Null <: AnyRef](seq: TraversableOnce[N]): RefArrayStack[N] = {
+    def fromSeq[N >: Null <: AnyRef](seq: IterableOnce[N]): RefArrayStack[N] = {
         seq.foldLeft(new RefArrayStack[N](8))(_ += _)
     }
 

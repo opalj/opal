@@ -9,6 +9,7 @@ import scala.collection.Map
 import scala.collection.mutable.Builder
 import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.control.{find => findInArray}
+import scala.compat._
 
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
@@ -185,7 +186,7 @@ class RefArray[+T /* "<: AnyRef" this constraint is ONLY enforced by the factory
         IntArray._UNSAFE_from(newData)
     }
 
-    def flatMap[X <: AnyRef](f: T => TraversableOnce[X]): RefArray[X] = {
+    def flatMap[X <: AnyRef](f: T => IterableOnce[X]): RefArray[X] = {
         val b = RefArray.newBuilder[X]
         var i = 0
         val max = data.length

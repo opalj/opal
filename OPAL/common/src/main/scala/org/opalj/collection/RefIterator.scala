@@ -5,6 +5,7 @@ package collection
 import scala.reflect.ClassTag
 import scala.collection.AbstractIterator
 import scala.collection.GenTraversableOnce
+import scala.compat._
 
 /**
  * Iterator over a collection of `AnyRef` values. (RefIterator[Char] would be an iterator over
@@ -114,7 +115,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
         }
     }
 
-    def flatMap[X](f: T => TraversableOnce[X]): RefIterator[X] = {
+    def flatMap[X](f: T => IterableOnce[X]): RefIterator[X] = {
         new RefIterator[X] {
             private[this] var it: Iterator[X] = Iterator.empty
             private[this] def advanceIterator(): Unit = {
@@ -219,13 +220,13 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
 
     def zip[X <: AnyRef](that: RefIterator[X]): RefIterator[(T, X)] = new RefIterator[(T, X)] {
         def hasNext: Boolean = self.hasNext && that.hasNext
-        def next: (T, X) = (self.next(), that.next())
+        def next(): (T, X) = (self.next(), that.next())
     }
 
     override def zipWithIndex: RefIterator[(T, Int)] = new RefIterator[(T, Int)] {
         private[this] var idx = 0
         def hasNext: Boolean = self.hasNext
-        def next: (T, Int) = { val ret = (self.next(), idx); idx += 1; ret }
+        def next(): (T, Int) = { val ret = (self.next(), idx); idx += 1; ret }
     }
 
 }

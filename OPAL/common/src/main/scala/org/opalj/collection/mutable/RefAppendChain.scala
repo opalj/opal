@@ -14,7 +14,7 @@ class RefAppendChain[N >: Null <: AnyRef] private (
         private var l: RefAppendChainNode[N]
 ) {
 
-    def this() { this(null, null) }
+    def this() = { this(null, null) }
 
     def isEmpty: Boolean = h == null
 
