@@ -2,7 +2,7 @@
 import sbt._
 import sbt.Keys._
 import sbt.internal.util.ManagedLogger
-
+import scalafix.sbt.ScalafixPlugin.autoImport._
 /**
  * @author Simon Leischnig
  */

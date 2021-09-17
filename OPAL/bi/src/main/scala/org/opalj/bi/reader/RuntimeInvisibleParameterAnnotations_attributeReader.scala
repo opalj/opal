@@ -4,6 +4,7 @@ package bi
 package reader
 
 import java.io.DataInputStream
+import scala.Iterable
 
 /**
  * Generic parser for the `RuntimeInvisibleParameterAnnotations` attribute.
@@ -15,7 +16,7 @@ trait RuntimeInvisibleParameterAnnotations_attributeReader extends AttributeRead
     //
 
     type ParameterAnnotations
-    type ParametersAnnotations <: Traversable[ParameterAnnotations]
+    type ParametersAnnotations <: Iterable[ParameterAnnotations]
     /**
      * Method that delegates to another reader to parse the annotations of the parameters.
      */

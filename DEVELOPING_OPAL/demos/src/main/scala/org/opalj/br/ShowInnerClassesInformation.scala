@@ -22,7 +22,7 @@ object ShowInnerClassesInformation extends ProjectAnalysisApplication {
 
         val messages =
             for {
-                classFile ← p.allClassFiles.par
+                classFile <- p.allClassFiles.par
                 if classFile.innerClasses.isDefined
             } yield {
                 val header =

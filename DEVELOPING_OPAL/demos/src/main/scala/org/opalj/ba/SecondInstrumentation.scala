@@ -45,7 +45,7 @@ object SecondInstrumentation extends App {
     val cf = p.classFile(TheType).get
     // let's transform the methods
     val newVersion = bi.Java8Version
-    val newMethods = for (m ← cf.methods) yield {
+    val newMethods = for (m <- cf.methods) yield {
         m.body match {
             case None =>
                 m.copy() // these are native and abstract methods
@@ -58,7 +58,7 @@ object SecondInstrumentation extends App {
                 val lCode = LabeledCode(code)
                 var modified = false
                 for {
-                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) ← code
+                    PCAndInstruction(pc, INVOKEVIRTUAL(_, "println", PrintlnDescriptor)) <- code
                     param = operandsArray(pc).head
                     // if param.asDomainReferenceValue.valueType.get == CollectionType
                     if param.asDomainReferenceValue.isValueASubtypeOf(CollectionType).isYes

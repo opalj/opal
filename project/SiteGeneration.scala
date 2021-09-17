@@ -4,7 +4,7 @@ import sbt.Keys.TaskStreams
 
 import play.twirl.compiler.TwirlCompiler
 import play.twirl.api.Html
-
+import scalafix.sbt.ScalafixPlugin.autoImport._
 /**
  * Definition of the tasks and settings to generate the OPAL Website (www.opal-project.de)
  *

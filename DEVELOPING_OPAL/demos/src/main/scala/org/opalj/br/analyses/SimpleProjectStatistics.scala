@@ -60,8 +60,8 @@ object SimpleProjectStatistics extends ProjectAnalysisApplication {
                 var max = 0
                 var methodName: String = null
                 for {
-                    classFile ← project.allClassFiles
-                    method ← classFile.methods
+                    classFile <- project.allClassFiles
+                    method <- classFile.methods
                     if method.body.isDefined
                     size = method.body.get.instructionsCount
                     if size > max
@@ -79,8 +79,8 @@ object SimpleProjectStatistics extends ProjectAnalysisApplication {
                 var methodName: String = null
 
                 for {
-                    classFile ← project.allClassFiles
-                    method ← classFile.methods
+                    classFile <- project.allClassFiles
+                    method <- classFile.methods
                     if method.body.isDefined
                     count = method.body.get.maxLocals
                     if count > max
