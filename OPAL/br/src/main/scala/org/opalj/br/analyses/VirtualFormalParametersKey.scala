@@ -5,6 +5,7 @@ package analyses
 
 import scala.collection.mutable.OpenHashMap
 import org.opalj.collection.immutable.ConstArray
+import scala.Iterable
 
 /**
  * The set of all explicit and implicit virtual formal method parameters in a project.
@@ -59,7 +60,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
         val sites = new OpenHashMap[DeclaredMethod, ConstArray[VirtualFormalParameter]]
 
         for {
-            dm ← p.get(DeclaredMethodsKey).declaredMethods
+            dm <- p.get(DeclaredMethodsKey).declaredMethods
             if (dm.hasSingleDefinedMethod)
         } {
             val md = dm.descriptor
@@ -84,7 +85,7 @@ object VirtualFormalParametersKey extends ProjectInformationKey[VirtualFormalPar
     // PROPERTYSTORE AND TO ENSURE THAT VIRTUAL FORMAL PARAMETERS AND THE PROPERTYSTORE CONTAIN THE SAME
     // OBJECTS!
     //
-    final val entityDerivationFunction: (SomeProject) => (Traversable[AnyRef], VirtualFormalParameters) = {
+    final val entityDerivationFunction: (SomeProject) => (Iterable[AnyRef], VirtualFormalParameters) = {
         (p: SomeProject) =>
             {
                 // this will collect the formal parameters of the project if not yet collected...

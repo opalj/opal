@@ -32,6 +32,8 @@ import org.opalj.br.TopVariableInfo
 import org.opalj.br.Type
 import org.opalj.br.VerificationTypeInfo
 import org.opalj.br.VoidType
+import scala.Iterable
+import scala.compat._
 
 /**
  * Encapsulates the available type information about a `DomainValue`.
@@ -577,7 +579,7 @@ trait IsReferenceValue extends KnownTypedValue {
      * @return The set of values this reference value abstracts over. The set is empty if this
      *         value is already a base value and it does not abstract over other values.
      */
-    def baseValues: Traversable[IsReferenceValue] // ... technically a set of IsBaseReferenceValue
+    def baseValues: Iterable[IsReferenceValue] // ... technically a set of IsBaseReferenceValue
 
     /**
      * The set of base values (`IsReferenceValue`) this value abstracts over.
@@ -587,14 +589,14 @@ trait IsReferenceValue extends KnownTypedValue {
      *
      * @note Primarily defined as a convenience interface.
      */
-    def allValues: Traversable[IsReferenceValue]
+    def allValues: Iterable[IsReferenceValue]
 
     override def toCanonicalForm: IsReferenceValue
 }
 
 trait IsBaseReferenceValue extends IsReferenceValue {
-    final override def baseValues: Traversable[this.type] = Nil
-    final override def allValues: Traversable[this.type] = List(this)
+    final override def baseValues: Iterable[this.type] = Nil
+    final override def allValues: Iterable[this.type] = List(this)
     override def toCanonicalForm: IsBaseReferenceValue
 }
 
@@ -977,7 +979,7 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
 
     assert(baseValues.nonEmpty)
 
-    override def allValues: Traversable[IsReferenceValue] = this.baseValues
+    override def allValues: Iterable[IsReferenceValue] = this.baseValues
 
     override def verificationTypeInfo: VerificationTypeInfo = {
         if (isNull.isYes) {
@@ -1008,8 +1010,8 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
 
         // Recall that the runtime type of this value can still be a subtype of supertype
         // even if this upperTypeBound is not a subtype of supertype.
-        val values = baseValues.toIterator.filter(_.isNull.isNoOrUnknown)
-        var answer: Answer = values.next.isValueASubtypeOf(supertype)
+        val values = baseValues.iterator.filter(_.isNull.isNoOrUnknown)
+        var answer: Answer = values.next().isValueASubtypeOf(supertype)
         values foreach { value => /* the first value is already removed */
             if (answer eq Unknown)
                 return answer; //isSubtype
@@ -1043,7 +1045,7 @@ trait IsMultipleReferenceValue extends IsReferenceValue {
 }
 
 case class AMultipleReferenceValue(
-        baseValues:     Traversable[IsReferenceValue],
+        baseValues:     Iterable[IsReferenceValue],
         isNull:         Answer,
         isPrecise:      Boolean,
         upperTypeBound: UIDSet[_ <: ReferenceType],
@@ -1085,5 +1087,5 @@ case class AMultipleReferenceValue(
  * @author Michael Eichberg
  */
 object BaseReferenceValues {
-    def unapply(rv: IsReferenceValue): Some[Traversable[IsReferenceValue]] = Some(rv.allValues)
+    def unapply(rv: IsReferenceValue): Some[Iterable[IsReferenceValue]] = Some(rv.allValues)
 }

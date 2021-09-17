@@ -442,7 +442,7 @@ private[immutable] final class UIDTrieSetN[T <: UID](
         private[this] var index = 0
         private[this] val furtherNodes = RefArrayStack.empty[UIDTrieSetNode[T]]
         def hasNext: Boolean = currentNode ne null
-        def next: T = {
+        def next(): T = {
             (this.currentNode: @unchecked) match {
                 case n: UIDTrieSet1[T] =>
                     this.currentNode = if (furtherNodes.nonEmpty) furtherNodes.pop() else null

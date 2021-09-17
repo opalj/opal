@@ -35,13 +35,13 @@ object UIDTrieSetProperties extends Properties("UIDTrieSet") {
     val intSetGen: Gen[Set[Int]] = Gen.containerOf[Set, Int](Gen.posNum[Int])
 
     val veryLargeListGen = for {
-        i ← Gen.choose(30000, 100000)
-        s ← Gen.containerOfN[List, Int](i, Arbitrary.arbitrary[Int])
+        i <- Gen.choose(30000, 100000)
+        s <- Gen.containerOfN[List, Int](i, Arbitrary.arbitrary[Int])
     } yield (s, i)
 
     val largeSetGen = for {
-        i ← Gen.choose(20, 100)
-        s ← Gen.containerOfN[Set, Int](i, Arbitrary.arbitrary[Int])
+        i <- Gen.choose(20, 100)
+        s <- Gen.containerOfN[Set, Int](i, Arbitrary.arbitrary[Int])
     } yield (s, i)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,9 +106,9 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
 
                 var overallSum = 0
                 var overallTime = Nanoseconds.None
-                for { i ← 1 to 100000 } {
+                for { i <- 1 to 100000 } {
                     var s = UIDTrieSet.empty[SUID]
-                    for { j ← 1 to 500 } {
+                    for { j <- 1 to 500 } {
                         s += SUID(rngGen.nextInt())
                     }
 
@@ -128,9 +128,9 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
 
                 var overallSum = 0
                 var overallTime = Nanoseconds.None
-                for { i ← 1 to 100000 } {
+                for { i <- 1 to 100000 } {
                     var s = Set.empty[SUID]
-                    for { j ← 1 to 500 } {
+                    for { j <- 1 to 500 } {
                         s += SUID(rngGen.nextInt())
                     }
 
@@ -152,9 +152,9 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var lastOpalS = UIDTrieSet.empty[SUID]
-                    for { j ← 0 to 1000000 } {
+                    for { j <- 0 to 1000000 } {
                         var opalS = UIDTrieSet.empty[SUID]
-                        for { i ← 0 to 50 } {
+                        for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             opalS += SUID(v)
                         }
@@ -171,9 +171,9 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var lastScalaS = Set.empty[SUID]
-                    for { j ← 0 to 1000000 } {
+                    for { j <- 0 to 1000000 } {
                         var scalaS = Set.empty[SUID]
-                        for { i ← 0 to 50 } {
+                        for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             scalaS += SUID(v)
                         }
@@ -185,9 +185,9 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
             }
 
             var opalTotal = 0L
-            for { v ← opalS } { opalTotal += v.id }
+            for { v <- opalS } { opalTotal += v.id }
             var scalaTotal = 0L
-            for { v ← scalaS } { scalaTotal += v.id }
+            for { v <- scalaS } { scalaTotal += v.id }
             assert(opalTotal == scalaTotal)
         }
 
@@ -197,9 +197,9 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var allSets = List.empty[UIDTrieSet[SUID]]
-                    for { j ← 0 to 1000000 } {
+                    for { j <- 0 to 1000000 } {
                         var opalS = UIDTrieSet.empty[SUID]
-                        for { i ← 0 to 50 } {
+                        for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             opalS += SUID(v)
                         }
@@ -214,9 +214,9 @@ class UIDTrieSetTest extends AnyFunSpec with Matchers {
                     val seed = 123456789L
                     val rngGen = new java.util.Random(seed)
                     var allSets = List.empty[Set[SUID]]
-                    for { j ← 0 to 1000000 } {
+                    for { j <- 0 to 1000000 } {
                         var scalaS = Set.empty[SUID]
-                        for { i ← 0 to 50 } {
+                        for { i <- 0 to 50 } {
                             val v = rngGen.nextInt()
                             scalaS += SUID(v)
                         }

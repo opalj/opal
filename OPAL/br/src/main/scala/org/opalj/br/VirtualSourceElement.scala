@@ -3,6 +3,7 @@ package org.opalj
 package br
 
 import scala.math.Ordered
+import scala.Iterable
 
 /**
  * A `VirtualSourceElement` is the representation of some source element that may be
@@ -47,9 +48,9 @@ sealed abstract class VirtualSourceElement
 object VirtualSourceElement {
 
     def asVirtualSourceElements(
-        classFiles:     Traversable[ClassFile],
-        includeMethods: Boolean                = true,
-        includeFields:  Boolean                = true
+        classFiles:     Iterable[ClassFile],
+        includeMethods: Boolean             = true,
+        includeFields:  Boolean             = true
     ): Set[VirtualSourceElement] = {
         var sourceElements: Set[VirtualSourceElement] = Set.empty
 

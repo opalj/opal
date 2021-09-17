@@ -4,6 +4,7 @@ package graphs
 
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.IntIterator
+import scala.compat._
 
 /**
  * Efficient representation of a mutable graph where the nodes are identified using consecutive
@@ -37,7 +38,7 @@ class VirtualUnidirectionalGraph(
 
     override def nonEmpty: Boolean = verticesCount > 0
 
-    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s)
+    override def apply(s: Int): IterableOnce[Int] = theSuccessors(s)
 
     /**
      * Returns a node's successors.
