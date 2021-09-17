@@ -527,7 +527,7 @@ private[immutable] final class LongTrieSetN(
         }
         moveToNextLeafNode()
         def hasNext: Boolean = leafNode ne null
-        def next: Long = {
+        def next(): Long = {
             var index = this.index
             val i = leafNode(index)
             index += 1

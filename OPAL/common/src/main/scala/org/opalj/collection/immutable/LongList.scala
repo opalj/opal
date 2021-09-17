@@ -119,7 +119,7 @@ final case class LongListNode(
         new LongIterator {
             private[this] var currentList: LongList = list
             def hasNext: Boolean = currentList.nonEmpty
-            def next: Long = {
+            def next(): Long = {
                 val v = currentList.head
                 currentList = currentList.tail
                 v

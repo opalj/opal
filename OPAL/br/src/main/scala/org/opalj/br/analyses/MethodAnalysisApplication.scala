@@ -7,6 +7,7 @@ import java.net.URL
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import scala.Iterable
 
 /**
  * A small framework to implement analyses which should be executed for a given
@@ -19,7 +20,7 @@ abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
             "-method=<name and/or parts of the signature>"
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         if (parameters.size != 2 || parameters(0).substring(0, 7) == parameters(1).substring(0, 7))
             return List("missing parameters");
 

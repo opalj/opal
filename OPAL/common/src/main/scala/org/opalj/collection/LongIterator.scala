@@ -19,8 +19,8 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
         new LongIterator {
             private[this] var it = self
             override def hasNext = it != null
-            override def next: Long = {
-                val v = it.next
+            override def next(): Long = {
+                val v = it.next()
                 if (!it.hasNext) {
                     it = if (it eq self) other else null
                 }
@@ -89,7 +89,7 @@ abstract class LongIterator extends AbstractIterator[Long] { self =>
     override def map[X](m: Long => X): RefIterator[X] = new RefIterator[X] {
         def hasNext: Boolean = self.hasNext
 
-        def next: X = m(self.next())
+        def next(): X = m(self.next())
 
     }
 
