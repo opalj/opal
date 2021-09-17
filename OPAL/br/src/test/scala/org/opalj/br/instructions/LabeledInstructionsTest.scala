@@ -58,7 +58,7 @@ class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
         }
 
     "resolving SimpleBranchInstructions" should "resolve to the correct branchoffset" in {
-        for ((i, index) ← resolvedSimpleBranchInstructions.zipWithIndex) {
+        for ((i, index) <- resolvedSimpleBranchInstructions.zipWithIndex) {
             assert(i.branchoffset == index)
         }
     }

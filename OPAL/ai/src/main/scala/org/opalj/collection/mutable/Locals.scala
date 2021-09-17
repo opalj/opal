@@ -275,7 +275,7 @@ sealed trait Locals[T >: Null <: AnyRef] {
     def mkString(start: String, sep: String, end: String): String = {
         var s = ""
         var pre = start
-        for { e ← this } {
+        for { e <- this } {
             s = s + pre + e
             pre = sep
         }
@@ -1900,7 +1900,7 @@ private[mutable] final class Locals12_N[T >: Null <: AnyRef: ClassTag](
         final val vs12_N: Array[T]
 ) extends LocalsX[T] {
 
-    def this(size: Int) {
+    def this(size: Int) = {
         this(
             new Locals11[T],
             new Array[T](size - 11)

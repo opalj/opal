@@ -204,8 +204,8 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
         // }
 
         for {
-            (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            taCode ← getTACAI(method, pcs)
+            (method, pcs) <- fieldAccessInformation.writeAccesses(field)
+            taCode <- getTACAI(method, pcs)
         } {
             if (methodUpdatesField(method, taCode, pcs))
                 return Result(field, NonFinalFieldByAnalysis);
@@ -525,7 +525,7 @@ class L2FieldMutabilityAnalysis private[analyses] (val project: SomeProject) ext
     )(implicit state: State): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
-        for (pc ← pcs) {
+        for (pc <- pcs) {
             val index = taCode.properStmtIndexForPC(pc)
             if (index >= 0) {
                 val stmt = stmts(index)

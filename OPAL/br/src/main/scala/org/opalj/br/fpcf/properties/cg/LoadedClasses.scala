@@ -14,6 +14,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import scala.compat._
 
 sealed trait LoadedClassesMetaInformation extends PropertyMetaInformation {
     final type Self = LoadedClasses
@@ -38,10 +39,10 @@ sealed class LoadedClasses private[properties] (
         }
     }
 
-    def updated(newClasses: TraversableOnce[ObjectType]): LoadedClasses = {
+    def updated(newClasses: IterableOnce[ObjectType]): LoadedClasses = {
         var updatedOrderedClasses = orderedClasses
         var updatedClasses = classes
-        for { c ← newClasses } {
+        for { c <- newClasses } {
             val nextUpdatedClasses = updatedClasses + c
             if (nextUpdatedClasses ne updatedClasses /* <= used as a contains check */ ) {
                 updatedOrderedClasses ::= c

@@ -109,7 +109,7 @@ class LBFieldValuesAnalysis private[analyses] (
     def relevantFieldsIterable(classFile: ClassFile): Iterable[Field] = {
         val thisClassType = classFile.thisType
         for {
-            field ← classFile.fields
+            field <- classFile.fields
             if field.fieldType.isObjectType
 
             // Test that the initialization can be made by the declaring class only:
@@ -178,7 +178,7 @@ class LBFieldValuesAnalysis private[analyses] (
             classFile:      ClassFile,
             relevantFields: TraversableOnce[Field],
             dependees:      EOptionPSet[Entity, Property] = EOptionPSet.empty
-        ) {
+        ) = {
             this(classFile, dependees)
             fieldInformation = relevantFields.map[(Field, Option[DomainValue])](_ -> None).toMap
         }

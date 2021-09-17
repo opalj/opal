@@ -8,6 +8,7 @@ import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import scala.compat._
 
 /**
  * A basic facility to model shared and exclusive access to some functionality/data structure.
@@ -59,7 +60,7 @@ object Locking {
      * Afterwards all locks are released in reverse order.
      */
     @inline final def withWriteLocks[T](
-        rwLocks: TraversableOnce[ReentrantReadWriteLock]
+        rwLocks: IterableOnce[ReentrantReadWriteLock]
     )(
         f: => T
     ): T = {
