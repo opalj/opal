@@ -5,6 +5,7 @@ package mutable
 
 import scala.collection.mutable
 import scala.collection.generic
+import scala.compat._
 
 /**
  * An array based implementation of a mutable stack of `int` values which has a
@@ -23,7 +24,7 @@ final class IntArrayStack private (
     with mutable.Cloneable[IntArrayStack]
     with Serializable { stack =>
 
-    def this(initialSize: Int = 4) { this(new Array[Int](initialSize), 0) }
+    def this(initialSize: Int = 4) = { this(new Array[Int](initialSize), 0) }
 
     override def size: Int = size0
     override def length: Int = size0
@@ -212,7 +213,7 @@ object IntArrayStack {
     implicit def canBuildFrom: generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] = {
         new generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] {
             def apply(): mutable.Builder[Int, IntArrayStack] = newBuilder
-            def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder
+            def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder()
         }
     }
 
@@ -224,7 +225,7 @@ object IntArrayStack {
      * Creates a new stack based on a given sequence. The last value of the sequence will
      * be the top value of the stack.
      */
-    def fromSeq(seq: TraversableOnce[Int]): IntArrayStack = {
+    def fromSeq(seq: IterableOnce[Int]): IntArrayStack = {
         seq.foldLeft(new IntArrayStack(8))(_ += _)
     }
 

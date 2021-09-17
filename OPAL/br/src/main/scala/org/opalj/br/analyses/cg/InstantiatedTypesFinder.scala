@@ -6,6 +6,7 @@ package cg
 
 import net.ceedubs.ficus.Ficus._
 import org.opalj.log.OPALLogger
+import scala.Iterable
 
 /**
  *
@@ -14,7 +15,7 @@ import org.opalj.log.OPALLogger
  */
 sealed trait InstantiatedTypesFinder {
 
-    def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = Traversable.empty
+    def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = Iterable.empty
 }
 
 /**
@@ -25,8 +26,8 @@ sealed trait InstantiatedTypesFinder {
  */
 trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
-    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
-        Traversable(ObjectType.String) ++ super.collectInstantiatedTypes(project)
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
+        Iterable(ObjectType.String) ++ super.collectInstantiatedTypes(project)
     }
 }
 
@@ -39,7 +40,7 @@ trait ApplicationInstantiatedTypesFinder extends InstantiatedTypesFinder {
  */
 trait LibraryInstantiatedTypesFinder extends InstantiatedTypesFinder {
 
-    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         val closedPackages = project.get(ClosedPackagesKey)
         project.allClassFiles.iterator.filter { cf =>
             (cf.isPublic || !closedPackages.isClosed(cf.thisType.packageName)) &&
@@ -85,7 +86,7 @@ trait ConfigurationInstantiatedTypesFinder extends InstantiatedTypesFinder {
         InitialInstantiatedTypesKey.ConfigKeyPrefix+"instantiatedTypes"
     }
 
-    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         implicit val logContext = project.logContext
         var instantiatedTypes = Set.empty[ObjectType]
 
@@ -150,7 +151,7 @@ object LibraryInstantiatedTypesFinder
  * @author Dominik Helm
  */
 object AllInstantiatedTypesFinder extends InstantiatedTypesFinder {
-    override def collectInstantiatedTypes(project: SomeProject): Traversable[ObjectType] = {
+    override def collectInstantiatedTypes(project: SomeProject): Iterable[ObjectType] = {
         val projectMethodsOnlyConfigKey = InitialInstantiatedTypesKey.ConfigKeyPrefix+
             "AllInstantiatedTypesFinder.projectClassesOnly"
         if (project.config.as[Boolean](projectMethodsOnlyConfigKey))

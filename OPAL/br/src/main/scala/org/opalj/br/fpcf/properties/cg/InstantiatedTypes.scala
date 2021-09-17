@@ -18,6 +18,7 @@ import org.opalj.fpcf.PropertyIsNotDerivedByPreviouslyExecutedAnalysis
 import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
+import scala.compat._
 
 /**
  * Represent the set of types that have allocations reachable from the respective entry points.
@@ -48,9 +49,9 @@ case class InstantiatedTypes private[properties] (
         }
     }
 
-    def updated(newTypes: TraversableOnce[ReferenceType]): InstantiatedTypes = {
+    def updated(newTypes: IterableOnce[ReferenceType]): InstantiatedTypes = {
         var newOrderedTypes = orderedTypes
-        for { t ← newTypes if !types.contains(t) } {
+        for { t <- newTypes if !types.contains(t) } {
             newOrderedTypes ::= t
         }
         new InstantiatedTypes(newOrderedTypes, types ++ newTypes)

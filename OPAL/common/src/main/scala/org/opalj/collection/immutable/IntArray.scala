@@ -7,6 +7,8 @@ import java.util.{Arrays => JArrays}
 
 import scala.collection.AbstractIterator
 import scala.collection.mutable.Builder
+import scala.Iterable
+import scala.compat._
 
 /**
  * Wraps an array such that the underlying array is no longer directly accessible and
@@ -71,7 +73,7 @@ class IntArray private (
         new IntArray(newData)
     }
 
-    def flatMap[X <: AnyRef](f: Int => TraversableOnce[X]): RefArray[X] = {
+    def flatMap[X <: AnyRef](f: Int => IterableOnce[X]): RefArray[X] = {
         val b = RefArray.newBuilder[X]
         var i = 0
         val max = data.length
@@ -83,7 +85,7 @@ class IntArray private (
         b.result()
     }
 
-    def flatMap(f: Int => TraversableOnce[Int]): IntArray = {
+    def flatMap(f: Int => IterableOnce[Int]): IntArray = {
         val b = IntArray.newBuilder
         var i = 0
         val max = data.length
@@ -259,9 +261,9 @@ object IntArray {
         new IntArray(data.clone())
     }
 
-    def from[T](data: Traversable[T])(f: T => Int): IntArray = {
+    def from[T](data: Iterable[T])(f: T => Int): IntArray = {
         val max = data.size
-        val it = data.toIterator
+        val it = data.iterator
         val newData = new Array[Int](max)
         var i = 0; while (i < max) { newData(i) = f(it.next()); i += 1 }
         new IntArray(newData)

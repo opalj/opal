@@ -149,7 +149,7 @@ final case class Int2ListNode(
             private[this] var currentList: Int2List = list
             private[this] var head: Boolean = list.h != Int.MinValue
             def hasNext: Boolean = currentList ne Int2ListEnd
-            def next: Int = {
+            def next(): Int = {
                 if (head) {
                     head = false
                     currentList.h

@@ -78,7 +78,7 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
     override def analyze(
         project:                Project[Source],
-        parameters:             Seq[String]                = List.empty,
+        parameters:             Seq[String]                 = List.empty,
         initProgressManagement: (Int) => ProgressManagement
     ): BasicReport = {
         implicit val logContext = project.logContext
@@ -123,7 +123,7 @@ object InterpretMethodsAnalysis {
         domainClass:            Class[_ <: Domain],
         beVerbose:              Boolean,
         initProgressManagement: (Int) => ProgressManagement,
-        maxEvaluationFactor:    Double                     = 3d
+        maxEvaluationFactor:    Double                      = 3d
     )(
         implicit
         logContext: LogContext
@@ -219,7 +219,7 @@ object InterpretMethodsAnalysis {
             val header = <p>Generated { new java.util.Date() }</p>
 
             val body = Seq(header) ++
-                (for ((exResource, exInstances) ← collectedExceptions.groupBy(e => e._1)) yield {
+                (for ((exResource, exInstances) <- collectedExceptions.groupBy(e => e._1)) yield {
                     val exDetails =
                         exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex

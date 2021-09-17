@@ -120,7 +120,7 @@ final case class IntListNode(
         new IntIterator {
             private[this] var currentList: IntList = list
             def hasNext: Boolean = currentList.nonEmpty
-            def next: Int = {
+            def next(): Int = {
                 val v = currentList.head
                 currentList = currentList.tail
                 v

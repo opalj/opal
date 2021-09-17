@@ -34,9 +34,9 @@ object InstructionStatistics extends AnalysisApplication {
             // FQPN = FullyQualifiedPackageName
             val instructionsPerFQPN = HashMap.empty[String, Int]
             for {
-                classFile ← project.allClassFiles
+                classFile <- project.allClassFiles
                 packageName = classFile.thisType.packageName
-                MethodWithBody(body) ← classFile.methods
+                MethodWithBody(body) <- classFile.methods
             } {
                 instructionsPerFQPN.update(
                     packageName,
@@ -56,7 +56,7 @@ object InstructionStatistics extends AnalysisApplication {
 
                 if (childPNs.nonEmpty) {
                     val childPackages =
-                        for { childPN ← childPNs } yield {
+                        for { childPN <- childPNs } yield {
                             processPackage(
                                 childPN,
                                 (
@@ -86,14 +86,14 @@ object InstructionStatistics extends AnalysisApplication {
                 // packages have only one subpackage.
                 val childPNs = HashSet.empty[String]
                 for {
-                    fqpn ← instructionsPerFQPN.keys
+                    fqpn <- instructionsPerFQPN.keys
                     if fqpn.length > rootFQPN.length()
                     if fqpn.startsWith(rootFQPN)
                     if fqpn.charAt(rootFQPN.length()) == '/' // javax is not a subpackage of java..
                 } {
                     val pnsToRemove = HashSet.empty[String]
                     var pnNeedToBeAdded = true
-                    for (childPN ← childPNs) {
+                    for (childPN <- childPNs) {
                         if (childPN.startsWith(fqpn)) {
                             pnsToRemove += childPN
                         } else if (fqpn.startsWith(childPN)) {

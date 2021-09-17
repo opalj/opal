@@ -4,6 +4,7 @@ package collection
 
 import scala.collection.mutable.Builder
 import org.opalj.collection.immutable.Chain
+import scala.compat._
 
 /**
  * A set of integer values.
