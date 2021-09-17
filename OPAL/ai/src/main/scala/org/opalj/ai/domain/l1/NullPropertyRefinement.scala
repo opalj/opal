@@ -70,7 +70,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                     (utb.head eq ObjectType.NullPointerException) && {
                         val origins = originsIterator(exception)
                         origins.nonEmpty && {
-                            val origin = origins.next
+                            val origin = origins.next()
                             isImmediateVMException(origin) && pcOfImmediateVMException(origin) == pc &&
                                 !origins.hasNext
                         }

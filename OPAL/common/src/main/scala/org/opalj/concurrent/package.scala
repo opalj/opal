@@ -204,7 +204,7 @@ package object concurrent {
     @throws[ConcurrentExceptions]("the set of concurrently thrown suppressed exceptions ")
     final def parForeachArrayElement[T, U](
         data:                 Array[T],
-        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks,
+        parallelizationLevel: Int           = NumberOfThreadsForCPUBoundTasks,
         isInterrupted:        () => Boolean = defaultIsInterrupted
     )(
         f: Function[T, U]
@@ -235,7 +235,7 @@ package object concurrent {
     final def parForeachSeqElement[T, U](
         data:                 IndexedSeq[T],
         parallelizationLevel: Int           = NumberOfThreadsForCPUBoundTasks,
-        isInterrupted:        () => Boolean  = defaultIsInterrupted
+        isInterrupted:        () => Boolean = defaultIsInterrupted
     )(
         f: Function[T, U]
     ): Unit = {

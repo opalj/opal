@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj
 package issues
-
+import scala.compat._
 import scala.xml.Node
 import scala.collection._
 import play.api.libs.json.Json

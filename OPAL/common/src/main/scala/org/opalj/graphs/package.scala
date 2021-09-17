@@ -11,6 +11,7 @@ import org.opalj.collection.mutable.RefArrayStack
 import org.opalj.collection.mutable.RefArrayBuffer
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import scala.Iterable
 
 /**
  * This package defines graph algorithms as well as factory methods to describe and compute graphs
@@ -78,11 +79,11 @@ package object graphs {
      * Requires that `Node` implements a content-based `equals` and `hashCode` method.
      */
     def toDot(
-        rootNodes: Traversable[_ <: Node],
-        dir:       String                 = "forward",
-        ranksep:   String                 = "0.8",
-        fontname:  String                 = "Helvetica",
-        rankdir:   String                 = "TB"
+        rootNodes: Iterable[_ <: Node],
+        dir:       String              = "forward",
+        ranksep:   String              = "0.8",
+        fontname:  String              = "Helvetica",
+        rankdir:   String              = "TB"
     ): String = {
         var nodesToProcess = Set.empty[Node] ++ rootNodes
         var processedNodes = Set.empty[Node]
@@ -193,8 +194,8 @@ package object graphs {
      *         of the graph.
      */
     def closedSCCs[N >: Null <: AnyRef: ClassTag](
-        ns: Traversable[N],
-        es: N => Traversable[N] // TODO Improve(?) N => Iterator[N]
+        ns: Iterable[N],
+        es: N => Iterable[N] // TODO Improve(?) N => Iterator[N]
     ): List[Iterable[N]] = {
 
         val nDFSNums = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap[N]()
@@ -555,7 +556,7 @@ package object graphs {
     def sccs(
         ns:               Int,
         es:               Int => IntIterator,
-        filterSingletons: Boolean           = false
+        filterSingletons: Boolean            = false
     ): Chain[Chain[Int]] = {
 
         /* TEXTBOOK DESCRIPTION
@@ -669,7 +670,7 @@ package object graphs {
                 // the next node that should be processed.
                 do {
                     val n = ws.pop()
-                    var remainingSuccessors = wsSuccessors.pop
+                    var remainingSuccessors = wsSuccessors.pop()
                     if (remainingSuccessors eq null) {
                         // ... we are processing the node n for the first time
                         nIndex(n) = index

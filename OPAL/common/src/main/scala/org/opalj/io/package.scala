@@ -12,6 +12,7 @@ import java.util.zip.GZIPOutputStream
 
 import scala.io.Source
 import scala.xml.Node
+import scala.compat._
 
 /**
  * Various io-related helper methods and classes.
@@ -115,7 +116,7 @@ package object io {
     }
 
     def write(
-        data:           TraversableOnce[String],
+        data:           IterableOnce[String],
         filenamePrefix: String,
         filenameSuffix: String
     ): Path = {
@@ -138,7 +139,7 @@ package object io {
     }
 
     def writeGZip(
-        data:           TraversableOnce[String],
+        data:           IterableOnce[String],
         filenamePrefix: String,
         filenameSuffix: String
     ): Path = {
@@ -156,7 +157,7 @@ package object io {
      */
     def write(data: Array[Byte], path: Path): Unit = Files.write(path, data)
 
-    def write(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
+    def write(data: IterableOnce[Array[Byte]], path: Path): Unit = {
         val out = new FileOutputStream(path.toFile)
         try {
             data.foreach(out.write)
@@ -169,7 +170,7 @@ package object io {
         writeGZip(Seq(data), path)
     }
 
-    def writeGZip(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
+    def writeGZip(data: IterableOnce[Array[Byte]], path: Path): Unit = {
         val out = new GZIPOutputStream(new FileOutputStream(path.toFile))
         try {
             data.foreach(out.write)
