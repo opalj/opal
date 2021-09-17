@@ -146,7 +146,7 @@ object TestSupport {
     ): Unit = {
         val it = allBIProjects(projectReader, jreReader)
         while (it.hasNext) {
-            val (name, project) = it.next
+            val (name, project) = it
             f(name, project())
             gc()
         }

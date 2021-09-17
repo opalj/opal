@@ -2,11 +2,10 @@
 package org.opalj
 package collection
 package immutable
-
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayStack
-
+import scala.language._
 /**
  * An '''unordered''' trie-set based on the unique ids of the stored [[UID]] objects. I.e.,
  * equality of two sets is defined in terms of the unique ids and not in terms of structural or
@@ -68,7 +67,7 @@ sealed abstract class UIDSet[T <: UID]
     /**
      * Adds the given element to this set by mutating it!
      */
-    private[opalj] def +!(e: T): UIDSet[T] = this + e
+    private[opalj] def +!(e: T): UIDSet[T] = this.add(e)
 
     // The following method(s) is(are) unsafe if "+!" is used!
     final def toUIDSet[X >: T <: UID]: UIDSet[X] = this.asInstanceOf[UIDSet[X]]
@@ -191,7 +190,7 @@ final case class UIDSet1[T <: UID](value: T) extends NonEmptyUIDSet[T] {
         es.size match {
             case 0 => this
             case 1 => this + es.head
-            case _ => es + value
+            case _ => es.add(value)
         }
     }
 
@@ -310,8 +309,9 @@ final class UIDSet2[T <: UID](value1: T, value2: T) extends NonEmptyUIDSet[T] {
         es.size match {
             case 0 => this
             case 1 => this + es.head
-            case 2 => this + es.head + es.last
-            case _ => this.foldLeft(es)(_ + _) // es is larger... which should be less work
+
+            case 2 => (this + es.head).add(es.last)
+            case _ => this.foldLeft(es)((x, y) => x.add(y)) // es is larger... which should be less work
         }
     }
 }
@@ -443,8 +443,8 @@ final class UIDSet3[T <: UID](value1: T, value2: T, value3: T) extends NonEmptyU
         es.size match {
             case 0 => this
             case 1 => this + es.head
-            case 2 => this + es.head + es.last
-            case _ => this.foldLeft(es)(_ + _) // es is at least as large as this set
+            case 2 => (this + es.head).add(es.last)
+            case _ => this.foldLeft(es)((x, y) => x.add(y)) // es is at least as large as this set
         }
     }
 }
@@ -527,8 +527,8 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
     def iterator: RefIterator[T] = new RefIterator[T] {
         private[this] val nextNodes = ArrayStack[UIDSetNodeLike[T]](self)
         def hasNext: Boolean = nextNodes.nonEmpty
-        def next: T = {
-            val currentNode = nextNodes.pop
+        def next(): T = {
+            val currentNode = nextNodes.pop()
             val nextRight = currentNode.right
             val nextLeft = currentNode.left
             if (nextRight ne null) nextNodes.push(nextRight)
@@ -676,7 +676,7 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
             override def hasNext: Boolean = nextNodes.nonEmpty
 
             override def next(): Int = {
-                val currentNode = nextNodes.pop
+                val currentNode = nextNodes.pop()
                 val nextRight = currentNode.right
                 val nextLeft = currentNode.left
                 if (nextRight ne null) nextNodes.push(nextRight)
@@ -717,12 +717,12 @@ sealed private[immutable] abstract class UIDSetNodeLike[T <: UID] extends NonEmp
         es.size match {
             case 0 => this
             case 1 => this + es.head
-            case 2 => this + es.head + es.last
+            case 2 => (this + es.head).add(es.last)
             case esSize =>
                 if (this.size > esSize)
-                    es.foldLeft(this: UIDSet[T])(_ + _)
+                    es.foldLeft(this: UIDSet[T])((x, y) => x.add(y))
                 else
-                    this.foldLeft(es: UIDSet[T])(_ + _)
+                    this.foldLeft(es: UIDSet[T])((x, y) => x.add(y))
         }
     }
 

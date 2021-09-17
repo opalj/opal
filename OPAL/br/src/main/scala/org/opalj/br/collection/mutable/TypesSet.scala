@@ -6,6 +6,7 @@ package mutable
 
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.ObjectType
+import scala.Iterable
 
 /**
  * An efficient representation of a set of types if some types are actually upper type bounds
@@ -40,9 +41,9 @@ class TypesSet( final val classHierarchy: ClassHierarchy) extends collection.Typ
         }
     }
 
-    def ++=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { += }
+    def ++=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { += }
 
-    def ++<:=(tpes: Traversable[ObjectType]): Unit = tpes.foreach { +<:= }
+    def ++<:=(tpes: Iterable[ObjectType]): Unit = tpes.foreach { +<:= }
 
     /**
      * Adds the given upper type bound to this `TypesSet` unless a supertype

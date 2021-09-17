@@ -140,7 +140,7 @@ class TamiFlexMethodInvokeAnalysis private[analyses] (
         val persistentMethodInvokeActualParams: Seq[Option[(ValueInformation, IntTrieSet)]] =
             methodInvokeActualParamsOpt.map(_.map(persistentUVar(_)(tac.stmts))).getOrElse(Seq.empty)
 
-        for (target ← targets) {
+        for (target <- targets) {
             indirectCalls.addCall(
                 caller,
                 target,

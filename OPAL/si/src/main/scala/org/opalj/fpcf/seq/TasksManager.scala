@@ -7,6 +7,7 @@ import java.util.ArrayDeque
 import java.util.PriorityQueue
 
 import scala.collection.mutable
+import scala.Iterable
 
 trait TasksManager {
 
@@ -31,8 +32,8 @@ trait TasksManager {
         task:                              QualifiedTask,
         taskEPK:                           SomeEPK,
         updatedEOptionP:                   SomeEOptionP, // the current eOptionP to which the task is related
-        updatedEOptionPDependees:          Traversable[SomeEOptionP], // the dependees of the eOptionP
-        currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
+        updatedEOptionPDependees:          Iterable[SomeEOptionP], // the dependees of the eOptionP
+        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]
     ): Unit
 
     def pollAndExecute(): Unit
@@ -58,8 +59,8 @@ private[seq] final class LIFOTasksManager extends TasksManager {
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         this.tasks.addFirst(task)
     }
@@ -95,8 +96,8 @@ private[seq] final class FIFOTasksManager extends TasksManager {
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionPs:        SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         this.tasks.addLast(task)
     }
@@ -166,8 +167,8 @@ private[seq] final class ManyDirectDependenciesLastTasksManager
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         val weight = Math.max(1, dependees.size) * Math.max(1, currentDependers.size)
         this.tasks.add(new WeightedQualifiedTask(task, weight))
@@ -205,8 +206,8 @@ private[seq] final class ManyDirectDependenciesFirstTasksManager
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         val weight = -(Math.max(1, dependees.size) * Math.max(1, currentDependers.size))
         this.tasks.add(new WeightedQualifiedTask(task, weight))
@@ -241,8 +242,8 @@ private[seq] final class ManyDirectDependersLastTasksManager
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         this.tasks.add(new WeightedQualifiedTask(task, currentDependers.size))
     }
@@ -276,8 +277,8 @@ private[seq] final class ManyDirectDependersFirstTasksManager
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         this.tasks.add(new WeightedQualifiedTask(task, -(currentDependers.size)))
     }
@@ -318,8 +319,8 @@ private[seq] final class ManyDependeesOfDirectDependersLastTasksManager
         task:                              QualifiedTask,
         taskEPK:                           SomeEPK,
         updatedEOptionP:                   SomeEOptionP,
-        updatedEOptionPDependees:          Traversable[SomeEOptionP],
-        currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
+        updatedEOptionPDependees:          Iterable[SomeEOptionP],
+        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]
     ): Unit = {
         if (task.isTriggeredByFinalProperty && ps.dependeesCount(taskEPK) == 1) {
             task()
@@ -370,8 +371,8 @@ private[seq] final class ManyDependeesOfDirectDependersFirstTasksManager
         task:                              QualifiedTask,
         taskEPK:                           SomeEPK,
         updatedEOptionP:                   SomeEOptionP,
-        updatedEOptionPDependees:          Traversable[SomeEOptionP],
-        currentDependersOfUpdatedEOptionP: Traversable[SomeEPK]
+        updatedEOptionPDependees:          Iterable[SomeEOptionP],
+        currentDependersOfUpdatedEOptionP: Iterable[SomeEPK]
     ): Unit = {
         if (task.isTriggeredByFinalProperty && ps.dependeesCount(taskEPK) == 1) {
             task()
@@ -420,8 +421,8 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersLastTasksMana
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         var weight = 0
         currentDependers foreach { epk =>
@@ -459,8 +460,8 @@ private[seq] final class ManyDependeesAndDependersOfDirectDependersFirstTasksMan
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         var weight = 0
         currentDependers foreach { epk =>
@@ -496,7 +497,7 @@ private[seq] final class AllDependeesTasksManager(
         this.initialTasks.addFirst(task)
     }
 
-    private[this] def computeForwardWeight(dependees: Traversable[SomeEOptionP]): Int = {
+    private[this] def computeForwardWeight(dependees: Iterable[SomeEOptionP]): Int = {
         val allDependees = mutable.HashSet.empty[SomeEPK]
         var newDependees = dependees.map(_.toEPK).toList
         while (newDependees.nonEmpty) {
@@ -514,7 +515,7 @@ private[seq] final class AllDependeesTasksManager(
         allDependees.size
     }
 
-    private[this] def computeBackwardWeight(currentDependers: Traversable[SomeEPK]): Int = {
+    private[this] def computeBackwardWeight(currentDependers: Iterable[SomeEPK]): Int = {
         var weight = 0
         val allDependers = mutable.HashSet.empty[SomeEPK]
         var newDependers = currentDependers.toList
@@ -536,8 +537,8 @@ private[seq] final class AllDependeesTasksManager(
         task:             QualifiedTask,
         taskEPK:          SomeEPK,
         eOptionP:         SomeEOptionP,
-        dependees:        Traversable[SomeEOptionP],
-        currentDependers: Traversable[SomeEPK]
+        dependees:        Iterable[SomeEOptionP],
+        currentDependers: Iterable[SomeEPK]
     ): Unit = {
         var weight =
             if (forward) {

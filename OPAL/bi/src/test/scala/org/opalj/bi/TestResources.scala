@@ -76,14 +76,14 @@ object TestResources {
      */
     def allManagedBITestJARs(): Seq[File] = {
         for {
-            pathFunction ← pathPrefixCandidates("bi")
+            pathFunction <- pathPrefixCandidates("bi")
             fCandidate = pathFunction(s"bi/$managedResourcesFolder")
             if fCandidate.isDefined
             f = new File(fCandidate.get)
             if f.exists
             if f.canRead
             if f.isDirectory
-            jarFile ← f.listFiles(JARsFileFilter)
+            jarFile <- f.listFiles(JARsFileFilter)
         } yield {
             jarFile
         }
@@ -108,7 +108,7 @@ object TestResources {
             return Nil;
 
         for {
-            file ← f.listFiles()
+            file <- f.listFiles()
             if file.isDirectory
             if file.canRead
         } yield {
