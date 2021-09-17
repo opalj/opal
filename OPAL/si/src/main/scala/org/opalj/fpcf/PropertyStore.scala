@@ -17,6 +17,8 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.collection.IntIterator
 import org.opalj.fpcf.PropertyKind.SupportedPropertyKinds
 import org.opalj.fpcf.PropertyKey.fallbackPropertyBasedOnPKId
+import scala.Iterable
+import scala.compat._
 
 /**
  * A property store manages the execution of computations of properties related to concrete
@@ -669,9 +671,9 @@ abstract class PropertyStore {
      *         @see `apply(epk:EPK)` for details.
      */
     final def apply[E <: Entity, P <: Property](
-        es: Traversable[E],
+        es: Iterable[E],
         pk: PropertyKey[P]
-    ): Traversable[EOptionP[E, P]] = {
+    ): Iterable[EOptionP[E, P]] = {
         es.map(e => apply(EPK(e, pk)))
     }
 
@@ -683,9 +685,9 @@ abstract class PropertyStore {
      * @see  `apply(epk:EPK)` for details.
      */
     final def apply[E <: Entity, P <: Property](
-        es:  Traversable[E],
+        es:  Iterable[E],
         pmi: PropertyMetaInformation { type Self <: P }
-    ): Traversable[EOptionP[E, P]] = {
+    ): Iterable[EOptionP[E, P]] = {
         apply(es, pmi.key)
     }
 
@@ -880,7 +882,7 @@ abstract class PropertyStore {
      * @see [[scheduleEagerComputationForEntity]] for details.
      */
     final def scheduleEagerComputationsForEntities[E <: Entity](
-        es: TraversableOnce[E]
+        es: IterableOnce[E]
     )(
         c: PropertyComputation[E]
     ): Unit = {

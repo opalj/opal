@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 import scala.collection.JavaConverters._
 import org.opalj.io
+import scala.Iterable
 
 /**
  * Enables the tracing of key events during the analysis progress.
@@ -78,7 +79,7 @@ private[par] trait PropertyStoreTracer {
 
     def appliedUpdateComputation(
         newEPKState: EPKState,
-        result:      Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
+        result:      Option[(SomeEOptionP, SomeInterimEP, Iterable[SomeEPK])]
     ): Unit
 
     def processingResult(r: PropertyComputationResult): Unit
@@ -149,7 +150,7 @@ case class FinalizedPropertyEvent(
 case class AppliedUpdateComputationEvent(
         eventId:     Int,
         newEPKState: EPKState,
-        result:      Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
+        result:      Option[(SomeEOptionP, SomeInterimEP, Iterable[SomeEPK])]
 ) extends StoreEvent {
     override def toTxt: String = s"$eventId: AppliedUpdateComputation($newEPKState; result: $result)"
 }
@@ -409,7 +410,7 @@ private[par] class RecordAllPropertyStoreEvents extends PropertyStoreTracer {
 
     override def appliedUpdateComputation(
         newEPKState: EPKState,
-        result:      Option[(SomeEOptionP, SomeInterimEP, Traversable[SomeEPK])]
+        result:      Option[(SomeEOptionP, SomeInterimEP, Iterable[SomeEPK])]
     ): Unit = {
         events offer AppliedUpdateComputationEvent(nextEventId(), newEPKState, result)
     }

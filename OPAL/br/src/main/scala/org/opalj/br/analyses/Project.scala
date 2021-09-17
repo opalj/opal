@@ -53,6 +53,7 @@ import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.reader.Java16FrameworkWithDynamicRewritingAndCaching
 import org.opalj.br.reader.Java16LibraryFramework
+import scala.Iterable
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -506,7 +507,7 @@ class Project[Source] private (
     def availableProjectInformation: List[AnyRef] = {
         var pis = List.empty[AnyRef]
         val projectInformation = this.projectInformation
-        for (i ← (0 until projectInformation.length())) {
+        for (i <- (0 until projectInformation.length())) {
             val pi = projectInformation.get(i)
             if (pi != null) {
                 pis = pi :: pis
@@ -539,7 +540,7 @@ class Project[Source] private (
             else if (className.endsWith("Key$"))
                 className = className.substring(0, className.length - 4)
 
-            for (requiredProjectInformationKey ← pik.requirements(this)) {
+            for (requiredProjectInformationKey <- pik.requirements(this)) {
                 get(requiredProjectInformationKey)
             }
             val pi = time {
@@ -683,7 +684,7 @@ class Project[Source] private (
     /**
      * The set of all method names of the given types.
      */
-    def methodNames(objectTypes: Traversable[ObjectType]): Set[String] = {
+    def methodNames(objectTypes: Iterable[ObjectType]): Set[String] = {
         objectTypes.flatMap(ot => classFile(ot)).flatMap(cf => cf.methods.map(m => m.name)).toSet
     }
 
@@ -734,7 +735,7 @@ class Project[Source] private (
      */
     def parForeachMethodWithBody[T](
         isInterrupted:        () => Boolean = defaultIsInterrupted,
-        parallelizationLevel: Int          = NumberOfThreadsForCPUBoundTasks
+        parallelizationLevel: Int           = NumberOfThreadsForCPUBoundTasks
     )(
         f: MethodInfo[Source] => T
     ): Unit = {
@@ -821,7 +822,7 @@ class Project[Source] private (
             new ArrayBuffer[ClassFile](methodsCount / groupsCount)
         }
         for {
-            classFile ← projectClassFiles
+            classFile <- projectClassFiles
             if classFile.methods.exists(_.body.isDefined)
         } {
             // we distribute the classfiles among the different bins
@@ -888,10 +889,10 @@ class Project[Source] private (
      * are ignored.
      */
     def lookupClassFiles(
-        objectTypes: Traversable[ObjectType]
+        objectTypes: Iterable[ObjectType]
     )(
         classFileFilter: ClassFile => Boolean
-    ): Traversable[ClassFile] = {
+    ): Iterable[ClassFile] = {
         objectTypes.view.flatMap(classFile(_)) filter (classFileFilter)
     }
 
@@ -958,7 +959,7 @@ class Project[Source] private (
      */
     def toJavaMap(): java.util.HashMap[ObjectType, ClassFile] = {
         val map = new java.util.HashMap[ObjectType, ClassFile]
-        for (classFile ← allClassFiles) map.put(classFile.thisType, classFile)
+        for (classFile <- allClassFiles) map.put(classFile.thisType, classFile)
         map
     }
 
@@ -1026,7 +1027,7 @@ class Project[Source] private (
         }
 
         var result = SortedMap.empty[Int, (Int, Set[String])]
-        for ((typeName, membersCount) ← data) {
+        for ((typeName, membersCount) <- data) {
             val (count, typeNames) = result.getOrElse(membersCount, (0, Set.empty[String]))
             result += ((membersCount, (count + 1, typeNames + typeName)))
         }
@@ -1387,9 +1388,9 @@ object Project {
             var uniqueInterfaceMethods: Set[Method] = Set.empty
             var uniqueInterfaceMethodSignatures: Set[MethodSignature] = Set.empty
             for {
-                superinterfaceType ← superinterfaceTypes
-                superinterfaceClassfile ← objectTypeToClassFile(superinterfaceType)
-                superinterfaceTypeMethod ← superinterfaceClassfile.methods
+                superinterfaceType <- superinterfaceTypes
+                superinterfaceClassfile <- objectTypeToClassFile(superinterfaceType)
+                superinterfaceTypeMethod <- superinterfaceClassfile.methods
                 if superinterfaceTypeMethod.isPublic &&
                     !superinterfaceTypeMethod.isStatic &&
                     !superinterfaceTypeMethod.isInitializer
@@ -1434,7 +1435,7 @@ object Project {
 
             objectTypeToClassFile(objectType) match {
                 case Some(classFile) =>
-                    for { declaredMethod ← classFile.methods } {
+                    for { declaredMethod <- classFile.methods } {
                         if (declaredMethod.isVirtualMethodDeclaration) {
                             val declaredMethodContext = MethodDeclarationContext(declaredMethod)
                             // We have to filter multiple methods when we inherit (w.r.t. the
@@ -1591,8 +1592,8 @@ object Project {
             // instanceMethods will also just reuse the information derived from the superclasses.
             try {
                 for {
-                    cf ← objectTypeToClassFile.get(objectType)
-                    declaredMethod ← cf.methods
+                    cf <- objectTypeToClassFile.get(objectType)
+                    declaredMethod <- cf.methods
                     if declaredMethod.isVirtualMethodDeclaration
                 } {
                     if (declaredMethod.isFinal) { //... the method is necessarily not abstract...
@@ -1675,9 +1676,9 @@ object Project {
         val reader = JavaClassFileReader(logContext, config)
         this(
             projectClassFilesWithSources = reader.ClassFiles(file),
-            libraryClassFilesWithSources = Traversable.empty,
+            libraryClassFilesWithSources = Iterable.empty,
             libraryClassFilesAreInterfacesOnly = true,
-            virtualClassFiles = Traversable.empty,
+            virtualClassFiles = Iterable.empty,
             handleInconsistentProject = defaultHandlerForInconsistentProjects,
             config = config,
             logContext
@@ -1694,7 +1695,7 @@ object Project {
             JavaClassFileReader(logContext, config).AllClassFiles(projectFiles),
             JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
-            virtualClassFiles = Traversable.empty,
+            virtualClassFiles = Iterable.empty,
             handleInconsistentProject = defaultHandlerForInconsistentProjects,
             config = config,
             logContext
@@ -1702,7 +1703,7 @@ object Project {
     }
 
     def apply[Source](
-        projectClassFilesWithSources: Traversable[(ClassFile, Source)]
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)]
     ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
@@ -1711,14 +1712,14 @@ object Project {
     }
 
     def apply[Source](
-        projectClassFilesWithSources: Traversable[(ClassFile, Source)],
+        projectClassFilesWithSources: Iterable[(ClassFile, Source)],
         projectLogger:                OPALLogger
     ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
-            Traversable.empty,
+            Iterable.empty,
             libraryClassFilesAreInterfacesOnly = false /*it actually doesn't matter*/ ,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )(projectLogger = projectLogger)
     }
 
@@ -1727,10 +1728,10 @@ object Project {
         libraryFile: File
     ): Project[URL] = {
         implicit val logContext: LogContext = GlobalLogContext
-        val libraries: Traversable[(ClassFile, URL)] =
+        val libraries: Iterable[(ClassFile, URL)] =
             if (!libraryFile.exists) {
                 OPALLogger.error("project configuration", s"$libraryFile does not exist")
-                Traversable.empty
+                Iterable.empty
             } else {
                 val libraries = JavaLibraryClassFileReader.ClassFiles(libraryFile)
                 if (libraries.isEmpty)
@@ -1741,7 +1742,7 @@ object Project {
             JavaClassFileReader().ClassFiles(projectFile),
             libraries,
             libraryClassFilesAreInterfacesOnly = true,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )
     }
 
@@ -1753,7 +1754,7 @@ object Project {
             JavaClassFileReader().AllClassFiles(projectFiles),
             JavaLibraryClassFileReader.AllClassFiles(libraryFiles),
             libraryClassFilesAreInterfacesOnly = true,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )
     }
 
@@ -1776,7 +1777,7 @@ object Project {
             // therefore, we do not support extending the set of library class files.
             project.libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )(config = project.config, projectLogger = OPALLogger.logger(project.logContext.successor))
     }
 
@@ -1794,20 +1795,20 @@ object Project {
             project.projectClassFilesWithSources ++ projectClassFilesWithSources,
             project.libraryClassFilesWithSources ++ libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )(project.config, OPALLogger.logger(project.logContext.successor))
     }
 
     def apply[Source](
-        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Iterable[(ClassFile, Source)],
         libraryClassFilesAreInterfacesOnly: Boolean
     ): Project[Source] = {
         Project.apply[Source](
             projectClassFilesWithSources,
             libraryClassFilesWithSources,
             libraryClassFilesAreInterfacesOnly,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )
     }
 
@@ -1827,7 +1828,7 @@ object Project {
             project.projectClassFilesWithSources,
             project.libraryClassFilesWithSources,
             project.libraryClassFilesAreInterfacesOnly,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )(
                 if (useOldConfigAsFallback) config.withFallback(project.config) else config,
                 projectLogger = OPALLogger.logger(project.logContext.successor)
@@ -1866,11 +1867,11 @@ object Project {
      *      meaningful option for several advanced analyses.)
      */
     def apply[Source](
-        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Iterable[(ClassFile, Source)],
         libraryClassFilesAreInterfacesOnly: Boolean,
-        virtualClassFiles:                  Traversable[ClassFile]           = Traversable.empty,
-        handleInconsistentProject:          HandleInconsistentProject        = defaultHandlerForInconsistentProjects
+        virtualClassFiles:                  Iterable[ClassFile]           = Iterable.empty,
+        handleInconsistentProject:          HandleInconsistentProject     = defaultHandlerForInconsistentProjects
     )(
         implicit
         config:        Config     = BaseConfig,
@@ -1890,10 +1891,10 @@ object Project {
     }
 
     def apply[Source](
-        projectClassFilesWithSources:       Traversable[(ClassFile, Source)],
-        libraryClassFilesWithSources:       Traversable[(ClassFile, Source)],
+        projectClassFilesWithSources:       Iterable[(ClassFile, Source)],
+        libraryClassFilesWithSources:       Iterable[(ClassFile, Source)],
         libraryClassFilesAreInterfacesOnly: Boolean,
-        virtualClassFiles:                  Traversable[ClassFile],
+        virtualClassFiles:                  Iterable[ClassFile],
         handleInconsistentProject:          HandleInconsistentProject,
         config:                             Config,
         logContext:                         LogContext
@@ -2025,7 +2026,7 @@ object Project {
                     projectTypes += projectType
                     projectClassFiles = classFile :: projectClassFiles
                     projectClassFilesCount += 1
-                    for (method ← classFile.methods) {
+                    for (method <- classFile.methods) {
                         projectMethodsCount += 1
                         method.body.foreach(codeSize += _.instructions.length)
                     }
@@ -2036,18 +2037,18 @@ object Project {
                 }
             }
 
-            for ((classFile, source) ← projectClassFilesWithSources) {
+            for ((classFile, source) <- projectClassFilesWithSources) {
                 processProjectClassFile(classFile, Some(source))
             }
 
-            for (classFile ← virtualClassFiles) {
+            for (classFile <- virtualClassFiles) {
                 processProjectClassFile(classFile, None)
             }
 
             // The set `libraryTypes` is only used to improve the identification of
             // inconsistent projects while loading libraries.
             val libraryTypes = Set.empty[ObjectType]
-            for ((libClassFile, source) ← libraryClassFilesWithSources) {
+            for ((libClassFile, source) <- libraryClassFilesWithSources) {
                 val libraryType = libClassFile.thisType
 
                 if (libClassFile.isModuleDeclaration) {
@@ -2094,7 +2095,7 @@ object Project {
                     libraryClassFiles ::= libClassFile
                     libraryTypes += libraryType
                     libraryClassFilesCount += 1
-                    for (method ← libClassFile.methods) {
+                    for (method <- libClassFile.methods) {
                         libraryMethodsCount += 1
                         method.body.foreach(codeSize += _.instructions.length)
                     }

@@ -108,7 +108,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
                 val oldEOptP: EOptionP[Entity, PointsToSet] = state.getPointsToProperty(eps.e)
                 val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numTypes else 0
 
-                for (cs ← relevantCallSites) {
+                for (cs <- relevantCallSites) {
                     val pc = cs.pc
                     val receiver = state.tac.stmts(
                         state.tac.properStmtIndexForPC(pc)
@@ -262,7 +262,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
         indirectCalls: IndirectCalls
     ): Unit = {
         for {
-            threadDefSite ← receiver.asVar.definedBy
+            threadDefSite <- receiver.asVar.definedBy
         } {
             if (threadDefSite < 0) {
                 // the thread is given as a parameter
@@ -271,7 +271,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
                 stmts(threadDefSite) match {
                     case Assignment(_, thread, New(_, _)) =>
                         for {
-                            NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) ← getConstructorCalls(thread, threadDefSite, stmts)
+                            NonVirtualMethodCall(_, _, _, "<init>", descriptor, _, params) <- getConstructorCalls(thread, threadDefSite, stmts)
                         } {
                             val indexOfRunnableParameter = descriptor.parameterTypes.indexWhere {
                                 _ == ObjectType.Runnable
@@ -280,7 +280,7 @@ abstract class PointsToBasedThreadStartAnalysis private[cg] (
                             // if there is no runnable passed as parameter, we are sound
                             if (indexOfRunnableParameter != -1) {
                                 val theReceiver = params(indexOfRunnableParameter).asVar
-                                for (runnableValue ← theReceiver.value.asReferenceValue.allValues) {
+                                for (runnableValue <- theReceiver.value.asReferenceValue.allValues) {
                                     if (runnableValue.isPrecise) {
                                         addMethod(
                                             definedMethod,
