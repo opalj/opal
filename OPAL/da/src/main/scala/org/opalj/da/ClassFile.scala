@@ -49,7 +49,7 @@ case class ClassFile(
             2 + // constant_pool_count
             {
                 val cpIt = constant_pool.iterator
-                cpIt.next // the first entry is always empty in the class file
+                cpIt() // the first entry is always empty in the class file
                 cpIt.
                     filter(_ ne null /*handles the case of Constant_Long and Constant_Double*/ ).
                     map(_.size).
@@ -108,7 +108,7 @@ case class ClassFile(
     def cpToXHTML: Node = {
         val cpEntries =
             for {
-                cpIndex ← 1 until constant_pool.length
+                cpIndex <- 1 until constant_pool.length
                 cpNode = cp(cpIndex)
                 if cpNode != null /* <= need for constant_double/_long entries */
             } yield {

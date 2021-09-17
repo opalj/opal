@@ -56,7 +56,7 @@ trait APIBasedAnalysis extends FPCFAnalysis {
                 var newSeenCallers = seenCallers
                 var results: List[ProperPropertyComputationResult] = Nil
                 if (callersUB.nonEmpty) {
-                    for ((caller, pc, isDirect) ← callersUB.callers) {
+                    for ((caller, pc, isDirect) <- callersUB.callers) {
                         // the call graph is only computed for virtual and single defined methods
                         assert(caller.isVirtualOrHasSingleDefinedMethod)
 

@@ -26,7 +26,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
 
     val r = new Random()
 
-    val smallListsGen = for { m ← Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
+    val smallListsGen = for { m <- Gen.listOfN(8, Arbitrary.arbitrary[Int]) } yield (m)
 
     val frequencies = List(
         (1, Gen.choose(1, 31)),
@@ -71,7 +71,7 @@ object BitArraySetProperties extends Properties("BitArraySetProperties") {
     property("BitArraySet.apply(value)") = forAll { s: IntArraySet =>
         s.nonEmpty ==> {
             val sIt = s.iterator
-            val firstI = sIt.next
+            val firstI = sIt
             classify(firstI < 32, "first value <= 31") {
                 classify(firstI >= 32 && firstI < 64, "31 < first value < 64") {
                     val bas = sIt.foldLeft(BitArraySet(firstI))(_ + _)

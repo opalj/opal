@@ -8,6 +8,7 @@ package fpcf
  *
  * @author Michael Eichberg
  */
+import scala.Iterable
 sealed trait EOptionP[+E <: Entity, +P <: Property] {
 
     /**
@@ -148,7 +149,7 @@ sealed trait EOptionP[+E <: Entity, +P <: Property] {
     @throws[IllegalArgumentException]("if the given eps is not a valid update")
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit
 
 }
@@ -417,7 +418,7 @@ final class FinalEP[+E <: Entity, +P <: Property](val e: E, val p: P) extends EP
 
     private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit = {
         throw new IllegalArgumentException("already final")
     }
@@ -492,7 +493,7 @@ sealed trait InterimEP[+E <: Entity, +P <: Property] extends EPS[E, P] {
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit = {
         try {
             if (eps.isRefinable && (hasLBP != eps.hasLBP || hasUBP != eps.hasUBP)) {
@@ -817,7 +818,7 @@ final class EPK[+E <: Entity, +P <: Property](
 
     override private[fpcf] def checkIsValidPropertiesUpdate(
         eps:          SomeEPS,
-        newDependees: Traversable[SomeEOptionP]
+        newDependees: Iterable[SomeEOptionP]
     ): Unit = {}
 
     override def equals(other: Any): Boolean = {

@@ -36,8 +36,8 @@ object ExceptionUsage extends ProjectAnalysisApplication {
         }
 
         val usages = (for {
-            classFile ← theProject.allProjectClassFiles.par
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- theProject.allProjectClassFiles.par
+            method @ MethodWithBody(body) <- classFile.methods
             result = BaseAI(method, new ExceptionUsageAnalysisDomain(theProject, method))
         } yield {
             import scala.collection.mutable._
@@ -62,9 +62,9 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             }
 
             for {
-                operands ← result.operandsArray;
+                operands <- result.operandsArray;
                 if (operands ne null)
-                operand ← operands
+                operand <- operands
             } {
                 operand match {
                     case v: result.domain.SingleOriginReferenceValue =>
@@ -123,7 +123,7 @@ object ExceptionUsage extends ProjectAnalysisApplication {
             }
 
             val usages =
-                for { ((pc, typeName), exceptionUsage) ← exceptionUsages }
+                for { ((pc, typeName), exceptionUsage) <- exceptionUsages }
                     yield ExceptionUsage(method, pc, typeName, exceptionUsage)
 
             if (usages.isEmpty)

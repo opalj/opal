@@ -773,7 +773,7 @@ case class CFG[I <: AnyRef, C <: CodeSequence[I]](
      */
     def toDot(
         f:                      BasicBlock => String,
-        includeAbnormalReturns: Boolean             = true
+        includeAbnormalReturns: Boolean              = true
     ): (Node, Iterable[Node]) = {
         // 1. create a node foreach cfg node
         val bbsIterator = allBBs

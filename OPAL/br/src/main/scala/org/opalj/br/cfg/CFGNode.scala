@@ -4,6 +4,7 @@ package cfg
 
 import scala.collection.mutable
 import org.opalj.graphs.Node
+import scala.compat._
 
 /**
  * The common super trait of all nodes belonging to a method's control flow graph.
@@ -35,7 +36,7 @@ trait CFGNode extends Node {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors += predecessor
     }
-    def addPredecessors(predecessor: TraversableOnce[CFGNode]): Unit = {
+    def addPredecessors(predecessor: IterableOnce[CFGNode]): Unit = {
         //  if (predecessor eq this) throw new IllegalArgumentException()
         _predecessors ++= predecessor
     }
@@ -102,7 +103,7 @@ trait CFGNode extends Node {
             remainingSuccessors = remainingSuccessors.tail
             if (reachable.add(successor)) {
                 for {
-                    nextSuccessor ← successor.successors
+                    nextSuccessor <- successor.successors
                     if !remainingSuccessors.contains(nextSuccessor)
                     if !reachable.contains(nextSuccessor)
                 } {

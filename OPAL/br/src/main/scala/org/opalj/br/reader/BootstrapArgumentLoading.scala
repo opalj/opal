@@ -662,7 +662,7 @@ trait BootstrapArgumentLoading {
      */
     protected[this] def replaceChars(in: String, oldChars: String, newChars: String): String = {
         var result = in
-        for ((oldC, newC) ← oldChars.zip(newChars)) {
+        for ((oldC, newC) <- oldChars.zip(newChars)) {
             result = result.replace(oldC, newC)
         }
         result

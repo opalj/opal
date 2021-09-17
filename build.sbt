@@ -4,8 +4,8 @@ import scalariform.formatter.preferences._
 import sbtassembly.AssemblyPlugin.autoImport._
 
 import sbtunidoc.ScalaUnidocPlugin
-libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0"
 
+//libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0"
 name := "OPAL Library"
 
 // SNAPSHOT
@@ -23,15 +23,40 @@ version in ThisBuild := "4.0.1-SNAPSHOT"
 // RELEASED version in ThisBuild := "0.8.10"
 // RELEASED version in ThisBuild := "0.8.9"
 
+// build.sbt
+ThisBuild / scalafixDependencies += "org.scala-lang.modules" %% "scala-collection-migrations" % "2.5.0"
+libraryDependencies +=  "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0"
+addCompilerPlugin(scalafixSemanticdb)
+scalacOptions ++= List("-Yrangepos", "-P:semanticdb:synthetics:on")
+
 organization in ThisBuild := "de.opal-project"
 homepage in ThisBuild := Some(url("https://www.opal-project.de"))
 licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licenses/BSD-2-Clause"))
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-scalaVersion in ThisBuild := "2.12.14"
-2.13.06
+scalaVersion in ThisBuild := "2.13.6"
 
+
+/*
+  * build.sbt, for sbt 1.3x and newer
+  * SemanticDB is enabled for all sub-projects via ThisBuild scope.
+  */
+inThisBuild(
+  List(
+    scalaVersion:="2.13.6",
+    semanticdbEnabled:=true,
+semanticdbVersion := scalafixSemanticdb.revision
+  )
+)
+
+
+lazy val myproject = project.settings(
+  scalaVersion := "2.13.6", // 2.11.12, 2.13.6, or 3.x
+    semanticdbEnabled := true, // enable SemanticDB
+    semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
+  scalacOptions += "-Ywarn-unused-import" // required by `RemoveUnused` rule
+)
 ScalacConfiguration.globalScalacOptions
 
 resolvers in ThisBuild += Resolver.jcenterRepo
@@ -455,3 +480,4 @@ publishMavenStyle in ThisBuild := true
 publishArtifact in Test := false
 publishTo in ThisBuild := MavenPublishing.publishTo(isSnapshot.value)
 pomExtra in ThisBuild := MavenPublishing.pomNodeSeq()
+

@@ -7,14 +7,16 @@ package graphs
  *
  * @author Michael Eichberg
  */
-trait AbstractGraph[@specialized(Int) N] extends (N => TraversableOnce[N]) {
+import scala.Iterable._
+import scala.compat._
+trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
 
-    def vertices: Traversable[N]
+    def vertices: Iterable[N]
 
     def nonEmpty: Boolean = vertices.nonEmpty
 
     /** Returns a given node's successor nodes. */
-    def apply(s: N): TraversableOnce[N]
+    def apply(s: N): IterableOnce[N]
 
     /**
      * Returns the set of nodes with no incoming dependencies; self-dependencies are optionally
@@ -52,8 +54,8 @@ trait AbstractGraph[@specialized(Int) N] extends (N => TraversableOnce[N]) {
     def rootNodes(ignoreSelfRecursiveDependencies: Boolean = true): Set[N] = {
         var rootNodes = vertices.toSet
         for {
-            v ← vertices
-            t ← this(v)
+            v <- vertices
+            t <- this(v)
             if ignoreSelfRecursiveDependencies || (t != v)
         } {
             rootNodes -= t

@@ -21,7 +21,7 @@ class DefaultDomain[Source](
 
     type CalledMethodDomain = ChildDefaultDomain[Source]
 
-    def this(project: Project[Source], method: Method) {
+    def this(project: Project[Source], method: Method) = {
         this(project, method, 256, 2)
     }
 

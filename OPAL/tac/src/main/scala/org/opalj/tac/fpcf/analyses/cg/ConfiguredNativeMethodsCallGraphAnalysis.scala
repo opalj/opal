@@ -87,7 +87,7 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
         }
 
         val directCalls = new DirectCalls()
-        for (tgt ← tgtsOpt.get) {
+        for (tgt <- tgtsOpt.get) {
             val tgtMethod = tgt.method(declaredMethods)
             directCalls.addCall(dm, tgtMethod, 0)
         }

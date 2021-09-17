@@ -43,6 +43,7 @@ import org.opalj.concurrent.parForeachSeqElement
 import org.opalj.bytecode.BytecodeProcessingFailedException
 import org.opalj.collection.immutable.RefArray
 import org.opalj.concurrent.Tasks
+import scala.Iterable
 
 /**
  * Implements the template method to read in a Java class file. Additionally,
@@ -669,9 +670,9 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
     }
 
     def AllClassFiles(
-        files:            Traversable[File],
-        exceptionHandler: ExceptionHandler  = defaultExceptionHandler
-    ): Traversable[(ClassFile, URL)] = {
+        files:            Iterable[File],
+        exceptionHandler: ExceptionHandler = defaultExceptionHandler
+    ): Iterable[(ClassFile, URL)] = {
         files.flatMap(file => ClassFiles(file, exceptionHandler))
     }
 
@@ -683,7 +684,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
             def traversePath(p: Path): Unit = {
                 if (Files.isDirectory(p)) {
                     try {
-                        for (subPath ← Files.newDirectoryStream(p, "*").asScala) {
+                        for (subPath <- Files.newDirectoryStream(p, "*").asScala) {
                             traversePath(subPath)
                         }
                     } catch {
@@ -706,7 +707,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
 
         val allModulesPath = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("/modules")
         for {
-            modulePath ← Files.newDirectoryStream(allModulesPath, "*").asScala
+            modulePath <- Files.newDirectoryStream(allModulesPath, "*").asScala
             if Files.isDirectory(modulePath)
         } yield {
             (modulePath.getFileName.toString, traverseModule(modulePath))
@@ -717,10 +718,10 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      * Goes over all files in parallel and calls back the given function which has to be thread-safe!
      */
     def processClassFiles(
-        files:              Traversable[File],
+        files:              Iterable[File],
         progressReporter:   File => Unit,
         classFileProcessor: ((ClassFile, URL)) => Unit,
-        exceptionHandler:   ExceptionHandler          = defaultExceptionHandler
+        exceptionHandler:   ExceptionHandler           = defaultExceptionHandler
     ): Unit = {
         val ts = Tasks[File] { (tasks: Tasks[File], file: File) =>
             if (file.isFile && file.length() > 0) {
@@ -762,11 +763,11 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
      *              then, all files in that directory are processed.
      */
     def findClassFile(
-        files:            Traversable[File],
+        files:            Iterable[File],
         progressReporter: File => Unit,
         classFileFilter:  ClassFile => Boolean,
         className:        ClassFile => String,
-        exceptionHandler: ExceptionHandler    = defaultExceptionHandler
+        exceptionHandler: ExceptionHandler     = defaultExceptionHandler
     ): Either[(ClassFile, URL), Set[String]] = {
         var classNames = Set.empty[String]
         files.filter(_.exists()) foreach { file =>

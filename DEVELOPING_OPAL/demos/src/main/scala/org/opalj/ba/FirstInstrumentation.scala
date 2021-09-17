@@ -38,7 +38,7 @@ object FirstInstrumentation extends App {
     val cf = Java8Framework.ClassFile(in).head // in this case we don't have invokedynamic resolution
     // let's transform the methods
     val newMethods =
-        for (m ← cf.methods) yield {
+        for (m <- cf.methods) yield {
             m.body match {
                 case None =>
                     m.copy() // methods which are native and abstract ...
@@ -48,7 +48,7 @@ object FirstInstrumentation extends App {
                     val lCode = LabeledCode(code)
                     var modified = false
                     for {
-                        PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code
+                        PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) <- code
                     } {
                         modified = true
                         lCode.insert(

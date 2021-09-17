@@ -9,7 +9,7 @@ package log
  */
 class ConsoleOPALLogger(val ansiColored: Boolean, val minLogLevel: Int) extends OPALLogger {
 
-    def this(ansiColored: Boolean = true, minLogLevel: Level = Info) {
+    def this(ansiColored: Boolean = true, minLogLevel: Level = Info) = {
         this(ansiColored, minLogLevel.value)
     }
 

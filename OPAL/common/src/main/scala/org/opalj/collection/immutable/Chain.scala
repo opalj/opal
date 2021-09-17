@@ -12,7 +12,7 @@ import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.generic.FilterMonadic
 import scala.collection.AbstractIterable
-
+import scala.compat._
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
@@ -52,7 +52,7 @@ sealed trait Chain[@specialized(Int) +T]
                 if (p(x)) b += f(x)
                 rest = rest.tail
             }
-            b.result
+            b.result()
         }
 
         def flatMap[B, That](
@@ -69,7 +69,7 @@ sealed trait Chain[@specialized(Int) +T]
                 if (p(x)) b ++= f(x).seq
                 rest = rest.tail
             }
-            b.result
+            b.result()
         }
 
         def foreach[U](f: T => U): Unit = {
@@ -179,7 +179,7 @@ sealed trait Chain[@specialized(Int) +T]
             b ++= f(t).seq
             rest = rest.tail
         }
-        b.result
+        b.result()
     }
 
     def map[B, That](f: (T) => B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
@@ -190,7 +190,7 @@ sealed trait Chain[@specialized(Int) +T]
             builder += f(t)
             rest = rest.tail
         }
-        builder.result
+        builder.result()
     }
 
     def withFilter(p: (T) => Boolean): ChainWithFilter = new ChainWithFilter(p)
@@ -336,7 +336,7 @@ sealed trait Chain[@specialized(Int) +T]
      */
     private[opalj] def copy[X >: T](): (Chain[X], :&:[X]) = {
         val Nil: Chain[X] = Naught
-        if (isEmpty)
+        if (this.isEmpty)
             return (this, null);
 
         val result = new :&:[X](head, Nil)
@@ -359,7 +359,7 @@ sealed trait Chain[@specialized(Int) +T]
         if (this.isEmpty)
             return that;
 
-        val (head, last) = copy[X]
+        val (head, last) = copy[X]()
         last.rest = that
         head
     }
@@ -369,7 +369,7 @@ sealed trait Chain[@specialized(Int) +T]
         if (other.isEmpty)
             return this;
 
-        val that = other.foldLeft(new Chain.ChainBuilder[X])(_ += _).result
+        val that = other.foldLeft(new Chain.ChainBuilder[X])(_ += _).result()
         if (this.isEmpty)
             that
         else {
@@ -417,10 +417,10 @@ sealed trait Chain[@specialized(Int) +T]
             return Naught;
 
         var thisIt = this.tail
-        val result: :&:[(T, X)] = new :&:((this.head, otherIt.next), Naught)
+        val result: :&:[(T, X)] = new :&:((this.head, otherIt.next()), Naught)
         var last = result
         while (thisIt.nonEmpty && otherIt.hasNext) {
-            val newLast = new :&:((thisIt.head, otherIt.next), Naught)
+            val newLast = new :&:((thisIt.head, otherIt.next()), Naught)
             last.rest = newLast
             last = newLast
             thisIt = thisIt.tail
@@ -534,8 +534,12 @@ sealed trait Chain[@specialized(Int) +T]
     /**
      * Returns a newly created `Traversable[T]` collection.
      */
+    //TODO figure out difference between Traversable and Iterable.
     def toTraversable: Traversable[T] = {
-        new Traversable[T] { def foreach[U](f: T => U): Unit = self.foreach(f) }
+        new Traversable[T] {
+            def foreach[U](f: T => U): Unit = self.foreach(f)
+
+        }
     }
 
     def toIntArraySet(implicit ev: T <:< Int): IntArraySet = {
@@ -678,7 +682,7 @@ object Chain /* extends ChainLowPriorityImplicits */ {
         val result = new :&:[T](es.head, naught)
         var last = result
         val it = es.iterator
-        it.next // es is non-empty
+        it.next() // es is non-empty
         it foreach { e =>
             val newLast = new :&:[T](e, naught)
             last.rest = newLast

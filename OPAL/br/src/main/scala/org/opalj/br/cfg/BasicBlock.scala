@@ -19,7 +19,7 @@ final class BasicBlock(
         private[cfg] var _endPC: Int = Int.MinValue
 ) extends CFGNode {
 
-    def this(startPC: Int, successors: Set[CFGNode]) {
+    def this(startPC: Int, successors: Set[CFGNode]) = {
         this(startPC, Int.MinValue)
         this.setSuccessors(successors)
     }

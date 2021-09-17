@@ -44,9 +44,9 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         info(s"Testing $name")
         var successFull = false
         for {
-            method ← classFile.findMethod(name)
-            body ← method.body
-            factoryCall ← body.iterator.collect { case i: INVOKESTATIC => i }
+            method <- classFile.findMethod(name)
+            body <- method.body
+            factoryCall <- body.iterator.collect { case i: INVOKESTATIC => i }
             if factoryCall.declaringClass.fqn.matches(InvokedynamicRewriting.LambdaNameRegEx)
         } {
             val annotations = method.runtimeVisibleAnnotations
@@ -62,11 +62,11 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
 
             if (annotations.exists(_.annotationType == InvokedMethods)) {
                 val invokedTarget = for {
-                    a ← annotations.iterator
+                    a <- annotations.iterator
                     if a.annotationType == InvokedMethods
-                    evp ← a.elementValuePairs
+                    evp <- a.elementValuePairs
                     ArrayValue(values) = evp.value
-                    ev @ AnnotationValue(annotation) ← values
+                    ev @ AnnotationValue(annotation) <- values
                     innerAnnotation = RefArray(annotation)
                     expectedTarget = getInvokedMethod(project, classFile, innerAnnotation)
                     actualTarget = getCallTarget(project, factoryCall, expectedTarget.get.name)
@@ -169,10 +169,10 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
         annotations: Annotations
     ): Option[Method] = {
         val method = for {
-            invokedMethod ← annotations.filter(_.annotationType == InvokedMethod)
+            invokedMethod <- annotations.filter(_.annotationType == InvokedMethod)
             pairs = invokedMethod.elementValuePairs
-            ElementValuePair("receiverType", StringValue(receiverType)) ← pairs
-            ElementValuePair("name", StringValue(methodName)) ← pairs
+            ElementValuePair("receiverType", StringValue(receiverType)) <- pairs
+            ElementValuePair("name", StringValue(methodName)) <- pairs
             classFileOpt = project.classFile(ObjectType(receiverType))
         } yield {
             if (classFileOpt.isEmpty) {

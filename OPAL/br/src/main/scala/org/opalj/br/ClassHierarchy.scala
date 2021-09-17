@@ -45,6 +45,7 @@ import org.opalj.collection.CompleteCollection
 import org.opalj.collection.IncompleteCollection
 import org.opalj.collection.QualifiedCollection
 import org.opalj.br.ObjectType.Object
+import scala.Iterable
 
 /**
  * Represents '''a project's class hierarchy'''. The class hierarchy only contains
@@ -1787,13 +1788,13 @@ class ClassHierarchy private (
 
         val signaturesToCheck = subtype.superClassSignature :: subtype.superInterfacesSignature
         for {
-            cts ← signaturesToCheck if cts.objectType eq supertype
+            cts <- signaturesToCheck if cts.objectType eq supertype
         } { return Some(cts) }
 
         for {
-            cts ← signaturesToCheck
-            superCs ← getClassSignature(cts.objectType)
-            matchingType ← getSupertypeDeclaration(superCs, supertype)
+            cts <- signaturesToCheck
+            superCs <- getClassSignature(cts.objectType)
+            matchingType <- getSupertypeDeclaration(superCs, supertype)
         } { return Some(matchingType) }
 
         None
@@ -2708,7 +2709,7 @@ object ClassHierarchy {
      * This class hierarchy is primarily useful for testing purposes.
      */
     lazy val PreInitializedClassHierarchy: ClassHierarchy = {
-        apply(classFiles = Traversable.empty, defaultTypeHierarchyDefinitions)(GlobalLogContext)
+        apply(classFiles = Iterable.empty, defaultTypeHierarchyDefinitions)(GlobalLogContext)
     }
 
     def noDefaultTypeHierarchyDefinitions(): List[() => java.io.InputStream] = List.empty
@@ -2760,8 +2761,8 @@ object ClassHierarchy {
     }
 
     def apply(
-        classFiles:               Traversable[ClassFile],
-        typeHierarchyDefinitions: Seq[() => InputStream]  = defaultTypeHierarchyDefinitions
+        classFiles:               Iterable[ClassFile],
+        typeHierarchyDefinitions: Seq[() => InputStream] = defaultTypeHierarchyDefinitions
     )(
         implicit
         logContext: LogContext
@@ -2802,8 +2803,8 @@ object ClassHierarchy {
      * defines `java.util.List`.
      */
     def create(
-        classFiles:       Traversable[ClassFile],
-        typeDeclarations: Traversable[TypeDeclaration]
+        classFiles:       Iterable[ClassFile],
+        typeDeclarations: Iterable[TypeDeclaration]
     )(
         implicit
         logContext: LogContext
@@ -3151,8 +3152,8 @@ object ClassHierarchy {
                         // 2. Which type(s) cause the problem?
                         val allIssues =
                             for {
-                                dt ← deferredTypes
-                                subtype ← subinterfaceTypesMap(dt.id) ++ subclassTypesMap(dt.id)
+                                dt <- deferredTypes
+                                subtype <- subinterfaceTypesMap(dt.id) ++ subclassTypesMap(dt.id)
                                 if subtypes(subtype.id) != null
                                 if !deferredTypes.contains(subtype)
                             } yield {
@@ -3176,7 +3177,7 @@ object ClassHierarchy {
             var allInterfaceType = UIDSet.empty[ObjectType]
             var allNoneObjectTypes = UIDSet.empty[ObjectType]
             for {
-                t ← knownTypesMap
+                t <- knownTypesMap
                 if t ne null
             } {
                 val tid = t.id
@@ -3328,7 +3329,7 @@ object ClassHierarchy {
             // java.lang.Object is still not necessarily complete as the type may implement an
             // unknown interface.
             for {
-                rootType ← await(rootTypesFuture, Inf) // we may have to wait...
+                rootType <- await(rootTypesFuture, Inf) // we may have to wait...
                 if rootType ne ObjectType.Object
             } {
                 isSupertypeInformationCompleteMap(rootType.id) = false

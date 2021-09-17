@@ -51,7 +51,7 @@ case class Code(instructions: Array[Byte]) {
             </tr>
             { // One instruction per row
                 for {
-                    pc ← (0 until instructions.length)
+                    pc <- (0 until instructions.length)
                     if instructions(pc) != null
                 } yield {
                     val exceptionInfo =
@@ -568,7 +568,7 @@ case class Code(instructions: Array[Byte]) {
         cp: Constant_Pool
     ): Array[Array[Node]] = {
         val exceptions: Array[Array[Node]] = new Array(exceptionTable.size)
-        for { (exceptionHandler, index) ← exceptionTable.iterator.zipWithIndex } {
+        for { (exceptionHandler, index) <- exceptionTable.iterator.zipWithIndex } {
             val exceptionName =
                 (index + 1).toString+": "+(
                     if (exceptionHandler.catch_type != 0)
@@ -581,7 +581,7 @@ case class Code(instructions: Array[Byte]) {
             exceptions(index) = new Array[Node](instructions.length)
 
             for {
-                i ← exceptionHandler.start_pc until exceptionHandler.end_pc
+                i <- exceptionHandler.start_pc until exceptionHandler.end_pc
                 if instructions(i) ne null
             } {
                 if (exceptionPCLength == 0)
@@ -590,14 +590,14 @@ case class Code(instructions: Array[Byte]) {
             }
 
             for {
-                i ← 0 until exceptionHandler.start_pc
+                i <- 0 until exceptionHandler.start_pc
                 if i != exceptionHandler.handler_pc
             } {
                 exceptions(index)(i) = <td class="exception_empty"></td>
             }
 
             for {
-                i ← exceptionHandler.end_pc until instructions.length
+                i <- exceptionHandler.end_pc until instructions.length
                 if i != exceptionHandler.handler_pc
             } {
                 exceptions(index)(i) = <td class="exception_empty"></td>

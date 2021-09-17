@@ -38,7 +38,7 @@ class BoundedInterruptableAI[D <: Domain](
         maxEvaluationFactor:   Double,
         maxEvaluationTime:     Milliseconds,
         doInterrupt:           () => Boolean,
-        identifyDeadVariables: Boolean      = true
+        identifyDeadVariables: Boolean       = true
     )(
         implicit
         logContext: LogContext

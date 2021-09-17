@@ -4,6 +4,7 @@ package fpcf
 
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
+import scala.Iterable
 
 /**
  * An semi-mutable set storing EPKs and interim properties.
@@ -18,7 +19,7 @@ import scala.collection.mutable
  *
  * @author Michael Eichberg
  */
-sealed trait EOptionPSet[E <: Entity, P <: Property] extends Traversable[EOptionP[E, P]] {
+sealed trait EOptionPSet[E <: Entity, P <: Property] extends Iterable[EOptionP[E, P]] {
 
     // The number of times a dependency was added or removed. That is, this number always
     // increases and is used by the property store to detect if an EOptionPSet was actually

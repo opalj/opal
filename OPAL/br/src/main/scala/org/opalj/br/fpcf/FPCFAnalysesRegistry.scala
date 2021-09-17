@@ -103,7 +103,7 @@ object FPCFAnalysesRegistry {
             val registeredAnalyses = config.getObject("org.opalj.fpcf.registry.analyses")
             val entriesIterator = registeredAnalyses.entrySet.iterator
             while (entriesIterator.hasNext) {
-                val entry = entriesIterator.next
+                val entry = entriesIterator.next()
                 val id = entry.getKey
                 val metaData = entry.getValue.asInstanceOf[ConfigObject]
                 val description = metaData.getOrDefault("description", null).unwrapped.toString

@@ -8,6 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.opalj.collection.immutable.Chain
 import org.opalj.log.OPALLogger
 import net.ceedubs.ficus.Ficus._
+import scala.Iterable
 
 /**
  * The EntryPointFinder trait is a common trait for all analyses that can derive an programs entry
@@ -25,7 +26,7 @@ sealed trait EntryPointFinder {
     *
     * This method must be implemented by any subtype.
     */
-    def collectEntryPoints(project: SomeProject): Traversable[Method] = Set.empty[Method]
+    def collectEntryPoints(project: SomeProject): Iterable[Method] = Set.empty[Method]
 }
 
 /**
@@ -40,7 +41,7 @@ sealed trait EntryPointFinder {
  */
 trait ApplicationEntryPointsFinder extends EntryPointFinder {
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val MAIN_METHOD_DESCRIPTOR = MethodDescriptor.JustTakes(FieldType.apply("[Ljava/lang/String;"))
 
         super.collectEntryPoints(project) ++ project.allMethodsWithBody.collect {
@@ -64,7 +65,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
         "com/sun", "sun", "oracle", "jdk", "java", "com/oracle", "javax", "sunw"
     )
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         super.collectEntryPoints(project).filterNot { ep =>
             packagesToExclude.exists { prefix =>
                 ep.declaringClassFile.thisType.packageName.startsWith(prefix)
@@ -89,7 +90,7 @@ trait ApplicationWithoutJREEntryPointsFinder extends ApplicationEntryPointsFinde
  */
 trait LibraryEntryPointsFinder extends EntryPointFinder {
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         val isClosedPackage = project.get(ClosedPackagesKey).isClosed _
         val isExtensible = project.get(TypeExtensibilityKey)
         val classHierarchy = project.classHierarchy
@@ -174,7 +175,7 @@ trait ConfigurationEntryPointsFinder extends EntryPointFinder {
         InitialEntryPointsKey.ConfigKeyPrefix+"entryPoints"
     }
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
         implicit val logContext = project.logContext
@@ -342,7 +343,7 @@ object AllEntryPointsFinder extends EntryPointFinder {
     final val ConfigKey =
         InitialEntryPointsKey.ConfigKeyPrefix+"AllEntryPointsFinder.projectMethodsOnly"
 
-    override def collectEntryPoints(project: SomeProject): Traversable[Method] = {
+    override def collectEntryPoints(project: SomeProject): Iterable[Method] = {
         if (project.config.as[Boolean](ConfigKey))
             project.allProjectClassFiles.flatMap(_.methodsWithBody)
         else project.allMethodsWithBody

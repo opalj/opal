@@ -41,19 +41,19 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
         val instructionsLocations = Array.fill(256)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInstruction ← body
+            pcAndInstruction <- body
         } {
             val instruction = pcAndInstruction.instruction
             val pc = pcAndInstruction.pc
             instructionsLocations(instruction.opcode) += InstructionLocation(methodLocation, pc)
         }
 
-        for { (locations, opcode) ← instructionsLocations.iterator.zipWithIndex } yield {
+        for { (locations, opcode) <- instructionsLocations.iterator.zipWithIndex } yield {
             Feature[S](featureIDs(OpcodesToOrdinalNumbers(opcode)), locations)
         }
     }

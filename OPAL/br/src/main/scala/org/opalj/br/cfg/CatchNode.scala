@@ -33,7 +33,7 @@ final class CatchNode(
      * @param index The unique index in the exception handler table; this enables us to assign
      *              unique nodeids to catch nodes.
      */
-    def this(handler: ExceptionHandler, index: Int) {
+    def this(handler: ExceptionHandler, index: Int) = {
         this(index, handler.startPC, handler.endPC, handler.handlerPC, handler.catchType)
     }
 

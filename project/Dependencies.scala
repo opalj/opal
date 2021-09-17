@@ -1,7 +1,7 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 
 import sbt._
-
+import scalafix.sbt.ScalafixPlugin.autoImport._
 /**
  * Manages the library dependencies of the subprojects of OPAL.
  *

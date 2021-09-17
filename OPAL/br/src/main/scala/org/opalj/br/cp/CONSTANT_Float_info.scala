@@ -13,7 +13,7 @@ import org.opalj.bi.ConstantPoolTags
  */
 case class CONSTANT_Float_info(value: ConstantFloat) extends CONSTANT_FieldValue_info {
 
-    def this(value: Float) { this(ConstantFloat(value)) }
+    def this(value: Float) = { this(ConstantFloat(value)) }
 
     override def tag: Int = ConstantPoolTags.CONSTANT_Float_ID
 

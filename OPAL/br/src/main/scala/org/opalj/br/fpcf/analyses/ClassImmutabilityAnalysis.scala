@@ -43,6 +43,8 @@ import org.opalj.br.fpcf.properties.MutableObjectDueToUnknownSupertypes
 import org.opalj.br.fpcf.properties.MutableType
 import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.TypeImmutability
+import scala.Iterable
+import scala.compat._
 
 /**
  * Determines the mutability of instances of a specific class. In case the class
@@ -269,7 +271,7 @@ class ClassImmutabilityAnalysis(val project: SomeProject) extends FPCFAnalysis {
         if (hasMutableOrConditionallyImmutableField) {
             maxLocalImmutability = ImmutableContainer
         } else {
-            val fieldTypesWithUndecidedMutability: Traversable[EOptionP[Entity, Property]] =
+            val fieldTypesWithUndecidedMutability: Iterable[EOptionP[Entity, Property]] =
                 // Recall: we don't have fields which are mutable or conditionally immutable
                 fieldTypesImmutability.filterNot { eOptP =>
                     eOptP.hasUBP && eOptP.ub == ImmutableType && eOptP.isFinal
@@ -410,12 +412,12 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
     final override def uses: Set[PropertyBounds] =
         PropertyBounds.lubs(ClassImmutability, TypeImmutability, FieldMutability)
 
-    override type InitializationData = TraversableOnce[ClassFile]
+    override type InitializationData = IterableOnce[ClassFile]
 
     private[this] def setResultsAndComputeEntities(
         project:       SomeProject,
         propertyStore: PropertyStore
-    ): TraversableOnce[ClassFile] = {
+    ): IterableOnce[ClassFile] = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
         import classHierarchy.rootClassTypesIterator

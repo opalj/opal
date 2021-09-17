@@ -135,8 +135,8 @@ final class ClassFile private (
         val thisFieldIt = thisFields.iterator
         val otherFieldIt = otherFields.iterator
         while (thisFieldIt.hasNext) {
-            val thisField = thisFieldIt.next
-            val otherField = otherFieldIt.next
+            val thisField = thisFieldIt.next()
+            val otherField = otherFieldIt.next()
             if (!thisField.similar(otherField, config)) {
                 return Some(("the fields are different", thisField, otherField));
             }
@@ -151,8 +151,8 @@ final class ClassFile private (
         val thisMethodIt = thisMethods.iterator
         val otherMethodIt = otherMethods.iterator
         while (thisMethodIt.hasNext) {
-            val thisMethod = thisMethodIt.next
-            val otherMethod = otherMethodIt.next
+            val thisMethod = thisMethodIt.next()
+            val otherMethod = otherMethodIt.next()
             if (!thisMethod.similar(otherMethod, config)) {
                 return Some(("the methods are different", thisMethod, otherMethod));
             }

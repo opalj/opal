@@ -18,6 +18,7 @@ import org.opalj.log.OPALLogger.error
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
 import org.opalj.log.LogMessage
+import scala.Iterable
 
 /**
  * Provides the necessary infrastructure to easily execute a given analysis that
@@ -73,7 +74,7 @@ trait AnalysisApplication {
      * issues if it can't validate all arguments.
      * The default behavior is to check that there are no additional parameters.
      */
-    def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         if (parameters.isEmpty) Nil else parameters.map("unknown parameter: "+_)
     }
 
@@ -228,13 +229,13 @@ trait AnalysisApplication {
 
     protected def handleParsingExceptions(
         project:    SomeProject,
-        exceptions: Traversable[Throwable]
+        exceptions: Iterable[Throwable]
     ): Unit = {
         if (exceptions.isEmpty)
             return ;
 
         implicit val logContext: LogContext = project.logContext
-        for (exception ← exceptions) {
+        for (exception <- exceptions) {
             error("creating project", "ignoring invalid class file", exception)
         }
     }
@@ -279,7 +280,7 @@ trait AnalysisApplication {
                 classFiles,
                 libraryClassFiles,
                 libraryClassFilesAreInterfacesOnly = !completelyLoadLibraries,
-                Traversable.empty
+                Iterable.empty
             )(config = configuredConfig)
         handleParsingExceptions(project, exceptions1 ++ exceptions2)
 

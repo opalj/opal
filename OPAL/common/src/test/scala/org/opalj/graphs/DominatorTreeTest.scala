@@ -256,7 +256,7 @@ class DominatorTreeTest extends AnyFlatSpec with Matchers {
             f: (Int => Unit) => g.predecessors.getOrElse(n, Nil).foreach(e => f(e))
         }
         var lastI = 0
-        for (i ← 1 to 65000) {
+        for (i <- 1 to 65000) {
             g += (lastI -> i)
             lastI = i
         }

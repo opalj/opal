@@ -13,7 +13,6 @@ import scala.collection.mutable
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.Queue
 import scala.collection.generic.FilterMonadic
-import scala.collection.generic.CanBuildFrom
 
 import org.opalj.util.AnyToAnyThis
 import org.opalj.bytecode.BytecodeProcessingFailedException
@@ -32,6 +31,7 @@ import org.opalj.br.cfg.CFGFactory
 import org.opalj.br.cfg.CFG
 import org.opalj.br.ClassHierarchy.PreInitializedClassHierarchy
 import org.opalj.br.instructions._
+import scala.compat._
 
 /**
  * Representation of a method's code attribute, that is, representation of a method's
@@ -125,9 +125,9 @@ final class Code private (
             f: PCAndInstruction => B
         )(
             implicit
-            bf: CanBuildFrom[Nothing, B, That]
+            bf: Factory[B, That]
         ): That = {
-            val that = bf()
+            val that = bf.newBuilder
             code foreach { instructionLocation =>
                 if (p(instructionLocation)) that += f(instructionLocation)
             }
@@ -138,9 +138,9 @@ final class Code private (
             f: PCAndInstruction => scala.collection.GenTraversableOnce[B]
         )(
             implicit
-            bf: CanBuildFrom[Nothing, B, That]
+            bf: Factory[B, That]
         ): That = {
-            val that = bf()
+            val that = bf.newBuilder
             code foreach { instructionLocation: PCAndInstruction =>
                 if (p(instructionLocation)) {
                     f(instructionLocation) foreach { v => that += v }
@@ -168,9 +168,9 @@ final class Code private (
         f: PCAndInstruction => B
     )(
         implicit
-        bf: CanBuildFrom[Nothing, B, That]
+        bf: Factory[B, That]
     ): That = {
-        val that = bf()
+        val that = bf.newBuilder
         code.foreach(that += f(_))
         that.result
     }
@@ -179,9 +179,9 @@ final class Code private (
         f: (PCAndInstruction) => scala.collection.GenTraversableOnce[B]
     )(
         implicit
-        bf: CanBuildFrom[Nothing, B, That]
+        bf: Factory[B, That]
     ): That = {
-        val that = bf()
+        val that = bf.newBuilder
         code foreach { instructionLocation => f(instructionLocation).foreach(that += _) }
         that.result
     }
@@ -1432,7 +1432,7 @@ final class Code private (
      *                        passed to `f`.
      */
     def matchTriple(
-        matchMaxTriples: Int                                               = Int.MaxValue,
+        matchMaxTriples: Int                                                = Int.MaxValue,
         f:               (Instruction, Instruction, Instruction) => Boolean
     ): Chain[Int /*PC*/ ] = {
         val max_pc = instructions.length
@@ -1599,7 +1599,7 @@ final class Code private (
         // We have to make sure, that all exception handlers are evaluated for
         // max_stack, if an exception is caught, the stack size is always 1 -
         // containing the exception itself.
-        for (exceptionHandler ← exceptionHandlers) {
+        for (exceptionHandler <- exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
             if (visitedPCs.add(handlerPC)) paths :&:= ((handlerPC, 1))
         }
@@ -1955,7 +1955,7 @@ object Code {
         // We have to make sure, that all exception handlers are evaluated for
         // max_stack, if an exception is caught, the stack size is always 1 -
         // containing the exception itself.
-        for (exceptionHandler ← exceptionHandlers) {
+        for (exceptionHandler <- exceptionHandlers) {
             val handlerPC = exceptionHandler.handlerPC
             if (visitedPCs.add(handlerPC)) paths :&:= IntIntPair(handlerPC, 1)
         }

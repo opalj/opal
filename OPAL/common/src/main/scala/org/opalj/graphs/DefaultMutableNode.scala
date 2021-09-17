@@ -14,7 +14,7 @@ import scala.collection.Map
  */
 class DefaultMutableNode[I](
         theIdentifier:       I,
-        identifierToString:  I => String                  = (_: Any).toString,
+        identifierToString:  I => String                 = (_: Any).toString,
         theVisualProperties: Map[String, String]         = Map.empty,
         theChildren:         List[DefaultMutableNode[I]] = List.empty
 ) extends MutableNodeLike[I, DefaultMutableNode[I]](
@@ -28,7 +28,7 @@ class DefaultMutableNode[I](
         identifier:         I,
         identifierToString: I => String,
         fillcolor:          Option[String]
-    ) {
+    ) = {
         this(
             identifier,
             identifierToString,
