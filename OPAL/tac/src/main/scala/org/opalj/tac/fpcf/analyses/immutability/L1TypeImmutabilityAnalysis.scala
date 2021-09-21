@@ -61,7 +61,7 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
         e: Entity
     ): ProperPropertyComputationResult = e match {
         case t: ObjectType ⇒ step1(typeExtensibility)(t)
-        case _ ⇒ throw new IllegalArgumentException(s"$e is not an ObjectType")
+        case _             ⇒ throw new IllegalArgumentException(s"$e is not an ObjectType")
     }
 
     /**
@@ -73,8 +73,8 @@ class L1TypeImmutabilityAnalysis( final val project: SomeProject) extends FPCFAn
         t: ObjectType
     ): ProperPropertyComputationResult =
         {
-          if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
-            return Result(t, TransitivelyImmutableType)
+            if (defaultTransitivelyImmutableTypes.contains(t.asObjectType))
+                return Result(t, TransitivelyImmutableType)
             val te = typeExtensibility(t)
             te match {
                 case Yes | Unknown ⇒

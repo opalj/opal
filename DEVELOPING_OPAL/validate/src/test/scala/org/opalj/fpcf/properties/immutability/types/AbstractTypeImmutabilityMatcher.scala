@@ -57,7 +57,7 @@ class AbstractTypeImmutabilityMatcher(
 
 class TransitiveImmutableTypeMatcher
     extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.TransitivelyImmutableType)
-class DependentImmutableTypeMatcher
+class DependentlyImmutableTypeMatcher
     extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.DependentlyImmutableType(Set.empty))
 class NonTransitiveImmutableTypeMatcher
     extends AbstractTypeImmutabilityMatcher(org.opalj.br.fpcf.properties.NonTransitivelyImmutableType)

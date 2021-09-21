@@ -15,7 +15,7 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
-import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
+import org.opalj.fpcf.properties.immutability.types.DependentlyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
@@ -27,7 +27,7 @@ import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssign
 
 @NonTransitivelyImmutableType(value = "class is not extensible", analyses = L0TypeImmutabilityAnalysis.class)
 @NonTransitivelyImmutableClass(value = "can not handle generics", analyses = L0ClassImmutabilityAnalysis.class)
-@DependentImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
+@DependentlyImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
 @DependentlyImmutableClass(value = "has only dependent immutable fields", analyses = L1ClassImmutabilityAnalysis.class)
 public final class GenericBaseClass<T1,T2,T3> {
 
@@ -102,7 +102,7 @@ final class GenericClassWithMutableFinalParameter<T1 extends ClassWithOneMutable
     }
 }
 
-@DependentImmutableType(value = "class has only dependent immutable fields and is not extensible",
+@DependentlyImmutableType(value = "class has only dependent immutable fields and is not extensible",
         analyses = L1TypeImmutabilityAnalysis.class)
 @DependentlyImmutableClass(value = "class has only dependent immutable fields",
         analyses = L1ClassImmutabilityAnalysis.class)
@@ -128,7 +128,7 @@ final class GenericClassLevel2<T> {
     }
 }
 
-@DependentImmutableType(value = "class has only dependent immutable fields and is not extensible",
+@DependentlyImmutableType(value = "class has only dependent immutable fields and is not extensible",
         analyses = L1TypeImmutabilityAnalysis.class)
 @DependentlyImmutableClass(value = "class has only dependent immutable fields",
 analyses = L1ClassImmutabilityAnalysis.class)
@@ -323,7 +323,7 @@ class TwoVirgin<A, B, C> {
     }
 }
 
-@DependentImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
+@DependentlyImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
 @DependentlyImmutableClass(value = "class has only dependent immutable fields",
         analyses = L1ClassImmutabilityAnalysis.class)
 final class TestTest<T1,T2 extends FinalClassWithoutFields,T3> {

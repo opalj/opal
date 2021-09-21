@@ -14,10 +14,10 @@ import org.opalj.tac.fpcf.analyses.immutability.L1TypeImmutabilityAnalysis;
  *
  * @author Tobias Peter Roth
  */
-@PropertyValidator(key = "TypeImmutability", validator = DependentImmutableTypeMatcher.class)
+@PropertyValidator(key = "TypeImmutability", validator = DependentlyImmutableTypeMatcher.class)
 @Documented
 @Retention(RetentionPolicy.CLASS)
-public @interface DependentImmutableType {
+public @interface DependentlyImmutableType {
 
     /**
      * A short reasoning of this property.

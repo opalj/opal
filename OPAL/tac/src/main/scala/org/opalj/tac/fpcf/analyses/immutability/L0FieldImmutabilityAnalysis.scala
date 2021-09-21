@@ -353,18 +353,18 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
              * @note [[state.concreteClassTypeIsKnown]] must be set to true, before calling this function
              */
             def handleKnownClassType(objectType: ObjectType): Unit = {
-                    propertyStore(objectType, ClassImmutability.key) match {
-                        case LBP(TransitivelyImmutableClass) ⇒ //nothing to do ; transitively immutable is default
+                propertyStore(objectType, ClassImmutability.key) match {
+                    case LBP(TransitivelyImmutableClass) ⇒ //nothing to do ; transitively immutable is default
 
-                        case FinalEP(t, DependentImmutableClass(_)) ⇒
-                            state.classImmutability = DependentImmutableClass(Set.empty).meet(state.classImmutability)
-                            if (t == field.fieldType)
-                                state.fieldTypeIsDependentImmutable = true
+                    case FinalEP(t, DependentImmutableClass(_)) ⇒
+                        state.classImmutability = DependentImmutableClass(Set.empty).meet(state.classImmutability)
+                        if (t == field.fieldType)
+                            state.fieldTypeIsDependentImmutable = true
 
-                        case UBP(MutableClass | NonTransitivelyImmutableClass) ⇒ state.classImmutability = MutableClass
+                    case UBP(MutableClass | NonTransitivelyImmutableClass) ⇒ state.classImmutability = MutableClass
 
-                        case eps                                               ⇒ state.dependees += eps
-                    }
+                    case eps                                               ⇒ state.dependees += eps
+                }
             }
 
             /**

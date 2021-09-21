@@ -555,6 +555,10 @@ object Immutability {
                 | Dependently Immutable Fields: ${dependentlyImmutableFields.size}
                 | Transitively Immutable Fields: ${transitivelyImmutableFields.size}
                 | Fields: ${allFieldsInProjectClassFiles.size}
+                | Fields with primitive Types / java.lang.String: ${
+                    allFieldsInProjectClassFiles
+                        .filter(field ⇒ !field.fieldType.isReferenceType || field.fieldType == ObjectType.String).size
+                }
                 |""".stripMargin
             )
         }

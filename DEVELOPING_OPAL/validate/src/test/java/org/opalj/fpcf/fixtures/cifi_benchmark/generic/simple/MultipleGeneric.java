@@ -4,12 +4,12 @@ package org.opalj.fpcf.fixtures.cifi_benchmark.generic.simple;
 import org.opalj.fpcf.properties.immutability.classes.DependentlyImmutableClass;
 import org.opalj.fpcf.properties.immutability.field_assignability.NonAssignableField;
 import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
-import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
+import org.opalj.fpcf.properties.immutability.types.DependentlyImmutableType;
 
 /**
  * Class with multiple final fields with generic types.
  */
-@DependentImmutableType(value = "class is dependently immutable and final", parameter = {"A", "B", "C"})
+@DependentlyImmutableType(value = "class is dependently immutable and final", parameter = {"A", "B", "C"})
 @DependentlyImmutableClass(value = "class has only dependent immutable fields", parameter = {"A", "B", "C"})
 public final class MultipleGeneric<A,B,C> {
 

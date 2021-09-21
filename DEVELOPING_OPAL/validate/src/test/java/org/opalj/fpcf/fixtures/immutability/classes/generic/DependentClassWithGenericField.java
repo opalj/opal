@@ -15,7 +15,7 @@ import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableFie
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.AssignableField;
 import org.opalj.fpcf.properties.immutability.types.TransitivelyImmutableType;
-import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
+import org.opalj.fpcf.properties.immutability.types.DependentlyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.MutableType;
 import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
@@ -26,7 +26,7 @@ import org.opalj.tac.fpcf.analyses.immutability.L0FieldImmutabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.L3FieldAssignabilityAnalysis;
 
 
-@DependentImmutableType("")
+@DependentlyImmutableType("")
 @DependentlyImmutableClass("")
 public final class DependentClassWithGenericField<T> {
 
@@ -75,7 +75,7 @@ final class DependentClassWithGenericField_deep01 {
     }
 }
 
-@DependentImmutableType(value = "has only dependent immutable fields and is not extensible",
+@DependentlyImmutableType(value = "has only dependent immutable fields and is not extensible",
         analyses = L1TypeImmutabilityAnalysis.class)
 @DependentlyImmutableClass(value = "has only dependent immutable fields and is not extensible",
 analyses = L1ClassImmutabilityAnalysis.class)
@@ -118,7 +118,7 @@ final class FinalEmptyClass {
 
 }
 
-@DependentImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
+@DependentlyImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
 @DependentlyImmutableClass(value = "class has only dependent immutable fields",
         analyses = L1ClassImmutabilityAnalysis.class)
 final class SimpleGenericClass<T1,T2,T3> {
@@ -157,7 +157,7 @@ final class SimpleGenericClass<T1,T2,T3> {
     }
 }
 
-@DependentImmutableType("")
+@DependentlyImmutableType("")
 @DependentlyImmutableClass("")
 final class GenericAndDeepImmutableFields<T1, T2> {
 
