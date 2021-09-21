@@ -47,6 +47,7 @@ object MethodReturnValuesAnalysis extends ProjectAnalysisApplication {
         with domain.l0.DefaultTypeLevelDoubleValues
         with domain.l0.TypeLevelFieldAccessInstructions
         with domain.l0.TypeLevelInvokeInstructions
+        with domain.l0.TypeLevelDynamicLoads
         with domain.l1.DefaultReferenceValuesBinding
         with domain.DefaultHandlingOfMethodResults
         with domain.IgnoreSynchronization

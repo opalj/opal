@@ -2,9 +2,9 @@
 package org.opalj.collection.immutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.util.PerformanceEvaluation
 
@@ -14,7 +14,7 @@ import org.opalj.util.PerformanceEvaluation
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class LongListTest extends FunSpec with Matchers {
+class LongListTest extends AnyFunSpec with Matchers {
 
     describe("performance") {
 

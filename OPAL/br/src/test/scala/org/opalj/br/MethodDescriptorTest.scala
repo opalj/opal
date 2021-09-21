@@ -2,13 +2,13 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class MethodDescriptorTest extends FunSuite {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class MethodDescriptorTest extends AnyFunSuite {
 
     test("Parsing: ()V") {
         val md = MethodDescriptor("()V")

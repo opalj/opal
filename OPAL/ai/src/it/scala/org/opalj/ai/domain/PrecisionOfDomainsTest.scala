@@ -6,9 +6,9 @@ package domain
 import java.net.URL
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 import org.opalj.concurrent.ConcurrentExceptions
 import org.opalj.br.Method
@@ -24,7 +24,7 @@ import org.opalj.br.TestSupport.createJREProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PrecisionOfDomainsTest extends FunSpec with Matchers {
+class PrecisionOfDomainsTest extends AnyFunSpec with Matchers {
 
     describe("a more precise domain") {
 
@@ -43,6 +43,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.DefaultTypeLevelDoubleValues
                 with l1.DefaultReferenceValuesBinding
                 with l1.DefaultIntegerRangeValues
+                with l0.TypeLevelDynamicLoads
                 with TheProject
 
             class TypeLevelDomain(val method: Method, val project: Project[URL])
@@ -61,6 +62,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelFieldAccessInstructions
                 with l0.TypeLevelInvokeInstructions
+                with l0.TypeLevelDynamicLoads
                 with l0.TypeLevelLongValuesShiftOperators
 
             class L1RangesDomain[I](val method: Method, val project: Project[URL])
@@ -81,6 +83,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
+                with l0.TypeLevelDynamicLoads
 
             class L1SetsDomain[I](val method: Method, val project: Project[URL])
                 extends CorrelationalDomain
@@ -99,6 +102,7 @@ class PrecisionOfDomainsTest extends FunSpec with Matchers {
                 with l0.TypeLevelPrimitiveValuesConversions
                 with l0.TypeLevelInvokeInstructions
                 with l0.TypeLevelFieldAccessInstructions
+                with l0.TypeLevelDynamicLoads
 
             def checkAbstractsOver(r1: TheAIResult, r2: TheAIResult): Option[String] = {
                 var pc = -1

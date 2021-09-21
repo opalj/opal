@@ -6,8 +6,8 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_STATIC
 import org.opalj.bi.ACC_PRIVATE
 import org.opalj.bi.ACC_PROTECTED
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.opalj.br.instructions.IADD
 import org.opalj.br.instructions.ICONST_1
 import org.opalj.br.instructions.IRETURN
@@ -21,8 +21,8 @@ import org.opalj.collection.immutable.RefArray
  * @author Timothy Earley
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class SimilarityTestConfigurationTest extends FunSuite with Matchers {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class SimilarityTestConfigurationTest extends AnyFunSuite with Matchers {
 
     //
     // Test Fixtures

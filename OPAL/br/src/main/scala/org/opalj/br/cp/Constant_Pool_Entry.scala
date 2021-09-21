@@ -94,4 +94,11 @@ trait Constant_Pool_Entry extends bi.reader.ConstantPoolEntry {
         val message = "conversion to reference type is not supported"
         throw new BytecodeProcessingFailedException(message)
     }
+
+    def isDynamic = false
+
+    def asDynamic: CONSTANT_Dynamic_info = {
+        val message = "conversion to dynamic info is not supported"
+        throw new BytecodeProcessingFailedException(message)
+    }
 }

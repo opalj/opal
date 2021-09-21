@@ -17,6 +17,7 @@ import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.collection.mutable.{TypesSet ⇒ BRMutableTypesSet}
 import org.opalj.br.fpcf.properties.ThrownExceptions
 import org.opalj.br.fpcf.properties.ThrownExceptions.AnalysisLimitation
@@ -136,6 +137,8 @@ class VirtualMethodThrownExceptionsAnalysis private[analyses] (
 }
 
 trait VirtualMethodThrownExceptionsAnalysisScheduler extends FPCFAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(IsOverridableMethodKey)
 
     final override def uses: Set[PropertyBounds] = Set(PropertyBounds.lub(ThrownExceptions))
 

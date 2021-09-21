@@ -4,13 +4,13 @@ package org.opalj.fpcf
 import scala.collection.immutable.IntMap
 import scala.collection.mutable
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.opalj.fpcf.fixtures.InitializedPropertyStore
 import org.opalj.fpcf.fixtures.Marker
 import org.opalj.fpcf.fixtures.Palindromes
 
-class EOptionPSetTest extends FunSuite {
+class EOptionPSetTest extends AnyFunSuite {
 
     test("always has a definitive size") {
         val e1 = InterimEUBP(new Object, Marker.IsMarked)

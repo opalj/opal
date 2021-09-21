@@ -2,9 +2,9 @@
 package org.opalj.collection.immutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests Long2List.
@@ -12,7 +12,7 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class Long2ListTest extends FunSpec with Matchers {
+class Long2ListTest extends AnyFunSpec with Matchers {
 
     describe("properties") {
 

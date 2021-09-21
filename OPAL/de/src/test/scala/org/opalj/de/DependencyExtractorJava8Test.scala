@@ -2,7 +2,7 @@
 package org.opalj
 package de
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Tests that the dependency extractor does not miss some dependencies and
@@ -12,8 +12,8 @@ import org.scalatest.FunSuite
  * @author Michael Eichberg
  * @author Marco Jacobasch
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class DependencyExtractorJava8Test extends FunSuite {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class DependencyExtractorJava8Test extends AnyFunSuite {
 
     import DependencyTypes._
 

@@ -4,9 +4,9 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests IdentityPair.
@@ -14,7 +14,7 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class IdentityPairTest extends FunSpec with Matchers {
+class IdentityPairTest extends AnyFunSpec with Matchers {
 
     describe("an IdentityPair") {
 

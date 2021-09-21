@@ -5,9 +5,9 @@ package domain
 package l2
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.br.ClassFile
 import org.opalj.br.Method
@@ -20,7 +20,7 @@ import org.opalj.br.TestSupport.biProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PerformInvocationsTest extends FlatSpec with Matchers {
+class PerformInvocationsTest extends AnyFlatSpec with Matchers {
 
     import PerformInvocationsTestFixture._
 
@@ -196,6 +196,7 @@ object PerformInvocationsTestFixture {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelLongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with TheMethod
 
     trait LiDomain
@@ -210,6 +211,7 @@ object PerformInvocationsTestFixture {
         with l1.ConcretePrimitiveValuesConversions
         with l1.LongValuesShiftOperators
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with TheMethod
 
     abstract class InvocationDomain(

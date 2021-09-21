@@ -2,8 +2,8 @@
 package org.opalj
 package tac
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.TestSupport.biProjectWithJDK
@@ -24,7 +24,7 @@ import org.opalj.br.analyses.Project
  *
  * @author Michael Eichberg
  */
-class TACAITest extends FunSpec with Matchers {
+class TACAITest extends AnyFunSpec with Matchers {
 
     describe("the data-flow based three-address code") {
 

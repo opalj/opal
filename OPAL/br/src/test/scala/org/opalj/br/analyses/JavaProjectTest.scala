@@ -4,9 +4,9 @@ package br
 package analyses
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.collection.JavaConverters._
 
@@ -18,7 +18,7 @@ import org.opalj.bi.TestResources.locateTestResources
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class JavaProjectTest extends FlatSpec with Matchers {
+class JavaProjectTest extends AnyFlatSpec with Matchers {
 
     behavior of "A Java Project"
 

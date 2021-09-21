@@ -50,7 +50,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
     implicit val classHierarchy: ClassHierarchy
     implicit val config: Config
 
-    val allClassFiles: Iterable[ClassFile]
+    protected[this] val allClassFiles: Iterable[ClassFile]
 
     /**
      * Returns the minimum version number of the JVM required to run the code of the project, i.e.,
@@ -215,6 +215,13 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
      * `compareAccessibilityAware` method for further details.)
      */
     protected[this] val instanceMethods: SomeMap[ObjectType, ConstArray[MethodDeclarationContext]]
+
+    /**
+     * Returns the nest host (see JVM 11 Spec. 5.4.4) for the given type, if explicitly given. For
+     * classes without an explicit NestHost or NestMembers attribute, the type itself is the nest
+     * host, but this is NOT recorded in this map.
+     */
+    val nests: SomeMap[ObjectType, ObjectType]
 
     /**
      * Tests if the given method belongs to the interface of an '''object''' identified by
@@ -706,15 +713,18 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         if (isInterface) {
             classFile(declaringClassType) match {
                 case Some(cf) ⇒ cf.findMethod(name, descriptor) match {
-                    case Some(method) if method.isAccessibleBy(callerClassType) ⇒ Success(method)
+                    case Some(method) if method.isAccessibleBy(callerClassType, nests) ⇒
+                        Success(method)
                     case _ ⇒ Empty
                 }
                 case None ⇒ Empty
             }
         } else {
             resolveClassMethodReference(declaringClassType, name, descriptor) match {
-                case s @ Success(method) ⇒ if (method.isAccessibleBy(callerClassType)) s else Empty
-                case e                   ⇒ e
+                case s @ Success(method) ⇒
+                    if (method.isAccessibleBy(callerClassType, nests)) s else Empty
+                case e ⇒
+                    e
             }
         }
     }
@@ -786,7 +796,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 else {
                     classFile.findMethod(name, descriptor) match {
                         case Some(method) ⇒
-                            if (method.isAccessibleBy(callerClassType))
+                            if (method.isAccessibleBy(callerClassType, nests))
                                 Success(method)
                             else
                                 Empty
@@ -801,7 +811,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                                 definedMethod.compare(name, descriptor)
                             } match {
                                 case Some(mdc) ⇒
-                                    if (mdc.method.isAccessibleBy(callerClassType))
+                                    if (mdc.method.isAccessibleBy(callerClassType, nests))
                                         Success(mdc.method)
                                     else
                                         Empty
@@ -851,7 +861,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
         val receiverClassType = receiverType.asObjectType
         val mdcResult = lookupVirtualMethod(callerClassType, receiverClassType, name, descriptor)
         mdcResult flatMap { mdc ⇒
-            if (!mdc.method.isPrivate || mdc.method.isAccessibleBy(callerClassType))
+            if (!mdc.method.isPrivate || mdc.method.isAccessibleBy(callerClassType, nests))
                 Success(mdc.method)
             else
                 Empty
@@ -934,7 +944,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
                 if (method.isPrivate && useJava11CallSemantics) {
                     // The method is private, thus it is selected (JVM 11 Spec Section 5.4.6)
                     // However, access control may still fail
-                    if (!method.isAccessibleBy(callerType))
+                    if (!method.isAccessibleBy(callerType, nests))
                         return Set.empty[Method];
                     return methods;
                 } else {
@@ -1023,7 +1033,7 @@ abstract class ProjectLike extends ClassFileRepository { project ⇒
             if (method.isPrivate) {
                 // The concrete method is private, thus it is selected (JVM 11 Spec Section 5.4.6)
                 // However, access control may still fail
-                if (!method.isAccessibleBy(callerType))
+                if (!method.isAccessibleBy(callerType, nests))
                     return SomeSet.empty[Method];
                 return methods;
             } else if (method.classFile.thisType eq declaringClassType) {

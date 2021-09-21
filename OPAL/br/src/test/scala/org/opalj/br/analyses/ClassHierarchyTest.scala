@@ -4,9 +4,9 @@ package br
 package analyses
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.collection.immutable.UIDSet
@@ -21,7 +21,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  * @author Michael Reif
  */
 @RunWith(classOf[JUnitRunner])
-class ClassHierarchyTest extends FlatSpec with Matchers {
+class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     // -----------------------------------------------------------------------------------
     //

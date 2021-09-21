@@ -3,9 +3,9 @@ package org.opalj
 package br
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests OPAL's support w.r.t. inner classes.
@@ -13,7 +13,7 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class IsInnerClassPropertyTest extends FlatSpec with Matchers {
+class IsInnerClassPropertyTest extends AnyFlatSpec with Matchers {
 
     val project = TestSupport.biProject("innerclasses-1.8-g-parameters-genericsignature")
 

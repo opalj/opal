@@ -4,9 +4,9 @@ package br
 package cp
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Basic tests of the TypesSet class.
@@ -14,7 +14,7 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ConstantsBufferTest extends FunSpec with Matchers {
+class ConstantsBufferTest extends AnyFunSpec with Matchers {
 
     //
     // Verify

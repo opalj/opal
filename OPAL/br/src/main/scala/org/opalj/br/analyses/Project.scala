@@ -51,8 +51,8 @@ import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
 import org.opalj.br.reader.BytecodeInstructionsCache
-import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
-import org.opalj.br.reader.Java9LibraryFramework
+import org.opalj.br.reader.Java16FrameworkWithDynamicRewritingAndCaching
+import org.opalj.br.reader.Java16LibraryFramework
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a
@@ -154,6 +154,7 @@ class Project[Source] private (
         final val classHierarchy:                     ClassHierarchy,
         final val instanceMethods:                    Map[ObjectType, ConstArray[MethodDeclarationContext]],
         final val overridingMethods:                  Map[Method, Set[Method]],
+        final val nests:                              Map[ObjectType, ObjectType],
         // Note that the referenced array will never shrink!
         @volatile private[this] var projectInformation: AtomicReferenceArray[AnyRef] = new AtomicReferenceArray[AnyRef](32)
 )(
@@ -220,6 +221,7 @@ class Project[Source] private (
             newClassHierarchy,
             instanceMethods,
             overridingMethods,
+            nests,
             newProjectInformation
         )(
             newLogContext,
@@ -1073,7 +1075,7 @@ class Project[Source] private (
  */
 object Project {
 
-    lazy val JavaLibraryClassFileReader: Java9LibraryFramework.type = Java9LibraryFramework
+    lazy val JavaLibraryClassFileReader: Java16LibraryFramework.type = Java16LibraryFramework
 
     @volatile private[this] var theCache: SoftReference[BytecodeInstructionsCache] = {
         new SoftReference(new BytecodeInstructionsCache)
@@ -1096,12 +1098,12 @@ object Project {
         implicit
         theLogContext: LogContext = GlobalLogContext,
         theConfig:     Config     = BaseConfig
-    ): Java9FrameworkWithInvokedynamicSupportAndCaching = {
+    ): Java16FrameworkWithDynamicRewritingAndCaching = {
         // The following makes use of early initializers
         class ConfiguredFramework extends {
             override implicit val logContext: LogContext = theLogContext
             override implicit val config: Config = theConfig
-        } with Java9FrameworkWithInvokedynamicSupportAndCaching(cache)
+        } with Java16FrameworkWithDynamicRewritingAndCaching(cache)
         new ConfiguredFramework
     }
 
@@ -1334,7 +1336,10 @@ object Project {
             //      the subclass resolves the conflict by defining the method.
             var definedMethods: Chain[MethodDeclarationContext] = inheritedClassMethods
 
-            val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(objectType)
+            // Note that we must NOT process interfaces again that were already implemented by the
+            // supertype because the supertype can make a default method "abstract" again
+            val superinterfaceTypes = classHierarchy.allSuperinterfacetypes(objectType) --
+                superclassType.map(classHierarchy.allSuperinterfacetypes(_)).getOrElse(UIDSet.empty)
 
             // We have to filter (remove) those interfaces that are directly and indirectly
             // inherited. In this case the potentially(!) correct method is defined by the interface
@@ -1946,6 +1951,7 @@ object Project {
 
             val objectTypeToClassFile = OpenHashMap.empty[ObjectType, ClassFile] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
             val sources = OpenHashMap.empty[ObjectType, Source] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
+            val nests = OpenHashMap.empty[ObjectType, ObjectType] // IMPROVE Use ArrayMap as soon as we have project-local object type ids
 
             def processModule(
                 classFile:        ClassFile,
@@ -1978,6 +1984,29 @@ object Project {
                 }
             }
 
+            def processNestInformation(classFile: ClassFile, classType: ObjectType): Unit = {
+                def putNestInfo(member: ObjectType, host: ObjectType): Unit = {
+                    val prevHost = nests.put(member, host)
+                    if (prevHost.isDefined && prevHost.get != host)
+                        handleInconsistentProject(
+                            logContext,
+                            InconsistentProjectException(
+                                s"inconsistent nesting information for class $member, "+
+                                    s"found in nests $host and ${prevHost.get}"+
+                                    "\n\tkeeping the first one."
+                            )
+                        )
+                }
+
+                classFile.attributes.foreach {
+                    case NestHost(hostClassType) ⇒ putNestInfo(classType, hostClassType)
+                    case NestMembers(classes) ⇒
+                        putNestInfo(classType, classType)
+                        classes.foreach(putNestInfo(_, classType))
+                    case _ ⇒
+                }
+            }
+
             def processProjectClassFile(classFile: ClassFile, source: Option[Source]): Unit = {
                 val projectType = classFile.thisType
                 if (classFile.isModuleDeclaration) {
@@ -2002,7 +2031,8 @@ object Project {
                     }
                     projectFieldsCount += classFile.fields.size
                     objectTypeToClassFile(projectType) = classFile
-                    source.foreach(sources(classFile.thisType) = _)
+                    source.foreach(sources(projectType) = _)
+                    processNestInformation(classFile, projectType)
                 }
             }
 
@@ -2071,6 +2101,7 @@ object Project {
                     libraryFieldsCount += libClassFile.fields.size
                     objectTypeToClassFile(libraryType) = libClassFile
                     sources(libraryType) = source
+                    processNestInformation(libClassFile, libraryType)
                 }
             }
 
@@ -2176,7 +2207,8 @@ object Project {
                 virtualMethodsCount,
                 classHierarchy,
                 Await.result(instanceMethodsFuture, Duration.Inf),
-                Await.result(overridingMethodsFuture, Duration.Inf)
+                Await.result(overridingMethodsFuture, Duration.Inf),
+                nests
             )
 
             time {

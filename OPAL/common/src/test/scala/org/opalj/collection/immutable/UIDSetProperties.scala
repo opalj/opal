@@ -6,15 +6,15 @@ package immutable
 import scala.language.implicitConversions
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.BooleanOperators
+import org.scalacheck.Prop.propBoolean
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
@@ -364,7 +364,7 @@ object UIDSetProperties extends Properties("UIDSet") {
 }
 
 @RunWith(classOf[JUnitRunner])
-class UIDSetTest extends FunSpec with Matchers {
+class UIDSetTest extends AnyFunSpec with Matchers {
 
     describe("performance") {
 

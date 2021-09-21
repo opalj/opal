@@ -2,8 +2,8 @@
 package org.opalj.br
 package cfg
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.BeforeAndAfterAll
 
 import org.opalj.io.writeAndOpen
@@ -14,7 +14,7 @@ import org.opalj.br.instructions.Instruction
  *
  * @author Michael Eichberg
  */
-abstract class AbstractCFGTest extends FunSpec with Matchers with BeforeAndAfterAll {
+abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAfterAll {
 
     private[this] var oldCFGValidateSetting = CFG.Validate
 

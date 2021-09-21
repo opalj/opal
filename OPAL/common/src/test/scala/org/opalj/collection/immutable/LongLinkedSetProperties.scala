@@ -3,9 +3,9 @@ package org.opalj.collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 import org.scalacheck.Prop.forAll
-import org.scalacheck.Prop.BooleanOperators
+import org.scalacheck.Prop.propBoolean
 
 /**
  * Generic Tests for `LongSet`s.

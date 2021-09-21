@@ -2,13 +2,13 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ObjectTypeTest extends FunSuite {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class ObjectTypeTest extends AnyFunSuite {
 
     test("FieldType factory method") {
         val fieldType = FieldType("Ljava/lang/Object;")

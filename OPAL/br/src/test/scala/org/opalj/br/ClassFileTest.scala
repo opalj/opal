@@ -2,8 +2,8 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.control.ControlThrowable
 import org.opalj.collection.immutable.Naught
@@ -13,8 +13,8 @@ import org.opalj.collection.immutable.RefArray
 /**
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ClassFileTest extends FunSuite with Matchers {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class ClassFileTest extends AnyFunSuite with Matchers {
 
     import reader.Java8Framework.ClassFile
 

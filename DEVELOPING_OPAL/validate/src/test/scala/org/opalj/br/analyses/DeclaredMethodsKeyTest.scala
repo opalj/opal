@@ -8,15 +8,15 @@ import java.net.URL
 
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.util.ScalaMajorVersion
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 /**
  * Tests whether the DeclaredMethodsKey creates the correct declared method objects for each class
  *
  * @author Dominik Helm
  */
-class DeclaredMethodsKeyTest extends FunSpec with Matchers {
+class DeclaredMethodsKeyTest extends AnyFunSpec with Matchers {
 
     val singleAnnotationType =
         ObjectType("org/opalj/br/analyses/properties/declared_methods/DeclaredMethod")

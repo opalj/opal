@@ -36,6 +36,9 @@ object ConstantPoolTags extends Enumeration {
     final val CONSTANT_Module_ID = 19
     final val CONSTANT_Package_ID = 20
 
+    // Java 11 onwards...
+    final val CONSTANT_Dynamic_ID = 17
+
     // THE ENUM VALUES
 
     final val CONSTANT_Class = Value(CONSTANT_Class_ID, "CONSTANT_Class")
@@ -62,4 +65,6 @@ object ConstantPoolTags extends Enumeration {
 
     final val CONSTANT_Module = Value(CONSTANT_Module_ID, "CONSTANT_Module")
     final val CONSTANT_Package = Value(CONSTANT_Package_ID, "CONSTANT_Package")
+
+    final val CONSTANT_Dynamic = Value(CONSTANT_Dynamic_ID, "CONSTANT_Dynamic")
 }

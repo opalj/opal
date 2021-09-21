@@ -5,8 +5,8 @@ package ba
 import scala.language.postfixOps
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 import java.io.ByteArrayInputStream
 
@@ -24,7 +24,7 @@ import org.opalj.util.InMemoryClassLoader
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class JumpLabelsTest extends FlatSpec {
+class JumpLabelsTest extends AnyFlatSpec {
 
     val methodTemplate =
         METHOD(PUBLIC, "returnInt", "(I)I", CODE(

@@ -4,9 +4,9 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br._
@@ -19,7 +19,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class MethodsWithLoopsTest extends FlatSpec with Matchers {
+class MethodsWithLoopsTest extends AnyFlatSpec with Matchers {
 
     import MethodsWithLoopsTest._
 
@@ -61,6 +61,7 @@ class MethodsWithLoopsTest extends FlatSpec with Matchers {
             with l0.DefaultTypeLevelDoubleValues
             with l0.TypeLevelFieldAccessInstructions
             with l0.SimpleTypeLevelInvokeInstructions
+            with l0.TypeLevelDynamicLoads
             with PredefinedClassHierarchy
             with DefaultHandlingOfMethodResults
             with IgnoreSynchronization

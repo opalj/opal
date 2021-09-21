@@ -37,15 +37,17 @@ object ToTxt {
                     v.name+"/* return address */"
                 else
                     v.name
-            case Param(_ /*cTpe*/ , name)      ⇒ name
-            case IntConst(_, value)            ⇒ value.toString
-            case LongConst(_, value)           ⇒ value.toString+"l"
-            case FloatConst(_, value)          ⇒ value.toString+"f"
-            case DoubleConst(_, value)         ⇒ value.toString+"d"
-            case ClassConst(_, value)          ⇒ value.toJava+".class"
-            case StringConst(_, value)         ⇒ s""""${value.replace("\\", "\\\\")}""""
-            case MethodHandleConst(_, value)   ⇒ s"""MethodHandle("${value.toJava}")"""
-            case MethodTypeConst(_, value)     ⇒ s"""MethodType("${value.toJava}")"""
+            case Param(_ /*cTpe*/ , name)    ⇒ name
+            case IntConst(_, value)          ⇒ value.toString
+            case LongConst(_, value)         ⇒ value.toString+"l"
+            case FloatConst(_, value)        ⇒ value.toString+"f"
+            case DoubleConst(_, value)       ⇒ value.toString+"d"
+            case ClassConst(_, value)        ⇒ value.toJava+".class"
+            case StringConst(_, value)       ⇒ s""""${value.replace("\\", "\\\\")}""""
+            case MethodHandleConst(_, value) ⇒ s"""MethodHandle("${value.toJava}")"""
+            case MethodTypeConst(_, value)   ⇒ s"""MethodType("${value.toJava}")"""
+            case DynamicConst(_, bootstrapMethod, name, _) ⇒
+                s"DynamicConstant[${bootstrapMethod.toJava}]($name)"
             case NullExpr(_)                   ⇒ "null"
 
             case PrefixExpr(_, _, op, operand) ⇒ op.toString+" "+toTxtExpr[V](operand)

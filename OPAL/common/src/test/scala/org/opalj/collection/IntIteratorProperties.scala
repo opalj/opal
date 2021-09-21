@@ -7,10 +7,10 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.BooleanOperators
+import org.scalacheck.Prop.propBoolean
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.util.{Arrays ⇒ JArrays}
 
@@ -131,7 +131,7 @@ object IntIteratorProperties extends Properties("IntIterator") {
 
 }
 
-class IntIteratorFactoryTest extends FunSpec with Matchers {
+class IntIteratorFactoryTest extends AnyFunSpec with Matchers {
 
     describe("an empty IntIterator") {
 

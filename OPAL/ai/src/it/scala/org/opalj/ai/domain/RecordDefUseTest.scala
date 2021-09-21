@@ -4,9 +4,9 @@ package ai
 package domain
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -29,7 +29,7 @@ import org.opalj.br.reader.Java8FrameworkWithCaching
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class RecordDefUseTest extends FunSpec with Matchers {
+class RecordDefUseTest extends AnyFunSpec with Matchers {
 
     protected[this] object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
@@ -51,6 +51,7 @@ class RecordDefUseTest extends FunSpec with Matchers {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with l0.TypeLevelLongValuesShiftOperators
         with RecordDefUse // <=== we are going to test!
 

@@ -45,7 +45,7 @@ trait LogContext {
      * Creates a new log context that is the successor of this context and which will
      * automatically be associated with the same logger as this `LogContext`.
      */
-    final def successor: LogContext = {
+    def successor: LogContext = {
         val newLogContext = newInstance;
         val logger = OPALLogger.logger(this)
         OPALLogger.register(newLogContext, logger)

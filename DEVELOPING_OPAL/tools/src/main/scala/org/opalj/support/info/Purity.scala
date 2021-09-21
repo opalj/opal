@@ -61,7 +61,7 @@ import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
 import org.opalj.fpcf.PropertyStoreContext
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.log.LogContext
-import org.opalj.tac.cg.AbstractCallGraphKey
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -134,7 +134,7 @@ object Purity {
         configurationName:     Option[String],
         schedulingStrategy:    Option[String],
         rater:                 DomainSpecificRater,
-        callGraphKey:          AbstractCallGraphKey,
+        callGraphKey:          CallGraphKey,
         withoutJDK:            Boolean,
         individual:            Boolean,
         numThreads:            Int,

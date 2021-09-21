@@ -11,6 +11,7 @@ import org.opalj.br.ExceptionHandlers
 import org.opalj.br.SimilarityTestConfiguration
 import org.opalj.br.cfg.CFG
 import org.opalj.br.Code
+import org.opalj.br.PC
 
 /**
  * Contains the 3-address code (like) representation of a method.
@@ -112,6 +113,37 @@ sealed trait TACode[P <: AnyRef, V <: Var[V]] extends Attribute with CodeSequenc
             else
                 ""
         s"$taCodeType($txtParams,$txtStmts,cfg=$cfg$txtExceptionHandlers$additionalParameters)"
+    }
+
+    /**
+     * Gives for a bytecode program counter the next index in this TACode that is *not* a
+     * CaughtException statement.
+     */
+    def properStmtIndexForPC(pc: PC): Int = {
+        /*
+         * There is no caught exception instruction in bytecode, so in the three-address code, a
+         * CaughtException stmt will have the same pc as the next proper stmt. pcToIndex in this
+         * case returns the index of the CaughtException, but analyses will usually need the index
+         * of the next proper stmt.
+         *
+         * Example:
+         * void foo() {
+         *     try {
+         *         ...
+         *     } catch (Exception e) {
+         *         e.printStackTrace();
+         *     }
+         * }
+         *
+         * In TAC:
+         * 12: pc=52 caught java.lang.Exception ...
+         * 13: pc=52 java.lang.Exception.printStackTrace()
+         */
+
+        val index = pcToIndex(pc)
+        if (index < 0) index
+        else if (stmts(index).isCaughtException) index + 1
+        else index
     }
 }
 

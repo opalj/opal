@@ -23,7 +23,7 @@ case class DefinitionSite(method: Method, pc: Int) extends DefinitionSiteLike {
     override def usedBy[V <: ValueInformation](
         tacode: TACode[TACMethodParameter, DUVar[V]]
     ): IntTrieSet = {
-        val defSite = tacode.pcToIndex(pc)
+        val defSite = tacode.properStmtIndexForPC(pc)
         if (defSite == -1) {
             // the code is dead
             IntTrieSet.empty

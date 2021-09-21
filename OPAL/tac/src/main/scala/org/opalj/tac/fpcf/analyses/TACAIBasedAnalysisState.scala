@@ -7,8 +7,10 @@ package analyses
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.value.ValueInformation
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.tac.fpcf.analyses.cg.AnalysisState
+import org.opalj.tac.fpcf.analyses.cg.Context
+import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -16,28 +18,32 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-trait TACAIBasedAnalysisState {
+trait TACAIBasedAnalysisState[TheContextType <: Context]
+    extends AnalysisState with ContextualAnalysis {
 
-    def method: DefinedMethod
+    override type ContextType = TheContextType
+
+    def callContext: ContextType
 
     protected[this] var _tacDependee: EOptionP[Method, TACAI]
     assert((_tacDependee eq null) || (_tacDependee.hasUBP && _tacDependee.ub.tac.isDefined))
 
-    /**
-     * Inherited classes that introduce new dependencies must override this method and call add a
-     * call to super!
-     */
-    def hasOpenDependencies: Boolean = _tacDependee.isRefinable
+    abstract override def hasOpenDependencies: Boolean = {
+        (_tacDependee ne null) && _tacDependee.isRefinable || super.hasOpenDependencies
+    }
     final def hasTACDependee: Boolean = _tacDependee.isRefinable
 
     /**
      * Inherited classes that introduce new dependencies must override this method and call add a
      * call to super!
      */
-    def dependees: Set[SomeEOptionP] = if (_tacDependee.isRefinable)
-        Set(_tacDependee)
-    else
-        Set.empty
+    abstract override def dependees: Set[SomeEOptionP] = {
+        val otherDependees = super.dependees
+        if ((_tacDependee ne null) && _tacDependee.isRefinable)
+            otherDependees + _tacDependee
+        else
+            otherDependees
+    }
 
     final def updateTACDependee(tacDependee: EOptionP[Method, TACAI]): Unit = {
         _tacDependee = tacDependee

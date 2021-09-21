@@ -3,9 +3,9 @@ package org.opalj
 package ba
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import java.lang.Boolean.FALSE
 import java.io.File
 import java.io.DataInputStream
@@ -28,7 +28,7 @@ import org.opalj.br.reader.BytecodeOptimizer.SimplifyControlFlowKey
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class BRtoBATest extends FlatSpec with Matchers {
+class BRtoBATest extends AnyFlatSpec with Matchers {
 
     behavior of "toDA(...br.ClassFile)"
 

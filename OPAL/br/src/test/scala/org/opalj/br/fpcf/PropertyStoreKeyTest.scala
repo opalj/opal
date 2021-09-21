@@ -4,9 +4,9 @@ package br
 package fpcf
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.br.TestSupport.biProject
 import org.opalj.br.analyses.SomeProject
@@ -15,7 +15,7 @@ import org.opalj.br.analyses.SomeProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyStoreKeyTest extends FunSpec with Matchers {
+class PropertyStoreKeyTest extends AnyFunSpec with Matchers {
 
     describe("using the default PropertyStoreKey") {
         val p: SomeProject = biProject("ai.jar")

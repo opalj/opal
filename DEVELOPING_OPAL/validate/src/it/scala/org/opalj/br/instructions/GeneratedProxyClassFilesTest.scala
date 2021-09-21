@@ -6,9 +6,9 @@ package instructions
 import java.net.URL
 
 import org.junit.runner.RunWith
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.TestSupport.biProject
 import org.opalj.ai.BaseAI
@@ -21,7 +21,7 @@ import org.opalj.collection.immutable.RefArray
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class GeneratedProxyClassFilesTest extends FunSpec with Matchers {
+class GeneratedProxyClassFilesTest extends AnyFunSpec with Matchers {
 
     describe("the generation of Proxy classes") {
 

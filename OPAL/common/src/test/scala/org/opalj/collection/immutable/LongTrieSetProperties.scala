@@ -3,7 +3,7 @@ package org.opalj.collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 object LongTrieSetProperties extends LongSetProperties("LongTrieSetProperties") {

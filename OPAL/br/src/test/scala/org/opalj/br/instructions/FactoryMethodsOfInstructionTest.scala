@@ -4,8 +4,8 @@ package br
 package instructions
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 /**
  * Tests instantiation of [[Instruction]]s using the convenience factory methods.
@@ -13,7 +13,7 @@ import org.scalatest.junit.JUnitRunner
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class FactoryMethodsOfInstructionTest extends FlatSpec {
+class FactoryMethodsOfInstructionTest extends AnyFlatSpec {
 
     behavior of "factory methods of Instructions"
 

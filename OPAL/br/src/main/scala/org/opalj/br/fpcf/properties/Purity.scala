@@ -152,7 +152,7 @@ sealed abstract class Purity
     def modifiesParameters: Boolean = (flags & ModifiesParameters) != 0
     def usesDomainSpecificActions: Boolean = (flags & PerformsDomainSpecificOperations) != 0
 
-    final val aggregatedProperty = new VirtualMethodPurity(this)
+    final def aggregatedProperty = new VirtualMethodPurity(this)
 
     /**
      * Combines this purity value with another one to represent the progress by a purity

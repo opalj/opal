@@ -4,15 +4,15 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 import org.scalacheck.Properties
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.BooleanOperators
+import org.scalacheck.Prop.propBoolean
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 import org.opalj.util.PerformanceEvaluation
 
@@ -372,7 +372,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 }
 
 @RunWith(classOf[JUnitRunner])
-class IntTrieSetTest extends FunSpec with Matchers {
+class IntTrieSetTest extends AnyFunSpec with Matchers {
 
     describe("the subset of relation") {
         it("should correctly work for empty set related comparisons") {

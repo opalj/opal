@@ -20,6 +20,7 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Result
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.DoesNotLeakSelfReference
 import org.opalj.br.fpcf.properties.LeaksSelfReference
@@ -213,6 +214,8 @@ class L0SelfReferenceLeakageAnalysis(
 }
 
 object L0SelfReferenceLeakageAnalysis extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def uses: Set[PropertyBounds] = Set.empty
 

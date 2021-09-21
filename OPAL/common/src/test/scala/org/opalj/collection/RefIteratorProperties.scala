@@ -6,7 +6,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Prop.classify
-import org.scalacheck.Prop.BooleanOperators
+import org.scalacheck.Prop.propBoolean
 
 import org.opalj.collection.immutable.RefArray
 

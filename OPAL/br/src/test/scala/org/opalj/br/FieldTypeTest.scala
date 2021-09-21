@@ -2,15 +2,15 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Test the construction and analysis of types.
  *
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class FieldTypeTest extends FunSuite {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class FieldTypeTest extends AnyFunSuite {
 
     test("Byte Field Descriptor") {
         val fieldType = FieldType("B")

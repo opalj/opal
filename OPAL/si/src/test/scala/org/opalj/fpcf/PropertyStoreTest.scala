@@ -6,10 +6,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.{Set ⇒ SomeSet}
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.log.GlobalLogContext
 import org.opalj.log.LogContext
@@ -23,7 +23,7 @@ import org.opalj.fpcf.fixtures._
  */
 @RunWith(classOf[JUnitRunner])
 sealed abstract class PropertyStoreTest[PS <: PropertyStore]
-    extends FunSpec
+    extends AnyFunSpec
     with Matchers
     with BeforeAndAfterAll {
 

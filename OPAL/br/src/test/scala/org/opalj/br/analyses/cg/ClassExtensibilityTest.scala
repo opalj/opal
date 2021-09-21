@@ -6,12 +6,13 @@ package cg
 
 import com.typesafe.config.ConfigFactory
 import org.opalj.br.TestSupport.biProject
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * @author Michael Reif
  */
-class ClassExtensibilityTest extends FunSpec with Matchers {
+class ClassExtensibilityTest extends AnyFunSpec with Matchers {
 
     val testProject = biProject("extensible_classes.jar")
 

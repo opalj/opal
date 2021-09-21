@@ -3,10 +3,10 @@ package org.opalj
 package br
 package instructions
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.analyses.{Project, SomeProject}
 import org.opalj.br.reader.{Java8Framework, Java8LibraryFramework}
@@ -18,7 +18,7 @@ import org.opalj.collection.immutable.RefArray
  * @author Arne Lottmann
  */
 @RunWith(classOf[JUnitRunner])
-class ObjectMethodsOnFunctionalInterfacesTest extends FunSpec with Matchers {
+class ObjectMethodsOnFunctionalInterfacesTest extends AnyFunSpec with Matchers {
 
     val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 

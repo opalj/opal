@@ -5,9 +5,9 @@ package domain
 package l1
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -18,7 +18,7 @@ import org.opalj.br.analyses.Project
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ConstantFieldValuesResolutionTest extends FunSpec with Matchers {
+class ConstantFieldValuesResolutionTest extends AnyFunSpec with Matchers {
 
     class ConstantFieldValuesResolutionTestDomain(val project: Project[java.net.URL])
         extends CorrelationalDomain
@@ -34,6 +34,7 @@ class ConstantFieldValuesResolutionTest extends FunSpec with Matchers {
         with l0.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.SimpleTypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with DefaultHandlingOfMethodResults
         with IgnoreSynchronization
         with RecordLastReturnedValues

@@ -92,6 +92,7 @@ trait Domain
     with MethodCallsDomain
     with MonitorInstructionsDomain
     with ReturnInstructionsDomain
+    with DynamicLoadsDomain
     with PrimitiveValuesConversionsDomain
     with TypedValuesFactory
     with Configuration {

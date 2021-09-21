@@ -3,9 +3,9 @@ package org.opalj
 package bi
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the matching of access flags.
@@ -13,7 +13,7 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class AccessFlagsMatcherTest extends FlatSpec with Matchers {
+class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
 
     import AccessFlagsMatcher._
 

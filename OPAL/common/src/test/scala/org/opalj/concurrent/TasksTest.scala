@@ -6,9 +6,9 @@ import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicIntegerArray
 //import java.util.concurrent.ConcurrentLinkedQueue
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.ExecutionContext
 
@@ -18,7 +18,7 @@ import scala.concurrent.ExecutionContext
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TasksTest extends FunSpec with Matchers {
+class TasksTest extends AnyFunSpec with Matchers {
 
     final val ThreadPool = BoundedThreadPool("tasks test", 128)
     implicit final val TestExecutionContext = ExecutionContext.fromExecutorService(ThreadPool)

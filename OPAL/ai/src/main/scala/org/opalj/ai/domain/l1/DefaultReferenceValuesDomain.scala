@@ -29,6 +29,7 @@ class DefaultReferenceValuesDomain[Source](
     with l0.DefaultTypeLevelDoubleValues
     with l0.TypeLevelFieldAccessInstructions
     with l0.TypeLevelInvokeInstructions
+    with l0.TypeLevelDynamicLoads
     with l1.DefaultReferenceValuesBinding
     with l0.DefaultTypeLevelIntegerValues
     with l0.DefaultTypeLevelLongValues

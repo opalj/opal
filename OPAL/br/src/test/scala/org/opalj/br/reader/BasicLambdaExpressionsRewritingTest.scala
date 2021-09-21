@@ -5,8 +5,8 @@ package reader
 
 import java.io.File
 
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import org.scalactic.Equality
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -31,8 +31,8 @@ import org.opalj.collection.immutable.RefArray
  * @author Michael Eichberg
  * @author Andreas Muttscheller
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class BasicLambdaExpressionsRewritingTest extends FunSpec with Matchers {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
 
     val InvokedMethod = ObjectType("annotations/target/InvokedMethod")
 

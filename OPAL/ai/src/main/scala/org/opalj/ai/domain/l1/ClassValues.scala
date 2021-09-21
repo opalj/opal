@@ -10,14 +10,17 @@ import org.opalj.collection.immutable.RefArray
 import org.opalj.value.IsClassValue
 import org.opalj.value.TheClassValue
 import org.opalj.br.BooleanType
+import org.opalj.br.BootstrapMethod
 import org.opalj.br.ByteType
 import org.opalj.br.CharType
 import org.opalj.br.DoubleType
 import org.opalj.br.FieldType
 import org.opalj.br.FloatType
 import org.opalj.br.IntegerType
+import org.opalj.br.InvokeStaticMethodHandle
 import org.opalj.br.LongType
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.MethodDescriptor.ConstantBootstrapsPrimitiveClassDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
@@ -40,7 +43,11 @@ import org.opalj.br.Type
  * @author Michael Eichberg (fixes for multi-parameter Class.forName(...) calls)
  * @author Arne Lottmann
  */
-trait ClassValues extends StringValues with FieldAccessesDomain with MethodCallsDomain {
+trait ClassValues
+    extends StringValues
+    with FieldAccessesDomain
+    with DynamicLoadsDomain
+    with MethodCallsDomain {
     domain: CorrelationalDomain with IntegerValuesDomain with TypedValuesFactory with Configuration ⇒
 
     type DomainClassValue <: ClassValue with DomainObjectValue
@@ -207,6 +214,21 @@ trait ClassValues extends StringValues with FieldAccessesDomain with MethodCalls
             }
         } else {
             super.getstatic(pc, declaringClass, name, fieldType)
+        }
+    }
+
+    abstract override def loadDynamic(
+        pc:              Int,
+        bootstrapMethod: BootstrapMethod,
+        name:            String,
+        descriptor:      FieldType
+    ): Computation[DomainValue, Nothing] = {
+
+        bootstrapMethod match {
+            case BootstrapMethod(InvokeStaticMethodHandle(ObjectType.ConstantBootstraps, false, "primitiveClass", ConstantBootstrapsPrimitiveClassDescriptor), RefArray()) ⇒
+                ComputedValue(ClassValue(pc, FieldType(name)))
+            case _ ⇒
+                super.loadDynamic(pc, bootstrapMethod, name, descriptor)
         }
     }
 

@@ -2,15 +2,15 @@
 package org.opalj
 package br
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 /**
  * Tests that `ArrayType`s are represented as specified.
  *
  * @author Michael Eichberg
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ArrayTypeTest extends FunSuite {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class ArrayTypeTest extends AnyFunSuite {
 
     test("ArrayType (Array of References) Field Descriptor") {
         val fieldType = FieldType("[Ljava/lang/Object;")

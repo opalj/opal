@@ -630,6 +630,35 @@ object MethodDescriptor {
         )
     }
 
+    /**
+     * Descriptor of the method `java.lang.invoke.ConstantBootstraps.primitiveClass`.
+     */
+    final val ConstantBootstrapsPrimitiveClassDescriptor = {
+        MethodDescriptor(
+            RefArray(
+                ObjectType.MethodHandles$Lookup,
+                ObjectType.String,
+                ObjectType.Class
+            ),
+            ObjectType.Class
+        )
+    }
+
+    /**
+     * Descriptor of the methods `java.lang.invoke.MethodHandles$Lookup.findVarHandle` and
+     * `java.lang.invoke.MethodHandles$Lookup.findStaticVarHandle`.
+     */
+    final val FindVarHandleDescriptor = {
+        MethodDescriptor(
+            RefArray(
+                ObjectType.Class,
+                ObjectType.String,
+                ObjectType.Class
+            ),
+            ObjectType.VarHandle
+        )
+    }
+
     def withNoArgs(returnType: Type): MethodDescriptor = {
         (returnType.id: @scala.annotation.switch) match {
             case VoidType.id         ⇒ NoArgumentAndNoReturnValueMethodDescriptor

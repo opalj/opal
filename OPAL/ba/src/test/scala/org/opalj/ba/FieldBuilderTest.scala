@@ -7,8 +7,8 @@ import scala.language.postfixOps
 import java.io.ByteArrayInputStream
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 import scala.reflect.runtime.universe._
 
@@ -28,7 +28,7 @@ import org.opalj.util.InMemoryClassLoader
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class FieldBuilderTest extends FlatSpec {
+class FieldBuilderTest extends AnyFlatSpec {
 
     behavior of "Fields"
 

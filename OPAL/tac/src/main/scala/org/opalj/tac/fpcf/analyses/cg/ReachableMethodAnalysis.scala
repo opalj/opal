@@ -17,7 +17,6 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
@@ -29,7 +28,7 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-trait ReachableMethodAnalysis extends FPCFAnalysis {
+trait ReachableMethodAnalysis extends FPCFAnalysis with ContextualAnalysis {
 
     protected implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
@@ -65,23 +64,26 @@ trait ReachableMethodAnalysis extends FPCFAnalysis {
 
         val tacEP = propertyStore(method, TACAI.key)
 
+        // FIXME The asInstanceOf obviously won't work once different context types are possible
+        val callContext = new SimpleContext(declaredMethod).asInstanceOf[ContextType]
+
         if (tacEP.hasUBP && tacEP.ub.tac.isDefined) {
-            processMethod(declaredMethod.asDefinedMethod, tacEP.asEPS)
+            processMethod(callContext, tacEP.asEPS)
         } else {
-            InterimPartialResult(Set(tacEP), continuationForTAC(declaredMethod.asDefinedMethod))
+            InterimPartialResult(Set(tacEP), continuationForTAC(callContext))
         }
     }
 
     def processMethod(
-        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
+        callContext: ContextType, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult
 
     protected def continuationForTAC(
-        definedMethod: DefinedMethod
+        callContext: ContextType
     )(someEPS: SomeEPS): ProperPropertyComputationResult = {
         someEPS match {
             case UBP(tac: TACAI) if tac.tac.isDefined ⇒
-                processMethod(definedMethod, someEPS.asInstanceOf[EPS[Method, TACAI]])
+                processMethod(callContext, someEPS.asInstanceOf[EPS[Method, TACAI]])
             case _ ⇒
                 throw new IllegalArgumentException(s"unexpected eps $someEPS")
         }

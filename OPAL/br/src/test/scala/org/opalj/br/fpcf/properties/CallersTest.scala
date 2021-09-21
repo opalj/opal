@@ -5,9 +5,9 @@ package fpcf
 package properties
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.collection.immutable.LongLinkedTrieSet
 import org.opalj.bi.TestResources.locateTestResources
@@ -24,7 +24,7 @@ import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 import org.opalj.br.reader.Java8Framework.ClassFiles
 
 @RunWith(classOf[JUnitRunner])
-class CallersTest extends FlatSpec with Matchers {
+class CallersTest extends AnyFlatSpec with Matchers {
     val typesProject =
         Project(
             ClassFiles(locateTestResources("classhierarchy.jar", "bi")),

@@ -2,10 +2,12 @@
 package org.opalj.br.instructions
 
 import org.junit.runner.RunWith
+
 import org.opalj.collection.immutable.RefArray
 import org.opalj.collection.immutable.IntArray
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests instantiation and resolving of LabeledInstructions.
@@ -13,7 +15,7 @@ import org.scalatest.{FlatSpec, Matchers}
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class LabeledInstructionsTest extends FlatSpec with Matchers {
+class LabeledInstructionsTest extends AnyFlatSpec with Matchers {
     behavior of "LabeledInstructionsTest"
 
     val label = InstructionLabel('TestLabel)

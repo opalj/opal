@@ -5,12 +5,12 @@ package fpcf
 package properties
 
 import org.junit.runner.RunWith
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
-class EscapePropertyTest extends FlatSpec with Matchers {
+class EscapePropertyTest extends AnyFlatSpec with Matchers {
     val basicProperties = List(NoEscape, EscapeInCallee, EscapeViaParameter, EscapeViaReturn, EscapeViaAbnormalReturn,
         EscapeViaParameterAndReturn, EscapeViaParameterAndAbnormalReturn, EscapeViaNormalAndAbnormalReturn,
         EscapeViaParameterAndNormalAndAbnormalReturn)

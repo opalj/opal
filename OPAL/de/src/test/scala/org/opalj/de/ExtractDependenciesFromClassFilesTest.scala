@@ -4,8 +4,8 @@ package de
 
 import java.util.zip.ZipFile
 
-import org.scalatest.Matchers
-import org.scalatest.FlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 
 import org.opalj.bi.TestResources.allManagedBITestJARs
 import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
@@ -19,8 +19,8 @@ import org.opalj.br.reader.Java8Framework.{ClassFile ⇒ ClassFileReader}
  * @author Michael Eichberg
  * @author Marco Jacobasch
  */
-@org.junit.runner.RunWith(classOf[org.scalatest.junit.JUnitRunner])
-class ExtractDependenciesFromClassFilesTest extends FlatSpec with Matchers {
+@org.junit.runner.RunWith(classOf[org.scalatestplus.junit.JUnitRunner])
+class ExtractDependenciesFromClassFilesTest extends AnyFlatSpec with Matchers {
 
     val dependencyExtractor = new DependencyExtractor(DependencyProcessorAdapter)
 

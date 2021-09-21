@@ -3,15 +3,15 @@ package org.opalj
 package tac
 
 import java.util.Arrays
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Common superclass of all TAC unit tests.
  *
  * @author Michael Eichberg
  */
-private[tac] class TACTest extends FunSpec with Matchers {
+private[tac] class TACTest extends AnyFunSpec with Matchers {
 
     def compareStatements[V <: Var[V]](
         expectedStmts: IndexedSeq[Stmt[V]],

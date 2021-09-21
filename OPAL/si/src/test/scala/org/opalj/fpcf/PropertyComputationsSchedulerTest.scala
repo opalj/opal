@@ -3,9 +3,9 @@ package org.opalj
 package fpcf
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.BeforeAndAfterEach
 
 import org.opalj.log.GlobalLogContext
@@ -17,7 +17,7 @@ import org.opalj.fpcf.fixtures.PropertyStoreConfigurationRecorder
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyComputationsSchedulerTest extends FunSpec with Matchers with BeforeAndAfterEach {
+class PropertyComputationsSchedulerTest extends AnyFunSpec with Matchers with BeforeAndAfterEach {
 
     implicit val logContext: GlobalLogContext.type = GlobalLogContext
 

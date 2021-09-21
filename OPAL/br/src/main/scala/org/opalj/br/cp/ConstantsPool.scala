@@ -145,4 +145,32 @@ class ConstantsPool(
         CPEInvokeDynamic(bootstrapMethod, name, descriptor.toJVMDescriptor)
     }
 
+    @throws[ConstantPoolException]
+    def CPEDynamic(
+        bootstrapMethod:    BootstrapMethod,
+        name:               String,
+        descriptor:         String,
+        requiresUByteIndex: Boolean
+    ): Int = {
+        val indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
+        if (indexOfBootstrapMethod == -1) {
+            throw new ConstantPoolException(s"the bootstrap method $bootstrapMethod is unknown")
+        }
+        val cpNameAndTypeIndex = CPENameAndType(name, descriptor)
+        validateIndex(
+            constantPool(CONSTANT_Dynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex)),
+            requiresUByteIndex
+        )
+    }
+
+    @throws[ConstantPoolException]
+    override def CPEDynamic(
+        bootstrapMethod:    BootstrapMethod,
+        name:               String,
+        descriptor:         FieldType,
+        requiresUByteIndex: Boolean
+    ): Int = {
+        CPEDynamic(bootstrapMethod, name, descriptor.toJVMTypeName, requiresUByteIndex)
+    }
+
 }

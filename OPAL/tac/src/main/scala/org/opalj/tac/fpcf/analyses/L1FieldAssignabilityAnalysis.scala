@@ -178,7 +178,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
     ): Boolean = {
         val stmts = taCode.stmts
         for (pc ← pcs) {
-            val index = taCode.pcToIndex(pc)
+            val index = taCode.properStmtIndexForPC(pc)
             if (index >= 0) {
                 val stmtCandidate = stmts(index)
                 if (stmtCandidate.pc == pc) {

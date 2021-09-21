@@ -6,7 +6,9 @@ package reader
 /**
  * @author Michael Eichberg
  */
-trait InstructionsDeserializer extends DeferredInvokedynamicResolution {
+trait InstructionsDeserializer
+    extends DeferredInvokedynamicResolution
+    with DeferredDynamicConstantResolution {
 
     def Instructions(
         cp:                  Constant_Pool,

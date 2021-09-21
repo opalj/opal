@@ -27,7 +27,7 @@ trait DeferredInvokedynamicResolution extends ConstantPoolBinding with CodeBindi
      * To perform additional analyses on `invokedynamic` instructions, e.g., to
      * fully resolve the call target, a subclass may override this method to do so.
      * When you override this method, you should call this method
-     * (`super.deferredResolveInvokedynamicInstruction`) to ensure that the default resolution
+     * (`super.deferredResolveInvokedynamicResolution`) to ensure that the default resolution
      * is carried out.
      *
      * @param   classFile The [[ClassFile]] with which the deferred action was registered.

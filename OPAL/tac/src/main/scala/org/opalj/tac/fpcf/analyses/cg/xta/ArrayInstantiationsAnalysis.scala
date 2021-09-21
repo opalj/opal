@@ -7,8 +7,8 @@ package cg
 package xta
 
 import org.opalj.br.ArrayType
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
@@ -24,7 +24,6 @@ import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.tac.fpcf.properties.TACAI
-
 import scala.collection.mutable
 
 /**
@@ -45,12 +44,12 @@ final class ArrayInstantiationsAnalysis(
 ) extends ReachableMethodAnalysis {
 
     override def processMethod(
-        definedMethod: DefinedMethod,
-        tacEP:         EPS[Method, TACAI]
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        val code = definedMethod.definedMethod.body.get
+        val code = callContext.method.definedMethod.body.get
 
-        val targetSetEntity = selectSetEntity(definedMethod)
+        val targetSetEntity = selectSetEntity(callContext.method)
 
         // We only care about arrays of reference types.
         val instantiatedArrays = code.instructions.collect {
@@ -115,6 +114,8 @@ final class ArrayInstantiationsAnalysis(
 class ArrayInstantiationsAnalysisScheduler(
         selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
 
     override def register(project: SomeProject, propertyStore: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis = new ArrayInstantiationsAnalysis(project, selectSetEntity)

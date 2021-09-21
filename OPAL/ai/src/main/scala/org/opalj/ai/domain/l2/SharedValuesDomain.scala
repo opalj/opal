@@ -16,6 +16,7 @@ trait SharedValuesDomain[Source]
     with TheProject
     with l0.DefaultTypeLevelFloatValues
     with l0.DefaultTypeLevelDoubleValues
+    with l0.TypeLevelDynamicLoads
     with l1.DefaultClassValuesBinding
     with l1.DefaultArrayValuesBinding
     with l1.DefaultIntegerRangeValues
@@ -42,6 +43,7 @@ class SharedDefaultDomain[Source](
     with IgnoreSynchronization
     with l0.TypeLevelFieldAccessInstructions
     with l0.TypeLevelInvokeInstructions
+    with l0.TypeLevelDynamicLoads
     with SpecialMethodsHandling
     with SharedValuesDomain[Source]
     with l1.MaxArrayLengthRefinement // OPTIONAL

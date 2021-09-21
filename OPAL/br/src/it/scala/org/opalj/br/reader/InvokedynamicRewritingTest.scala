@@ -4,20 +4,18 @@ package br
 package reader
 
 import scala.language.existentials
+
 import scala.collection.JavaConverters._
-import org.scalatest.FunSuite
-import java.lang.{Boolean ⇒ JBoolean}
+
+import org.scalatest.funsuite.AnyFunSuite
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory
 import org.opalj.log.StandardLogContext
 import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.analyses.SomeProject
-import org.opalj.br.reader.InvokedynamicRewriting.StringConcatNameRegEx
+import org.opalj.br.reader.InvokedynamicRewriting.TargetMethodNameRegEx
 
 /**
  * Infrastructure to load a project containing Jars.
@@ -25,7 +23,7 @@ import org.opalj.br.reader.InvokedynamicRewriting.StringConcatNameRegEx
  * @author Arne Lottmann
  * @author Dominik Helm
  */
-abstract class InvokedynamicRewritingTest extends FunSuite {
+abstract class InvokedynamicRewritingTest extends AnyFunSuite {
 
     protected def isProxyFactoryCall(instruction: INVOKESTATIC): Boolean = {
         isProxyFactoryCall(instruction.declaringClass.fqn)
@@ -57,16 +55,16 @@ abstract class InvokedynamicRewritingTest extends FunSuite {
 
     }
 
-    protected def stringConcatFactoryCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
+    protected def otherDynamicCalls(project: SomeProject): Iterable[INVOKESTATIC] = {
         val factoryCalls = new ConcurrentLinkedQueue[INVOKESTATIC]()
         project.parForeachMethodWithBody() { mi ⇒
             factoryCalls.addAll(
                 mi.method.body.get.collectInstructions {
-                    case i: INVOKESTATIC if i.name.matches(StringConcatNameRegEx) ⇒ i
+                    case i: INVOKESTATIC if i.name.matches(TargetMethodNameRegEx) ⇒ i
                 }.asJava
             )
         }
-        info(s"found ${factoryCalls.size} string concat factory method calls")
+        info(s"found ${factoryCalls.size} further bootstrap method calls")
         factoryCalls.asScala
 
     }
@@ -75,16 +73,7 @@ abstract class InvokedynamicRewritingTest extends FunSuite {
      * Loads the library and checks if at least one call to a proxy factory method is found.
      */
     protected def project(libraryPath: java.io.File): (SomeProject, Iterable[INVOKESTATIC]) = {
-        val baseConfig: Config = ConfigFactory.load()
-        val rewritingConfigKey = InvokedynamicRewriting.InvokedynamicRewritingConfigKey
-        val logLambdaConfigKey = InvokedynamicRewriting.LambdaExpressionsLogRewritingsConfigKey
-        val logConcatConfigKey = InvokedynamicRewriting.StringConcatLogRewritingsConfigKey
-        val config = baseConfig.
-            withValue(rewritingConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.TRUE)).
-            withValue(logLambdaConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)).
-            withValue(logConcatConfigKey, ConfigValueFactory.fromAnyRef(JBoolean.FALSE)) /*.
-            withValue(SynthesizedClassFiles., ConfigValueFactory.fromAnyRef(JBoolean.FALSE))
-            */
+        val config = InvokedynamicRewriting.defaultConfig(rewrite = true, logRewrites = false)
 
         val logContext = new StandardLogContext
         OPALLogger.register(logContext)
@@ -92,7 +81,7 @@ abstract class InvokedynamicRewritingTest extends FunSuite {
         val proxyFactoryCalls = this.proxyFactoryCalls(project)
         assert(proxyFactoryCalls.nonEmpty, "there should be calls to the proxy factories")
 
-        stringConcatFactoryCalls(project)
+        otherDynamicCalls(project)
 
         (project, proxyFactoryCalls)
     }

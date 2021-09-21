@@ -5,10 +5,10 @@ package domain
 package l0
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.opalj.collection.immutable.UIDSet2
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
@@ -21,7 +21,7 @@ import org.opalj.ai.domain.ValuesCoordinatingDomain
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
+class DefaultReferenceValuesBindingTest extends AnyFlatSpec with Matchers {
 
     private object ValuesDomain extends {
         final val project: Project[java.net.URL] = TestSupport.createJREProject
@@ -32,6 +32,7 @@ class DefaultReferenceValuesBindingTest extends FlatSpec with Matchers {
         with l0.DefaultTypeLevelDoubleValues
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.DefaultReferenceValuesBinding
+        with l0.TypeLevelDynamicLoads
         with TheProject
 
     behavior of "instances of domains of type l0.DomainReferenceValuesBinding"

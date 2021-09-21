@@ -28,6 +28,7 @@ class DefaultSingletonValuesDomain[Source](
     with l0.DefaultTypeLevelDoubleValues
     with l0.TypeLevelFieldAccessInstructions
     with l0.TypeLevelInvokeInstructions
+    with l0.TypeLevelDynamicLoads
     with l0.DefaultReferenceValuesBinding
     with l1.DefaultIntegerValues
     with l1.DefaultLongValues

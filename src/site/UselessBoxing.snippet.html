@@ -28,7 +28,7 @@ for {
     method @ MethodWithBody(body) ← classFile.methods // for all non-abstract, non-native methods
     pc ← body.matchPair { // find a sequence of two instructions where...
         case (
-            INVOKESPECIAL(receiver1, _, TheArgument(parameterType: BaseType)),
+            INVOKESPECIAL(receiver1, _, _, TheArgument(parameterType: BaseType)),
             INVOKEVIRTUAL(receiver2, name, NoArgumentMethodDescriptor(returnType: BaseType))
             ) ⇒ { (receiver1 eq receiver2) &amp;&amp;
                    receiver1.isPrimitiveTypeWrapper &amp;&amp;

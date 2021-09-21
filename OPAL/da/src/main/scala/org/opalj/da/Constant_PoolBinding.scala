@@ -126,4 +126,12 @@ trait Constant_PoolBinding extends Constant_PoolReader with Constant_PoolAbstrac
 
     type CONSTANT_Package_info = org.opalj.da.CONSTANT_Package_info
     def CONSTANT_Package_info(i: Int): CONSTANT_Package_info = da.CONSTANT_Package_info(i)
+
+    type CONSTANT_Dynamic_info = org.opalj.da.CONSTANT_Dynamic_info
+    def CONSTANT_Dynamic_info(
+        bootstrap_method_attr_index: Int,
+        name_and_type_index:         Constant_Pool_Index
+    ): org.opalj.da.ClassFileReader.CONSTANT_Dynamic_info = {
+        new CONSTANT_Dynamic_info(bootstrap_method_attr_index, name_and_type_index)
+    }
 }

@@ -29,7 +29,7 @@ trait FPCFAnalysisScheduler extends ComputationSpecification[FPCFAnalysis] {
      * other keys which are not statically known at compile time. If a single key that is (transitively)
      * used is not correctly listed, a deadlock will _always_ occur.
      */
-    def requiredProjectInformation: ProjectInformationKeys = ???
+    def requiredProjectInformation: ProjectInformationKeys
 
     /**
      * The unique id of this factory.

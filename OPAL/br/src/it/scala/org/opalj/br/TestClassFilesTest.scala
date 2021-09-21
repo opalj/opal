@@ -6,10 +6,10 @@ import java.util.zip.ZipFile
 import java.io.DataInputStream
 import java.io.ByteArrayInputStream
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 
 import org.opalj.io.process
 import org.opalj.br.reader._
@@ -24,7 +24,7 @@ import org.opalj.bytecode.JRELibraryFolder
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class TestClassFilesTest extends FlatSpec with Matchers /*INTENTIONALLY NOT PARALLELIZED*/ {
+class TestClassFilesTest extends AnyFlatSpec with Matchers /*INTENTIONALLY NOT PARALLELIZED*/ {
 
     behavior of "OPAL's ClassFiles reader"
 

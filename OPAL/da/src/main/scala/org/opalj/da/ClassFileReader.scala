@@ -55,7 +55,12 @@ object ClassFileReader
     // JAVA 9
     with bi.reader.Module_attributeReader
     with bi.reader.ModuleMainClass_attributeReader
-    with bi.reader.ModulePackages_attributeReader {
+    with bi.reader.ModulePackages_attributeReader
+    // JAVA 11
+    with bi.reader.NestHost_attributeReader
+    with bi.reader.NestMembers_attributeReader
+    // JAVA 16
+    with bi.reader.Record_attributeReader {
 
     type ClassFile = da.ClassFile
 
@@ -880,5 +885,58 @@ object ClassFileReader
         main_class_index:     Constant_Pool_Index
     ): ModuleMainClass_attribute = {
         new ModuleMainClass_attribute(attribute_name_index, main_class_index)
+    }
+
+    // --------------------------------------------------------------------------------------------
+    // JAVA 11
+    // --------------------------------------------------------------------------------------------
+
+    type NestHost_attribute = da.NestHost_attribute
+    def NestHost_attribute(
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        host_class_index:     Constant_Pool_Index
+    ): NestHost_attribute = {
+        new NestHost_attribute(attribute_name_index, host_class_index)
+    }
+
+    type NestMembers_attribute = da.NestMembers_attribute
+    def NestMembers_attribute(
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        classes_array:        ClassesArray
+    ): NestMembers_attribute = {
+        new NestMembers_attribute(
+            attribute_name_index, IntArray._UNSAFE_from(classes_array)
+        )
+    }
+
+    // --------------------------------------------------------------------------------------------
+    // JAVA 16
+    // --------------------------------------------------------------------------------------------
+
+    type Record_attribute = da.Record_attribute
+    def Record_attribute(
+        cp:                   Constant_Pool,
+        ap_name_index:        Constant_Pool_Index,
+        ap_descriptor_index:  Constant_Pool_Index,
+        attribute_name_index: Constant_Pool_Index,
+        components:           RecordComponents
+    ): Record_attribute = {
+        new Record_attribute(attribute_name_index, components)
+    }
+
+    type RecordComponent = da.RecordComponent
+    def RecordComponent(
+        cp:               Constant_Pool,
+        name_index:       Constant_Pool_Index,
+        descriptor_index: Constant_Pool_Index,
+        attributes:       Attributes
+    ): RecordComponent = {
+        new RecordComponent(name_index, descriptor_index, attributes)
     }
 }

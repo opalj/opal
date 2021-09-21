@@ -5,11 +5,13 @@ package cp
 
 import scala.collection.mutable
 
+import org.opalj.br.instructions.INCOMPLETE_LDC
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LoadInt
 import org.opalj.br.instructions.LoadFloat
 import org.opalj.br.instructions.LoadString
 import org.opalj.br.instructions.LoadClass
+import org.opalj.br.instructions.LoadDynamic
 import org.opalj.br.instructions.LoadMethodHandle
 import org.opalj.br.instructions.LoadMethodType
 
@@ -145,7 +147,6 @@ class ConstantsBuffer private (
         val cpeClass = CPEClass(objectType, requiresUByteIndex = false)
         val cpFieldRef = CONSTANT_Fieldref_info(cpeClass, nameAndTypeRef)
         validateUShortIndex(getOrElseUpdate(cpFieldRef, 1))
-
     }
 
     @throws[ConstantPoolException]
@@ -189,7 +190,7 @@ class ConstantsBuffer private (
         var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
         if (indexOfBootstrapMethod == -1) {
             bootstrapMethods += bootstrapMethod
-            CPEMethodHandle(bootstrapMethod.handle, false)
+            CPEMethodHandle(bootstrapMethod.handle, requiresUByteIndex = false)
             bootstrapMethod.arguments.foreach(CPEntryForBootstrapArgument)
             indexOfBootstrapMethod = bootstrapMethods.size - 1
         }
@@ -205,14 +206,64 @@ class ConstantsBuffer private (
     def CPEModule(name: String): Int = {
         val cpeUtf8 = CPEUtf8(name)
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Module_info(cpeUtf8), 1)
-        validateIndex(cpEntryIndex, false)
+        validateIndex(cpEntryIndex, requiresUByteIndex = false)
     }
 
     @throws[ConstantPoolException]
     def CPEPackage(name: String): Int = {
         val cpeUtf8 = CPEUtf8(name)
         val cpEntryIndex = getOrElseUpdate(CONSTANT_Package_info(cpeUtf8), 1)
-        validateIndex(cpEntryIndex, false)
+        validateIndex(cpEntryIndex, requiresUByteIndex = false)
+    }
+
+    //
+    // Java11+ CPEntries
+    //
+
+    @throws[ConstantPoolException]
+    def CPEDynamic(
+        bootstrapMethod:    BootstrapMethod,
+        name:               String,
+        descriptor:         FieldType,
+        requiresUByteIndex: Boolean
+    ): Int = {
+        CPEDynamic(
+            bootstrapMethod,
+            name,
+            descriptor,
+            requiresUByteIndex,
+            createBootstrapArgumentEntries = true
+        )
+    }
+
+    @throws[ConstantPoolException]
+    def CPEDynamic(
+        bootstrapMethod:                BootstrapMethod,
+        name:                           String,
+        descriptor:                     FieldType,
+        requiresUByteIndex:             Boolean,
+        createBootstrapArgumentEntries: Boolean
+    ): Int = {
+        val jvmDescriptor = descriptor.toJVMTypeName
+
+        if (bootstrapMethodAttributeNameIndex == 0)
+            bootstrapMethodAttributeNameIndex = CPEUtf8(bi.BootstrapMethodsAttribute.Name)
+
+        //need to build up bootstrap_methods
+        var indexOfBootstrapMethod = bootstrapMethods.indexOf(bootstrapMethod)
+        if (indexOfBootstrapMethod == -1) {
+            bootstrapMethods += bootstrapMethod
+            CPEMethodHandle(bootstrapMethod.handle, requiresUByteIndex = false)
+            if (createBootstrapArgumentEntries)
+                bootstrapMethod.arguments.foreach(CPEntryForBootstrapArgument)
+            indexOfBootstrapMethod = bootstrapMethods.size - 1
+        }
+        val cpNameAndTypeIndex = CPENameAndType(name, jvmDescriptor)
+
+        validateIndex(
+            getOrElseUpdate(CONSTANT_Dynamic_info(indexOfBootstrapMethod, cpNameAndTypeIndex), 1),
+            requiresUByteIndex
+        )
     }
 
     /**
@@ -267,6 +318,17 @@ object ConstantsBuffer {
                 CPEMethodHandle(value, requiresUByteIndex = true)
             case LoadMethodType(value) ⇒
                 CPEMethodType(value, requiresUByteIndex = true)
+            // JAVA 11+
+            case LoadDynamic(bootstrapMethod, name, descriptor) ⇒
+                CPEDynamic(
+                    bootstrapMethod,
+                    name,
+                    descriptor,
+                    requiresUByteIndex = true,
+                    createBootstrapArgumentEntries = false
+                )
+            case INCOMPLETE_LDC ⇒
+                throw ConstantPoolException("incomplete LDC")
         }
     }
 
@@ -301,9 +363,14 @@ object ConstantsBuffer {
         referenced entries. After that, nextIndex is set to 1 and all LDC related entries
         are created.
 
-        The only exception are the CPClass entries: they strictly need to be processed first
+        One exception are the CPClass entries: they strictly need to be processed first
         to ensure that – indirect references (e.g., due to a method handle) - never lead to invalid
         indexes!
+
+        The second exception are bootstrap method attributes for dynamic constants. They can refer
+        to dynamic constants (using two byte references), but the same constant pool entries might
+        be used by a one byte reference from an LDC. Thus, we first create the LDC related entries,
+        then create the bootstrap argument entries at the end.
         */
         val (ldClasses, ldOtherConstants) = ldcs partition { ldc ⇒ ldc.isInstanceOf[LoadClass] }
 
@@ -321,13 +388,19 @@ object ConstantsBuffer {
 
         // 3.  process all referenced constant pool entries (UTF8, NAME_AND_TYPE, FIELDREF,...)
         constantsBuffer.nextIndex = nextIndexAfterLDCRelatedEntries
+        val bootstrapMethods = mutable.Buffer.empty[BootstrapMethod]
         ldOtherConstants foreach {
             case LoadMethodType(value)   ⇒ CPEUtf8(value.toJVMDescriptor)
             case LoadMethodHandle(value) ⇒ CPERefOfCPEMethodHandle(value)
             case LoadString(value)       ⇒ CPEUtf8(value)
-            case _: LoadFloat            ⇒ // does not reference other entries
-            case _: LoadInt              ⇒ // does not reference other entries
-            case that                    ⇒ throw new UnknownError(s"unknown LDC: $that")
+            case LoadDynamic(bootstrapMethod, name, descriptor) ⇒
+                CPEUtf8(bi.BootstrapMethodsAttribute.Name)
+                CPEMethodHandle(bootstrapMethod.handle, requiresUByteIndex = false)
+                CPENameAndType(name, descriptor.toJVMTypeName)
+                bootstrapMethods += bootstrapMethod
+            case _: LoadFloat ⇒ // does not reference other entries
+            case _: LoadInt   ⇒ // does not reference other entries
+            case that         ⇒ throw new UnknownError(s"unknown LDC: $that")
         }
         nextIndexAfterLDCRelatedEntries = constantsBuffer.nextIndex
 
@@ -336,8 +409,10 @@ object ConstantsBuffer {
         ldOtherConstants.foreach(getOrCreateCPEntry)
 
         // 5.   Correct nextIndex to point to the first not used index; all previous indexes
-        //      are now used!
+        //      are now used! Then create the constant pool entries for bootstrap arguments
         constantsBuffer.nextIndex = nextIndexAfterLDCRelatedEntries
+        bootstrapMethods.foreach(_.arguments.foreach(CPEntryForBootstrapArgument))
+
         assert(
             buffer.size == constantsBuffer.nextIndex,
             "constant pool contains holes:\n\t"+

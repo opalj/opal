@@ -5,9 +5,9 @@ package domain
 package tracing
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.ai.common.XHTML.dumpOnFailureDuringValidation
@@ -20,7 +20,7 @@ import org.opalj.br.reader.Java8Framework.ClassFiles
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class PropertyTracingTest extends FlatSpec with Matchers {
+class PropertyTracingTest extends AnyFlatSpec with Matchers {
 
     import PropertyTracingTest._
 
@@ -41,6 +41,7 @@ class PropertyTracingTest extends FlatSpec with Matchers {
         with l1.DefaultReferenceValuesBinding
         with l0.TypeLevelFieldAccessInstructions
         with l0.TypeLevelInvokeInstructions
+        with l0.TypeLevelDynamicLoads
         with TheMethod {
 
         override def maxCardinalityOfIntegerRanges: Long = 16L

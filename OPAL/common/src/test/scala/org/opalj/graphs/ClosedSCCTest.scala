@@ -5,9 +5,9 @@ package graphs
 import org.junit.runner.RunWith
 import org.opalj.collection.immutable.RefArray
 import org.opalj.util.PerformanceEvaluation
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 /**
  * Tests the SCC algorithm.
@@ -15,7 +15,7 @@ import org.scalatest.Matchers
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class ClosedSCCTest extends FlatSpec with Matchers {
+class ClosedSCCTest extends AnyFlatSpec with Matchers {
 
     "an empty graph" should "not contain any cSCCs" in {
         val g = Graph.empty[String]

@@ -5,9 +5,9 @@ package domain
 
 import java.net.URL
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
-import org.scalatest.Matchers
-import org.scalatest.FunSpec
+import org.scalatestplus.junit.JUnitRunner
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funspec.AnyFunSpec
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -29,7 +29,7 @@ import org.opalj.br.TestSupport.createJREProject
  * @author Michael Eichberg
  */
 @RunWith(classOf[JUnitRunner])
-class RecordCFGTest extends FunSpec with Matchers {
+class RecordCFGTest extends AnyFunSpec with Matchers {
 
     private object DominatorsPerformanceEvaluation extends PerformanceEvaluation
 
@@ -51,6 +51,7 @@ class RecordCFGTest extends FunSpec with Matchers {
         with l0.TypeLevelPrimitiveValuesConversions
         with l0.TypeLevelInvokeInstructions
         with l0.TypeLevelFieldAccessInstructions
+        with l0.TypeLevelDynamicLoads
         with l0.TypeLevelLongValuesShiftOperators
         with RecordCFG // <=== the domain we are going to test!
 

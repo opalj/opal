@@ -4,9 +4,9 @@ package collection
 package immutable
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
+import org.scalatestplus.junit.JUnitRunner
 import org.scalacheck.Properties
-import org.scalacheck.Prop.{forAll, classify, BooleanOperators}
+import org.scalacheck.Prop.{forAll, classify, propBoolean}
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 

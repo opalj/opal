@@ -37,6 +37,7 @@ final class TypeCheckingDomain(
     with DefaultTypeLevelDoubleValues
     with TypeLevelFieldAccessInstructions
     with TypeLevelInvokeInstructions
+    with TypeLevelDynamicLoads
     with ThrowAllPotentialExceptionsConfiguration
     with IgnoreSynchronization
     with DefaultTypeLevelHandlingOfMethodResults

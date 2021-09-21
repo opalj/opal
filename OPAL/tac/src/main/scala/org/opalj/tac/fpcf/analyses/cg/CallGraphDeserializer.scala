@@ -28,6 +28,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.PCAndInstruction
+import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.instructions.Instruction
@@ -142,7 +143,7 @@ private class CallGraphDeserializer private[analyses] (
                     getPCFromLineNumber(method, line, declaredTgtDesc.toDeclaredMethod, index)
 
                 for (tgtDesc ← tgts) {
-                    calls.addCall(method, tgtDesc.toDeclaredMethod, pc)
+                    calls.addCall(new SimpleContext(method), pc, tgtDesc.toDeclaredMethod)
                 }
                 results ++= calls.partialResults(method)
             }
@@ -194,6 +195,8 @@ private class CallGraphDeserializer private[analyses] (
 }
 
 class CallGraphDeserializerScheduler(serializedCG: File) extends BasicFPCFEagerAnalysisScheduler {
+
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
         val analysis = new CallGraphDeserializer(serializedCG, p)

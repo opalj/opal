@@ -7,8 +7,8 @@ import scala.reflect.runtime.universe._
 
 import org.junit.runner.RunWith
 
-import org.scalatest.FlatSpec
-import org.scalatest.junit.JUnitRunner
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatestplus.junit.JUnitRunner
 
 import java.io.ByteArrayInputStream
 
@@ -31,7 +31,7 @@ import org.opalj.br.IntegerType
  * @author Malte Limmeroth
  */
 @RunWith(classOf[JUnitRunner])
-class MethodBuilderTest extends FlatSpec {
+class MethodBuilderTest extends AnyFlatSpec {
     behavior of "the MethodBuilder"
 
     val (simpleMethodClass, _) =
