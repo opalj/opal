@@ -5,6 +5,7 @@ package fpcf
 package analyses
 package cg
 
+import scala.annotation.nowarn
 import scala.annotation.switch
 
 import scala.collection.immutable.IntMap
@@ -17,6 +18,8 @@ import org.opalj.fpcf.EPS
 import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyKey
+import org.opalj.fpcf.PropertyStore
+import org.opalj.fpcf.UBPS
 import org.opalj.value.IsMObjectValue
 import org.opalj.value.IsNullValue
 import org.opalj.value.IsSArrayValue
@@ -44,6 +47,11 @@ import org.opalj.br.fpcf.properties.cg.NoInstantiatedTypes
 import org.opalj.br.fpcf.properties.pointsto.NoTypes
 import org.opalj.br.fpcf.properties.pointsto.TypeBasedPointsToSet
 import org.opalj.br.fpcf.properties.pointsto.longToAllocationSite
+import org.opalj.br.Field
+import org.opalj.br.analyses.FieldAccessInformation
+import org.opalj.br.analyses.FieldAccessInformationKey
+import org.opalj.br.Method
+import org.opalj.br.PCs
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSites
 import org.opalj.tac.common.DefinitionSitesKey
@@ -59,6 +67,8 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBu
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringBuilderPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedAnalysis.stringConstPointsToSet
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
+import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
  * Core class of the call-graph framework: Provides type and (if available) points-to information to
@@ -86,14 +96,45 @@ trait TypeProvider {
         use: V, context: ContextType, depender: Entity, stmts: Array[Stmt[V]]
     )(implicit state: TypeProviderState): InformationType
 
+    def typesProperty(
+        field: Field, context: ContextType, depender: Entity
+    )(
+        implicit
+        propertyStore: PropertyStore,
+        state:         TypeProviderState
+    ): InformationType
+
+    def typesProperty(
+        field: Field, fieldAllocation: DefinitionSite, context: ContextType, depender: Entity
+    )(
+        implicit
+        propertyStore: PropertyStore,
+        state:         TypeProviderState
+    ): InformationType = {
+        typesProperty(field, context, depender)
+    }
+
     def foreachType(
         use:             V,
         typesProperty:   InformationType,
         additionalTypes: Set[ReferenceType] = Set.empty
     )(handleType: ReferenceType ⇒ Unit): Unit
 
+    def foreachType(
+        field:         Field,
+        typesProperty: InformationType
+    )(handleType: ReferenceType ⇒ Unit): Unit
+
     def foreachAllocation(
         use: V, typesProperty: InformationType, additionalTypes: Set[ReferenceType] = Set.empty
+    )(
+        handleAllocation: (ReferenceType, ContextType, Int) ⇒ Unit
+    ): Unit = {
+        throw new UnsupportedOperationException
+    }
+
+    def foreachAllocation(
+        field: Field, typesProperty: InformationType
     )(
         handleAllocation: (ReferenceType, ContextType, Int) ⇒ Unit
     ): Unit = {
@@ -113,6 +154,18 @@ trait TypeProvider {
         continuation(use, updatedEPS, oldEOptP, additionalTypes, handleNewType)
     }
 
+    def continuation(
+        field:      Field,
+        updatedEPS: EPS[Entity, Property]
+    )(
+        handleNewType: ReferenceType ⇒ Unit
+    )(implicit state: TypeProviderState): Unit = {
+        val epk = updatedEPS.toEPK
+        val oldEOptP = state.getProperty(epk)
+
+        continuation(field, updatedEPS, oldEOptP, handleNewType)
+    }
+
     @inline protected[this] def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, PropertyType],
@@ -120,6 +173,13 @@ trait TypeProvider {
         additionalTypes: Set[ReferenceType],
         handleNewType:   ReferenceType ⇒ Unit
     ): Unit
+
+    @inline protected[this] def continuation(
+        field:         Field,
+        updatedEPS:    EPS[Entity, Property],
+        oldEOptP:      EOptionP[Entity, Property],
+        handleNewType: ReferenceType ⇒ Unit
+    )(implicit state: TypeProviderState): Unit
 
     def continuationForAllocations(
         use:             V,
@@ -134,12 +194,36 @@ trait TypeProvider {
         continuationForAllocations(use, updatedEPS, oldEOptP, additionalTypes, handleNewAllocation)
     }
 
+    def continuationForAllocations(
+        field:      Field,
+        updatedEPS: EPS[Entity, Property]
+    )(
+        handleNewAllocation: (ReferenceType, ContextType, Int) ⇒ Unit
+    )(implicit state: TypeProviderState): Unit = {
+        val epk = updatedEPS.toEPK
+        val oldEOptP = state.getProperty(epk)
+
+        continuationForAllocations(field, updatedEPS, oldEOptP, handleNewAllocation)
+    }
+
     @inline protected[this] def continuationForAllocations(
         use:                 V,
         updatedEPS:          EPS[Entity, PropertyType],
         oldEOptP:            EOptionP[Entity, PropertyType],
         additionalTypes:     Set[ReferenceType],
         handleNewAllocation: (ReferenceType, ContextType, Int) ⇒ Unit
+    ): Unit = {
+        throw new UnsupportedOperationException
+    }
+
+    @inline protected[this] def continuationForAllocations(
+        field:               Field,
+        updatedEPS:          EPS[Entity, Property],
+        oldEOptP:            EOptionP[Entity, Property],
+        handleNewAllocation: (ReferenceType, ContextType, Int) ⇒ Unit
+    )(
+        implicit
+        @nowarn state: TypeProviderState
     ): Unit = {
         throw new UnsupportedOperationException
     }
@@ -173,6 +257,10 @@ trait TypeProvider {
                     false
             }
     }
+
+    private[cg] def isPossibleType(field: Field, tpe: ReferenceType): Boolean = {
+        project.classHierarchy.isSubtypeOf(tpe, field.fieldType.asReferenceType)
+    }
 }
 
 /**
@@ -190,6 +278,14 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider {
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
     )(implicit state: TypeProviderState): Null = null
+
+    @inline override def typesProperty(
+        field: Field, context: SimpleContext, depender: Entity
+    )(
+        implicit
+        propertyStore: PropertyStore,
+        state:         TypeProviderState
+    ): Null = null
 
     def foreachType(
         use: V, typesProperty: Null, additionalTypes: Set[ReferenceType]
@@ -211,7 +307,7 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider {
                                     !cf.isInterfaceDeclaration && !cf.isAbstract
                                 }
                             }.foreach(handleType)
-                    } else handleType(ObjectType.Object)
+                    } else handleType(sv.theUpperTypeBound)
                 }
 
             case mv: IsMObjectValue ⇒
@@ -238,6 +334,23 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider {
         }
     }
 
+    def foreachType(
+        field: Field, typesProperty: Null
+    )(handleType: ReferenceType ⇒ Unit): Unit = {
+        if (field.fieldType.isObjectType) {
+            project.classHierarchy.allSubtypesForeachIterator(
+                field.fieldType.asObjectType, reflexive = true
+            ).filter { subtype ⇒
+                    val cfOption = project.classFile(subtype)
+                    cfOption.isDefined && {
+                        val cf = cfOption.get
+                        !cf.isInterfaceDeclaration && !cf.isAbstract
+                    }
+                }.foreach(handleType)
+        } else
+            handleType(ObjectType.Object)
+    }
+
     @inline protected[this] override def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, Nothing],
@@ -245,6 +358,15 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider {
         additionalTypes: Set[ReferenceType],
         handleNewType:   ReferenceType ⇒ Unit
     ): Unit = {
+        throw new UnsupportedOperationException
+    }
+
+    @inline protected[this] override def continuation(
+        field:         Field,
+        updatedEPS:    EPS[Entity, Property],
+        oldEOptP:      EOptionP[Entity, Property],
+        handleNewType: ReferenceType ⇒ Unit
+    )(implicit state: TypeProviderState): Unit = {
         throw new UnsupportedOperationException
     }
 }
@@ -264,14 +386,26 @@ class RTATypeProvider(val project: SomeProject) extends TypeProvider {
 
     @inline override def typesProperty(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
+    )(implicit state: TypeProviderState): InstantiatedTypes =
+        typesProperty(depender, requiresDependency = true)
+
+    @inline override def typesProperty(
+        field: Field, context: SimpleContext, depender: Entity
+    )(
+        implicit
+        propertyStore: PropertyStore,
+        state:         TypeProviderState
+    ): InstantiatedTypes =
+        typesProperty(depender, field.fieldType.isObjectType)
+
+    @inline def typesProperty(
+        depender: Entity, requiresDependency: Boolean
     )(implicit state: TypeProviderState): InstantiatedTypes = {
         val epk = EPK(project, InstantiatedTypes.key)
         val instantiatedTypesProperty = if (state.hasDependee(epk)) state.getProperty(epk)
         else propertyStore(epk)
 
-        //val types = possibleTypes(use)
-
-        if (instantiatedTypesProperty.isRefinable)
+        if (instantiatedTypesProperty.isRefinable && requiresDependency)
             state.addDependency(depender, instantiatedTypesProperty)
 
         if (instantiatedTypesProperty.hasUBP) instantiatedTypesProperty.ub
@@ -294,6 +428,18 @@ class RTATypeProvider(val project: SomeProject) extends TypeProvider {
         }.foreach(handleType)
     }
 
+    @inline override def foreachType(
+        field: Field, typesProperty: InstantiatedTypes
+    )(
+        handleType: ReferenceType ⇒ Unit
+    ): Unit = {
+        // The InstantiatedTypes do not track array types, we just assume them to be instantiated
+        if (field.fieldType.isArrayType)
+            handleType(field.fieldType.asReferenceType)
+        else
+            typesProperty.types.iterator.filter(isPossibleType(field, _)).foreach(handleType)
+    }
+
     @inline protected[this] def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, InstantiatedTypes],
@@ -304,6 +450,19 @@ class RTATypeProvider(val project: SomeProject) extends TypeProvider {
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
         updatedEPS.ub.dropOldest(seenTypes).filter { tpe ⇒
             isPossibleType(use, tpe) || additionalTypes.contains(tpe)
+        }.foreach(handleNewType)
+    }
+
+    @inline protected[this] def continuation(
+        field:         Field,
+        updatedEPS:    EPS[Entity, Property],
+        oldEOptP:      EOptionP[Entity, Property],
+        handleNewType: ReferenceType ⇒ Unit
+    )(implicit state: TypeProviderState): Unit = {
+        val seenTypes =
+            if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[InstantiatedTypes].numElements else 0
+        updatedEPS.ub.asInstanceOf[InstantiatedTypes].dropOldest(seenTypes).filter {
+            isPossibleType(field, _)
         }.foreach(handleNewType)
     }
 }
@@ -330,19 +489,34 @@ class PropagationBasedTypeProvider(
         use: V, context: SimpleContext, depender: Entity, stmts: Array[Stmt[V]]
     )(implicit state: TypeProviderState): (InstantiatedTypes, InstantiatedTypes) = {
         (
-            getProperty(typeSetEntitySelector(context.method), depender),
-            getProperty(project, depender)
+            getProperty(typeSetEntitySelector(context.method), depender, requiresDependency = true),
+            getProperty(project, depender, requiresDependency = true)
+        )
+    }
+
+    @inline override def typesProperty(
+        field: Field, context: SimpleContext, depender: Entity
+    )(
+        implicit
+        propertyStore: PropertyStore,
+        state:         TypeProviderState
+    ): (InstantiatedTypes, InstantiatedTypes) = {
+        (
+            getProperty(
+                typeSetEntitySelector(context.method), depender, field.fieldType.isObjectType
+            ),
+                getProperty(project, depender, field.fieldType.isObjectType)
         )
     }
 
     @inline private[this] def getProperty(
-        entity: TypeSetEntity, depender: Entity
+        entity: TypeSetEntity, depender: Entity, requiresDependency: Boolean
     )(implicit state: TypeProviderState): InstantiatedTypes = {
         val epk = EPK(entity, InstantiatedTypes.key)
         val instantiatedTypesProperty = if (state.hasDependee(epk)) state.getProperty(epk)
         else propertyStore(epk)
 
-        if (instantiatedTypesProperty.isRefinable)
+        if (instantiatedTypesProperty.isRefinable && requiresDependency)
             state.addDependency(depender, instantiatedTypesProperty)
 
         if (instantiatedTypesProperty.hasUBP) instantiatedTypesProperty.ub
@@ -364,6 +538,16 @@ class PropagationBasedTypeProvider(
         }.foreach(handleType)
     }
 
+    @inline override def foreachType(
+        field:         Field,
+        typesProperty: (InstantiatedTypes, InstantiatedTypes)
+    )(
+        handleType: ReferenceType ⇒ Unit
+    ): Unit = {
+        typesProperty._1.types.iterator.filter(isPossibleType(field, _)).foreach(handleType)
+        typesProperty._2.types.iterator.filter(isPossibleType(field, _)).foreach(handleType)
+    }
+
     @inline protected[this] def continuation(
         use:             V,
         updatedEPS:      EPS[Entity, InstantiatedTypes],
@@ -374,6 +558,19 @@ class PropagationBasedTypeProvider(
         val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.numElements else 0
         updatedEPS.ub.dropOldest(seenTypes).filter { tpe ⇒
             isPossibleType(use, tpe) || additionalTypes.contains(tpe)
+        }.foreach(handleNewType)
+    }
+
+    @inline protected[this] def continuation(
+        field:         Field,
+        updatedEPS:    EPS[Entity, Property],
+        oldEOptP:      EOptionP[Entity, Property],
+        handleNewType: ReferenceType ⇒ Unit
+    )(implicit state: TypeProviderState): Unit = {
+        val seenTypes =
+            if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[InstantiatedTypes].numElements else 0
+        updatedEPS.ub.asInstanceOf[InstantiatedTypes].dropOldest(seenTypes).filter {
+            isPossibleType(field, _)
         }.foreach(handleNewType)
     }
 }
@@ -392,9 +589,10 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     protected[this] def emptyPointsToSet: PointsToSet
 
     private[this] val propertyStore = project.get(PropertyStoreKey)
-    private[this] implicit val formalParameters: VirtualFormalParameters =
+    protected[this] implicit val formalParameters: VirtualFormalParameters =
         project.get(VirtualFormalParametersKey)
-    private[this] implicit val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
+    protected[this] implicit val definitionSites: DefinitionSites = project.get(DefinitionSitesKey)
+    protected[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     protected[this] def createPointsToSet(
         pc:            Int,
@@ -428,6 +626,24 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         }
     }
 
+    override def typesProperty(
+        field: Field, fieldAllocation: DefinitionSite, context: ContextType, depender: Entity
+    )(
+        implicit
+        propertyStore: PropertyStore,
+        state:         TypeProviderState
+    ): PointsToSet = {
+        val objects = currentPointsTo(
+            depender,
+            toEntity(fieldAllocation.pc, new SimpleContext(declaredMethods(fieldAllocation.method)))
+        )
+        var pointsTo = emptyPointsToSet
+        objects.forNewestNElements(objects.numElements) { as ⇒
+            pointsTo = combine(pointsTo, currentPointsTo(depender, (as, field)))
+        }
+        pointsTo
+    }
+
     @inline protected[this] def combine(pts1: PointsToSet, pts2: PointsToSet): PointsToSet
 
     @inline override def foreachType(
@@ -437,6 +653,16 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     ): Unit = {
         typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe ⇒
             if (isPossibleType(use, tpe) || additionalTypes.contains(tpe)) handleType(tpe)
+        }
+    }
+
+    @inline override def foreachType(
+        field: Field, typesProperty: PointsToSet
+    )(
+        handleType: ReferenceType ⇒ Unit
+    ): Unit = {
+        typesProperty.forNewestNTypes(typesProperty.numTypes) { tpe ⇒
+            if (isPossibleType(field, tpe)) handleType(tpe)
         }
     }
 
@@ -454,13 +680,23 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
         }
     }
 
-    @inline private[this] def currentPointsTo(
+    @inline protected[this] def continuation(
+        field:         Field,
+        updatedEPS:    EPS[Entity, Property],
+        oldEOptP:      EOptionP[Entity, Property],
+        handleNewType: ReferenceType ⇒ Unit
+    )(implicit state: TypeProviderState): Unit = {
+        val ub = updatedEPS.ub.asInstanceOf[PointsToSet]
+        val seenTypes = if (oldEOptP.hasUBP) oldEOptP.ub.asInstanceOf[PointsToSet].numTypes else 0
+        ub.forNewestNTypes(ub.numTypes - seenTypes) { tpe ⇒
+            if (isPossibleType(field, tpe)) handleNewType(tpe)
+        }
+    }
+
+    @inline protected[this] def currentPointsTo(
         depender: Entity,
         dependee: Entity
-    )(
-        implicit
-        state: TypeProviderState
-    ): PointsToSet = {
+    )(implicit state: TypeProviderState): PointsToSet = {
         val epk = EPK(dependee, pointsToProperty)
         val p2s = if (state.hasDependee(epk)) state.getProperty(epk) else propertyStore(epk)
 
@@ -481,7 +717,7 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
      * Given a definition site (value origin) in a certain method, this returns the
      * entity to be used to attach/retrieve points-to information from.
      */
-    @inline protected[this] def toEntity(pc: Int, context: ContextType)(
+    @inline protected[this] def toEntity(pc: Int, context: Context)(
         implicit
         formalParameters: VirtualFormalParameters, definitionSites: DefinitionSites
     ): Entity = {
@@ -511,6 +747,19 @@ class TypesPointsToTypeProvider(val project: SomeProject)
         TypeBasedPointsToSet.key
 
     protected[this] val emptyPointsToSet: TypeBasedPointsToSet = NoTypes
+
+    override def typesProperty(
+        field: Field, context: SimpleContext, depender: Entity
+    )(
+        implicit
+        propertyStore: PropertyStore,
+        state:         TypeProviderState
+    ): TypeBasedPointsToSet = {
+        val types = project.classHierarchy.allSubtypes(field.classFile.thisType, reflexive = true)
+        types.foldLeft(emptyPointsToSet) { (result, tpe) ⇒
+            combine(result, currentPointsTo(depender, (tpe, field)))
+        }
+    }
 
     @inline override protected[this] def createPointsToSet(
         pc:            Int,
@@ -542,11 +791,43 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
 
     private var exceptionPointsToSets: IntMap[AllocationSitePointsToSet] = IntMap()
 
-    private[this] implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    private[this] val fieldAccesses: FieldAccessInformation = project.get(FieldAccessInformationKey)
 
     override type ContextType = Context
 
     override val providesAllocations: Boolean = true
+
+    override def typesProperty(
+        field: Field, context: Context, depender: Entity
+    )(
+        implicit
+        propertyStore: PropertyStore,
+        state:         TypeProviderState
+    ): AllocationSitePointsToSet = {
+        fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) ⇒
+            val eOptP = propertyStore(access._1, TACAI.key)
+            eOptP match {
+                case UBPS(tac: TheTACAI, isFinal) ⇒
+                    if (!isFinal)
+                        state.addDependency((depender, access._1, access._2), eOptP)
+
+                    val theTAC = tac.theTAC
+                    access._2.foldLeft(result) { (result, pc) ⇒
+                        theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy.foldLeft(result) { (result, defSite) ⇒
+                            val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
+                            combine(
+                                result,
+                                typesProperty(field, DefinitionSite(access._1, defPC), context, depender)
+                            )
+                        }
+                    }
+
+                case _ ⇒
+                    state.addDependency((depender, access._1, access._2), eOptP)
+                    result
+            }
+        }
+    }
 
     @inline override def foreachAllocation(
         use: V, typesProperty: AllocationSitePointsToSet, additionalTypes: Set[ReferenceType]
@@ -562,6 +843,56 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
                     method.map(new SimpleContext(_)).getOrElse(NoContext),
                     pc
                 )
+        }
+    }
+
+    @inline override def foreachAllocation(
+        field: Field, typesProperty: AllocationSitePointsToSet
+    )(
+        handleAllocation: (ReferenceType, Context, Int) ⇒ Unit
+    ): Unit = {
+        typesProperty.forNewestNElements(typesProperty.numElements) { as ⇒
+            val (method, pc, typeId) = longToAllocationSite(as)
+            val tpe = ReferenceType.lookup(typeId)
+            if (isPossibleType(field, tpe))
+                handleAllocation(
+                    tpe,
+                    method.map(new SimpleContext(_)).getOrElse(NoContext),
+                    pc
+                )
+        }
+    }
+
+    @inline protected[this] override def continuation(
+        field:         Field,
+        updatedEPS:    EPS[Entity, Property],
+        oldEOptP:      EOptionP[Entity, Property],
+        handleNewType: ReferenceType ⇒ Unit
+    )(implicit state: TypeProviderState): Unit = {
+
+        updatedEPS.ub match {
+            case _: AllocationSitePointsToSet ⇒
+                super.continuation(field, updatedEPS, oldEOptP, handleNewType)
+            case tac: TheTACAI ⇒
+                val theTAC = tac.theTAC
+                state.dependersOf(updatedEPS.toEPK).foreach {
+                    case (depender: Entity, method: Method, pcs: PCs) ⇒
+                        pcs.foreach { pc ⇒
+                            val putField = theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField
+                            putField.objRef.asVar.definedBy.foreach { defSite ⇒
+                                val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
+                                val objects = currentPointsTo(
+                                    depender,
+                                    toEntity(defPC, new SimpleContext(declaredMethods(method)))
+                                )
+
+                                objects.forNewestNElements(objects.numElements) { as ⇒
+                                    val pts = currentPointsTo(depender, (as, field))
+                                    pts.forNewestNTypes(pts.numTypes)(handleNewType)
+                                }
+                            }
+                        }
+                }
         }
     }
 
@@ -583,6 +914,64 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
                     method.map(new SimpleContext(_)).getOrElse(NoContext),
                     pc
                 )
+        }
+    }
+
+    @inline protected[this] override def continuationForAllocations(
+        field:               Field,
+        updatedEPS:          EPS[Entity, Property],
+        oldEOptP:            EOptionP[Entity, Property],
+        handleNewAllocation: (ReferenceType, Context, Int) ⇒ Unit
+    )(implicit state: TypeProviderState): Unit = {
+        def handleAllocation(as: AllocationSite): Unit = {
+            val (method, pc, typeId) = longToAllocationSite(as)
+            val tpe = ReferenceType.lookup(typeId)
+            if (isPossibleType(field, tpe))
+                handleNewAllocation(
+                    tpe,
+                    method.map(new SimpleContext(_)).getOrElse(NoContext),
+                    pc
+                )
+        }
+
+        val ub = updatedEPS.ub
+        ub match {
+            case pts: AllocationSitePointsToSet ⇒
+                val seenElements = if (oldEOptP.hasUBP)
+                    oldEOptP.ub.asInstanceOf[AllocationSitePointsToSet].numElements
+                else
+                    0
+                updatedEPS.e match {
+                    case (_, `field`) ⇒
+                        pts.forNewestNElements(pts.numElements - seenElements)(handleAllocation)
+                    case _ ⇒
+                        pts.forNewestNElements(pts.numElements - seenElements) { oas ⇒
+                            state.dependersOf(updatedEPS.toEPK).foreach { depender ⇒
+                                val objects = currentPointsTo(depender, (oas, field))
+                                objects.forNewestNElements(objects.numElements)(handleAllocation)
+                            }
+                        }
+                }
+            case tac: TheTACAI ⇒
+                val theTAC = tac.theTAC
+                state.dependersOf(updatedEPS.toEPK).foreach {
+                    case (depender: Entity, method: Method, pcs: PCs) ⇒
+                        pcs.foreach { pc ⇒
+                            val putField = theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField
+                            putField.objRef.asVar.definedBy.foreach { defSite ⇒
+                                val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
+                                val objects = currentPointsTo(
+                                    depender,
+                                    toEntity(defPC, new SimpleContext(declaredMethods(method)))
+                                )
+
+                                objects.forNewestNElements(objects.numElements) { as ⇒
+                                    val pts = currentPointsTo(depender, (as, field))
+                                    pts.forNewestNElements(pts.numElements)(handleAllocation)
+                                }
+                            }
+                        }
+                }
         }
     }
 
