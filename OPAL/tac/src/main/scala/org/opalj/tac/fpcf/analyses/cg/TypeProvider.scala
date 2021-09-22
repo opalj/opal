@@ -97,7 +97,7 @@ trait TypeProvider {
     )(implicit state: TypeProviderState): InformationType
 
     def typesProperty(
-        field: Field, context: ContextType, depender: Entity
+        field: Field, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -105,13 +105,13 @@ trait TypeProvider {
     ): InformationType
 
     def typesProperty(
-        field: Field, fieldAllocation: DefinitionSite, context: ContextType, depender: Entity
+        field: Field, fieldAllocation: DefinitionSite, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
         state:         TypeProviderState
     ): InformationType = {
-        typesProperty(field, context, depender)
+        typesProperty(field, depender)
     }
 
     def foreachType(
@@ -280,7 +280,7 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider {
     )(implicit state: TypeProviderState): Null = null
 
     @inline override def typesProperty(
-        field: Field, context: SimpleContext, depender: Entity
+        field: Field, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -390,7 +390,7 @@ class RTATypeProvider(val project: SomeProject) extends TypeProvider {
         typesProperty(depender, requiresDependency = true)
 
     @inline override def typesProperty(
-        field: Field, context: SimpleContext, depender: Entity
+        field: Field, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -495,7 +495,7 @@ class PropagationBasedTypeProvider(
     }
 
     @inline override def typesProperty(
-        field: Field, context: SimpleContext, depender: Entity
+        field: Field, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -503,7 +503,7 @@ class PropagationBasedTypeProvider(
     ): (InstantiatedTypes, InstantiatedTypes) = {
         (
             getProperty(
-                typeSetEntitySelector(context.method), depender, field.fieldType.isObjectType
+                typeSetEntitySelector(field), depender, field.fieldType.isObjectType
             ),
                 getProperty(project, depender, field.fieldType.isObjectType)
         )
@@ -627,7 +627,7 @@ trait PointsToTypeProvider[ElementType, PointsToSet >: Null <: PointsToSetLike[E
     }
 
     override def typesProperty(
-        field: Field, fieldAllocation: DefinitionSite, context: ContextType, depender: Entity
+        field: Field, fieldAllocation: DefinitionSite, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -749,7 +749,7 @@ class TypesPointsToTypeProvider(val project: SomeProject)
     protected[this] val emptyPointsToSet: TypeBasedPointsToSet = NoTypes
 
     override def typesProperty(
-        field: Field, context: SimpleContext, depender: Entity
+        field: Field, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -798,7 +798,7 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
     override val providesAllocations: Boolean = true
 
     override def typesProperty(
-        field: Field, context: Context, depender: Entity
+        field: Field, depender: Entity
     )(
         implicit
         propertyStore: PropertyStore,
@@ -817,7 +817,7 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
                             val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
                             combine(
                                 result,
-                                typesProperty(field, DefinitionSite(access._1, defPC), context, depender)
+                                typesProperty(field, DefinitionSite(access._1, defPC), depender)
                             )
                         }
                     }
