@@ -142,6 +142,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     private[analyses] def determineFieldImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
+        import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider
+        import org.opalj.tac.fpcf.analyses.cg.TypeProvider
         // import org.opalj.br.ReferenceType
         //TODO determine bounds
         /**
@@ -190,6 +192,16 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
         // def isInClassesGenericTypeParameters(string: String): Boolean =
         //     classFormalTypeParameters.contains(string)
+
+      val typeProvider = new CHATypeProvider(project)
+
+        /**
+         * Handles type immutability with support of type provider
+         */
+        def handleTypeImmutability2(field: Field, typeProvider: TypeProvider)(implicit state: State): Unit = {
+            val actualTypes = typeProvider.typesProperty(field, typeProvider, state.stmts)
+          typeProvider.foreachType(field, actualTypes, )
+        }
 
         /**
          * Determines the immutability of a fieldtype. Adjusts the state and registers the dependencies if necessary.
@@ -596,9 +608,10 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          */
 
         if (!state.concreterTypeIsKnown) {
-            if (!state.concreteClassTypeIsKnown)
+            if (!state.concreteClassTypeIsKnown) {
+              handleTypeImmutability2(state.field, typeProvider)
                 handleTypeImmutability(state.field.fieldType)
-            else //The analysis is optimistic so the default value must be adapted in this case
+            } else //The analysis is optimistic so the default value must be adapted in this case
                 state.typeImmutability = MutableType
         }
 
