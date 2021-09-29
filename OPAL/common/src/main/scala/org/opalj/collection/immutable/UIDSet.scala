@@ -2,7 +2,7 @@
 package org.opalj
 package collection
 package immutable
-import scala.collection.generic.CanBuildFrom
+import scala.collection.BuildFrom
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayStack
 import scala.language._
@@ -1083,16 +1083,16 @@ object UIDSet {
         def result(): UIDSet[T] = s
     }
 
-    implicit def canBuildFrom[T <: UID]: CanBuildFrom[UIDSet[_], T, UIDSet[T]] = {
-        new CanBuildFrom[UIDSet[_], T, UIDSet[T]] {
-            override def apply(from: UIDSet[_]): UIDSetBuilder[T] = newBuilder[T]
+    implicit def buildFrom[T <: UID]: BuildFrom[UIDSet[_], T, UIDSet[T]] = {
+        new BuildFrom[UIDSet[_], T, UIDSet[T]] {
+            override def apply(from: UIDSet[_]): UIDSetBuilder[T] = newBuilder[UIDSet[T],T]
             override def apply(): UIDSetBuilder[T] = newBuilder[T]
         }
     }
 
-    def canBuildUIDSet[T <: UID]: CanBuildFrom[Any, T, UIDSet[T]] = {
-        new CanBuildFrom[Any, T, UIDSet[T]] {
-            override def apply(from: Any): UIDSetBuilder[T] = newBuilder[T]
+    def buildUIDSet[T <: UID]: BuildFrom[Any, T, UIDSet[T]] = {
+        new BuildFrom[Any, T, UIDSet[T]] {
+            override def apply(from: Any): UIDSetBuilder[T] =newBuilder[T]
             override def apply(): UIDSetBuilder[T] = newBuilder[T]
         }
     }

@@ -4,7 +4,7 @@ package br
 
 import scala.annotation.switch
 
-import scala.collection.Seq
+import scala.collection.immutable.Seq
 import scala.math.Ordered
 
 import org.opalj.collection.immutable.RefArray

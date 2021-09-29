@@ -6,7 +6,6 @@ package mutable
 import scala.collection.mutable
 import scala.collection.generic
 import scala.compat._
-
 /**
  * An array based implementation of a mutable stack of `int` values which has a
  * given initial size. If the stack is non-empty, the index of the top value is `0` and the

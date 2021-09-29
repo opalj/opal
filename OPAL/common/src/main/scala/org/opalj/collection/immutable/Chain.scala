@@ -2,16 +2,10 @@
 package org.opalj
 package collection
 package immutable
-
 import scala.language.implicitConversions
-
-import scala.collection.GenIterable
-import scala.collection.GenTraversableOnce
-import scala.collection.AbstractIterator
+import scala.collection.{AbstractIterable, AbstractIterator, GenIterable, GenTraversableOnce, WithFilter}
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
-import scala.collection.generic.FilterMonadic
-import scala.collection.AbstractIterable
 import scala.compat._
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
@@ -31,16 +25,17 @@ import scala.compat._
  *
  * @author Michael Eichberg
  */
+
 sealed trait Chain[@specialized(Int) +T]
-    extends TraversableOnce[T]
-    with FilterMonadic[T, Chain[T]]
+    extends WithFilter[T, Chain[T]]
+    with IterableOnce[T]
     with Serializable { self =>
 
     /**
      * Represents a filtered [[Chain]]. Instances of [[ChainWithFilter]] are typically
      * created by [[Chain]]'s `withFilter` method.
      */
-    class ChainWithFilter(p: T => Boolean) extends FilterMonadic[T, Chain[T]] {
+    class ChainWithFilter(p: T => Boolean) extends WithFilter[T, Chain[T]] {
 
         def map[B, That](f: T => B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
             val list = self
