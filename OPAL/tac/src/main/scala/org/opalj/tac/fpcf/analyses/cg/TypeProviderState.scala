@@ -98,7 +98,7 @@ trait TypeProviderState extends AnalysisState {
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
     }
 
-    final def hasDependees: Boolean = {
+    private final def hasDependees: Boolean = {
         assert(
             (_dependees.isEmpty == _dependeeToDependers.isEmpty) &&
                 (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)

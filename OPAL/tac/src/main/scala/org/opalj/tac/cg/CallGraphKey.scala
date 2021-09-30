@@ -8,9 +8,9 @@ import scala.reflect.runtime.universe.runtimeMirror
 import scala.collection.JavaConverters._
 
 import org.opalj.log.LogContext
+import org.opalj.log.OPALLogger
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
@@ -36,6 +36,8 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     private[this] val CallBySignatureConfigKey = "org.opalj.br.analyses.cg.callBySignatureResolution"
 
+    private[this] var typeProvider: TypeProvider = null
+
     /**
      * Lists the call graph specific schedulers that must be run to compute the respective call
      * graph.
@@ -45,6 +47,20 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     ): Traversable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
+        project.updateProjectInformationKeyInitializationData(TypeProviderKey) {
+            case Some(typeProvider: TypeProvider) if typeProvider ne this.typeProvider ⇒
+                implicit val logContext: LogContext = project.logContext
+                OPALLogger.error(
+                    "analysis configuration",
+                    s"must not configure multiple type providers"
+                )
+                throw new IllegalArgumentException()
+            case Some(_) ⇒ () ⇒ this.typeProvider
+            case None ⇒ () ⇒ {
+                this.typeProvider = getTypeProvider(project)
+                this.typeProvider
+            }
+        }
 
         Seq(
             DeclaredMethodsKey,
@@ -60,7 +76,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     }
 
     protected[this] def registeredAnalyses(project: SomeProject): Seq[FPCFAnalysisScheduler] = {
-        implicit val logContext = project.logContext
+        implicit val logContext: LogContext = project.logContext
         val config = project.config
 
         // TODO use FPCFAnaylsesRegistry here
@@ -70,9 +86,7 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     }
 
     override def compute(project: SomeProject): CallGraph = {
-        setupTypeProvider(project)
-
-        implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+        implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
         val manager = project.get(FPCFAnalysesManagerKey)
@@ -89,7 +103,20 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
         manager.runAll(analyses)
 
-        new CallGraph()
+        val cg = new CallGraph()
+
+        project.updateProjectInformationKeyInitializationData(CallGraphKey) {
+            case Some(_) ⇒
+                implicit val logContext: LogContext = project.logContext
+                OPALLogger.error(
+                    "analysis configuration",
+                    s"must not compute multiple call graphs"
+                )
+                throw new IllegalArgumentException()
+            case None ⇒ cg
+        }
+
+        cg
     }
 
     private[this] def resolveAnalysisRunner(
@@ -120,16 +147,24 @@ trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     }
 
     def getTypeProvider(project: SomeProject): TypeProvider
-
-    final def setupTypeProvider(project: SomeProject): Unit = {
-        CallGraphKey._typeProvider = Some(getTypeProvider(project))
-    }
 }
 
-object CallGraphKey {
-    private var _typeProvider: Option[TypeProvider] = None
+object CallGraphKey extends ProjectInformationKey[CallGraph, CallGraph] {
 
-    def typeProvider: TypeProvider = {
-        _typeProvider.get
+    override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeProviderKey)
+
+    override def compute(project: SomeProject): CallGraph = {
+
+        project.getProjectInformationKeyInitializationData(this) match {
+            case Some(cg) ⇒
+                cg
+            case None ⇒
+                implicit val logContext: LogContext = project.logContext
+                OPALLogger.error(
+                    "analysis configuration",
+                    s"must compute specific call graph first"
+                )
+                throw new IllegalArgumentException()
+        }
     }
 }

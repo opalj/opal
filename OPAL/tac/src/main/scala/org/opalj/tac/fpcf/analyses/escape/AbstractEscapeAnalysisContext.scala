@@ -11,6 +11,7 @@ import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.VirtualFormalParameters
+import org.opalj.br.fpcf.properties.Context
 
 /**
  * Provides the basic information corresponding to an entity to determine its escape information.
@@ -22,7 +23,7 @@ import org.opalj.br.analyses.VirtualFormalParameters
  */
 trait AbstractEscapeAnalysisContext {
 
-    val entity: Entity
+    val entity: (Context, Entity)
     val targetMethod: Method
 
     def targetMethodDeclaringClassType: ObjectType = targetMethod.classFile.thisType

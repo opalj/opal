@@ -8,12 +8,11 @@ package xta
 
 import org.opalj.br.ClassHierarchy
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.SomeEOptionP
@@ -24,6 +23,7 @@ import java.util.{Set ⇒ JSet}
 
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 
 /**
@@ -41,7 +41,7 @@ final class TypePropagationState[ContextType <: Context](
         override protected[this] var _tacDependee: EOptionP[Method, TACAI],
 
         private[this] var _ownInstantiatedTypesDependee: EOptionP[TypeSetEntity, InstantiatedTypes],
-        private[this] var _calleeDependee:               EOptionP[DefinedMethod, Callees]
+        private[this] var _calleeDependee:               EOptionP[DeclaredMethod, Callees]
 ) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     var methodWritesArrays: Boolean = false
@@ -87,7 +87,7 @@ final class TypePropagationState[ContextType <: Context](
         _seenCallees.add((pc, callee))
     }
 
-    def calleeDependee: Option[EOptionP[DefinedMethod, Callees]] = {
+    def calleeDependee: Option[EOptionP[DeclaredMethod, Callees]] = {
         if (_calleeDependee.isRefinable) {
             Some(_calleeDependee)
         } else {
@@ -95,7 +95,7 @@ final class TypePropagationState[ContextType <: Context](
         }
     }
 
-    def updateCalleeDependee(calleeDependee: EOptionP[DefinedMethod, Callees]): Unit = {
+    def updateCalleeDependee(calleeDependee: EOptionP[DeclaredMethod, Callees]): Unit = {
         _calleeDependee = calleeDependee
     }
 

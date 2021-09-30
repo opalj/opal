@@ -20,12 +20,13 @@ import org.opalj.br.Method
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
-import org.opalj.br.fpcf.properties.cg.ConcreteCallees
-import org.opalj.br.fpcf.properties.cg.NoCallees
-import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.CallersOnlyWithConcreteCallers
+import org.opalj.tac.fpcf.properties.cg.ConcreteCallees
+import org.opalj.tac.fpcf.properties.cg.NoCallees
+import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
@@ -37,12 +38,12 @@ import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
  */
 sealed trait CalleesAndCallers {
     final def partialResults(
-        caller: DeclaredMethod
-    ): TraversableOnce[PartialResult[DeclaredMethod, _ >: Null <: Property]] =
+        callerContext: Context
+    ): TraversableOnce[PartialResult[_, _ >: Null <: Property]] =
         if (directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty)
             partialResultsForCallers
         else
-            Iterator(partialResultForCallees(caller)) ++ partialResultsForCallers
+            Iterator(partialResultForCallees(callerContext)) ++ partialResultsForCallers
 
     protected def directCallees: IntMap[IntTrieSet] = IntMap.empty
 
@@ -55,30 +56,36 @@ sealed trait CalleesAndCallers {
     protected def receivers: IntMap[IntMap[Option[(ValueInformation, IntTrieSet)]]] = IntMap.empty
 
     private[this] def partialResultForCallees(
-        dm: DeclaredMethod
+        callerContext: Context
     ): PartialResult[DeclaredMethod, Callees] = {
-        PartialResult[DeclaredMethod, Callees](dm, Callees.key, {
+        PartialResult[DeclaredMethod, Callees](callerContext.method, Callees.key, {
             case InterimUBP(_) if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty ⇒
                 None
 
             case InterimUBP(ub: Callees) ⇒
                 Some(InterimEUBP(
-                    dm,
+                    callerContext.method,
                     ub.updateWithCallees(
-                        directCallees, indirectCallees, incompleteCallSites, receivers, parameters
+                        callerContext,
+                        directCallees, indirectCallees,
+                        incompleteCallSites,
+                        receivers, parameters
                     )
                 ))
 
             case _: EPK[_, _] if directCallees.isEmpty && indirectCallees.isEmpty && incompleteCallSites.isEmpty ⇒
                 Some(InterimEUBP(
-                    dm, NoCallees
+                    callerContext.method, NoCallees
                 ))
 
             case _: EPK[_, _] ⇒
                 Some(InterimEUBP(
-                    dm,
-                    new ConcreteCallees(
-                        directCallees, indirectCallees, incompleteCallSites, receivers, parameters
+                    callerContext.method,
+                    ConcreteCallees(
+                        callerContext,
+                        directCallees, indirectCallees,
+                        incompleteCallSites,
+                        receivers, parameters
                     )
                 ))
 
@@ -101,25 +108,25 @@ trait Calls extends CalleesAndCallers {
 
     val isDirect: Boolean
 
-    protected def createPartialResultForCaller(
-        caller: DeclaredMethod,
-        callee: DeclaredMethod,
-        pc:     Int
+    protected def createPartialResultForContext(
+        callerContext: Context,
+        calleeContext: Context,
+        pc:            Int
     ): PartialResult[DeclaredMethod, Callers] = {
-        PartialResult[DeclaredMethod, Callers](callee, Callers.key, {
+        PartialResult[DeclaredMethod, Callers](calleeContext.method, Callers.key, {
             case InterimUBP(ub: Callers) ⇒
-                val newCallers = ub.updated(caller, pc, isDirect)
+                val newCallers = ub.updated(calleeContext, callerContext, pc, isDirect)
                 // here we assert that update returns the identity if there is no change
                 if (ub ne newCallers)
-                    Some(InterimEUBP(callee, newCallers))
+                    Some(InterimEUBP(calleeContext.method, newCallers))
                 else
                     None
 
             case _: EPK[_, _] ⇒
-                val set = LongLinkedTrieSet(Callers.toLong(caller.id, pc, isDirect))
+                val set = LongLinkedTrieSet(Callers.toLong(callerContext.id, pc, isDirect))
                 Some(InterimEUBP(
-                    callee,
-                    new CallersOnlyWithConcreteCallers(set)
+                    calleeContext.method,
+                    new CallersOnlyWithConcreteCallers(IntMap(calleeContext.id → set), 1)
                 ))
 
             case r ⇒
@@ -132,14 +139,14 @@ trait Calls extends CalleesAndCallers {
     private[this] var _partialResultsForCallers: List[PartialResult[DeclaredMethod, Callers]] =
         List.empty
 
-    def addCall(context: Context, pc: Int, callee: DeclaredMethod): Unit = {
-        val caller = context.method.asDefinedMethod
-
-        val calleeId = callee.id
+    def addCall(
+        callerContext: Context, pc: Int, calleeContext: Context
+    ): Unit = {
+        val calleeId = calleeContext.id
         val oldCalleesAtPCOpt = _callees.get(pc)
         if (oldCalleesAtPCOpt.isEmpty) {
             _callees = _callees.updated(pc, IntTrieSet(calleeId))
-            _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
+            _partialResultsForCallers ::= createPartialResultForContext(callerContext, calleeContext, pc)
         } else {
             val oldCalleesAtPC = oldCalleesAtPCOpt.get
             val newCalleesAtPC = oldCalleesAtPC + calleeId
@@ -147,7 +154,7 @@ trait Calls extends CalleesAndCallers {
             // here we assert that IntSet returns the identity if the element is already contained
             if (newCalleesAtPC ne oldCalleesAtPC) {
                 _callees = _callees.updated(pc, newCalleesAtPC)
-                _partialResultsForCallers ::= createPartialResultForCaller(caller, callee, pc)
+                _partialResultsForCallers ::= createPartialResultForContext(callerContext, calleeContext, pc)
             }
         }
     }
@@ -182,25 +189,25 @@ trait IndirectCallsBase extends Calls {
     override protected def indirectCallees: IntMap[IntTrieSet] = _callees
 
     def addCall(
-        context:  Context,
-        pc:       Int,
-        callee:   DeclaredMethod,
-        params:   Seq[Option[(ValueInformation, IntTrieSet)]],
-        receiver: Option[(ValueInformation, IntTrieSet)]
+        callerContext: Context,
+        pc:            Int,
+        calleeContext: Context,
+        params:        Seq[Option[(ValueInformation, IntTrieSet)]],
+        receiver:      Option[(ValueInformation, IntTrieSet)]
     ): Unit = {
-        addCall(context, pc, callee)
+        addCall(callerContext, pc, calleeContext)
         _parameters = _parameters.updated(
             pc,
-            _parameters.getOrElse(pc, IntMap.empty).updated(callee.id, params)
+            _parameters.getOrElse(pc, IntMap.empty).updated(calleeContext.id, params)
         )
         _receivers = _receivers.updated(
             pc,
-            _receivers.getOrElse(pc, IntMap.empty).updated(callee.id, receiver)
+            _receivers.getOrElse(pc, IntMap.empty).updated(calleeContext.id, receiver)
         )
     }
 
     def addCallOrFallback(
-        context:            Context,
+        callerContext:      Context,
         pc:                 Int,
         callee:             org.opalj.Result[Method],
         callerPackage:      String,
@@ -208,10 +215,17 @@ trait IndirectCallsBase extends Calls {
         fallbackName:       String,
         fallbackDescriptor: MethodDescriptor,
         parameters:         Seq[Option[(ValueInformation, IntTrieSet)]],
-        receiver:           Option[(ValueInformation, IntTrieSet)]
+        receiver:           Option[(ValueInformation, IntTrieSet)],
+        expandContext:      DeclaredMethod ⇒ Context
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         if (callee.hasValue) {
-            addCall(context, pc, declaredMethods(callee.value), parameters, receiver)
+            addCall(
+                callerContext,
+                pc,
+                expandContext(declaredMethods(callee.value)),
+                parameters,
+                receiver
+            )
         } else {
             val fallbackCallee = declaredMethods(
                 fallbackType,
@@ -220,7 +234,7 @@ trait IndirectCallsBase extends Calls {
                 fallbackName,
                 fallbackDescriptor
             )
-            addCall(context, pc, fallbackCallee, parameters, receiver)
+            addCall(callerContext, pc, expandContext(fallbackCallee), parameters, receiver)
         }
     }
 }

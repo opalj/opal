@@ -7,6 +7,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
@@ -40,7 +41,7 @@ import org.opalj.tac.fpcf.analyses.cg.PropagationBasedTypeProvider
 trait PropagationBasedCallGraphKey extends CallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        super.requirements(project) :+ InitialInstantiatedTypesKey
+        super.requirements(project) ++ Seq(InitialInstantiatedTypesKey, SimpleContextsKey)
     }
 
     def typeSetEntitySelector(): TypeSetEntitySelector

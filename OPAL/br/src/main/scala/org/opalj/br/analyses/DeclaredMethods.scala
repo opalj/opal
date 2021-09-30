@@ -35,6 +35,8 @@ class DeclaredMethods(
 
     private var extensionSize = 1000
 
+    def size: Int = idCounter
+
     def apply(
         declaredType: ObjectType,
         packageName:  String,

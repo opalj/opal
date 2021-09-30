@@ -1,15 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package tac
-package cg
+package org.opalj.tac.cg
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.CallStringContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.AllocationSitesPointsToTypeProvider
+import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
@@ -23,12 +21,12 @@ import org.opalj.tac.fpcf.analyses.pointsto.ReflectionAllocationsAnalysisSchedul
  *
  * @see [[CallGraphKey]] for further details.
  *
- * @author Florian Kuebler
+ * @author Dominik Helm
  */
-object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
+object CFA_1_1_CallGraphKey extends CallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
+        Seq(DefinitionSitesKey, VirtualFormalParametersKey, CallStringContextsKey) ++:
             super.requirements(project)
     }
 
@@ -45,5 +43,5 @@ object AllocationSiteBasedPointsToCallGraphKey extends CallGraphKey {
         )
     }
     override def getTypeProvider(project: SomeProject) =
-        new AllocationSitesPointsToTypeProvider(project)
+        new CFA_k_l_TypeProvider(project, 1, 1)
 }

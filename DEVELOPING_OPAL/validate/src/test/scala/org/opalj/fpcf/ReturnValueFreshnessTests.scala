@@ -39,7 +39,7 @@ class ReturnValueFreshnessTests extends PropertiesTest {
         as.propertyStore.shutdown()
         validateProperties(
             as,
-            declaredMethodsWithAnnotations(as.project),
+            contextsWithAnnotations(as.project),
             Set("ReturnValueFreshness")
         )
     }
