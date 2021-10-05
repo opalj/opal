@@ -8,7 +8,7 @@ import org.opalj.br.MethodWithBody
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.da.ClassFile
-
+import scala.collection.Iterable
 /**
  * Test case feature that performs an interface call for a default method where an intermediate
  * interface shadows the default method with a static method (not valid java, but valid bytecode).
@@ -24,7 +24,7 @@ class NonJavaBytecode1(implicit hermes: HermesConfig) extends DefaultFeatureQuer
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])

@@ -18,7 +18,7 @@ import scala.compat._
 abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
 
     def ++[X >: T <: AnyRef](other: GenTraversableOnce[X]): RefIterator[X] = {
-        val that = other.toIterator
+        val that = other.iterator
         new RefIterator[X] {
             def hasNext: Boolean = self.hasNext || that.hasNext
             def next(): X = if (self.hasNext) self.next() else that.next()
@@ -121,7 +121,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
             private[this] def advanceIterator(): Unit = {
                 while (!it.hasNext) {
                     if (self.hasNext) {
-                        it = f(self.next()).toIterator
+                        it = f(self.next()).iterator
                     } else {
                         it = null
                         return ;
@@ -141,7 +141,7 @@ abstract class RefIterator[+T] extends AbstractIterator[T] { self =>
             private[this] def advanceIterator(): Unit = {
                 while (!it.hasNext) {
                     if (self.hasNext) {
-                        it = f(self.next()).toIterator
+                        it = f(self.next()).iterator
                     } else {
                         it = null
                         return ;

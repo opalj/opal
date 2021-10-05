@@ -4,7 +4,7 @@ package tac
 package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyStore
@@ -19,7 +19,7 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
-
+import scala.collection.Iterable
 /**
  * An abstract [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]].
  * Uses the call graph analyses modules specified in the config file under the key
@@ -37,7 +37,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
      */
     protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler]
+    ): Iterable[FPCFAnalysisScheduler]
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
 

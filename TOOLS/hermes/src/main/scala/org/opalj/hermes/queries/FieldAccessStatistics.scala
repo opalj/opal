@@ -9,7 +9,7 @@ import org.opalj.bi.ACC_PROTECTED
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.FieldAccessInformationKey
-
+import scala.collection.Iterable
 /**
  * Counts how often fields are accessed.
  *
@@ -32,7 +32,7 @@ class FieldAccessStatistics(implicit hermes: HermesConfig) extends DefaultFeatur
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 

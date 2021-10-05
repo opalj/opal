@@ -21,7 +21,7 @@ import org.opalj.bi.TestResources.{locateTestResources => locate}
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.collection.immutable.RefArray
-
+import scala.collection.Iterable
 /**
  * Tests the rewriting of lambda expressions/method references using Java 8's infrastructure. I.e.,
  * tests rewriting of [[org.opalj.br.instructions.INVOKEDYNAMIC]] instruction using
@@ -326,7 +326,7 @@ class BasicLambdaExpressionsRewritingTest extends AnyFunSpec with Matchers {
             Framework.ClassFiles(lambda18TestResources),
             Java8LibraryFramework.ClassFiles(org.opalj.bytecode.JRELibraryFolder),
             libraryClassFilesAreInterfacesOnly = true,
-            Traversable.empty,
+            Iterable.empty,
             Project.defaultHandlerForInconsistentProjects,
             testConfig,
             logContext

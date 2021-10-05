@@ -13,7 +13,7 @@ import org.opalj.bi.TestResources
 import org.opalj.concurrent.OPALHTBoundedExecutionContextTaskSupport
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.Seconds
-
+import scala.collection.Iterable
 /**
  * This test(suite) just loads a very large number of class files and creates
  * the xHTML representation of the classes. It basically tests if we can load and
@@ -30,7 +30,7 @@ class DisassemblerSmokeTest extends AnyFunSpec with Matchers {
             "bi"
         )
         val jreLibraryFolder = bytecode.JRELibraryFolder
-        val specialResources = Traversable(jmodsZip, jreLibraryFolder)
+        val specialResources = Iterable(jmodsZip, jreLibraryFolder)
         for { file <- bi.TestResources.allBITestJARs ++ specialResources } {
 
             describe(s"(when processing $file)") {

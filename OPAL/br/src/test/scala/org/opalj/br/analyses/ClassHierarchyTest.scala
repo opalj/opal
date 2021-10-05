@@ -13,7 +13,7 @@ import org.opalj.collection.immutable.UIDSet
 import org.opalj.br.MethodDescriptor.NoArgsAndReturnVoid
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
-
+import scala.collection.Iterable
 /**
  * Basic tests of the class hierarchy.
  *
@@ -34,13 +34,13 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     //
     val jlsCHFile = "ClassHierarchyJLS.ths"
     val jlsCHCreator = List(() => getClass.getResourceAsStream(jlsCHFile))
-    val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
+    val jlsCH = ClassHierarchy(Iterable.empty, jlsCHCreator)(GlobalLogContext)
 
     val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
     val javaLangCHFile = "JavaLangClassHierarchy.ths"
     val javaLangCHCreator = List(() => getClass.getResourceAsStream(javaLangCHFile))
-    val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
+    val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object
     val Throwable = ObjectType.Throwable
@@ -492,7 +492,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val typesProject =
         Project(
             ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
-            Traversable.empty,
+            Iterable.empty,
             true
         )
 
@@ -745,7 +745,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     val apacheANTCH =
         ClassHierarchy(
-            Traversable.empty,
+            Iterable.empty,
             List(() => getClass.getResourceAsStream("ApacheANT1.7.1.ClassHierarchy.ths"))
         )(GlobalLogContext)
 
@@ -769,7 +769,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 
     final val clusteringProject = {
         val classFiles = ClassFiles(locateTestResources("classfiles/ClusteringTestProject.jar", "bi"))
-        Project(classFiles, Traversable.empty, true)
+        Project(classFiles, Iterable.empty, true)
     }
 
     behavior of "the ClassHierarchy's method to traverse the class hierarchy"
@@ -806,7 +806,7 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
     val jvmFeaturesProject =
         Project(
             ClassFiles(locateTestResources("jvm_features-1.8-g-parameters-genericsignature.jar", "bi")),
-            Traversable.empty,
+            Iterable.empty,
             true
         )
 
@@ -829,6 +829,6 @@ class ClassHierarchyTest extends AnyFlatSpec with Matchers {
 object ClassHierarchyTest {
 
     val generics = locateTestResources("generictypes.jar", "bi")
-    val genericProject = Project(ClassFiles(generics), Traversable.empty, true)
+    val genericProject = Project(ClassFiles(generics), Iterable.empty, true)
 
 }

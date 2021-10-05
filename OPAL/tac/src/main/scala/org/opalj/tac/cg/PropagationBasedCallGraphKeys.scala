@@ -18,7 +18,7 @@ import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisSched
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
-
+import scala.collection.Iterable
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on Tip and
  * Palsberg's propagation-based algorithms.
@@ -47,7 +47,7 @@ trait PropagationBasedCallGraphKey extends AbstractCallGraphKey {
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         val theTypeSetEntitySelector = typeSetEntitySelector()
 
         val common = List(

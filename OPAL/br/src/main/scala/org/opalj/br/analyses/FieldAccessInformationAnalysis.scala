@@ -112,7 +112,7 @@ object FieldAccessInformationAnalysis {
             if (unresolved.nonEmpty) allUnresolved.add((method, unresolved))
         }
 
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
         val ra = new AnyRefMap(allReadAccesses.size * 2) ++= allReadAccesses.asScala
         ra.repack()
         val wa = new AnyRefMap(allReadAccesses.size * 2) ++= allWriteAccesses.asScala

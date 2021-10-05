@@ -13,7 +13,7 @@ import org.opalj.br.instructions.PUTSTATIC
 import org.opalj.br.instructions.LDC
 import org.opalj.br.instructions.LDC_W
 import org.opalj.da.ClassFile
-
+import scala.collection.Iterable
 /**
  * Groups test case features that test the correct recognition of static initializers.
  *
@@ -42,7 +42,7 @@ class StaticInitializer(implicit hermes: HermesConfig) extends DefaultFeatureQue
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val classLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 

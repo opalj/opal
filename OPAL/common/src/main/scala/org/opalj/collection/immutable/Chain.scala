@@ -503,7 +503,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     override def toIterable: Iterable[T] = {
-        new AbstractIterable[T] { def iterator: Iterator[T] = self.toIterator }
+        new AbstractIterable[T] { def iterator: Iterator[T] = self.iterator }
     }
 
     def toIterator: Iterator[T] = {
@@ -530,7 +530,7 @@ sealed trait Chain[@specialized(Int) +T]
         }
     }
     /**
-     * Returns a newly created `Traversable[T]` collection.
+     * Returns a newly created `Iterable[T]` collection.
      */
     //TODO figure out difference between Traversable and Iterable.
     def toTraversable: Iterable[T] = {

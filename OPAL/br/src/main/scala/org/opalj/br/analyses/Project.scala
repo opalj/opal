@@ -2117,8 +2117,8 @@ object Project {
             val allMethods: Iterable[Method] = {
                 new Iterable[Method] {
                     def iterator: Iterator[Method] = {
-                        projectClassFilesArray.toIterator.flatMap { cf => cf.methods } ++
-                            libraryClassFilesArray.toIterator.flatMap { cf => cf.methods }
+                        projectClassFilesArray.iterator.flatMap { cf => cf.methods } ++
+                            libraryClassFilesArray.iterator.flatMap { cf => cf.methods }
                     }
                 }
             }
@@ -2160,7 +2160,7 @@ object Project {
             val allClassFiles: Iterable[ClassFile] = {
                 new Iterable[ClassFile] {
                     def iterator: Iterator[ClassFile] = {
-                        projectClassFilesArray.toIterator ++ libraryClassFilesArray.toIterator
+                        projectClassFilesArray.iterator ++ libraryClassFilesArray.iterator
                     }
                 }
             }
@@ -2168,8 +2168,8 @@ object Project {
             val allFields: Iterable[Field] = {
                 new Iterable[Field] {
                     def iterator: Iterator[Field] = {
-                        projectClassFilesArray.toIterator.flatMap { cf => cf.fields } ++
-                            libraryClassFilesArray.toIterator.flatMap { cf => cf.fields }
+                        projectClassFilesArray.iterator.flatMap { cf => cf.fields } ++
+                            libraryClassFilesArray.iterator.flatMap { cf => cf.fields }
                     }
                 }
             }

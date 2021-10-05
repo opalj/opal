@@ -6,7 +6,7 @@ package analyses
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import org.opalj.collection.immutable.ConstArray
 import org.opalj.br.instructions.LDCString
 import org.opalj.concurrent.defaultIsInterrupted

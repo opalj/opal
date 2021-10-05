@@ -9,7 +9,7 @@ import java.io.FileInputStream
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigRenderOptions
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * Prints the current explicit (application.conf/reference.conf files) and

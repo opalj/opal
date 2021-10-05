@@ -72,7 +72,7 @@ sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedAnalysis {
         caller:         DefinedMethod,
         pc:             Int,
         actualReceiver: Option[(ValueInformation, IntTrieSet)],
-        actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Traversable[MethodMatcher]
+        actualParams:   Seq[Option[(ValueInformation, IntTrieSet)]], matchers: Iterable[MethodMatcher]
     )(implicit indirectCalls: IndirectCalls): Unit = {
         MethodMatching.getPossibleMethods(matchers.toSeq).foreach { m =>
             indirectCalls.addCall(

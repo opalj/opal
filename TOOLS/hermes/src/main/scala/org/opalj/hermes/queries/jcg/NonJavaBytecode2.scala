@@ -38,7 +38,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFile
 
 import scala.collection.mutable
-
+import scala.collection.Iterable
 /**
  * Test case feature where two methods are defined a class that do only vary in the specified return
  * type. This is not possible on Java source level both is still valid in bytecode.
@@ -54,7 +54,7 @@ class NonJavaBytecode2(implicit hermes: HermesConfig) extends DefaultFeatureQuer
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])

@@ -14,7 +14,7 @@ import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger
-
+import scala.collection.Iterable
 /**
  * Matches AvailableTypes annotations to the values computed cooperatively by a
  * dataflow-based call graph analysis.
@@ -28,7 +28,7 @@ class AvailableTypesMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
 
         val annotationType = a.annotationType.asObjectType

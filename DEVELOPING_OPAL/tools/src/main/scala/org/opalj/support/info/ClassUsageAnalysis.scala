@@ -23,7 +23,7 @@ import org.opalj.tac.LazyDetachedTACAIKey
 import org.opalj.tac.NonVirtualMethodCall
 import org.opalj.tac.StaticMethodCall
 import org.opalj.tac.VirtualMethodCall
-
+import scala.collection.Iterable
 /**
  * Analyzes a project for how a particular class is used within that project. Collects information
  * on which methods are called on objects of that class as well as how often.
@@ -106,7 +106,7 @@ object ClassUsageAnalysis extends ProjectAnalysisApplication {
      */
     private final val parameterNameForGranularity = "-granularity="
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
             parameters.filter { p =>
                 !p.contains(parameterNameForClass) && !p.contains(parameterNameForGranularity)

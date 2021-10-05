@@ -10,7 +10,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import scala.collection.generic.Growable
 import scala.collection.mutable
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Await.{result => await}
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration.Inf

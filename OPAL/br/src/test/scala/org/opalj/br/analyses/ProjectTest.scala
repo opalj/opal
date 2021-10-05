@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java11Framework.ClassFiles
-
+import scala.collection.Iterable
 /**
  * Tests the support for "project" related functionality.
  *
@@ -321,7 +321,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     {
         val fieldsProject = {
             val classFiles = ClassFiles(locateTestResources("fields-g=none-5.jar", "bi"))
-            Project(classFiles, Traversable.empty, true)
+            Project(classFiles, Iterable.empty, true)
         }
         import fieldsProject.classFile
         import fieldsProject.resolveFieldReference
@@ -402,7 +402,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         val methodsProject = {
             val classFiles = ClassFiles(ProjectTest.methodsArchive)
-            Project(classFiles, Traversable.empty, true)
+            Project(classFiles, Iterable.empty, true)
         }
 
         val superI = ObjectType("methods/b/SuperI")
@@ -742,11 +742,11 @@ private object ProjectTest {
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal), Traversable.empty, true)
+    val opalProject = Project(ClassFiles(opal), Iterable.empty, true)
 
     val java11nestsArchive =
         locateTestResources("java11nests-g-11-parameters-genericsignature", "bi")
-    val java11nestsProject = Project(ClassFiles(java11nestsArchive), Traversable.empty, true)
+    val java11nestsProject = Project(ClassFiles(java11nestsArchive), Iterable.empty, true)
 
     //
     //

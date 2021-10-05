@@ -23,7 +23,7 @@ import java.util.jar.JarInputStream
 import java.util.jar.JarEntry
 
 import scala.util.control.ControlThrowable
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -486,7 +486,7 @@ trait ClassFileReader extends ClassFileReaderConfiguration with Constant_PoolAbs
         exceptionHandler: ExceptionHandler
     ): Unit = {
 
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters.__
 
         // First let's collect all inner Jar Entries, then do the processing.
         // Otherwise - if the OPALExecutionContextTaskSupport uses a fixed

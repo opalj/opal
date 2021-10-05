@@ -12,7 +12,7 @@ import org.opalj.br.instructions.INVOKEVIRTUAL
 import org.opalj.da.ClassFile
 
 import scala.collection.mutable.ArrayBuffer
-
+import scala.collection.Iterable
 /**
  * Groups test case features that perform a polymorphic method calls over package boundaries. This is
  * particulary relevant for package visible types and/or package visible methods.
@@ -33,7 +33,7 @@ class PackageBoundaries(implicit hermes: HermesConfig) extends DefaultFeatureQue
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionsLocations = Array.fill(2)(new LocationsContainer[S])
 

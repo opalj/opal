@@ -11,7 +11,7 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import org.opalj.util.PerformanceEvaluation
 import org.opalj.util.PerformanceEvaluation.time
 import org.opalj.br.analyses.Project
@@ -136,7 +136,7 @@ class RecordDefUseTest extends AnyFunSpec with Matchers {
             // Tests if the def/use information for reference values corresponds to the
             // def/use information (implicitly) collected by the corresponding domain.
             //
-            for { (op, opIndex) <- ops.toIterator.zipWithIndex } {
+            for { (op, opIndex) <- ops.iterator.zipWithIndex } {
                 val defUseOrigins =
                     try {
                         d.operandOrigin(pc, opIndex)

@@ -251,7 +251,7 @@ object DeclaredMethodsKey extends ProjectInformationKey[DeclaredMethods, Nothing
 
         val id2method = new Array[DeclaredMethod](idCounter.get() + 1000)
 
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
         for {
             context2Method <- result.elements().asScala
             dm <- context2Method.elements().asScala

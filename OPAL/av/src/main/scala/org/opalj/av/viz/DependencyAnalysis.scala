@@ -27,7 +27,7 @@ import org.opalj.br.analyses.BasicReport
 import org.opalj.br.analyses.ProgressManagement
 import org.opalj.br.analyses.ProgressEvents
 import org.opalj.br.analyses.Project
-
+import scala.collection.Iterable
 /**
  * @author Tobias Becker
  */
@@ -58,7 +58,7 @@ object DependencyAnalysis extends AnalysisApplication {
         }
     }
 
-    override def checkAnalysisSpecificParameters(args: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(args: Seq[String]): Iterable[String] = {
 
         val (mainPackage, parameters1) = readParameter("mp", args)
         this.mainPackage = mainPackage
@@ -73,7 +73,7 @@ object DependencyAnalysis extends AnalysisApplication {
         this.filter = filter
 
         if (parameters4.isEmpty)
-            Traversable.empty
+            Iterable.empty
         else
             parameters4.map("unknown parameter: "+_)
     }

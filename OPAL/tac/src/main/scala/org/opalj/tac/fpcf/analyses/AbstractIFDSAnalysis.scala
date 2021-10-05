@@ -350,7 +350,7 @@ abstract class AbstractIFDSAnalysis[IFDSFact <: AbstractIFDSFact] extends FPCFAn
                 new Iterable[SomeEOptionP] {
                     override def iterator: Iterator[SomeEOptionP] = {
                         // This method is actually not called by the property store...
-                        Iterator.single(state.cgDependency.get) ++ dependees.toIterator
+                        Iterator.single(state.cgDependency.get) ++ dependees.iterator
                     }
                     override def foreach[U](f: SomeEOptionP => U): Unit = {
                         f(state.cgDependency.get)

@@ -5,7 +5,7 @@ package fpcf
 package analyses
 package pointsto
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._

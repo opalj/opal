@@ -30,7 +30,7 @@ import org.opalj.ai.util.containsInPrefix
 import org.opalj.ai.util.insertBefore
 import org.opalj.ai.util.insertBeforeIfNew
 import org.opalj.ai.util.removeFirstUnless
-
+import scala.collection.Iterable
 /**
  * A highly-configurable framework for the (abstract) interpretation of Java bytecode.
  * The framework is built upon OPAL's standard representation ([[org.opalj.br]]) of Java bytecode.
@@ -705,7 +705,7 @@ abstract class AI[D <: Domain](
                     val jumpToSubroutineId = belongsToSubroutine(targetPC)
                     if (jumpToSubroutineId != memoryLayoutBeforeSubroutineCall.head._1) {
                         var subroutinesToTerminate = 1
-                        val it = memoryLayoutBeforeSubroutineCall.toIterator
+                        val it = memoryLayoutBeforeSubroutineCall.iterator
                         it.next()
                         while (it.hasNext && it.next()._1 != jumpToSubroutineId) {
                             subroutinesToTerminate += 1
@@ -1683,7 +1683,7 @@ abstract class AI[D <: Domain](
                 ): Unit = {
                     // Iterating over the individual exceptions is potentially
                     // more precise than just iterating over the "abstraction".
-                    val baseValues: Traversable[theDomain.DomainReferenceValue] = exceptionValue.baseValues
+                    val baseValues: Iterable[theDomain.DomainReferenceValue] = exceptionValue.baseValues
                     if (baseValues.isEmpty) {
                         if (testForNullnessOfExceptionValue) {
                             exceptionValue.isNull match {
@@ -1724,7 +1724,7 @@ abstract class AI[D <: Domain](
 
                 /* One instruction may cause multiple data-flows at the same time! */
                 def handleExceptions(
-                    exceptions:                      Traversable[ExceptionValue],
+                    exceptions:                      Iterable[ExceptionValue],
                     testForNullnessOfExceptionValue: Boolean
                 ): Unit = {
                     var forceJoin: Boolean = false

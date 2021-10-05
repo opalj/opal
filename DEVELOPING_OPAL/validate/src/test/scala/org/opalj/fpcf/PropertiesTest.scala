@@ -40,7 +40,8 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
-import scala.collection.IterableOnce
+import scala.collection.{IterableOnce, Iterable}
+
 /**
  * Framework to test if the properties specified in the test project (the classes in the
  * (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching
@@ -88,7 +89,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
             projectClassFiles,
             libraryClassFiles,
             libraryClassFilesAreInterfacesOnly = false,
-            virtualClassFiles = Traversable.empty
+            virtualClassFiles = Iterable.empty
         )
     }
 
@@ -179,7 +180,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      */
     def validateProperties(
         context:       TestContext,
-        eas:           IterableOnce[(Entity, /*the processed annotation*/ String => String /* a String identifying the entity */ , Traversable[AnnotationLike])],
+        eas:           IterableOnce[(Entity, /*the processed annotation*/ String => String /* a String identifying the entity */ , Iterable[AnnotationLike])],
         propertyKinds: Set[String]
     ): Unit = {
         val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context
@@ -230,7 +231,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     def fieldsWithAnnotations(
         recreatedFixtureProject: SomeProject
-    ): Traversable[(Field, String => String, Annotations)] = {
+    ): Iterable[(Field, String => String, Annotations)] = {
         for {
             f <- recreatedFixtureProject.allFields // cannot be parallelized; "it" is not thread safe
             annotations = f.runtimeInvisibleAnnotations
@@ -242,7 +243,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     def methodsWithAnnotations(
         recreatedFixtureProject: SomeProject
-    ): Traversable[(Method, String => String, Annotations)] = {
+    ): Iterable[(Method, String => String, Annotations)] = {
         for {
             // cannot be parallelized; "it" is not thread safe
             m <- recreatedFixtureProject.allMethods
@@ -255,7 +256,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     def declaredMethodsWithAnnotations(
         recreatedFixtureProject: SomeProject
-    ): Traversable[(DefinedMethod, String => String, Annotations)] = {
+    ): Iterable[(DefinedMethod, String => String, Annotations)] = {
         val declaredMethods = recreatedFixtureProject.get(DeclaredMethodsKey)
         for {
             // cannot be parallelized; "it" is not thread safe
@@ -274,7 +275,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     def classFilesWithAnnotations(
         recreatedFixtureProject: SomeProject
-    ): Traversable[(ClassFile, String => String, Annotations)] = {
+    ): Iterable[(ClassFile, String => String, Annotations)] = {
         for {
             // cannot be parallelized; "it" is not thread safe
             cf <- recreatedFixtureProject.allClassFiles
@@ -288,7 +289,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
     // there can't be any annotations of the implicit "this" parameter...
     def explicitFormalParametersWithAnnotations(
         recreatedFixtureProject: SomeProject
-    ): Traversable[(VirtualFormalParameter, String => String, Annotations)] = {
+    ): Iterable[(VirtualFormalParameter, String => String, Annotations)] = {
         val formalParameters = recreatedFixtureProject.get(VirtualFormalParametersKey)
         val declaredMethods = recreatedFixtureProject.get(DeclaredMethodsKey)
         for {
@@ -312,7 +313,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     def allocationSitesWithAnnotations(
         recreatedFixtureProject: SomeProject
-    ): Traversable[(DefinitionSite, String => String, Traversable[AnnotationLike])] = {
+    ): Iterable[(DefinitionSite, String => String, Iterable[AnnotationLike])] = {
         val allocationSites = recreatedFixtureProject.get(DefinitionSitesKey).getAllocationSites
         for {
             as <- allocationSites
@@ -384,7 +385,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
 
     private[this] def getFixtureClassFiles(
         classFileReader: ClassFileReader
-    ): Traversable[(classFileReader.ClassFile, URL)] = {
+    ): Iterable[(classFileReader.ClassFile, URL)] = {
         import classFileReader.AllClassFiles
 
         var classFilePaths: List[File] = List.empty

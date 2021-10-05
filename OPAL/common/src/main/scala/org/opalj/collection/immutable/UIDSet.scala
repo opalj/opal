@@ -53,7 +53,7 @@ sealed abstract class UIDSet[T <: UID]
     }
 
     override def iterator: RefIterator[T]
-    // Note that, "super.toIterator" guarantees to call "iterator"
+    // Note that, "super.iterator" guarantees to call "iterator"
 
     def idSet: IntTrieSet
 

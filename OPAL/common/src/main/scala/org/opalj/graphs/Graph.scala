@@ -101,8 +101,8 @@ class Graph[@specialized(Int) N: ClassTag] private (
             }
         }
 
-        org.opalj.graphs.sccs(size, es, filterSingletons).toIterator.map { scc =>
-            scc.toIterator.map(indexToN)
+        org.opalj.graphs.sccs(size, es, filterSingletons).iterator.map { scc =>
+            scc.iterator.map(indexToN)
         }
     }
 }

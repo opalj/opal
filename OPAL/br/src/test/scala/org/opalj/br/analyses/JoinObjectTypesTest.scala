@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.log.GlobalLogContext
-
+import scala.collection.Iterable
 /**
  * @author Tobias Becker
  */
@@ -26,7 +26,7 @@ class JoinObjectTypesTest extends AnyFunSpec with Matchers {
         if (in == null)
             throw new UnknownError("class hierarchy could not be loaded")
         ClassHierarchy(
-            Traversable.empty,
+            Iterable.empty,
             List(() => in)
         )(GlobalLogContext)
     }

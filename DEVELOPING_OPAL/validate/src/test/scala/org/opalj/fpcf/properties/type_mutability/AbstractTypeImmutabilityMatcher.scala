@@ -8,7 +8,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.TypeImmutability
-
+import scala.collection.Iterable
 class AbstractTypeImmutabilityMatcher(
         val property: TypeImmutability
 ) extends AbstractPropertyMatcher {
@@ -18,7 +18,7 @@ class AbstractTypeImmutabilityMatcher(
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case `property` => true

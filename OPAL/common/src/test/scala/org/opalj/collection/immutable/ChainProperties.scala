@@ -9,7 +9,7 @@ import org.scalacheck.Properties
 import org.scalacheck.Prop.{forAll, classify, propBoolean}
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
-
+import scala.collection.Iterable
 /**
  * Tests `Chain` by creating standard Scala Lists and comparing
  * the results of the respective functions modulo the different semantics.
@@ -562,7 +562,7 @@ object ChainProperties extends Properties("Chain") {
         fl == l
     }
     property("toIterator") = forAll { l: List[String] =>
-        val fl = Chain(l: _*).toIterator.toList
+        val fl = Chain(l: _*).iterator.toList
         fl == l
     }
     property("toIntTrieSet") = forAll { l: List[Int] =>
@@ -583,8 +583,8 @@ object ChainProperties extends Properties("Chain") {
 
     property("implicit toTraversable") = forAll { l: List[String] =>
         val fl = Chain(l: _*)
-        val tl: Traversable[String] = fl
-        tl.isInstanceOf[Traversable[String]] && tl.toList == l
+        val tl: Iterable[String] = fl
+        tl.isInstanceOf[Iterable[String]] && tl.toList == l
     }
 
     property("toStream") = forAll { l: List[String] =>

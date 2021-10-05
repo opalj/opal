@@ -15,7 +15,7 @@ import org.opalj.tac.LazyTACUsingAIKey
 import org.opalj.tac.TACode
 import org.opalj.tac.DUVar
 import org.opalj.value.KnownTypedValue
-
+import scala.collection.Iterable
 /**
  * Groups test case features that perform classloading.
  *
@@ -43,7 +43,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         implicit val locations: Array[LocationsContainer[S]] =

@@ -4,7 +4,7 @@ package org.opalj.ai
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
 import org.opalj.br.MethodDescriptor.JustReturnsString
 import org.opalj.br.{ObjectType, PCAndInstruction}

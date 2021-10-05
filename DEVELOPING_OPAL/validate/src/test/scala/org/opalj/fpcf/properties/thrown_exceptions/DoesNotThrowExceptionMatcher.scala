@@ -9,7 +9,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.ThrownExceptions
-
+import scala.collection.Iterable
 /**
  * Matches a methods's `ThrownExceptions` property.
  *
@@ -22,7 +22,7 @@ class DoesNotThrowExceptionMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val annotationType = a.annotationType.asObjectType
         val analysesElementValues =

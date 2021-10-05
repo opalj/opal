@@ -13,7 +13,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.instructions._
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.collection.immutable.Naught
-
+import scala.collection.Iterable
 /**
  * Tests some of the core methods of the Code attribute.
  *
@@ -227,7 +227,7 @@ private object CodeAttributeTest {
         Project(
             ClassFiles(locateTestResources("code.jar", "bi")) ++
                 ClassFiles(locateTestResources("controlflow.jar", "bi")),
-            Traversable.empty,
+            Iterable.empty,
             true
         )
 

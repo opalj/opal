@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.Date
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.control.ControlThrowable
 import scala.xml.Node
 import scala.xml.NodeSeq
@@ -438,7 +438,7 @@ class BugPickerAnalysis extends Analysis[URL, BugPickerResults] {
             s"the analysis took ${analysisTime.toSeconds} "+
                 s"and found ${identifiedIssues.size} unique issues"
         )
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
         (analysisTime, identifiedIssues, exceptions.asScala)
     }
 }

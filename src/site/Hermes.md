@@ -27,7 +27,7 @@ All queries in Hermes have to inherit from `org.opalj.hermes.FeatureQuery` and h
         override def apply[S](
             projectConfiguration: ProjectConfiguration,
             project:              Project[S],
-            rawClassFiles:        Traversable[(da.ClassFile, S)]
+            rawClassFiles:        Iterable[(da.ClassFile, S)]
         ): IterableOnce[Feature[S]] = {
             ???
     }   }
@@ -54,7 +54,7 @@ Next, we will discuss a complete query which finds *native* methods.
         override def apply[S](
             projectConfiguration: ProjectConfiguration,
             project:              Project[S],
-            rawClassFiles:        Traversable[(da.ClassFile, S)]
+            rawClassFiles:        Iterable[(da.ClassFile, S)]
         ): IterableOnce[Feature[S]] = {
 
             // To store the location information; i.e., to store the native methods,

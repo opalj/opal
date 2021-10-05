@@ -13,7 +13,7 @@ import org.opalj.br.instructions.INVOKEINTERFACE
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.da.ClassFile
-
+import scala.collection.Iterable
 /**
  * Groups test case features that perform a method calls that are related to Java 8
  * interfaces. I.e., method calls to an interface's default method.
@@ -42,7 +42,7 @@ class Java8InterfaceMethods(implicit hermes: HermesConfig) extends DefaultFeatur
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         val instructionsLocations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 

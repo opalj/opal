@@ -9,8 +9,8 @@ import java.io.PrintWriter
 import java.net.URL
 import java.util.Calendar
 
-import scala.collection.JavaConverters._
-
+import scala.jdk.CollectionConverters._
+import scala.collection.Iterable
 import com.typesafe.config.ConfigValueFactory
 
 import org.opalj.log.LogContext
@@ -104,7 +104,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
     private val algorithmRegex = "-algorithm=(CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo)".r
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
             parameters.filter { p =>
                 !p.matches(algorithmRegex.regex) &&

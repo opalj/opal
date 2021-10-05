@@ -21,7 +21,7 @@ import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.cg.Callees
-
+import scala.collection.Iterable
 class DirectCallMatcher extends AbstractPropertyMatcher {
 
     override def validateProperty(
@@ -29,7 +29,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         // If the entity is annotated with a single annotation, we receive a DirectCall annotation.
         // If it is annotated with multiple DirectCall annotations, we receive a single DirectCalls
@@ -67,7 +67,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val annotationType = a.annotationType.asObjectType
 

@@ -18,7 +18,7 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
-
+import scala.collection.Iterable
 /**
  * Tests `UIDSets` by creating standard Sets and comparing
  * the results of the respective functions modulo the different semantics.
@@ -32,7 +32,7 @@ object UIDSetProperties extends Properties("UIDSet") {
     val EmptyUIDSet: SUIDSet = UIDSet.empty[SUID]
 
     implicit def intToSUID(i: Int): SUID = SUID(i)
-    implicit def toSUIDSet(l: Traversable[Int]): UIDSet[SUID] = {
+    implicit def toSUIDSet(l: Iterable[Int]): UIDSet[SUID] = {
         EmptyUIDSet ++ l.map(i => SUID(i))
     }
 

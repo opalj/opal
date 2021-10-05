@@ -82,8 +82,8 @@ final class ConstArray[T <: AnyRef] private (
         other match {
             case that: IndexedSeq[_] =>
                 this.length == that.length && {
-                    val thisIt = this.toIterator
-                    val thatIt = that.toIterator
+                    val thisIt = this.iterator
+                    val thatIt = that.iterator
                     while (thisIt.hasNext && thisIt == thatIt) { /*continue*/ }
                     !thisIt.hasNext // <=> all elements are equal
                 }

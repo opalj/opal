@@ -9,7 +9,7 @@ import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.instructions._
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.util.Nanoseconds
-
+import scala.collection.Iterable
 /**
  * Implementation of some simple static analyses to demonstrate the flexibility
  * and power offered by Scala and OPAL when analyzing class files.
@@ -287,7 +287,7 @@ object MoreCheckers {
         println(", " /*"\tViolations: "*/ +classesWithoutDefaultConstructor.size);
 
         // FINDBUGS: UuF: Unused field (UUF_UNUSED_FIELD)
-        var unusedFields: List[(ClassFile, Traversable[String])] = Nil
+        var unusedFields: List[(ClassFile, Iterable[String])] = Nil
         time {
             for (classFile <- classFiles if !classFile.isInterfaceDeclaration) {
                 val declaringClass = classFile.thisType

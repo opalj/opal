@@ -19,7 +19,7 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
-
+import scala.collection.Iterable
 /**
  * Base trait for matchers that match a method's `Purity` property.
  *
@@ -119,7 +119,7 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case `property` => true
@@ -140,7 +140,7 @@ sealed abstract class ContextualPurityMatcher(propertyConstructor: IntTrieSet =>
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val annotationType = a.annotationType.asObjectType
 
@@ -235,7 +235,7 @@ class ImpureMatcher extends PurityMatcher(null) {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case _: ClassifiedImpure => true

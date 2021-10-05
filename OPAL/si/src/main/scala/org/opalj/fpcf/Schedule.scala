@@ -39,7 +39,7 @@ case class Schedule[A](
 
         var allExecutedAnalyses: List[(ComputationSpecification[A], A)] = Nil
 
-        batches.toIterator.zipWithIndex foreach { batchId =>
+        batches.iterator.zipWithIndex foreach { batchId =>
             val (PhaseConfiguration(configuration, css), id) = batchId
 
             if (trace) {

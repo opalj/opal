@@ -13,7 +13,7 @@ import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.FieldPrematurelyRead
 import org.opalj.br.fpcf.properties.NonFinalField
 import org.opalj.br.fpcf.properties.PrematurelyReadField
-
+import scala.collection.Iterable
 /**
  * Matches a field's `FieldMutability` property. The match is successful if the field either
  * does not have a corresponding property (in which case the fallback property will be
@@ -57,7 +57,7 @@ class NonFinalMatcher extends AbstractPropertyMatcher {
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (properties.forall(p => p.isInstanceOf[NonFinalField] || p.key != FieldMutability.key))
             None

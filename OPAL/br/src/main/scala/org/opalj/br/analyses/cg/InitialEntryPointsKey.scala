@@ -8,7 +8,7 @@ import net.ceedubs.ficus.Ficus._
 import scala.Iterable
 
 /**
- * The ''key'' object to get a traversable of entry points. Entry points are particularly relevant
+ * The ''key'' object to get a iterable of entry points. Entry points are particularly relevant
  * to construct call graphs.
  * See [[InitialEntryPointsKey]] for further details.
  *

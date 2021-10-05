@@ -21,7 +21,7 @@ import scala.compat._
  * {{{
  * val edges = Map((0 -> List(1)),(1 -> List(0)),(2 -> List(3))/*,(3 -> List())*/)
  * val successors : Int => Iterator[Int] = (i : Int) => {
- * edges.get(i) match {case Some(successors) => successors.toIterator; case _ => Iterator.empty }
+ * edges.get(i) match {case Some(successors) => successors.iterator; case _ => Iterator.empty }
  * }
  * val vg = new org.opalj.graphs.VirtualUnidirectionalGraph(4/*max id of a node +1 */,successors)
  * }}}

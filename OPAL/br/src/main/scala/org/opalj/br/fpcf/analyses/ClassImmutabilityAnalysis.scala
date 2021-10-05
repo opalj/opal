@@ -452,7 +452,7 @@ trait ClassImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         // 3.
         // Compute the initial set of classes for which we want to determine the mutability.
         var cfs: List[ClassFile] = Nil
-        classHierarchy.directSubclassesOf(ObjectType.Object).toIterator.
+        classHierarchy.directSubclassesOf(ObjectType.Object).iterator.
             map(ot => (ot, project.classFile(ot))).
             foreach {
                 case (_, Some(cf)) => cfs ::= cf

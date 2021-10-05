@@ -6,7 +6,7 @@ package queries
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFile
 import org.opalj.hermes.{Feature, FeatureQuery, ProjectConfiguration}
-
+import scala.collection.Iterable
 /**
  * Computes the size of the inheritance tree for each class of a project and then assigns the
  * class to its respective category.
@@ -34,7 +34,7 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IterableOnce[Feature[S]] = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.isSupertypeInformationComplete

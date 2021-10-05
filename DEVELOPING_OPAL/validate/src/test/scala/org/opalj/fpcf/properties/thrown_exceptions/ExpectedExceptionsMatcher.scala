@@ -9,7 +9,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.ThrownExceptions
-
+import scala.collection.Iterable
 /**
  * Trait to extract the concrete and upper bound exceptions specified in the test cases.
  *
@@ -61,7 +61,7 @@ class ExpectedExceptionsMatcher extends AbstractPropertyMatcher with ExceptionTy
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterableable[Property]
     ): Option[String] = {
         val (concreteTypeExceptions, upperBoundTypeExceptions) =
             getConcreteAndUpperBoundExceptionAnnotations(p, a)

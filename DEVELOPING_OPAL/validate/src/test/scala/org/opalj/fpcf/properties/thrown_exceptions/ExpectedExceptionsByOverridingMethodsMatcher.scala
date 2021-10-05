@@ -8,7 +8,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.fpcf.properties.ThrownExceptionsByOverridingMethods
-
+import scala.collection.Iterable
 /**
  * Matches a methods's `ThrownExceptionsByOverridingMethods` property.
  *
@@ -24,7 +24,7 @@ class ExpectedExceptionsByOverridingMethodsMatcher
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         val (concreteTypeExceptions, upperBoundTypeExceptions) =
             getConcreteAndUpperBoundExceptionAnnotations(p, a)

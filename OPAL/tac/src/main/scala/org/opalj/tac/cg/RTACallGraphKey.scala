@@ -12,7 +12,7 @@ import org.opalj.tac.fpcf.analyses.cg.rta.ConfiguredNativeMethodsInstantiatedTyp
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.LibraryInstantiatedTypesBasedEntryPointsAnalysis
-
+import scala.collection.Iterable
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on rapid type
  * analysis (RTA).
@@ -39,7 +39,7 @@ object RTACallGraphKey extends AbstractCallGraphKey {
 
     override def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         // in case the library entrypoints finder is configured, we want to use the
         // EagerLibraryEntryPointsAnalysis
         val isLibrary =

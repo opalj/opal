@@ -20,12 +20,12 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.util.Nanoseconds
 import org.opalj.util.PerformanceEvaluation
-
+import scala.collection.Iterable
 @RunWith(classOf[JUnitRunner])
 object UIDTrieSetProperties extends Properties("UIDTrieSet") {
 
     implicit def intToSUID(i: Int): SUID = SUID(i)
-    implicit def toSUIDSet(l: Traversable[Int]): UIDTrieSet[SUID] = {
+    implicit def toSUIDSet(l: Iterable[Int]): UIDTrieSet[SUID] = {
         l.foldLeft(UIDTrieSet.empty[SUID])(_ + SUID(_))
     }
 

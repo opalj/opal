@@ -155,7 +155,7 @@ object GuardedAndUnguardedAccessAnalysis {
             for {
                 (guardPC, unguardedAccesses) <- unguardedAccesses.groupBy(f => f._1 /*by guard*/ )
             } yield {
-                val relevance = unguardedAccesses.toIterator.map(_._2.value).max
+                val relevance = unguardedAccesses.iterator.map(_._2.value).max
 
                 val unguardedLocations: Seq[IssueLocation] =
                     unguardedAccesses.map { ua =>

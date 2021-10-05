@@ -59,7 +59,7 @@ object SiteGeneration {
 
       import java.nio.charset.Charset
       import java.nio.file.Files
-      import scala.collection.JavaConverters._
+      import scala.jdk.CollectionConverters._
       import scala.io.Source.fromFile
 
       import com.typesafe.config.ConfigFactory

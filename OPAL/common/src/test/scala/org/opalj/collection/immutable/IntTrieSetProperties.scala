@@ -201,7 +201,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
     }
 
     property("transform") = forAll { s: IntTrieSet =>
-        val its = s.transform(_ * 2, Chain.newBuilder[Int]).toIterator.toList.sorted
+        val its = s.transform(_ * 2, Chain.newBuilder[Int]).iterator.toList.sorted
         its == s.map(_ * 2).iterator.toList.sorted
     }
 
@@ -226,7 +226,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
 
     property("toChain") = forAll { s: IntArraySet =>
         val its = EmptyIntTrieSet ++ s.iterator
-        its.toChain.toIterator.toList.sorted == s.iterator.toList.sorted
+        its.toChain.iterator.toList.sorted == s.iterator.toList.sorted
     }
 
     property("headAndTail") = forAll { s: IntArraySet =>
@@ -237,7 +237,7 @@ object IntTrieSetProperties extends Properties("IntTrieSet") {
             removed :&:= v
             its = newIts
         }
-        (removed.toIterator.toSet.size == s.size) :| "no value is returned more than once" &&
+        (removed.iterator.toSet.size == s.size) :| "no value is returned more than once" &&
             (removed.size == s.size) :| "all values are returned"
     }
 

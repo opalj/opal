@@ -326,8 +326,8 @@ package object graphs {
     private[this] val Undetermined: Int = -1
 
     final def closedSCCs[N >: Null <: AnyRef](
-        ns: Traversable[N],
-        es: N => Traversable[N]
+        ns: Iterable[N],
+        es: N => Iterable[N]
     ): List[Iterable[N]] = {
 
         case class NInfo(dfsNum: Int, var cSCCId: Int = Undetermined) {
@@ -354,8 +354,8 @@ package object graphs {
     }
 
     def closedSCCs[N >: Null <: AnyRef](
-        ns:        Traversable[N],
-        es:        N => Traversable[N],
+        ns:        Iterable[N],
+        es:        N => Iterable[N],
         setDFSNum: (N, Int) => Unit,
         hasDFSNum: (N) => Boolean,
         dfsNum:    (N) => Int,
@@ -537,14 +537,14 @@ package object graphs {
      *      g
      * }
      * val g = genGraph(100000)
-     * val es = (i:Int) => {g(i).toIterator}
+     * val es = (i:Int) => {g(i).iterator}
      * org.opalj.graphs.sccs(g.size,es).mkString("\n")
      * }}}
      *
      * A large graph:
      * {{{
      * val g = Map((0,List(5)),(1,List(2)),(2,List(1,4)),(3,List(0)),(4,List(2)),(5,List(4,3,6)),(6,List(6)),(7, List()))
-     * val es = (i:Int) => { g(i).toIterator }
+     * val es = (i:Int) => { g(i).iterator }
      * org.opalj.graphs.sccs(g.size,es,filterSingletons = true).mkString("\n")
      * }}}
      *

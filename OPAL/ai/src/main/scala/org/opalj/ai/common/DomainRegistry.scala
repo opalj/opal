@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
-
+import scala.collection.Iterable
 /**
  * Registry for all domains that can be instantiated given a `Project`, and a `Method` with a
  * body.
@@ -78,7 +78,7 @@ object DomainRegistry {
         domains
     }
 
-    def selectCandidates(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectCandidates(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         classRegistry.keys.filter { candidate =>
             requirements.forall(r => r.isAssignableFrom(candidate))
         }.toSet
@@ -97,7 +97,7 @@ object DomainRegistry {
      *
      * @return The best domain satisfying the stated requirements.
      */
-    def selectBest(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectBest(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         val candidateClasses = selectCandidates(requirements)
         if (candidateClasses.isEmpty)
             return Set.empty;
@@ -120,7 +120,7 @@ object DomainRegistry {
         best
     }
 
-    def selectCheapest(requirements: Traversable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
+    def selectCheapest(requirements: Iterable[Class[_ <: AnyRef]]): Set[Class[_ <: Domain]] = {
         val candidateClasses = selectCandidates(requirements)
         if (candidateClasses.isEmpty)
             return Set.empty;
@@ -145,7 +145,7 @@ object DomainRegistry {
 
     def selectConfigured(
         config:       Config,
-        requirements: Traversable[Class[_ <: AnyRef]]
+        requirements: Iterable[Class[_ <: AnyRef]]
     ): Set[Class[_ <: Domain]] = {
         config.getString(configStrategySelectionKey) match {
             case "cheapest" => selectCheapest(requirements)

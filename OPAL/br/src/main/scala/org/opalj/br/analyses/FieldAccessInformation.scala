@@ -67,7 +67,7 @@ class FieldAccessInformation(
      * Returns a new iterator to iterate over all field access locations.
      */
     def allAccesses(field: Field): Iterator[(Method, PCs)] = {
-        readAccesses(field).toIterator ++ writeAccesses(field).toIterator
+        readAccesses(field).iterator ++ writeAccesses(field).iterator
     }
 
     /**

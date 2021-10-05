@@ -21,7 +21,7 @@ import org.opalj.ai.util.XHTML
 import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.InstructionCountBoundedAI
-
+import scala.collection.Iterable
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
  * a configurable domain.
@@ -36,26 +36,26 @@ object InterpretMethods extends AnalysisApplication {
         "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n"+
             "[-verbose={true,false} If true, extensive information is shown.]\n"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         def isDomainParameter(parameter: String) =
             parameter.startsWith("-domain=") && parameter.length() > 8
         def isVerbose(parameter: String) =
             parameter == "-verbose=true" || parameter == "-verbose=false"
 
         parameters match {
-            case Nil => Traversable.empty
+            case Nil => Iterable.empty
             case Seq(parameter) =>
                 if (isDomainParameter(parameter) || isVerbose(parameter))
-                    Traversable.empty
+                    Iterable.empty
                 else
-                    Traversable("unknown parameter: "+parameter)
+                    Iterable("unknown parameter: "+parameter)
             case Seq(parameter1, parameter2) =>
                 if (!isDomainParameter(parameter1))
                     Seq("the first parameter does not specify the domain: "+parameter1)
                 else if (!isVerbose(parameter2))
                     Seq("the second parameter has to be \"verbose\": "+parameter2)
                 else
-                    Traversable.empty
+                    Iterable.empty
 
         }
     }
@@ -211,7 +211,7 @@ object InterpretMethodsAnalysis {
             project.parForeachMethodWithBody() { m =>
                 analyzeMethod(m.source.toString, m.method).map(results.add)
             }
-            import scala.collection.JavaConverters._
+            import scala.jdk.CollectionConverters._
             results.asScala
         }
 

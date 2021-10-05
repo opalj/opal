@@ -14,7 +14,7 @@ import org.opalj.br.ClassHierarchy
 import org.opalj.br.PC
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
-
+import scala.collection.Iterable
 /**
  * Defines the concept of a value in a `Domain`.
  *
@@ -416,9 +416,9 @@ trait ValuesDomain { domain =>
             }
         }
 
-        override def baseValues: Traversable[domain.DomainReferenceValue]
+        override def baseValues: Iterable[domain.DomainReferenceValue]
 
-        override def allValues: Traversable[domain.DomainReferenceValue]
+        override def allValues: Iterable[domain.DomainReferenceValue]
 
         /*
         /**

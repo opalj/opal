@@ -6,7 +6,7 @@ package info
 import java.net.URL
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import org.opalj.fpcf.FinalP
 import org.opalj.fpcf.PropertyStore

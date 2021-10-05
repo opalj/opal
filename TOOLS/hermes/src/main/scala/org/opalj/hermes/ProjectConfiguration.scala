@@ -15,7 +15,7 @@ import org.opalj.da
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.Project.JavaLibraryClassFileReader
 import org.opalj.br.analyses.Project.JavaClassFileReader
-
+import scala.collection.Iterable
 /**
  * Meta-information about a project that belongs to a corpus.
  *
@@ -85,7 +85,7 @@ case class ProjectConfiguration(
         //
         // SETUP BR PROJECT
         //
-        val noBRClassFiles = Traversable.empty[(br.ClassFile, URL)]
+        val noBRClassFiles = Iterable.empty[(br.ClassFile, URL)]
         val brProjectClassFiles = cpJARs.foldLeft(noBRClassFiles) { (classFiles, cpJAR) =>
             classFiles ++ JavaClassFileReader().ClassFiles(cpJAR)
         }
@@ -107,10 +107,10 @@ case class ProjectConfiguration(
                     }
             }
         }
-        val libraryClassFiles: Traversable[(br.ClassFile, URL)] = libcp_defaults match {
+        val libraryClassFiles: Iterable[(br.ClassFile, URL)] = libcp_defaults match {
             case None => libcpJARs
             case Some(libraries) =>
-                var predefinedLibrariesClassFiles = Traversable.empty[(br.ClassFile, URL)]
+                var predefinedLibrariesClassFiles = Iterable.empty[(br.ClassFile, URL)]
                 var predefinedLibraries = libraries.split(File.pathSeparatorChar)
                 while (predefinedLibraries.nonEmpty) {
                     predefinedLibraries.head match {
@@ -138,7 +138,7 @@ case class ProjectConfiguration(
         //
         // SETUP DA CLASS FILE
         //
-        val noDAClassFiles = Traversable.empty[(da.ClassFile, URL)]
+        val noDAClassFiles = Iterable.empty[(da.ClassFile, URL)]
         val daProjectClassFiles = cpJARs.foldLeft(noDAClassFiles) { (classFiles, cpJAR) =>
             classFiles ++ da.ClassFileReader.ClassFiles(cpJAR)
         }

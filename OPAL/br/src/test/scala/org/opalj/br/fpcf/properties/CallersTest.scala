@@ -22,13 +22,13 @@ import org.opalj.br.fpcf.properties.cg.OnlyCallersWithUnknownContext
 import org.opalj.br.fpcf.properties.cg.OnlyVMCallersAndWithUnknownContext
 import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 import org.opalj.br.reader.Java8Framework.ClassFiles
-
+import scala.collection.Iterable
 @RunWith(classOf[JUnitRunner])
 class CallersTest extends AnyFlatSpec with Matchers {
     val typesProject =
         Project(
             ClassFiles(locateTestResources("classhierarchy.jar", "bi")),
-            Traversable.empty,
+            Iterable.empty,
             libraryClassFilesAreInterfacesOnly = true
         )
 

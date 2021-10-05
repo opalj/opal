@@ -26,7 +26,7 @@ import org.opalj.hermes.InstructionLocation
 import org.opalj.hermes.ProjectConfiguration
 import org.opalj.hermes.LocationsContainer
 import org.opalj.hermes.DefaultFeatureQuery
-
+import scala.collection.Iterable
 /**
  * This feature query corresponds to the Java8Invokedynamics.md test cases from the JCG call
  * graph test suite as well as some infrastructure incompatabile tests pertaining to JVM-hosted
@@ -56,7 +56,7 @@ class Java8Invokedynamics(
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         import org.opalj.br.reader.InvokedynamicRewriting._
 

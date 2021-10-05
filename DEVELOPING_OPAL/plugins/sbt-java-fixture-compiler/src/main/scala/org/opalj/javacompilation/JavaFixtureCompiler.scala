@@ -9,7 +9,7 @@ import java.io.PrintWriter
 
 import org.opalj.javacompilation.FixtureDiscovery._
 import org.opalj.javacompilation.FixtureCompileSpec._
-
+import scala.collection.Iterable
 /**
  * Plug-in to compile java fixtures against the Eclipse JDT Java compiler.
  *
@@ -190,7 +190,7 @@ object JavaFixtureCompiler extends AutoPlugin {
 
       if (packagingNecessary) {
         val targetFolderLength = compilationResult.task.targetFolder.toString.length + 1
-        val classFiles: Traversable[(File, String)] =
+        val classFiles: Iterable[(File, String)] =
           (compilationResult.task.targetFolder ** "*.class").get map { classFile =>
             ((classFile, classFile.toString.substring(targetFolderLength)))
           }

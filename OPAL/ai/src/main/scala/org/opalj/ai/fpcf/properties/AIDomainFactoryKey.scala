@@ -9,7 +9,7 @@ import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.common.DomainRegistry
-
+import scala.collection.Iterable
 /**
  * Encapsulates the information which domain will be used to perform the abstract interpretations
  * for the specified project. This typically initialized by the [[AIDomainFactoryKey$]].
@@ -62,7 +62,7 @@ object AIDomainFactoryKey
 
     def compute(
         project:         SomeProject,
-        domainFactories: Traversable[Class[_ <: AnyRef]] => Set[Class[_ <: Domain]]
+        domainFactories: Iterable[Class[_ <: AnyRef]] => Set[Class[_ <: Domain]]
     ): ProjectSpecificAIExecutor = {
         implicit val logContext: LogContext = project.logContext
 

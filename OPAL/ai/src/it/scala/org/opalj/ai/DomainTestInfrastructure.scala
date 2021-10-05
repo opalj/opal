@@ -25,7 +25,7 @@ import org.opalj.br.reader.BytecodeInstructionsCache
 import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.reader.Java9FrameworkWithInvokedynamicSupportAndCaching
 import org.opalj.ai.util.XHTML
-
+import scala.collection.Iterable
 /**
  * Provides the basic infrastructure to load a very large number of class files and to perform
  * an abstract interpretation of all methods.
@@ -111,7 +111,7 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
                 val MethodInfo(source, method) = m
                 analyzeClassFile(source.toString, method) foreach { exceptions.add(_) }
             }
-            import scala.collection.JavaConverters._
+            import scala.jdk.CollectionConverters._
             exceptions.asScala
         }
 
@@ -185,14 +185,14 @@ abstract class DomainTestInfrastructure(domainName: String) extends AnyFlatSpec 
         })
         info(opalJARs.mkString("analyzing the following jars: ", ", ", ""))
         opalJARs.size should not be (0)
-        val project = Project(AllClassFiles(opalJARs), Traversable.empty, true)
+        val project = Project(AllClassFiles(opalJARs), Iterable.empty, true)
 
         analyzeProject("OPAL-SNAPSHOT-08-14-2014", project, 1.5d)
     }
 
     it should ("be useable to perform an abstract interpretation of OPAL-SNAPSHOT-0.3.jar") in {
         val classFiles = TestResources.locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-        val project = Project(reader.ClassFiles(classFiles), Traversable.empty, true)
+        val project = Project(reader.ClassFiles(classFiles), Iterable.empty, true)
 
         analyzeProject("OPAL-0.3", project, 2.5d)
     }

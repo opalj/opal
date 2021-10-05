@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import org.opalj.collection.immutable.UIDSet
 import scala.language.implicitConversions
 import org.opalj.log.GlobalLogContext
-
+import scala.collection.Iterable
 /**
  * @author Tobias Becker
  */
@@ -19,7 +19,7 @@ class JoinUpperBoundsTest extends AnyFunSpec with Matchers {
 
     val classhierachy =
         ClassHierarchy(
-            Traversable.empty,
+            Iterable.empty,
             List(() => this.getClass.getResourceAsStream("ClassHierarchyUpperBounds.ths"))
         )(GlobalLogContext)
 

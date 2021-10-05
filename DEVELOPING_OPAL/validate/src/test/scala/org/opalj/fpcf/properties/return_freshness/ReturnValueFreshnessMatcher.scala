@@ -7,7 +7,7 @@ import org.opalj.br.AnnotationLike
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
-
+import scala.collection.Iterable
 /**
  * A property matcher that checks whether the annotated method has the specified return value
  * freshness property.
@@ -28,7 +28,7 @@ class ReturnValueFreshnessMatcher(val property: ReturnValueFreshness) extends Ab
      *         why the analysis failed.
      */
     override def validateProperty(
-        p: Project[_], as: Set[ObjectType], entity: scala.Any, a: AnnotationLike, properties: Traversable[Property]
+        p: Project[_], as: Set[ObjectType], entity: scala.Any, a: AnnotationLike, properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case `property` => true

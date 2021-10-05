@@ -29,7 +29,7 @@ import org.opalj.tac.Stmt
 import org.opalj.tac.Checkcast
 import org.opalj.tac.ExprStmt
 import org.opalj.tac.InvokedynamicFunctionCall
-
+import scala.collection.Iterable
 /**
  * Groups test case features that perform serialization.
  *
@@ -77,7 +77,7 @@ class Serialization(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         implicit val locations: Array[LocationsContainer[S]] =

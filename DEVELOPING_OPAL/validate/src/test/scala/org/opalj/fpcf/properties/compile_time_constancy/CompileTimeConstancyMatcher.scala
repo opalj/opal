@@ -10,7 +10,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.CompileTimeConstancy
 import org.opalj.br.fpcf.properties.CompileTimeConstantField
 import org.opalj.br.fpcf.properties.CompileTimeVaryingField
-
+import scala.collection.Iterable
 /**
  * Base trait for matchers that match a field's `CompileTimeConstancy` property.
  *
@@ -26,7 +26,7 @@ sealed abstract class CompileTimeConstancyMatcher(
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists(_ match {
             case `property` => true

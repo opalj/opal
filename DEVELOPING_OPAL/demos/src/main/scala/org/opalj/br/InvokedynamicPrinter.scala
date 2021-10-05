@@ -6,7 +6,7 @@ import java.net.URL
 import java.io.File
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import com.typesafe.config.Config
 

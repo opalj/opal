@@ -355,7 +355,7 @@ object EagerL0PurityAnalysis
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new L0PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
-        val methodsWithBody = dms.toIterator.collect {
+        val methodsWithBody = dms.iterator.collect {
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined =>
                 dm.asDefinedMethod
         }

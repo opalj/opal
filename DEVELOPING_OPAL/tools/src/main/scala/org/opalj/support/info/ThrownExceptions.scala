@@ -20,7 +20,7 @@ import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.analyses.EagerL1ThrownExceptionsAnalysis
 import org.opalj.br.fpcf.analyses.LazyVirtualMethodThrownExceptionsAnalysis
-
+import scala.collection.Iterable
 /**
  * Prints out the information about the exceptions thrown by methods.
  *
@@ -44,7 +44,7 @@ object ThrownExceptions extends ProjectAnalysisApplication {
             "[-suppressPerMethodReports]"
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         val remainingParameters =
             parameters.filter { p =>
                 p != AnalysisLevelL0 && p != AnalysisLevelL1 && p != SuppressPerMethodReports

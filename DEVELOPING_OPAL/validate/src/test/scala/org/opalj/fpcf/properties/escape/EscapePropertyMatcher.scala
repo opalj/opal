@@ -14,7 +14,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.tac.common.DefinitionSite
-
+import scala.collection.Iterable
 /**
  * A property matcher that checks whether an annotated allocation or parameter has the specified
  * escape property.
@@ -69,7 +69,7 @@ abstract class EscapePropertyMatcher(
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
             case `property` => true

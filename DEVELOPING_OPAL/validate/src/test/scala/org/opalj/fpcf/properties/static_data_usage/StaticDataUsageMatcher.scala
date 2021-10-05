@@ -9,7 +9,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties
 import org.opalj.br.fpcf.properties.StaticDataUsage
-
+import scala.collection.Iterable
 /**
  * Base trait for matchers that match a method's `StaticDataUsage` property.
  *
@@ -23,7 +23,7 @@ sealed abstract class StaticDataUsageMatcher(val property: StaticDataUsage)
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists(_ match {
             case `property` => true

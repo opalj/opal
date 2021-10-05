@@ -29,8 +29,8 @@ final class RefAccumulator[A <: AnyRef] private (
         is match {
             case it: Iterator[A] =>
                 if (it.hasNext) data ::= it
-            case is /*not a traversable once...*/ =>
-                if (is.nonEmpty) data ::= is.toIterator
+            case is /*not a iterable once...*/ =>
+                if (is.nonEmpty) data ::= is.iterator
         }
     }
 

@@ -8,7 +8,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
-
+import scala.collection.Iterable
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on class
  * hierarchy analysis (CHA).
@@ -24,7 +24,7 @@ object CHACallGraphKey extends AbstractCallGraphKey {
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         List(CHACallGraphAnalysisScheduler)
     }
 

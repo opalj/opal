@@ -49,7 +49,7 @@ import org.opalj.tac.NonVirtualFunctionCall
 import org.opalj.tac.Call
 import org.opalj.tac.New
 import org.opalj.tac.TACMethodParameter
-
+import scala.collection.Iterable
 /**
  * Groups features that use the java reflection API.
  *
@@ -108,7 +108,7 @@ class Reflection(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         implicit val locations: Array[LocationsContainer[S]] =
