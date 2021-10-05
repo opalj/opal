@@ -40,7 +40,7 @@ class DeclaredMethods(
         name:         String,
         descriptor:   MethodDescriptor
     ): DeclaredMethod = {
-        val dmSet = data.computeIfAbsent(runtimeType, _ ⇒ new ConcurrentHashMap)
+        val dmSet = data.computeIfAbsent(runtimeType, _ => new ConcurrentHashMap)
 
         val context = new MethodContextQuery(p, declaredType, packageName, name, descriptor)
         var method = dmSet.get(context)
@@ -122,7 +122,7 @@ class DeclaredMethods(
     }
 
     def declaredMethods: Iterator[DeclaredMethod] = {
-        import scala.collection.JavaConverters._
+        import scala.jdk.CollectionConverters._
         // Thread-safe as .values() creates a view of the current state
         data.values().asScala.iterator.flatMap { _.values().asScala }
     }

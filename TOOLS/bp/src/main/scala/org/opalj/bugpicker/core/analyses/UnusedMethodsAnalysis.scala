@@ -60,7 +60,7 @@ object UnusedMethodsAnalysis {
             val classFile = method.classFile
 
             import method.{isConstructor, isPrivate, actualArgumentsCount, descriptor, name}
-            import descriptor.{returnType, parametersCount ⇒ declaredParametersCount}
+            import descriptor.{returnType, parametersCount => declaredParametersCount}
 
             //
             // Let's handle some technical artifacts related methods...
@@ -112,7 +112,7 @@ object UnusedMethodsAnalysis {
             val body = method.body.get
             val instructions = body.instructions
             def justThrowsException: Boolean = {
-                !body.exists { (pc, i) ⇒ /* <= it just throws exceptions */
+                !body.exists { (pc, i) => /* <= it just throws exceptions */
                     i.isReturnInstruction
                 }
             }
@@ -133,8 +133,8 @@ object UnusedMethodsAnalysis {
         def unusedMethodOrConstructor: String = {
             def access(flags: Int): String =
                 VisibilityModifier.get(flags) match {
-                    case Some(visiblity) ⇒ visiblity.javaName.get
-                    case _               ⇒ "/*default*/"
+                    case Some(visiblity) => visiblity.javaName.get
+                    case _               => "/*default*/"
                 }
 
             val isConstructor = method.isConstructor

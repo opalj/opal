@@ -40,7 +40,7 @@ import org.opalj.br.ObjectType
  * @author Michael Eichberg
  */
 trait NullPropertyRefinement extends CoreDomainFunctionality {
-    domain: ReferenceValuesDomain with Origin ⇒
+    domain: ReferenceValuesDomain with Origin =>
 
     abstract override def afterEvaluation(
         pc:                       Int,
@@ -70,7 +70,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                     (utb.head eq ObjectType.NullPointerException) && {
                         val origins = originsIterator(exception)
                         origins.nonEmpty && {
-                            val origin = origins.next
+                            val origin = origins.next()
                             isImmediateVMException(origin) && pcOfImmediateVMException(origin) == pc &&
                                 !origins.hasNext
                         }
@@ -105,7 +105,7 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                 | IALOAD.opcode
                 | LALOAD.opcode
                 | FALOAD.opcode
-                | DALOAD.opcode ⇒
+                | DALOAD.opcode =>
                 val arrayRef = oldOperands(1)
                 establishNullProperty(arrayRef)
 
@@ -116,33 +116,33 @@ trait NullPropertyRefinement extends CoreDomainFunctionality {
                 | IASTORE.opcode
                 | LASTORE.opcode
                 | FASTORE.opcode
-                | DASTORE.opcode ⇒
+                | DASTORE.opcode =>
                 val arrayRef = oldOperands(2)
                 establishNullProperty(arrayRef)
 
-            case ARRAYLENGTH.opcode ⇒
+            case ARRAYLENGTH.opcode =>
                 val arrayRef = oldOperands.head
                 establishNullProperty(arrayRef)
 
-            case MONITORENTER.opcode /* not necessary: | MONITOREXIT.opcode (every monitorexit is preceeded by a monitorenter) */ ⇒
+            case MONITORENTER.opcode /* not necessary: | MONITOREXIT.opcode (every monitorexit is preceeded by a monitorenter) */ =>
                 val monitor = oldOperands.head
                 establishNullProperty(monitor)
 
-            case GETFIELD.opcode ⇒
+            case GETFIELD.opcode =>
                 val objectRef = oldOperands.head
                 establishNullProperty(objectRef)
 
-            case PUTFIELD.opcode ⇒
+            case PUTFIELD.opcode =>
                 val objectRef = oldOperands.tail.head
                 establishNullProperty(objectRef)
 
             // THE RECEIVER OF AN INVOKESPECIAL IS ALWAYS "THIS" AND, HENCE, IS IRRELEVANT!
-            case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode ⇒
+            case INVOKEVIRTUAL.opcode | INVOKEINTERFACE.opcode =>
                 val invoke = instruction.asInstanceOf[VirtualMethodInvocationInstruction]
                 val receiver = oldOperands(invoke.methodDescriptor.parametersCount)
                 establishNullProperty(receiver)
 
-            case _ ⇒
+            case _ =>
                 default()
         }
     }

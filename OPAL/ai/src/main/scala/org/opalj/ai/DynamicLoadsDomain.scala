@@ -10,7 +10,7 @@ import org.opalj.br.FieldType
  *
  * @author Dominik Helm
  */
-trait DynamicLoadsDomain { this: ValuesDomain ⇒
+trait DynamicLoadsDomain { this: ValuesDomain =>
 
     /**
      * Returns the dynamic constant's value.

@@ -10,7 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.opalj.log.GlobalLogContext
 import org.opalj.br.analyses.Project
-
+import scala.collection.Iterable
 /**
  * Basic tests of the TypesSet class.
  *
@@ -23,14 +23,14 @@ class TypesSetTest extends AnyFlatSpec with Matchers {
     // Setup
     //
     val jlsCHFile = "ClassHierarchyJLS.ths"
-    val jlsCHCreator = List(() ⇒ classOf[Project[_]].getResourceAsStream(jlsCHFile))
-    val jlsCH = ClassHierarchy(Traversable.empty, jlsCHCreator)(GlobalLogContext)
+    val jlsCHCreator = List(() => classOf[Project[_]].getResourceAsStream(jlsCHFile))
+    val jlsCH = ClassHierarchy(Iterable.empty, jlsCHCreator)(GlobalLogContext)
 
     val preInitCH = ClassHierarchy.PreInitializedClassHierarchy
 
     val javaLangCHFile = "JavaLangClassHierarchy.ths"
-    val javaLangCHCreator = List(() ⇒ classOf[Project[_]].getResourceAsStream(javaLangCHFile))
-    val javaLangCH = ClassHierarchy(Traversable.empty, javaLangCHCreator)(GlobalLogContext)
+    val javaLangCHCreator = List(() => classOf[Project[_]].getResourceAsStream(javaLangCHFile))
+    val javaLangCH = ClassHierarchy(Iterable.empty, javaLangCHCreator)(GlobalLogContext)
 
     val Object = ObjectType.Object
     val Class = ObjectType.Class

@@ -14,8 +14,8 @@ import scala.xml.Node
 trait ParametersAnnotations_attribute extends Attribute {
 
     final override def attribute_length: Int = {
-        parameters_annotations.foldLeft(1 /*num_parameters*/ ) { (c, n) ⇒
-            c + n.foldLeft(2 /*num_annotations*/ )((c, n) ⇒ c + n.attribute_length)
+        parameters_annotations.foldLeft(1 /*num_parameters*/ ) { (c, n) =>
+            c + n.foldLeft(2 /*num_annotations*/ )((c, n) => c + n.attribute_length)
         }
     }
 
@@ -24,8 +24,8 @@ trait ParametersAnnotations_attribute extends Attribute {
     def parametersAnnotationstoXHTML(implicit cp: Constant_Pool): Node = {
         val ans = {
             for { // TODO This doesn't make sense: it is no longer possible to distinguish parameters
-                (perParameterAnnotations, parameterIndex) ← parameters_annotations.zipWithIndex
-                annotation ← perParameterAnnotations
+                (perParameterAnnotations, parameterIndex) <- parameters_annotations.zipWithIndex
+                annotation <- perParameterAnnotations
             } yield annotation.toXHTML(cp)
         }
 

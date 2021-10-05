@@ -12,6 +12,7 @@ import java.util.zip.GZIPOutputStream
 
 import scala.io.Source
 import scala.xml.Node
+import scala.compat._
 
 /**
  * Various io-related helper methods and classes.
@@ -81,7 +82,7 @@ package object io {
      *      try {
      *          util.writeAndOpen("The Message", "Result", ".txt")
      *      } catch {
-     *          case OpeningFileFailedException(file, _) ⇒
+     *          case OpeningFileFailedException(file, _) =>
      *              Console.err.println("Details can be found in: "+file.toString)
      *      }}}
      */
@@ -101,7 +102,7 @@ package object io {
         try {
             Desktop.getDesktop.open(file)
         } catch {
-            case t: Throwable ⇒ throw OpeningFileFailedException(file, t)
+            case t: Throwable => throw OpeningFileFailedException(file, t)
         }
     }
 
@@ -115,7 +116,7 @@ package object io {
     }
 
     def write(
-        data:           TraversableOnce[String],
+        data:           IterableOnce[String],
         filenamePrefix: String,
         filenameSuffix: String
     ): Path = {
@@ -138,7 +139,7 @@ package object io {
     }
 
     def writeGZip(
-        data:           TraversableOnce[String],
+        data:           IterableOnce[String],
         filenamePrefix: String,
         filenameSuffix: String
     ): Path = {
@@ -156,7 +157,7 @@ package object io {
      */
     def write(data: Array[Byte], path: Path): Unit = Files.write(path, data)
 
-    def write(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
+    def write(data: IterableOnce[Array[Byte]], path: Path): Unit = {
         val out = new FileOutputStream(path.toFile)
         try {
             data.foreach(out.write)
@@ -169,7 +170,7 @@ package object io {
         writeGZip(Seq(data), path)
     }
 
-    def writeGZip(data: TraversableOnce[Array[Byte]], path: Path): Unit = {
+    def writeGZip(data: IterableOnce[Array[Byte]], path: Path): Unit = {
         val out = new GZIPOutputStream(new FileOutputStream(path.toFile))
         try {
             data.foreach(out.write)
@@ -190,7 +191,7 @@ package object io {
      * @param closable The `Closeable` resource.
      * @param r The function that processes the `resource`.
      */
-    def process[C <: Closeable, T](closable: C)(r: C ⇒ T): T = {
+    def process[C <: Closeable, T](closable: C)(r: C => T): T = {
         // Implementation Note
         // Creating the closeable (I) in the try block doesn't make sense, hence
         // we don't need a by-name parameter. (If creating the closable fails,
@@ -211,7 +212,7 @@ package object io {
      *
      * @note If `source` is `null`, `null` is passed to `r`.
      */
-    def processSource[C <: Source, T](source: C)(r: C ⇒ T): T = {
+    def processSource[C <: Source, T](source: C)(r: C => T): T = {
         try {
             r(source)
         } finally {

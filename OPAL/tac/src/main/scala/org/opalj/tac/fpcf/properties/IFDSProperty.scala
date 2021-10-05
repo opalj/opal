@@ -24,12 +24,12 @@ abstract class IFDSProperty[DataFlowFact]
     def flows: Map[Statement, Set[DataFlowFact]]
 
     override def equals(other: Any): Boolean = other match {
-        case that: IFDSProperty[DataFlowFact] ⇒
+        case that: IFDSProperty[DataFlowFact] =>
             // We cached the "hashCode" to make the following comparison more efficient;
             // note that all properties are eventually added to some set and therefore
             // the hashCode is required anyway!
             (this eq that) || (this.hashCode == that.hashCode && this.flows == that.flows)
-        case _ ⇒
+        case _ =>
             false
     }
 

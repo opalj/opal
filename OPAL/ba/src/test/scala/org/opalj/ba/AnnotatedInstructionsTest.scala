@@ -31,10 +31,10 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
             methods = METHODS(
                 METHOD(PUBLIC, "<init>", "()V", CODE(
                     'UnUsedLabel1,
-                    ALOAD_0 → "MarkerAnnotation1",
+                    ALOAD_0 -> "MarkerAnnotation1",
                     'UnUsedLabel2,
                     INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                    RETURN → "MarkerAnnotation2"
+                    RETURN -> "MarkerAnnotation2"
                 ))
             )
         )
@@ -53,7 +53,7 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
 
         "[String Annotated Instructions] the generated class" should "load correctly" in {
             val loader = new InMemoryClassLoader(
-                Map("Test" → Assembler(daClassFile)), this.getClass.getClassLoader
+                Map("Test" -> Assembler(daClassFile)), this.getClass.getClassLoader
             )
             assert("Test" == loader.loadClass("Test").getSimpleName)
         }
@@ -77,10 +77,10 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
                 methods = METHODS(
                     METHOD(PUBLIC, "<init>", "()V", CODE(
                         'UnUsedLabel1,
-                        ALOAD_0 → (('L1, "MarkerAnnotation1")),
+                        ALOAD_0 -> (('L1, "MarkerAnnotation1")),
                         'UnUsedLabel2,
                         INVOKESPECIAL("java/lang/Object", false, "<init>", "()V"),
-                        RETURN → (('L2, "MarkerAnnotation2"))
+                        RETURN -> (('L2, "MarkerAnnotation2"))
                     ))
                 )
             ).toDA()
@@ -93,7 +93,7 @@ class AnnotatedInstructionsTest extends AnyFlatSpec {
 
         "[Tuple Annotated Instructions] the generated class" should "load correctly" in {
             val loader = new InMemoryClassLoader(
-                Map("Test" → Assembler(daClassFile)), this.getClass.getClassLoader
+                Map("Test" -> Assembler(daClassFile)), this.getClass.getClassLoader
             )
             assert("Test" == loader.loadClass("Test").getSimpleName)
         }

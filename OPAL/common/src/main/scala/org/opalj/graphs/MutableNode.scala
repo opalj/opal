@@ -22,7 +22,7 @@ trait MutableNode[I, N <: Node] extends Node {
 
     def updateIdentifier(newIdentifier: I): Unit
 
-    def identifierToString: I ⇒ String
+    def identifierToString: I => String
 
     def mergeVisualProperties(other: Map[String, String]): Unit
 

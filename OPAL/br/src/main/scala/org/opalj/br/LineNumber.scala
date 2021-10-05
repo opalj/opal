@@ -8,7 +8,7 @@ package org.opalj.br
  */
 case class LineNumber(startPC: PC, lineNumber: Int) {
 
-    def remapPCs(codeSize: Int, f: PC ⇒ PC): Option[LineNumber] = {
+    def remapPCs(codeSize: Int, f: PC => PC): Option[LineNumber] = {
         val newStartPC = f(startPC)
         if (newStartPC < codeSize)
             Some(LineNumber(newStartPC, lineNumber))

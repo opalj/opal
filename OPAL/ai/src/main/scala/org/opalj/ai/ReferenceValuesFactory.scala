@@ -13,7 +13,7 @@ import org.opalj.br.MethodHandle
  *
  * @author Michael Eichberg
  */
-trait ReferenceValuesFactory extends ExceptionsFactory { domain ⇒
+trait ReferenceValuesFactory extends ExceptionsFactory { domain =>
 
     /**
      * Factory method to create a `DomainValue` that represents value `null` and

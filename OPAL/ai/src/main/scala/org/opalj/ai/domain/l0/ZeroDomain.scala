@@ -25,6 +25,6 @@ trait ZeroDomain
     with DefaultHandlingOfMethodResults
     with IgnoreSynchronization
     with TheProject
-    with TheCode { domain: Configuration ⇒
+    with TheCode { domain: Configuration =>
 
 }

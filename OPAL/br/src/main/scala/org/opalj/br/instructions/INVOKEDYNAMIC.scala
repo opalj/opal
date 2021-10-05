@@ -23,7 +23,7 @@ trait INVOKEDYNAMIC extends InvocationInstruction {
 
     final def isInstanceMethod: Boolean = false
 
-    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = {
+    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = {
         methodDescriptor.parametersCount
     }
 

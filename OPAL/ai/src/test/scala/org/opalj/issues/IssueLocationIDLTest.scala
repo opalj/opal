@@ -32,9 +32,9 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         )
 
         packageLocation.toIDL should be(Json.obj(
-            "description" → "bar",
-            "location" → Json.obj("package" → "baz"),
-            "details" → Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
+            "description" -> "bar",
+            "location" -> Json.obj("package" -> "baz"),
+            "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
         ))
     }
 
@@ -42,12 +42,12 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         val classLocation = new ClassLocation(Option("baz"), null, classFile)
 
         classLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL
             ),
-            "details" → Json.arr()
+            "details" -> Json.arr()
         ))
     }
 
@@ -57,12 +57,12 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         )
 
         classLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL
             ),
-            "details" → Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
+            "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
         ))
     }
 
@@ -70,13 +70,13 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         val methodLocation = new MethodLocation(Option("baz"), null, methodReturnVoidNoParameters)
 
         methodLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL,
-                "method" → methodReturnVoidNoParametersIDL
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL,
+                "method" -> methodReturnVoidNoParametersIDL
             ),
-            "details" → Json.arr()
+            "details" -> Json.arr()
         ))
     }
 
@@ -84,13 +84,13 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         val methodLocation = new MethodLocation(Option("baz"), null, methodReturnIntTwoParameters)
 
         methodLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL,
-                "method" → methodReturnIntTwoParametersIDL
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL,
+                "method" -> methodReturnIntTwoParametersIDL
             ),
-            "details" → Json.arr()
+            "details" -> Json.arr()
         ))
     }
 
@@ -98,25 +98,25 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         val methodLocation = new MethodLocation(Option("baz"), null, methodReturnIntOneParameter)
 
         methodLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL,
-                "method" → Json.obj(
-                    "accessFlags" → "public static",
-                    "name" → "test1p",
-                    "returnType" → Json.obj(
-                        "bt" → "int"
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL,
+                "method" -> Json.obj(
+                    "accessFlags" -> "public static",
+                    "name" -> "test1p",
+                    "returnType" -> Json.obj(
+                        "bt" -> "int"
                     ),
-                    "parameters" → Json.arr(Json.obj(
-                        "ot" → "foo.Bar",
-                        "simpleName" → "Bar"
+                    "parameters" -> Json.arr(Json.obj(
+                        "ot" -> "foo.Bar",
+                        "simpleName" -> "Bar"
                     )),
-                    "signature" → "test1p(Lfoo/Bar;)I",
-                    "firstLine" → JsNull
+                    "signature" -> "test1p(Lfoo/Bar;)I",
+                    "firstLine" -> JsNull
                 )
             ),
-            "details" → Json.arr()
+            "details" -> Json.arr()
         ))
     }
 
@@ -129,13 +129,13 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         )
 
         methodLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL,
-                "method" → methodReturnIntTwoParametersIDL
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL,
+                "method" -> methodReturnIntTwoParametersIDL
             ),
-            "details" → Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
+            "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
         ))
     }
 
@@ -145,14 +145,14 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         )
 
         instructionLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL,
-                "method" → methodReturnVoidNoParametersIDL,
-                "instruction" → Json.obj("pc" → 42)
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL,
+                "method" -> methodReturnVoidNoParametersIDL,
+                "instruction" -> Json.obj("pc" -> 42)
             ),
-            "details" → Json.arr()
+            "details" -> Json.arr()
         ))
     }
 
@@ -162,14 +162,14 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         )
 
         instructionLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL,
-                "method" → methodReturnIntTwoParametersIDL,
-                "instruction" → Json.obj("pc" → 42, "line" → 10)
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL,
+                "method" -> methodReturnIntTwoParametersIDL,
+                "instruction" -> Json.obj("pc" -> 42, "line" -> 10)
             ),
-            "details" → Json.arr()
+            "details" -> Json.arr()
         ))
     }
 
@@ -183,14 +183,14 @@ class IssueLocationIDLTest extends AnyFlatSpec with Matchers {
         )
 
         instructionLocation.toIDL should be(Json.obj(
-            "description" → "baz",
-            "location" → Json.obj(
-                "package" → "foo",
-                "class" → classFileIDL,
-                "method" → methodReturnIntTwoParametersIDL,
-                "instruction" → Json.obj("pc" → 42, "line" → 10)
+            "description" -> "baz",
+            "location" -> Json.obj(
+                "package" -> "foo",
+                "class" -> classFileIDL,
+                "method" -> methodReturnIntTwoParametersIDL,
+                "instruction" -> Json.obj("pc" -> 42, "line" -> 10)
             ),
-            "details" → Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
+            "details" -> Json.arr(simpleOperandsIDL, simpleLocalVariablesIDL)
         ))
     }
 }

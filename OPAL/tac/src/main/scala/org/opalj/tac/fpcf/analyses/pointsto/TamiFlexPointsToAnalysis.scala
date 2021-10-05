@@ -47,7 +47,7 @@ import org.opalj.tac.fpcf.properties.TheTACAI
  */
 abstract class TamiFlexPointsToAnalysis private[analyses] (
         final val project: SomeProject
-) extends PointsToAnalysisBase { self ⇒
+) extends PointsToAnalysisBase { self =>
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
         override protected[this] type ElementType = self.ElementType
@@ -73,7 +73,7 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
         @inline override protected[this] def currentPointsTo(
             depender:   DependerType,
             dependee:   Entity,
-            typeFilter: ReferenceType ⇒ Boolean
+            typeFilter: ReferenceType => Boolean
         )(implicit state: State): PointsToSet = {
             self.currentPointsTo(depender, dependee, typeFilter)
         }
@@ -192,7 +192,7 @@ abstract class TamiFlexPointsToAnalysis private[analyses] (
 trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     val propertyKind: PropertyMetaInformation
-    val createAnalysis: SomeProject ⇒ TamiFlexPointsToAnalysis
+    val createAnalysis: SomeProject => TamiFlexPointsToAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TamiFlexKey)
@@ -213,14 +213,14 @@ trait TamiFlexPointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler 
 
 object TypeBasedTamiFlexPointsToAnalysisScheduler extends TamiFlexPointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
-    override val createAnalysis: SomeProject ⇒ TamiFlexPointsToAnalysis =
+    override val createAnalysis: SomeProject => TamiFlexPointsToAnalysis =
         new TamiFlexPointsToAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
     extends TamiFlexPointsToAnalysisScheduler {
     override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
-    override val createAnalysis: SomeProject ⇒ TamiFlexPointsToAnalysis =
+    override val createAnalysis: SomeProject => TamiFlexPointsToAnalysis =
         new TamiFlexPointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }
 
@@ -255,7 +255,7 @@ abstract class TamiFlexPointsToArrayGetAnalysis( final val project: SomeProject)
 
             val line = caller.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
             val arrays = tamiFlexLogData.classes(caller, "Array.get*", line)
-            for (array ← arrays) {
+            for (array <- arrays) {
                 handleArrayLoad(array.asArrayType, pc, theArray.get.asVar.definedBy)
             }
 
@@ -298,7 +298,7 @@ abstract class TamiFlexPointsToArraySetAnalysis( final val project: SomeProject)
 
             val line = caller.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
             val arrays = tamiFlexLogData.classes(caller, "Array.set*", line)
-            for (array ← arrays) {
+            for (array <- arrays) {
                 handleArrayStore(
                     array.asArrayType, theArray.get.asVar.definedBy, storeVal.get.asVar.definedBy
                 )
@@ -329,7 +329,7 @@ abstract class TamiFlexPointsToNewInstanceAnalysis(
         val line = caller.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
         val allocatedTypes = tamiFlexLogData.classes(caller, key, line)
         val defSite = definitionSites(caller.definedMethod, pc)
-        for (allocatedType ← allocatedTypes)
+        for (allocatedType <- allocatedTypes)
             state.includeSharedPointsToSet(
                 defSite,
                 createPointsToSet(pc, caller, allocatedType, isConstant = false)
@@ -361,11 +361,11 @@ abstract class TamiFlexPointsToClassGetMemberAnalysis(
 
         val line = caller.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
         val members = memberType match {
-            case ObjectType.Class ⇒
+            case ObjectType.Class =>
                 tamiFlexLogData.classes(caller, s"Class.$method", line)
-            case TamiFlexPointsToAnalysis.FieldT ⇒
+            case TamiFlexPointsToAnalysis.FieldT =>
                 tamiFlexLogData.fields(caller, s"Class.$method", line)
-            case TamiFlexPointsToAnalysis.MethodT | TamiFlexPointsToAnalysis.ConstructorT ⇒
+            case TamiFlexPointsToAnalysis.MethodT | TamiFlexPointsToAnalysis.ConstructorT =>
                 tamiFlexLogData.methods(caller, s"Class.$method", line)
         }
         if (members.nonEmpty) {
@@ -454,7 +454,7 @@ abstract class TamiFlexPointsToFieldGetAnalysis( final val project: SomeProject)
 
         val line = caller.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
         val fields = tamiFlexLogData.fields(state.method, "Field.get*", line)
-        for (field ← fields) {
+        for (field <- fields) {
             if (field.isStatic) {
                 handleGetStatic(field, pc)
             } else if (theObject.isDefined) {
@@ -498,7 +498,7 @@ abstract class TamiFlexPointsToFieldSetAnalysis( final val project: SomeProject)
 
             val line = caller.definedMethod.body.get.lineNumber(pc).getOrElse(-1)
             val fields = tamiFlexLogData.fields(state.method, "Field.set*", line)
-            for (field ← fields) {
+            for (field <- fields) {
                 if (field.isStatic) {
                     handlePutStatic(field, storeVal.get.asVar.definedBy)
                 } else if (theObject.isDefined) {

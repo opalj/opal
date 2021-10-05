@@ -38,8 +38,8 @@ final class VirtualFormalParameter(val method: DeclaredMethod, val origin: Int) 
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: VirtualFormalParameter ⇒ (this.method == that.method) && this.origin == that.origin
-            case _                            ⇒ false
+            case that: VirtualFormalParameter => (this.method == that.method) && this.origin == that.origin
+            case _                            => false
         }
     }
 

@@ -48,7 +48,7 @@ class SimpleEscapeAnalysisSmokeTest extends AnyFunSpec with Matchers {
 
     describe(s"executing the simple escape analysis should not fail") {
 
-        allBIProjects() foreach { biProject ⇒
+        allBIProjects() foreach { biProject =>
             val (name, projectFactory) = biProject
             it(s"for $name") {
                 val p = projectFactory()

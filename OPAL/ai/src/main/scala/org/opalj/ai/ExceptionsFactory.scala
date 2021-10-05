@@ -9,7 +9,7 @@ package ai
  *
  * @author Michael Eichberg
  */
-trait ExceptionsFactory extends ValuesDomain { domain ⇒
+trait ExceptionsFactory extends ValuesDomain { domain =>
 
     /**
      * Creates a non-null object that represent a `Throwable` object and that has the

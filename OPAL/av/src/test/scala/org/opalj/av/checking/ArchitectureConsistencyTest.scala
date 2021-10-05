@@ -26,7 +26,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
     val project = ClassFiles(locateTestResources("classfiles/mathematics.jar", "av"))
 
     def testEnsemblesAreNonEmpty(specification: Specification): Unit = {
-        specification.ensembles.foreach { e ⇒
+        specification.ensembles.foreach { e =>
             val (ensembleID, (matcher, extent)) = e
             if (ensembleID != 'empty && extent.isEmpty)
                 fail(ensembleID+" didn't match any elements ("+matcher+")")
@@ -309,7 +309,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
                         AnnotatedWith("entity.annotation.Id"),
                         AnnotatedWith(
                             "entity.annotation.Column",
-                            "name" → StringValue("id"), "nullable" → BooleanValue(false)
+                            "name" -> StringValue("id"), "nullable" -> BooleanValue(false)
                         )
                     )
                 )
@@ -333,7 +333,7 @@ class ArchitectureConsistencyTest extends AnyFlatSpec with Matchers with BeforeA
                         AnnotatedWith("entity.annotation.Id"),
                         AnnotatedWith(
                             "entity.annotation.Column",
-                            "name" → StringValue("id"), "nullable" → BooleanValue(true)
+                            "name" -> StringValue("id"), "nullable" -> BooleanValue(true)
                         )
                     )
                 )

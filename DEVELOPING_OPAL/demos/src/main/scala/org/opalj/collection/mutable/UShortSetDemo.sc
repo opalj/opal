@@ -64,13 +64,13 @@ object UShortSetDemo {
     try {
         empty + 66666
     } catch {
-        case _: IllegalArgumentException ⇒ "OK"
+        case _: IllegalArgumentException => "OK"
     }                                             //> res29: Object = OK
 
     try {
         empty + -1
     } catch {
-        case _: IllegalArgumentException ⇒ "OK"
+        case _: IllegalArgumentException => "OK"
     }                                             //> res30: Object = OK
 
     UShortSet.create(0, 5, 3, 10, 19, 200, 65, 56, 56, 3, 0).size == 8

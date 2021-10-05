@@ -39,27 +39,27 @@ class SwingMethodInvokedInSwingThread[Source] extends FindRealBugsAnalysis[Sourc
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
         // Look for INVOKEVIRTUAL calls to show/pack/setVisible() methods on javax/swing/
         // objects from inside public static main() or methods containing "benchmark" in
         // their name.
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
             if (method.isPublic &&
                 method.isStatic &&
                 method.name == "main") ||
                 (classFile.thisType.fqn.toLowerCase.indexOf("benchmark") >= 0)
-            (idx, INVOKEVIRTUAL(targetType, name, desc)) ← body.associateWithIndex
+            (idx, INVOKEVIRTUAL(targetType, name, desc)) <- body.associateWithIndex
             if targetType.isObjectType &&
                 targetType.asObjectType.fqn.startsWith("javax/swing/")
             if ((name, desc) match {
-                case ("show" | "pack", MethodDescriptor.NoArgsAndReturnVoid) ⇒ true
+                case ("show" | "pack", MethodDescriptor.NoArgsAndReturnVoid) => true
                 case ("setVisible", MethodDescriptor(IndexedSeq(BooleanType),
-                    VoidType)) ⇒ true
-                case _ ⇒ false
+                    VoidType)) => true
+                case _ => false
             })
         } yield {
             MethodBasedReport(

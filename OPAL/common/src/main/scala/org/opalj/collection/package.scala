@@ -3,7 +3,7 @@ package org.opalj
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.collection.immutable.HashMap
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * ==Design Goals==
@@ -80,12 +80,12 @@ package object collection {
         map: ConcurrentHashMap[K, ConcurrentHashMap[SubK, V]]
     ): Map[K, Map[SubK, V]] = {
 
-        map.entrySet.asScala.foldLeft(HashMap.empty[K, Map[SubK, V]]) { (c, n) ⇒
+        map.entrySet.asScala.foldLeft(HashMap.empty[K, Map[SubK, V]]) { (c, n) =>
             val key = n.getKey
             val values = n.getValue.entrySet.asScala
             val entry = (
                 key,
-                values.foldLeft(HashMap.empty[SubK, V])((c, n) ⇒ c + ((n.getKey, n.getValue)))
+                values.foldLeft(HashMap.empty[SubK, V])((c, n) => c + ((n.getKey, n.getValue)))
             )
             c + entry
         }

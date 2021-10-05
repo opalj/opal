@@ -39,7 +39,7 @@ import org.opalj.ai.fpcf.properties.TheMethodReturnValue
  */
 class LBMethodReturnValuesAnalysis private[analyses] (
         val project: SomeProject
-) extends FPCFAnalysis { analysis ⇒
+) extends FPCFAnalysis { analysis =>
 
     /**
      *  A very basic domain that we use for analyzing the values returned by a method.
@@ -187,7 +187,7 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
         // analysis, we state that the domain that has to be used when computing
         // the AIResult has to use the (partial) domain: RefinedTypeLevelInvokeInstructions.
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey)(
-            i ⇒ i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
+            i => i.getOrElse(Set.empty) + classOf[RefinedTypeLevelInvokeInstructions]
         )
         null
     }
@@ -202,7 +202,7 @@ object EagerLBMethodReturnValuesAnalysis extends BasicFPCFEagerAnalysisScheduler
 
     override def start(p: SomeProject, ps: PropertyStore, unused: Null): FPCFAnalysis = {
         val analysis = new LBMethodReturnValuesAnalysis(p)
-        val methods = p.allMethodsWithBody.iterator.filter { m ⇒
+        val methods = p.allMethodsWithBody.iterator.filter { m =>
             val returnType = m.returnType
             returnType.isObjectType
             // If we enable the following check then we can't refine to null anymore:

@@ -13,20 +13,20 @@ trait CommonAttributes {
     def attributes: Attributes
 
     def runtimeVisibleTypeAnnotations: TypeAnnotations = {
-        attributes collectFirst { case RuntimeVisibleTypeAnnotationTable(vas) ⇒ vas } match {
-            case Some(typeAnnotations) ⇒ typeAnnotations
-            case None                  ⇒ NoTypeAnnotations
+        attributes collectFirst { case RuntimeVisibleTypeAnnotationTable(vas) => vas } match {
+            case Some(typeAnnotations) => typeAnnotations
+            case None                  => NoTypeAnnotations
         }
     }
 
     def runtimeInvisibleTypeAnnotations: TypeAnnotations = {
-        attributes collectFirst { case RuntimeInvisibleTypeAnnotationTable(ias) ⇒ ias } match {
-            case Some(typeAnnotations) ⇒ typeAnnotations
-            case None                  ⇒ NoTypeAnnotations
+        attributes collectFirst { case RuntimeInvisibleTypeAnnotationTable(ias) => ias } match {
+            case Some(typeAnnotations) => typeAnnotations
+            case None                  => NoTypeAnnotations
         }
     }
 
-    final def foreachTypeAnnotation[U](f: TypeAnnotation ⇒ U): Unit = {
+    final def foreachTypeAnnotation[U](f: TypeAnnotation => U): Unit = {
         runtimeVisibleTypeAnnotations.foreach(f)
         runtimeInvisibleTypeAnnotations.foreach(f)
     }
@@ -51,7 +51,7 @@ trait CommonAttributes {
         // Recall that some attributes may be defined multiple times and therefore an easy
         // approach to get a stable sorting is not available.
         // (We have not seen any case of multiple occurences of an attribute in practice so far.)
-        thisAttributes.find { a ⇒ !otherAttributes.exists(o ⇒ a.similar(o, config)) } map { missingAttribute ⇒
+        thisAttributes.find { a => !otherAttributes.exists(o => a.similar(o, config)) } map { missingAttribute =>
             val message = "missing attribute: "+missingAttribute
             return Some((message, thisAttributes, otherAttributes));
         }

@@ -26,8 +26,8 @@ trait DomainBasedFPCFAnalysisScheduler extends FPCFAnalysisScheduler {
         // To get the domain's requirements, we simply instantiate it and query it...
         val domain = p.get(AIDomainFactoryKey).domainFactory(p, p.allMethodsWithBody.head)
         domain match {
-            case d: PropertyStoreBased ⇒ d.usesPropertyBounds
-            case _                     ⇒ Set.empty
+            case d: PropertyStoreBased => d.usesPropertyBounds
+            case _                     => Set.empty
         }
     }
 

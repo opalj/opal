@@ -15,6 +15,7 @@ import org.opalj.fpcf.PropertyKey
 import org.opalj.fpcf.PropertyMetaInformation
 import org.opalj.fpcf.PropertyStore
 import org.opalj.br.analyses.DeclaredMethods
+import scala.compat._
 
 /**
  * For a given [[org.opalj.br.DeclaredMethod]], and for each call site (represented by the PC),
@@ -42,7 +43,7 @@ sealed trait Callers extends OrderedProperty with CallersPropertyMetaInformation
     def callers(
         implicit
         declaredMethods: DeclaredMethods
-    ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )]
+    ): IterableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )]
 
     /**
      * Returns a new callers object, containing all callers of `this` object and a call from
@@ -97,7 +98,7 @@ sealed trait EmptyConcreteCallers extends Callers {
     final override def callers(
         implicit
         declaredMethods: DeclaredMethods
-    ): TraversableOnce[(DeclaredMethod, Int, Boolean)] = {
+    ): IterableOnce[(DeclaredMethod, Int, Boolean)] = {
         Nil
     }
 
@@ -145,8 +146,8 @@ sealed trait CallersImplementation extends Callers {
     final override def callers(
         implicit
         declaredMethods: DeclaredMethods
-    ): TraversableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
-        encodedCallers.iterator.map { encodedPair ⇒
+    ): IterableOnce[(DeclaredMethod, Int /*PC*/ , Boolean /*isDirect*/ )] = {
+        encodedCallers.iterator.map { encodedPair =>
             val (mId, pc, isDirect) = Callers.toMethodPcAndIsDirect(encodedPair)
             (declaredMethods(mId), pc, isDirect)
         }
@@ -246,9 +247,9 @@ object Callers extends CallersPropertyMetaInformation {
         val name = "opalj.CallersProperty"
         PropertyKey.create(
             name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ NoCallers
-                case _ ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => NoCallers
+                case _ =>
                     throw new IllegalStateException(s"analysis required for property: $name")
             }
         )

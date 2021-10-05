@@ -12,7 +12,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.da.ClassFile
-
+import scala.collection.{IterableOnce, Iterable}
 /**
  * A predefined query for finding simple API features. It supports - in particular -
  * features that check for certain API calls. Subclasses are only required to define
@@ -65,8 +65,8 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes
@@ -74,18 +74,18 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
 
         def getClassFileLocation(objectType: ObjectType): Option[ClassFileLocation[S]] = {
             val classFile = project.classFile(objectType)
-            classFile.flatMap { cf ⇒ project.source(cf).map(src ⇒ ClassFileLocation(src, cf)) }
+            classFile.flatMap { cf => project.source(cf).map(src => ClassFileLocation(src, cf)) }
         }
 
         var occurrencesCount = apiFeatures.foldLeft(Map.empty[String, Int])(
-            (result, feature) ⇒ result + ((feature.featureID, 0))
+            (result, feature) => result + ((feature.featureID, 0))
         )
 
         // TODO Use LocationsContainer
         val locations = mutable.Map.empty[String, Chain[Location[S]]]
 
         for {
-            classFeature ← apiFeatures.collect { case ce: ClassExtension ⇒ ce }
+            classFeature <- apiFeatures.collect { case ce: ClassExtension => ce }
             featureID = classFeature.featureID
             subtypes = allSubtypes(classFeature.declClass, reflexive = false).filter(isProjectType)
             size = subtypes.size
@@ -95,9 +95,9 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             occurrencesCount += ((featureID, count))
 
             for {
-                subtype ← subtypes
+                subtype <- subtypes
                 if project.isProjectType(subtype)
-                classFileLocation ← getClassFileLocation(subtype)
+                classFileLocation <- getClassFileLocation(subtype)
             } {
                 locations += ((
                     featureID,
@@ -109,19 +109,19 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
         // Checking method API features
 
         for {
-            cf ← project.allProjectClassFiles
+            cf <- project.allProjectClassFiles
             if !isInterrupted()
-            source ← project.source(cf)
-            m @ MethodWithBody(code) ← cf.methods
-            pcAndInvocation ← code collect { case mii: MethodInvocationInstruction ⇒ mii }
+            source <- project.source(cf)
+            m @ MethodWithBody(code) <- cf.methods
+            pcAndInvocation <- code collect { case mii: MethodInvocationInstruction => mii }
             pc = pcAndInvocation.pc
             mii = pcAndInvocation.value
             declClass = mii.declaringClass
             if declClass.isObjectType
             if apiTypes.contains(declClass.asObjectType)
-            apiFeature ← apiFeatures
+            apiFeature <- apiFeatures
             featureID = apiFeature.featureID
-            APIMethod ← apiFeature.apiMethods
+            APIMethod <- apiFeature.apiMethods
             if APIMethod.matches(mii)
         } {
             val l = InstructionLocation(source, m, pc)
@@ -130,7 +130,7 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
             occurrencesCount = occurrencesCount + ((featureID, count))
         }
 
-        apiFeatures.map { apiFeature ⇒
+        apiFeatures.map { apiFeature =>
             val featureID = apiFeature.featureID
             Feature(
                 featureID,

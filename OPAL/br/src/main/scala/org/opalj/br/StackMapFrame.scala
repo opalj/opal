@@ -53,9 +53,9 @@ object ChopFrame {
 
     def apply(frameType: Int, offsetDelta: Int): ChopFrame = {
         frameType match {
-            case 248 ⇒ new ChopFrame248(offsetDelta)
-            case 249 ⇒ new ChopFrame249(offsetDelta)
-            case 250 ⇒ new ChopFrame250(offsetDelta)
+            case 248 => new ChopFrame248(offsetDelta)
+            case 249 => new ChopFrame249(offsetDelta)
+            case 250 => new ChopFrame250(offsetDelta)
         }
     }
 

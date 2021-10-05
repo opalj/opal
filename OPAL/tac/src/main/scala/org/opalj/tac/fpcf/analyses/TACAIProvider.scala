@@ -38,7 +38,7 @@ class TACAIProvider private[analyses] (val project: SomeProject) extends FPCFAna
     final implicit val aiFactory: ProjectSpecificAIExecutor = project.get(AIDomainFactoryKey)
 
     def computeTAC(e: Entity): ProperPropertyComputationResult = e match {
-        case m: Method ⇒
+        case m: Method =>
             val aiResult = L0BaseAIResultAnalysis.performAI(m)
             Result(FinalEP(m, computeTheTACAI(m, aiResult, detachFromAIResult = true)))
     }

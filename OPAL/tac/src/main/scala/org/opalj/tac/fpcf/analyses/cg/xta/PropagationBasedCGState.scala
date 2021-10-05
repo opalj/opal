@@ -15,10 +15,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
-
+import scala.collection.IterableOnce
 import scala.collection.mutable
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * Manages the state of each method analyzed by [[PropagationBasedCallGraphAnalysis]].
@@ -33,7 +33,7 @@ class PropagationBasedCGState(
 
     private[this] val _instantiatedTypesDependeeMap = new java.util.HashMap[TypeSetEntity, EOptionP[TypeSetEntity, InstantiatedTypes]]()
 
-    for (dependee ← _instantiatedTypesDependees) {
+    for (dependee <- _instantiatedTypesDependees) {
         _instantiatedTypesDependeeMap.put(dependee.e, dependee)
     }
 
@@ -60,12 +60,12 @@ class PropagationBasedCGState(
     }
 
     def instantiatedTypesContains(tpe: ReferenceType): Boolean = {
-        _instantiatedTypesDependeeMap.values().iterator().asScala.exists { eOptP ⇒
+        _instantiatedTypesDependeeMap.values().iterator().asScala.exists { eOptP =>
             instantiatedTypes(eOptP.e).contains(tpe)
         }
     }
 
-    def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
+    def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): IterableOnce[ReferenceType] = {
         val typeDependee = _instantiatedTypesDependeeMap.get(typeSetEntity)
         if (typeDependee.hasUBP) {
             typeDependee.ub.dropOldest(seenTypes)
@@ -87,7 +87,7 @@ class PropagationBasedCGState(
         if (oldValOpt.isDefined)
             oldValOpt.get += callSite
         else {
-            _virtualCallSites += (typeId → mutable.Set(callSite))
+            _virtualCallSites += (typeId -> mutable.Set(callSite))
         }
     }
 

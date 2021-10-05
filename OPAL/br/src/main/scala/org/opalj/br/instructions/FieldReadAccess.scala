@@ -10,7 +10,7 @@ package instructions
  */
 abstract class FieldReadAccess extends FieldAccess {
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def expressionResult: Stack.type = Stack
 }

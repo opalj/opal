@@ -26,7 +26,7 @@ case class UnpackedLineNumberTable(lineNumbers: LineNumbers) extends LineNumberT
         var lastLineNumber: LineNumber = null
         breakable {
             while (lnsIterator.hasNext) {
-                val currentLineNumber = lnsIterator.next()
+                val currentLineNumber = lnsIterator()
                 if (currentLineNumber.startPC <= pc) {
                     lastLineNumber = currentLineNumber
                 } else {

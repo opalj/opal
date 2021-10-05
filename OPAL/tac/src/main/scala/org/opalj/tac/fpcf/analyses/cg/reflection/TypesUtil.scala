@@ -25,7 +25,7 @@ object TypesUtil {
         project:   SomeProject
     ): Option[Set[ObjectType]] = {
         val classNamesOpt = StringUtil.getPossibleStrings(className, pc, stmts)
-        classNamesOpt.map(_.map(cls ⇒
+        classNamesOpt.map(_.map(cls =>
             ObjectType(cls.replace('.', '/'))).filter(project.classFile(_).isDefined))
     }
 
@@ -126,7 +126,7 @@ object TypesUtil {
         val value = uvar.value.asReferenceValue
         if (value.isPrecise) value.leastUpperType.map(Iterator(_))
         else if (value.allValues.forall(_.isPrecise))
-            Some(value.allValues.toIterator.flatMap(_.leastUpperType))
+            Some(value.allValues.iterator.flatMap(_.leastUpperType))
         else {
             None
         }

@@ -10,7 +10,7 @@ import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
 import org.opalj.br.analyses.Project
 import org.opalj.collection.immutable.RefArray
-
+import scala.collection.Iterable
 /**
  * Tests that type annotations can be read.
  *
@@ -58,7 +58,7 @@ private object TypeAnnotationsTest {
 
     val project = {
         val testResources = locateTestResources("type_annotations.jar", "bi")
-        Project(ClassFiles(testResources), Traversable.empty, true)
+        Project(ClassFiles(testResources), Iterable.empty, true)
     }
 
     //Classfile /Users/Michael/Code/OPAL/core/bin/type_annotations/RITypeAnnotationUser.class

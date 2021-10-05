@@ -21,7 +21,7 @@ import org.opalj.ai.util.XHTML
 import org.opalj.ai.domain
 import org.opalj.ai.Domain
 import org.opalj.ai.InstructionCountBoundedAI
-
+import scala.collection.Iterable
 /**
  * Performs an abstract interpretation of all methods of the given class file(s) using
  * a configurable domain.
@@ -36,26 +36,26 @@ object InterpretMethods extends AnalysisApplication {
         "[-domain=<Class of the domain that should be used for the abstract interpretation>]\n"+
             "[-verbose={true,false} If true, extensive information is shown.]\n"
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         def isDomainParameter(parameter: String) =
             parameter.startsWith("-domain=") && parameter.length() > 8
         def isVerbose(parameter: String) =
             parameter == "-verbose=true" || parameter == "-verbose=false"
 
         parameters match {
-            case Nil ⇒ Traversable.empty
-            case Seq(parameter) ⇒
+            case Nil => Iterable.empty
+            case Seq(parameter) =>
                 if (isDomainParameter(parameter) || isVerbose(parameter))
-                    Traversable.empty
+                    Iterable.empty
                 else
-                    Traversable("unknown parameter: "+parameter)
-            case Seq(parameter1, parameter2) ⇒
+                    Iterable("unknown parameter: "+parameter)
+            case Seq(parameter1, parameter2) =>
                 if (!isDomainParameter(parameter1))
                     Seq("the first parameter does not specify the domain: "+parameter1)
                 else if (!isVerbose(parameter2))
                     Seq("the second parameter has to be \"verbose\": "+parameter2)
                 else
-                    Traversable.empty
+                    Iterable.empty
 
         }
     }
@@ -78,8 +78,8 @@ class InterpretMethodsAnalysis[Source] extends Analysis[Source, BasicReport] {
 
     override def analyze(
         project:                Project[Source],
-        parameters:             Seq[String]                = List.empty,
-        initProgressManagement: (Int) ⇒ ProgressManagement
+        parameters:             Seq[String]                 = List.empty,
+        initProgressManagement: (Int) => ProgressManagement
     ): BasicReport = {
         implicit val logContext = project.logContext
 
@@ -122,8 +122,8 @@ object InterpretMethodsAnalysis {
         project:                Project[Source],
         domainClass:            Class[_ <: Domain],
         beVerbose:              Boolean,
-        initProgressManagement: (Int) ⇒ ProgressManagement,
-        maxEvaluationFactor:    Double                     = 3d
+        initProgressManagement: (Int) => ProgressManagement,
+        maxEvaluationFactor:    Double                      = 3d
     )(
         implicit
         logContext: LogContext
@@ -197,8 +197,8 @@ object InterpretMethodsAnalysis {
                 methodsCount.incrementAndGet()
                 None
             } catch {
-                case ct: ControlThrowable ⇒ throw ct
-                case t: Throwable ⇒
+                case ct: ControlThrowable => throw ct
+                case t: Throwable =>
                     // basically, we want to catch everything!
                     val classFile = method.classFile
                     val source = project.source(classFile.thisType).get.toString
@@ -208,10 +208,10 @@ object InterpretMethodsAnalysis {
 
         val collectedExceptions = time('OVERALL) {
             val results = new ConcurrentLinkedQueue[(String, ClassFile, Method, Throwable)]()
-            project.parForeachMethodWithBody() { m ⇒
+            project.parForeachMethodWithBody() { m =>
                 analyzeMethod(m.source.toString, m.method).map(results.add)
             }
-            import scala.collection.JavaConverters._
+            import scala.jdk.CollectionConverters._
             results.asScala
         }
 
@@ -219,9 +219,9 @@ object InterpretMethodsAnalysis {
             val header = <p>Generated { new java.util.Date() }</p>
 
             val body = Seq(header) ++
-                (for ((exResource, exInstances) ← collectedExceptions.groupBy(e ⇒ e._1)) yield {
+                (for ((exResource, exInstances) <- collectedExceptions.groupBy(e => e._1)) yield {
                     val exDetails =
-                        exInstances.map { ex ⇒
+                        exInstances.map { ex =>
                             val (_, classFile, method, throwable) = ex
                             <div>
                                 <b>{ classFile.thisType.fqn }</b>

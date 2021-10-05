@@ -20,12 +20,12 @@ class LoadClassFilesInParallelUsingCachingTest extends AnyFlatSpec with Matchers
     }
 
     for {
-        file ← Iterator(JRELibraryFolder) ++ allBITestJARs()
+        file <- Iterator(JRELibraryFolder) ++ allBITestJARs()
         if file.isFile && file.canRead && file.getName.endsWith(".jar")
         path = file.getPath
     } {
         it should s"should be able to read all classes in $path" in {
-            reader.ClassFiles(file) foreach { cs ⇒ val (cf, _) = cs; validate(cf) }
+            reader.ClassFiles(file) foreach { cs => val (cf, _) = cs; validate(cf) }
         }
     }
 }

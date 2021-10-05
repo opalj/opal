@@ -17,7 +17,7 @@ import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.reader.Java16Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java16Framework.{ClassFile => ClassFileReader}
 import org.opalj.bc.Assembler
 import org.opalj.collection.immutable.RefArray
 import org.opalj.bi.isCurrentJREAtLeastJava16
@@ -72,17 +72,17 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     val abstractAsm = Assembler(abstractClass)
     val concreteAsm = Assembler(simpleConcreteClass)
     val recordAsm = Assembler(recordClass)
-    val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
-    val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
-    val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
+    val abstractBRClassFile = ClassFileReader(() => new ByteArrayInputStream(abstractAsm)).head
+    val concreteBRClassFile = ClassFileReader(() => new ByteArrayInputStream(concreteAsm)).head
+    val recordBRClassFile = ClassFileReader(() => new ByteArrayInputStream(recordAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
-            "MarkerInterface1" → Assembler(markerInterface1),
-            "MarkerInterface2" → Assembler(markerInterface2),
-            "org.opalj.bc.AbstractClass" → abstractAsm,
-            "ConcreteClass" → concreteAsm,
-            "RecordClass" → recordAsm
+            "MarkerInterface1" -> Assembler(markerInterface1),
+            "MarkerInterface2" -> Assembler(markerInterface2),
+            "org.opalj.bc.AbstractClass" -> abstractAsm,
+            "ConcreteClass" -> concreteAsm,
+            "RecordClass" -> recordAsm
         ),
         this.getClass.getClassLoader
     )
@@ -122,8 +122,8 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     }
 
     it should "implement MarkerInterface1 and MarkerInterface2" in {
-        assert(concreteBRClassFile.interfaceTypes.map[String](i ⇒ i.fqn).contains("MarkerInterface1"))
-        assert(concreteBRClassFile.interfaceTypes.map[String](i ⇒ i.fqn).contains("MarkerInterface2"))
+        assert(concreteBRClassFile.interfaceTypes.map[String](i => i.fqn).contains("MarkerInterface1"))
+        assert(concreteBRClassFile.interfaceTypes.map[String](i => i.fqn).contains("MarkerInterface2"))
     }
 
     it should "be public final synthetic (super)" in {

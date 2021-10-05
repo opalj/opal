@@ -46,13 +46,13 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
     allBIProjects(
         config = ConfigFactory.load("LibraryProject.conf")
-    ) foreach { biProject ⇒
+    ) foreach { biProject =>
             val (name, projectFactory) = biProject
             if (!ignoredProjects.contains(name))
                 checkProject(name, projectFactory)
         }
 
-    def checkProject(projectName: String, projectFactory: () ⇒ Project[URL]): Unit = {
+    def checkProject(projectName: String, projectFactory: () => Project[URL]): Unit = {
 
         behavior of s"the call graph analyses on $projectName"
 
@@ -77,8 +77,8 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             val rtaProject = project.recreate {
                 case DeclaredMethodsKey.uniqueId | IsOverridableMethodKey.uniqueId |
                     TypeExtensibilityKey.uniqueId | ClosedPackagesKey.uniqueId |
-                    ClassExtensibilityKey.uniqueId ⇒ true
-                case _ ⇒ false
+                    ClassExtensibilityKey.uniqueId => true
+                case _ => false
             }
             rtaPS = rtaProject.get(PropertyStoreKey)
             rta = rtaProject.get(RTACallGraphKey)
@@ -93,8 +93,8 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
             val pointsToProject = project.recreate {
                 case DeclaredMethodsKey.uniqueId | IsOverridableMethodKey.uniqueId |
                     TypeExtensibilityKey.uniqueId | ClosedPackagesKey.uniqueId |
-                    ClassExtensibilityKey.uniqueId ⇒ true
-                case _ ⇒ false
+                    ClassExtensibilityKey.uniqueId => true
+                case _ => false
             }
             val pointsToPS = pointsToProject.get(PropertyStoreKey)
             pointsTo = pointsToProject.get(AllocationSiteBasedPointsToCallGraphKey)
@@ -114,7 +114,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
         declaredMethods: DeclaredMethods
     ): Unit = {
         var unexpectedCalls: List[UnexpectedCallTarget] = Nil
-        morePreciseCG.reachableMethods().foreach { method ⇒
+        morePreciseCG.reachableMethods().foreach { method =>
             val callersLPCG = lessPreciseCG.callersPropertyOf(method)
             val callersMPCG = morePreciseCG.callersPropertyOf(method)
             if ((callersLPCG eq NoCallers) ||
@@ -122,11 +122,11 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
                 unexpectedCalls ::= UnexpectedCallTarget(method, null, -1)
             val allCalleesMPCG = morePreciseCG.calleesOf(method)
             for {
-                (pc, calleesMPCG) ← allCalleesMPCG
+                (pc, calleesMPCG) <- allCalleesMPCG
                 calleesLPCG = lessPreciseCG.calleesPropertyOf(method)
                 if !calleesLPCG.isIncompleteCallSite(pc)(lessPreciseCGPS)
                 allCalleesLPCG = calleesLPCG.callees(pc)(lessPreciseCGPS, declaredMethods).toSet
-                calleeMPCG ← calleesMPCG
+                calleeMPCG <- calleesMPCG
                 if !allCalleesLPCG(calleeMPCG)
             } {
                 unexpectedCalls ::= UnexpectedCallTarget(method, calleeMPCG, pc)
@@ -144,17 +144,17 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         implicit val ps: PropertyStore = propertyStore
         for {
-            FinalEP(dm: DeclaredMethod, callees) ← propertyStore.entities(Callees.key).map(_.asFinal)
-            (pc, tgts) ← callees.callSites()
-            callee ← tgts
+            FinalEP(dm: DeclaredMethod, callees) <- propertyStore.entities(Callees.key).map(_.asFinal)
+            (pc, tgts) <- callees.callSites()
+            callee <- tgts
         } {
             val FinalP(callersProperty) = propertyStore(callee, Callers.key).asFinal
-            assert(callersProperty.callers.map(caller ⇒ (caller._1, caller._2)).toSet.contains(dm → pc))
+            assert(callersProperty.callers.map(caller => (caller._1, caller._2)).toSet.contains(dm -> pc))
         }
 
         for {
-            FinalEP(dm: DeclaredMethod, callers) ← propertyStore.entities(Callers.key).map(_.asFinal)
-            (caller, pc, _) ← callers.callers
+            FinalEP(dm: DeclaredMethod, callers) <- propertyStore.entities(Callers.key).map(_.asFinal)
+            (caller, pc, _) <- callers.callers
         } {
             val FinalP(calleesProperty) = propertyStore(caller, Callees.key).asFinal
             assert(calleesProperty.callees(pc).contains(dm))

@@ -9,7 +9,7 @@ package ai
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait PrimitiveValuesConversionsDomain { domain: ValuesDomain ⇒
+trait PrimitiveValuesConversionsDomain { domain: ValuesDomain =>
 
     def i2d(pc: Int, value: DomainValue): DomainValue
     def i2f(pc: Int, value: DomainValue): DomainValue

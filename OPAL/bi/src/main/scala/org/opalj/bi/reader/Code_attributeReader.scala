@@ -94,7 +94,7 @@ trait Code_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length = */ in.readInt()
         Code_attribute(
             cp,
@@ -115,6 +115,6 @@ trait Code_attributeReader extends AttributeReader {
         )
     }
 
-    registerAttributeReader(CodeAttribute.Name → parserFactory())
+    registerAttributeReader(CodeAttribute.Name -> parserFactory())
 
 }

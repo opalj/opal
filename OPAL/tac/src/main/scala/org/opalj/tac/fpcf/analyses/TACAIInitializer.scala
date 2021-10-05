@@ -23,8 +23,8 @@ trait TACAIInitializer extends FPCFAnalysisScheduler {
         // To compute the TAC, we (at least) need def-use information; hence, we state
         // this as a requirement.
         p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
-            case None               ⇒ Set(classOf[RecordDefUse])
-            case Some(requirements) ⇒ requirements + classOf[RecordDefUse]
+            case None               => Set(classOf[RecordDefUse])
+            case Some(requirements) => requirements + classOf[RecordDefUse]
         }
         null
     }

@@ -24,7 +24,7 @@ import org.opalj.br.Code
  * @author Michael Eichberg
  */
 trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with CustomInitialization {
-    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
+    domain: ValuesDomain with Configuration with ExceptionsFactory =>
 
     /**
      * Wraps the given value into a `ReturnedValue`.
@@ -73,10 +73,10 @@ trait RecordReturnedValues extends RecordReturnedValuesInfrastructure with Custo
 
     protected[this] def doRecordReturnedValue(pc: Int, value: DomainValue): Boolean = {
         returnedValues.get(pc) match {
-            case None ⇒
+            case None =>
                 returnedValues = returnedValues.updated(pc, recordReturnedValue(pc, value))
                 true // <=> isUpdated
-            case Some(returnedValue) ⇒
+            case Some(returnedValue) =>
                 val joinedReturnedValue = joinReturnedValues(pc, returnedValue, value)
                 if (returnedValue ne joinedReturnedValue) {
                     returnedValues = returnedValues.updated(pc, joinedReturnedValue)

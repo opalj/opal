@@ -12,6 +12,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.bytecode.RTJar
+import scala.Iterable
 
 /**
  * Defines convenience methods related to reading in class files.
@@ -41,15 +42,15 @@ package object reader {
      */
     def read(
         args:             Iterable[String],
-        classFilesReader: (File, (Source, Throwable) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)]
+        classFilesReader: (File, (Source, Throwable) => Unit) => Iterable[(ClassFile, URL)]
     ): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         readClassFiles(args.view.map(new File(_)), classFilesReader)
     }
 
     def readClassFiles(
         files:            Iterable[File],
-        classFilesReader: (File, (Source, Throwable) ⇒ Unit) ⇒ Iterable[(ClassFile, URL)],
-        perFile:          File ⇒ Unit                                                     = (f: File) ⇒ { /*do nothing*/ }
+        classFilesReader: (File, (Source, Throwable) => Unit) => Iterable[(ClassFile, URL)],
+        perFile:          File => Unit                                                      = (f: File) => { /*do nothing*/ }
     ): (Iterable[(ClassFile, URL)], List[Throwable]) = {
         val exceptionsMutex = new Object
         var exceptions: List[Throwable] = Nil
@@ -58,13 +59,13 @@ package object reader {
             exceptionsMutex.synchronized { exceptions ::= e }
         }
 
-        val allClassFiles = for (file ← files.par) yield {
+        val allClassFiles = for (file <- files.par) yield {
             try {
                 perFile(file)
                 classFilesReader(file, handleException)
             } catch {
-                case ct: ControlThrowable ⇒ throw ct
-                case t: Throwable         ⇒ handleException(file, t); Iterable.empty
+                case ct: ControlThrowable => throw ct
+                case t: Throwable         => handleException(file, t); Iterable.empty
             }
         }
         (allClassFiles.flatten.seq, exceptions)
@@ -96,7 +97,7 @@ package object reader {
         implicit
         reader:     ClassFileBinding = new Java11FrameworkWithCaching(cache),
         logContext: LogContext       = GlobalLogContext
-    ): Traversable[(ClassFile, URL)] = {
+    ): Iterable[(ClassFile, URL)] = {
         val classFiles = reader.ClassFiles(RTJar)
         if (classFiles.isEmpty) {
             OPALLogger.error("project setup", s"loading the JRE ($JRELibraryFolder) failed")

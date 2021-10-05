@@ -39,15 +39,15 @@ class ObjectTypeTest extends AnyFunSuite {
     test("primitiveTypeWrapperMatcher method") {
 
         val matcher = ObjectType.primitiveTypeWrapperMatcher[Int, (Int, Int)](
-            (id) ⇒ (id, BooleanType.WrapperType.id),
-            (id) ⇒ (id, ByteType.WrapperType.id),
-            (id) ⇒ (id, CharType.WrapperType.id),
-            (id) ⇒ (id, ShortType.WrapperType.id),
-            (id) ⇒ (id, IntegerType.WrapperType.id),
-            (id) ⇒ (id, LongType.WrapperType.id),
-            (id) ⇒ (id, FloatType.WrapperType.id),
-            (id) ⇒ (id, DoubleType.WrapperType.id),
-            (id) ⇒ (-1, id)
+            (id) => (id, BooleanType.WrapperType.id),
+            (id) => (id, ByteType.WrapperType.id),
+            (id) => (id, CharType.WrapperType.id),
+            (id) => (id, ShortType.WrapperType.id),
+            (id) => (id, IntegerType.WrapperType.id),
+            (id) => (id, LongType.WrapperType.id),
+            (id) => (id, FloatType.WrapperType.id),
+            (id) => (id, DoubleType.WrapperType.id),
+            (id) => (-1, id)
         )
         assert(matcher(BooleanType.WrapperType, 1) == ((1, BooleanType.WrapperType.id)))
         assert(matcher(ByteType.WrapperType, 2) == ((2, ByteType.WrapperType.id)))
@@ -83,8 +83,8 @@ class ObjectTypeTest extends AnyFunSuite {
         val ot1: FieldType = ObjectType("java/lang/Object")
 
         ot1 match {
-            case ObjectType(c) ⇒ assert(c === "java/lang/Object")
-            case _             ⇒ fail(s"pattern match on ObjectType ($ot1) failed")
+            case ObjectType(c) => assert(c === "java/lang/Object")
+            case _             => fail(s"pattern match on ObjectType ($ot1) failed")
         }
     }
 }

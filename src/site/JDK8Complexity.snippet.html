@@ -57,9 +57,9 @@
       // FQPN = FullyQualifiedPackageName
       val instructionsPerFQPN = HashMap.empty[String, Int]
       for {
-        classFile ← project.allClassFiles
+        classFile <- project.allClassFiles
         packageName = classFile.thisType.packageName
-        MethodWithBody(body) ← classFile.methods
+        MethodWithBody(body) <- classFile.methods
       } {
         instructionsPerFQPN.update(
           packageName,

@@ -15,7 +15,7 @@ import org.opalj.value.ValueInformation
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
-import org.opalj.tac.{TACAI ⇒ TACAIFactory}
+import org.opalj.tac.{TACAI => TACAIFactory}
 
 sealed trait TACAIPropertyMetaInformation extends PropertyMetaInformation {
 
@@ -65,12 +65,12 @@ object TACAI extends TACAIPropertyMetaInformation {
      */
     final val key: PropertyKey[TACAI] = PropertyKey.create[Method, TACAI](
         "opalj.TACAI",
-        (ps: PropertyStore, r: FallbackReason, m: Method) ⇒ {
+        (ps: PropertyStore, r: FallbackReason, m: Method) => {
             r match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
                     NoTACAI
 
-                case PropertyIsNotComputedByAnyAnalysis ⇒
+                case PropertyIsNotComputedByAnyAnalysis =>
                     val p = ps.context(classOf[SomeProject])
                     val d = new PrimitiveTACAIDomain(p.classHierarchy, m)
                     val taCode = TACAIFactory(p, m)(d)

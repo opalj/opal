@@ -43,8 +43,8 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
 
     def computeTAC(e: Entity): ProperPropertyComputationResult = {
         e match {
-            case m: Method ⇒ computeTAC(m)
-            case _         ⇒ throw new IllegalArgumentException(s"$e is not a method")
+            case m: Method => computeTAC(m)
+            case _         => throw new IllegalArgumentException(s"$e is not a method")
         }
     }
 
@@ -58,10 +58,10 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
     def c(eOptionP: EOptionP[Method, BaseAIResult]): ProperPropertyComputationResult = {
         val m = eOptionP.e
         (eOptionP: @unchecked) match {
-            case FinalP(NoAIResult)           ⇒ Result(m, NoTACAI)
-            case FinalP(AnAIResult(aiResult)) ⇒ Result(m, computeTheTACAI(m, aiResult, false))
+            case FinalP(NoAIResult)           => Result(m, NoTACAI)
+            case FinalP(AnAIResult(aiResult)) => Result(m, computeTheTACAI(m, aiResult, false))
 
-            case currentAIResult @ InterimLUBP(AnAIResult(initialLBAIResult), ub) ⇒
+            case currentAIResult @ InterimLUBP(AnAIResult(initialLBAIResult), ub) =>
                 val newLB = computeTheTACAI(m, initialLBAIResult, false)
                 val newUB =
                     if (ub == NoAIResult)
@@ -79,7 +79,7 @@ class L0TACAIAnalysis private[analyses] (val project: SomeProject) extends FPCFA
                     c = c
                 )
 
-            case epk @ EPK(m: Method, _) ⇒
+            case epk @ EPK(m: Method, _) =>
                 val aiResult = L0BaseAIResultAnalysis.performAI(m)
 
                 InterimResult.create(

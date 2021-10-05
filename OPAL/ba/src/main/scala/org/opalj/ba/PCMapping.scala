@@ -8,9 +8,9 @@ import java.util.Arrays.fill
  * Mapping of some pc to some new pc. If no mapping exists, Int.MaxValue == PCMapping.Invalid
  * is returned.
  */
-class PCMapping(private[ba] var data: Array[Int]) extends (Int ⇒ Int) {
+class PCMapping(private[ba] var data: Array[Int]) extends (Int => Int) {
 
-    def this(initialSize: Int) {
+    def this(initialSize: Int) = {
         this({
             val a = new Array[Int](Math.max(initialSize, 0))
             fill(a, Int.MaxValue)

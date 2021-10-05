@@ -44,17 +44,17 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
 
         assert(cfJoins == cfJoinsAlt)
 
-        exitPCs foreach { pc ⇒
+        exitPCs foreach { pc =>
             assert(cfg.bb(pc).successors.forall(_.isExitNode))
         }
 
-        cfJoins foreach { pc ⇒
+        cfJoins foreach { pc =>
             assert(
                 cfg.bb(pc).startPC == pc,
                 m.toJava(s"; the join PC $pc is not at the beginning of a BasicBlock node")
             )
         }
-        cfForks foreach { pc ⇒
+        cfForks foreach { pc =>
             assert(
                 cfg.bb(pc).endPC == pc,
                 m.toJava(s"; the fork PC $pc is not at the end of a BasicBlock node")
@@ -64,7 +64,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
             )
         }
 
-        cfg.allBBs foreach { bb ⇒
+        cfg.allBBs foreach { bb =>
             if (bb.startPC != 0 || bb.predecessors.nonEmpty) {
                 if (bb.predecessors.size > 1) {
                     assert(
@@ -93,7 +93,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
         code:   Code,
         cfg:    CFG[Instruction, Code]
     )(
-        f: ⇒ Unit
+        f: => Unit
     )(
         implicit
         classHierarchy: ClassHierarchy
@@ -102,7 +102,7 @@ abstract class AbstractCFGTest extends AnyFunSpec with Matchers with BeforeAndAf
             cfgNodesCheck(method, code, cfg)
             f
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 writeAndOpen(cfg.toDot, method.name+"-CFG", ".gv")
                 throw t
         }

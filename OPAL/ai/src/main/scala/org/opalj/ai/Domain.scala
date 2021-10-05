@@ -108,11 +108,11 @@ trait Domain
      */
     final def ConstantFieldValue(pc: Int, cv: ConstantFieldValue[_]): DomainValue = {
         (cv.kindId: @scala.annotation.switch) match {
-            case ConstantInteger.KindId ⇒ IntegerValue(pc, cv.toInt)
-            case ConstantLong.KindId    ⇒ LongValue(pc, cv.toLong)
-            case ConstantFloat.KindId   ⇒ FloatValue(pc, cv.toFloat)
-            case ConstantDouble.KindId  ⇒ DoubleValue(pc, cv.toDouble)
-            case ConstantString.KindId  ⇒ StringValue(pc, cv.toUTF8)
+            case ConstantInteger.KindId => IntegerValue(pc, cv.toInt)
+            case ConstantLong.KindId    => LongValue(pc, cv.toLong)
+            case ConstantFloat.KindId   => FloatValue(pc, cv.toFloat)
+            case ConstantDouble.KindId  => DoubleValue(pc, cv.toDouble)
+            case ConstantString.KindId  => StringValue(pc, cv.toUTF8)
         }
     }
 
@@ -120,25 +120,25 @@ trait Domain
     override def InitializedDomainValue(origin: ValueOrigin, vi: ValueInformation): DomainValue = {
         vi match {
 
-            case pv @ IsPrimitiveValue(baseType) ⇒
+            case pv @ IsPrimitiveValue(baseType) =>
                 if (pv.constantValue.isDefined) {
                     baseType match {
-                        case BooleanType ⇒ BooleanValue(origin, pv.asConstantBoolean)
-                        case ByteType    ⇒ ByteValue(origin, pv.asConstantByte)
-                        case ShortType   ⇒ ShortValue(origin, pv.asConstantShort)
-                        case CharType    ⇒ CharValue(origin, pv.asConstantChar)
-                        case IntegerType ⇒ IntegerValue(origin, pv.asConstantInteger)
-                        case LongType    ⇒ LongValue(origin, pv.asConstantLong)
-                        case FloatType   ⇒ FloatValue(origin, pv.asConstantFloat)
-                        case DoubleType  ⇒ DoubleValue(origin, pv.asConstantDouble)
+                        case BooleanType => BooleanValue(origin, pv.asConstantBoolean)
+                        case ByteType    => ByteValue(origin, pv.asConstantByte)
+                        case ShortType   => ShortValue(origin, pv.asConstantShort)
+                        case CharType    => CharValue(origin, pv.asConstantChar)
+                        case IntegerType => IntegerValue(origin, pv.asConstantInteger)
+                        case LongType    => LongValue(origin, pv.asConstantLong)
+                        case FloatType   => FloatValue(origin, pv.asConstantFloat)
+                        case DoubleType  => DoubleValue(origin, pv.asConstantDouble)
                     }
                 } else {
                     TypedValue(origin, baseType)
                 }
 
-            case _: IsNullValue ⇒ NullValue(origin)
+            case _: IsNullValue => NullValue(origin)
 
-            case v: IsReferenceValue ⇒
+            case v: IsReferenceValue =>
                 if (v.isNull.isNo && v.asReferenceType.isObjectType) {
                     val t = v.leastUpperType.get.asObjectType
                     if (v.isPrecise)
@@ -149,12 +149,12 @@ trait Domain
                     ReferenceValue(origin, v.leastUpperType.get)
                 }
 
-            case _: IsReturnAddressValue ⇒
+            case _: IsReturnAddressValue =>
                 throw new IllegalArgumentException(
                     s"$vi does not contain sufficient information to create a return address value"
                 )
 
-            case vi ⇒
+            case vi =>
                 throw new IllegalArgumentException(s"cannot create domain value for $vi")
         }
     }

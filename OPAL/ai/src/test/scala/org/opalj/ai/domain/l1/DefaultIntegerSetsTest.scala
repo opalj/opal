@@ -588,8 +588,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValue(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                            => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -607,8 +607,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValue(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                            => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -619,8 +619,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValue(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                            => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -631,8 +631,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = idiv(SomePC, v1, v2)
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValue(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                            => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -660,8 +660,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.result should be { AnIntegerValue }
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValue(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                            => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -672,8 +672,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValue(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                            => fail(s"expected ArithmeticException; found $v")
                 }
             }
 
@@ -684,8 +684,8 @@ class DefaultIntegerSetsTest extends AnyFunSpec with Matchers {
                 val result = irem(SomePC, v1, v2)
                 result.hasResult should be(false)
                 result.exceptions match {
-                    case SObjectValue(ObjectType.ArithmeticException) ⇒ /*OK*/
-                    case v                                            ⇒ fail(s"expected ArithmeticException; found $v")
+                    case SObjectValue(ObjectType.ArithmeticException) => /*OK*/
+                    case v                                            => fail(s"expected ArithmeticException; found $v")
                 }
             }
 

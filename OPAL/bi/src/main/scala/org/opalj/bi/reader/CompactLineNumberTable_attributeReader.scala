@@ -49,7 +49,7 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
         ap_descriptor_index: Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
         in: DataInputStream
-    ) ⇒ {
+    ) => {
         /*val attribute_length =*/ in.readInt()
         val table_length = in.readUnsignedShort()
         if (table_length > 0 || reifyEmptyAttributes) {
@@ -68,5 +68,5 @@ trait CompactLineNumberTable_attributeReader extends AttributeReader {
 
     }
 
-    registerAttributeReader(LineNumberTableAttribute.Name → parserFactory())
+    registerAttributeReader(LineNumberTableAttribute.Name -> parserFactory())
 }

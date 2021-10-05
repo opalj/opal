@@ -19,7 +19,7 @@ package fpcf
  *         ps.setupPhase(
  *           Set(ReachableNodes.Key, ReachableNodesCount.Key),
  *           Set.empty,
- *           Map(ReachableNodesCount.Key → Set(ReachableNodes.Key))
+ *           Map(ReachableNodesCount.Key -> Set(ReachableNodes.Key))
  *         )
  *         }}}
  *         will suppress notifications about interim updates from `ReachableNodes` to
@@ -40,7 +40,7 @@ case class PropertyKindsConfiguration(
             propertyKindsComputedInThisPhase.map(PropertyKey.name).mkString("computedInThisPhase={", ", ", "}\n\t") +
             propertyKindsComputedInLaterPhase.map(PropertyKey.name).mkString("computedInLaterPhase={", ", ", "}\n\t") +
             suppressInterimUpdates.map {
-                case (targetPK, sourcePKs) ⇒
+                case (targetPK, sourcePKs) =>
                     PropertyKey.name(targetPK)+
                         "<-"+
                         sourcePKs.map(PropertyKey.name).mkString("{", ", ", "}")

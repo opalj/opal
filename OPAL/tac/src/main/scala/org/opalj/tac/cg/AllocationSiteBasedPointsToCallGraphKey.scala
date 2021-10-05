@@ -16,7 +16,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethods
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToAnalysisScheduler
-
+import scala.collection.Iterable
 /**
  * A [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]] based on
  * the points-to analysis.
@@ -35,7 +35,7 @@ object AllocationSiteBasedPointsToCallGraphKey extends AbstractCallGraphKey {
 
     override protected def callGraphSchedulers(
         project: SomeProject
-    ): Traversable[FPCFAnalysisScheduler] = {
+    ): Iterable[FPCFAnalysisScheduler] = {
         List(
             AllocationSiteBasedPointsToBasedCallGraphAnalysisScheduler, // TODO make this one independent
             AllocationSiteBasedPointsToAnalysisScheduler,

@@ -22,13 +22,13 @@ class SimpleInstrumentationDemo {
 
     def playingWithTypes(a: AnyRef): Unit = {
         a match {
-            case i: Integer ⇒
+            case i: Integer =>
                 println("integer ")
                 println(i.intValue())
-            case c: java.util.Collection[_] ⇒
+            case c: java.util.Collection[_] =>
                 print("some collection ")
                 println(c) // let's assume that we want to know the type of c
-            case s: String ⇒
+            case s: String =>
                 print("some string ")
                 println(s)
         }

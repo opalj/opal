@@ -92,9 +92,9 @@ final case class ConstantDouble(value: Double) extends ConstantFieldValue[Double
 
     override def equals(other: Any): Boolean = {
         other match {
-            case ConstantDouble(thatValue) ⇒
+            case ConstantDouble(thatValue) =>
                 (this.value == thatValue) || (this.value.isNaN && thatValue.isNaN)
-            case _ ⇒
+            case _ =>
                 false
         }
     }
@@ -122,9 +122,9 @@ final case class ConstantFloat(value: Float) extends ConstantFieldValue[Float] w
 
     override def equals(other: Any): Boolean = {
         other match {
-            case ConstantFloat(thatValue) ⇒
+            case ConstantFloat(thatValue) =>
                 (this.value == thatValue) || (this.value.isNaN && thatValue.isNaN)
-            case _ ⇒
+            case _ =>
                 false
         }
     }

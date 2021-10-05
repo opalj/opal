@@ -27,14 +27,14 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
         foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; new Array(0)
         } {
-            (i, e) ⇒ /*nothing*/ ;
+            (i, e) => /*nothing*/ ;
         }
 
         initialized = false
         foreachNonNullValue[String] {
             if (initialized) fail(); initialized = true; Array("a", "b", "c", null, null, "d")
         } {
-            (i, e) ⇒ /*nothing*/ ;
+            (i, e) => /*nothing*/ ;
         }
     }
 
@@ -43,7 +43,7 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
         foreachNonNullValue[String] {
             Array(null, "a", null, "b", "c", null, null, "d", null, null)
         } {
-            (i, e) ⇒ result = (i, e) :: result;
+            (i, e) => result = (i, e) :: result;
         }
         result.reverse should be(List((1, "a"), (3, "b"), (4, "c"), (7, "d")))
     }
@@ -130,7 +130,7 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
 
     it should "iterate over all values in a range" in {
         var lastResult = -1
-        iterateTo(0, 10) { i ⇒
+        iterateTo(0, 10) { i =>
             if (i != lastResult + 1)
                 fail();
 
@@ -143,7 +143,7 @@ class ControlAbstractionsTest extends AnyFlatSpec with Matchers {
 
     it should "iterate over all values in a range" in {
         var lastResult = -1
-        iterateUntil(0, 10) { i ⇒
+        iterateUntil(0, 10) { i =>
             if (i != lastResult + 1)
                 fail();
 

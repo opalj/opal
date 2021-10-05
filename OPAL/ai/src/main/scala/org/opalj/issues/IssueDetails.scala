@@ -72,7 +72,7 @@ object PCLineComprehension {
         pc:                 PC,
         line:               Option[Int]
     ): Node = {
-        line.map { line ⇒
+        line.map { line =>
             <span class="line_number" data-class={ classFileFQN } data-method={ methodJVMSignature } data-line={ line.toString } data-pc={ pc.toString } data-show="sourcecode">
                 line={ line.toString }
             </span>

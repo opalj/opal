@@ -64,8 +64,8 @@ package object domain {
      */
     def analyzedEntity(domain: Domain): String = {
         domain match {
-            case d: TheMethod ⇒ d.method.toJava
-            case _            ⇒ "<Unknown (the domain does not provide source information)>\n"
+            case d: TheMethod => d.method.toJava
+            case _            => "<Unknown (the domain does not provide source information)>\n"
         }
     }
 

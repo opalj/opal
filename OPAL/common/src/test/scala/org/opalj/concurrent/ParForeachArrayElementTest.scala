@@ -24,9 +24,9 @@ class ParForeachArrayElementTest extends AnyFunSpec with Matchers {
         it("it should collect all exceptions that are thrown if we just use one thread") {
             val data = Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
             try {
-                parForeachArrayElement(data, 1) { e ⇒ throw new RuntimeException(e.toString) }
+                parForeachArrayElement(data, 1) { e => throw new RuntimeException(e.toString) }
             } catch {
-                case ce: ConcurrentExceptions ⇒
+                case ce: ConcurrentExceptions =>
                     assert(ce.getSuppressed.length == 16)
                     assert(ce.getSuppressed.forall(_.isInstanceOf[RuntimeException]))
             }
@@ -35,9 +35,9 @@ class ParForeachArrayElementTest extends AnyFunSpec with Matchers {
         it("it should collect all exceptions that are thrown if we use multiple threads") {
             val data = Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
             try {
-                parForeachArrayElement(data, 8) { e ⇒ throw new RuntimeException(e.toString) }
+                parForeachArrayElement(data, 8) { e => throw new RuntimeException(e.toString) }
             } catch {
-                case ce: ConcurrentExceptions ⇒
+                case ce: ConcurrentExceptions =>
                     assert(ce.getSuppressed.length == 16)
                     assert(ce.getSuppressed.forall(_.isInstanceOf[RuntimeException]))
             }
@@ -48,11 +48,11 @@ class ParForeachArrayElementTest extends AnyFunSpec with Matchers {
             def test(): Unit = {
                 val data = Array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
                 try {
-                    parForeachArrayElement(data, 8) { e ⇒
+                    parForeachArrayElement(data, 8) { e =>
                         if (e == 7) return ; else processed.incrementAndGet()
                     }
                 } catch {
-                    case ce: ConcurrentExceptions ⇒
+                    case ce: ConcurrentExceptions =>
                         assert(ce.getSuppressed().length == 1)
                         assert(ce.getSuppressed()(0).getCause.isInstanceOf[ControlThrowable])
                 }

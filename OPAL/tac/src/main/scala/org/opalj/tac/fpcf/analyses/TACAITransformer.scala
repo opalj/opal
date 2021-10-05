@@ -36,17 +36,17 @@ object TACAITransformer extends BasicFPCFTransformerScheduler with TACAIInitiali
     override def register(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
         class TheTACAITransformer
             extends DefaultFPCFAnalysis(p)
-            with ((Entity, BaseAIResult) ⇒ FinalEP[Method, TACAI]) {
+            with ((Entity, BaseAIResult) => FinalEP[Method, TACAI]) {
 
             def apply(e: Entity, baseAIResult: BaseAIResult): FinalEP[Method, TACAI] = {
                 e match {
-                    case m: Method ⇒
+                    case m: Method =>
                         FinalEP(
                             m,
                             baseAIResult.aiResult match {
-                                case Some(aiResult) ⇒
+                                case Some(aiResult) =>
                                     TACAIAnalysis.computeTheTACAI(m, aiResult, false)(p)
-                                case None ⇒
+                                case None =>
                                     NoTACAI
                             }
                         )

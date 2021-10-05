@@ -38,9 +38,9 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
      *      the information if type represents an upper type bound (`true`) or refers to a
      *      concrete class/interface type (the second parameter is then `false`).
      */
-    def foreach[U](f: (ObjectType, Boolean) ⇒ U): Unit = {
-        concreteTypes.foreach { tpe ⇒ f(tpe, false) }
-        upperTypeBounds.foreach { tpe ⇒ f(tpe, true) }
+    def foreach[U](f: (ObjectType, Boolean) => U): Unit = {
+        concreteTypes.foreach { tpe => f(tpe, false) }
+        upperTypeBounds.foreach { tpe => f(tpe, true) }
     }
 
     /**
@@ -52,9 +52,9 @@ abstract class TypesSet /*extends Set[(ObjectType,...)]*/ {
     final override def equals(other: Any): Boolean = {
 
         other match {
-            case that: TypesSet ⇒
+            case that: TypesSet =>
                 concreteTypes == that.concreteTypes && upperTypeBounds == that.upperTypeBounds
-            case _ ⇒ false
+            case _ => false
         }
     }
 

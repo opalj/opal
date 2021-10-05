@@ -35,8 +35,8 @@ case class TypeIdentifier(t: Type) extends StructureIdentifier {
 
     def declaringPackage: Option[String] =
         t match {
-            case o: ObjectType ⇒ Some(o.packageName);
-            case _             ⇒ None
+            case o: ObjectType => Some(o.packageName);
+            case _             => None
         }
 }
 
@@ -52,10 +52,10 @@ case class MethodIdentifier(
 
     def declaringPackage: Option[String] =
         declaringReferenceType match {
-            case o: ObjectType            ⇒ Some(o.packageName);
-            case ArrayType(o: ObjectType) ⇒ Some(o.packageName);
-            case _: ArrayType             ⇒ Some("java/lang"); // handles Arrays of primitives
-            case _                        ⇒ None
+            case o: ObjectType            => Some(o.packageName);
+            case ArrayType(o: ObjectType) => Some(o.packageName);
+            case _: ArrayType             => Some("java/lang"); // handles Arrays of primitives
+            case _                        => None
         }
 }
 

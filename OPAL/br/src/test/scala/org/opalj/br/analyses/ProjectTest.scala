@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java11Framework.ClassFiles
-
+import scala.collection.Iterable
 /**
  * Tests the support for "project" related functionality.
  *
@@ -195,13 +195,13 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     }
 
     it should "be able to store a large amount of information" in {
-        val piks = for (i ← (0 until 100)) yield {
+        val piks = for (i <- (0 until 100)) yield {
             val pik = new TestProjectInformationKey
             project.get(pik)
             pik.uniqueId should be >= i
             pik
         }
-        for (pik ← piks) {
+        for (pik <- piks) {
             project.availableProjectInformation should contain(pik.theResult)
         }
     }
@@ -257,8 +257,8 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         it should s"allMethodsWithBodyWithContext should return ALL concrete methods for $name" in {
             var allConcreteMethods = project.allMethodsWithBodyWithContext.map(_.method).toSet
             val missedMethods: Iterable[Method] = (for {
-                c ← project.allClassFiles
-                m ← c.methods
+                c <- project.allClassFiles
+                m <- c.methods
                 if m.body.isDefined
             } yield {
                 if (allConcreteMethods.contains(m)) {
@@ -280,10 +280,10 @@ class ProjectTest extends AnyFlatSpec with Matchers {
         it should s"return that same methods for $name as a manual search" in {
             val mutex = new Object
             var methods = List.empty[Method]
-            project.parForeachMethodWithBody()(mi ⇒ mutex.synchronized { methods ::= mi.method })
+            project.parForeachMethodWithBody()(mi => mutex.synchronized { methods ::= mi.method })
             val missedMethods = for {
-                c ← project.allClassFiles
-                m ← c.methods
+                c <- project.allClassFiles
+                m <- c.methods
                 if m.body.isDefined
                 if !methods.contains(m)
             } yield {
@@ -292,7 +292,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
             assert(
                 missedMethods.isEmpty, {
                     s"; missed ${missedMethods.size} methods: "+
-                        missedMethods.map { mm ⇒
+                        missedMethods.map { mm =>
                             val (c, m) = mm
                             val belongsToProject = project.isProjectType(c.thisType)
                             m.toJava(
@@ -321,7 +321,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
     {
         val fieldsProject = {
             val classFiles = ClassFiles(locateTestResources("fields-g=none-5.jar", "bi"))
-            Project(classFiles, Traversable.empty, true)
+            Project(classFiles, Iterable.empty, true)
         }
         import fieldsProject.classFile
         import fieldsProject.resolveFieldReference
@@ -402,7 +402,7 @@ class ProjectTest extends AnyFlatSpec with Matchers {
 
         val methodsProject = {
             val classFiles = ClassFiles(ProjectTest.methodsArchive)
-            Project(classFiles, Traversable.empty, true)
+            Project(classFiles, Iterable.empty, true)
         }
 
         val superI = ObjectType("methods/b/SuperI")
@@ -742,11 +742,11 @@ private object ProjectTest {
     val overallProject = Project.extend(project, ClassFiles(codeJAR))
 
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal), Traversable.empty, true)
+    val opalProject = Project(ClassFiles(opal), Iterable.empty, true)
 
     val java11nestsArchive =
         locateTestResources("java11nests-g-11-parameters-genericsignature", "bi")
-    val java11nestsProject = Project(ClassFiles(java11nestsArchive), Traversable.empty, true)
+    val java11nestsProject = Project(ClassFiles(java11nestsArchive), Iterable.empty, true)
 
     //
     //

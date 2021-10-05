@@ -28,17 +28,17 @@ trait LongSet extends AnyRef {
 
     def contains(value: Long): Boolean
 
-    def foreach[U](f: Long ⇒ U): Unit
+    def foreach[U](f: Long => U): Unit
 
-    def forall(p: Long ⇒ Boolean): Boolean
+    def forall(p: Long => Boolean): Boolean
 
     def iterator: LongIterator
 
-    def foldLeft[B](z: B)(op: (B, Long) ⇒ B): B
+    def foldLeft[B](z: B)(op: (B, Long) => B): B
 
-    final def transform[B, To](f: Long ⇒ B, b: Builder[B, To]): To = {
+    final def transform[B, To](f: Long => B, b: Builder[B, To]): To = {
         b.sizeHint(size)
-        foreach(i ⇒ b += f(i))
+        foreach(i => b += f(i))
         b.result()
     }
 

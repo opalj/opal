@@ -49,7 +49,7 @@ class InterProceduralEscapeAnalysisContext(
         val virtualFormalParameters: VirtualFormalParameters,
         val project:                 SomeProject,
         val propertyStore:           PropertyStore,
-        val isMethodOverridable:     Method ⇒ Answer
+        val isMethodOverridable:     Method => Answer
 ) extends AbstractEscapeAnalysisContext
     with PropertyStoreContainer
     with IsMethodOverridableContainer
@@ -76,19 +76,19 @@ class InterProceduralEscapeAnalysis private[analyses] (
     override type AnalysisContext = InterProceduralEscapeAnalysisContext
     type AnalysisState = InterProceduralEscapeAnalysisState
 
-    private[this] val isMethodOverridable: Method ⇒ Answer = project.get(IsOverridableMethodKey)
+    private[this] val isMethodOverridable: Method => Answer = project.get(IsOverridableMethodKey)
 
     override def determineEscapeOfFP(fp: VirtualFormalParameter): ProperPropertyComputationResult = {
         fp match {
             // if the underlying method is inherited, we avoid recomputation and query the
             // result of the method for its defining class.
-            case VirtualFormalParameter(dm: DefinedMethod, i) if dm.declaringClassType != dm.definedMethod.classFile.thisType ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, i) if dm.declaringClassType != dm.definedMethod.classFile.thisType =>
                 def handleEscapeState(eOptionP: SomeEOptionP): ProperPropertyComputationResult = {
                     eOptionP match {
-                        case FinalP(p) ⇒
+                        case FinalP(p) =>
                             Result(fp, p)
 
-                        case InterimLUBP(lb, ub) ⇒
+                        case InterimLUBP(lb, ub) =>
                             InterimResult.create(
                                 fp,
                                 lb,
@@ -97,7 +97,7 @@ class InterProceduralEscapeAnalysis private[analyses] (
                                 handleEscapeState
                             )
 
-                        case _ ⇒
+                        case _ =>
                             InterimResult(
                                 fp,
                                 GlobalEscape,
@@ -113,18 +113,18 @@ class InterProceduralEscapeAnalysis private[analyses] (
 
                 handleEscapeState(propertyStore(parameterOfBase, EscapeProperty.key))
 
-            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.definedMethod.body.isEmpty =>
                 Result(fp, AtMost(NoEscape))
 
             // parameters of base types are not considered
-            case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType ⇒
+            case VirtualFormalParameter(m, i) if i != -1 && m.descriptor.parameterType(-i - 2).isBaseType =>
                 Result(fp, AtMost(NoEscape))
 
-            case VirtualFormalParameter(dm: DefinedMethod, i) ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, i) =>
                 val ctx = createContext(fp, i, dm.definedMethod)
                 doDetermineEscape(ctx, createState)
 
-            case VirtualFormalParameter(_: VirtualDeclaredMethod, _) ⇒
+            case VirtualFormalParameter(_: VirtualDeclaredMethod, _) =>
                 throw new IllegalArgumentException()
         }
     }
@@ -182,11 +182,11 @@ object EagerInterProceduralEscapeAnalysis
 
         val reachableMethods = callersProperties.filterNot(_.asFinal.p == NoCallers).map(_.e).toSet
 
-        val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.filter { fp ⇒
+        val fps = p.get(VirtualFormalParametersKey).virtualFormalParameters.filter { fp =>
             reachableMethods.contains(fp.method)
         }
 
-        val ass = p.get(DefinitionSitesKey).getAllocationSites.filter { fp ⇒
+        val ass = p.get(DefinitionSitesKey).getAllocationSites.filter { fp =>
             reachableMethods.contains(declaredMethods(fp.method))
         }
 

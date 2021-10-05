@@ -69,7 +69,7 @@ sealed abstract class DeclaredMethod {
      * The behavior of this method is undefined if neither [[hasSingleDefinedMethod]] nor
      * [[hasMultipleDefinedMethods]] returns true.
      */
-    def foreachDefinedMethod[U](f: Method ⇒ U): Unit
+    def foreachDefinedMethod[U](f: Method => U): Unit
 
     /**
      * A unique ID.
@@ -77,8 +77,8 @@ sealed abstract class DeclaredMethod {
     val id: Int
 
     override def equals(other: Any): Boolean = other match {
-        case that: DeclaredMethod ⇒ id == that.id
-        case _                    ⇒ false
+        case that: DeclaredMethod => id == that.id
+        case _                    => false
     }
 
     override def hashCode(): Int = id
@@ -107,7 +107,7 @@ final class VirtualDeclaredMethod private[br] (
     override def definedMethods: ConstArray[Method] = throw new UnsupportedOperationException();
     override def asMultipleDefinedMethods: MultipleDefinedMethods = throw new ClassCastException();
 
-    override def foreachDefinedMethod[U](f: Method ⇒ U): Unit = {
+    override def foreachDefinedMethod[U](f: Method => U): Unit = {
         throw new UnsupportedOperationException();
     }
 
@@ -138,7 +138,7 @@ final class DefinedMethod private[br] (
     override def definedMethods: ConstArray[Method] = throw new UnsupportedOperationException();
     override def asMultipleDefinedMethods: MultipleDefinedMethods = throw new ClassCastException();
 
-    override def foreachDefinedMethod[U](f: Method ⇒ U): Unit = f(definedMethod)
+    override def foreachDefinedMethod[U](f: Method => U): Unit = f(definedMethod)
 
     override def toString: String = {
         s"DefinedMethod(declaringClassType=${declaringClassType.toJava},definedMethod=${definedMethod.toJava})"
@@ -163,7 +163,7 @@ final class MultipleDefinedMethods private[br] (
     override def hasMultipleDefinedMethods: Boolean = true
     override def asMultipleDefinedMethods: MultipleDefinedMethods = this
 
-    override def foreachDefinedMethod[U](f: Method ⇒ U): Unit = definedMethods.foreach(f)
+    override def foreachDefinedMethod[U](f: Method => U): Unit = definedMethods.foreach(f)
 
     override def toString: String = {
         s"DefinedMethod(${declaringClassType.toJava},definedMethods=${definedMethods.map(_.toJava).mkString("{", ", ", "}")})"

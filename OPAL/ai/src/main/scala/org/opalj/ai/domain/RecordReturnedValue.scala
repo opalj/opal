@@ -16,7 +16,7 @@ package domain
  * @author Michael Eichberg
  */
 trait RecordReturnedValue extends RecordReturnedValuesInfrastructure {
-    domain: ValuesDomain ⇒
+    domain: ValuesDomain =>
 
     protected[this] var theReturnedValue: DomainValue = null
 

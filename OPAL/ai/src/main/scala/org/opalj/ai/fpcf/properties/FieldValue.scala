@@ -55,7 +55,7 @@ object FieldValue extends FieldValueMetaInformation {
     final val key: PropertyKey[FieldValue] = PropertyKey.create[Field, FieldValue](
         "opalj.FieldValue",
         // fallback property computation...
-        (ps: PropertyStore, r: FallbackReason, f: Field) ⇒ {
+        (ps: PropertyStore, r: FallbackReason, f: Field) => {
             val p = ps.context(classOf[SomeProject])
             val vi = ValueInformation.forProperValue(f.fieldType)(p.classHierarchy)
             ValueBasedFieldValueInformation(vi)

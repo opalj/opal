@@ -32,10 +32,10 @@ object SystemProperties extends SystemPropertiesPropertyMetaInformation {
     final val key: PropertyKey[SystemProperties] = {
         PropertyKey.create(
             Name,
-            (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒
+            (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+                case PropertyIsNotDerivedByPreviouslyExecutedAnalysis =>
                     new SystemProperties(Map.empty)
-                case _ ⇒
+                case _ =>
                     throw new IllegalStateException(s"analysis required for property: $Name")
             }
         )

@@ -16,7 +16,7 @@ import org.opalj.collection.mutable.RefArrayBuffer
  */
 class InstructionsBuilder private (private val buffer: RefArrayBuffer[Instruction]) {
 
-    def this(initialSize: Int) {
+    def this(initialSize: Int) = {
         this(RefArrayBuffer.withInitialSize[Instruction](initialSize))
     }
 

@@ -14,7 +14,7 @@ package mutable
 protected[opalj] final class IntQueue private (
         private var first: QueueNode = null,
         private var last:  QueueNode = null
-) extends Serializable { queue ⇒
+) extends Serializable { queue =>
 
     def this(value: Int) = this(new QueueNode(value, null))
 
@@ -36,7 +36,7 @@ protected[opalj] final class IntQueue private (
 
     // FIXME ... we should generate a new instance def tail: this.type = { first = first.next; this }
 
-    def foreach[U](f: Int ⇒ U): Unit = {
+    def foreach[U](f: Int => U): Unit = {
         var c = first
         while (c ne null) {
             f(c.value)

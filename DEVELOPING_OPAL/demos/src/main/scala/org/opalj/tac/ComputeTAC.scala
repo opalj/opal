@@ -24,12 +24,12 @@ object ComputeTAC {
 
         val tacProvider = time {
             val p = Project(rootFolder)
-            p.updateProjectInformationKeyInitializationData(EagerDetachedTACAIKey) { oldFactory ⇒
+            p.updateProjectInformationKeyInitializationData(EagerDetachedTACAIKey) { oldFactory =>
                 if (oldFactory.isDefined) throw new IllegalStateException();
-                (m: Method) ⇒ new org.opalj.ai.domain.l0.PrimitiveTACAIDomain(p, m)
+                (m: Method) => new org.opalj.ai.domain.l0.PrimitiveTACAIDomain(p, m)
             }
             p.get(EagerDetachedTACAIKey)
-        } { t ⇒
+        } { t =>
             println("Loading the project and computing the tac for all methods took: "+t.toSeconds)
         }
 

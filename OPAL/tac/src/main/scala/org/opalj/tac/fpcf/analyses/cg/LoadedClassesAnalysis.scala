@@ -61,19 +61,19 @@ class LoadedClassesAnalysis(
     ): PropertyComputationResult = {
         val callersOfMethod = propertyStore(declaredMethod, Callers.key)
         callersOfMethod match {
-            case FinalP(NoCallers) ⇒
+            case FinalP(NoCallers) =>
                 // nothing to do, since there is no caller
                 NoResult
 
-            case _: EPK[_, _] ⇒
+            case _: EPK[_, _] =>
                 throw new IllegalStateException("unexpected state")
 
-            case InterimUBP(NoCallers) ⇒
+            case InterimUBP(NoCallers) =>
                 // we can not create a dependency here, so the analysis is not allowed to create
                 // such a result
                 throw new IllegalStateException("illegal immediate result for callers")
 
-            case _: EPS[_, _] ⇒
+            case _: EPS[_, _] =>
                 if (!declaredMethod.hasSingleDefinedMethod)
                     return NoResult;
 
@@ -115,9 +115,9 @@ class LoadedClassesAnalysis(
         method: DeclaredMethod
     )(eps: SomeEPS): PropertyComputationResult = {
         eps match {
-            case UBP(tac: TACAI) if tac.tac.isDefined ⇒
+            case UBP(tac: TACAI) if tac.tac.isDefined =>
                 processMethod(method, eps.asInstanceOf[EPS[Method, TACAI]])
-            case _ ⇒
+            case _ =>
                 InterimPartialResult(
                     Nil,
                     Set(eps),
@@ -158,7 +158,7 @@ class LoadedClassesAnalysis(
     )(
         eop: EOptionP[_, LoadedClasses]
     ): Option[InterimEP[SomeProject, LoadedClasses]] = eop match {
-        case InterimUBP(ub: LoadedClasses) ⇒
+        case InterimUBP(ub: LoadedClasses) =>
             val newUb = ub.classes ++ newLoadedClasses
             // due to monotonicity:
             // the size check sufficiently replaces the subset check
@@ -167,12 +167,12 @@ class LoadedClassesAnalysis(
             else
                 None
 
-        case _: EPK[_, _] ⇒
+        case _: EPK[_, _] =>
             Some(
                 InterimEUBP(project, LoadedClasses(newLoadedClasses))
             )
 
-        case r ⇒
+        case r =>
             throw new IllegalStateException(s"unexpected previous result $r")
     }
 
@@ -202,16 +202,16 @@ class LoadedClassesAnalysis(
             newLoadedClasses ++= getSuperclassesNotYetLoaded(declClassType, currentLoadedClasses)
         }
 
-        for (stmt ← stmts) {
+        for (stmt <- stmts) {
             stmt match {
                 //TODO is dc sufficient?
-                case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) ⇒
+                case PutStatic(_, dc, _, _, _) if isNewLoadedClass(dc) =>
                     newLoadedClasses += dc
-                case Assignment(_, _, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
+                case Assignment(_, _, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) =>
                     newLoadedClasses += dc
-                case ExprStmt(_, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) ⇒
+                case ExprStmt(_, GetStatic(_, dc, _, _)) if isNewLoadedClass(dc) =>
                     newLoadedClasses += dc
-                case _ ⇒
+                case _ =>
             }
         }
 
@@ -229,8 +229,8 @@ class LoadedClassesAnalysis(
             propertyStore(project, LoadedClasses.key)
 
         currentLoadedClassesEPS match {
-            case _: EPK[_, _] ⇒ UIDSet.empty
-            case p: EPS[_, _] ⇒ p.ub.classes
+            case _: EPK[_, _] => UIDSet.empty
+            case p: EPS[_, _] => p.ub.classes
         }
     }
 }

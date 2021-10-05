@@ -42,9 +42,9 @@ abstract class LoadLocalVariableInstruction extends Instruction with NoLabels {
         Chain.singleton(indexOfNextInstruction(currentPC))
     }
 
-    final def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def readsLocal: Boolean = true
 
@@ -72,15 +72,15 @@ object LoadLocalVariableInstruction {
      */
     def apply(fieldType: FieldType, lvIndex: Int): LoadLocalVariableInstruction = {
         (fieldType.id: @scala.annotation.switch) match {
-            case IntegerType.id ⇒ ILOAD.canonicalRepresentation(lvIndex)
-            case ByteType.id    ⇒ ILOAD.canonicalRepresentation(lvIndex)
-            case ShortType.id   ⇒ ILOAD.canonicalRepresentation(lvIndex)
-            case CharType.id    ⇒ ILOAD.canonicalRepresentation(lvIndex)
-            case BooleanType.id ⇒ ILOAD.canonicalRepresentation(lvIndex)
-            case LongType.id    ⇒ LLOAD.canonicalRepresentation(lvIndex)
-            case FloatType.id   ⇒ FLOAD.canonicalRepresentation(lvIndex)
-            case DoubleType.id  ⇒ DLOAD.canonicalRepresentation(lvIndex)
-            case _              ⇒ ALOAD.canonicalRepresentation(lvIndex)
+            case IntegerType.id => ILOAD.canonicalRepresentation(lvIndex)
+            case ByteType.id    => ILOAD.canonicalRepresentation(lvIndex)
+            case ShortType.id   => ILOAD.canonicalRepresentation(lvIndex)
+            case CharType.id    => ILOAD.canonicalRepresentation(lvIndex)
+            case BooleanType.id => ILOAD.canonicalRepresentation(lvIndex)
+            case LongType.id    => LLOAD.canonicalRepresentation(lvIndex)
+            case FloatType.id   => FLOAD.canonicalRepresentation(lvIndex)
+            case DoubleType.id  => DLOAD.canonicalRepresentation(lvIndex)
+            case _              => ALOAD.canonicalRepresentation(lvIndex)
         }
     }
 
@@ -90,12 +90,12 @@ object LoadLocalVariableInstruction {
      */
     def apply(computationalType: ComputationalType, lvIndex: Int): LoadLocalVariableInstruction = {
         computationalType match {
-            case ComputationalTypeInt           ⇒ ILOAD.canonicalRepresentation(lvIndex)
-            case ComputationalTypeFloat         ⇒ FLOAD.canonicalRepresentation(lvIndex)
-            case ComputationalTypeLong          ⇒ LLOAD.canonicalRepresentation(lvIndex)
-            case ComputationalTypeDouble        ⇒ DLOAD.canonicalRepresentation(lvIndex)
-            case ComputationalTypeReference     ⇒ ALOAD.canonicalRepresentation(lvIndex)
-            case ComputationalTypeReturnAddress ⇒ ALOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeInt           => ILOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeFloat         => FLOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeLong          => LLOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeDouble        => DLOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeReference     => ALOAD.canonicalRepresentation(lvIndex)
+            case ComputationalTypeReturnAddress => ALOAD.canonicalRepresentation(lvIndex)
         }
     }
 

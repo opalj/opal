@@ -2,10 +2,10 @@
 package org.opalj.collection
 package mutable
 
-import java.util.{Arrays ⇒ JArrays}
-
+import java.util.{Arrays => JArrays}
 import scala.collection.mutable
 import scala.collection.generic
+import scala.compat._
 
 /**
  * An array based implementation of a mutable stack of `ref` values which has a
@@ -25,11 +25,11 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
 ) extends mutable.IndexedSeq[N]
     with mutable.IndexedSeqLike[N, RefArrayStack[N]]
     with mutable.Cloneable[RefArrayStack[N]]
-    with Serializable { stack ⇒
+    with Serializable { stack =>
 
-    def this(initialSize: Int = 4) { this(new Array[AnyRef](initialSize), 0) }
+    def this(initialSize: Int = 4) = { this(new Array[AnyRef](initialSize), 0) }
 
-    def this(e: N, initialSize: Int) {
+    def this(e: N, initialSize: Int) = {
         this(new Array[AnyRef](Math.max(initialSize, 1)), 1)
         data(0) = e
     }
@@ -80,7 +80,7 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
         this
     }
 
-    final def ++=(is: TraversableOnce[N]): this.type = {
+    final def ++=(is: IterableOnce[N]): this.type = {
         is foreach { push }
         this
     }
@@ -173,7 +173,7 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
         this.data(0).asInstanceOf[N]
     }
 
-    override def foreach[U](f: N ⇒ U): Unit = {
+    override def foreach[U](f: N => U): Unit = {
         val data = this.data
         var i = this.size0 - 1
         while (i >= 0) {
@@ -182,7 +182,7 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
         }
     }
 
-    override def foldLeft[B](z: B)(f: (B, N) ⇒ B): B = {
+    override def foldLeft[B](z: B)(f: (B, N) => B): B = {
         val data = this.data
         var v = z
         var i = this.size0 - 1
@@ -214,13 +214,15 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
     override def clone(): RefArrayStack[N] = new RefArrayStack(data.clone(), size0)
 
     override def toString: String = {
-        s"RefArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "→")})"
+        s"RefArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "->")})"
     }
 }
 
 /**
  * Factory to create [[RefArrayStack]]s.
  */
+
+//TODO solve the following problem
 object RefArrayStack {
 
     implicit def canBuildFrom[N >: Null <: AnyRef]: generic.CanBuildFrom[RefArrayStack[N], N, RefArrayStack[N]] = {
@@ -238,7 +240,7 @@ object RefArrayStack {
      * Creates a new stack based on a given sequence. The last value of the sequence will
      * be the top value of the stack.
      */
-    def fromSeq[N >: Null <: AnyRef](seq: TraversableOnce[N]): RefArrayStack[N] = {
+    def fromSeq[N >: Null <: AnyRef](seq: IterableOnce[N]): RefArrayStack[N] = {
         seq.foldLeft(new RefArrayStack[N](8))(_ += _)
     }
 

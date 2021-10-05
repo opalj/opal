@@ -47,7 +47,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
 
     final def runAll(
         analyses:             Iterable[ComputationSpecification[FPCFAnalysis]],
-        afterPhaseScheduling: Chain[ComputationSpecification[FPCFAnalysis]] ⇒ Unit = _ ⇒ ()
+        afterPhaseScheduling: Chain[ComputationSpecification[FPCFAnalysis]] => Unit = _ => ()
     ): (PropertyStore, List[(ComputationSpecification[FPCFAnalysis], FPCFAnalysis)]) = this.synchronized {
 
         val scenario = AnalysisScenario(analyses, propertyStore)
@@ -58,7 +58,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         if (trace) { debug("analysis progress", "executing "+schedule) }
         val as = time {
             schedule(propertyStore, trace, afterPhaseScheduling = afterPhaseScheduling)
-        } { t ⇒
+        } { t =>
             if (trace) {
                 debug("analysis progress", s"execution of schedule took ${t.toSeconds}")
             }
@@ -66,7 +66,7 @@ class FPCFAnalysesManager private[fpcf] (val project: SomeProject) {
         if (trace) {
             debug(
                 "analysis progress",
-                scenario.allProperties.map(p ⇒ PropertyKey.name(p.pk.id)).mkString(
+                scenario.allProperties.map(p => PropertyKey.name(p.pk.id)).mkString(
                     "used and derived properties = {", ", ", "}"
                 )
             )

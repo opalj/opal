@@ -6,7 +6,7 @@ import java.net.URL
 
 import org.opalj.da
 import org.opalj.br.analyses.Project
-
+import scala.collection.Iterable
 /**
  * The resources of the instantiated project.
  *
@@ -14,5 +14,5 @@ import org.opalj.br.analyses.Project
  */
 case class ProjectInstantiation(
         project:       Project[URL],
-        rawClassFiles: Traversable[(da.ClassFile, URL)]
+        rawClassFiles: Iterable[(da.ClassFile, URL)]
 )

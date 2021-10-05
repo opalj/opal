@@ -5,6 +5,7 @@ package graphs
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.IntTrieSet
+import scala.compat._
 
 /**
  * Efficient representation of a mutable graph where the nodes are identified using consecutive
@@ -32,7 +33,7 @@ class UnidirectionalGraph(
 
     override def nonEmpty: Boolean = verticesCount > 0
 
-    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s).iterator
+    override def apply(s: Int): IterableOnce[Int] = theSuccessors(s).iterator
 
     /**
      * Returns a node's successors.
@@ -45,7 +46,7 @@ class UnidirectionalGraph(
             sSuccessors
     }
 
-    def edges: Int ⇒ IntIterator = (n: Int) ⇒ { theSuccessors(n).iterator }
+    def edges: Int => IntIterator = (n: Int) => { theSuccessors(n).iterator }
 
     /**
      * Adds a new edge between the given vertices.

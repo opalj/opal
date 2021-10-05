@@ -19,9 +19,9 @@ abstract class SynchronizationInstruction
 
     final override def mayThrowExceptions: Boolean = true
 
-    final override def numberOfPoppedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final override def numberOfPoppedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
-    final override def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 0
+    final override def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 0
 
     final override def isIsomorphic(thisPC: PC, otherPC: PC)(implicit code: Code): Boolean = {
         val other = code.instructions(otherPC)

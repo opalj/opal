@@ -11,7 +11,7 @@ package l1
  * @author Michael Eichberg
  */
 trait MaxArrayLengthRefinement extends l0.TypeLevelReferenceValues {
-    domain: Domain with IntegerRangeValues ⇒
+    domain: Domain with IntegerRangeValues =>
 
     abstract override def arraylength(
         pc:       Int,
@@ -20,8 +20,8 @@ trait MaxArrayLengthRefinement extends l0.TypeLevelReferenceValues {
         val length = super.arraylength(pc, arrayref)
         if (length.hasResult) {
             length.result match {
-                case _: AnIntegerValue ⇒ length.updateResult(IntegerRange(0, Int.MaxValue))
-                case _                 ⇒ length
+                case _: AnIntegerValue => length.updateResult(IntegerRange(0, Int.MaxValue))
+                case _                 => length
             }
         } else {
             // if the array is null..

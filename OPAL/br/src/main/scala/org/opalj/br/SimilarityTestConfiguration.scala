@@ -75,8 +75,8 @@ class CompareAllConfiguration extends SimilarityTestConfiguration {
         left:        Attributes,
         right:       Attributes
     ): (Attributes, Attributes) = {
-        val newLeft = left.filterNot(a ⇒ a.isInstanceOf[UnknownAttribute])
-        val newRight = right.filterNot(a ⇒ a.isInstanceOf[UnknownAttribute])
+        val newLeft = left.filterNot(a => a.isInstanceOf[UnknownAttribute])
+        val newRight = right.filterNot(a => a.isInstanceOf[UnknownAttribute])
         (newLeft, newRight)
     }
 

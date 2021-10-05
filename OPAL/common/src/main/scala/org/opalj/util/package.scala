@@ -12,6 +12,7 @@ import com.typesafe.config.ConfigRenderOptions
 
 import org.opalj.log.OPALLogger
 import org.opalj.log.LogContext
+import scala.Iterable
 
 /**
  * Utility methods.
@@ -29,7 +30,7 @@ package object util {
         versionNumberString.split('.').take(2).mkString(".") // e.g. 2.10, 2.11
     }
 
-    def avg(ts: Traversable[Nanoseconds]): Nanoseconds = {
+    def avg(ts: Iterable[Nanoseconds]): Nanoseconds = {
         if (ts.isEmpty)
             return Nanoseconds.None;
 

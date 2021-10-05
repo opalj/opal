@@ -7,6 +7,7 @@ import java.net.URL
 
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.info
+import scala.Iterable
 
 /**
  * A small framework to implement analyses which should be executed for a given
@@ -19,11 +20,11 @@ abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
             "-method=<name and/or parts of the signature>"
     }
 
-    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
+    override def checkAnalysisSpecificParameters(parameters: Seq[String]): Iterable[String] = {
         if (parameters.size != 2 || parameters(0).substring(0, 7) == parameters(1).substring(0, 7))
             return List("missing parameters");
 
-        parameters.foldLeft(List.empty[String]) { (notUnderstood, p) ⇒
+        parameters.foldLeft(List.empty[String]) { (notUnderstood, p) =>
             if (!p.startsWith("-class=") && !p.startsWith("-method="))
                 p :: notUnderstood
             else
@@ -34,7 +35,7 @@ abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
     override def doAnalyze(
         p:             Project[URL],
         params:        Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         implicit val logContext: LogContext = p.logContext
 
@@ -45,12 +46,12 @@ abstract class MethodAnalysisApplication extends ProjectAnalysisApplication {
         info("progress", s"trying to find: $className{ $methodSignature }")
 
         val cf = p.classFile(ObjectType(className)) match {
-            case Some(cf) ⇒ cf
-            case None     ⇒ return s"Class $className could not be found!";
+            case Some(cf) => cf
+            case None     => return s"Class $className could not be found!";
         }
         val m = cf.methods.find(_.signatureToJava(false).contains(methodSignature)) match {
-            case Some(m) ⇒ m
-            case None    ⇒ return s"Method $methodSignature could not be found!";
+            case Some(m) => m
+            case None    => return s"Method $methodSignature could not be found!";
         }
         info("progress", s"analyzing: ${m.toJava}")
 

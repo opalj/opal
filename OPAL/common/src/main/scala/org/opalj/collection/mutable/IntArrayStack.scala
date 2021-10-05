@@ -5,7 +5,7 @@ package mutable
 
 import scala.collection.mutable
 import scala.collection.generic
-
+import scala.compat._
 /**
  * An array based implementation of a mutable stack of `int` values which has a
  * given initial size. If the stack is non-empty, the index of the top value is `0` and the
@@ -21,9 +21,9 @@ final class IntArrayStack private (
 ) extends mutable.IndexedSeq[Int]
     with mutable.IndexedSeqLike[Int, IntArrayStack]
     with mutable.Cloneable[IntArrayStack]
-    with Serializable { stack ⇒
+    with Serializable { stack =>
 
-    def this(initialSize: Int = 4) { this(new Array[Int](initialSize), 0) }
+    def this(initialSize: Int = 4) = { this(new Array[Int](initialSize), 0) }
 
     override def size: Int = size0
     override def length: Int = size0
@@ -146,7 +146,7 @@ final class IntArrayStack private (
         this.data(0)
     }
 
-    override def foreach[U](f: Int ⇒ U): Unit = {
+    override def foreach[U](f: Int => U): Unit = {
         val data = this.data
         var i = this.size0 - 1
         while (i >= 0) {
@@ -155,7 +155,7 @@ final class IntArrayStack private (
         }
     }
 
-    def foreachReverse[U](f: Int ⇒ U): Unit = {
+    def foreachReverse[U](f: Int => U): Unit = {
         val data = this.data
         val max = this.size0 - 1
         var i = 0
@@ -165,7 +165,7 @@ final class IntArrayStack private (
         }
     }
 
-    override def foldLeft[B](z: B)(f: (B, Int) ⇒ B): B = {
+    override def foldLeft[B](z: B)(f: (B, Int) => B): B = {
         val data = this.data
         var v = z
         var i = this.size0 - 1
@@ -200,7 +200,7 @@ final class IntArrayStack private (
     override def clone(): IntArrayStack = new IntArrayStack(data.clone(), size0)
 
     override def toString: String = {
-        s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "→")})"
+        s"IntArrayStack(/*size=$size0;*/data=${data.take(size0).mkString("[", ",", "->")})"
     }
 }
 
@@ -212,7 +212,7 @@ object IntArrayStack {
     implicit def canBuildFrom: generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] = {
         new generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] {
             def apply(): mutable.Builder[Int, IntArrayStack] = newBuilder
-            def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder
+            def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder()
         }
     }
 
@@ -224,7 +224,7 @@ object IntArrayStack {
      * Creates a new stack based on a given sequence. The last value of the sequence will
      * be the top value of the stack.
      */
-    def fromSeq(seq: TraversableOnce[Int]): IntArrayStack = {
+    def fromSeq(seq: IterableOnce[Int]): IntArrayStack = {
         seq.foldLeft(new IntArrayStack(8))(_ += _)
     }
 

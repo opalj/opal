@@ -9,7 +9,7 @@ import org.opalj.br.{ReferenceType, ArrayType, FieldType}
  *
  * @author Michael Eichberg
  */
-trait ReferenceValuesDomain extends ReferenceValuesFactory { domain ⇒
+trait ReferenceValuesDomain extends ReferenceValuesFactory { domain =>
 
     // -----------------------------------------------------------------------------------
     //

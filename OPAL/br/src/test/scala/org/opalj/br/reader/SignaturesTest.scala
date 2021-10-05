@@ -20,7 +20,7 @@ class SignaturesTest extends AnyFunSuite {
 
     test("traversing a minimal class type signature") {
         var types: Set[Type] = Set()
-        val visitor = new TypesVisitor(t ⇒ { types = types + t })
+        val visitor = new TypesVisitor(t => { types = types + t })
         visitor.visit(parseClassSignature("<E:Ljava/Object;>Lde/Iterator<TE;>;"))
 
         assert(types == Set(ObjectType("java/Object"), ObjectType("de/Iterator")))
@@ -28,7 +28,7 @@ class SignaturesTest extends AnyFunSuite {
 
     test("traversing a class type signature") {
         var types: Set[Type] = Set()
-        val visitor = new TypesVisitor(t ⇒ { types = types + t })
+        val visitor = new TypesVisitor(t => { types = types + t })
         visitor.visit(parseClassSignature("LDefault;Lde/Collection<Lde/Type;>;LAnotherDefault;Lde/MyObject;"))
 
         assert(
@@ -58,17 +58,17 @@ class SignaturesTest extends AnyFunSuite {
     }
 
     test("parsing the field type signatures") {
-        classA.fields.foreach(x ⇒
+        classA.fields.foreach(x =>
             x match {
-                case Field(_, "b", _) ⇒ {
+                case Field(_, "b", _) => {
                     val signature = x.fieldTypeSignature;
                     assert(signature ne null)
                 }
-                case Field(_, "bs", _) ⇒ {
+                case Field(_, "bs", _) => {
                     val signature = x.fieldTypeSignature
                     assert(signature ne null)
                 }
-                case _ ⇒ ;
+                case _ => ;
             })
     }
 

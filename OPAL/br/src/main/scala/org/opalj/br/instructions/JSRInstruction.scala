@@ -10,7 +10,7 @@ package instructions
  */
 trait JSRInstructionLike extends UnconditionalBranchInstructionLike {
 
-    final def numberOfPushedOperands(ctg: Int ⇒ ComputationalTypeCategory): Int = 1
+    final def numberOfPushedOperands(ctg: Int => ComputationalTypeCategory): Int = 1
 
     final def stackSlotsChange: Int = 1
 }
@@ -21,8 +21,8 @@ trait JSRInstruction extends UnconditionalBranchInstruction with JSRInstructionL
         val that = code.instructions(thatPC)
         (this eq that) || (
             that match {
-                case that: JSRInstruction ⇒ thisPC + this.branchoffset == thatPC + that.branchoffset
-                case _                    ⇒ false
+                case that: JSRInstruction => thisPC + this.branchoffset == thatPC + that.branchoffset
+                case _                    => false
             }
         )
     }

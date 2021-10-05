@@ -9,7 +9,7 @@ package ai
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain ⇒
+trait FloatValuesDomain extends FloatValuesFactory { this: ValuesDomain =>
 
     //
     // RELATIONAL OPERATORS

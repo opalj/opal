@@ -1,4 +1,5 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
+import scalafix.sbt.ScalafixPlugin.autoImport._
 import sbt._
 import sbt.Keys._
 import com.jsuereth.sbtpgp.PgpKeys._

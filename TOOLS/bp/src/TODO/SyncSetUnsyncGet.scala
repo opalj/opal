@@ -34,7 +34,7 @@ object SyncSetUnsyncGet {
     def apply(
         project:       SomeProject,
         parameters:    Seq[String]  = List.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[MethodBasedReport[Source]] = {
 
         // Look through non-static methods of all classes, collecting lists of
@@ -42,9 +42,9 @@ object SyncSetUnsyncGet {
         var unSyncedGetters = Map[String, Method]()
         var syncedSetters = Map[String, (ClassFile, Method)]()
         for {
-            classFile ← project.allProjectClassFiles
+            classFile <- project.allProjectClassFiles
             if !classFile.isInterfaceDeclaration
-            method ← classFile.methods
+            method <- classFile.methods
             if !method.isAbstract
             if !method.isStatic
             if !method.isNative
@@ -68,7 +68,7 @@ object SyncSetUnsyncGet {
 
         // Report only cases where both setter/getter for the same field were found.
         // setters/getters that do not belong together are ignored.
-        for (field ← syncedSetters.keySet.intersect(unSyncedGetters.keySet)) yield {
+        for (field <- syncedSetters.keySet.intersect(unSyncedGetters.keySet)) yield {
             val classFile = syncedSetters(field)._1
             val syncSet = syncedSetters(field)._2
             val unsyncGet = unSyncedGetters(field)

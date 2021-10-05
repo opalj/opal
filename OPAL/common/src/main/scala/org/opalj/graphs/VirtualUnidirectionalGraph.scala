@@ -4,6 +4,7 @@ package graphs
 
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.IntIterator
+import scala.compat._
 
 /**
  * Efficient representation of a mutable graph where the nodes are identified using consecutive
@@ -20,7 +21,7 @@ import org.opalj.collection.IntIterator
  * {{{
  * val edges = Map((0 -> List(1)),(1 -> List(0)),(2 -> List(3))/*,(3 -> List())*/)
  * val successors : Int => Iterator[Int] = (i : Int) => {
- * edges.get(i) match {case Some(successors) => successors.toIterator; case _ => Iterator.empty }
+ * edges.get(i) match {case Some(successors) => successors.iterator; case _ => Iterator.empty }
  * }
  * val vg = new org.opalj.graphs.VirtualUnidirectionalGraph(4/*max id of a node +1 */,successors)
  * }}}
@@ -30,14 +31,14 @@ import org.opalj.collection.IntIterator
  */
 class VirtualUnidirectionalGraph(
         val verticesCount: Int,
-        val successors:    Int ⇒ IntIterator
+        val successors:    Int => IntIterator
 ) extends AbstractGraph[Int] {
 
     def vertices: Range = 0 until this.verticesCount
 
     override def nonEmpty: Boolean = verticesCount > 0
 
-    override def apply(s: Int): TraversableOnce[Int] = theSuccessors(s)
+    override def apply(s: Int): IterableOnce[Int] = theSuccessors(s)
 
     /**
      * Returns a node's successors.

@@ -9,7 +9,7 @@ import org.opalj.bi.reader.FieldsReader
  *
  * @author Michael Eichberg
  */
-trait FieldsBinding extends FieldsReader { this: ConstantPoolBinding with AttributeBinding ⇒
+trait FieldsBinding extends FieldsReader { this: ConstantPoolBinding with AttributeBinding =>
 
     type Field_Info = br.Field
 

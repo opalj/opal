@@ -10,7 +10,7 @@ package control
  */
 object Comparable {
 
-    def apply[T](f: T ⇒ Int): Comparable[T] = {
+    def apply[T](f: T => Int): Comparable[T] = {
         new Comparable[T] { def compareTo(t: T): Int = f(t) }
     }
 

@@ -7,7 +7,7 @@ package bi
  *
  * @author Michael Eichberg
  */
-sealed trait AccessFlagsMatcher { left ⇒
+sealed trait AccessFlagsMatcher { left =>
 
     def unapply(accessFlags: Int): Boolean
 
@@ -50,7 +50,7 @@ sealed trait AccessFlagsMatcher { left ⇒
         }
 }
 
-trait PrimitiveAccessFlagsMatcher extends AccessFlagsMatcher { left ⇒
+trait PrimitiveAccessFlagsMatcher extends AccessFlagsMatcher { left =>
 
     /**
      * An integer value that represents an access flags bit mask.
@@ -59,13 +59,13 @@ trait PrimitiveAccessFlagsMatcher extends AccessFlagsMatcher { left ⇒
 
     override def &&(right: AccessFlagsMatcher): AccessFlagsMatcher = {
         right match {
-            case PrimitiveAccessFlagsMatcher(rightMask) ⇒
+            case PrimitiveAccessFlagsMatcher(rightMask) =>
                 new PrimitiveAccessFlagsMatcher {
                     protected val mask = left.mask | rightMask
                     def unapply(accessFlags: Int): Boolean = (accessFlags & mask) == mask
                     override def toString: String = mask.toString
                 }
-            case _ ⇒ super.&&(right)
+            case _ => super.&&(right)
         }
     }
 

@@ -34,21 +34,21 @@ object FirstInstrumentation extends App {
     val TheType = ObjectType("org/opalj/ba/SimpleInstrumentationDemo")
 
     // let's load the class
-    val in = () ⇒ this.getClass.getResourceAsStream("SimpleInstrumentationDemo.class")
+    val in = () => this.getClass.getResourceAsStream("SimpleInstrumentationDemo.class")
     val cf = Java8Framework.ClassFile(in).head // in this case we don't have invokedynamic resolution
     // let's transform the methods
     val newMethods =
-        for (m ← cf.methods) yield {
+        for (m <- cf.methods) yield {
             m.body match {
-                case None ⇒
+                case None =>
                     m.copy() // methods which are native and abstract ...
 
-                case Some(code) ⇒
+                case Some(code) =>
                     // let's search all "toString" calls
                     val lCode = LabeledCode(code)
                     var modified = false
                     for {
-                        PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) ← code
+                        PCAndInstruction(pc, INVOKEVIRTUAL(_, "toString", JustReturnsString)) <- code
                     } {
                         modified = true
                         lCode.insert(
@@ -97,7 +97,7 @@ object FirstInstrumentation extends App {
     println("original: "+oldCFHTMLFile)
 
     // Let's see the new class file...
-    val newCF = ClassFile(() ⇒ new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
+    val newCF = ClassFile(() => new ByteArrayInputStream(newRawCF)).head.toXHTML(None)
     println("instrumented: "+writeAndOpen(newCF, "NewSimpleInstrumentationDemo", ".html"))
 
     // Let's test that the new class does what it is expected to do... (we execute the

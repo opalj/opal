@@ -23,13 +23,13 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
         val accessFlags = ACC_PUBLIC.mask
 
         accessFlags match {
-            case ACC_PUBLIC() ⇒ /*success*/
-            case _            ⇒ fail("did not match ACC_PUBLIC")
+            case ACC_PUBLIC() => /*success*/
+            case _            => fail("did not match ACC_PUBLIC")
         }
 
         accessFlags match {
-            case ACC_INTERFACE() ⇒ fail("did match ACC_INTERFACE")
-            case _               ⇒ /*success*/
+            case ACC_INTERFACE() => fail("did match ACC_INTERFACE")
+            case _               => /*success*/
         }
     }
 
@@ -37,57 +37,57 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
         val afPublicAbstract = ACC_PUBLIC.mask | ACC_ABSTRACT.mask
 
         afPublicAbstract match {
-            case ACC_PUBLIC() ⇒ /*success*/
-            case _            ⇒ fail("did not match ACC_PUBLIC")
+            case ACC_PUBLIC() => /*success*/
+            case _            => fail("did not match ACC_PUBLIC")
         }
 
         afPublicAbstract match {
-            case ACC_ABSTRACT() ⇒ /*success*/
-            case _              ⇒ fail("did not match ACC_ABSTRACT")
+            case ACC_ABSTRACT() => /*success*/
+            case _              => fail("did not match ACC_ABSTRACT")
         }
 
         afPublicAbstract match {
-            case ACC_INTERFACE() ⇒ fail("did match ACC_INTERFACE")
-            case _               ⇒ /*success*/
+            case ACC_INTERFACE() => fail("did match ACC_INTERFACE")
+            case _               => /*success*/
         }
 
         afPublicAbstract match {
-            case PUBLIC_ABSTRACT() ⇒ /*success*/
-            case _                 ⇒ fail("did not match ACC_PUBLIC and ACC_ABSTRACT")
+            case PUBLIC_ABSTRACT() => /*success*/
+            case _                 => fail("did not match ACC_PUBLIC and ACC_ABSTRACT")
         }
 
         afPublicAbstract match {
-            case PUBLIC_INTERFACE() ⇒ fail("did match ACC_PUBLIC & ACC_INTERFACE")
-            case _                  ⇒ /*success*/
+            case PUBLIC_INTERFACE() => fail("did match ACC_PUBLIC & ACC_INTERFACE")
+            case _                  => /*success*/
         }
 
         afPublicAbstract match {
-            case NOT_STATIC() ⇒ /*success*/
-            case _            ⇒ fail("did match ACC_STATIC")
+            case NOT_STATIC() => /*success*/
+            case _            => fail("did match ACC_STATIC")
         }
 
         val NOT___PUBLIC_ABSTRACT = !PUBLIC_ABSTRACT
         afPublicAbstract match {
-            case NOT___PUBLIC_ABSTRACT() ⇒ fail("did match NOT (ACC_PUBLIC and ACC_ABSTRACT)")
-            case _                       ⇒ /*success*/
+            case NOT___PUBLIC_ABSTRACT() => fail("did match NOT (ACC_PUBLIC and ACC_ABSTRACT)")
+            case _                       => /*success*/
         }
 
         val NOT___PUBLIC_FINAL = !PUBLIC_FINAL
         afPublicAbstract match {
-            case NOT___PUBLIC_FINAL() ⇒ /*success*/
-            case _                    ⇒ fail("did not match NOT (ACC_PUBLIC and ACC_FINAL)")
+            case NOT___PUBLIC_FINAL() => /*success*/
+            case _                    => fail("did not match NOT (ACC_PUBLIC and ACC_FINAL)")
         }
 
         val PUBLIC___NOT_FINAL = ACC_PUBLIC && !ACC_FINAL
         afPublicAbstract match {
-            case PUBLIC___NOT_FINAL() ⇒ /*success*/
-            case _                    ⇒ fail("did not match ACC_PUBLIC and NOT (ACC_FINAL)")
+            case PUBLIC___NOT_FINAL() => /*success*/
+            case _                    => fail("did not match ACC_PUBLIC and NOT (ACC_FINAL)")
         }
 
         val NOT_PRIVATE___NOT_FINAL = (!ACC_PRIVATE) && (!ACC_FINAL)
         afPublicAbstract match {
-            case NOT_PRIVATE___NOT_FINAL() ⇒ /*success*/
-            case _ ⇒
+            case NOT_PRIVATE___NOT_FINAL() => /*success*/
+            case _ =>
                 fail(
                     AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
                         " did not match "+NOT_PRIVATE___NOT_FINAL
@@ -96,8 +96,8 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
 
         val NOT_NOT_PUBLIC = !(!ACC_PUBLIC)
         afPublicAbstract match {
-            case NOT_NOT_PUBLIC() ⇒ /*success*/
-            case _ ⇒
+            case NOT_NOT_PUBLIC() => /*success*/
+            case _ =>
                 fail(
                     AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
                         " did not match "+NOT_NOT_PUBLIC
@@ -113,14 +113,14 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
 
         val OrMatcher = AccessFlagsMatcher.PUBLIC___OR___PROTECTED_AND_NOT_FINAL
         afPublicAbstract match {
-            case OrMatcher() ⇒ /*success*/
-            case _ ⇒
+            case OrMatcher() => /*success*/
+            case _ =>
                 fail(AccessFlags.toString(afPublicAbstract, AccessFlagsContexts.METHOD)+
                     " did not match "+OrMatcher)
         }
         afProtectedAbstract match {
-            case OrMatcher() ⇒ /*success*/
-            case _ ⇒
+            case OrMatcher() => /*success*/
+            case _ =>
                 fail(
                     AccessFlags.toString(afProtectedAbstract, AccessFlagsContexts.METHOD)+
                         " did not match "+OrMatcher
@@ -128,20 +128,20 @@ class AccessFlagsMatcherTest extends AnyFlatSpec with Matchers {
         }
 
         afProtectedFinal match {
-            case OrMatcher() ⇒
+            case OrMatcher() =>
                 fail(
                     AccessFlags.toString(afProtectedFinal, AccessFlagsContexts.METHOD)+
                         " did match "+OrMatcher
                 )
-            case _ ⇒ /*success*/
+            case _ => /*success*/
         }
         afDefaultAbstract match {
-            case OrMatcher() ⇒
+            case OrMatcher() =>
                 fail(
                     AccessFlags.toString(afDefaultAbstract, AccessFlagsContexts.METHOD)+
                         " did match "+OrMatcher
                 )
-            case _ ⇒ /*success*/
+            case _ => /*success*/
         }
     }
 }

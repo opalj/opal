@@ -22,7 +22,7 @@ object VirtualAndStaticMethodCalls extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
 
         var staticCalls = 0
@@ -30,17 +30,17 @@ object VirtualAndStaticMethodCalls extends ProjectAnalysisApplication {
         var executionTime = Nanoseconds.None
         time {
             for {
-                classFile ← project.allClassFiles
-                method ← classFile.methods
-                code ← method.body
-                instruction ← code.instructions.collect { case mii: MethodInvocationInstruction ⇒ mii }
+                classFile <- project.allClassFiles
+                method <- classFile.methods
+                code <- method.body
+                instruction <- code.instructions.collect { case mii: MethodInvocationInstruction => mii }
             } {
                 if (instruction.isVirtualMethodCall)
                     virtualCalls += 1
                 else
                     staticCalls += 1
             }
-        } { t ⇒ executionTime = t }
+        } { t => executionTime = t }
 
         BasicReport(
             "The sequential analysis took: "+executionTime.toSeconds+"\n"+

@@ -20,12 +20,12 @@ object ClassesWithoutConcreteSubclasses extends ProjectAnalysisApplication {
     def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ) = {
         val classHierarchy = project.classHierarchy
         val abstractTypes =
             for {
-                classFile ← project.allClassFiles.par
+                classFile <- project.allClassFiles.par
                 if classFile.isAbstract
                 thisType = classFile.thisType
                 if classHierarchy.directSubtypesOf(thisType).isEmpty

@@ -74,7 +74,7 @@ class L1PuritySmokeTest extends AnyFunSpec with Matchers {
 
     describe("executing the L1 purity analysis should not fail") {
 
-        allBIProjects() foreach { biProject ⇒
+        allBIProjects() foreach { biProject =>
             val (name, projectFactory) = biProject
 
             it(s"for $name when no support analyses are scheduled") {

@@ -15,7 +15,7 @@ import org.opalj.br.FieldType
  * @author Dominik Helm
  */
 trait TypeLevelDynamicLoads extends DynamicLoadsDomain {
-    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration ⇒
+    domain: ReferenceValuesDomain with TypedValuesFactory with Configuration =>
 
     /*override*/ def loadDynamic(
         pc:              Int,

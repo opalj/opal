@@ -27,9 +27,9 @@ case class InstantiatedTypes(classes: UIDSet[ObjectType]) extends InstantiatedTy
 object InstantiatedTypes extends InstantiatedTypesPropertyMetaInformation {
     final val key: PropertyKey[InstantiatedTypes] = PropertyKey.create(
         "InstantiatedTypes",
-        (_: PropertyStore, reason: FallbackReason, _: Entity) ⇒ reason match {
-            case PropertyIsNotDerivedByPreviouslyExecutedAnalysis ⇒ InstantiatedTypes(UIDSet.empty)
-            case _ ⇒ throw new IllegalStateException(s"No analysis is scheduled for property InstantiatedTypes")
+        (_: PropertyStore, reason: FallbackReason, _: Entity) => reason match {
+            case PropertyIsNotDerivedByPreviouslyExecutedAnalysis => InstantiatedTypes(UIDSet.empty)
+            case _ => throw new IllegalStateException(s"No analysis is scheduled for property InstantiatedTypes")
         }
     )
 }
@@ -90,17 +90,17 @@ def analyzeMethod(method: DeclaredMethod): PropertyComputationResult = {
         PartialResult[SomeProject, InstantiatedTypes](
             project,
             InstantiatedTypes.key,
-            (current: EOptionP[SomeProject, InstantiatedTypes]) ⇒ current match {
-                case InterimUBP(ub: InstantiatedTypes) ⇒
+            (current: EOptionP[SomeProject, InstantiatedTypes]) => current match {
+                case InterimUBP(ub: InstantiatedTypes) =>
                     if (ub.classes.contains(instantiatedType))
                         None
                     else
                         Some(InterimEUBP(project, InstantiatedTypes(ub.classes + instantiatedType)))
 
-                case _: EPK[_, _] ⇒
+                case _: EPK[_, _] =>
                     Some(InterimEUBP(project, InstantiatedTypes(UIDSet(instantiatedType))))
 
-                case r ⇒ throw new IllegalStateException(s"unexpected previous result $r")
+                case r => throw new IllegalStateException(s"unexpected previous result $r")
             }
         )
     }
@@ -142,12 +142,12 @@ Let's start implementing it:
 ```scala
 def checkCallers(callersProperty: EOptionP[DeclaredMethod, Callers]): PropertyComputationResult = {
     val callers: Callers = callersProperty match {
-        case FinalP(NoCallers) ⇒
+        case FinalP(NoCallers) =>
             return NoResult
 
-        case UBP(v) ⇒ v
+        case UBP(v) => v
 
-        case r ⇒ throw new IllegalStateException(s"unexpected result for callers $r")
+        case r => throw new IllegalStateException(s"unexpected result for callers $r")
     }
 
     [...]
@@ -172,7 +172,7 @@ The `callers` method implicitly requires the `DeclaredMethods`, which is why we 
 def checkCallers(callersProperty: EOptionP[DeclaredMethod, Callers]): PropertyComputationResult = {
     [...]
 
-    for((caller, _, isDirect) ← callers.callers) {
+    for((caller, _, isDirect) <- callers.callers) {
         if (!isDirect)
             return result()
 
@@ -192,7 +192,7 @@ If it isn't, again the constructor must have been called explicitly.
 
 If the caller is a constructor, we now check whether it belongs to a direct subclass:
 ```scala
-for((caller, _, isDirect) ← callers.callers){
+for((caller, _, isDirect) <- callers.callers){
     [...]
 
     val callerClass = project.classFile(caller.declaringClassType)
@@ -209,7 +209,7 @@ The same is true if we know the class, but it has no superclass (this mainly con
 If we didn't return a result yet, we have established that the caller is a constructor of a direct subclass.  
 However, it may still have an explicit call to the analyzed constructor, thus we have to look for such call in its instructions:
 ```scala
-for((caller, _, isDirect) ← callers.callers){
+for((caller, _, isDirect) <- callers.callers){
     [...]
 
     val body = caller.definedMethod.body.get
@@ -224,10 +224,10 @@ Finally, they also can't be abstract or implemented by a native method, thus the
 
 Now we can look for explicit instantiations of the analyzed constructor's class:
 ```scala
-for((caller, _, isDirect) ← callers.callers){
+for((caller, _, isDirect) <- callers.callers){
     [...]
 
-    if(body.exists((_, instruction) ⇒ instruction == NEW(instantiatedType)))
+    if(body.exists((_, instruction) => instruction == NEW(instantiatedType)))
         return result()
 }
 ```
@@ -331,7 +331,7 @@ In the `register` method, we have to call the PropertyStore's `registerTriggered
 As a last step, we implement a simple runner to test our analysis.
 ```scala
 object InstantiatedTypesRunner extends ProjectAnalysisApplication {
-    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () ⇒ Boolean): BasicReport = {
+    override def doAnalyze(project: Project[URL], parameters: Seq[String], isInterrupted: () => Boolean): BasicReport = {
         val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(
             CHACallGraphAnalysisScheduler,
             InstantiatedTypesAnalysisScheduler

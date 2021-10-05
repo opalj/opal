@@ -16,8 +16,8 @@ object PrintTAC {
         val p = Project(new java.io.File(args(0)))
         val tacProvider = p.get(LazyDetachedTACAIKey) // TAC = Three-address code...
         for {
-            cf ← p.allProjectClassFiles
-            m ← cf.methods
+            cf <- p.allProjectClassFiles
+            m <- cf.methods
             if m.body.isDefined
         } {
             val tac = tacProvider(m)

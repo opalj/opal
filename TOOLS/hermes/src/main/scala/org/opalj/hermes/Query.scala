@@ -31,7 +31,7 @@ class Query(val query: String, private[this] var activate: Boolean = true) {
                 val queryClassConstructor = queryClass.getDeclaredConstructor(classOf[HermesConfig])
                 Some(queryClassConstructor.newInstance(hermes).asInstanceOf[FeatureQuery])
             } catch {
-                case t: Throwable ⇒
+                case t: Throwable =>
                     error("application configuration", s"failed to load: $query", t)(GlobalLogContext)
                     activate = false
                     None

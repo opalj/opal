@@ -21,11 +21,11 @@ object ISTORE extends InstructionMetaInformation {
 
     def canonicalRepresentation(lvIndex: Int): StoreLocalVariableInstruction =
         (lvIndex: @scala.annotation.switch) match {
-            case 0 ⇒ ISTORE_0
-            case 1 ⇒ ISTORE_1
-            case 2 ⇒ ISTORE_2
-            case 3 ⇒ ISTORE_3
-            case _ ⇒ new ISTORE(lvIndex)
+            case 0 => ISTORE_0
+            case 1 => ISTORE_1
+            case 2 => ISTORE_2
+            case 3 => ISTORE_3
+            case _ => new ISTORE(lvIndex)
         }
 
 }

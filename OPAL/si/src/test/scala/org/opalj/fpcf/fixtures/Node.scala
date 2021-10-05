@@ -16,8 +16,8 @@ final class Node(
 
     override def hashCode: Int = name.hashCode()
     override def equals(other: Any): Boolean = other match {
-        case that: Node ⇒ this.name equals that.name
-        case _          ⇒ false
+        case that: Node => this.name equals that.name
+        case _          => false
     }
 
     override def toString: String = name // RECALL: Nodes are potentially used in cycles.

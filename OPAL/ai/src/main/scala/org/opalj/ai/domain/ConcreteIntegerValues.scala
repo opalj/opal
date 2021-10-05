@@ -14,13 +14,13 @@ package domain
  *
  * @author Michael Eichberg
  */
-trait ConcreteIntegerValues { this: ValuesDomain ⇒
+trait ConcreteIntegerValues { this: ValuesDomain =>
 
     /**
      * If the given value encapsulates a precise integer value then the function
      * `ifThen` is called with the respective value otherwise `orElse` is called.
      */
-    def intValue[T](value: DomainValue)(ifThen: Int ⇒ T)(orElse: ⇒ T): T
+    def intValue[T](value: DomainValue)(ifThen: Int => T)(orElse: => T): T
 
     /**
      * Returns the current `Int` value represented by the domain value if it exists.

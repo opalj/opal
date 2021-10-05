@@ -10,7 +10,7 @@ package l0
  * @author Michael Eichberg
  */
 trait DefaultTypeLevelHandlingOfVoidReturns extends ReturnInstructionsDomain {
-    domain: ValuesDomain with ExceptionsFactory with Configuration ⇒
+    domain: ValuesDomain with ExceptionsFactory with Configuration =>
 
     /*base impl.*/ def returnVoid(pc: Int): Computation[Nothing, ExceptionValue] = {
         handleReturn(pc)

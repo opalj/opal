@@ -62,7 +62,7 @@ object UselessReComputationsAnalysis {
                     ConcreteIntegerValue(a) :&: _
                     ) if localsArray(pc) != null &&
                     domain.intValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
-                    code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
+                    code.localVariable(pc, index).map(lv => lv.startPC < pc).getOrElse(false) =>
                     (pc, index, a.toString)
 
                 case (
@@ -71,11 +71,11 @@ object UselessReComputationsAnalysis {
                     ConcreteLongValue(a) :&: _
                     ) if localsArray(pc) != null &&
                     domain.longValueOption(localsArray(pc)(index)).map(_ == a).getOrElse(false) &&
-                    code.localVariable(pc, index).map(lv ⇒ lv.startPC < pc).getOrElse(false) ⇒
+                    code.localVariable(pc, index).map(lv => lv.startPC < pc).getOrElse(false) =>
                     (pc, index, a.toString)
             }
 
-        methodsWithValueReassignment.map { e ⇒
+        methodsWithValueReassignment.map { e =>
             val (pc, index, value) = e
             val lv = code.localVariable(pc, index).get
             val details = List(new Operands(code, pc, operandsArray(pc), localsArray(pc)))

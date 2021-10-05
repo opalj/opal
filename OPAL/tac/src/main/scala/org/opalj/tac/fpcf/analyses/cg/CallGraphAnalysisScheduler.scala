@@ -57,13 +57,13 @@ trait CallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
                 Error("project configuration", "the project has no entry points")
             )(p.logContext)
 
-        entryPoints.foreach { ep ⇒
+        entryPoints.foreach { ep =>
             ps.preInitialize(ep, Callers.key) {
-                case _: EPK[_, _] ⇒
+                case _: EPK[_, _] =>
                     InterimEUBP(ep, OnlyCallersWithUnknownContext)
-                case InterimUBP(ub: Callers) ⇒
+                case InterimUBP(ub: Callers) =>
                     InterimEUBP(ep, ub.updatedWithUnknownContext())
-                case eps ⇒
+                case eps =>
                     throw new IllegalStateException(s"unexpected: $eps")
             }
         }

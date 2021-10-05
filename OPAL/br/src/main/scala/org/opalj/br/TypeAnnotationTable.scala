@@ -24,14 +24,14 @@ trait TypeAnnotationTable extends CodeAttribute {
 
     def copy(typeAnnotations: TypeAnnotations): TypeAnnotationTable
 
-    override def remapPCs(codeSize: Int, f: PC ⇒ PC): TypeAnnotationTable = {
+    override def remapPCs(codeSize: Int, f: PC => PC): TypeAnnotationTable = {
         copy(typeAnnotations.flatMap[TypeAnnotation](_.remapPCs(codeSize, f)))
     }
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: TypeAnnotationTable ⇒ this.similar(that)
-            case _                         ⇒ false
+            case that: TypeAnnotationTable => this.similar(that)
+            case _                         => false
         }
     }
 

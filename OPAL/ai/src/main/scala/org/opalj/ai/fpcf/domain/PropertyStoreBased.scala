@@ -37,7 +37,7 @@ trait PropertyStoreBased extends TheProject {
     def usesProperties: Set[PropertyKind] = Set.empty
 
     final def usesPropertyBounds: Set[PropertyBounds] = {
-        usesProperties.map(pk ⇒ PropertyBounds(UsedPropertiesBound, pk))
+        usesProperties.map(pk => PropertyBounds(UsedPropertiesBound, pk))
     }
 
     val dependees: EOptionPSet[Entity, Property]

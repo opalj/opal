@@ -10,7 +10,7 @@ import org.opalj.br.LongType
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait LongValuesFactory extends ValuesDomain { domain ⇒
+trait LongValuesFactory extends ValuesDomain { domain =>
 
     /**
      * Factory method to create a `DomainValue` that was created (explicitly or

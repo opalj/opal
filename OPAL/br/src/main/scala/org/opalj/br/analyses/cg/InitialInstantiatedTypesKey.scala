@@ -5,6 +5,7 @@ package analyses
 package cg
 
 import net.ceedubs.ficus.Ficus._
+import scala.Iterable
 
 /**
  *
@@ -24,13 +25,13 @@ import net.ceedubs.ficus.Ficus._
  *
  * @author Florian Kuebler
  */
-object InitialInstantiatedTypesKey extends ProjectInformationKey[Traversable[ObjectType], Nothing] {
+object InitialInstantiatedTypesKey extends ProjectInformationKey[Iterable[ObjectType], Nothing] {
 
     final val ConfigKeyPrefix = "org.opalj.br.analyses.cg.InitialInstantiatedTypesKey."
 
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(ClosedPackagesKey)
 
-    override def compute(project: SomeProject): Traversable[ObjectType] = {
+    override def compute(project: SomeProject): Iterable[ObjectType] = {
         val key = ConfigKeyPrefix+"analysis"
         val configuredAnalysis = project.config.as[Option[String]](key)
         if (configuredAnalysis.isEmpty) {

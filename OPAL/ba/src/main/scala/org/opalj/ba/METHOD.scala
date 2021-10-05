@@ -34,7 +34,7 @@ class METHOD[T](
         val descriptor = br.MethodDescriptor(this.descriptor)
         val accessFlags = accessModifiers.accessFlags
 
-        val attributes = this.attributes.map[br.Attribute](attributeBuilder ⇒
+        val attributes = this.attributes.map[br.Attribute](attributeBuilder =>
             attributeBuilder(accessFlags, name, descriptor))
 
         if (code.isDefined) {

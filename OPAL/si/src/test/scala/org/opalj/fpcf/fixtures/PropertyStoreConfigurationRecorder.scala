@@ -45,7 +45,7 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     override def entities[P <: Property](lb: P, ub: P): Iterator[Entity] = ???
 
-    override def entities(propertyFilter: SomeEPS ⇒ Boolean): Iterator[Entity] = ???
+    override def entities(propertyFilter: SomeEPS => Boolean): Iterator[Entity] = ???
 
     override def entitiesWithLB[P <: Property](lb: P): Iterator[Entity] = ???
 
@@ -63,7 +63,7 @@ class BasePropertyStoreMockup extends PropertyStore {
         e:  E,
         pk: PropertyKey[P]
     )(
-        pc: EOptionP[E, P] ⇒ InterimEP[E, P]
+        pc: EOptionP[E, P] => InterimEP[E, P]
     ): Unit = ???
 
     override def doApply[E <: Entity, P <: Property](
@@ -76,7 +76,7 @@ class BasePropertyStoreMockup extends PropertyStore {
 
     override def isIdle: Boolean = true
 
-    override def execute(f: ⇒ Unit): Unit = ???
+    override def execute(f: => Unit): Unit = ???
 
     override def doRegisterTriggeredComputation[E <: Entity, P <: Property](
         pk: PropertyKey[P],

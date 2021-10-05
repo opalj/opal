@@ -3,9 +3,9 @@ package org.opalj
 package br
 package analyses
 
-import scala.collection.JavaConverters._
-
+import scala.jdk.CollectionConverters._
 import org.opalj.log.{ConsoleOPALLogger, StandardLogContext, Error, GlobalLogContext, OPALLogger}
+import scala.Iterable
 
 /**
  * Enables the querying of a project.
@@ -20,15 +20,15 @@ class JavaProject( final val project: Project[java.net.URL]) {
     /**
      * @param classPath A list of files and jars, where to look for classes.
      */
-    def this(classPath: java.util.List[java.io.File]) {
+    def this(classPath: java.util.List[java.io.File]) = {
         this({
             implicit val logCtx = new StandardLogContext()
             OPALLogger.register(logCtx, JavaProject.Logger)
             val cp = classPath.asScala
             Project(
                 Project.JavaClassFileReader(theLogContext = logCtx).AllClassFiles(cp),
-                Traversable.empty, true, /*true or false... doesn't matter when we have no lib. */
-                Traversable.empty,
+                Iterable.empty, true, /*true or false... doesn't matter when we have no lib. */
+                Iterable.empty,
                 Project.defaultHandlerForInconsistentProjects,
                 BaseConfig,
                 logCtx
@@ -47,7 +47,7 @@ class JavaProject( final val project: Project[java.net.URL]) {
         project
             .classHierarchy
             .allSubtypes(ObjectType(objectType), reflexive = false)
-            .map(ot ⇒ ot.toJava)
+            .map(ot => ot.toJava)
             .toList
             .asJava
     }

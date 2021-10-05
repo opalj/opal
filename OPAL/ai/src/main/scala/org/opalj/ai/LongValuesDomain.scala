@@ -9,7 +9,7 @@ package ai
  * @author Michael Eichberg
  * @author Dennis Siebert
  */
-trait LongValuesDomain extends LongValuesFactory { domain ⇒
+trait LongValuesDomain extends LongValuesFactory { domain =>
 
     //
     // RELATIONAL OPERATORS

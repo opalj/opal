@@ -10,6 +10,7 @@ package immutable
  *
  * @author Dominik Helm
  */
+import scala.Iterable
 case class TypesSet(
         final val concreteTypes:   Set[ObjectType],
         final val upperTypeBounds: Set[ObjectType]
@@ -17,11 +18,11 @@ case class TypesSet(
 
     import classHierarchy.isSubtypeOf
 
-    def ++(tpes: Traversable[ObjectType]): TypesSet = {
+    def ++(tpes: Iterable[ObjectType]): TypesSet = {
         var newConcreteTypes = concreteTypes
-        tpes foreach { tpe ⇒
+        tpes foreach { tpe =>
             if (!newConcreteTypes.contains(tpe) &&
-                !upperTypeBounds.exists(utb ⇒ isSubtypeOf(tpe, utb))) {
+                !upperTypeBounds.exists(utb => isSubtypeOf(tpe, utb))) {
                 newConcreteTypes += tpe
             }
         }

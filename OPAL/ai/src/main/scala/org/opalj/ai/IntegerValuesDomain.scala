@@ -8,7 +8,7 @@ package ai
  *
  * @author Michael Eichberg
  */
-trait IntegerValuesDomain extends IntegerValuesFactory { domain ⇒
+trait IntegerValuesDomain extends IntegerValuesFactory { domain =>
 
     // -----------------------------------------------------------------------------------
     //

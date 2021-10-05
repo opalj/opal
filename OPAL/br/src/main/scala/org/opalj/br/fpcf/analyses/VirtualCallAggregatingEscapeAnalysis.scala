@@ -67,18 +67,18 @@ class VirtualCallAggregatingEscapeAnalysis private[analyses] ( final val project
                 dm.descriptor
             )
 
-        for (method ← methods) {
+        for (method <- methods) {
             val vfp = formalParameters(declaredMethods(method))(-1 - fp.origin)
             handleEscapeState(propertyStore(vfp, EscapeProperty.key))
         }
 
         def handleEscapeState(eOptionP: EOptionP[VirtualFormalParameter, EscapeProperty]): Unit =
             eOptionP match {
-                case ep @ InterimUBP(p) ⇒
+                case ep @ InterimUBP(p) =>
                     escapeState = escapeState meet p
                     dependees += ep
-                case FinalP(p) ⇒ escapeState = escapeState meet p
-                case epk       ⇒ dependees += epk
+                case FinalP(p) => escapeState = escapeState meet p
+                case epk       => dependees += epk
             }
 
         def returnResult: ProperPropertyComputationResult = {

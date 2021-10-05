@@ -29,8 +29,8 @@ private[tac] class TACTest extends AnyFunSpec with Matchers {
         if (!Arrays.equals(expected: Array[Object], actual: Array[Object])) {
             val message =
                 actualStmts.zip(expectedStmts).
-                    filter(p ⇒ p._1 != p._2).
-                    map(p ⇒ "\t"+p._1+"\n\t<=>[Expected:]\n\t"+p._2+"\n").
+                    filter(p => p._1 != p._2).
+                    map(p => "\t"+p._1+"\n\t<=>[Expected:]\n\t"+p._2+"\n").
                     mkString("Differences:\n", "\n", "\n")
             fail(message)
         }

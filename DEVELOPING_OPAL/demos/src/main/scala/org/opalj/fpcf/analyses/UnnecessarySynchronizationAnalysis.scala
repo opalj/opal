@@ -43,7 +43,7 @@ object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
     override def doAnalyze(
         project:       Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         implicit val logContext: LogContext = project.logContext
 
@@ -51,35 +51,35 @@ object UnnecessarySynchronizationAnalysis extends ProjectAnalysisApplication {
         val manager = project.get(FPCFAnalysesManagerKey)
         time {
             project.get(RTACallGraphKey)
-        } { t ⇒ info("progress", s"computing call graph and tac took ${t.toSeconds}") }
+        } { t => info("progress", s"computing call graph and tac took ${t.toSeconds}") }
         time {
             manager.runAll(
                 EagerInterProceduralEscapeAnalysis
             )
-        } { t ⇒ info("progress", s"escape analysis took ${t.toSeconds}") }
+        } { t => info("progress", s"escape analysis took ${t.toSeconds}") }
 
         val allocationSites = project.get(DefinitionSitesKey).getAllocationSites
         val objects = time {
             for {
-                as ← allocationSites
+                as <- allocationSites
                 method = as.method
                 FinalP(escape) = propertyStore(as, EscapeProperty.key)
                 if EscapeViaNormalAndAbnormalReturn lessOrEqualRestrictive escape
                 FinalP(tacai) = propertyStore(method, TACAI.key)
                 code = tacai.tac.get.stmts
-                defSite = code indexWhere (stmt ⇒ stmt.pc == as.pc)
+                defSite = code indexWhere (stmt => stmt.pc == as.pc)
                 if defSite != -1
                 stmt = code(defSite)
                 if stmt.astID == Assignment.ASTID
                 Assignment(_, DVar(_, uses), New(_, _) | NewArray(_, _, _)) = code(defSite)
-                if uses exists { use ⇒
+                if uses exists { use =>
                     code(use) match {
-                        case MonitorEnter(_, v) if v.asVar.definedBy.contains(defSite) ⇒ true
-                        case _ ⇒ false
+                        case MonitorEnter(_, v) if v.asVar.definedBy.contains(defSite) => true
+                        case _ => false
                     }
                 }
             } yield as
-        } { t ⇒ info("progress", s"unnecessary synchronization analysis took ${t.toSeconds}") }
+        } { t => info("progress", s"unnecessary synchronization analysis took ${t.toSeconds}") }
 
         val message =
             s"""|Objects that were unnecessarily synchronized:

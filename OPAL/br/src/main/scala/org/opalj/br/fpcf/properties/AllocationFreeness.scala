@@ -58,7 +58,7 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
      */
     final val key = PropertyKey.create[DeclaredMethod, AllocationFreeness](
         "AllocationFreeness",
-        (_: PropertyStore, _: FallbackReason, dm: DeclaredMethod) ⇒ {
+        (_: PropertyStore, _: FallbackReason, dm: DeclaredMethod) => {
             if (dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined) {
                 val method = dm.definedMethod
                 val body = method.body.get
@@ -74,15 +74,15 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                     val instruction = instructions(currentPC)
                     (instruction.opcode: @switch) match {
                         case NEW.opcode | NEWARRAY.opcode |
-                            ANEWARRAY.opcode | MULTIANEWARRAY.opcode ⇒
+                            ANEWARRAY.opcode | MULTIANEWARRAY.opcode =>
                             hasAllocation = true
                         case INVOKESTATIC.opcode | INVOKESPECIAL.opcode | INVOKEVIRTUAL.opcode |
-                            INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode ⇒
+                            INVOKEINTERFACE.opcode | INVOKEDYNAMIC.opcode =>
                             hasAllocation = true
-                        case ASTORE_0.opcode if !method.isStatic ⇒
+                        case ASTORE_0.opcode if !method.isStatic =>
                             if (mayOverwriteSelf) overwritesSelf = true
                             else hasAllocation = true
-                        case PUTFIELD.opcode | GETFIELD.opcode ⇒ // may allocate NPE on non-receiver
+                        case PUTFIELD.opcode | GETFIELD.opcode => // may allocate NPE on non-receiver
                             if (method.isStatic || overwritesSelf)
                                 hasAllocation = true
                             else if (instructions(body.pcOfPreviousInstruction(currentPC)).opcode !=
@@ -90,7 +90,7 @@ object AllocationFreeness extends AllocationFreenessPropertyMetaInformation {
                                 hasAllocation = true
                             else
                                 mayOverwriteSelf = false
-                        case _ ⇒ hasAllocation = instruction.jvmExceptions.nonEmpty
+                        case _ => hasAllocation = instruction.jvmExceptions.nonEmpty
                     }
                     currentPC = body.pcOfNextInstruction(currentPC)
                 }
@@ -117,7 +117,7 @@ case object MethodWithAllocations extends AllocationFreeness {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: AllocationFreeness): Unit = {
         if (other ne MethodWithAllocations)
-            throw new IllegalArgumentException(s"$e: impossible refinement: $other ⇒ $this")
+            throw new IllegalArgumentException(s"$e: impossible refinement: $other => $this")
     }
 
     override def meet(other: AllocationFreeness): AllocationFreeness = this

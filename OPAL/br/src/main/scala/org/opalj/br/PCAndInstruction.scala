@@ -18,8 +18,8 @@ import org.opalj.br.instructions.Instruction
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: PCAndInstruction ⇒ this.pc == that.pc && this.instruction == that.instruction
-            case _                      ⇒ false
+            case that: PCAndInstruction => this.pc == that.pc && this.instruction == that.instruction
+            case _                      => false
         }
     }
 

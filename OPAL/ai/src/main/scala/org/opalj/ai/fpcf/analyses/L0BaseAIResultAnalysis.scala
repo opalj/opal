@@ -33,8 +33,8 @@ class L0BaseAIResultAnalysis private[analyses] (val project: SomeProject) extend
 
     def performAI(entity: Entity): ProperPropertyComputationResult = {
         entity match {
-            case m: Method ⇒ Result(m, AnAIResult(L0BaseAIResultAnalysis.performAI(m)))
-            case e         ⇒ throw new IllegalArgumentException(s"$e is not a method")
+            case m: Method => Result(m, AnAIResult(L0BaseAIResultAnalysis.performAI(m)))
+            case e         => throw new IllegalArgumentException(s"$e is not a method")
         }
     }
 }
@@ -59,7 +59,7 @@ object L0BaseAIResultAnalysis {
         try {
             aiFactory(m)
         } catch {
-            case t: Throwable ⇒
+            case t: Throwable =>
                 error(
                     "project configuration",
                     s"interpretation of ${m.toJava} failed; "+

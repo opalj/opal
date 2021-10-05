@@ -14,8 +14,8 @@ case class ExceptionTable(exceptions: Exceptions) extends Attribute {
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case that: ExceptionTable ⇒ this.similar(that)
-            case _                    ⇒ false
+            case that: ExceptionTable => this.similar(that)
+            case _                    => false
         }
     }
 
@@ -23,7 +23,7 @@ case class ExceptionTable(exceptions: Exceptions) extends Attribute {
         // the order does not have to be identical "... throws IOException, Throwable"
         // is the same as "... throws Throwable, IOException"
         this.exceptions.size == other.exceptions.size &&
-            this.exceptions.iterator.zip(other.exceptions.iterator).forall { e ⇒
+            this.exceptions.iterator.zip(other.exceptions.iterator).forall { e =>
                 val (thisEx, otherEx) = e
                 thisEx == otherEx
             }

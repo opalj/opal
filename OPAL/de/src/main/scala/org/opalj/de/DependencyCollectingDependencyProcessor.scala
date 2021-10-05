@@ -2,7 +2,7 @@
 package org.opalj
 package de
 
-import java.util.concurrent.{ConcurrentHashMap ⇒ CMap}
+import java.util.concurrent.{ConcurrentHashMap => CMap}
 import scala.collection.mutable.Set
 
 import org.opalj.collection.asScala
@@ -52,10 +52,10 @@ class DependencyCollectingDependencyProcessor(
         val targets =
             deps.computeIfAbsent(
                 source,
-                (_) ⇒ new CMap[VirtualSourceElement, Set[DependencyType]](16)
+                (_) => new CMap[VirtualSourceElement, Set[DependencyType]](16)
             )
 
-        val dependencyTypes = targets.computeIfAbsent(target, (_) ⇒ Set.empty[DependencyType])
+        val dependencyTypes = targets.computeIfAbsent(target, (_) => Set.empty[DependencyType])
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {
@@ -73,11 +73,11 @@ class DependencyCollectingDependencyProcessor(
         val arrayTypes =
             depsOnArrayTypes.computeIfAbsent(
                 source,
-                (_) ⇒ new CMap[ArrayType, Set[DependencyType]](16)
+                (_) => new CMap[ArrayType, Set[DependencyType]](16)
             )
 
         val dependencyTypes =
-            arrayTypes.computeIfAbsent(arrayType, (_) ⇒ Set.empty[DependencyType])
+            arrayTypes.computeIfAbsent(arrayType, (_) => Set.empty[DependencyType])
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {
@@ -95,10 +95,10 @@ class DependencyCollectingDependencyProcessor(
         val baseTypes =
             depsOnBaseTypes.computeIfAbsent(
                 source,
-                (_) ⇒ new CMap[BaseType, Set[DependencyType]](16)
+                (_) => new CMap[BaseType, Set[DependencyType]](16)
             )
 
-        val dependencyTypes = baseTypes.computeIfAbsent(baseType, (_) ⇒ Set.empty[DependencyType])
+        val dependencyTypes = baseTypes.computeIfAbsent(baseType, (_) => Set.empty[DependencyType])
 
         if (!dependencyTypes.contains(dType)) {
             dependencyTypes.synchronized {

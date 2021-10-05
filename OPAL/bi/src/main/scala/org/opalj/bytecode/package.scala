@@ -58,8 +58,8 @@ package object bytecode {
                 fqnB.substring(pkgSeparatorIndex, fqnB.length())
             )
             commonPkg match {
-                case Some(childPackage) ⇒ Some(rootPkg + childPackage)
-                case None               ⇒ Some(rootPkg)
+                case Some(childPackage) => Some(rootPkg + childPackage)
+                case None               => Some(rootPkg)
             }
         } else {
             None
@@ -95,7 +95,7 @@ package object bytecode {
 
         commonPackage(definingTypeFQN, memberTypeFQN) match {
 
-            case Some(commonPkg) if commonPkg.indexOf(pkgSeparatorChar) < commonPkg.length - 1 ⇒
+            case Some(commonPkg) if commonPkg.indexOf(pkgSeparatorChar) < commonPkg.length - 1 =>
                 // we have more than one common package...
                 val beforeLastCommonPkgIndex = commonPkg.dropRight(1).lastIndexOf(pkgSeparatorChar)
                 val length = memberTypeFQN.length
@@ -104,7 +104,7 @@ package object bytecode {
                 packageAbbreviation +
                     memberTypeFQN.substring(beforeLastCommonPkgIndex + 1, length)
 
-            case _ ⇒
+            case _ =>
                 memberTypeFQN
         }
     }
@@ -122,10 +122,10 @@ package object bytecode {
             val paths = sunBootClassPath.split(File.pathSeparator)
             paths.find(_.endsWith("rt.jar")) match {
 
-                case Some(libPath) ⇒
+                case Some(libPath) =>
                     new File(libPath.substring(0, libPath.length() - 6))
 
-                case None ⇒
+                case None =>
                     val sunBootLibraryPath = System.getProperty("sun.boot.library.path")
                     if (sunBootLibraryPath == null) {
                         throw new RuntimeException("cannot locate the JRE libraries")
@@ -150,8 +150,8 @@ package object bytecode {
             val paths = sunBootClassPath.split(File.pathSeparator)
 
             paths.find(_.endsWith("rt.jar")) match {
-                case Some(rtJarPath) ⇒ new File(rtJarPath)
-                case None ⇒
+                case Some(rtJarPath) => new File(rtJarPath)
+                case None =>
                     val rtJarCandidates =
                         new File(System.getProperty("sun.boot.library.path")).listFiles(
                             new java.io.FilenameFilter() {
@@ -174,9 +174,9 @@ package object bytecode {
      * The list of all JVM instructions in the format: "<OPCODE><MNEMONIC>NewLine".
      */
     def JVMInstructions: List[(Int, String)] = {
-        process(getClass.getClassLoader.getResourceAsStream("JVMInstructionsList.txt")) { stream ⇒
+        process(getClass.getClassLoader.getResourceAsStream("JVMInstructionsList.txt")) { stream =>
             val is = Source.fromInputStream(stream).getLines.toList.map(_.split(" ").map(_.trim))
-            is.map { i ⇒
+            is.map { i =>
                 val opcode = i(0)
                 val mnemonic = i(1)
                 (opcode.toInt, mnemonic)

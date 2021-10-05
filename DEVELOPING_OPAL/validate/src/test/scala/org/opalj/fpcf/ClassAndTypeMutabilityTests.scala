@@ -29,7 +29,7 @@ class ClassAndTypeMutabilityTests extends PropertiesTest {
         as.propertyStore.shutdown()
         validateProperties(
             as,
-            classFilesWithAnnotations(as.project).map(tp ⇒ (tp._1.thisType, tp._2, tp._3)),
+            classFilesWithAnnotations(as.project).map(tp => (tp._1.thisType, tp._2, tp._3)),
             Set("TypeImmutability", "ClassImmutability")
         )
     }

@@ -29,7 +29,7 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      */
     override def requirements(
         project: SomeProject
-    ): Seq[ProjectInformationKey[Method ⇒ AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
+    ): Seq[ProjectInformationKey[Method => AIResult { val domain: Domain with RecordDefUse }, _ <: AnyRef]] = {
         Seq(SimpleAIKey)
     }
 
@@ -44,11 +44,11 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
      */
     override def compute(
         project: SomeProject
-    ): Method ⇒ AITACode[TACMethodParameter, ValueInformation] = {
+    ): Method => AITACode[TACMethodParameter, ValueInformation] = {
         val aiResults = project.get(SimpleAIKey)
         val taCodes = TrieMap.empty[Method, AITACode[TACMethodParameter, ValueInformation]]
 
-        (m: Method) ⇒ taCodes.getOrElseUpdate(m, {
+        (m: Method) => taCodes.getOrElseUpdate(m, {
             val aiResult = aiResults(m)
             val code = TACAI(project, m, aiResult)
             // well... the following cast is safe, because the underlying
@@ -66,16 +66,16 @@ object LazyTACUsingAIKey extends TACAIKey[Nothing] {
             taCodes.put(m, taCode)
             taCode
         }
-         (m: Method) ⇒ taCodes.get(m) match {
-            case Some(taCode) ⇒ taCode
-            case None ⇒
+         (m: Method) => taCodes.get(m) match {
+            case Some(taCode) => taCode
+            case None =>
                 val brCode = m.body.get
                 // Basically, we use double checked locking; we really don't want to
                 // transform the code more than once!
                 brCode.synchronized {
                     taCodes.get(m) match {
-                        case Some(taCode) ⇒ taCode
-                        case None         ⇒ computeAndCacheTAC(m)
+                        case Some(taCode) => taCode
+                        case None         => computeAndCacheTAC(m)
                     }
                 }
         }

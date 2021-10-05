@@ -8,7 +8,7 @@ package l0
  * @author Michael Eichberg
  */
 trait ReturnInstructionsDomain extends ai.ReturnInstructionsDomain with MonitorInstructionsTracker {
-    domain: ValuesDomain with Configuration with ExceptionsFactory ⇒
+    domain: ValuesDomain with Configuration with ExceptionsFactory =>
 
     /**
      * Creates a computation object that encapsulates the result of a computation that

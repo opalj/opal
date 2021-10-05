@@ -22,7 +22,7 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
-
+import scala.collection.IterableOnce
 /**
  * XTA, MTA, FTA and CTA are a propagation-based call graph analyses which were introduced by Tip and Palsberg.
  *
@@ -45,7 +45,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     override type LocalTypeInformation = Null
 
     override def c(state: PropagationBasedCGState)(eps: SomeEPS): ProperPropertyComputationResult = eps match {
-        case EUBP(typeSetEntity: TypeSetEntity, _: InstantiatedTypes) ⇒
+        case EUBP(typeSetEntity: TypeSetEntity, _: InstantiatedTypes) =>
             val seenTypes = state.instantiatedTypes(typeSetEntity).size
 
             state.updateInstantiatedTypesDependee(
@@ -61,7 +61,7 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
 
             returnResult(calleesAndCallers)(state)
 
-        case _ ⇒ super.c(state)(eps)
+        case _ => super.c(state)(eps)
     }
 
     override def createInitialState(
@@ -94,11 +94,11 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
 
     // modifies state and the calleesAndCallers
     private[this] def handleVirtualCallSites(
-        calleesAndCallers: DirectCalls, newTypes: TraversableOnce[ReferenceType]
+        calleesAndCallers: DirectCalls, newTypes: IterableOnce[ReferenceType]
     )(implicit state: PropagationBasedCGState): Unit = {
-        newTypes.filter(_.isObjectType).foreach { instantiatedType ⇒
+        newTypes.iterator.filter(_.isObjectType).foreach { instantiatedType =>
             val callSites = state.getVirtualCallSites(instantiatedType.asObjectType)
-            callSites.foreach { callSite ⇒
+            callSites.foreach { callSite =>
                 val CallSite(pc, name, descr, declaringClass) = callSite
                 val tgtR = project.instanceCall(
                     state.method.definedMethod.classFile.thisType,
@@ -125,13 +125,13 @@ class PropagationBasedCallGraphAnalysis private[analyses] (
     @inline override protected[this] def canResolveCall(
         localTypeInformation: LocalTypeInformation,
         state:                PropagationBasedCGState
-    ): ObjectType ⇒ Boolean = state.instantiatedTypesContains
+    ): ObjectType => Boolean = state.instantiatedTypesContains
 
     @inline protected[this] def handleUnresolvedCall(
         unresolvedTypes: IntTrieSet,
         callSite:        CallSite
     )(implicit state: PropagationBasedCGState): Unit = {
-        for (typeId ← unresolvedTypes)
+        for (typeId <- unresolvedTypes)
             state.addVirtualCallSite(typeId.toLong, callSite)
     }
 

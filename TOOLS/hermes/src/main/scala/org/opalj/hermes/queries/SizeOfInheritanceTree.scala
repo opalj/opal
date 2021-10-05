@@ -6,7 +6,7 @@ package queries
 import org.opalj.br.analyses.Project
 import org.opalj.da.ClassFile
 import org.opalj.hermes.{Feature, FeatureQuery, ProjectConfiguration}
-
+import scala.collection.Iterable
 /**
  * Computes the size of the inheritance tree for each class of a project and then assigns the
  * class to its respective category.
@@ -34,8 +34,8 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val classHierarchy = project.classHierarchy
         import classHierarchy.isSupertypeInformationComplete
 
@@ -45,16 +45,16 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
         val features = Array.fill[LocationsContainer[S]](featureIDs.size)(new LocationsContainer[S])
         var classCount = 0
         var sumOfSizeOfInheritanceTrees = 0
-        classHierarchy.foreachKnownType { t ⇒
+        classHierarchy.foreachKnownType { t =>
             if (project.isProjectType(t)) {
                 val l = ClassFileLocation(project, t)
                 classHierarchy.supertypeInformation(t) match {
-                    case Some(supertypeInformation) if isSupertypeInformationComplete(t) ⇒
+                    case Some(supertypeInformation) if isSupertypeInformationComplete(t) =>
                         val sizeOfInheritanceTree = supertypeInformation.size
                         features(Math.min(sizeOfInheritanceTree / CategorySize, 5)) += l
                         classCount += 1
                         sumOfSizeOfInheritanceTrees += sizeOfInheritanceTree
-                    case _ /* None or <incomplete> */ ⇒
+                    case _ /* None or <incomplete> */ =>
                         features(6) += l
                 }
             }
@@ -69,7 +69,7 @@ class SizeOfInheritanceTree(implicit hermes: HermesConfig) extends FeatureQuery 
             }
         )
 
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, features(featureIDIndex))
         }
 

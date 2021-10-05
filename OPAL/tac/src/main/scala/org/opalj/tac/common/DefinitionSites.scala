@@ -6,7 +6,7 @@ package common
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import org.opalj.br.Method
 import org.opalj.br.analyses.SomeProject
@@ -49,7 +49,7 @@ class DefinitionSites(val project: SomeProject) {
     def getAllocationSites: Seq[DefinitionSite] = {
         val allocationSites = new ConcurrentLinkedQueue[DefinitionSite]()
 
-        project.parForeachMethodWithBody() { methodInfo ⇒
+        project.parForeachMethodWithBody() { methodInfo =>
             val m = methodInfo.method
             val code = m.body.get.instructions
             var pc = 0
@@ -57,10 +57,10 @@ class DefinitionSites(val project: SomeProject) {
                 val instr = code(pc)
                 if (instr != null) {
                     instr.opcode match {
-                        case NEW.opcode | NEWARRAY.opcode | ANEWARRAY.opcode | MULTIANEWARRAY.opcode ⇒
+                        case NEW.opcode | NEWARRAY.opcode | ANEWARRAY.opcode | MULTIANEWARRAY.opcode =>
                             val defSite: DefinitionSite = apply(m, pc)
                             allocationSites.add(defSite)
-                        case _ ⇒
+                        case _ =>
                     }
                 }
                 pc += 1

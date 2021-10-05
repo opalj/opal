@@ -47,7 +47,7 @@ object VarargsUtil {
         expr:      Expr[V],
         stmts:     Array[Stmt[V]],
         cfg:       CFG[Stmt[V], TACStmts[V]],
-        fillEntry: (ArrayStore[V], Array[Stmt[V]], RefArray[T]) ⇒ Option[RefArray[T]]
+        fillEntry: (ArrayStore[V], Array[Stmt[V]], RefArray[T]) => Option[RefArray[T]]
     ): Option[RefArray[T]] = {
         val definitions = expr.asVar.definedBy
         if (!definitions.isSingletonSet || definitions.head < 0) {
@@ -61,7 +61,7 @@ object VarargsUtil {
             } else {
                 val uses = IntArraySetBuilder(definition.targetVar.usedBy.toChain).result()
                 var params: RefArray[T] = RefArray.withSize(uses.size - 1)
-                if (!uses.forall { useSite ⇒
+                if (!uses.forall { useSite =>
                     val use = stmts(useSite)
                     if (useSite == uses.last)
                         // todo: should we just check for invocations?

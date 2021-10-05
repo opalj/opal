@@ -46,14 +46,14 @@ trait BootstrapMethods_attributeBinding
         cp(constantPoolIndex).asBootstrapArgument(cp)
     }
 
-    registerAttributesPostProcessor { attributes ⇒
-        val bsmO = attributes collectFirst { case BootstrapMethodTable(bms) ⇒ bms }
+    registerAttributesPostProcessor { attributes =>
+        val bsmO = attributes collectFirst { case BootstrapMethodTable(bms) => bms }
         if (bsmO.isDefined) {
             val bootstrapMethods = bsmO.get
-            bootstrapMethods foreach { bsm ⇒
+            bootstrapMethods foreach { bsm =>
                 bsm.arguments foreach {
-                    case dc: DynamicConstant ⇒ dc.fillInBootstrapMethod(bootstrapMethods)
-                    case _                   ⇒
+                    case dc: DynamicConstant => dc.fillInBootstrapMethod(bootstrapMethods)
+                    case _                   =>
                 }
             }
         }

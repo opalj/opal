@@ -11,7 +11,7 @@ import org.opalj.br.DeclaredMethod
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-
+import scala.collection.IterableOnce
 /**
  * The proxy class for all call-graph related properties.
  * All information will be queried from the property store ([[org.opalj.fpcf.PropertyStore]]),
@@ -31,7 +31,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
 
     def calleesOf(m: DeclaredMethod): Iterator[(Int, Iterator[DeclaredMethod])] = {
         // IMPROVE: avoid inefficient boxing operations
-        ps(m, Callees.key).ub.callSites().toIterator
+        ps(m, Callees.key).ub.callSites().iterator
     }
 
     def calleesPropertyOf(m: DeclaredMethod): Callees = {
@@ -58,7 +58,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
      * For the given method it returns all callers, including the pc of the call-site and a flag,
      * indicating whether the call was direct (true) or indirect (false).
      */
-    def callersOf(m: DeclaredMethod): TraversableOnce[(DeclaredMethod, Int, Boolean)] = {
+    def callersOf(m: DeclaredMethod): IterableOnce[(DeclaredMethod, Int, Boolean)] = {
         ps(m, Callers.key).ub.callers
     }
 
@@ -77,7 +77,7 @@ class CallGraph private[cg] ()(implicit ps: PropertyStore, declaredMethods: Decl
     def reachableMethods(): Iterator[DeclaredMethod] = {
         val callersProperties = ps.entities(Callers.key)
         callersProperties.collect {
-            case EUBP(dm: DeclaredMethod, ub: Callers) if ub ne NoCallers ⇒ dm
+            case EUBP(dm: DeclaredMethod, ub: Callers) if ub ne NoCallers => dm
         }
     }
 

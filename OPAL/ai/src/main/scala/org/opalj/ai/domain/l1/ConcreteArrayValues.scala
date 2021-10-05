@@ -39,7 +39,7 @@ trait ConcreteArrayValues
     extends l1.ArrayValues
     with PerInstructionPostProcessing
     with PostEvaluationMemoryManagement {
-    domain: CorrelationalDomain with ConcreteIntegerValues with LogContextProvider ⇒
+    domain: CorrelationalDomain with ConcreteIntegerValues with LogContextProvider =>
 
     private[this] val debug: Boolean = false
 
@@ -64,8 +64,8 @@ trait ConcreteArrayValues
      */
     protected def isEffectivelyImmutable(objectType: ObjectType): Boolean = {
         objectType.id match {
-            case ObjectType.ObjectId | ObjectType.StringId | ObjectType.ClassId ⇒ true
-            case _ ⇒ false
+            case ObjectType.ObjectId | ObjectType.StringId | ObjectType.ClassId => true
+            case _ => false
         }
     }
 
@@ -133,7 +133,7 @@ trait ConcreteArrayValues
     ) extends ArrayValue(origin, isNull = No, isPrecise = true, theType, refId) { ... }
     */
 
-    protected trait ConcreteArrayValue extends ArrayValue { this: DomainConcreteArrayValue ⇒
+    protected trait ConcreteArrayValue extends ArrayValue { this: DomainConcreteArrayValue =>
 
         def values: Array[DomainValue]
 
@@ -158,7 +158,7 @@ trait ConcreteArrayValues
                 );
             }
 
-            intValue[ArrayLoadResult](index) { index ⇒
+            intValue[ArrayLoadResult](index) { index =>
                 ComputedValue(values(index))
             } {
                 // This handles the case that we know that the index is not precise
@@ -191,7 +191,7 @@ trait ConcreteArrayValues
 
             // If we reach this point no exception will be thrown!
             // However, we now have to provide the solution for the happy path
-            intValue[ArrayStoreResult](index) { index ⇒
+            intValue[ArrayStoreResult](index) { index =>
                 // let's check if we need to do anything
                 if (values(index) ne value) {
                     val updatedValue = ArrayValue(origin, theUpperTypeBound, values.updated(index, value), refId)
@@ -214,19 +214,19 @@ trait ConcreteArrayValues
         ): Update[DomainSingleOriginReferenceValue] = {
 
             other match {
-                case DomainConcreteArrayValueTag(that) if this.refId == that.refId ⇒
+                case DomainConcreteArrayValueTag(that) if this.refId == that.refId =>
                     var update: UpdateType = NoUpdateType
                     var isOther: Boolean = true
                     val allValues = this.values.view.zip(that.values)
                     val newValues =
-                        (allValues map { (v) ⇒
+                        (allValues map { (v) =>
                             val (v1, v2) = v
                             if (v1 ne v2) {
                                 val joinResult = v1.join(joinPC, v2)
                                 joinResult match {
-                                    case NoUpdate ⇒
+                                    case NoUpdate =>
                                         v1
-                                    case SomeUpdate(newValue) ⇒
+                                    case SomeUpdate(newValue) =>
                                         if (v2 ne newValue) {
                                             isOther = false
                                         }
@@ -237,8 +237,8 @@ trait ConcreteArrayValues
                                 v1
                         }).toArray // <= forces the evaluation - WHICH IS REQUIRED
                     update match {
-                        case NoUpdateType ⇒ NoUpdate
-                        case _ ⇒
+                        case NoUpdateType => NoUpdate
+                        case _ =>
                             if (isOther) {
                                 update(other)
                             } else {
@@ -246,9 +246,9 @@ trait ConcreteArrayValues
                             }
                     }
 
-                // case DomainInitializedArrayValueTag(that) ⇒
+                // case DomainInitializedArrayValueTag(that) =>
 
-                case _ ⇒
+                case _ =>
                     val answer = super.doJoinWithNonNullValueWithSameOrigin(joinPC, other)
                     if (answer == NoUpdate) {
                         // => This array and the other array have a corresponding
@@ -271,29 +271,29 @@ trait ConcreteArrayValues
         override def adapt(target: TargetDomain, vo: ValueOrigin): target.DomainValue = {
             val adaptedValue = target match {
 
-                case thatDomain: l1.ConcreteArrayValues ⇒
+                case thatDomain: l1.ConcreteArrayValues =>
                     // Is this the right adaptation scheme???
                     val adaptedValues =
                         values.map(_.adapt(target, vo).asInstanceOf[thatDomain.DomainValue])
                     thatDomain.ArrayValue(vo, theUpperTypeBound, adaptedValues)
 
-                case thatDomain: l1.ArrayValues ⇒
+                case thatDomain: l1.ArrayValues =>
                     thatDomain.InitializedArrayValue(vo, theUpperTypeBound, values.length)
 
-                case thatDomain: l1.ReferenceValues ⇒
+                case thatDomain: l1.ReferenceValues =>
                     thatDomain.ArrayValue(vo, No, true, theUpperTypeBound, thatDomain.nextRefId())
 
-                case thatDomain: l0.TypeLevelReferenceValues ⇒
+                case thatDomain: l0.TypeLevelReferenceValues =>
                     thatDomain.ReferenceValue(vo, theUpperTypeBound)
 
-                case _ ⇒ super.adapt(target, vo)
+                case _ => super.adapt(target, vo)
             }
             adaptedValue.asInstanceOf[target.DomainValue]
         }
 
         override def equals(other: Any): Boolean = {
             other match {
-                case DomainConcreteArrayValueTag(that) ⇒
+                case DomainConcreteArrayValueTag(that) =>
                     (that eq this) ||
                         (
                             (that canEqual this) &&
@@ -302,7 +302,7 @@ trait ConcreteArrayValues
                             this.values == that.values
                         )
 
-                case _ ⇒ false
+                case _ => false
             }
         }
 
@@ -363,7 +363,7 @@ trait ConcreteArrayValues
         counts:    Operands,
         arrayType: ArrayType
     ): DomainArrayValue = {
-        intValue(counts.last) { length ⇒
+        intValue(counts.last) { length =>
             InitializedArrayValue(origin, arrayType, length)
         } {
             super.NewArray(origin, counts, arrayType)

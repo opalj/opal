@@ -21,7 +21,7 @@ object AccessFlags {
      * Returns the names of the access flags set in a respective vector.
      */
     def toStrings(accessFlags: Int, ctx: AccessFlagsContext): Iterator[String] = {
-        AccessFlagsIterator(accessFlags, ctx) map { accessFlag ⇒
+        AccessFlagsIterator(accessFlags, ctx) map { accessFlag =>
             accessFlag.javaName.getOrElse("/*"+accessFlag.toString+"*/")
         }
     }

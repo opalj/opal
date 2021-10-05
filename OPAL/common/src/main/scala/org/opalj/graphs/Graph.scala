@@ -7,10 +7,12 @@ import scala.reflect.ClassTag
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Set
 import scala.collection.mutable.HashMap
-import scala.collection.{Map ⇒ AMap}
+import scala.collection.{Map => AMap}
 import org.opalj.collection.IntIterator
 import org.opalj.collection.immutable.Chain
 import org.opalj.collection.immutable.Naught
+import scala.Iterable
+import scala.compat._
 
 /**
  * Represents a mutable (multi-)graph with ordered edges.
@@ -28,7 +30,7 @@ class Graph[@specialized(Int) N: ClassTag] private (
 
     def apply(s: N): Chain[N] = successors.getOrElse(s, Naught)
 
-    def asTraversable: N ⇒ Traversable[N] = (n: N) ⇒ { this(n).toTraversable }
+    def asTraversable: N => Iterable[N] = (n: N) => { this(n).toTraversable }
 
     /**
      * Adds a new vertice.
@@ -66,41 +68,41 @@ class Graph[@specialized(Int) N: ClassTag] private (
     def -=(v: N): this.type = {
         vertices -= v
         val oldSuccessorsOpt = successors.get(v)
-        oldSuccessorsOpt.foreach(_ foreach { s ⇒ predecessors(s) = predecessors(s) filter (_ != v) })
+        oldSuccessorsOpt.foreach(_ foreach { s => predecessors(s) = predecessors(s) filter (_ != v) })
         val oldPredecessorsOpt = predecessors.get(v)
-        oldPredecessorsOpt.foreach(_ foreach { s ⇒ successors(s) = successors(s) filter (_ != v) })
+        oldPredecessorsOpt.foreach(_ foreach { s => successors(s) = successors(s) filter (_ != v) })
         successors -= v
         predecessors -= v
         this
     }
 
-    def --=(vs: TraversableOnce[N]): this.type = { vs foreach { v ⇒ this -= v }; this }
+    def --=(vs: IterableOnce[N]): this.type = { vs foreach { v => this -= v }; this }
 
     /**
      * All nodes which only have incoming dependencies/which have no successors.
      */
-    def leafNodes: Set[N] = vertices.filter(v ⇒ !successors.contains(v) || successors(v).isEmpty)
+    def leafNodes: Set[N] = vertices.filter(v => !successors.contains(v) || successors(v).isEmpty)
 
     def sccs(filterSingletons: Boolean = false): Iterator[Iterator[N]] = {
         val size = vertices.size
         val indexToN = new Array[N](size)
         val nToIndex = new HashMap[N, Int] { override def initialSize = size }
         for {
-            e ← vertices.iterator.zipWithIndex // Scalac 2.12.2 will issue an incorrect warning for e @ (n, index)
+            e <- vertices.iterator.zipWithIndex // Scalac 2.12.2 will issue an incorrect warning for e @ (n, index)
         } {
             val (n, index) = e
             indexToN(index) = n
             nToIndex += e
         }
-        val es: Int ⇒ IntIterator = (index: Int) ⇒ {
+        val es: Int => IntIterator = (index: Int) => {
             successors.get(indexToN(index)) match {
-                case Some(successors) ⇒ successors.mapToIntIterator(nToIndex)
-                case None             ⇒ IntIterator.empty
+                case Some(successors) => successors.mapToIntIterator(nToIndex)
+                case None             => IntIterator.empty
             }
         }
 
-        org.opalj.graphs.sccs(size, es, filterSingletons).toIterator.map { scc ⇒
-            scc.toIterator.map(indexToN)
+        org.opalj.graphs.sccs(size, es, filterSingletons).iterator.map { scc =>
+            scc.iterator.map(indexToN)
         }
     }
 }
@@ -120,10 +122,10 @@ object Graph {
 
     def apply[N: ClassTag](edges: AMap[N, List[N]]): Graph[N] = {
         val g = Graph.empty[N]
-        edges foreach { e ⇒
+        edges foreach { e =>
             val (s, ts) = e
-            ts foreach { t ⇒
-                g += (s → t)
+            ts foreach { t =>
+                g += (s -> t)
             }
         }
         g

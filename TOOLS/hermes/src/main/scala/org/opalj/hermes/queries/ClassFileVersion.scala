@@ -10,7 +10,7 @@ import org.opalj.bi.Java5MajorVersion
 import org.opalj.bi.Java1MajorVersion
 import org.opalj.bi.jdkVersion
 import org.opalj.br.analyses.Project
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  * Counts the number of class files per class file version.
  *
@@ -22,7 +22,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
 
     override val featureIDs: Seq[String] = {
         featureId(Java1MajorVersion) +: (
-            for (majorVersion ← Java5MajorVersion to LatestSupportedJavaMajorVersion)
+            for (majorVersion <- Java5MajorVersion to LatestSupportedJavaMajorVersion)
                 yield featureId(majorVersion)
         )
     }
@@ -30,13 +30,13 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val data = ArrayMap[LocationsContainer[S]](LatestSupportedJavaMajorVersion)
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
         } {
             val version = classFile.majorVersion
@@ -57,7 +57,7 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
             else
                 Feature[S](java1MajorVersionFeatureId, extensions.size, extensions)
         } +: (
-            for (majorVersion ← Java5MajorVersion to LatestSupportedJavaMajorVersion) yield {
+            for (majorVersion <- Java5MajorVersion to LatestSupportedJavaMajorVersion) yield {
                 val featureId = this.featureId(majorVersion)
                 val extensions = data(majorVersion)
                 if (extensions ne null) {

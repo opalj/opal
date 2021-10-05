@@ -29,7 +29,7 @@ class BytecodeInstructionsCache {
 
     private[this] val gotoInstructions = {
         val instructions = new Array[GOTO](2000)
-        for (i ← instructions.indices) instructions(i) = new GOTO(i - 1000)
+        for (i <- instructions.indices) instructions(i) = new GOTO(i - 1000)
         instructions
     }
     def GOTO(branchtarget: Int): GOTO = {
@@ -39,7 +39,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifnullInstructions = {
         val instructions = new Array[IFNULL](1000)
-        for (i ← instructions.indices) instructions(i) = new IFNULL(i - 150)
+        for (i <- instructions.indices) instructions(i) = new IFNULL(i - 150)
         instructions
     }
     def IFNULL(branchtarget: Int): IFNULL = {
@@ -49,7 +49,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifnonnullInstructions = {
         val instructions = new Array[IFNONNULL](500)
-        for (i ← instructions.indices) instructions(i) = new IFNONNULL(i - 150)
+        for (i <- instructions.indices) instructions(i) = new IFNONNULL(i - 150)
         instructions
     }
     def IFNONNULL(branchtarget: Int): IFNONNULL = {
@@ -59,7 +59,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifacmpeqInstructions = {
         val instructions = new Array[IF_ACMPEQ](1000)
-        for (i ← instructions.indices) instructions(i) = new IF_ACMPEQ(i - 150)
+        for (i <- instructions.indices) instructions(i) = new IF_ACMPEQ(i - 150)
         instructions
     }
     def IF_ACMPEQ(branchtarget: Int): IF_ACMPEQ =
@@ -68,7 +68,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifacmpneInstructions = {
         val instructions = new Array[IF_ACMPNE](500)
-        for (i ← instructions.indices) instructions(i) = new IF_ACMPNE(i - 150)
+        for (i <- instructions.indices) instructions(i) = new IF_ACMPNE(i - 150)
         instructions
     }
     def IF_ACMPNE(branchtarget: Int): IF_ACMPNE =
@@ -77,7 +77,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifneInstructions = {
         val instructions = new Array[IFNE](256 + 512)
-        for (i ← instructions.indices) instructions(i) = new IFNE(i - 256)
+        for (i <- instructions.indices) instructions(i) = new IFNE(i - 256)
         instructions
     }
     def IFNE(branchtarget: Int): IFNE = {
@@ -87,7 +87,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifeqInstructions = {
         val instructions = new Array[IFEQ](256 + 512)
-        for (i ← instructions.indices) instructions(i) = new IFEQ(i - 256)
+        for (i <- instructions.indices) instructions(i) = new IFEQ(i - 256)
         instructions
     }
     def IFEQ(branchtarget: Int): IFEQ = {
@@ -97,7 +97,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifltInstructions = {
         val instructions = new Array[IFLT](128 + 256)
-        for (i ← instructions.indices) instructions(i) = new IFLT(i - 128)
+        for (i <- instructions.indices) instructions(i) = new IFLT(i - 128)
         instructions
     }
     def IFLT(branchtarget: Int): IFLT = {
@@ -107,7 +107,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifgtInstructions = {
         val instructions = new Array[IFGT](128 + 256)
-        for (i ← instructions.indices) instructions(i) = new IFGT(i - 128)
+        for (i <- instructions.indices) instructions(i) = new IFGT(i - 128)
         instructions
     }
     def IFGT(branchtarget: Int): IFGT = {
@@ -117,7 +117,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifleInstructions = {
         val instructions = new Array[IFLE](128 + 256)
-        for (i ← instructions.indices) instructions(i) = new IFLE(i - 128)
+        for (i <- instructions.indices) instructions(i) = new IFLE(i - 128)
         instructions
     }
     def IFLE(branchtarget: Int): IFLE = {
@@ -127,7 +127,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ifgeInstructions = {
         val instructions = new Array[IFGE](128 + 256)
-        for (i ← instructions.indices) instructions(i) = new IFGE(i - 128)
+        for (i <- instructions.indices) instructions(i) = new IFGE(i - 128)
         instructions
     }
     def IFGE(branchtarget: Int): IFGE = {
@@ -137,7 +137,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ificmpneInstructions = {
         val instructions = new Array[IF_ICMPNE](256 + 512)
-        for (i ← instructions.indices) instructions(i) = new IF_ICMPNE(i - 256)
+        for (i <- instructions.indices) instructions(i) = new IF_ICMPNE(i - 256)
         instructions
     }
     def IF_ICMPNE(branchtarget: Int): IF_ICMPNE = {
@@ -147,7 +147,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ificmpeqInstructions = {
         val instructions = new Array[IF_ICMPEQ](256 + 512)
-        for (i ← instructions.indices) instructions(i) = new IF_ICMPEQ(i - 256)
+        for (i <- instructions.indices) instructions(i) = new IF_ICMPEQ(i - 256)
         instructions
     }
     def IF_ICMPEQ(branchtarget: Int): IF_ICMPEQ = {
@@ -157,7 +157,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ificmpltInstructions = {
         val instructions = new Array[IF_ICMPLT](128 + 256)
-        for (i ← instructions.indices) instructions(i) = new IF_ICMPLT(i - 128)
+        for (i <- instructions.indices) instructions(i) = new IF_ICMPLT(i - 128)
         instructions
     }
     def IF_ICMPLT(branchtarget: Int): IF_ICMPLT = {
@@ -167,7 +167,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ificmpgtInstructions = {
         val instructions = new Array[IF_ICMPGT](128 + 256)
-        for (i ← instructions.indices) instructions(i) = new IF_ICMPGT(i - 128)
+        for (i <- instructions.indices) instructions(i) = new IF_ICMPGT(i - 128)
         instructions
     }
     def IF_ICMPGT(branchtarget: Int): IF_ICMPGT = {
@@ -177,7 +177,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ificmpleInstructions = {
         val instructions = new Array[IF_ICMPLE](128 + 256)
-        for (i ← instructions.indices) instructions(i) = new IF_ICMPLE(i - 128)
+        for (i <- instructions.indices) instructions(i) = new IF_ICMPLE(i - 128)
         instructions
     }
     def IF_ICMPLE(branchtarget: Int): IF_ICMPLE = {
@@ -187,7 +187,7 @@ class BytecodeInstructionsCache {
 
     private[this] val ificmpgeInstructions = {
         val instructions = new Array[IF_ICMPGE](128 + 256)
-        for (i ← instructions.indices) instructions(i) = new IF_ICMPGE(i - 128)
+        for (i <- instructions.indices) instructions(i) = new IF_ICMPGE(i - 128)
         instructions
     }
     def IF_ICMPGE(branchtarget: Int): IF_ICMPGE =
@@ -200,7 +200,7 @@ class BytecodeInstructionsCache {
 
     private[this] val sipushInstructions = {
         val instructions = new Array[SIPUSH](20000)
-        for (i ← instructions.indices) instructions(i) = new SIPUSH(i - 10000)
+        for (i <- instructions.indices) instructions(i) = new SIPUSH(i - 10000)
         instructions
     }
     def SIPUSH(value: Int): SIPUSH =
@@ -213,7 +213,7 @@ class BytecodeInstructionsCache {
 
     private[this] val retInstructions = {
         val instructions = new Array[RET](32)
-        for (i ← instructions.indices) instructions(i) = new RET(i)
+        for (i <- instructions.indices) instructions(i) = new RET(i)
         instructions
     }
     def RET(lvIndex: Int): RET =
@@ -224,7 +224,7 @@ class BytecodeInstructionsCache {
     //
     private[this] val aloadInstructions = {
         val instructions = new Array[ALOAD](256)
-        for (i ← instructions.indices) instructions(i) = new ALOAD(i)
+        for (i <- instructions.indices) instructions(i) = new ALOAD(i)
         instructions
     }
     def ALOAD(lvIndex: Int): ALOAD =
@@ -233,7 +233,7 @@ class BytecodeInstructionsCache {
 
     private[this] val astoreInstructions = {
         val instructions = new Array[ASTORE](256)
-        for (i ← instructions.indices) instructions(i) = new ASTORE(i)
+        for (i <- instructions.indices) instructions(i) = new ASTORE(i)
         instructions
     }
     def ASTORE(lvIndex: Int): ASTORE =
@@ -244,7 +244,7 @@ class BytecodeInstructionsCache {
     //
     private[this] val iloadInstructions = {
         val instructions = new Array[ILOAD](128)
-        for (i ← instructions.indices) instructions(i) = new ILOAD(i)
+        for (i <- instructions.indices) instructions(i) = new ILOAD(i)
         instructions
     }
     def ILOAD(lvIndex: Int): ILOAD =
@@ -253,7 +253,7 @@ class BytecodeInstructionsCache {
 
     private[this] val istoreInstructions = {
         val instructions = new Array[ISTORE](128)
-        for (i ← instructions.indices) instructions(i) = new ISTORE(i)
+        for (i <- instructions.indices) instructions(i) = new ISTORE(i)
         instructions
     }
     def ISTORE(lvIndex: Int): ISTORE =
@@ -264,7 +264,7 @@ class BytecodeInstructionsCache {
     //
     private[this] val lloadInstructions = {
         val instructions = new Array[LLOAD](48)
-        for (i ← instructions.indices) instructions(i) = new LLOAD(i)
+        for (i <- instructions.indices) instructions(i) = new LLOAD(i)
         instructions
     }
     def LLOAD(lvIndex: Int): LLOAD =
@@ -273,7 +273,7 @@ class BytecodeInstructionsCache {
 
     private[this] val lstoreInstructions = {
         val instructions = new Array[LSTORE](48)
-        for (i ← instructions.indices) instructions(i) = new LSTORE(i)
+        for (i <- instructions.indices) instructions(i) = new LSTORE(i)
         instructions
     }
     def LSTORE(lvIndex: Int): LSTORE =
@@ -284,7 +284,7 @@ class BytecodeInstructionsCache {
     //
     private[this] val floadInstructions = {
         val instructions = new Array[FLOAD](256)
-        for (i ← instructions.indices) instructions(i) = new FLOAD(i)
+        for (i <- instructions.indices) instructions(i) = new FLOAD(i)
         instructions
     }
     def FLOAD(lvIndex: Int): FLOAD =
@@ -293,7 +293,7 @@ class BytecodeInstructionsCache {
 
     private[this] val fstoreInstructions = {
         val instructions = new Array[FSTORE](256)
-        for (i ← instructions.indices) instructions(i) = new FSTORE(i)
+        for (i <- instructions.indices) instructions(i) = new FSTORE(i)
         instructions
     }
     def FSTORE(lvIndex: Int): FSTORE =
@@ -304,7 +304,7 @@ class BytecodeInstructionsCache {
     //
     private[this] val dloadInstructions = {
         val instructions = new Array[DLOAD](256)
-        for (i ← instructions.indices) instructions(i) = new DLOAD(i)
+        for (i <- instructions.indices) instructions(i) = new DLOAD(i)
         instructions
     }
     def DLOAD(lvIndex: Int): DLOAD = {
@@ -314,7 +314,7 @@ class BytecodeInstructionsCache {
 
     private[this] val dstoreInstructions = {
         val instructions = new Array[DSTORE](256)
-        for (i ← instructions.indices) instructions(i) = new DSTORE(i)
+        for (i <- instructions.indices) instructions(i) = new DSTORE(i)
         instructions
     }
     def DSTORE(lvIndex: Int): DSTORE = {

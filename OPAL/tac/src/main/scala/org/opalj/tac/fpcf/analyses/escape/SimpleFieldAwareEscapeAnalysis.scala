@@ -60,7 +60,7 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                 // is the object/array reference of the field a local
                 if (referenceDefSite >= 0) {
                     state.tacai.get.stmts(referenceDefSite) match {
-                        case Assignment(_, _, New(_, _) | NewArray(_, _, _)) ⇒
+                        case Assignment(_, _, New(_, _) | NewArray(_, _, _)) =>
                             /* as may alias information are not easily available we cannot simply
                             check for escape information of the base object */
                             state.meetMostRestrictive(AtMost(NoEscape))
@@ -69,33 +69,33 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                             val allocationSite = allocationSites(m)(pc)
                             val escapeState = propertyStore(allocationSite, EscapeProperty.key)
                             escapeState match {
-                                case EP(_, EscapeViaStaticField) ⇒ calcMostRestrictive(EscapeViaHeapObject)
-                                case EP(_, EscapeViaHeapObject)  ⇒ calcMostRestrictive(EscapeViaStaticField)
-                                case EP(_, GlobalEscape)         ⇒ calcMostRestrictive(GlobalEscape)
-                                case EP(_, NoEscape)             ⇒ calcMostRestrictive(NoEscape)
-                                case EP(_, p) if p.isFinal       ⇒ calcMostRestrictive(MaybeNoEscape)
-                                case _                           ⇒ dependees += escapeState
+                                case EP(_, EscapeViaStaticField) => calcMostRestrictive(EscapeViaHeapObject)
+                                case EP(_, EscapeViaHeapObject)  => calcMostRestrictive(EscapeViaStaticField)
+                                case EP(_, GlobalEscape)         => calcMostRestrictive(GlobalEscape)
+                                case EP(_, NoEscape)             => calcMostRestrictive(NoEscape)
+                                case EP(_, p) if p.isFinal       => calcMostRestrictive(MaybeNoEscape)
+                                case _                           => dependees += escapeState
 
                             }*/
                         /* if the base object came from a static field, the value assigned to it
                          escapes globally */
-                        case Assignment(_, _, GetStatic(_, _, _, _)) ⇒
+                        case Assignment(_, _, GetStatic(_, _, _, _)) =>
                             state.meetMostRestrictive(EscapeViaHeapObject)
-                        case Assignment(_, _, GetField(_, _, _, _, objRef)) ⇒
-                            objRef.asVar.definedBy foreach { x ⇒
+                        case Assignment(_, _, GetField(_, _, _, _, objRef)) =>
+                            objRef.asVar.definedBy foreach { x =>
                                 if (!seen.contains(x))
                                     workset += x
                             }
-                        case Assignment(_, _, ArrayLoad(_, _, arrayRef)) ⇒
-                            arrayRef.asVar.definedBy foreach { x ⇒
+                        case Assignment(_, _, ArrayLoad(_, _, arrayRef)) =>
+                            arrayRef.asVar.definedBy foreach { x =>
                                 if (!seen.contains(x))
                                     workset += x
                             }
                         // we are not inter-procedural
-                        case Assignment(_, _, _: FunctionCall[_]) ⇒
+                        case Assignment(_, _, _: FunctionCall[_]) =>
                             state.meetMostRestrictive(AtMost(NoEscape))
-                        case Assignment(_, _, _: Const) ⇒
-                        case s ⇒
+                        case Assignment(_, _, _: Const) =>
+                        case s =>
                             throw new UnknownError(s"Unexpected tac: $s")
                     }
 
@@ -108,9 +108,9 @@ trait SimpleFieldAwareEscapeAnalysis extends AbstractEscapeAnalysis {
                     val formalParameter = formalParameters(m)(-referenceDefSite - 1)
                     val escapeState = propertyStore(formalParameter, EscapeProperty.key)
                     escapeState match {
-                        case EP(_, p: GlobalEscape) ⇒ calcLeastRestrictive(p)
-                        case EP(_, p) if p.isFinal  ⇒
-                        case _                      ⇒ dependees += escapeState
+                        case EP(_, p: GlobalEscape) => calcLeastRestrictive(p)
+                        case EP(_, p) if p.isFinal  =>
+                        case _                      => dependees += escapeState
                     }*/
                 } else {
                     // we store the value into a field of an exception object. As we do not track

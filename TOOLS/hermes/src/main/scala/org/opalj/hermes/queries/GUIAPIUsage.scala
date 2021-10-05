@@ -6,7 +6,7 @@ package queries
 import org.opalj.br.analyses.Project
 import org.opalj.da.CONSTANT_Utf8_info
 import org.opalj.da.ClassFile
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  * Scans a class file's constant pool to check whether it refers to packages that belong to an API
  * for graphical user interfaces. The current analysis supports:
@@ -31,15 +31,15 @@ class GUIAPIUsage(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])
 
         for {
-            (classFile, source) ← rawClassFiles
+            (classFile, source) <- rawClassFiles
             location = ClassFileLocation(Some(source), classFile.thisType.asJava)
-            CONSTANT_Utf8_info(_, entry) ← classFile.constant_pool
+            CONSTANT_Utf8_info(_, entry) <- classFile.constant_pool
         } {
             if (entry.startsWith("javafx/")) {
                 // note: package "javafx" is empty,
@@ -53,7 +53,7 @@ class GUIAPIUsage(implicit hermes: HermesConfig) extends FeatureQuery {
             }
         }
 
-        for { (featureID, featureIDIndex) ← featureIDs.iterator.zipWithIndex } yield {
+        for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, locations(featureIDIndex))
         }
     }

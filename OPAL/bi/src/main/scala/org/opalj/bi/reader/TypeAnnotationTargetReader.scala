@@ -158,40 +158,40 @@ trait TypeAnnotationTargetReader extends Constant_PoolAbstractions {
     def TypeAnnotationTarget(in: DataInputStream): TypeAnnotationTarget = {
         val target_type = in.readUnsignedByte()
         (target_type: @switch) match {
-            case 0x00 ⇒ ParameterDeclarationOfClassOrInterface(in.readUnsignedByte())
-            case 0x01 ⇒ ParameterDeclarationOfMethodOrConstructor(in.readUnsignedByte())
-            case 0x10 ⇒ SupertypeTarget(in.readUnsignedShort())
-            case 0x11 ⇒
+            case 0x00 => ParameterDeclarationOfClassOrInterface(in.readUnsignedByte())
+            case 0x01 => ParameterDeclarationOfMethodOrConstructor(in.readUnsignedByte())
+            case 0x10 => SupertypeTarget(in.readUnsignedShort())
+            case 0x11 =>
                 TypeBoundOfParameterDeclarationOfClassOrInterface(
                     in.readUnsignedByte(),
                     in.readUnsignedByte()
                 )
-            case 0x12 ⇒
+            case 0x12 =>
                 TypeBoundOfParameterDeclarationOfMethodOrConstructor(
                     in.readUnsignedByte(),
                     in.readUnsignedByte()
                 )
-            case 0x13 ⇒ FieldDeclaration
-            case 0x14 ⇒ ReturnType
-            case 0x15 ⇒ ReceiverType
-            case 0x16 ⇒ FormalParameter(in.readUnsignedByte())
-            case 0x17 ⇒ Throws(in.readUnsignedShort())
-            case 0x40 ⇒ LocalvarDecl(LocalvarTable(in))
-            case 0x41 ⇒ ResourcevarDecl(LocalvarTable(in))
-            case 0x42 ⇒ Catch(in.readUnsignedShort())
-            case 0x43 ⇒ InstanceOf(in.readUnsignedShort())
-            case 0x44 ⇒ New(in.readUnsignedShort())
-            case 0x45 ⇒ MethodReferenceExpressionNew(in.readUnsignedShort())
-            case 0x46 ⇒ MethodReferenceExpressionIdentifier(in.readUnsignedShort())
-            case 0x47 ⇒ CastExpression(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x48 ⇒ ConstructorInvocation(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x49 ⇒ MethodInvocation(in.readUnsignedShort(), in.readUnsignedByte())
-            case 0x4A ⇒
+            case 0x13 => FieldDeclaration
+            case 0x14 => ReturnType
+            case 0x15 => ReceiverType
+            case 0x16 => FormalParameter(in.readUnsignedByte())
+            case 0x17 => Throws(in.readUnsignedShort())
+            case 0x40 => LocalvarDecl(LocalvarTable(in))
+            case 0x41 => ResourcevarDecl(LocalvarTable(in))
+            case 0x42 => Catch(in.readUnsignedShort())
+            case 0x43 => InstanceOf(in.readUnsignedShort())
+            case 0x44 => New(in.readUnsignedShort())
+            case 0x45 => MethodReferenceExpressionNew(in.readUnsignedShort())
+            case 0x46 => MethodReferenceExpressionIdentifier(in.readUnsignedShort())
+            case 0x47 => CastExpression(in.readUnsignedShort(), in.readUnsignedByte())
+            case 0x48 => ConstructorInvocation(in.readUnsignedShort(), in.readUnsignedByte())
+            case 0x49 => MethodInvocation(in.readUnsignedShort(), in.readUnsignedByte())
+            case 0x4A =>
                 ConstructorInMethodReferenceExpression(
                     in.readUnsignedShort(),
                     in.readUnsignedByte()
                 )
-            case 0x4B ⇒
+            case 0x4B =>
                 MethodInMethodReferenceExpression(in.readUnsignedShort(), in.readUnsignedByte())
         }
     }

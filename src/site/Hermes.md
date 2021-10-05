@@ -27,8 +27,8 @@ All queries in Hermes have to inherit from `org.opalj.hermes.FeatureQuery` and h
         override def apply[S](
             projectConfiguration: ProjectConfiguration,
             project:              Project[S],
-            rawClassFiles:        Traversable[(da.ClassFile, S)]
-        ): TraversableOnce[Feature[S]] = {
+            rawClassFiles:        Iterable[(da.ClassFile, S)]
+        ): IterableOnce[Feature[S]] = {
             ???
     }   }
 
@@ -54,8 +54,8 @@ Next, we will discuss a complete query which finds *native* methods.
         override def apply[S](
             projectConfiguration: ProjectConfiguration,
             project:              Project[S],
-            rawClassFiles:        Traversable[(da.ClassFile, S)]
-        ): TraversableOnce[Feature[S]] = {
+            rawClassFiles:        Iterable[(da.ClassFile, S)]
+        ): IterableOnce[Feature[S]] = {
 
             // To store the location information; i.e., to store the native methods,
             // we create a new empty LocationsContainer.
@@ -67,7 +67,7 @@ Next, we will discuss a complete query which finds *native* methods.
 
             for {
                 // Let's iterate over all class files belonging to the project.
-                (classFile, source) ← project.projectClassFilesWithSources
+                (classFile, source) <- project.projectClassFilesWithSources
 
                 // It is highly recommended to regularly check if the query should be aborted;
                 // if so, the reported (intermediate/partial) results will always be thrown away.
@@ -77,7 +77,7 @@ Next, we will discuss a complete query which finds *native* methods.
                 // is generally meaningful to always create instances of location information,
                 // which may be shared, as soon as possible.
                 classLocation = ClassFileLocation(source, classFile)
-                m ← classFile.methods
+                m <- classFile.methods
                 if m.isNative // basically "the query"
             } {
                 // The current method is native and is added to the set of native methods..

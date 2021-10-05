@@ -53,7 +53,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
     def doAnalyze(
         project:       Project[Source],
         parameters:    Seq[String]     = Seq.empty,
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): Iterable[SourceLocationBasedReport[Source]] = {
 
         import project.classHierarchy
@@ -68,8 +68,8 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
         def declaresField(classFile: ClassFile, name: String,
                           fieldType: FieldType): Boolean = {
             classFile.fields.exists {
-                case Field(_, `name`, `fieldType`) ⇒ true
-                case _                             ⇒ false
+                case Field(_, `name`, `fieldType`) => true
+                case _                             => false
             }
         }
 
@@ -103,8 +103,8 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
         def calls(source: Method, targetType: Type, target: Method): Boolean = {
             source.body.get.instructions.exists {
                 case MethodInvocationInstruction(`targetType`, target.name,
-                    target.descriptor) ⇒ true
-                case _ ⇒ false
+                    target.descriptor) => true
+                case _ => false
             }
         }
 
@@ -166,7 +166,7 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
             constructor: Method
         ): Option[Method] = {
             constructor.body.get.associateWithIndex.collectFirst({
-                case (pc, INVOKESPECIAL(typ, name, desc)) ⇒ maybeResolveMethodReference(
+                case (pc, INVOKESPECIAL(typ, name, desc)) => maybeResolveMethodReference(
                     classFile, constructor, pc, typ, name, desc
                 )
             }).flatten
@@ -175,15 +175,15 @@ class UrUninitReadCalledFromSuperConstructor[Source] extends FindRealBugsAnalysi
         var reports: Set[SourceLocationBasedReport[Source]] = Set.empty
 
         for {
-            classFile ← project.allProjectClassFiles
-            method @ MethodWithBody(body) ← classFile.methods
+            classFile <- project.allProjectClassFiles
+            method @ MethodWithBody(body) <- classFile.methods
             if !method.isStatic &&
                 !method.isConstructor &&
                 methodOverridesAnything(classFile, method)
-            GETFIELD(declaringClass, fieldName, fieldType) ← body.instructions
-            constructor ← classFile.constructors
+            GETFIELD(declaringClass, fieldName, fieldType) <- body.instructions
+            constructor <- classFile.constructors
             if declaresField(classFile, fieldName, fieldType)
-            superConstructor ← findCalledSuperConstructor(classFile, constructor)
+            superConstructor <- findCalledSuperConstructor(classFile, constructor)
             superClass = project.classFile(superConstructor)
             if superConstructor.body.isDefined &&
                 calls(superConstructor, superClass.thisType, method)

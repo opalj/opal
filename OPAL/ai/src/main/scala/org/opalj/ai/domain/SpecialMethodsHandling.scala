@@ -25,7 +25,7 @@ import org.opalj.collection.immutable.RefArray
  * @author Michael Eichberg
  */
 trait SpecialMethodsHandling extends MethodCallsHandling {
-    callingDomain: ValuesFactory with ReferenceValuesDomain with IntegerValuesDomain with Configuration with TheCode ⇒
+    callingDomain: ValuesFactory with ReferenceValuesDomain with IntegerValuesDomain with Configuration with TheCode =>
 
     import SpecialMethodsHandling._
 

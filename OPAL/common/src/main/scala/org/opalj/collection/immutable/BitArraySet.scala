@@ -13,7 +13,7 @@ import java.lang.Integer.toUnsignedLong
  *
  * @author Michael Eichberg
  */
-sealed abstract class BitArraySet extends BitSet { thisSet ⇒
+sealed abstract class BitArraySet extends BitSet { thisSet =>
 
     def isEmpty: Boolean
 
@@ -32,7 +32,7 @@ sealed abstract class BitArraySet extends BitSet { thisSet ⇒
 
 }
 
-private[immutable] object BitArraySet0 extends BitArraySet { thisSet ⇒
+private[immutable] object BitArraySet0 extends BitArraySet { thisSet =>
 
     override def isEmpty: Boolean = true
 
@@ -48,14 +48,14 @@ private[immutable] object BitArraySet0 extends BitArraySet { thisSet ⇒
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: AnyRef ⇒ this eq that
-            case _            ⇒ false
+            case that: AnyRef => this eq that
+            case _            => false
         }
     }
     override def hashCode: Int = 1 // from j.u.Arrays.hashCode
 }
 
-private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet { thisSet ⇒
+private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet { thisSet =>
 
     assert(set != 0L)
 
@@ -93,10 +93,10 @@ private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet {
 
     override def ++(that: BitArraySet): BitArraySet = {
         that match {
-            case BitArraySet0 ⇒
+            case BitArraySet0 =>
                 this
 
-            case that: BitArraySet32 ⇒
+            case that: BitArraySet32 =>
                 val thisSet = this.set
                 val thatSet = that.set
                 val newSet = thisSet | thatSet
@@ -107,7 +107,7 @@ private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet {
                 else
                     new BitArraySet32(newSet)
 
-            case that: BitArraySet64 ⇒
+            case that: BitArraySet64 =>
                 val thatSet = that.set
                 val newSet = Integer.toUnsignedLong(this.set) | thatSet
                 if (newSet == thatSet)
@@ -115,7 +115,7 @@ private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet {
                 else
                     new BitArraySet64(newSet)
 
-            case that: BitArraySetN ⇒
+            case that: BitArraySetN =>
                 that | this
         }
     }
@@ -141,15 +141,15 @@ private[immutable] final class BitArraySet32(val set: Int) extends BitArraySet {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BitArraySet32 ⇒ this.set == that.set
-            case _                   ⇒ false
+            case that: BitArraySet32 => this.set == that.set
+            case _                   => false
         }
     }
 
     override def hashCode: Int = 31 * set
 }
 
-private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet { thisSet ⇒
+private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet { thisSet =>
 
     assert(set != 0L)
 
@@ -187,10 +187,10 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
 
     override def ++(that: BitArraySet): BitArraySet = {
         that match {
-            case BitArraySet0 ⇒
+            case BitArraySet0 =>
                 this
 
-            case that: BitArraySet32 ⇒
+            case that: BitArraySet32 =>
                 val thisSet = this.set
                 val newSet = thisSet | toUnsignedLong(that.set)
                 if (newSet == thisSet)
@@ -198,7 +198,7 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
                 else
                     new BitArraySet64(newSet)
 
-            case that: BitArraySet64 ⇒
+            case that: BitArraySet64 =>
                 val thisSet = this.set
                 val thatSet = that.set
                 val newSet = thisSet | thatSet
@@ -209,7 +209,7 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
                 else
                     new BitArraySet64(newSet)
 
-            case that: BitArraySetN ⇒
+            case that: BitArraySetN =>
                 that | this
         }
     }
@@ -235,15 +235,15 @@ private[immutable] final class BitArraySet64(val set: Long) extends BitArraySet 
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BitArraySet64 ⇒ this.set == that.set
-            case _                   ⇒ false
+            case that: BitArraySet64 => this.set == that.set
+            case _                   => false
         }
     }
 
     override def hashCode: Int = 31 * (set ^ (set >>> 32)).toInt // from j.u.Arrays.hashCode
 }
 
-private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArraySet { self ⇒
+private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArraySet { self =>
 
     override def isEmpty: Boolean = false
 
@@ -289,12 +289,12 @@ private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArra
                 emptyBuckets += 1
             }
             (setLength - emptyBuckets) match {
-                case 0 ⇒ BitArraySet0
-                case 1 ⇒ new BitArraySet32(set(0))
-                case 2 ⇒
+                case 0 => BitArraySet0
+                case 1 => new BitArraySet32(set(0))
+                case 2 =>
                     val newSet = toUnsignedLong(set(0)) | toUnsignedLong(set(1)) << 32
                     new BitArraySet64(newSet)
-                case x ⇒
+                case x =>
                     val newSet = new Array[Int](x)
                     Array.copy(set, 0, newSet, 0, x)
                     new BitArraySetN(newSet)
@@ -309,9 +309,9 @@ private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArra
 
     override def ++(that: BitArraySet): BitArraySet = {
         that match {
-            case BitArraySet0 ⇒ this
+            case BitArraySet0 => this
 
-            case that: BitArraySet32 ⇒
+            case that: BitArraySet32 =>
                 val thisSet0 = this.set(0)
                 val newSet0 = thisSet0 | that.set
                 if (newSet0 == thisSet0)
@@ -322,7 +322,7 @@ private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArra
                     new BitArraySetN(newSet)
                 }
 
-            case that: BitArraySet64 ⇒
+            case that: BitArraySet64 =>
                 val thisSet = toUnsignedLong(this.set(0)) | toUnsignedLong(this.set(1)) << 32
                 val newSet64 = thisSet | that.set
                 if (newSet64 == thisSet)
@@ -334,7 +334,7 @@ private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArra
                     new BitArraySetN(newSet)
                 }
 
-            case that: BitArraySetN ⇒
+            case that: BitArraySetN =>
                 val thisSet = this.set
                 val thatSet = that.set
                 val thisSetLength = this.set.length
@@ -425,8 +425,8 @@ private[immutable] final class BitArraySetN(val set: Array[Int]) extends BitArra
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: BitArraySetN ⇒ java.util.Arrays.equals(this.set, that.set)
-            case _                  ⇒ false
+            case that: BitArraySetN => java.util.Arrays.equals(this.set, that.set)
+            case _                  => false
         }
     }
 

@@ -2,17 +2,13 @@
 package org.opalj
 package collection
 package immutable
+import org.opalj.collection.IntIterator.empty.foldLeft
 
 import scala.language.implicitConversions
-
-import scala.collection.GenIterable
-import scala.collection.GenTraversableOnce
-import scala.collection.AbstractIterator
-import scala.collection.generic.CanBuildFrom
+import scala.collection.{AbstractIterable, AbstractIterator, BuildFrom, GenIterable, GenTraversableOnce, Iterable, IterableOnce, WithFilter, mutable}
 import scala.collection.mutable.Builder
-import scala.collection.generic.FilterMonadic
-import scala.collection.AbstractIterable
-
+import scala.compat._
+imporala.collection.IterableOnce
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
@@ -31,18 +27,18 @@ import scala.collection.AbstractIterable
  *
  * @author Michael Eichberg
  */
+
 sealed trait Chain[@specialized(Int) +T]
-    extends TraversableOnce[T]
-    with FilterMonadic[T, Chain[T]]
-    with Serializable { self ⇒
+    extends WithFilter[T, Chain[T]]
+    with IterableOnce[T]
+    with Serializable { self =>
 
     /**
      * Represents a filtered [[Chain]]. Instances of [[ChainWithFilter]] are typically
      * created by [[Chain]]'s `withFilter` method.
      */
-    class ChainWithFilter(p: T ⇒ Boolean) extends FilterMonadic[T, Chain[T]] {
-
-        def map[B, That](f: T ⇒ B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
+    class ChainWithFilter(p: T => Boolean) extends WithFilter[T, Chain[T]] {
+        def map[B, That](f: T => B)(implicit bf: BuildFrom[Chain[T], B, That]): That = {
             val list = self
             var rest = list
 
@@ -52,27 +48,26 @@ sealed trait Chain[@specialized(Int) +T]
                 if (p(x)) b += f(x)
                 rest = rest.tail
             }
-            b.result
+            b.result()
         }
-
-        def flatMap[B, That](
-            f: T ⇒ GenTraversableOnce[B]
+        override def flatMap[B, That](
+            f: T => IterableOnce[B]
         )(
             implicit
-            bf: CanBuildFrom[Chain[T], B, That]
-        ): That = {
+            bf: BuildFrom[Chain[T], B, That]
+        ): Chain = {
             val list = self
             val b = bf(list)
             var rest = list
             while (rest.nonEmpty) {
                 val x = rest.head
-                if (p(x)) b ++= f(x).seq
+                if (p(x)) b ++= f(x)
                 rest = rest.tail
             }
-            b.result
+            b.result()
         }
 
-        def foreach[U](f: T ⇒ U): Unit = {
+        def foreach[U](f: T => U): Unit = {
             var rest = self
             while (rest.nonEmpty) {
                 val x = rest.head
@@ -81,9 +76,13 @@ sealed trait Chain[@specialized(Int) +T]
             }
         }
 
-        def withFilter(q: T ⇒ Boolean): ChainWithFilter = {
-            new ChainWithFilter(x ⇒ p(x) && q(x))
+        def withFilter(q: T => Boolean): ChainWithFilter = {
+            new ChainWithFilter(x => p(x) && q(x))
         }
+
+        override def map[B](f: T ⇒ B): Chain[B] = ???
+
+        override def flatMap[B](f: T ⇒ IterableOnce[B]): Chain[B] = ???
     }
 
     final override def hasDefiniteSize: Boolean = true
@@ -92,7 +91,7 @@ sealed trait Chain[@specialized(Int) +T]
 
     final override def seq: this.type = this
 
-    override def foreach[U](f: T ⇒ U): Unit = {
+    override def foreach[U](f: T => U): Unit = {
         var rest = this
         while (rest.nonEmpty) {
             f(rest.head)
@@ -104,7 +103,7 @@ sealed trait Chain[@specialized(Int) +T]
      * Executes the given function `f` for each element of this chain as long as
      * it returns `true`.
      */
-    def foreachWhile(f: T ⇒ Boolean): Boolean = {
+    def foreachWhile(f: T => Boolean): Boolean = {
         var rest = this
         while (rest.nonEmpty) {
             if (!f(rest.head))
@@ -154,7 +153,7 @@ sealed trait Chain[@specialized(Int) +T]
             prefixHead
     }
 
-    def forFirstN[U](n: Int)(f: T ⇒ U): Unit = {
+    def forFirstN[U](n: Int)(f: T => U): Unit = {
         var rest = this
         var i = 0
         while (i < n) {
@@ -166,23 +165,23 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def flatMap[B, That](
-        f: T ⇒ GenTraversableOnce[B]
+        f: T => IterableOnce[B]
     )(
         implicit
-        bf: CanBuildFrom[Chain[T], B, That]
+        bf: BuildFrom[Chain[T], B, That]
     ): That = {
         val b = bf(this)
-        //OLD: foreach { t ⇒ f(t) foreach { e ⇒ builder += e } }
+        //OLD: foreach { t => f(t) foreach { e => builder += e } }
         var rest = this
         while (rest.nonEmpty) {
             val t = rest.head
-            b ++= f(t).seq
+            b ++= f(t)
             rest = rest.tail
         }
-        b.result
+        b.result()
     }
 
-    def map[B, That](f: (T) ⇒ B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
+    def map[B, That](f: (T) => B)(implicit bf: BuildFrom[Chain[T], B, That]): That = {
         val builder = bf(this)
         var rest = this
         while (rest.nonEmpty) {
@@ -190,10 +189,10 @@ sealed trait Chain[@specialized(Int) +T]
             builder += f(t)
             rest = rest.tail
         }
-        builder.result
+        builder.result()
     }
 
-    def withFilter(p: (T) ⇒ Boolean): ChainWithFilter = new ChainWithFilter(p)
+    def withFilter(p: (T) => Boolean): ChainWithFilter = new ChainWithFilter(p)
 
     def head: T
 
@@ -228,7 +227,7 @@ sealed trait Chain[@specialized(Int) +T]
         rest.head
     }
 
-    def exists(f: T ⇒ Boolean): Boolean = {
+    def exists(f: T => Boolean): Boolean = {
         var rest = this
         while (rest.nonEmpty) {
             if (f(rest.head))
@@ -238,7 +237,7 @@ sealed trait Chain[@specialized(Int) +T]
         false
     }
 
-    def forall(f: T ⇒ Boolean): Boolean = {
+    def forall(f: T => Boolean): Boolean = {
         var rest = this
         while (rest.nonEmpty) {
             if (!f(rest.head))
@@ -258,7 +257,7 @@ sealed trait Chain[@specialized(Int) +T]
         false
     }
 
-    def find(p: T ⇒ Boolean): Option[T] = {
+    def find(p: T => Boolean): Option[T] = {
         var rest = this
         while (rest.nonEmpty) {
             val e = rest.head
@@ -336,7 +335,7 @@ sealed trait Chain[@specialized(Int) +T]
      */
     private[opalj] def copy[X >: T](): (Chain[X], :&:[X]) = {
         val Nil: Chain[X] = Naught
-        if (isEmpty)
+        if (this.isEmpty)
             return (this, null);
 
         val result = new :&:[X](head, Nil)
@@ -359,17 +358,17 @@ sealed trait Chain[@specialized(Int) +T]
         if (this.isEmpty)
             return that;
 
-        val (head, last) = copy[X]
+        val (head, last) = copy[X]()
         last.rest = that
         head
     }
 
     // TODO Manually specialize Chain!
-    def ++[X >: T](other: Traversable[X]): Chain[X] = {
+    def ++[X >: T](other: Iterable[X]): Chain[X] = {
         if (other.isEmpty)
             return this;
 
-        val that = other.foldLeft(new Chain.ChainBuilder[X])(_ += _).result
+        val that = other.foldLeft(new Chain.ChainBuilder[X])(_ += _).result()
         if (this.isEmpty)
             that
         else {
@@ -395,21 +394,21 @@ sealed trait Chain[@specialized(Int) +T]
      */
     def takeUpTo(n: Int): Chain[T]
 
-    def takeWhile(f: T ⇒ Boolean): Chain[T]
+    def takeWhile(f: T => Boolean): Chain[T]
 
-    def filter(f: T ⇒ Boolean): Chain[T]
+    def filter(f: T => Boolean): Chain[T]
 
-    def filterNot(f: T ⇒ Boolean): Chain[T] = filter(t ⇒ !f(t))
+    def filterNot(f: T => Boolean): Chain[T] = filter(t => !f(t))
 
     def drop(n: Int): Chain[T]
 
-    def dropWhile(f: T ⇒ Boolean): Chain[T] = {
+    def dropWhile(f: T => Boolean): Chain[T] = {
         var rest = this
         while (rest.nonEmpty && f(rest.head)) { rest = rest.tail }
         rest
     }
 
-    def zip[X](other: GenIterable[X]): Chain[(T, X)] = {
+    def zip[X](other: Iterable[X]): Chain[(T, X)] = {
         if (this.isEmpty)
             return this.asInstanceOf[Naught.type];
         val otherIt = other.iterator
@@ -417,10 +416,10 @@ sealed trait Chain[@specialized(Int) +T]
             return Naught;
 
         var thisIt = this.tail
-        val result: :&:[(T, X)] = new :&:((this.head, otherIt.next), Naught)
+        val result: :&:[(T, X)] = new :&:((this.head, otherIt.next()), Naught)
         var last = result
         while (thisIt.nonEmpty && otherIt.hasNext) {
-            val newLast = new :&:((thisIt.head, otherIt.next), Naught)
+            val newLast = new :&:((thisIt.head, otherIt.next()), Naught)
             last.rest = newLast
             last = newLast
             thisIt = thisIt.tail
@@ -450,7 +449,7 @@ sealed trait Chain[@specialized(Int) +T]
 
     def zipWithIndex: Chain[(T, Int)] = {
         var index = 0
-        map[(T, Int), Chain[(T, Int)]] { e ⇒
+        map[(T, Int), Chain[(T, Int)]] { e =>
             val currentIndex = index
             index += 1
             (e, currentIndex)
@@ -460,7 +459,7 @@ sealed trait Chain[@specialized(Int) +T]
     /**
      * @see    `merge`
      */
-    def corresponds[X](other: Chain[X])(f: (T, X) ⇒ Boolean): Boolean = {
+    def corresponds[X](other: Chain[X])(f: (T, X) => Boolean): Boolean = {
         if (this.isEmpty)
             return other.isEmpty;
         if (other.isEmpty)
@@ -480,7 +479,7 @@ sealed trait Chain[@specialized(Int) +T]
         thisIt.isEmpty && otherIt.isEmpty
     }
 
-    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): Chain[X]
+    def mapConserve[X >: T <: AnyRef](f: T => X): Chain[X]
 
     def reverse: Chain[T]
 
@@ -504,7 +503,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     override def toIterable: Iterable[T] = {
-        new AbstractIterable[T] { def iterator: Iterator[T] = self.toIterator }
+        new AbstractIterable[T] { def iterator: Iterator[T] = self.iterator }
     }
 
     def toIterator: Iterator[T] = {
@@ -519,7 +518,7 @@ sealed trait Chain[@specialized(Int) +T]
         }
     }
 
-    def mapToIntIterator(f: T ⇒ Int): IntIterator = {
+    def mapToIntIterator(f: T => Int): IntIterator = {
         new IntIterator {
             private var rest = self
             def hasNext: Boolean = rest.nonEmpty
@@ -530,12 +529,15 @@ sealed trait Chain[@specialized(Int) +T]
             }
         }
     }
-
     /**
-     * Returns a newly created `Traversable[T]` collection.
+     * Returns a newly created `Iterable[T]` collection.
      */
-    def toTraversable: Traversable[T] = {
-        new Traversable[T] { def foreach[U](f: T ⇒ U): Unit = self.foreach(f) }
+    //TODO figure out difference between Traversable and Iterable.
+    def toTraversable: Iterable[T] = {
+        new Iterable[T] {
+            def foreach[U](f: T => U): Unit = self.foreach(f)
+
+        }
     }
 
     def toIntArraySet(implicit ev: T <:< Int): IntArraySet = {
@@ -543,7 +545,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def toIntTrieSet(implicit ev: T <:< Int): IntTrieSet = {
-        // foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
+        //foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         var set: IntTrieSet = EmptyIntTrieSet
         var rest = this
         while (rest ne Naught) {
@@ -553,7 +555,7 @@ sealed trait Chain[@specialized(Int) +T]
         set
     }
 
-    def toStream: Stream[T] = toTraversable.toStream
+    def toStream: LazyList[T] = toTraversable.to(LazyList)
 
     def copyToArray[B >: T](xs: Array[B], start: Int, len: Int): Unit = {
         val max = xs.length
@@ -574,7 +576,7 @@ sealed trait Chain[@specialized(Int) +T]
      * @param     other A chain with the same number of elements as this chain. If the size of
      *            the chains it not equal, the result is undefined.
      */
-    def merge[X <: AnyRef, Z >: T <: AnyRef](that: Chain[X])(f: (T, X) ⇒ Z): Chain[Z]
+    def merge[X <: AnyRef, Z >: T <: AnyRef](that: Chain[X])(f: (T, X) => Z): Chain[Z]
 
     /**
      * Fuses this chain with the given chain by fusing the values using the given function.
@@ -585,7 +587,7 @@ sealed trait Chain[@specialized(Int) +T]
      * @param     other A chain with the same number of elements as this chain. If the size of
      *            the chains it not equal, the result is undefined.
      */
-    def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) ⇒ X): Chain[X]
+    def fuse[X >: T <: AnyRef](that: Chain[X], onDiff: (T, X) => X): Chain[X]
 }
 
 //trait ChainLowPriorityImplicits
@@ -625,27 +627,31 @@ object Chain /* extends ChainLowPriorityImplicits */ {
         def result(): Chain[T] = { val list = this.list; if (list == null) Naught else list }
     }
 
-    private[this] val baseCanBuildFrom = new CanBuildFrom[Chain[_], AnyRef, Chain[AnyRef]] {
+    private[this] val baseCanBuildFrom = new BuildFrom[Chain[_], AnyRef, Chain[AnyRef]] {
         def apply(from: Chain[_]) = new ChainBuilder[AnyRef]
         def apply() = new ChainBuilder[AnyRef]
     }
-    implicit def canBuildFrom[A <: AnyRef]: CanBuildFrom[Chain[_], A, Chain[A]] = {
-        baseCanBuildFrom.asInstanceOf[CanBuildFrom[Chain[_], A, Chain[A]]]
+    implicit def canBuildFrom[A <: AnyRef]: BuildFrom[Chain[_], A, Chain[A]] = {
+        baseCanBuildFrom.asInstanceOf[BuildFrom[Chain[_], A, Chain[A]]]
     }
-    private[this] val specializedCanBuildFrom = new CanBuildFrom[Chain[_], Int, Chain[Int]] {
+    private[this] val specializedCanBuildFrom = new BuildFrom[Chain[_], Int, Chain[Int]] {
         def apply(from: Chain[_]) = new ChainBuilder[Int]
         def apply() = new ChainBuilder[Int]
     }
-    implicit def canBuildIntChainFrom: CanBuildFrom[Chain[_], Int, Chain[Int]] = {
+    implicit def canBuildIntChainFrom: BuildFrom[Chain[_], Int, Chain[Int]] = {
         specializedCanBuildFrom
     }
 
-    val GenericSpecializedCBF = new CanBuildFrom[Any, Int, Chain[Int]] {
-        def apply(from: Any) = new ChainBuilder[Int]
+    val GenericSpecializedCBF = new BuildFrom[Any, Int, Chain[Int]] {
+        //def apply(from: Any) = new ChainBuilder[Int]
         def apply() = new ChainBuilder[Int]
+
+        override def fromSpecific(from: Any)(it: IterableOnce[UByte]): Chain[UByte] = ???
+
+        override def newBuilder(from: Any): mutable.Builder[UByte, Chain[UByte]] = ???
     }
 
-    implicit def toTraversable[T](cl: Chain[T]): Traversable[T] = cl.toIterable
+    implicit def toTraversable[T](cl: Chain[T]): Iterable[T] = cl.toIterable
 
     def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainBuilder[T] = {
         if (t.runtimeClass == classOf[Int])
@@ -678,8 +684,8 @@ object Chain /* extends ChainLowPriorityImplicits */ {
         val result = new :&:[T](es.head, naught)
         var last = result
         val it = es.iterator
-        it.next // es is non-empty
-        it foreach { e ⇒
+        it.next() // es is non-empty
+        it foreach { e =>
             val newLast = new :&:[T](e, naught)
             last.rest = newLast
             last = newLast
@@ -708,19 +714,19 @@ case object Naught extends Chain[Nothing] {
     def :&::[X >: Nothing](x: Chain[X]): Chain[X] = x
     def take(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
     def takeUpTo(n: Int): this.type = this
-    def takeWhile(f: Nothing ⇒ Boolean): Chain[Nothing] = this
-    def filter(f: Nothing ⇒ Boolean): Chain[Nothing] = this
+    def takeWhile(f: Nothing => Boolean): Chain[Nothing] = this
+    def filter(f: Nothing => Boolean): Chain[Nothing] = this
     def drop(n: Int): Naught.type = { if (n == 0) this else throw listIsEmpty }
-    def mapConserve[X >: Nothing <: AnyRef](f: Nothing ⇒ X): Chain[X] = this
+    def mapConserve[X >: Nothing <: AnyRef](f: Nothing => X): Chain[X] = this
     def reverse: Chain[Nothing] = this
 
     def merge[X <: AnyRef, Z >: Nothing <: AnyRef](
         that: Chain[X]
     )(
-        f: (Nothing, X) ⇒ Z
+        f: (Nothing, X) => Z
     ): Chain[Z] = this
 
-    def fuse[X >: Nothing <: AnyRef](that: Chain[X], onDiff: (Nothing, X) ⇒ X): Chain[X] = this
+    def fuse[X >: Nothing <: AnyRef](that: Chain[X], onDiff: (Nothing, X) => X): Chain[X] = this
 }
 
 /**
@@ -750,8 +756,8 @@ final case class :&:[@specialized(Int) T](
     // other list to append this one...
     def :&::[X >: T](x: Chain[X]): Chain[X] = {
         x match {
-            case Naught        ⇒ this
-            case other: :&:[X] ⇒ other ++ this
+            case Naught        => this
+            case other: :&:[X] => other ++ this
         }
     }
 
@@ -798,7 +804,7 @@ final case class :&:[@specialized(Int) T](
 
     }
 
-    def takeWhile(f: T ⇒ Boolean): Chain[T] = {
+    def takeWhile(f: T => Boolean): Chain[T] = {
         val head = this.head
         val Nil = Naught
 
@@ -818,7 +824,7 @@ final case class :&:[@specialized(Int) T](
         result
     }
 
-    def filter(f: T ⇒ Boolean): Chain[T] = {
+    def filter(f: T => Boolean): Chain[T] = {
         val Nil = Naught
 
         var result: Chain[T] = Nil
@@ -853,7 +859,7 @@ final case class :&:[@specialized(Int) T](
         result
     }
 
-    def mapConserve[X >: T <: AnyRef](f: T ⇒ X): Chain[X] = {
+    def mapConserve[X >: T <: AnyRef](f: T => X): Chain[X] = {
         val head = this.head
         val newHead = f(head)
         var updated = (head.asInstanceOf[AnyRef] ne newHead)
@@ -899,7 +905,7 @@ final case class :&:[@specialized(Int) T](
      */
     def fuse[X >: T <: AnyRef](
         that:   Chain[X],
-        onDiff: (T, X) ⇒ X
+        onDiff: (T, X) => X
     ): Chain[X] = {
 
         var thisHead: Chain[T] = this
@@ -965,7 +971,7 @@ final case class :&:[@specialized(Int) T](
     def merge[X <: AnyRef, Z >: T <: AnyRef](
         that: Chain[X]
     )(
-        f: (T, X) ⇒ Z
+        f: (T, X) => Z
     ): Chain[Z] = {
         // The idea: iterate over both lists in parallel, when the merge results in the
         // same value as this list's value, then we do not create a new list element, but

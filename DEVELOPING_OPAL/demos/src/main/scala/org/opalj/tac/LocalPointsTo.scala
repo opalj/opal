@@ -19,9 +19,9 @@ object LocalPointsTo {
 
     def main(args: Array[String]): Unit = {
         // Load the class file (we don't handle invokedynamic in this case)
-        val cf = Java9Framework.ClassFile(() ⇒ new FileInputStream(args(0))).head
+        val cf = Java9Framework.ClassFile(() => new FileInputStream(args(0))).head
         // ... now let's take the first method that matches our filter
-        val m = cf.methods.filter(m ⇒ m.signatureToJava().contains(args(1))).head
+        val m = cf.methods.filter(m => m.signatureToJava().contains(args(1))).head
         // ... let's get one of the default pre-initialized class hierarchies (typically we want a project!)
         val ch = ClassHierarchy.PreInitializedClassHierarchy
         // ... perform the data-flow analysis
@@ -38,10 +38,10 @@ object LocalPointsTo {
         // Let's collect the information where a reference value that is passed
         // to some method is coming from.
         for {
-            (MethodCallParameters(params), stmtIndex) ← tac.stmts.iterator.zipWithIndex
-            (UVar(v, defSites), paramIndex) ← params.iterator.zipWithIndex
+            (MethodCallParameters(params), stmtIndex) <- tac.stmts.iterator.zipWithIndex
+            (UVar(v, defSites), paramIndex) <- params.iterator.zipWithIndex
             if v.computationalType == ComputationalTypeReference
-            defSite ← defSites
+            defSite <- defSites
         } {
             if (defSite >= 0) {
                 val Assignment(_, _, expr) = tac.stmts(defSite) // a def site is always an assignment

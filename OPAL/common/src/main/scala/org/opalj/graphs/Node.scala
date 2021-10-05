@@ -38,7 +38,7 @@ trait Node {
     /**
      * Applies the given function for each successor node.
      */
-    def foreachSuccessor(f: Node ⇒ Unit): Unit
+    def foreachSuccessor(f: Node => Unit): Unit
 
     /**
      * The hash code of this node. By default the hash code is the unique id.
@@ -47,8 +47,8 @@ trait Node {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: Node ⇒ this.nodeId == that.nodeId
-            case _          ⇒ false
+            case that: Node => this.nodeId == that.nodeId
+            case _          => false
         }
     }
 

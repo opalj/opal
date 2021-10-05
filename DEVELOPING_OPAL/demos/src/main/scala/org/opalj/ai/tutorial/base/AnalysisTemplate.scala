@@ -15,7 +15,7 @@ object AnalysisTemplate extends ProjectAnalysisApplication {
     def doAnalyze(
         theProject:    Project[URL],
         parameters:    Seq[String],
-        isInterrupted: () ⇒ Boolean
+        isInterrupted: () => Boolean
     ): BasicReport = {
         BasicReport(theProject.statistics.mkString("\n"))
     }

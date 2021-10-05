@@ -19,7 +19,7 @@ import org.opalj.br._
  * @author Michael Eichberg
  */
 trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with AsJavaObject {
-    domain: Domain ⇒
+    domain: Domain =>
 
     def warnOnFailedReflectiveCalls: Boolean = true
 
@@ -47,12 +47,12 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                 var jOperands: List[Object] = Nil
                 // Recall: the last method parameter is the top-most stack value ...
                 // the receiver (if existing) is the last operand.
-                operands foreach { op ⇒
+                operands foreach { op =>
                     operandCount += 1
                     val jObject =
                         toJavaObject(pc, op) match {
-                            case Some(jObject) ⇒ jObject
-                            case _             ⇒ return None /* <------- EARLY RETURN FROM METHOD */
+                            case Some(jObject) => jObject
+                            case _             => return None /* <------- EARLY RETURN FROM METHOD */
                         }
                     if (operandCount > declaredParametersCount) {
                         // this is also the last operand
@@ -68,7 +68,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                     )
                 (method, jReceiver, jOperands)
             } catch {
-                case e: ClassNotFoundException ⇒
+                case e: ClassNotFoundException =>
                     if (warnOnFailedReflectiveCalls)
                         Console.println(
                             Console.YELLOW+
@@ -78,7 +78,7 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
                                 Console.RESET
                         )
                     return None; /* <------- EARLY RETURN FROM METHOD */
-                case _: NoSuchMethodException ⇒
+                case _: NoSuchMethodException =>
                     if (warnOnFailedReflectiveCalls)
                         Console.println(
                             Console.YELLOW+
@@ -93,56 +93,56 @@ trait ReflectiveInvoker extends DefaultJavaObjectToDomainValueConversion with As
         try {
             val result = method.invoke(jReceiver, jOperands: _*)
             (descriptor.returnType.id: @scala.annotation.switch) match {
-                case VoidType.id ⇒
+                case VoidType.id =>
                     Some(ComputationWithSideEffectOnly)
-                case BooleanType.id ⇒
+                case BooleanType.id =>
                     Some(ComputedValue(BooleanValue(
                         pc,
                         result.asInstanceOf[java.lang.Boolean].booleanValue()
                     )))
-                case ByteType.id ⇒
+                case ByteType.id =>
                     Some(ComputedValue(ByteValue(
                         pc,
                         result.asInstanceOf[java.lang.Byte].byteValue()
                     )))
-                case ShortType.id ⇒
+                case ShortType.id =>
                     Some(ComputedValue(ShortValue(
                         pc,
                         result.asInstanceOf[java.lang.Short].shortValue()
                     )))
-                case CharType.id ⇒
+                case CharType.id =>
                     Some(ComputedValue(CharValue(
                         pc,
                         result.asInstanceOf[java.lang.Character].charValue()
                     )))
-                case IntegerType.id ⇒
+                case IntegerType.id =>
                     Some(ComputedValue(IntegerValue(
                         pc,
                         result.asInstanceOf[java.lang.Integer].intValue()
                     )))
-                case LongType.id ⇒
+                case LongType.id =>
                     Some(ComputedValue(LongValue(
                         pc,
                         result.asInstanceOf[java.lang.Long].longValue()
                     )))
-                case FloatType.id ⇒
+                case FloatType.id =>
                     Some(ComputedValue(FloatValue(
                         pc,
                         result.asInstanceOf[java.lang.Float].floatValue()
                     )))
-                case DoubleType.id ⇒
+                case DoubleType.id =>
                     Some(ComputedValue(DoubleValue(
                         pc,
                         result.asInstanceOf[java.lang.Double].doubleValue()
                     )))
-                case _ ⇒
+                case _ =>
                     Some(ComputedValue(toDomainValue(pc, result)))
             }
         } catch {
             // The exception happens as part of the execution of the underlying method;
             // hence, we want to capture it and use it in the following!
-            case _: NullPointerException      ⇒ Some(justThrows(NullPointerException(pc)))
-            case e: InvocationTargetException ⇒ Some(justThrows(toDomainValue(pc, e.getCause())))
+            case _: NullPointerException      => Some(justThrows(NullPointerException(pc)))
+            case e: InvocationTargetException => Some(justThrows(toDomainValue(pc, e.getCause())))
         }
     }
 }

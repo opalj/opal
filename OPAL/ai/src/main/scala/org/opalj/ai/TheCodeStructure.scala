@@ -17,7 +17,7 @@ import org.opalj.collection.immutable.IntTrieSet
  *
  * @author Michael Eichberg
  */
-trait TheCodeStructure { domain: ValuesDomain ⇒
+trait TheCodeStructure { domain: ValuesDomain =>
 
     private[this] var theInstructions: Array[Instruction] = null
 

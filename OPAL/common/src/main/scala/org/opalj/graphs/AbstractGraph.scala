@@ -7,14 +7,16 @@ package graphs
  *
  * @author Michael Eichberg
  */
-trait AbstractGraph[@specialized(Int) N] extends (N ⇒ TraversableOnce[N]) {
+import scala.Iterable._
+import scala.compat._
+trait AbstractGraph[@specialized(Int) N] extends (N => IterableOnce[N]) {
 
-    def vertices: Traversable[N]
+    def vertices: Iterable[N]
 
     def nonEmpty: Boolean = vertices.nonEmpty
 
     /** Returns a given node's successor nodes. */
-    def apply(s: N): TraversableOnce[N]
+    def apply(s: N): IterableOnce[N]
 
     /**
      * Returns the set of nodes with no incoming dependencies; self-dependencies are optionally
@@ -28,8 +30,8 @@ trait AbstractGraph[@specialized(Int) N] extends (N ⇒ TraversableOnce[N]) {
      * @example
      * {{{
      * scala> val g = org.opalj.graphs.Graph.empty[AnyRef] +=
-     *          ("a" → "b") += ("b" → "c") += ("b" → "d") +=
-     *          ("a" → "e") += ("f" -> "e") += ("y" -> "y") +=
+     *          ("a" -> "b") += ("b" -> "c") += ("b" -> "d") +=
+     *          ("a" -> "e") += ("f" -> "e") += ("y" -> "y") +=
      *          ("a" -> "f")
      * g: org.opalj.graphs.Graph[AnyRef] =
      * Graph{
@@ -52,8 +54,8 @@ trait AbstractGraph[@specialized(Int) N] extends (N ⇒ TraversableOnce[N]) {
     def rootNodes(ignoreSelfRecursiveDependencies: Boolean = true): Set[N] = {
         var rootNodes = vertices.toSet
         for {
-            v ← vertices
-            t ← this(v)
+            v <- vertices
+            t <- this(v)
             if ignoreSelfRecursiveDependencies || (t != v)
         } {
             rootNodes -= t
@@ -66,19 +68,19 @@ trait AbstractGraph[@specialized(Int) N] extends (N ⇒ TraversableOnce[N]) {
     //
 
     override def toString: String = {
-        val vertices = this.vertices map { v ⇒ this(v).mkString(v.toString()+" => {", ",", "}") }
+        val vertices = this.vertices map { v => this(v).mkString(v.toString()+" => {", ",", "}") }
         vertices.mkString("Graph{\n\t", "\n\t", "\n}")
     }
 
     def toNodes: Iterable[Node] = {
 
         val nodesMap: Map[N, DefaultMutableNode[String]] = {
-            vertices.map(v ⇒ (v, new DefaultMutableNode(v.toString()))).toMap
+            vertices.map(v => (v, new DefaultMutableNode(v.toString()))).toMap
         }
 
-        vertices.foreach { v ⇒
+        vertices.foreach { v =>
             val node = nodesMap(v)
-            val successors = this(v).map(v ⇒ nodesMap(v)).toList
+            val successors = this(v).map(v => nodesMap(v)).toList
             node.addChildren(successors)
         }
 

@@ -56,15 +56,15 @@ object PublicMethodsInNonRestrictedPackagesCounter extends AnalysisApplication {
         def doAnalyze(
             project:       Project[URL],
             parameters:    Seq[String],
-            isInterrupted: () ⇒ Boolean
+            isInterrupted: () => Boolean
         ) = {
             val methods =
                 (
                     for {
-                        classFile ← project.allClassFiles.par
+                        classFile <- project.allClassFiles.par
                         if classFile.isPublic
                         if !restrictedPackages.exists(classFile.fqn.startsWith(_))
-                        method ← classFile.methods
+                        method <- classFile.methods
                         if method.body.isDefined
                         if method.isPublic || (method.isProtected && !classFile.isFinal)
                         referenceParametersCount = method.parameterTypes.count(_.isReferenceType)

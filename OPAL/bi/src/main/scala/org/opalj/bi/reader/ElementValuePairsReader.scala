@@ -139,19 +139,19 @@ trait ElementValuePairsReader extends AnnotationsAbstractions {
     def ElementValue(cp: Constant_Pool, in: DataInputStream): ElementValue = {
         val tag = in.readByte
         (tag: @scala.annotation.switch) match {
-            case 'B' ⇒ ByteValue(cp, in.readUnsignedShort)
-            case 'C' ⇒ CharValue(cp, in.readUnsignedShort)
-            case 'D' ⇒ DoubleValue(cp, in.readUnsignedShort)
-            case 'F' ⇒ FloatValue(cp, in.readUnsignedShort)
-            case 'I' ⇒ IntValue(cp, in.readUnsignedShort)
-            case 'J' ⇒ LongValue(cp, in.readUnsignedShort)
-            case 'S' ⇒ ShortValue(cp, in.readUnsignedShort)
-            case 'Z' ⇒ BooleanValue(cp, in.readUnsignedShort)
-            case 's' ⇒ StringValue(cp, in.readUnsignedShort)
-            case 'e' ⇒ EnumValue(cp, in.readUnsignedShort, in.readUnsignedShort)
-            case 'c' ⇒ ClassValue(cp, in.readUnsignedShort)
-            case '@' ⇒ AnnotationValue(cp, Annotation(cp, in))
-            case '[' ⇒ ArrayValue(cp, fillRefArray(in.readUnsignedShort)(ElementValue(cp, in)))
+            case 'B' => ByteValue(cp, in.readUnsignedShort)
+            case 'C' => CharValue(cp, in.readUnsignedShort)
+            case 'D' => DoubleValue(cp, in.readUnsignedShort)
+            case 'F' => FloatValue(cp, in.readUnsignedShort)
+            case 'I' => IntValue(cp, in.readUnsignedShort)
+            case 'J' => LongValue(cp, in.readUnsignedShort)
+            case 'S' => ShortValue(cp, in.readUnsignedShort)
+            case 'Z' => BooleanValue(cp, in.readUnsignedShort)
+            case 's' => StringValue(cp, in.readUnsignedShort)
+            case 'e' => EnumValue(cp, in.readUnsignedShort, in.readUnsignedShort)
+            case 'c' => ClassValue(cp, in.readUnsignedShort)
+            case '@' => AnnotationValue(cp, Annotation(cp, in))
+            case '[' => ArrayValue(cp, fillRefArray(in.readUnsignedShort)(ElementValue(cp, in)))
         }
     }
 }

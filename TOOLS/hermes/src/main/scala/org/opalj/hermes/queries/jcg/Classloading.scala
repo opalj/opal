@@ -15,7 +15,7 @@ import org.opalj.tac.LazyTACUsingAIKey
 import org.opalj.tac.TACode
 import org.opalj.tac.DUVar
 import org.opalj.value.KnownTypedValue
-
+import scala.collection.Iterable
 /**
  * Groups test case features that perform classloading.
  *
@@ -43,7 +43,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         implicit val locations: Array[LocationsContainer[S]] =
@@ -54,7 +54,7 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
         val classHierarchy = project.classHierarchy
 
         val hasCustomClassLoaders =
-            project.allClassFiles exists { cf ⇒
+            project.allClassFiles exists { cf =>
                 classHierarchy.isSubtypeOf(cf.thisType, ClassLoaderT) &&
                     !(cf.thisType.fqn.startsWith("java/") ||
                         cf.thisType.fqn.startsWith("sun/") ||
@@ -64,13 +64,13 @@ class Classloading(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
             }
 
         for {
-            (classFile, source) ← project.projectClassFilesWithSources
+            (classFile, source) <- project.projectClassFilesWithSources
             if !isInterrupted()
             classFileLocation = ClassFileLocation(source, classFile)
-            method @ MethodWithBody(body) ← classFile.methods
+            method @ MethodWithBody(body) <- classFile.methods
             methodLocation = MethodLocation(classFileLocation, method)
-            pcAndInvocation ← body collect {
-                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) ⇒ i
+            pcAndInvocation <- body collect {
+                case i @ INVOKEVIRTUAL(declClass, "loadClass", loadClassMD) if classHierarchy.isSubtypeOf(declClass, ClassLoaderT) => i
             }
             TACode(_, stmts, pcToIndex, _, _) = tacai(method)
         } {

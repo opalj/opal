@@ -18,11 +18,11 @@ The query finds self and mutually recursive data structures. The query first bui
 would be:
 
     Graph (
-        Object → { }
-        U → { U } // ⟲
-        X → { Y }
-        Y → { Z }
-        Z → { X, Object }
+        Object -> { }
+        U -> { U } // ⟲
+        X -> { Y }
+        Y -> { Z }
+        Z -> { X, Object }
     )
 
 I.e., though the `mutex` field of `Z` could also reference a Y or Z value, this would not be considered because it is in general not relevant. Overall, the algorithm would identify U and Y as being self-recursive data-structures.

@@ -17,7 +17,7 @@ import org.opalj.br.DoubleType
  * @author David Becker
  */
 trait TypeLevelDoubleValues extends DoubleValuesDomain {
-    domain: IntegerValuesFactory ⇒
+    domain: IntegerValuesFactory =>
 
     // -----------------------------------------------------------------------------------
     //
@@ -29,7 +29,7 @@ trait TypeLevelDoubleValues extends DoubleValuesDomain {
      * Abstracts over double values at the type level.
      */
     trait DoubleValue extends TypedValue[DoubleType] with IsDoubleValue {
-        this: DomainTypedValue[DoubleType] ⇒
+        this: DomainTypedValue[DoubleType] =>
 
         final override def leastUpperType = Some(DoubleType)
 

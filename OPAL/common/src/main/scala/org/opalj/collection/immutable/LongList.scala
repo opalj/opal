@@ -3,7 +3,7 @@ package org.opalj
 package collection
 package immutable
 
-import java.lang.{Long ⇒ JLong}
+import java.lang.{Long => JLong}
 
 /**
  * An immutable linked list for storing long values.
@@ -17,7 +17,7 @@ import java.lang.{Long ⇒ JLong}
  *
  * @author Michael Eichberg
  */
-sealed trait LongList extends Serializable { self ⇒
+sealed trait LongList extends Serializable { self =>
 
     def isEmpty: Boolean
     def nonEmpty: Boolean
@@ -25,10 +25,10 @@ sealed trait LongList extends Serializable { self ⇒
     def head: Long
     def tail: LongList
 
-    def foreach[U](f: Long ⇒ U): Unit
+    def foreach[U](f: Long => U): Unit
 
     /** Iterates over the first N values. */
-    def forFirstN[U](n: Int)(f: Long ⇒ U): Unit
+    def forFirstN[U](n: Int)(f: Long => U): Unit
 
     def iterator: LongIterator
 
@@ -37,8 +37,8 @@ sealed trait LongList extends Serializable { self ⇒
 
     final override def equals(other: Any): Boolean = {
         other match {
-            case l: LongList ⇒ equals(l)
-            case _           ⇒ false
+            case l: LongList => equals(l)
+            case _           => false
         }
     }
     def equals(that: LongList): Boolean
@@ -69,9 +69,9 @@ case object LongList0 extends LongList {
     override def isEmpty: Boolean = true
     override def nonEmpty: Boolean = false
 
-    override def foreach[U](f: Long ⇒ U): Unit = {}
+    override def foreach[U](f: Long => U): Unit = {}
     /** Iterates over the first N values. */
-    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {}
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = {}
     override def iterator: LongIterator = LongIterator.empty
     /** Prepends the given value to this list. E.g., `l = 2l +: l`. */
     override def +:(v: Long): LongList = new LongListNode(v, this)
@@ -88,14 +88,14 @@ case object LongList0 extends LongList {
 final case class LongListNode(
         head:                        Long,
         private[immutable] var rest: LongList = LongList0
-) extends LongList { list ⇒
+) extends LongList { list =>
 
     override def tail: LongList = rest
 
     override def isEmpty: Boolean = false
     override def nonEmpty: Boolean = true
 
-    override def foreach[U](f: Long ⇒ U): Unit = {
+    override def foreach[U](f: Long => U): Unit = {
         var list: LongList = this
         do {
             f(list.head)
@@ -103,7 +103,7 @@ final case class LongListNode(
         } while (list.nonEmpty)
     }
 
-    override def forFirstN[U](n: Int)(f: Long ⇒ U): Unit = {
+    override def forFirstN[U](n: Int)(f: Long => U): Unit = {
         if (n == 0) return ;
 
         var i = 0
@@ -119,7 +119,7 @@ final case class LongListNode(
         new LongIterator {
             private[this] var currentList: LongList = list
             def hasNext: Boolean = currentList.nonEmpty
-            def next: Long = {
+            def next(): Long = {
                 val v = currentList.head
                 currentList = currentList.tail
                 v

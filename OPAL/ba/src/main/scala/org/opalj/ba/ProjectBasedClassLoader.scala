@@ -21,11 +21,11 @@ class ProjectBasedInMemoryClassLoader(
     override def findClass(name: String): Class[_] = {
         project.classFile(ObjectType(name.replace('.', '/'))) match {
 
-            case Some(cf) ⇒
+            case Some(cf) =>
                 val bytes = Assembler(ba.toDA(cf))
                 defineClass(name, bytes, 0, bytes.length)
 
-            case None ⇒
+            case None =>
                 throw new ClassNotFoundException(name)
         }
     }

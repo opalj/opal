@@ -13,7 +13,7 @@ package cg
  *
  * @author Michael Reif
  */
-object IsOverridableMethodKey extends ProjectInformationKey[Method ⇒ Answer, Nothing] {
+object IsOverridableMethodKey extends ProjectInformationKey[Method => Answer, Nothing] {
 
     /**
      * The [[IsOverridableMethodKey]] has the [[TypeExtensibilityKey]] as prerequisite.
@@ -22,7 +22,7 @@ object IsOverridableMethodKey extends ProjectInformationKey[Method ⇒ Answer, N
      */
     override def requirements(project: SomeProject): ProjectInformationKeys = Seq(TypeExtensibilityKey)
 
-    override def compute(project: SomeProject): Method ⇒ Answer = {
+    override def compute(project: SomeProject): Method => Answer = {
         new IsOverridableMethodAnalysis(
             project,
             project.get(ClassExtensibilityKey),

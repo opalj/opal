@@ -13,12 +13,12 @@ package domain
  * @author Michael Eichberg
  */
 trait RefineDefUseUsingOrigins extends RecordDefUse {
-    defUseDomain: Domain with TheCode with Origin ⇒
+    defUseDomain: Domain with TheCode with Origin =>
 
     override protected[this] def originsOf(domainValue: DomainValue): Option[ValueOrigins] = {
         domainValue match {
-            case vo: ValueWithOriginInformation ⇒ Some(vo.origins)
-            case _                              ⇒ super.originsOf(domainValue)
+            case vo: ValueWithOriginInformation => Some(vo.origins)
+            case _                              => super.originsOf(domainValue)
         }
     }
 }

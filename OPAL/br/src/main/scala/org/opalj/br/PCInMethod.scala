@@ -17,8 +17,8 @@ package br
 
     override def equals(other: Any): Boolean = {
         other match {
-            case that: PCInMethod ⇒ that.pc == this.pc && that.method == this.method
-            case _                ⇒ false
+            case that: PCInMethod => that.pc == this.pc && that.method == this.method
+            case _                => false
         }
 
     }

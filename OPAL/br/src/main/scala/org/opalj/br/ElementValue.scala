@@ -33,8 +33,8 @@ object ElementValue {
 
     def unapply(attribute: Attribute): Boolean = {
         attribute match {
-            case _: ElementValue ⇒ true
-            case _               ⇒ false
+            case _: ElementValue => true
+            case _               => false
         }
     }
 }
@@ -270,8 +270,8 @@ case class AnnotationValue(annotation: Annotation) extends ElementValue {
 
     override def similar(other: Attribute, config: SimilarityTestConfiguration): Boolean = {
         other match {
-            case AnnotationValue(thatAnnotation) ⇒ this.annotation.similar(thatAnnotation)
-            case _                               ⇒ false
+            case AnnotationValue(thatAnnotation) => this.annotation.similar(thatAnnotation)
+            case _                               => false
         }
     }
 

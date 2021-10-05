@@ -14,7 +14,7 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.tac.common.DefinitionSite
-
+import scala.collection.Iterable
 /**
  * A property matcher that checks whether an annotated allocation or parameter has the specified
  * escape property.
@@ -42,11 +42,11 @@ abstract class EscapePropertyMatcher(
 
         // retrieve the current method and using this the domain used for the TAC
         val m = entity match {
-            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.declaringClassType == dm.definedMethod.classFile.thisType ⇒
+            case VirtualFormalParameter(dm: DefinedMethod, _) if dm.declaringClassType == dm.definedMethod.classFile.thisType =>
                 dm.definedMethod
-            case VirtualFormalParameter(dm: DefinedMethod, _) ⇒ return false;
-            case DefinitionSite(m, _)                         ⇒ m
-            case _                                            ⇒ throw new RuntimeException(s"unsuported entity $entity")
+            case VirtualFormalParameter(dm: DefinedMethod, _) => return false;
+            case DefinitionSite(m, _)                         => m
+            case _                                            => throw new RuntimeException(s"unsuported entity $entity")
         }
         if (as.nonEmpty && m.body.isDefined) {
             val domainClass = p.get(AIDomainFactoryKey).domainClass
@@ -69,11 +69,11 @@ abstract class EscapePropertyMatcher(
         as:         Set[ObjectType],
         entity:     scala.Any,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists {
-            case `property` ⇒ true
-            case _          ⇒ false
+            case `property` => true
+            case _          => false
         }) {
             Some(a.elementValuePairs.head.value.asStringValue.value)
         } else {
