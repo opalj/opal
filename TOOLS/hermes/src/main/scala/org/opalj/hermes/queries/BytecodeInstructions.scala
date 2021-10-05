@@ -7,7 +7,7 @@ import java.net.URL
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  * Counts the number of occurrences of each bytecode instruction.
  *
@@ -36,8 +36,8 @@ class BytecodeInstructions(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val instructionsLocations = Array.fill(256)(new LocationsContainer[S])
 
         for {

@@ -25,7 +25,7 @@ import org.opalj.da.CONSTANT_NameAndType_info
 import org.opalj.da.CONSTANT_Utf8_info
 import org.opalj.da.ClassFile
 import org.opalj.da.Constant_Pool_Entry
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  *  This metric computes the Fan-In and Fan-Out of a class.
  *
@@ -197,8 +197,8 @@ class FanInFanOut(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val features = Array.fill(featureIDs.size)(new LocationsContainer[S])
 

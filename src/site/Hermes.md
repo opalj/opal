@@ -28,7 +28,7 @@ All queries in Hermes have to inherit from `org.opalj.hermes.FeatureQuery` and h
             projectConfiguration: ProjectConfiguration,
             project:              Project[S],
             rawClassFiles:        Traversable[(da.ClassFile, S)]
-        ): TraversableOnce[Feature[S]] = {
+        ): IterableOnce[Feature[S]] = {
             ???
     }   }
 
@@ -55,7 +55,7 @@ Next, we will discuss a complete query which finds *native* methods.
             projectConfiguration: ProjectConfiguration,
             project:              Project[S],
             rawClassFiles:        Traversable[(da.ClassFile, S)]
-        ): TraversableOnce[Feature[S]] = {
+        ): IterableOnce[Feature[S]] = {
 
             // To store the location information; i.e., to store the native methods,
             // we create a new empty LocationsContainer.

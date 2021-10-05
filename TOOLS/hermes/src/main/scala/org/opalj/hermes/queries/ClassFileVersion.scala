@@ -10,7 +10,7 @@ import org.opalj.bi.Java5MajorVersion
 import org.opalj.bi.Java1MajorVersion
 import org.opalj.bi.jdkVersion
 import org.opalj.br.analyses.Project
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  * Counts the number of class files per class file version.
  *
@@ -30,8 +30,8 @@ class ClassFileVersion(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val data = ArrayMap[LocationsContainer[S]](LatestSupportedJavaMajorVersion)
 

@@ -8,7 +8,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.VirtualMethodInvocationInstruction
 import org.opalj.da.ClassFile
-
+import scala.collection.Iterable
 /**
  * Groups test case features for features that explicitly must be modeled to imitate the JVM's
  * behaviour, i.e., callbacks that are registered and then (potentially) called from the JVM.
@@ -35,7 +35,7 @@ class JVMCalls(implicit hermes: HermesConfig) extends DefaultFeatureQuery {
     override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
+        rawClassFiles:        Iterable[(ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
 
         val locations = Array.fill(featureIDs.size)(new LocationsContainer[S])

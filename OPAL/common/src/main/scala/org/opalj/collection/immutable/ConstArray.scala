@@ -7,9 +7,9 @@ import scala.reflect.ClassTag
 
 import java.util.{Arrays => JArrays}
 import java.lang.System.arraycopy
-
+import scala.collection.BuildFrom
 import scala.collection.IndexedSeqOptimized
-import scala.collection.generic.CanBuildFrom
+
 import scala.collection.mutable.Builder
 import scala.collection.mutable.ArrayBuffer
 
@@ -128,8 +128,8 @@ object ConstArray /*extends LowLevelConstArrayImplicits*/ {
         builder mapResult (r => ConstArray(r.toArray[Object].asInstanceOf[Array[T]]))
     }
 
-    implicit def canBuildFrom[T <: AnyRef]: CanBuildFrom[ConstArray[_ <: AnyRef], T, ConstArray[T]] = {
-        new CanBuildFrom[ConstArray[_], T, ConstArray[T]] {
+    implicit def buildFrom[T <: AnyRef]: BuildFrom[ConstArray[_ <: AnyRef], T, ConstArray[T]] = {
+        new BuildFrom[ConstArray[_], T, ConstArray[T]] {
             def apply(): Builder[T, ConstArray[T]] = newBuilder[T]()
             def apply(from: ConstArray[_]): Builder[T, ConstArray[T]] = newBuilder[T](from.size)
         }

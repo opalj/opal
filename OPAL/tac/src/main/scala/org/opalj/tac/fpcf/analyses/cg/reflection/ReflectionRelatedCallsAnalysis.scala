@@ -45,7 +45,7 @@ import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.LoadedClasses
 import org.opalj.tac.fpcf.properties.TACAI
-
+import scala.collection.IterableOnce
 sealed trait TypeAndStringMagic extends TACAIBasedAPIBasedAnalysis {
 
     implicit final val HighSoundnessMode: Boolean = {
@@ -95,7 +95,7 @@ class ClassForNameAnalysis private[analyses] (
     ) {
         private[this] var _newLoadedClasses: UIDSet[ObjectType] = UIDSet.empty
 
-        private[cg] def addNewLoadedClasses(loadedClasses: TraversableOnce[ObjectType]): Unit = {
+        private[cg] def addNewLoadedClasses(loadedClasses: IterableOnce[ObjectType]): Unit = {
             _newLoadedClasses ++= loadedClasses.filter(!loadedClassesUB.contains(_))
         }
 

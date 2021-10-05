@@ -39,7 +39,7 @@ import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
 import org.opalj.tac.fpcf.properties.TACAI
-
+import scala.collection.IterableOnce
 /**
  * This analysis handles the type propagation of XTA, MTA, FTA and CTA call graph
  * algorithms.
@@ -473,7 +473,7 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def returnResults(
-        partialResults: TraversableOnce[SomePartialResult]
+        partialResults: IterableOnce[SomePartialResult]
     )(implicit state: State): ProperPropertyComputationResult = {
         // Always re-register the continuation. It is impossible for all dependees to be final in XTA/...
         Results(

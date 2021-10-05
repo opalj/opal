@@ -1085,14 +1085,14 @@ object UIDSet {
 
     implicit def buildFrom[T <: UID]: BuildFrom[UIDSet[_], T, UIDSet[T]] = {
         new BuildFrom[UIDSet[_], T, UIDSet[T]] {
-            override def apply(from: UIDSet[_]): UIDSetBuilder[T] = newBuilder[UIDSet[T],T]
+            override def apply(from: UIDSet[_]): UIDSetBuilder[T] = newBuilder[UIDSet[T], T]
             override def apply(): UIDSetBuilder[T] = newBuilder[T]
         }
     }
 
     def buildUIDSet[T <: UID]: BuildFrom[Any, T, UIDSet[T]] = {
         new BuildFrom[Any, T, UIDSet[T]] {
-            override def apply(from: Any): UIDSetBuilder[T] =newBuilder[T]
+            override def apply(from: Any): UIDSetBuilder[T] = newBuilder[T]
             override def apply(): UIDSetBuilder[T] = newBuilder[T]
         }
     }

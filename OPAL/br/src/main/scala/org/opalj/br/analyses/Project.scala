@@ -267,7 +267,7 @@ class Project[Source] private (
                 })
             buffer += cf
         }
-        classesPerPackage.mapValues(cfs => cfs.toSet)
+        classesPerPackage.view.mapValues(cfs => cfs.toSet).toMap
     }
 
     /**

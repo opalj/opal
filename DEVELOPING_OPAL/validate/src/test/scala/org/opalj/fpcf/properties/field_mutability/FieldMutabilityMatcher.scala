@@ -11,7 +11,7 @@ import org.opalj.br.fpcf.properties.DeclaredFinalField
 import org.opalj.br.fpcf.properties.EffectivelyFinalField
 import org.opalj.br.fpcf.properties.FieldMutability
 import org.opalj.br.fpcf.properties.LazyInitializedField
-
+import scala.collection.Iterable
 /**
  * Matches a field's `FieldMutability` property. The match is successful if the field has the
  * given property and a sufficiently capable analysis was scheduled.
@@ -43,7 +43,7 @@ class FieldMutabilityMatcher(val property: FieldMutability) extends AbstractProp
         as:         Set[ObjectType],
         entity:     Entity,
         a:          AnnotationLike,
-        properties: Traversable[Property]
+        properties: Iterable[Property]
     ): Option[String] = {
         if (!properties.exists(p => p == property)) {
             // ... when we reach this point the expected property was not found.

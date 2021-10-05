@@ -15,10 +15,10 @@ import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.tac.fpcf.properties.TACAI
-
+import scala.collection.IterableOnce
 import scala.collection.mutable
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * Manages the state of each method analyzed by [[PropagationBasedCallGraphAnalysis]].
@@ -65,7 +65,7 @@ class PropagationBasedCGState(
         }
     }
 
-    def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): TraversableOnce[ReferenceType] = {
+    def newInstantiatedTypes(typeSetEntity: TypeSetEntity, seenTypes: Int): IterableOnce[ReferenceType] = {
         val typeDependee = _instantiatedTypesDependeeMap.get(typeSetEntity)
         if (typeDependee.hasUBP) {
             typeDependee.ub.dropOldest(seenTypes)

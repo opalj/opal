@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 
 import org.opalj.bi.TestResources.locateTestResources
 import org.opalj.br.reader.Java8Framework.ClassFiles
-
+import scala.collection.Iterable
 /**
  * Tests the support for "project" related functionality.
  *
@@ -20,7 +20,7 @@ class StringConstantsInformationKeyTest extends AnyFlatSpec with Matchers {
     val stringsProject = Project(ClassFiles(stringsArchive))
 
     val opal = locateTestResources("classfiles/OPAL-SNAPSHOT-0.3.jar", "bi")
-    val opalProject = Project(ClassFiles(opal), Traversable.empty, true)
+    val opalProject = Project(ClassFiles(opal), Iterable.empty, true)
 
     //
     //

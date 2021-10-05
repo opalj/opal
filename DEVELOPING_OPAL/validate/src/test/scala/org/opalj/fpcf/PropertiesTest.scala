@@ -40,7 +40,7 @@ import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
-
+import scala.collection.IterableOnce
 /**
  * Framework to test if the properties specified in the test project (the classes in the
  * (sub-)package of org.opalj.fpcf.fixture) and the computed ones match. The actual matching
@@ -179,7 +179,7 @@ abstract class PropertiesTest extends AnyFunSpec with Matchers {
      */
     def validateProperties(
         context:       TestContext,
-        eas:           TraversableOnce[(Entity, /*the processed annotation*/ String => String /* a String identifying the entity */ , Traversable[AnnotationLike])],
+        eas:           IterableOnce[(Entity, /*the processed annotation*/ String => String /* a String identifying the entity */ , Traversable[AnnotationLike])],
         propertyKinds: Set[String]
     ): Unit = {
         val TestContext(p: Project[URL], ps: PropertyStore, as: List[FPCFAnalysis]) = context

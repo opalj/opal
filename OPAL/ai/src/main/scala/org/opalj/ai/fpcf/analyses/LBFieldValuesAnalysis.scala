@@ -43,7 +43,7 @@ import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.ai.fpcf.properties.FieldValue
 import org.opalj.ai.fpcf.properties.TypeBasedFieldValueInformation
 import org.opalj.ai.fpcf.properties.ValueBasedFieldValueInformation
-
+import scala.collection.IterableOnce
 /**
  * Computes for each private field an approximation of the type of values stored in the field.
  *
@@ -176,7 +176,7 @@ class LBFieldValuesAnalysis private[analyses] (
 
         def this(
             classFile:      ClassFile,
-            relevantFields: TraversableOnce[Field],
+            relevantFields: IterableOnce[Field],
             dependees:      EOptionPSet[Entity, Property] = EOptionPSet.empty
         ) = {
             this(classFile, dependees)

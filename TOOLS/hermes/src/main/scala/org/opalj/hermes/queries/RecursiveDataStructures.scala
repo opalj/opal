@@ -6,7 +6,7 @@ package queries
 import org.opalj.graphs.UnidirectionalGraph
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  * Identifies recursive data structures. Such data-structure can often significantly limit
  * the scalability of analyses.
@@ -28,8 +28,8 @@ class RecursiveDataStructures(implicit hermes: HermesConfig) extends FeatureQuer
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         import project.classHierarchy.getObjectType
 

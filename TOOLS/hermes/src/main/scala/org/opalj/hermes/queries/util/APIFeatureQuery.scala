@@ -12,7 +12,7 @@ import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.da.ClassFile
-
+import scala.collection.{IterableOnce, Iterable}
 /**
  * A predefined query for finding simple API features. It supports - in particular -
  * features that check for certain API calls. Subclasses are only required to define
@@ -65,8 +65,8 @@ abstract class APIFeatureQuery(implicit hermes: HermesConfig) extends FeatureQue
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
 
         val classHierarchy = project.classHierarchy
         import classHierarchy.allSubtypes

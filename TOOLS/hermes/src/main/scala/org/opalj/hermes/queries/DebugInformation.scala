@@ -5,7 +5,7 @@ package queries
 
 import org.opalj.br.analyses.Project
 import org.opalj.br.MethodWithBody
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  * Classifies class file elements which contain debug information.
  *
@@ -27,8 +27,8 @@ class DebugInformation(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val locations = Array.fill(4)(new LocationsContainer[S])
 
         for {

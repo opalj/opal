@@ -255,9 +255,9 @@ sealed class ConcreteCallees(
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): Map[Int, Iterator[DeclaredMethod]] = {
-        directCalleesIds.mapValues { calleeIds =>
+        directCalleesIds.view.mapValues { calleeIds =>
             calleeIds.iterator.map[DeclaredMethod](declaredMethods.apply)
-        }
+        }.toMap
     }
 
     override def indirectCallSites()(
@@ -265,9 +265,9 @@ sealed class ConcreteCallees(
         propertyStore:   PropertyStore,
         declaredMethods: DeclaredMethods
     ): Map[Int, Iterator[DeclaredMethod]] = {
-        indirectCalleesIds.mapValues { calleeIds =>
+        indirectCalleesIds.view.mapValues { calleeIds =>
             calleeIds.iterator.map[DeclaredMethod](declaredMethods.apply)
-        }
+        }.toMap
     }
 
     override def indirectCallReceiver(

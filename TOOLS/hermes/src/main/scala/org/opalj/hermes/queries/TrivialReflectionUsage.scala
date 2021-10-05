@@ -12,7 +12,7 @@ import org.opalj.br.analyses.MethodInfo
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.ai.BaseAI
 import org.opalj.ai.domain.l1.DefaultDomainWithCFGAndDefUse
-
+import scala.collection.{IterableOnce, Iterable}
 /**
  * Counts (non-)trivial usages of "Class.forName(...)".
  *
@@ -29,8 +29,8 @@ class TrivialReflectionUsage(implicit hermes: HermesConfig) extends FeatureQuery
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val Class = ObjectType.Class
         val ForName1MD = MethodDescriptor("(Ljava/lang/String;)Ljava/lang/Class;")
         val ForName3MD =

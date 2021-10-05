@@ -19,7 +19,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.log.GlobalLogContext
 import org.opalj.io.processSource
 import org.opalj.de.DependencyTypes.toUsageDescription
-
+import scala.collection.Iterable
 /**
  * A specification of a project's architectural constraints.
  *
@@ -64,14 +64,14 @@ class Specification(val project: Project[URL], val useAnsiColors: Boolean) { spe
     }
 
     def this(
-        classFiles:    Traversable[(ClassFile, URL)],
-        useAnsiColors: Boolean                       = false
+        classFiles:    Iterable[(ClassFile, URL)],
+        useAnsiColors: Boolean                    = false
     ) = {
         this(
             run {
                 Project(
                     projectClassFilesWithSources = classFiles,
-                    Traversable.empty,
+                    Iterable.empty,
                     libraryClassFilesAreInterfacesOnly = true /*actually not relevant*/ )
             } { (t, project) =>
                 import project.logContext

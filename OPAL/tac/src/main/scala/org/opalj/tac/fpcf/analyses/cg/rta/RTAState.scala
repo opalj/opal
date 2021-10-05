@@ -18,7 +18,7 @@ import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
-
+import scala.collection.IterableOnce
 /**
  * Manages the state used by the [[RTACallGraphAnalysis]].
  *
@@ -57,7 +57,7 @@ class RTAState(
             UIDSet.empty
     }
 
-    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ReferenceType] = {
+    def newInstantiatedTypes(seenTypes: Int): IterableOnce[ReferenceType] = {
         if (_instantiatedTypesDependee.hasUBP) {
             _instantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {

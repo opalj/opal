@@ -6,6 +6,8 @@ package queries
 import org.opalj.br.analyses.Project
 import org.opalj.br.instructions.ReturnInstruction
 import org.opalj.br.cfg.CFGFactory
+import scala.collection.Iterable
+import scala.collection.IterableOnce
 
 /**
  * Counts the number of methods without regular returns.
@@ -24,8 +26,8 @@ class MethodsWithoutReturns(implicit hermes: HermesConfig) extends FeatureQuery 
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val infiniteLoopMethods: LocationsContainer[S] = new LocationsContainer[S]
         val alwaysThrowsExceptionMethods: LocationsContainer[S] = new LocationsContainer[S]
 

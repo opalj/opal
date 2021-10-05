@@ -27,7 +27,7 @@ import org.opalj.ai.BaseAI
 import org.opalj.ai.CorrelationalDomain
 import org.opalj.ai.domain
 import org.opalj.br.LongType
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  * Counts which kinds of micro patterns are actually available.
  *
@@ -70,8 +70,8 @@ class MicroPatterns(implicit hermes: HermesConfig) extends FeatureQuery {
     override def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(org.opalj.da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(org.opalj.da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         implicit val theProject = project
 
         val fa = project.get(FieldAccessInformationKey)

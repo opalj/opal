@@ -16,7 +16,7 @@ import javafx.beans.property.SimpleLongProperty
 
 import org.opalj.io.processSource
 import org.opalj.br.analyses.Project
-
+import scala.collection.{Iterable, IterableOnce}
 /**
  * Extracts a feature/a set of closely related features of a given project.
  *
@@ -52,8 +52,8 @@ abstract class FeatureQuery(implicit hermes: HermesConfig) {
     def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]]
 
     // =================================== DEFAULT FUNCTIONALITY ===================================
     // ==================================== (can be overridden) ====================================
@@ -119,14 +119,14 @@ abstract class DefaultFeatureQuery(
     def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]]
 
     final def apply[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): TraversableOnce[Feature[S]] = {
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IterableOnce[Feature[S]] = {
         val locations = evaluate(projectConfiguration, project, rawClassFiles)
         for { (featureID, featureIDIndex) <- featureIDs.iterator.zipWithIndex } yield {
             Feature[S](featureID, locations(featureIDIndex))
@@ -144,15 +144,15 @@ abstract class DefaultGroupedFeaturesQuery(
     def evaluateFeatureGroups[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
-    ): IndexedSeq[TraversableOnce[LocationsContainer[S]]]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
+    ): IndexedSeq[IterableOnce[LocationsContainer[S]]]
 
     final def featureIDs: Seq[String] = groupedFeatureIDs.flatten
 
     final override def evaluate[S](
         projectConfiguration: ProjectConfiguration,
         project:              Project[S],
-        rawClassFiles:        Traversable[(da.ClassFile, S)]
+        rawClassFiles:        Iterable[(da.ClassFile, S)]
     ): IndexedSeq[LocationsContainer[S]] = {
         evaluateFeatureGroups(projectConfiguration, project, rawClassFiles).flatten
     }

@@ -26,7 +26,7 @@ import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.Type
-
+import scala.collection.Iterable
 /**
  * This partial domain enables tracking of a reference value's null-ness and must-alias information.
  *
@@ -1128,9 +1128,9 @@ trait ReferenceValues extends l0.DefaultTypeLevelReferenceValues with Origin {
             }
         }
 
-        override def baseValues: Traversable[DomainSingleOriginReferenceValue] = values
+        override def baseValues: Iterable[DomainSingleOriginReferenceValue] = values
 
-        override def allValues: Traversable[DomainSingleOriginReferenceValue] = values
+        override def allValues: Iterable[DomainSingleOriginReferenceValue] = values
 
         def addValue(newValue: DomainSingleOriginReferenceValue): DomainMultipleReferenceValues = {
 

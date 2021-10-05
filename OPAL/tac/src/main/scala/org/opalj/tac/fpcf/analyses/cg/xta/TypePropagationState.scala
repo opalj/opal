@@ -21,7 +21,7 @@ import org.opalj.tac.fpcf.properties.TACAI
 import java.util.{HashSet => JHashSet}
 import java.util.{HashMap => JHashMap}
 import java.util.{Set => JSet}
-
+import scala.collection.IterableOnce
 import scala.collection.JavaConverters.asScalaIteratorConverter
 
 /**
@@ -62,7 +62,7 @@ final class TypePropagationState(
             UIDSet.empty
     }
 
-    def newInstantiatedTypes(seenTypes: Int): TraversableOnce[ReferenceType] = {
+    def newInstantiatedTypes(seenTypes: Int): IterableOnce[ReferenceType] = {
         if (_ownInstantiatedTypesDependee.hasUBP) {
             _ownInstantiatedTypesDependee.ub.dropOldest(seenTypes)
         } else {

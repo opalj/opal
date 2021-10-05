@@ -7,7 +7,7 @@ import org.opalj.br.ClassFile
 import org.opalj.br.ObjectType
 import org.opalj.br.ClassHierarchy
 import org.opalj.log.GlobalLogContext
-
+import scala.collection.Iterable
 /**
  * Writes out (a subset of) the class hierarchy in the format used by
  * [[org.opalj.br.ClassHierarchy]] to create the pre-initialized
@@ -18,7 +18,7 @@ import org.opalj.log.GlobalLogContext
 object ClassHierarchyExtractor {
 
     def deriveSpecification(
-        types: Traversable[ObjectType]
+        types: Iterable[ObjectType]
     )(
         implicit
         classHierarchy: ClassHierarchy

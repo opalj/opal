@@ -3,7 +3,6 @@ package org.opalj.collection
 package mutable
 
 import java.util.{Arrays => JArrays}
-
 import scala.collection.mutable
 import scala.collection.generic
 import scala.compat._

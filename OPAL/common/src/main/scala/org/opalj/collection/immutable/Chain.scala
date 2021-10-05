@@ -2,9 +2,10 @@
 package org.opalj
 package collection
 package immutable
+import org.opalj.collection.IntIterator.empty.foldLeft
+
 import scala.language.implicitConversions
-import scala.collection.{AbstractIterable, AbstractIterator, GenIterable, GenTraversableOnce, WithFilter}
-import scala.collection.generic.CanBuildFrom
+import scala.collection.{AbstractIterable, AbstractIterator, BuildFrom, GenIterable, GenTraversableOnce, Iterable, IterableOnce, WithFilter, mutable}
 import scala.collection.mutable.Builder
 import scala.compat._
 /**
@@ -37,7 +38,7 @@ sealed trait Chain[@specialized(Int) +T]
      */
     class ChainWithFilter(p: T => Boolean) extends WithFilter[T, Chain[T]] {
 
-        def map[B, That](f: T => B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
+        def map[B, That](f: T => B)(implicit bf: BuildFrom[Chain[T], B, That]): That = {
             val list = self
             var rest = list
 
@@ -49,19 +50,18 @@ sealed trait Chain[@specialized(Int) +T]
             }
             b.result()
         }
-
-        def flatMap[B, That](
-            f: T => GenTraversableOnce[B]
+        override def flatMap[B, That](
+            f: T => IterableOnce[B]
         )(
             implicit
-            bf: CanBuildFrom[Chain[T], B, That]
-        ): That = {
+            bf: BuildFrom[Chain[T], B, That]
+        ): Chain = {
             val list = self
             val b = bf(list)
             var rest = list
             while (rest.nonEmpty) {
                 val x = rest.head
-                if (p(x)) b ++= f(x).seq
+                if (p(x)) b ++= f(x)
                 rest = rest.tail
             }
             b.result()
@@ -79,6 +79,10 @@ sealed trait Chain[@specialized(Int) +T]
         def withFilter(q: T => Boolean): ChainWithFilter = {
             new ChainWithFilter(x => p(x) && q(x))
         }
+
+        override def map[B](f: T ⇒ B): Chain[B] = ???
+
+        override def flatMap[B](f: T ⇒ IterableOnce[B]): Chain[B] = ???
     }
 
     final override def hasDefiniteSize: Boolean = true
@@ -161,23 +165,23 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def flatMap[B, That](
-        f: T => GenTraversableOnce[B]
+        f: T => IterableOnce[B]
     )(
         implicit
-        bf: CanBuildFrom[Chain[T], B, That]
+        bf: BuildFrom[Chain[T], B, That]
     ): That = {
         val b = bf(this)
         //OLD: foreach { t => f(t) foreach { e => builder += e } }
         var rest = this
         while (rest.nonEmpty) {
             val t = rest.head
-            b ++= f(t).seq
+            b ++= f(t)
             rest = rest.tail
         }
         b.result()
     }
 
-    def map[B, That](f: (T) => B)(implicit bf: CanBuildFrom[Chain[T], B, That]): That = {
+    def map[B, That](f: (T) => B)(implicit bf: BuildFrom[Chain[T], B, That]): That = {
         val builder = bf(this)
         var rest = this
         while (rest.nonEmpty) {
@@ -360,7 +364,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     // TODO Manually specialize Chain!
-    def ++[X >: T](other: Traversable[X]): Chain[X] = {
+    def ++[X >: T](other: Iterable[X]): Chain[X] = {
         if (other.isEmpty)
             return this;
 
@@ -404,7 +408,7 @@ sealed trait Chain[@specialized(Int) +T]
         rest
     }
 
-    def zip[X](other: GenIterable[X]): Chain[(T, X)] = {
+    def zip[X](other: Iterable[X]): Chain[(T, X)] = {
         if (this.isEmpty)
             return this.asInstanceOf[Naught.type];
         val otherIt = other.iterator
@@ -525,13 +529,12 @@ sealed trait Chain[@specialized(Int) +T]
             }
         }
     }
-
     /**
      * Returns a newly created `Traversable[T]` collection.
      */
     //TODO figure out difference between Traversable and Iterable.
-    def toTraversable: Traversable[T] = {
-        new Traversable[T] {
+    def toTraversable: Iterable[T] = {
+        new Iterable[T] {
             def foreach[U](f: T => U): Unit = self.foreach(f)
 
         }
@@ -542,7 +545,7 @@ sealed trait Chain[@specialized(Int) +T]
     }
 
     def toIntTrieSet(implicit ev: T <:< Int): IntTrieSet = {
-        // foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
+        //foldLeft(EmptyIntTrieSet: IntTrieSet)(_ + _)
         var set: IntTrieSet = EmptyIntTrieSet
         var rest = this
         while (rest ne Naught) {
@@ -552,7 +555,7 @@ sealed trait Chain[@specialized(Int) +T]
         set
     }
 
-    def toStream: Stream[T] = toTraversable.toStream
+    def toStream: LazyList[T] = toTraversable.to(LazyList)
 
     def copyToArray[B >: T](xs: Array[B], start: Int, len: Int): Unit = {
         val max = xs.length
@@ -624,27 +627,31 @@ object Chain /* extends ChainLowPriorityImplicits */ {
         def result(): Chain[T] = { val list = this.list; if (list == null) Naught else list }
     }
 
-    private[this] val baseCanBuildFrom = new CanBuildFrom[Chain[_], AnyRef, Chain[AnyRef]] {
+    private[this] val baseCanBuildFrom = new BuildFrom[Chain[_], AnyRef, Chain[AnyRef]] {
         def apply(from: Chain[_]) = new ChainBuilder[AnyRef]
         def apply() = new ChainBuilder[AnyRef]
     }
-    implicit def canBuildFrom[A <: AnyRef]: CanBuildFrom[Chain[_], A, Chain[A]] = {
-        baseCanBuildFrom.asInstanceOf[CanBuildFrom[Chain[_], A, Chain[A]]]
+    implicit def canBuildFrom[A <: AnyRef]: BuildFrom[Chain[_], A, Chain[A]] = {
+        baseCanBuildFrom.asInstanceOf[BuildFrom[Chain[_], A, Chain[A]]]
     }
-    private[this] val specializedCanBuildFrom = new CanBuildFrom[Chain[_], Int, Chain[Int]] {
+    private[this] val specializedCanBuildFrom = new BuildFrom[Chain[_], Int, Chain[Int]] {
         def apply(from: Chain[_]) = new ChainBuilder[Int]
         def apply() = new ChainBuilder[Int]
     }
-    implicit def canBuildIntChainFrom: CanBuildFrom[Chain[_], Int, Chain[Int]] = {
+    implicit def canBuildIntChainFrom: BuildFrom[Chain[_], Int, Chain[Int]] = {
         specializedCanBuildFrom
     }
 
-    val GenericSpecializedCBF = new CanBuildFrom[Any, Int, Chain[Int]] {
-        def apply(from: Any) = new ChainBuilder[Int]
+    val GenericSpecializedCBF = new BuildFrom[Any, Int, Chain[Int]] {
+        //def apply(from: Any) = new ChainBuilder[Int]
         def apply() = new ChainBuilder[Int]
+
+        override def fromSpecific(from: Any)(it: IterableOnce[UByte]): Chain[UByte] = ???
+
+        override def newBuilder(from: Any): mutable.Builder[UByte, Chain[UByte]] = ???
     }
 
-    implicit def toTraversable[T](cl: Chain[T]): Traversable[T] = cl.toIterable
+    implicit def toTraversable[T](cl: Chain[T]): Iterable[T] = cl.toIterable
 
     def newBuilder[T](implicit t: scala.reflect.ClassTag[T]): ChainBuilder[T] = {
         if (t.runtimeClass == classOf[Int])

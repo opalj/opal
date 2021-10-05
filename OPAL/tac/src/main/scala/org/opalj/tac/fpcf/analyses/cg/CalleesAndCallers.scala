@@ -27,7 +27,7 @@ import org.opalj.br.fpcf.properties.cg.CallersOnlyWithConcreteCallers
 import org.opalj.br.fpcf.properties.cg.ConcreteCallees
 import org.opalj.br.fpcf.properties.cg.NoCallees
 import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
-
+import scala.collection.IterableOnce
 /**
  * A convenience class for call graph constructions. Manages direct/indirect calls and incomplete
  * call sites and allows the analyses to retrieve the required [[org.opalj.fpcf.PartialResult]]s for
@@ -39,7 +39,7 @@ import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 sealed trait CalleesAndCallers {
     final def partialResults(
         caller: DeclaredMethod
-    ): TraversableOnce[PartialResult[DeclaredMethod, _ >: Null <: Property]] =
+    ): IterableOnce[PartialResult[DeclaredMethod, _ >: Null <: Property]] =
         Iterator(partialResultForCallees(caller)) ++ partialResultsForCallers
 
     protected def directCallees: IntMap[IntTrieSet] = IntMap.empty
@@ -85,7 +85,7 @@ sealed trait CalleesAndCallers {
         })
     }
 
-    protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = Iterator.empty
+    protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = Iterator.empty
 }
 
 trait IncompleteCallSites extends CalleesAndCallers {
@@ -150,7 +150,7 @@ trait Calls extends CalleesAndCallers {
         }
     }
 
-    override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
+    override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = {
         _partialResultsForCallers.iterator ++ super.partialResultsForCallers
     }
 }
@@ -231,7 +231,7 @@ trait VMReachableMethodsBase extends CalleesAndCallers {
     def addVMReachableMethod(declaredMethod: DeclaredMethod): Unit =
         vmReachableMethods += declaredMethod
 
-    override protected def partialResultsForCallers: TraversableOnce[PartialResult[DeclaredMethod, Callers]] = {
+    override protected def partialResultsForCallers: IterableOnce[PartialResult[DeclaredMethod, Callers]] = {
         vmReachableMethods.iterator.map { m =>
             PartialResult[DeclaredMethod, Callers](m, Callers.key, {
                 case _: EPK[_, _] =>

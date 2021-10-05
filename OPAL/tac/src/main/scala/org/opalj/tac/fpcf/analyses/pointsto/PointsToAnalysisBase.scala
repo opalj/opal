@@ -308,7 +308,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                         results ++= createPartialResults(
                             (as, fieldOpt.getOrElse(UnsafeFakeField)),
                             knownPointsTo,
-                            rhsDefSitesEPS.mapValues((_, typeFilter)),
+                            rhsDefSitesEPS.view.mapValues((_, typeFilter)).toMap,
                             { _.included(knownPointsTo, typeFilter) }
                         )
                     }
@@ -349,7 +349,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                         results ++= createPartialResults(
                             ArrayEntity(as),
                             knownPointsTo,
-                            rhsDefSitesEPS.mapValues((_, typeFilter)),
+                            rhsDefSitesEPS.view.mapValues((_, typeFilter)).toMap,
                             { _.included(knownPointsTo, typeFilter) }
                         )
                     }

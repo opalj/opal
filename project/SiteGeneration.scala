@@ -5,6 +5,7 @@ import sbt.Keys.TaskStreams
 import play.twirl.compiler.TwirlCompiler
 import play.twirl.api.Html
 import scalafix.sbt.ScalafixPlugin.autoImport._
+import scala.collection.Iterable
 /**
  * Definition of the tasks and settings to generate the OPAL Website (www.opal-project.de)
  *
@@ -154,7 +155,7 @@ object SiteGeneration {
             throw new RuntimeException("unsupported page configuration: " + page)
         }
       }
-      val toc /*Traversable[(String,String)]*/ = pages.filter(_._6).map { page =>
+      val toc /*Iterable[(String,String)]*/ = pages.filter(_._6).map { page =>
         val (baseFileName, _, title, _, _, _) = page
         (baseFileName, title)
       }
@@ -187,7 +188,7 @@ object SiteGeneration {
 
   def buildPageFromTemplate(title: String,
       content: String,
-      toc: Traversable[(String, String)],
+      toc: Iterable[(String, String)],
       useBanner: Boolean
     )(htmlTemplate: String): Html = {
     import scala.reflect.runtime.universe._
