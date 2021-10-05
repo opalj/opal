@@ -8,6 +8,7 @@ import scala.language.implicitConversions
 import scala.collection.{AbstractIterable, AbstractIterator, BuildFrom, GenIterable, GenTraversableOnce, Iterable, IterableOnce, WithFilter, mutable}
 import scala.collection.mutable.Builder
 import scala.compat._
+imporala.collection.IterableOnce
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
@@ -37,7 +38,6 @@ sealed trait Chain[@specialized(Int) +T]
      * created by [[Chain]]'s `withFilter` method.
      */
     class ChainWithFilter(p: T => Boolean) extends WithFilter[T, Chain[T]] {
-
         def map[B, That](f: T => B)(implicit bf: BuildFrom[Chain[T], B, That]): That = {
             val list = self
             var rest = list
