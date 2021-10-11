@@ -13,8 +13,6 @@ import org.opalj.br.ReferenceType
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * TODO: That state object is currently copy&paste and should be refactored.
- *
  * @author Florian Kuebler
  */
 class CGState[ContextType <: Context](

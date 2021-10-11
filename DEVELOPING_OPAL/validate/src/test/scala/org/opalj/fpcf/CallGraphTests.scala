@@ -14,6 +14,7 @@ import org.opalj.fpcf.properties.callgraph.TypePropagationVariant
 import org.opalj.br.analyses.Project
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
+import org.opalj.tac.cg.CTACallGraphKey
 import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
@@ -166,7 +167,7 @@ class CallGraphTests extends PropertiesTest {
     }
 
     describe("the CTA call graph analysis is executed") {
-        cgKey = FTACallGraphKey
+        cgKey = CTACallGraphKey
 
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(CTASetEntitySelector))
 
