@@ -143,7 +143,7 @@ private class CallGraphDeserializer private[analyses] (
                     getPCFromLineNumber(method, line, declaredTgtDesc.toDeclaredMethod, index)
 
                 for (tgtDesc ← tgts) {
-                    calls.addCall(method, tgtDesc.toDeclaredMethod, pc)
+                    calls.addCall(new SimpleContext(method), pc, tgtDesc.toDeclaredMethod)
                 }
                 results ++= calls.partialResults(method)
             }

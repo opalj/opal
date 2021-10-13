@@ -31,9 +31,9 @@ package object pointsto {
     )(
         implicit
         declaredMethods: DeclaredMethods
-    ): (DeclaredMethod, PC, Int) /* method, pc, typeid */ = {
+    ): (Option[DeclaredMethod], PC, Int) /* method, pc, typeid */ = {
         (
-            declaredMethods(encodedAllocationSite.toInt & 0x3FFFFF),
+            declaredMethods.get(encodedAllocationSite.toInt & 0x3FFFFF),
             (encodedAllocationSite >> 22).toInt & 0xFFFF,
             (encodedAllocationSite >> 39).toInt
         )

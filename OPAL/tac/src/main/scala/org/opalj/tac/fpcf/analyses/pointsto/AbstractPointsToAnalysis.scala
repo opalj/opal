@@ -29,7 +29,6 @@ import org.opalj.value.IsMultipleReferenceValue
 import org.opalj.value.IsReferenceValue
 import org.opalj.value.IsSArrayValue
 import org.opalj.value.ValueInformation
-import org.opalj.br.DefinedMethod
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Method
@@ -62,9 +61,11 @@ import org.opalj.tac.fpcf.properties.TACAI
 trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethodAnalysis {
 
     override def processMethod(
-        definedMethod: DefinedMethod, tacEP: EPS[Method, TACAI]
+        callContext: ContextType, tacEP: EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        doProcessMethod(new PointsToAnalysisState[ElementType, PointsToSet](definedMethod, tacEP))
+        doProcessMethod(
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](callContext, tacEP)
+        )
     }
 
     private[this] def doProcessMethod(
@@ -74,10 +75,10 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
         if (state.hasTACDependee)
             throw new IllegalStateException("points to analysis does not support refinement based tac")
         val tac = state.tac
-        val method = state.method.definedMethod
+        val method = state.callContext.method.definedMethod
         if (method.returnType.isReferenceType) {
             state.includeSharedPointsToSet(
-                state.method,
+                state.callContext.method,
                 emptyPointsToSet,
                 t ⇒ classHierarchy.isSubtypeOf(t, method.returnType.asReferenceType)
             )
@@ -87,7 +88,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             val throwingStmt = tac.stmts(throwingBB.asBasicBlock.endPC)
             throwingStmt match {
                 case Throw(_, UVar(_, defSites)) ⇒
-                    val entity = MethodExceptions(state.method)
+                    val entity = MethodExceptions(state.callContext.method)
                     val filter = { t: ReferenceType ⇒
                         classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
                     }
@@ -96,8 +97,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     )
 
                 case Assignment(_, _, _: Call[_]) | ExprStmt(_, _: Call[_]) | _: Call[_] ⇒
-                    val entity = MethodExceptions(state.method)
-                    val callSite = definitionSites(state.method.definedMethod, throwingStmt.pc)
+                    val entity = MethodExceptions(state.callContext.method)
+                    val callSite =
+                        definitionSites(state.callContext.method.definedMethod, throwingStmt.pc)
                     val filter = { t: ReferenceType ⇒
                         classHierarchy.isSubtypeOf(t, ObjectType.Throwable)
                     }
@@ -126,7 +128,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                     // note, this is wrong for alias analyses
                     else
                         createPointsToSet(
-                            pc, state.method, const.tpe.asObjectType, isConstant = true
+                            pc, state.callContext, const.tpe.asObjectType, isConstant = true
                         )
                 )
 
@@ -252,11 +254,13 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             case ReturnValue(_, UVar(_: IsReferenceValue, defSites)) ⇒
                 val filter = { t: ReferenceType ⇒
                     classHierarchy.isSubtypeOf(
-                        t, state.method.descriptor.returnType.asReferenceType
+                        t, state.callContext.method.descriptor.returnType.asReferenceType
                     )
                 }
                 state.includeSharedPointsToSets(
-                    state.method, currentPointsToOfDefSites(state.method, defSites, filter), filter
+                    state.callContext.method,
+                    currentPointsToOfDefSites(state.callContext.method, defSites, filter),
+                    filter
                 )
 
             case _ ⇒
@@ -270,11 +274,11 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     @inline private[this] def handleAllocation(
         pc: Int, tpe: ReferenceType
     )(implicit state: State): Unit = {
-        val defSite = definitionSites(state.method.definedMethod, pc)
+        val defSite = definitionSites(state.callContext.method.definedMethod, pc)
         if (!state.hasAllocationSitePointsToSet(defSite)) {
             state.setAllocationSitePointsToSet(
                 defSite,
-                createPointsToSet(pc, state.method, tpe, isConstant = false)
+                createPointsToSet(pc, state.callContext, tpe, isConstant = false)
             )
         }
     }
@@ -282,7 +286,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
     @inline private[this] def handleArrayAllocation(
         pc: Int, counts: Seq[Expr[V]], tpe: ArrayType
     )(implicit state: State): Unit = {
-        val defSite = definitionSites(state.method.definedMethod, pc)
+        val defSite = definitionSites(state.callContext.method.definedMethod, pc)
         if (!state.hasAllocationSitePointsToSet(defSite)) {
             @inline def countIsZero(theCounts: Seq[Expr[V]]): Boolean = {
                 theCounts.head.asVar.definedBy.forall { ds ⇒
@@ -294,7 +298,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
             val isEmptyArray = countIsZero(counts)
             var arrayReferencePTS = createPointsToSet(
-                pc, state.method, tpe, isConstant = false, isEmptyArray
+                pc, state.callContext, tpe, isConstant = false, isEmptyArray
             )
             state.setAllocationSitePointsToSet(
                 defSite,
@@ -312,7 +316,7 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
 
                 arrayReferencePTS = createPointsToSet(
                     pc,
-                    state.method,
+                    state.callContext,
                     theType,
                     isConstant = false,
                     isEmptyArray = !continue
@@ -344,7 +348,8 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
             handleIndirectCall(pc, target, callees, tac)
         }
 
-        val callExceptions = CallExceptions(definitionSites(state.method.definedMethod, pc))
+        val callExceptions =
+            CallExceptions(definitionSites(state.callContext.method.definedMethod, pc))
         val filter = { t: ReferenceType ⇒ classHierarchy.isSubtypeOf(t, ObjectType.Throwable) }
         for (target ← callees.callees(pc)) {
             val targetExceptions = MethodExceptions(target)
@@ -458,7 +463,9 @@ trait AbstractPointsToAnalysis extends PointsToAnalysisBase with ReachableMethod
                 Set(calleesDependee),
                 continuationForCallees(
                     calleesDependee,
-                    new PointsToAnalysisState[ElementType, PointsToSet](state.method, state.tacDependee)
+                    new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
+                        state.callContext, state.tacDependee
+                    )
                 )
             )
         }

@@ -826,14 +826,18 @@ case class EPKState(
 
         this.synchronized {
             theEOptP = eOptP
-            updateComputation(theEOptP) match {
-                case Some(interimEP) ⇒
-                    if (ps.debug) assert(eOptP != interimEP)
-                    dependers.synchronized {
-                        eOptP = interimEP
-                        notifyAndClearDependers(theEOptP, dependers)
-                    }
-                case _ ⇒
+            if (theEOptP.isFinal) {
+                throw new IllegalStateException(s"${theEOptP.e} already had the property $theEOptP")
+            } else {
+                updateComputation(theEOptP) match {
+                    case Some(interimEP) ⇒
+                        if (ps.debug) assert(eOptP != interimEP)
+                        dependers.synchronized {
+                            eOptP = interimEP
+                            notifyAndClearDependers(theEOptP, dependers)
+                        }
+                    case _ ⇒
+                }
             }
         }
 

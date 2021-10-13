@@ -32,8 +32,8 @@ import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
 /**
  * Computes the set of finalize methods that are being called by the VM during the execution of the
  * `project`.
- * Extends the call graph analysis (e.g. [[org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysis]]
- * ) to include the calls to these methods.
+ * Extends the call graph analysis ([[org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysis]]) to include
+ * the calls to these methods.
  *
  * @author Florian Kuebler
  */

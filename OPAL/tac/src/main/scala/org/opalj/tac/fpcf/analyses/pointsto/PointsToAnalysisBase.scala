@@ -37,7 +37,7 @@ import org.opalj.tac.common.DefinitionSite
  */
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet, ContextType]
     override protected[this] type DependerType = Entity
 
     protected[this] def handleCallReceiver(
@@ -113,7 +113,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         fieldOpt: Option[Field], pc: Int, objRefDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         val fakeEntity = (defSiteObject, fieldOpt, filter)
         state.addGetFieldEntity(fakeEntity)
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
@@ -136,7 +136,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         field: Field, pc: Int, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         state.includeSharedPointsToSet(
             defSiteObject,
             currentPointsTo(defSiteObject, field, filter),
@@ -148,7 +148,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         arrayType: ArrayType, pc: Int, arrayDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         val fakeEntity = (defSiteObject, arrayType, filter)
         state.addArrayLoadEntity(fakeEntity)
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
@@ -234,16 +234,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         depender: Entity, dependee: Entity, typeFilter: ReferenceType ⇒ Boolean
     )(implicit state: State): PointsToSet = {
         val epk = EPK(dependee, pointsToPropertyKey)
-        val p2s = if (state.hasDependency(depender, epk)) {
-            // IMPROVE: add a method to the state
-            state.dependeesOf(depender)(epk)._1
-        } else {
-            val p2s = propertyStore(dependee, pointsToPropertyKey)
-            if (p2s.isRefinable) {
-                state.addDependee(depender, p2s, typeFilter)
-            }
-            p2s
+
+        val p2s = if (state.hasDependee(epk)) state.getProperty(epk) else propertyStore(epk)
+
+        if (p2s.isRefinable && !state.hasDependency(depender, epk)) {
+            state.addDependee(depender, p2s, typeFilter)
         }
+
         pointsToUB(p2s.asInstanceOf[EOptionP[Entity, PointsToSet]])
     }
 
