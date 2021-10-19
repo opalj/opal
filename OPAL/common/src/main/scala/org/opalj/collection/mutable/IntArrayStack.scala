@@ -3,8 +3,7 @@ package org.opalj
 package collection
 package mutable
 
-import scala.collection.mutable
-import scala.collection.generic
+import scala.collection.{BuildFrom, generic, mutable,IterableOnce}
 import scala.compat._
 /**
  * An array based implementation of a mutable stack of `int` values which has a
@@ -209,8 +208,8 @@ final class IntArrayStack private (
  */
 object IntArrayStack {
 
-    implicit def canBuildFrom: generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] = {
-        new generic.CanBuildFrom[IntArrayStack, Int, IntArrayStack] {
+    implicit def canBuildFrom: BuildFrom[IntArrayStack, Int, IntArrayStack] = {
+        new BuildFrom[IntArrayStack, Int, IntArrayStack] {
             def apply(): mutable.Builder[Int, IntArrayStack] = newBuilder
             def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder()
         }
@@ -218,6 +217,7 @@ object IntArrayStack {
 
     def newBuilder: mutable.Builder[Int, IntArrayStack] = {
         new mutable.ArrayBuffer[Int] mapResult fromSeq
+
     }
 
     /**
@@ -225,7 +225,7 @@ object IntArrayStack {
      * be the top value of the stack.
      */
     def fromSeq(seq: IterableOnce[Int]): IntArrayStack = {
-        seq.foldLeft(new IntArrayStack(8))(_ += _)
+        seq.iterator.foldLeft(new IntArrayStack(8))(_ += _)
     }
 
     def apply(value: Int): IntArrayStack = {

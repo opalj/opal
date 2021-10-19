@@ -5,7 +5,7 @@ import sbtassembly.AssemblyPlugin.autoImport._
 
 import sbtunidoc.ScalaUnidocPlugin
 
-//libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0"
+
 name := "OPAL Library"
 
 // SNAPSHOT
@@ -35,7 +35,7 @@ licenses in ThisBuild := Seq("BSD-2-Clause" -> url("https://opensource.org/licen
 
 usePgpKeyHex("80B9D3FB5A8508F6B4774932E71AFF01E234090C")
 
-scalaVersion in ThisBuild := "2.13.6"
+scalaVersion in ThisBuild := "2.12.14"
 
 
 /*

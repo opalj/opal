@@ -5,10 +5,10 @@ package immutable
 import org.opalj.collection.IntIterator.empty.foldLeft
 
 import scala.language.implicitConversions
-import scala.collection.{AbstractIterable, AbstractIterator, BuildFrom, GenIterable, GenTraversableOnce, Iterable, IterableOnce, WithFilter, mutable}
+import scala.collection.{AbstractIterable, AbstractIterator, BuildFrom, Iterable, WithFilter, mutable}
 import scala.collection.mutable.Builder
 import scala.compat._
-imporala.collection.IterableOnce
+import scala.collection.IterableOnce
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
@@ -28,8 +28,8 @@ imporala.collection.IterableOnce
  * @author Michael Eichberg
  */
 
-sealed trait Chain[@specialized(Int) +T]
-    extends WithFilter[T, Chain[T]]
+sealed trait Chain[+T]
+    extends WithFilter[T, Chain]
     with IterableOnce[T]
     with Serializable { self =>
 
@@ -37,7 +37,7 @@ sealed trait Chain[@specialized(Int) +T]
      * Represents a filtered [[Chain]]. Instances of [[ChainWithFilter]] are typically
      * created by [[Chain]]'s `withFilter` method.
      */
-    class ChainWithFilter(p: T => Boolean) extends WithFilter[T, Chain[T]] {
+    class ChainWithFilter(p: T => Boolean) extends WithFilter[T, Chain] {
         def map[B, That](f: T => B)(implicit bf: BuildFrom[Chain[T], B, That]): That = {
             val list = self
             var rest = list
@@ -50,12 +50,15 @@ sealed trait Chain[@specialized(Int) +T]
             }
             b.result()
         }
-        override def flatMap[B, That](
+
+
+        //TODO: i changed override def flatMap[B,That] to def flatMap[B,That]. i'm not quite sure if that causes unwanted changes in the code.
+          def flatMap[B,That](
             f: T => IterableOnce[B]
         )(
             implicit
             bf: BuildFrom[Chain[T], B, That]
-        ): Chain = {
+        ): That = {
             val list = self
             val b = bf(list)
             var rest = list
@@ -80,9 +83,9 @@ sealed trait Chain[@specialized(Int) +T]
             new ChainWithFilter(x => p(x) && q(x))
         }
 
-        override def map[B](f: T ⇒ B): Chain[B] = ???
+        override def map[B](f: T => B): Chain[B] = ???
 
-        override def flatMap[B](f: T ⇒ IterableOnce[B]): Chain[B] = ???
+        override def flatMap[B](f: T => IterableOnce[B]): Chain[B] = ???
     }
 
     final override def hasDefiniteSize: Boolean = true

@@ -109,7 +109,7 @@ final class ConstArray[T <: AnyRef] private (
  */
 trait LowLevelConstArrayImplicits {
 
-    implicit def canBuildFromAnything[T <: AnyRef, X, CC[X]]: CanBuildFrom[CC[_], T, ConstArray[T]] =
+    implicit def Anything[T <: AnyRef, X, CC[X]]: CanBuildFrom[CC[_], T, ConstArray[T]] =
         new CanBuildFrom[CC[_], T, ConstArray[T]] {
             def apply(): Builder[T, ConstArray[T]] = ConstArray.newBuilder[T]()
             def apply(from: CC[_]): Builder[T, ConstArray[T]] = ConstArray.newBuilder[T]()
@@ -128,10 +128,13 @@ object ConstArray /*extends LowLevelConstArrayImplicits*/ {
         builder mapResult (r => ConstArray(r.toArray[Object].asInstanceOf[Array[T]]))
     }
 
+    //TODO replace ??? with suitable statement
     implicit def buildFrom[T <: AnyRef]: BuildFrom[ConstArray[_ <: AnyRef], T, ConstArray[T]] = {
         new BuildFrom[ConstArray[_], T, ConstArray[T]] {
-            def apply(): Builder[T, ConstArray[T]] = newBuilder[T]()
-            def apply(from: ConstArray[_]): Builder[T, ConstArray[T]] = newBuilder[T](from.size)
+            //   def apply(): Builder[T, ConstArray[T]] = newBuilder()
+            def newBuilder(from: ConstArray[_]): Builder[T, ConstArray[T]] = ConstArray.newBuilder[T]()
+
+            override def fromSpecific(from: ConstArray[_])(it: IterableOnce[T]): ConstArray[T] = ???
         }
     }
 

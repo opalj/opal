@@ -22,7 +22,7 @@ import scala.language._
  */
 sealed abstract class UIDSet[T <: UID]
     extends scala.collection.immutable.Set[T]
-    with scala.collection.SetLike[T, UIDSet[T]] { set =>
+    with scala.collection.SetOps[T, Set, UIDSet[T]] { set =>
 
     final override def empty: UIDSet[T] = UIDSet0.asInstanceOf[UIDSet[T]]
     final override def contains(e: T): Boolean = containsId(e.id)
