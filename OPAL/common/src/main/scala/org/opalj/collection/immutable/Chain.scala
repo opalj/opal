@@ -9,6 +9,7 @@ import scala.collection.{AbstractIterable, AbstractIterator, BuildFrom, Iterable
 import scala.collection.mutable.Builder
 import scala.compat._
 import scala.collection.IterableOnce
+
 /**
  * A linked list which does not perform any length related checks. I.e., it fails in
  * case of `drop` and `take` etc. if the size of the list is smaller than expected.
@@ -51,9 +52,8 @@ sealed trait Chain[+T]
             b.result()
         }
 
-
         //TODO: i changed override def flatMap[B,That] to def flatMap[B,That]. i'm not quite sure if that causes unwanted changes in the code.
-          def flatMap[B,That](
+        def flatMap[B,That](
             f: T => IterableOnce[B]
         )(
             implicit

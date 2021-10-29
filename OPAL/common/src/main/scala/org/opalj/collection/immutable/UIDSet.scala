@@ -1085,15 +1085,21 @@ object UIDSet {
 
     implicit def buildFrom[T <: UID]: BuildFrom[UIDSet[_], T, UIDSet[T]] = {
         new BuildFrom[UIDSet[_], T, UIDSet[T]] {
-            override def apply(from: UIDSet[_]): UIDSetBuilder[T] = newBuilder[UIDSet[T], T]
-            override def apply(): UIDSetBuilder[T] = newBuilder[T]
+            // override def apply(from: UIDSet[_]): UIDSetBuilder[T] = newBuilder[UIDSet[T], T]
+            def newBuilder(from: UIDSet[_]): Builder[T, UIDSet[T]] = UIDSet.newBuilder[T]
+
+            //override def apply(): UIDSetBuilder[T] = newBuilder[T]
+            override def fromSpecific(from: UIDSet[_])(it: IterableOnce[T]): UIDSet[T] = ???
         }
     }
 
     def buildUIDSet[T <: UID]: BuildFrom[Any, T, UIDSet[T]] = {
         new BuildFrom[Any, T, UIDSet[T]] {
-            override def apply(from: Any): UIDSetBuilder[T] = newBuilder[T]
-            override def apply(): UIDSetBuilder[T] = newBuilder[T]
+            //  override def apply(from: Any): UIDSetBuilder[T] = newBuilder[T]
+            def newBuilder(from: UIDSet[Any]): Builder[T, UIDSet[T]] = UIDSet.newBuilder[T]
+
+            //override def apply(): UIDSetBuilder[T] = newBuilder[T]
+            override def fromSpecific(from: Any)(it: IterableOnce[T]): UIDSet[T] = ???
         }
     }
 

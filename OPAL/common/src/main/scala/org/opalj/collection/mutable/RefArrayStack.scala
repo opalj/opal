@@ -3,8 +3,7 @@ package org.opalj.collection
 package mutable
 
 import java.util.{Arrays => JArrays}
-import scala.collection.mutable
-import scala.collection.generic
+import scala.collection.{BuildFrom, generic, mutable}
 import scala.compat._
 
 /**
@@ -225,10 +224,13 @@ final class RefArrayStack[N >: Null <: AnyRef] private (
 //TODO solve the following problem
 object RefArrayStack {
 
-    implicit def canBuildFrom[N >: Null <: AnyRef]: generic.CanBuildFrom[RefArrayStack[N], N, RefArrayStack[N]] = {
-        new generic.CanBuildFrom[RefArrayStack[N], N, RefArrayStack[N]] {
-            def apply(): mutable.Builder[N, RefArrayStack[N]] = newBuilder
-            def apply(from: RefArrayStack[N]): mutable.Builder[N, RefArrayStack[N]] = newBuilder
+    implicit def canBuildFrom[N >: Null <: AnyRef]: BuildFrom[RefArrayStack[N], N, RefArrayStack[N]] = {
+        new BuildFrom[RefArrayStack[N], N, RefArrayStack[N]] {
+            // def apply(): mutable.Builder[N, RefArrayStack[N]] = newBuilder
+            def newBuilder(from: RefArrayStack[N]): mutable.Builder[N, RefArrayStack[N]] = RefArrayStack.newBuilder[N]
+
+            //def apply(from: RefArrayStack[N]): mutable.Builder[N, RefArrayStack[N]] = newBuilder
+            override def fromSpecific(from: RefArrayStack[N])(it: IterableOnce[N]): RefArrayStack[N] = ???
         }
     }
 

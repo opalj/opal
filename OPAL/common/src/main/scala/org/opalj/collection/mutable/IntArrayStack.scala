@@ -3,8 +3,9 @@ package org.opalj
 package collection
 package mutable
 
-import scala.collection.{BuildFrom, generic, mutable,IterableOnce}
+import scala.collection.{BuildFrom, IterableOnce, generic, mutable}
 import scala.compat._
+
 /**
  * An array based implementation of a mutable stack of `int` values which has a
  * given initial size. If the stack is non-empty, the index of the top value is `0` and the
@@ -210,8 +211,12 @@ object IntArrayStack {
 
     implicit def canBuildFrom: BuildFrom[IntArrayStack, Int, IntArrayStack] = {
         new BuildFrom[IntArrayStack, Int, IntArrayStack] {
-            def apply(): mutable.Builder[Int, IntArrayStack] = newBuilder
-            def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder()
+
+            // def apply(): mutable.Builder[Int, IntArrayStack] = newBuilder
+            def newBuilder(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = IntArrayStack.newBuilder
+
+            // def apply(from: IntArrayStack): mutable.Builder[Int, IntArrayStack] = newBuilder()
+            override def fromSpecific(from: IntArrayStack)(it: IterableOnce[UByte]): IntArrayStack = ???
         }
     }
 
