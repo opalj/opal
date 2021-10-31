@@ -95,17 +95,19 @@ package object bi {
     final val Java15Version = UShortPair(0, Java15MajorVersion)
     final val Java16MajorVersion = 60
     final val Java16Version = UShortPair(0, Java16MajorVersion)
+    final val Java17MajorVersion = 61
+    final val Java17Version = UShortPair(0, Java17MajorVersion)
 
     /**
      * The latest major version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaMajorVersion = Java16MajorVersion
+    final val LatestSupportedJavaMajorVersion = Java17MajorVersion
     /**
      * The latest version supported by OPAL; this constant is adapted whenever a new version
      * is supported.
      */
-    final val LatestSupportedJavaVersion = Java16Version
+    final val LatestSupportedJavaVersion = Java17Version
 
     /**
      * Returns `true` if the current JRE is at least Java 8 or a newer version.
@@ -121,6 +123,8 @@ package object bi {
     final lazy val isCurrentJREAtLeastJava15: Boolean = isCurrentJREAtLeastJavaX(15)
 
     final lazy val isCurrentJREAtLeastJava16: Boolean = isCurrentJREAtLeastJavaX(16)
+
+    final lazy val isCurrentJREAtLeastJava17: Boolean = isCurrentJREAtLeastJavaX(17)
 
     // only works for Java 8 and above
     private[this] def isCurrentJREAtLeastJavaX(x: Int): Boolean = {
