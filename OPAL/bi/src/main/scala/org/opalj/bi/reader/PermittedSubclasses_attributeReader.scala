@@ -35,14 +35,6 @@ trait PermittedSubclasses_attributeReader extends AttributeReader {
         classes:           ClassesArray
     ): PermittedSubclasses_attribute
 
-    protected def Attributes(
-        cp:                  Constant_Pool,
-        ap:                  AttributeParent,
-        ap_name_index:       Constant_Pool_Index,
-        ap_descriptor_index: Constant_Pool_Index,
-        in:                  DataInputStream
-    ): Attributes
-
     //
     // IMPLEMENTATION
     //
