@@ -165,6 +165,25 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             }
         }
 
+        describe("testing the rewritten methods of the java17sealedclass test project") {
+            val recordsJarName = "java17sealedclasses-g-16-parameters-genericsignature--enable-preview.jar"
+            val recordsJar = locateTestResources(recordsJarName, "bi")
+            val config = InvokedynamicRewriting.defaultConfig(
+                rewrite = true,
+                logRewrites = false
+            ).withValue(DeleteSynthesizedClassFilesAttributesConfigKey, configValueFalse)
+            val records = Project(recordsJar, GlobalLogContext, config)
+            info(records.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
+
+            it("should be able to perform abstract interpretation of rewritten Java 17 sealed class"+
+              " in the java17sealedclass test project") {
+                val verifiedMethodsCount =
+                    testProject(records, (p, m) ⇒ BaseDomain(p, m)) +
+                      testProject(records, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                info(s"interpreted ${verifiedMethodsCount / 2} methods")
+            }
+        }
+
         if (org.opalj.bi.isCurrentJREAtLeastJava8) {
             describe("testing the rewritten methods of the rewritten JRE") {
                 val jrePath = org.opalj.bytecode.JRELibraryFolder
