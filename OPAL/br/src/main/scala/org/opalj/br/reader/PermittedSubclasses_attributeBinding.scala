@@ -2,7 +2,6 @@
 package org.opalj.br.reader
 
 import org.opalj.bi.reader.PermittedSubclasses_attributeReader
-import org.opalj.br
 import org.opalj.br.PermittedSubclasses
 import org.opalj.collection.immutable.RefArray
 
@@ -23,7 +22,7 @@ trait PermittedSubclasses_attributeBinding
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        classes:           ClassesArray
+        classes:           PermittedSubclassesArray
     ): PermittedSubclasses_attribute = {
         new PermittedSubclasses(
             RefArray.mapFrom(classes) { p ⇒ cp(p).asObjectType(cp) }

@@ -100,6 +100,10 @@ trait AttributesReader
      * <ul>
      * <li>Record_attribute</li>
      * </ul>
+     * <b>Java 17</b>Attributes:<br />
+     * <ul>
+     * <li>PermittedSubclasses_attribute</li>
+     * </ul>
      *
      * The returned function is allowed to return null; in this case the attribute
      * will be discarded.

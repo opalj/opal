@@ -25,14 +25,14 @@ trait PermittedSubclasses_attributeReader extends AttributeReader {
 
     type PermittedSubclasses_attribute >: Null <: Attribute
 
-    type ClassesArray = Array[Constant_Pool_Index]
+    type PermittedSubclassesArray = Array[Constant_Pool_Index]
 
     def PermittedSubclasses_attribute(
         cp:                   Constant_Pool,
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        classes:           ClassesArray
+        classes:           PermittedSubclassesArray
     ): PermittedSubclasses_attribute
 
     //
