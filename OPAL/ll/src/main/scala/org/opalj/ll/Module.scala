@@ -10,10 +10,10 @@ case class Module(ref: LLVMModuleRef) {
     }
 
     def repr(): String = {
-      val bytePointer = LLVMPrintModuleToString(ref)
-      val string = bytePointer.getString
-      LLVMDisposeMessage(bytePointer)
-      string
+        val bytePointer = LLVMPrintModuleToString(ref)
+        val string = bytePointer.getString
+        LLVMDisposeMessage(bytePointer)
+        string
     }
 }
 

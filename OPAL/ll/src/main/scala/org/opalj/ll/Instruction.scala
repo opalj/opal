@@ -8,12 +8,12 @@ object Instruction {
     def fromValue(ref: LLVMValueRef): Instruction = {
         assert(LLVMGetValueKind(ref) == LLVMInstructionValueKind, "ref has to be an instruction")
         LLVMGetInstructionOpcode(ref) match {
-            case LLVMAlloca => Alloca(ref)
-            case LLVMStore => Store(ref)
-            case LLVMLoad => Load(ref)
-            case LLVMAdd => Add(ref)
-            case LLVMRet => Ret(ref)
-            case opCode => throw new IllegalArgumentException("unknown instruction opcode: " + opCode)
+            case LLVMAlloca ⇒ Alloca(ref)
+            case LLVMStore  ⇒ Store(ref)
+            case LLVMLoad   ⇒ Load(ref)
+            case LLVMAdd    ⇒ Add(ref)
+            case LLVMRet    ⇒ Ret(ref)
+            case opCode     ⇒ throw new IllegalArgumentException("unknown instruction opcode: "+opCode)
         }
     }
 }
@@ -24,5 +24,4 @@ case class Store(ref: LLVMValueRef) extends Instruction(ref)
 case class Load(ref: LLVMValueRef) extends Instruction(ref)
 case class Add(ref: LLVMValueRef) extends Instruction(ref)
 case class Ret(ref: LLVMValueRef) extends Instruction(ref)
-
 

@@ -336,7 +336,7 @@ lazy val `LLVM` = (project in file("OPAL/ll"))
     fork := true,
     libraryDependencies ++= Dependencies.ll
   )
-.dependsOn(common % "it->test;test->test;compile->compile")
+.dependsOn(br % "it->it;it->test;test->test;compile->compile")
 .configs(IntegrationTest)
 
 lazy val framework = `Framework`
@@ -351,7 +351,7 @@ lazy val `Framework` = (project in file("OPAL/framework"))
     ba  % "it->it;it->test;test->test;compile->compile",
     av  % "it->it;it->test;test->test;compile->compile",
     tac % "it->it;it->test;test->test;compile->compile",
-    ll % "it->it;it->test;test->test;compile->compile"
+    ll  % "it->it;it->test;test->test;compile->compile"
   )
   .configs(IntegrationTest)
 
