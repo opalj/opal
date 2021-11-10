@@ -34,7 +34,6 @@ object XTASetEntitySelector extends TypeSetEntitySelector {
         case ef: ExternalField          ⇒ ExternalWorld
         case at: ArrayType              ⇒ at
         case _                          ⇒ sys.error("unexpected entity: "+e)
-
     }
 }
 

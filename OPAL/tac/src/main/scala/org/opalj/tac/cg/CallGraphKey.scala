@@ -4,7 +4,9 @@ package tac
 package cg
 
 import scala.reflect.runtime.universe.runtimeMirror
+
 import scala.collection.JavaConverters._
+
 import org.opalj.log.LogContext
 import org.opalj.log.OPALLogger.error
 import org.opalj.fpcf.PropertyStore
@@ -15,10 +17,13 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.cg.CallBySignatureKey
+import org.opalj.br.analyses.cg.IsOverridableMethodKey
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
+import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 
 /**
  * An abstract [[org.opalj.br.analyses.ProjectInformationKey]] to compute a [[CallGraph]].
@@ -27,7 +32,7 @@ import org.opalj.tac.fpcf.analyses.LazyTACAIProvider
  *
  * @author Florian Kuebler
  */
-trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
+trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 
     private[this] val CallBySignatureConfigKey = "org.opalj.br.analyses.cg.callBySignatureResolution"
 
@@ -44,10 +49,12 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
         Seq(
             DeclaredMethodsKey,
             InitialEntryPointsKey,
+            IsOverridableMethodKey,
             PropertyStoreKey,
             FPCFAnalysesManagerKey
         ) ++
             requiresCallBySignatureKey(project) ++
+            CallGraphAnalysisScheduler.requiredProjectInformation ++
             callGraphSchedulers(project).flatMap(_.requiredProjectInformation) ++
             registeredAnalyses(project).flatMap(_.requiredProjectInformation)
     }
@@ -63,6 +70,8 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
     }
 
     override def compute(project: SomeProject): CallGraph = {
+        setupTypeProvider(project)
+
         implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
         implicit val ps: PropertyStore = project.get(PropertyStoreKey)
 
@@ -74,6 +83,7 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
                 LazyTACAIProvider
             )
 
+        analyses ::= CallGraphAnalysisScheduler
         analyses ++= callGraphSchedulers(project)
         analyses ++= registeredAnalyses(project)
 
@@ -107,5 +117,19 @@ trait AbstractCallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
             return Seq(CallBySignatureKey);
         }
         Seq.empty
+    }
+
+    def getTypeProvider(project: SomeProject): TypeProvider
+
+    final def setupTypeProvider(project: SomeProject): Unit = {
+        CallGraphKey._typeProvider = Some(getTypeProvider(project))
+    }
+}
+
+object CallGraphKey {
+    private var _typeProvider: Option[TypeProvider] = None
+
+    def typeProvider: TypeProvider = {
+        _typeProvider.get
     }
 }

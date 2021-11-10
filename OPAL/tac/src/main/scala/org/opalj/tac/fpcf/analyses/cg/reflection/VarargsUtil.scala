@@ -9,7 +9,6 @@ import org.opalj.collection.immutable.IntArraySetBuilder
 import org.opalj.collection.immutable.RefArray
 import org.opalj.br.FieldType
 import org.opalj.br.FieldTypes
-import org.opalj.br.cfg.CFG
 
 /**
  * Utility class to retrieve types or expressions for varargs.
@@ -24,10 +23,9 @@ object VarargsUtil {
      */
     def getParamsFromVararg(
         expr:  Expr[V],
-        stmts: Array[Stmt[V]],
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+        stmts: Array[Stmt[V]]
     ): Option[RefArray[V]] = {
-        getTFromVarArgs(expr, stmts, cfg, fillParam)
+        getTFromVarArgs(expr, stmts, fillParam)
     }
 
     /**
@@ -37,16 +35,14 @@ object VarargsUtil {
      */
     private[reflection] def getTypesFromVararg(
         expr:  Expr[V],
-        stmts: Array[Stmt[V]],
-        cfg:   CFG[Stmt[V], TACStmts[V]]
+        stmts: Array[Stmt[V]]
     ): Option[FieldTypes] = {
-        getTFromVarArgs(expr, stmts, cfg, fillType)
+        getTFromVarArgs(expr, stmts, fillType)
     }
 
     private[this] def getTFromVarArgs[T](
         expr:      Expr[V],
         stmts:     Array[Stmt[V]],
-        cfg:       CFG[Stmt[V], TACStmts[V]],
         fillEntry: (ArrayStore[V], Array[Stmt[V]], RefArray[T]) ⇒ Option[RefArray[T]]
     ): Option[RefArray[T]] = {
         val definitions = expr.asVar.definedBy
@@ -80,13 +76,14 @@ object VarargsUtil {
                 } else {
                     Some(params)
                 }
-                // }
             }
         }
     }
 
     // todo: merge both methods
-    @inline private[this] def fillParam(use: ArrayStore[V], stmts: Array[Stmt[V]], params: RefArray[V]): Option[RefArray[V]] = {
+    @inline private[this] def fillParam(
+        use: ArrayStore[V], stmts: Array[Stmt[V]], params: RefArray[V]
+    ): Option[RefArray[V]] = {
         val indices = use.index.asVar.definedBy
         if (!indices.isSingletonSet || indices.head < 0)
             None

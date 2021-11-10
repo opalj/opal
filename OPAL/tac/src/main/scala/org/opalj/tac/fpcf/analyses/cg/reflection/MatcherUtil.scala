@@ -6,32 +6,13 @@ package analyses
 package cg
 package reflection
 
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.PropertyStore
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.FieldTypes
-import org.opalj.br.cfg.CFG
 
 object MatcherUtil {
-    private[reflection] def retrieveClassBasedMethodMatcher(
-        ref:                       Expr[V],
-        pc:                        Int,
-        stmts:                     Array[Stmt[V]],
-        project:                   SomeProject,
-        onlyMethodsExactlyInClass: Boolean
-    )(
-        implicit
-        incompleteCallSites: IncompleteCallSites,
-        highSoundness:       Boolean
-    ): MethodMatcher = {
-        val typesOpt =
-            TypesUtil.getPossibleTypes(ref, pc, stmts, project).map(_.map(_.asObjectType)).map(_.toSet)
-
-        retrieveSuitableMatcher[Set[ObjectType]](
-            typesOpt,
-            pc,
-            v ⇒ new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
-        )
-    }
 
     /**
      * Given an optional value of type `A` and a `factory` method for a [[MethodMatcher]],
@@ -76,13 +57,16 @@ object MatcherUtil {
         }
     }
 
+    /**
+     * Given the expression for a varargs array of types (i.e., Class<?> objects), creates a
+     * MethodMatcher to match methods with the respective parameter types.
+     */
     private[reflection] def retrieveParameterTypesBasedMethodMatcher(
         varArgs: Expr[V],
         pc:      Int,
-        stmts:   Array[Stmt[V]],
-        cfg:     CFG[Stmt[V], TACStmts[V]]
+        stmts:   Array[Stmt[V]]
     )(implicit incompleteCallSites: IncompleteCallSites, highSoundness: Boolean): MethodMatcher = {
-        val paramTypesO = VarargsUtil.getTypesFromVararg(varArgs, stmts, cfg)
+        val paramTypesO = VarargsUtil.getTypesFromVararg(varArgs, stmts)
         retrieveSuitableMatcher[FieldTypes](
             paramTypesO,
             pc,
@@ -90,18 +74,74 @@ object MatcherUtil {
         )
     }
 
+    /**
+     * Given an expression that evaluates to a String, creates a MethodMatcher to match methods with
+     * the respective name.
+     * Clients MUST handle dependencies where the depender is the given one and the dependee
+     * provides allocation sites of Strings to be used as the method name.
+     */
     private[reflection] def retrieveNameBasedMethodMatcher(
-        expr:  Expr[V],
-        pc:    Int,
-        stmts: Array[Stmt[V]]
-    )(implicit incompleteCallSites: IncompleteCallSites, highSoundness: Boolean): MethodMatcher = {
-        val namesO = StringUtil.getPossibleStrings(expr, Some(pc), stmts)
+        context:  Context,
+        expr:     Expr[V],
+        depender: Entity,
+        pc:       Int,
+        stmts:    Array[Stmt[V]],
+        failure:  () ⇒ Unit
+    )(
+        implicit
+        typeProvider:        TypeProvider,
+        state:               TypeProviderState,
+        ps:                  PropertyStore,
+        incompleteCallSites: IncompleteCallSites,
+        highSoundness:       Boolean
+    ): MethodMatcher = {
+        val names = StringUtil.getPossibleStrings(expr, context, depender, stmts, failure)
         retrieveSuitableMatcher[Set[String]](
-            namesO,
+            Some(names),
             pc,
-            v ⇒ new NameBasedMethodMatcher(v)
+            v ⇒ if (v.isEmpty) NoMethodsMatcher else new NameBasedMethodMatcher(v)
         )
     }
 
     private[reflection] val constructorMatcher = new NameBasedMethodMatcher(Set("<init>"))
+
+    /**
+     * Given an expression that evaluates to a Class<?> object, creates a MethodMatcher to match
+     * methods which are defined on the respective class.
+     * Clients MUST handle TWO types of dependencies:
+     * - One where the depender is the given one and the dependee provides allocation sites of Class
+     * objects on which the method in question is defined AND
+     * - One where the depender is a tuple of the given depender and the String "getPossibleTypes"
+     * and the dependee provides allocation sites of Strings that give class names of such classes
+     */
+    private[reflection] def retrieveClassBasedMethodMatcher(
+        context:                   Context,
+        ref:                       Expr[V],
+        depender:                  Entity,
+        pc:                        Int,
+        stmts:                     Array[Stmt[V]],
+        project:                   SomeProject,
+        failure:                   () ⇒ Unit,
+        onlyMethodsExactlyInClass: Boolean
+    )(
+        implicit
+        typeProvider:        TypeProvider,
+        state:               TypeProviderState,
+        ps:                  PropertyStore,
+        incompleteCallSites: IncompleteCallSites,
+        highSoundness:       Boolean
+    ): MethodMatcher = {
+        val typesOpt = Some(TypesUtil.getPossibleTypes(
+            context, ref, depender, stmts, project, failure
+        ).map(_.asObjectType))
+
+        retrieveSuitableMatcher[Set[ObjectType]](
+            typesOpt,
+            pc,
+            v ⇒
+                if (v.isEmpty) NoMethodsMatcher
+                else new ClassBasedMethodMatcher(v, onlyMethodsExactlyInClass)
+        )
+    }
+
 }

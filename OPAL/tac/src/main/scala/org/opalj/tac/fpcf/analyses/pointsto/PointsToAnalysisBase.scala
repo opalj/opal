@@ -23,10 +23,8 @@ import org.opalj.fpcf.SomeEPK
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.UBP
 import org.opalj.br.ArrayType
-import org.opalj.br.fpcf.properties.pointsto.allocationSiteLongToTypeId
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.pointsto.isEmptyArrayAllocationSite
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
 import org.opalj.br.DeclaredMethod
 import org.opalj.tac.common.DefinitionSite
@@ -39,7 +37,7 @@ import org.opalj.tac.common.DefinitionSite
  */
 trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
 
-    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet]
+    override protected[this] type State = PointsToAnalysisState[ElementType, PointsToSet, ContextType]
     override protected[this] type DependerType = Entity
 
     protected[this] def handleCallReceiver(
@@ -115,7 +113,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         fieldOpt: Option[Field], pc: Int, objRefDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         val fakeEntity = (defSiteObject, fieldOpt, filter)
         state.addGetFieldEntity(fakeEntity)
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
@@ -138,7 +136,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         field: Field, pc: Int, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         state.includeSharedPointsToSet(
             defSiteObject,
             currentPointsTo(defSiteObject, field, filter),
@@ -150,13 +148,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         arrayType: ArrayType, pc: Int, arrayDefSites: IntTrieSet, checkForCast: Boolean = true
     )(implicit state: State): Unit = {
         val filter = getFilter(pc, checkForCast)
-        val defSiteObject = definitionSites(state.method.definedMethod, pc)
+        val defSiteObject = definitionSites(state.callContext.method.definedMethod, pc)
         val fakeEntity = (defSiteObject, arrayType, filter)
         state.addArrayLoadEntity(fakeEntity)
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
         currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
-                val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                val typeId = getTypeIdOf(as)
                 if (typeId < 0 &&
                     classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)) {
                     state.includeSharedPointsToSet(
@@ -213,10 +211,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         state.addArrayStoreEntity(fakeEntity)
         currentPointsToOfDefSites(fakeEntity, arrayDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
-                val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                val typeId = getTypeIdOf(as)
                 if (typeId < 0 &&
                     classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
-                    !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
+                    !isEmptyArray(as)) {
                     val arrayEntity = ArrayEntity(as)
                     val componentType = ArrayType.lookup(typeId).componentType.asReferenceType
                     val filter = { t: ReferenceType ⇒
@@ -236,16 +234,13 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
         depender: Entity, dependee: Entity, typeFilter: ReferenceType ⇒ Boolean
     )(implicit state: State): PointsToSet = {
         val epk = EPK(dependee, pointsToPropertyKey)
-        val p2s = if (state.hasDependency(depender, epk)) {
-            // IMPROVE: add a method to the state
-            state.dependeesOf(depender)(epk)._1
-        } else {
-            val p2s = propertyStore(dependee, pointsToPropertyKey)
-            if (p2s.isRefinable) {
-                state.addDependee(depender, p2s, typeFilter)
-            }
-            p2s
+
+        val p2s = if (state.hasDependee(epk)) state.getProperty(epk) else propertyStore(epk)
+
+        if (p2s.isRefinable && !state.hasDependency(depender, epk)) {
+            state.addDependee(depender, p2s, typeFilter)
         }
+
         pointsToUB(p2s.asInstanceOf[EOptionP[Entity, PointsToSet]])
     }
 
@@ -340,10 +335,10 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 val newDependees = updatedDependees(eps, dependees)
                 var results: List[ProperPropertyComputationResult] = List.empty
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
-                    val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                    val typeId = getTypeIdOf(as)
                     if (typeId < 0 &&
                         classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType) &&
-                        !isEmptyArrayAllocationSite(as.asInstanceOf[Long])) {
+                        !isEmptyArray(as)) {
                         val componentType = ArrayType.lookup(typeId).componentType.asReferenceType
                         val typeFilter = { t: ReferenceType ⇒
                             classHierarchy.isSubtypeOf(t, componentType)
@@ -426,7 +421,7 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis {
                 var nextDependees: List[SomeEOptionP] = Nil
                 var newPointsTo = emptyPointsToSet
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
-                    val typeId = allocationSiteLongToTypeId(as.asInstanceOf[Long])
+                    val typeId = getTypeIdOf(as)
                     if (typeId < 0 && classHierarchy.isSubtypeOf(ArrayType.lookup(typeId), arrayType)) {
                         val arrayEntries = ps(ArrayEntity(as), pointsToPropertyKey)
                         newPointsTo = newPointsTo.included(pointsToUB(arrayEntries), filter)

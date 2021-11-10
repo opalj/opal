@@ -87,7 +87,7 @@ private[xta] class TypePropagationTrace {
     }
 
     @elidable(elidable.ASSERTION)
-    def traceTypeUpdate(receiver: DefinedMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
+    def traceTypeUpdate(receiver: DeclaredMethod, source: Entity, types: UIDSet[ReferenceType]): Unit = {
         traceMsg(s"type set update: for ${simplifiedName(receiver)}, from ${simplifiedName(source)}, with types: {${types.map(simplifiedName).mkString(", ")}}")
         _trace.events += TypePropagationTrace.TypeSetUpdate(receiver, source, types)
     }

@@ -17,7 +17,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.LongType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
@@ -33,6 +32,7 @@ import org.opalj.br.BooleanType
 import org.opalj.br.IntegerType
 import org.opalj.br.ReferenceType
 import org.opalj.br.VoidType
+import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.V
 import org.opalj.tac.fpcf.properties.TheTACAI
@@ -46,13 +46,14 @@ abstract class UnsafePointsToAnalysis private[pointsto] ( final val project: Som
     extends PointsToAnalysisBase { self ⇒
 
     private[this] val UnsafeT = ObjectType("sun/misc/Unsafe")
-    val declaredMethods = project.get(DeclaredMethodsKey)
+    val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     trait PointsToBase extends AbstractPointsToBasedAnalysis {
         override protected[this] type ElementType = self.ElementType
         override protected[this] type PointsToSet = self.PointsToSet
         override protected[this] type State = self.State
         override protected[this] type DependerType = self.DependerType
+        override type ContextType = self.ContextType
 
         override protected[this] val pointsToPropertyKey: PropertyKey[PointsToSet] =
             self.pointsToPropertyKey
@@ -60,16 +61,16 @@ abstract class UnsafePointsToAnalysis private[pointsto] ( final val project: Som
         override protected[this] def emptyPointsToSet: PointsToSet = self.emptyPointsToSet
 
         override protected[this] def createPointsToSet(
-            pc:             Int,
-            declaredMethod: DeclaredMethod,
-            allocatedType:  ReferenceType,
-            isConstant:     Boolean,
-            isEmptyArray:   Boolean
+            pc:            Int,
+            callContext:   ContextType,
+            allocatedType: ReferenceType,
+            isConstant:    Boolean,
+            isEmptyArray:  Boolean
         ): PointsToSet = {
-            self.createPointsToSet(pc, declaredMethod, allocatedType, isConstant, isEmptyArray)
+            self.createPointsToSet(pc, callContext, allocatedType, isConstant, isEmptyArray)
         }
 
-        override protected[this] def currentPointsTo(
+        @inline override protected[this] def currentPointsTo(
             depender:   DependerType,
             dependee:   Entity,
             typeFilter: ReferenceType ⇒ Boolean
@@ -77,8 +78,16 @@ abstract class UnsafePointsToAnalysis private[pointsto] ( final val project: Som
             self.currentPointsTo(depender, dependee, typeFilter)
         }
 
-        override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
+        @inline override protected[this] def getTypeOf(element: ElementType): ReferenceType = {
             self.getTypeOf(element)
+        }
+
+        @inline override protected[this] def getTypeIdOf(element: ElementType): Int = {
+            self.getTypeIdOf(element)
+        }
+
+        @inline override protected[this] def isEmptyArray(element: ElementType): Boolean = {
+            self.isEmptyArray(element)
         }
     }
 
@@ -161,7 +170,7 @@ abstract class UnsafeGetPointsToAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def processNewCaller(
-        caller:          DefinedMethod,
+        callContext:     ContextType,
         pc:              Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -170,8 +179,8 @@ abstract class UnsafeGetPointsToAnalysis(
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet](
-                caller, FinalEP(caller.definedMethod, TheTACAI(tac))
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
+                callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
             )
 
         val theObject = params.head
@@ -191,7 +200,7 @@ abstract class UnsafePutPointsToAnalysis(
 ) extends PointsToAnalysisBase with TACAIBasedAPIBasedAnalysis {
 
     def processNewCaller(
-        caller:          DefinedMethod,
+        callContext:     ContextType,
         pc:              Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -200,8 +209,8 @@ abstract class UnsafePutPointsToAnalysis(
         isDirect:        Boolean
     ): ProperPropertyComputationResult = {
         implicit val state: State =
-            new PointsToAnalysisState[ElementType, PointsToSet](
-                caller, FinalEP(caller.definedMethod, TheTACAI(tac))
+            new PointsToAnalysisState[ElementType, PointsToSet, ContextType](
+                callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
             )
 
         val baseObject = params.head
@@ -239,14 +248,14 @@ trait UnsafePointsToAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 }
 
 object TypeBasedUnsafePointsToAnalysisScheduler extends UnsafePointsToAnalysisScheduler {
-    override val propertyKind = TypeBasedPointsToSet
+    override val propertyKind: PropertyMetaInformation = TypeBasedPointsToSet
     override val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis =
         new UnsafePointsToAnalysis(_) with TypeBasedAnalysis
 }
 
 object AllocationSiteBasedUnsafePointsToAnalysisScheduler
     extends UnsafePointsToAnalysisScheduler {
-    override val propertyKind = AllocationSitePointsToSet
+    override val propertyKind: PropertyMetaInformation = AllocationSitePointsToSet
     override val createAnalysis: SomeProject ⇒ UnsafePointsToAnalysis =
         new UnsafePointsToAnalysis(_) with AllocationSiteBasedAnalysis
 }

@@ -33,6 +33,8 @@ class DeclaredMethods(
 
     private[this] final val lock = new ReentrantReadWriteLock()
 
+    private var extensionSize = 1000
+
     def apply(
         declaredType: ObjectType,
         packageName:  String,
@@ -79,32 +81,40 @@ class DeclaredMethods(
             if (method != null) return method;
         }
 
-        // in case of an unseen method, compute id
-        if (!dmSet.contains(context)) {
-            lock.writeLock().lock()
-            try {
-                if (!dmSet.contains(context)) {
-                    val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter)
-                    idCounter += 1
-                    dmSet.put(MethodContext(p, runtimeType, "", name, descriptor, false), vm)
-                    if (id2method.size <= vm.id) {
-                        implicit val logContext: LogContext = p.logContext
-                        info(
-                            "project",
-                            "too many virtual declared methods; extended the underlying array"
-                        )
-                        //IMPROVE use variable increment
-                        val id2methodExt = new Array[DeclaredMethod](id2method.length + 1000)
-                        Array.copy(id2method, 0, id2methodExt, 0, id2method.length)
-                        id2method = id2methodExt
-                    }
-                    id2method(vm.id) = vm
+        // Package private methods can be invoked from other packages if they override a public
+        // method. Thus, try a query with the receiver's package name.
+        method = dmSet.get(
+            new MethodContextQuery(p, runtimeType, runtimeType.packageName, name, descriptor)
+        )
+        if (method != null) return method;
+
+        // In case of an unseen method, compute id
+        lock.writeLock().lock()
+        try {
+            if (!dmSet.contains(context)) {
+                val vm = new VirtualDeclaredMethod(runtimeType, name, descriptor, idCounter)
+                idCounter += 1
+                dmSet.put(MethodContext(p, runtimeType, "", name, descriptor, false), vm)
+                if (id2method.size <= vm.id) {
+                    implicit val logContext: LogContext = p.logContext
+                    info(
+                        "project",
+                        "too many virtual declared methods; extended the underlying array"
+                    )
+                    val id2methodExt = new Array[DeclaredMethod](id2method.length + extensionSize)
+                    extensionSize = Math.min(extensionSize * 2, 32000)
+                    Array.copy(id2method, 0, id2methodExt, 0, id2method.length)
+                    id2method = id2methodExt
                 }
-            } finally {
-                lock.writeLock().unlock()
+                id2method(vm.id) = vm
             }
+        } finally {
+            lock.writeLock().unlock()
         }
-        dmSet.get(context)
+
+        method = dmSet.get(context)
+        assert(method ne null)
+        method
     }
 
     def apply(method: Method): DefinedMethod = {
@@ -116,6 +126,16 @@ class DeclaredMethods(
         lock.readLock().lock()
         try {
             id2method(methodId)
+        } finally {
+            lock.readLock().unlock()
+        }
+    }
+
+    def get(methodId: Int): Option[DeclaredMethod] = {
+        lock.readLock().lock()
+        try {
+            if (methodId < id2method.length) Some(id2method(methodId))
+            else None
         } finally {
             lock.readLock().unlock()
         }
