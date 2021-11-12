@@ -6,18 +6,11 @@ import org.opalj.ll.llvm.Reader
 
 object LLPlayground {
 
-    def main(args: Array[String]): Unit = {
-        val module = Reader.readIR("./OPAL/ll/src/test/resources/org/opalj/ll/test.ll").get
-        //println(module.repr)
-        println(module.functions.map(f ⇒ f.name).toList)
-        //println(module.functions.map(f => f.repr).toList)
-        val functions = module.functions()
-        val function = functions.next()
-        //print(function.repr)
-        val block = function.basicBlocks().next();
-        print(block.repr);
-        val instruction = block.instructions().next();
-        println("Instruction: "+instruction.repr())
-        println(block.instructions.toList)
-    }
+  def main(args: Array[String]): Unit = {
+    val module = Reader.readIR("./OPAL/ll/src/test/resources/org/opalj/ll/test_jsmn.ll").get
+    val function = module.get_function("jsmn_parse_string")
+    println(function.name)
+    function.viewLLVMCFG(false)
+    function.viewCFG()
+  }
 }

@@ -5,92 +5,102 @@ import org.bytedeco.llvm.LLVM.LLVMValueRef
 import org.bytedeco.llvm.global.LLVM._
 
 object Instruction {
-    def apply(ref: LLVMValueRef): Instruction = {
-        assert(LLVMGetValueKind(ref) == LLVMInstructionValueKind, "ref has to be an instruction")
-        LLVMGetInstructionOpcode(ref) match {
-            case LLVMRet            ⇒ Ret(ref)
-            case LLVMBr             ⇒ Br(ref)
-            case LLVMSwitch         ⇒ Switch(ref)
-            case LLVMIndirectBr     ⇒ IndirectBr(ref)
-            case LLVMInvoke         ⇒ Invoke(ref)
-            case LLVMUnreachable    ⇒ Unreachable(ref)
-            case LLVMCallBr         ⇒ CallBr(ref)
-            case LLVMFNeg           ⇒ FNeg(ref)
-            case LLVMAdd            ⇒ Add(ref)
-            case LLVMFAdd           ⇒ FAdd(ref)
-            case LLVMSub            ⇒ Sub(ref)
-            case LLVMFSub           ⇒ FSub(ref)
-            case LLVMMul            ⇒ Mul(ref)
-            case LLVMFMul           ⇒ FMul(ref)
-            case LLVMUDiv           ⇒ UDiv(ref)
-            case LLVMSDiv           ⇒ SDiv(ref)
-            case LLVMFDiv           ⇒ FDiv(ref)
-            case LLVMURem           ⇒ URem(ref)
-            case LLVMSRem           ⇒ SRem(ref)
-            case LLVMFRem           ⇒ FRem(ref)
-            case LLVMShl            ⇒ Shl(ref)
-            case LLVMLShr           ⇒ LShr(ref)
-            case LLVMAShr           ⇒ AShr(ref)
-            case LLVMAnd            ⇒ And(ref)
-            case LLVMOr             ⇒ Or(ref)
-            case LLVMXor            ⇒ Xor(ref)
-            case LLVMAlloca         ⇒ Alloca(ref)
-            case LLVMLoad           ⇒ Load(ref)
-            case LLVMStore          ⇒ Store(ref)
-            case LLVMGetElementPtr  ⇒ GetElementPtr(ref)
-            case LLVMTrunc          ⇒ Trunc(ref)
-            case LLVMZExt           ⇒ ZExt(ref)
-            case LLVMSExt           ⇒ SExt(ref)
-            case LLVMFPToUI         ⇒ FPToUI(ref)
-            case LLVMFPToSI         ⇒ FPToSI(ref)
-            case LLVMUIToFP         ⇒ UIToFP(ref)
-            case LLVMSIToFP         ⇒ SIToFP(ref)
-            case LLVMFPTrunc        ⇒ FPTrunc(ref)
-            case LLVMFPExt          ⇒ FPExt(ref)
-            case LLVMPtrToInt       ⇒ PtrToInt(ref)
-            case LLVMIntToPtr       ⇒ IntToPtr(ref)
-            case LLVMBitCast        ⇒ BitCast(ref)
-            case LLVMAddrSpaceCast  ⇒ AddrSpaceCast(ref)
-            case LLVMICmp           ⇒ ICmp(ref)
-            case LLVMFCmp           ⇒ FCmp(ref)
-            case LLVMPHI            ⇒ PHI(ref)
-            case LLVMCall           ⇒ Call(ref)
-            case LLVMSelect         ⇒ Select(ref)
-            case LLVMUserOp1        ⇒ UserOp1(ref)
-            case LLVMUserOp2        ⇒ UserOp2(ref)
-            case LLVMVAArg          ⇒ VAArg(ref)
-            case LLVMExtractElement ⇒ ExtractElement(ref)
-            case LLVMInsertElement  ⇒ InsertElement(ref)
-            case LLVMShuffleVector  ⇒ ShuffleVector(ref)
-            case LLVMExtractValue   ⇒ ExtractValue(ref)
-            case LLVMInsertValue    ⇒ InsertValue(ref)
-            case LLVMFreeze         ⇒ Freeze(ref)
-            case LLVMFence          ⇒ Fence(ref)
-            case LLVMAtomicCmpXchg  ⇒ AtomicCmpXchg(ref)
-            case LLVMAtomicRMW      ⇒ AtomicRMW(ref)
-            case LLVMResume         ⇒ Resume(ref)
-            case LLVMLandingPad     ⇒ LandingPad(ref)
-            case LLVMCleanupRet     ⇒ CleanupRet(ref)
-            case LLVMCatchRet       ⇒ CatchRet(ref)
-            case LLVMCatchPad       ⇒ CatchPad(ref)
-            case LLVMCleanupPad     ⇒ CleanupPad(ref)
-            case LLVMCatchSwitch    ⇒ CatchSwitch(ref)
-            case opCode             ⇒ throw new IllegalArgumentException("unknown instruction opcode: "+opCode)
-        }
+  def apply(ref: LLVMValueRef): Instruction = {
+    assert(LLVMGetValueKind(ref) == LLVMInstructionValueKind, "ref has to be an instruction")
+    LLVMGetInstructionOpcode(ref) match {
+      case LLVMRet => Ret(ref)
+      case LLVMBr => Br(ref)
+      case LLVMSwitch => Switch(ref)
+      case LLVMIndirectBr => IndirectBr(ref)
+      case LLVMInvoke => Invoke(ref)
+      case LLVMUnreachable => Unreachable(ref)
+      case LLVMCallBr => CallBr(ref)
+      case LLVMFNeg => FNeg(ref)
+      case LLVMAdd => Add(ref)
+      case LLVMFAdd => FAdd(ref)
+      case LLVMSub => Sub(ref)
+      case LLVMFSub => FSub(ref)
+      case LLVMMul => Mul(ref)
+      case LLVMFMul => FMul(ref)
+      case LLVMUDiv => UDiv(ref)
+      case LLVMSDiv => SDiv(ref)
+      case LLVMFDiv => FDiv(ref)
+      case LLVMURem => URem(ref)
+      case LLVMSRem => SRem(ref)
+      case LLVMFRem => FRem(ref)
+      case LLVMShl => Shl(ref)
+      case LLVMLShr => LShr(ref)
+      case LLVMAShr => AShr(ref)
+      case LLVMAnd => And(ref)
+      case LLVMOr => Or(ref)
+      case LLVMXor => Xor(ref)
+      case LLVMAlloca => Alloca(ref)
+      case LLVMLoad => Load(ref)
+      case LLVMStore => Store(ref)
+      case LLVMGetElementPtr => GetElementPtr(ref)
+      case LLVMTrunc => Trunc(ref)
+      case LLVMZExt => ZExt(ref)
+      case LLVMSExt => SExt(ref)
+      case LLVMFPToUI => FPToUI(ref)
+      case LLVMFPToSI => FPToSI(ref)
+      case LLVMUIToFP => UIToFP(ref)
+      case LLVMSIToFP => SIToFP(ref)
+      case LLVMFPTrunc => FPTrunc(ref)
+      case LLVMFPExt => FPExt(ref)
+      case LLVMPtrToInt => PtrToInt(ref)
+      case LLVMIntToPtr => IntToPtr(ref)
+      case LLVMBitCast => BitCast(ref)
+      case LLVMAddrSpaceCast => AddrSpaceCast(ref)
+      case LLVMICmp => ICmp(ref)
+      case LLVMFCmp => FCmp(ref)
+      case LLVMPHI => PHI(ref)
+      case LLVMCall => Call(ref)
+      case LLVMSelect => Select(ref)
+      case LLVMUserOp1 => UserOp1(ref)
+      case LLVMUserOp2 => UserOp2(ref)
+      case LLVMVAArg => VAArg(ref)
+      case LLVMExtractElement => ExtractElement(ref)
+      case LLVMInsertElement => InsertElement(ref)
+      case LLVMShuffleVector => ShuffleVector(ref)
+      case LLVMExtractValue => ExtractValue(ref)
+      case LLVMInsertValue => InsertValue(ref)
+      case LLVMFreeze => Freeze(ref)
+      case LLVMFence => Fence(ref)
+      case LLVMAtomicCmpXchg => AtomicCmpXchg(ref)
+      case LLVMAtomicRMW => AtomicRMW(ref)
+      case LLVMResume => Resume(ref)
+      case LLVMLandingPad => LandingPad(ref)
+      case LLVMCleanupRet => CleanupRet(ref)
+      case LLVMCatchRet => CatchRet(ref)
+      case LLVMCatchPad => CatchPad(ref)
+      case LLVMCleanupPad => CleanupPad(ref)
+      case LLVMCatchSwitch => CatchSwitch(ref)
+      case opCode => throw new IllegalArgumentException("unknown instruction opcode: " + opCode)
     }
+  }
+}
+
+trait Terminator {
+  val ref: LLVMValueRef
+  def numSuccessors(): Int = LLVMGetNumSuccessors(ref)
+  def hasSuccessors(): Boolean = numSuccessors() > 0
+  def getSuccessor(i: Int) = BasicBlock(LLVMGetSuccessor(ref, i))
+  def foreachSuccessor(f: BasicBlock => Unit): Unit = {
+    (0 to numSuccessors() - 1).foreach(i => f(getSuccessor(i)))
+  }
 }
 
 sealed abstract class Instruction(ref: LLVMValueRef) extends Value(ref) {
-    def is_terminator(): Boolean = !LLVMIsATerminatorInst(ref).isNull
+  def is_terminator(): Boolean = !LLVMIsATerminatorInst(ref).isNull
 }
 
-case class Ret(ref: LLVMValueRef) extends Instruction(ref)
-case class Br(ref: LLVMValueRef) extends Instruction(ref)
-case class Switch(ref: LLVMValueRef) extends Instruction(ref)
-case class IndirectBr(ref: LLVMValueRef) extends Instruction(ref)
-case class Invoke(ref: LLVMValueRef) extends Instruction(ref)
-case class Unreachable(ref: LLVMValueRef) extends Instruction(ref)
-case class CallBr(ref: LLVMValueRef) extends Instruction(ref)
+case class Ret(ref: LLVMValueRef) extends Instruction(ref) with Terminator
+case class Br(ref: LLVMValueRef) extends Instruction(ref) with Terminator
+case class Switch(ref: LLVMValueRef) extends Instruction(ref) with Terminator
+case class IndirectBr(ref: LLVMValueRef) extends Instruction(ref) with Terminator
+case class Invoke(ref: LLVMValueRef) extends Instruction(ref) with Terminator
+case class Unreachable(ref: LLVMValueRef) extends Instruction(ref) with Terminator
+case class CallBr(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class FNeg(ref: LLVMValueRef) extends Instruction(ref)
 case class Add(ref: LLVMValueRef) extends Instruction(ref)
 case class FAdd(ref: LLVMValueRef) extends Instruction(ref)
@@ -113,13 +123,13 @@ case class Xor(ref: LLVMValueRef) extends Instruction(ref)
 case class Alloca(ref: LLVMValueRef) extends Instruction(ref)
 case class Load(ref: LLVMValueRef) extends Instruction(ref)
 case class Store(ref: LLVMValueRef) extends Instruction(ref) {
-    def src(): Value = {
-        Value(LLVMGetOperand(ref, 0))
-    }
+  def src(): Value = {
+    Value(LLVMGetOperand(ref, 0)).asInstanceOf[Value]
+  }
 
-    def dst(): Value = {
-        Value(LLVMGetOperand(ref, 1))
-    }
+  def dst(): Value = {
+    Value(LLVMGetOperand(ref, 1)).asInstanceOf[Value]
+  }
 }
 case class GetElementPtr(ref: LLVMValueRef) extends Instruction(ref)
 case class Trunc(ref: LLVMValueRef) extends Instruction(ref)
@@ -152,10 +162,10 @@ case class Freeze(ref: LLVMValueRef) extends Instruction(ref)
 case class Fence(ref: LLVMValueRef) extends Instruction(ref)
 case class AtomicCmpXchg(ref: LLVMValueRef) extends Instruction(ref)
 case class AtomicRMW(ref: LLVMValueRef) extends Instruction(ref)
-case class Resume(ref: LLVMValueRef) extends Instruction(ref)
+case class Resume(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class LandingPad(ref: LLVMValueRef) extends Instruction(ref)
-case class CleanupRet(ref: LLVMValueRef) extends Instruction(ref)
-case class CatchRet(ref: LLVMValueRef) extends Instruction(ref)
+case class CleanupRet(ref: LLVMValueRef) extends Instruction(ref) with Terminator
+case class CatchRet(ref: LLVMValueRef) extends Instruction(ref) with Terminator
 case class CatchPad(ref: LLVMValueRef) extends Instruction(ref)
 case class CleanupPad(ref: LLVMValueRef) extends Instruction(ref)
-case class CatchSwitch(ref: LLVMValueRef) extends Instruction(ref)
+case class CatchSwitch(ref: LLVMValueRef) extends Instruction(ref) with Terminator
