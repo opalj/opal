@@ -12,13 +12,23 @@ class SimplePurityTests extends AnyFunSpec with Matchers {
     describe("SimplePurityAnalysis") {
         it("executes") {
             val project = Project(Traversable.empty)
-            project.updateProjectInformationKeyInitializationData(LLVMModulesKey)(current =>
-              current.getOrElse(Iterable.empty) ++ List("./OPAL/ll/src/test/resources/org/opalj/ll/test.ll")
+            project.updateProjectInformationKeyInitializationData(LLVMProjectKey)(
+                current ⇒ List("./DEVELOPING_OPAL/validate/src/test/resources/llvm/purity.ll")
             )
             val (propertyStore, _) = project.get(FPCFAnalysesManagerKey).runAll(EagerSimplePurityAnalysis)
 
-            assert(propertyStore.finalEntities(Pure).size == 0)
-            assert(propertyStore.finalEntities(Impure).size == 4)
+            val impureFunctionNames = propertyStore
+                .finalEntities(Impure)
+                .asInstanceOf[Iterator[llvm.Function]]
+                .map(function ⇒ function.name())
+                .toList
+            impureFunctionNames should contain("impure_function")
+            val pureFunctionNames = propertyStore
+                .finalEntities(Pure)
+                .asInstanceOf[Iterator[llvm.Function]]
+                .map(function ⇒ function.name())
+                .toList
+            pureFunctionNames should contain("pure_function")
         }
     }
 }

@@ -1,8 +1,13 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj.ll
+package org.opalj.ll.llvm
 
 import org.bytedeco.llvm.LLVM.{LLVMBasicBlockRef, LLVMValueRef}
-import org.bytedeco.llvm.global.LLVM.{LLVMFunctionValueKind, LLVMGetFirstBasicBlock, LLVMGetNextBasicBlock, LLVMGetValueKind}
+import org.bytedeco.llvm.global.LLVM.{
+    LLVMFunctionValueKind,
+    LLVMGetFirstBasicBlock,
+    LLVMGetNextBasicBlock,
+    LLVMGetValueKind
+}
 
 case class Function(ref: LLVMValueRef) extends Value(ref) {
     assert(LLVMGetValueKind(ref) == LLVMFunctionValueKind, "ref has to be a function")

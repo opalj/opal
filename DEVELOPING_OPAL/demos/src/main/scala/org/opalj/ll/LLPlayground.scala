@@ -2,6 +2,8 @@
 package org.opalj
 package ll
 
+import org.opalj.ll.llvm.Reader
+
 object LLPlayground {
 
     def main(args: Array[String]): Unit = {

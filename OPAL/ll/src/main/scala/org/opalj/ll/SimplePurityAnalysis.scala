@@ -2,7 +2,17 @@
 package org.opalj.ll
 import org.opalj.br.analyses.{ProjectInformationKeys, SomeProject}
 import org.opalj.br.fpcf.{BasicFPCFEagerAnalysisScheduler, FPCFAnalysis, FPCFAnalysisScheduler}
-import org.opalj.fpcf.{Entity, OrderedProperty, ProperPropertyComputationResult, PropertyBounds, PropertyKey, PropertyMetaInformation, PropertyStore, Result}
+import org.opalj.fpcf.{
+    Entity,
+    OrderedProperty,
+    ProperPropertyComputationResult,
+    PropertyBounds,
+    PropertyKey,
+    PropertyMetaInformation,
+    PropertyStore,
+    Result
+}
+import org.opalj.ll.llvm.{Function, GlobalVariable, Store}
 
 sealed trait SimplePurityPropertyMetaInformation extends PropertyMetaInformation {
     final type Self = SimplePurity
@@ -38,26 +48,47 @@ object SimplePurity extends SimplePurityPropertyMetaInformation {
 
 class SimplePurityAnalysis(val project: SomeProject) extends FPCFAnalysis {
     def analyzeSimplePurity(function: Function): ProperPropertyComputationResult = {
-        Result(function, Impure)
+        function
+            .basicBlocks()
+            .flatMap(_.instructions())
+            .foreach {
+                case instruction: Store ⇒
+                    instruction.dst() match {
+                        case _: GlobalVariable ⇒
+                            return Result(function, Impure)
+                        case _ ⇒ Unit
+                    }
+                case _ ⇒ Unit
+            }
+        Result(function, Pure)
     }
 }
 
 trait SimplePurityAnalysisScheduler extends FPCFAnalysisScheduler {
     def derivedProperty: PropertyBounds = PropertyBounds.ub(SimplePurity)
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMFunctionsKey)
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(LLVMProjectKey)
 
     override def uses: Set[PropertyBounds] = Set.empty // TODO: check this later
 }
 
-object EagerSimplePurityAnalysis extends SimplePurityAnalysisScheduler with BasicFPCFEagerAnalysisScheduler {
+object EagerSimplePurityAnalysis
+    extends SimplePurityAnalysisScheduler
+    with BasicFPCFEagerAnalysisScheduler {
     override def derivesEagerly: Set[PropertyBounds] = Set(derivedProperty)
 
     override def derivesCollaboratively: Set[PropertyBounds] = Set.empty
 
-    override def start(project: SomeProject, propertyStore: PropertyStore, initData: InitializationData): FPCFAnalysis = {
+    override def start(
+        project:       SomeProject,
+        propertyStore: PropertyStore,
+        initData:      InitializationData
+    ): FPCFAnalysis = {
         val analysis = new SimplePurityAnalysis(project)
-        propertyStore.scheduleEagerComputationsForEntities(project.get(LLVMFunctionsKey))(analysis.analyzeSimplePurity)
+        val llvm_project = project.get(LLVMProjectKey)
+        propertyStore.scheduleEagerComputationsForEntities(llvm_project.functions())(
+            analysis.analyzeSimplePurity
+        )
         analysis
     }
 }

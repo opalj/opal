@@ -1,10 +1,15 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package ll
+
+package org.opalj.ll.llvm
 
 import org.bytedeco.javacpp.BytePointer
 import org.bytedeco.llvm.LLVM.{LLVMContextRef, LLVMMemoryBufferRef, LLVMModuleRef}
-import org.bytedeco.llvm.global.LLVM.{LLVMContextCreate, LLVMCreateMemoryBufferWithContentsOfFile, LLVMDisposeMessage, LLVMParseIRInContext}
+import org.bytedeco.llvm.global.LLVM.{
+    LLVMContextCreate,
+    LLVMCreateMemoryBufferWithContentsOfFile,
+    LLVMDisposeMessage,
+    LLVMParseIRInContext
+}
 
 object Reader {
     def readIR(path: String): Option[Module] = {
