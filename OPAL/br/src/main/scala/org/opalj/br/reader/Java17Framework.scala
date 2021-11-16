@@ -6,8 +6,7 @@ package org.opalj.br.reader
  * standard information (as defined in the Java Virtual Machine Specification)
  * is represented.
  *
- * @author Dominik Helm
- *         Julius Naeumann
+ * @author Julius Naeumann
  */
 trait Java17Framework extends Java16Framework with Java17LibraryFramework
 

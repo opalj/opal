@@ -6,8 +6,7 @@ package org.opalj.br.reader
  * standard information (as defined in the Java Virtual Machine Specification)
  * is represented. Instructions will be cached.
  *
- * @author Dominik Helm
- *         Julius Naeumann
+ * @author Julius Naeumann
  */
 class Java17FrameworkWithCaching(
         cache: BytecodeInstructionsCache
