@@ -8,7 +8,7 @@ import org.opalj.control.fillArrayOfInt
 import java.io.DataInputStream
 
 /**
- * Generic parser for the ''PermittedSubclasses'' attribute (Java 16).
+ * Generic parser for the ''PermittedSubclasses'' attribute (Java 17).
  *
  * '''From the Specification'''
  * The PermittedSubclasses attribute is a variable-length attribute in the attributes table of a
