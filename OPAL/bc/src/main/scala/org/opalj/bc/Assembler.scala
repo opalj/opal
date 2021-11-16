@@ -670,6 +670,10 @@ object Assembler {
                         c.attributes foreach RichAttribute.write
                     }
 
+                case a: PermittedSubclasses_attribute ⇒
+                    writeShort(a.permittedSubclasses.length)
+                    a.permittedSubclasses.foreach(writeShort)
+
                 case a: Unknown_attribute ⇒ out.write(a.info, 0, a.info.length)
             }
         }
