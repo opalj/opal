@@ -21,6 +21,7 @@ import org.opalj.collection.immutable.RefArray
  * `Serialized Class File` -> `BRClassFile`.
  *
  * @author Malte Limmeroth
+ *         Julius Naeumann
  */
 @RunWith(classOf[JUnitRunner])
 class ClassFileBuilderTest extends AnyFlatSpec {
