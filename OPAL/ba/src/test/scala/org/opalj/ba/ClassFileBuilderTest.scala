@@ -11,7 +11,7 @@ import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
 import org.opalj.bi.{ACC_FINAL, ACC_PUBLIC, ACC_SUPER, ACC_SYNTHETIC, isCurrentJREAtLeastJava16, isCurrentJREAtLeastJava17}
 import org.opalj.br.{IntegerType, MethodDescriptor}
-import org.opalj.br.reader.Java17Framework.{ClassFile => ClassFileReader}
+import org.opalj.br.reader.Java17Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.bc.Assembler
 import org.opalj.collection.immutable.RefArray
 
@@ -70,7 +70,6 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             superclassType = Some("SealedClass")
         ).toDA()
 
-
     val sealedClassSubclassType = br.ObjectType("SealedClassSubclass")
 
     val permittedSubclassesAttribute = br.PermittedSubclasses(RefArray(sealedClassSubclassType))
@@ -103,7 +102,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             "org.opalj.bc.AbstractClass" → abstractAsm,
             "ConcreteClass" → concreteAsm,
             "RecordClass" → recordAsm,
-            "SealedClass" →  sealedClassAsm,
+            "SealedClass" → sealedClassAsm,
             "SealedClassSubclass" → sealedClassSubclassAsm,
 
         ),

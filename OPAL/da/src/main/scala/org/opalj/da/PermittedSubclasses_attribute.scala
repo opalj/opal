@@ -10,7 +10,7 @@ import scala.xml.{Node, NodeBuffer}
  */
 case class PermittedSubclasses_attribute(
         attribute_name_index: Constant_Pool_Index,
-        permittedSubclasses:        ClassesArray
+        permittedSubclasses:  ClassesArray
 ) extends Attribute {
 
     override def attribute_length: Int = 2 + permittedSubclasses.size * 2

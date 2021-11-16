@@ -12,6 +12,6 @@ trait Java17Framework extends Java16Framework with Java17LibraryFramework
 
 object Java17Framework extends Java17Framework {
 
-  final override def loadsInterfacesOnly: Boolean = false
+    final override def loadsInterfacesOnly: Boolean = false
 
 }

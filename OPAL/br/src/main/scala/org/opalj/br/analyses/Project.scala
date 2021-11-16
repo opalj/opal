@@ -8,7 +8,7 @@ import scala.annotation.tailrec
 import java.io.File
 import java.lang.ref.SoftReference
 import java.net.URL
-import java.util.Arrays.{sort => sortArray}
+import java.util.Arrays.{sort ⇒ sortArray}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReferenceArray
 import scala.collection.Map

@@ -176,10 +176,10 @@ class InvokedynamicRewritingBytecodeStructureTest extends AnyFunSpec with Matche
             info(sealedclasses.statistics.toList.map(_.toString).filter(_.startsWith("(Project")).mkString(","))
 
             it("should be able to perform abstract interpretation of rewritten Java 17 sealed class"+
-              " in the java17sealedclass test project") {
+                " in the java17sealedclass test project") {
                 val verifiedMethodsCount =
                     testProject(sealedclasses, (p, m) ⇒ BaseDomain(p, m)) +
-                      testProject(sealedclasses, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
+                        testProject(sealedclasses, (p, m) ⇒ new DefaultDomainWithCFGAndDefUse(p, m))
                 info(s"interpreted ${verifiedMethodsCount / 2} methods")
             }
         }

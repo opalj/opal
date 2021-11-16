@@ -32,7 +32,7 @@ trait PermittedSubclasses_attributeReader extends AttributeReader {
         ap_name_index:        Constant_Pool_Index,
         ap_descriptor_index:  Constant_Pool_Index,
         attribute_name_index: Constant_Pool_Index,
-        classes:           PermittedSubclassesArray
+        classes:              PermittedSubclassesArray
     ): PermittedSubclasses_attribute
 
     //

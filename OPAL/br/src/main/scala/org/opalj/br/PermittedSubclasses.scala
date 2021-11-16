@@ -15,7 +15,6 @@ case class PermittedSubclasses(classes: Classes) extends Attribute {
     }
 }
 
-
 object PermittedSubclasses {
 
     final val KindId = 50
