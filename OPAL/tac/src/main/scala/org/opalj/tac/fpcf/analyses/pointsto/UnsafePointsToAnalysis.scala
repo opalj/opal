@@ -158,6 +158,23 @@ abstract class UnsafePointsToAnalysis private[pointsto] (
                     "compareAndSwapObject",
                     MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object, ObjectType.Object), BooleanType)
                 )
+            ) with PointsToBase,
+            new UnsafeGetPointsToAnalysis(
+                p,
+                declaredMethods(
+                    UnsafeT, "", UnsafeT,
+                    "getAndSetObject",
+                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
+                )
+            ) with PointsToBase,
+            new UnsafePutPointsToAnalysis(
+                p,
+                2,
+                declaredMethods(
+                    UnsafeT, "", UnsafeT,
+                    "getAndSetObject",
+                    MethodDescriptor(RefArray(ObjectType.Object, LongType, ObjectType.Object), ObjectType.Object)
+                )
             ) with PointsToBase
         )
 

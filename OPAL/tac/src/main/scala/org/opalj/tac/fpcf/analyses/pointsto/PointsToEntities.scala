@@ -17,5 +17,3 @@ import org.opalj.tac.common.DefinitionSite
 case class ArrayEntity[ElementType](element: ElementType)
 case class MethodExceptions(context: Context)
 case class CallExceptions(defSite: DefinitionSite)
-
-object UnsafeFakeField

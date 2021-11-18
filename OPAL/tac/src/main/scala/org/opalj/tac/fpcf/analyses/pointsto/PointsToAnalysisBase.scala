@@ -173,14 +173,19 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
         state.includeSharedPointsToSet(defSiteObject, emptyPointsToSet, PointsToSetLike.noFilter)
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
-                if (fieldOpt.isEmpty ||
-                    classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
-                    state.includeSharedPointsToSet(
-                        defSiteObject,
-                        // IMPROVE: Use LongRefPair to avoid boxing
-                        currentPointsTo(defSiteObject, (as, fieldOpt.getOrElse(UnsafeFakeField)), filter),
-                        filter
-                    )
+                val tpe = getTypeOf(as)
+                if (tpe.isObjectType && (fieldOpt.isEmpty ||
+                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
+                    val fieldEntities =
+                        if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
+                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
+                    for (fieldEntity ← fieldEntities)
+                        state.includeSharedPointsToSet(
+                            defSiteObject,
+                            // IMPROVE: Use LongRefPair to avoid boxing
+                            currentPointsTo(defSiteObject, fieldEntity, filter),
+                            filter
+                        )
                 }
             }
         }
@@ -234,14 +239,18 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
 
         currentPointsToOfDefSites(fakeEntity, objRefDefSites).foreach { pts ⇒
             pts.forNewestNElements(pts.numElements) { as ⇒
-                if (fieldOpt.isEmpty ||
-                    classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
-                    val fieldEntity = (as, fieldOpt.getOrElse(UnsafeFakeField))
-                    state.includeSharedPointsToSets(
-                        fieldEntity,
-                        currentPointsToOfDefSites(fieldEntity, rhsDefSites, filter),
-                        filter
-                    )
+                val tpe = getTypeOf(as)
+                if (tpe.isObjectType && (fieldOpt.isEmpty ||
+                    classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
+                    val fieldEntities =
+                        if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
+                        else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
+                    for (fieldEntity ← fieldEntities)
+                        state.includeSharedPointsToSets(
+                            fieldEntity,
+                            currentPointsToOfDefSites(fieldEntity, rhsDefSites, filter),
+                            filter
+                        )
                 }
             }
         }
@@ -349,20 +358,25 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 var results: List[ProperPropertyComputationResult] = List.empty
 
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
-                    if (fieldOpt.isEmpty ||
-                        classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
+                    val tpe = getTypeOf(as)
+                    if (tpe.isObjectType && (fieldOpt.isEmpty ||
+                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
 
                         val typeFilter = if (fieldOpt.isDefined) { t: ReferenceType ⇒
                             classHierarchy.isSubtypeOf(t, fieldOpt.get.fieldType.asReferenceType)
                         } else
                             PointsToSetLike.noFilter
 
-                        results ++= createPartialResults(
-                            (as, fieldOpt.getOrElse(UnsafeFakeField)),
-                            knownPointsTo,
-                            rhsDefSitesEPS.mapValues((_, typeFilter)),
-                            { _.included(knownPointsTo, typeFilter) }
-                        )(state)
+                        val fieldEntities =
+                            if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
+                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
+                        for (fieldEntity ← fieldEntities)
+                            results ++= createPartialResults(
+                                fieldEntity,
+                                knownPointsTo,
+                                rhsDefSitesEPS.mapValues((_, typeFilter)),
+                                { _.included(knownPointsTo, typeFilter) }
+                            )(state)
                     }
                 }
                 if (newDependees.nonEmpty) {
@@ -435,12 +449,18 @@ trait PointsToAnalysisBase extends AbstractPointsToBasedAnalysis with TypeConsum
                 var nextDependees: List[SomeEOptionP] = Nil
                 var newPointsTo = emptyPointsToSet
                 newDependeePointsTo.forNewestNElements(newDependeePointsTo.numElements - getNumElements(dependees(eps.toEPK)._1)) { as ⇒
-                    if (fieldOpt.isEmpty ||
-                        classHierarchy.isSubtypeOf(getTypeOf(as), fieldOpt.get.classFile.thisType)) {
-                        val fieldEntries = ps((as, fieldOpt.getOrElse(UnsafeFakeField)), pointsToPropertyKey)
-                        newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)
-                        if (fieldEntries.isRefinable)
-                            nextDependees ::= fieldEntries
+                    val tpe = getTypeOf(as)
+                    if (tpe.isObjectType && (fieldOpt.isEmpty ||
+                        classHierarchy.isSubtypeOf(tpe, fieldOpt.get.classFile.thisType))) {
+                        val fieldEntities =
+                            if (fieldOpt.isDefined) Iterator((as, fieldOpt.get))
+                            else project.classHierarchy.allSuperclassesIterator(tpe.asObjectType, true).flatMap(_.fields.iterator).map((as, _))
+                        for (fieldEntity ← fieldEntities) {
+                            val fieldEntries = ps(fieldEntity, pointsToPropertyKey)
+                            newPointsTo = newPointsTo.included(pointsToUB(fieldEntries), filter)
+                            if (fieldEntries.isRefinable)
+                                nextDependees ::= fieldEntries
+                        }
                     }
                 }
 

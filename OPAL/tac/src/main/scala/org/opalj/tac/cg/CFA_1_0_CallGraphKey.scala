@@ -10,6 +10,7 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.CFA_k_0_TypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedNewInstanceAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisScheduler
@@ -37,7 +38,8 @@ object CFA_1_0_CallGraphKey extends CallGraphKey {
             TypeBasedConfiguredMethodsPointsToAnalysisScheduler,
             TypeBasedTamiFlexPointsToAnalysisScheduler,
             TypeBasedArraycopyPointsToAnalysisScheduler,
-            TypeBasedUnsafePointsToAnalysisScheduler
+            TypeBasedUnsafePointsToAnalysisScheduler,
+            TypeBasedNewInstanceAnalysisScheduler
         )
     }
 

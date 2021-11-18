@@ -10,6 +10,7 @@ import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.analyses.cg.CFA_k_l_TypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedConfiguredMethodsPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedNewInstanceAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.AllocationSiteBasedUnsafePointsToAnalysisScheduler
@@ -39,7 +40,8 @@ object CFA_1_1_CallGraphKey extends CallGraphKey {
             AllocationSiteBasedTamiFlexPointsToAnalysisScheduler,
             AllocationSiteBasedArraycopyPointsToAnalysisScheduler,
             AllocationSiteBasedUnsafePointsToAnalysisScheduler,
-            ReflectionAllocationsAnalysisScheduler
+            ReflectionAllocationsAnalysisScheduler,
+            AllocationSiteBasedNewInstanceAnalysisScheduler
         )
     }
     override def getTypeProvider(project: SomeProject) =

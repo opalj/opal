@@ -13,6 +13,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypesPointsToTypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedNewInstanceAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisScheduler
 
@@ -39,7 +40,8 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
             TypeBasedConfiguredMethodsPointsToAnalysisScheduler,
             TypeBasedTamiFlexPointsToAnalysisScheduler,
             TypeBasedArraycopyPointsToAnalysisScheduler,
-            TypeBasedUnsafePointsToAnalysisScheduler
+            TypeBasedUnsafePointsToAnalysisScheduler,
+            TypeBasedNewInstanceAnalysisScheduler
         )
     }
 
