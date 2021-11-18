@@ -11,10 +11,13 @@ import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.EPK
 import org.opalj.fpcf.Property
-import org.opalj.fpcf.SomeEOptionP
+//import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPS
 
-trait TypeProviderState extends AnalysisState {
+trait TypeProviderState extends BaseAnalysisState {
+
+    import org.opalj.fpcf.SomeEOptionP
+
     private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
         mutable.Map.empty
     }
@@ -98,7 +101,7 @@ trait TypeProviderState extends AnalysisState {
         _dependerToDependees.contains(depender) && _dependerToDependees(depender).contains(dependee)
     }
 
-    final def hasDependees: Boolean = {
+    private final def hasDependees: Boolean = { //TODO final
         assert(
             (_dependees.isEmpty == _dependeeToDependers.isEmpty) &&
                 (_dependeeToDependers.isEmpty == _dependerToDependees.isEmpty)

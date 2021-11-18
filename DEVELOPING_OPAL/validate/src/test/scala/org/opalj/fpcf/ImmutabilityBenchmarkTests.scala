@@ -8,14 +8,12 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.tac.cg.RTACallGraphKey
-import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazyInterProceduralEscapeAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL1ClassImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL1TypeImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.EagerL0FieldImmutabilityAnalysis
-import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.EagerL3FieldAssignabilityAnalysis
+import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
+import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL0FieldImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL1ClassImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.LazyL1TypeImmutabilityAnalysis
+import org.opalj.tac.fpcf.analyses.immutability.fieldassignability.LazyL3FieldAssignabilityAnalysis
 
 /**
  * Tests if the properties specified in the test project (the classes in the (sub-)package of
@@ -29,7 +27,7 @@ class ImmutabilityBenchmarkTests extends PropertiesTest {
     override def withRT = true
 
     override def fixtureProjectPackage: List[String] = {
-        List("org/opalj/fpcf/fixtures/cifi_benchmark")
+        List("org/opalj/fpcf/fixtures/cifi_benchmark/sandbox")
     }
 
     override def init(p: Project[URL]): Unit = {
@@ -45,16 +43,14 @@ class ImmutabilityBenchmarkTests extends PropertiesTest {
 
         val as = executeAnalyses(
             Set(
-                LazyL2PurityAnalysis,
-                EagerL3FieldAssignabilityAnalysis,
-                EagerL0FieldImmutabilityAnalysis,
-                EagerL1TypeImmutabilityAnalysis,
-                EagerL1ClassImmutabilityAnalysis,
+                LazyUnsoundPrematurelyReadFieldsAnalysis,
+                LazyL3FieldAssignabilityAnalysis,
+                LazyL0FieldImmutabilityAnalysis,
+                LazyL1ClassImmutabilityAnalysis,
+                LazyL1TypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazyInterProceduralEscapeAnalysis,
-                LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis
+                LazySimpleEscapeAnalysis
             )
         )
 

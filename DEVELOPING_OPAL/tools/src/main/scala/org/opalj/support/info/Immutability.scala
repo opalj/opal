@@ -22,11 +22,8 @@ import org.opalj.util.Seconds
 import org.opalj.br.fpcf.analyses.LazyL0CompileTimeConstancyAnalysis
 import org.opalj.br.fpcf.analyses.LazyStaticDataUsageAnalysis
 import org.opalj.br.fpcf.analyses.LazyUnsoundPrematurelyReadFieldsAnalysis
-import org.opalj.tac.fpcf.analyses.LazyFieldLocalityAnalysis
-import org.opalj.tac.fpcf.analyses.escape.LazyReturnValueFreshnessAnalysis
 import org.opalj.tac.fpcf.analyses.escape.LazySimpleEscapeAnalysis
 import org.opalj.br.ObjectType
-import org.opalj.tac.fpcf.analyses.purity.LazyL2PurityAnalysis
 import org.opalj.br.Field
 import org.opalj.br.fpcf.properties.TransitivelyImmutableField
 import org.opalj.br.fpcf.properties.DependentlyImmutableField
@@ -101,6 +98,7 @@ object Immutability {
         configurationName:                 Option[String],
         times:                             Int
     ): BasicReport = {
+        import org.opalj.tac.cg.RTACallGraphKey
 
         val classFiles = projectDir match {
             case Some(dir) ⇒ JavaClassFileReader().ClassFiles(cp.toPath.resolve(dir).toFile)
@@ -155,17 +153,16 @@ object Immutability {
         val dependencies: List[FPCFAnalysisScheduler] =
             List(
                 LazyUnsoundPrematurelyReadFieldsAnalysis,
-                LazyL2PurityAnalysis,
                 LazyL3FieldAssignabilityAnalysis,
                 LazyL0FieldImmutabilityAnalysis,
                 LazyL1ClassImmutabilityAnalysis,
                 LazyL1TypeImmutabilityAnalysis,
                 LazyStaticDataUsageAnalysis,
                 LazyL0CompileTimeConstancyAnalysis,
-                LazySimpleEscapeAnalysis,
-                LazyReturnValueFreshnessAnalysis,
-                LazyFieldLocalityAnalysis
+                LazySimpleEscapeAnalysis //LazyInterproceduraEscapeAnalysis PointsToCallgraph //CHA
             )
+
+        project.get(RTACallGraphKey)
 
         L2PurityAnalysis.setRater(Some(SystemOutLoggingAllExceptionRater))
 
