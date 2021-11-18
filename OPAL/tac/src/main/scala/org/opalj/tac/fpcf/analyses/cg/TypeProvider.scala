@@ -390,7 +390,7 @@ class CHATypeProvider(val project: SomeProject) extends TypeProvider with Simple
                     }
                 }.foreach(handleType)
         } else
-            handleType(ObjectType.Object)
+            handleType(field.fieldType.asReferenceType)
     }
 
     @inline protected[this] override def continuation(
