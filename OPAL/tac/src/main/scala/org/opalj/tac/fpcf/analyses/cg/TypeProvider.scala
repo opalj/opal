@@ -804,27 +804,31 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
         propertyStore: PropertyStore,
         state:         TypeProviderState
     ): AllocationSitePointsToSet = {
-        fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) ⇒
-            val eOptP = propertyStore(access._1, TACAI.key)
-            eOptP match {
-                case UBPS(tac: TheTACAI, isFinal) ⇒
-                    if (!isFinal)
-                        state.addDependency((depender, access._1, access._2), eOptP)
+        if(field.isStatic){
+            currentPointsTo(depender, field)
+        } else {
+            fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) ⇒
+                val eOptP = propertyStore(access._1, TACAI.key)
+                eOptP match {
+                    case UBPS(tac: TheTACAI, isFinal) ⇒
+                        if (!isFinal)
+                            state.addDependency((depender, access._1, access._2), eOptP)
 
-                    val theTAC = tac.theTAC
-                    access._2.foldLeft(result) { (result, pc) ⇒
-                        theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy.foldLeft(result) { (result, defSite) ⇒
-                            val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
-                            combine(
-                                result,
-                                typesProperty(field, DefinitionSite(access._1, defPC), depender)
-                            )
+                        val theTAC = tac.theTAC
+                        access._2.foldLeft(result) { (result, pc) ⇒
+                            theTAC.stmts(theTAC.properStmtIndexForPC(pc)).asPutField.objRef.asVar.definedBy.foldLeft(result) { (result, defSite) ⇒
+                                val defPC = if (defSite < 0) defSite else theTAC.stmts(defSite).pc
+                                combine(
+                                    result,
+                                    typesProperty(field, DefinitionSite(access._1, defPC), depender)
+                                )
+                            }
                         }
-                    }
 
-                case _ ⇒
-                    state.addDependency((depender, access._1, access._2), eOptP)
-                    result
+                    case _ ⇒
+                        state.addDependency((depender, access._1, access._2), eOptP)
+                        result
+                }
             }
         }
     }
