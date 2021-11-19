@@ -50,7 +50,6 @@ import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.LazilyInitialized
 import org.opalj.br.fpcf.properties.NonAssignable
 import org.opalj.br.fpcf.properties.UnsafelyLazilyInitialized
-import org.opalj.tac.fpcf.analyses.cg.RTATypeProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.br.fpcf.properties.DependentlyImmutableField
 import org.opalj.br.ClassFile
@@ -61,7 +60,6 @@ import org.opalj.tac.fpcf.analyses.cg.TypeProviderState
 import org.opalj.br.fpcf.properties.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.br.ReferenceType
-//import org.opalj.tac.fpcf.analyses.cg.RTATypeProvider
 
 /**
  * Analysis that determines the immutability of org.opalj.br.Field
@@ -115,9 +113,10 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     private[analyses] def determineFieldImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
+        import org.opalj.tac.cg.CallGraphKey
 
         implicit val state: State = State(field)
-        implicit val typeProvider: TypeProvider = new RTATypeProvider(project)
+        implicit val typeProvider: TypeProvider = CallGraphKey.typeProvider
 
         /**
          * Returns the formal type parameters from the class' and outer classes' signature
@@ -168,9 +167,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          * Note: Does only work in a closed world assumption!!
          */
         def queryTypeProvider(implicit state: State, typeProvider: TypeProvider): Unit = {
-            // println(s"1 ${state.field.name}")
             val actualTypes = typeProvider.typesProperty(state.field, typeProvider)
-            //println(s"2 ${state.field.name}")
+
             typeProvider.foreachType(state.field, actualTypes) { actualType ⇒
                 handleKnownClassType(actualType)
             }
@@ -227,18 +225,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                     noShallowOrMutableTypesInGenericTypeFound = false
                     onlyDeepImmutableTypesInGenericTypeFound = false
             }
-            /* println(
-                s"""
-                 | field ${field.name}
-                 | gen prams: $genericParameters
-                 | gen type params: ${state.genericTypeParameters}
-                 |""".stripMargin
-            ) */
-
-            //    if (genericParameters.size > 0 || state.genericTypeParameters.size > 0) {
-            // println("x")
-            //        state.classImmutability = DependentImmutableClass(Set.empty)
-            //    }
 
             genericParameters.foreach(objectType ⇒ {
 
@@ -273,12 +259,12 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
          * In case of the concrete assigned class-type is known this method handles the immutability of it.
          */
         def handleKnownClassType(referenceType: ReferenceType)(implicit state: State): Unit = {
-            // println(s"handle classtype: $referenceType")
-            if (referenceType.isArrayType) // || referenceType == ObjectType.Object)
+
+            if (referenceType.isArrayType)
                 state.classImmutability = MutableClass
             else {
                 val result = propertyStore(referenceType, ClassImmutability.key)
-                //   println(s"result $result")
+
                 result match {
                     case LBP(TransitivelyImmutableClass) ⇒ //nothing to do ; transitively immutable is default
 
@@ -338,19 +324,6 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
                         c
                     )
             } else {
-
-                /*     println(
-                    s"""
-                     | --------------------------------------------------------------------------------
-                     | field: $field
-                     | ref imm: ${state.referenceIsImmutable}
-                     | clas imm: ${state.classImmutability}
-                     | type imm: ${state.typeImmutability}
-                     | dep imm: ${state.dependentImmutability}
-                     |
-                     |""".stripMargin
-                ) */
-
                 state.referenceIsImmutable match {
 
                     case Some(false) ⇒
@@ -451,11 +424,8 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             state.dependentImmutability = NotDependentlyImmutable
 
         if (field.fieldType.isReferenceType && (!state.classImmutability.isInstanceOf[DependentImmutableClass] || state.dependentImmutability == NotDependentlyImmutable)) { //TODO
-            //  println("query type provider")
-
             queryTypeProvider
-        }
-        //else state.classImmutability = TransitivelyImmutable is default
+        } //else state.classImmutability = TransitivelyImmutable is default
 
         createResult()
     }
