@@ -9,7 +9,12 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.junit.runner.RunWith
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
-import org.opalj.bi.{ACC_FINAL, ACC_PUBLIC, ACC_SUPER, ACC_SYNTHETIC, isCurrentJREAtLeastJava16, isCurrentJREAtLeastJava17}
+import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.bi.isCurrentJREAtLeastJava16
+import org.opalj.bi.isCurrentJREAtLeastJava17
 import org.opalj.br.{IntegerType, MethodDescriptor}
 import org.opalj.br.reader.Java17Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.bc.Assembler
@@ -21,7 +26,7 @@ import org.opalj.collection.immutable.RefArray
  * `Serialized Class File` -> `BRClassFile`.
  *
  * @author Malte Limmeroth
- *         Julius Naeumann
+ * @author Julius Naeumann
  */
 @RunWith(classOf[JUnitRunner])
 class ClassFileBuilderTest extends AnyFlatSpec {
@@ -95,6 +100,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
     val sealedClassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassAsm)).head
     val sealedClassSubclassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassSubclassAsm)).head
+
     val loader = new InMemoryClassLoader(
         Map(
             "MarkerInterface1" → Assembler(markerInterface1),
@@ -103,8 +109,7 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             "ConcreteClass" → concreteAsm,
             "RecordClass" → recordAsm,
             "SealedClass" → sealedClassAsm,
-            "SealedClassSubclass" → sealedClassSubclassAsm,
-
+            "SealedClassSubclass" → sealedClassSubclassAsm
         ),
         this.getClass.getClassLoader
     )

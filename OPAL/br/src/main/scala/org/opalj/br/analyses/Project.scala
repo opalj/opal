@@ -46,7 +46,9 @@ import org.opalj.br.instructions.INVOKESPECIAL
 import org.opalj.br.instructions.INVOKESTATIC
 import org.opalj.br.instructions.NEW
 import org.opalj.br.instructions.NonVirtualMethodInvocationInstruction
-import org.opalj.br.reader.{BytecodeInstructionsCache, Java17FrameworkWithDynamicRewritingAndCaching, Java17LibraryFramework}
+import org.opalj.br.reader.BytecodeInstructionsCache
+import org.opalj.br.reader.Java17FrameworkWithDynamicRewritingAndCaching
+import org.opalj.br.reader.Java17LibraryFramework
 
 /**
  * Primary abstraction of a Java project; i.e., a set of classes that constitute a

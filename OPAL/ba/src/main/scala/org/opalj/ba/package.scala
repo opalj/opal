@@ -1132,9 +1132,10 @@ package object ba { ba ⇒
             case br.PermittedSubclasses.KindId ⇒
                 val br.PermittedSubclasses(subclasses) = attribute
                 val attributeNameIndex = CPEUtf8(bi.PermittedSubclassesAttribute.Name)
+                val CPsubclasses = subclasses.map(CPEClass(_, false))
                 Some(da.PermittedSubclasses_attribute(
                     attributeNameIndex,
-                    subclasses.map(CPEClass(_, false))
+                    CPsubclasses
                 ))
             //
             // OPAL'S OWN ATTRIBUTES
