@@ -10,16 +10,16 @@ import scala.xml.{Node, NodeBuffer}
  */
 case class PermittedSubclasses_attribute(
         attribute_name_index: Constant_Pool_Index,
-        permittedSubclasses:  ClassesArray
+        permitted_subclasses: ClassesArray
 ) extends Attribute {
 
-    override def attribute_length: Int = 2 + permittedSubclasses.size * 2
+    override def attribute_length: Int = 2 + permitted_subclasses.size * 2
 
     override def toXHTML(implicit cp: Constant_Pool): Node = {
         <details class="attribute">
             <summary>PermittedSubclasses</summary>
             {
-                permittedSubclasses.map[String](p ⇒ cp(p).toString).sorted.map[NodeBuffer] { p ⇒
+                permitted_subclasses.map[String](p ⇒ cp(p).toString).sorted.map[NodeBuffer] { p ⇒
                     <span>{ p }</span><br/>
                 }
             }
