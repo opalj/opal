@@ -25,13 +25,13 @@ import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.ArrayType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.ReferenceType
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.tac.cg.CallGraphKey
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.common.DefinitionSitesKey
 import org.opalj.tac.fpcf.properties.TheTACAI
 
@@ -53,12 +53,12 @@ import org.opalj.tac.fpcf.properties.TheTACAI
 class DoPrivilegedMethodAnalysis private[cg] (
         final val doPrivilegedMethod: DeclaredMethod,
         final val declaredRunMethod:  DeclaredMethod,
-        override val project:         SomeProject,
-        override val typeProvider:    TypeProvider
+        override val project:         SomeProject
 ) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override def processNewCaller(
-        callContext:     ContextType,
+        calleeContext:   ContextType,
+        callerContext:   ContextType,
         callPC:          Int,
         tac:             TACode[TACMethodParameter, V],
         receiverOption:  Option[Expr[V]],
@@ -72,7 +72,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
             val param = params.head.get.asVar
 
             implicit val state: CGState[ContextType] = new CGState[ContextType](
-                callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac))
+                callerContext, FinalEP(callerContext.method.definedMethod, TheTACAI(tac))
             )
 
             val thisActual = persistentUVar(param)(state.tac.stmts)
@@ -80,14 +80,14 @@ class DoPrivilegedMethodAnalysis private[cg] (
             typeProvider.foreachType(
                 param,
                 typeProvider.typesProperty(
-                    param, callContext, callPC.asInstanceOf[Entity], tac.stmts
+                    param, callerContext, callPC.asInstanceOf[Entity], tac.stmts
                 )
-            ) { tpe ⇒ handleType(tpe, callContext, callPC, thisActual, indirectCalls) }
+            ) { tpe ⇒ handleType(tpe, callerContext, callPC, thisActual, indirectCalls) }
 
             returnResult(param, thisActual, indirectCalls)
         } else {
             indirectCalls.addIncompleteCallSite(callPC)
-            Results(indirectCalls.partialResults(callContext.method))
+            Results(indirectCalls.partialResults(callerContext))
         }
     }
 
@@ -96,8 +96,8 @@ class DoPrivilegedMethodAnalysis private[cg] (
         thisActual: Some[(ValueInformation, IntTrieSet)],
         calls:      IndirectCalls
     )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+        val partialResults = calls.partialResults(state.callContext)
 
-        val partialResults = calls.partialResults(state.callContext.method)
         if (state.hasOpenDependencies)
             Results(
                 InterimPartialResult(state.dependees, c(state, thisVar, thisActual)),
@@ -122,7 +122,13 @@ class DoPrivilegedMethodAnalysis private[cg] (
         )
         if (callR.hasValue) {
             val tgtMethod = declaredMethods(callR.value)
-            calleesAndCallers.addCall(callContext, callPC, tgtMethod, Seq.empty, thisActual)
+            calleesAndCallers.addCall(
+                callContext,
+                callPC,
+                typeProvider.expandContext(callContext, tgtMethod, callPC),
+                Seq.empty,
+                thisActual
+            )
         } else {
             calleesAndCallers.addIncompleteCallSite(callPC)
         }
@@ -155,8 +161,7 @@ class DoPrivilegedMethodAnalysis private[cg] (
 }
 
 class DoPrivilegedCGAnalysis private[cg] (
-        final val project:      SomeProject,
-        final val typeProvider: TypeProvider
+        final val project: SomeProject
 ) extends FPCFAnalysis {
 
     def analyze(p: SomeProject): PropertyComputationResult = {
@@ -186,7 +191,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             MethodDescriptor(privilegedActionType, ObjectType.Object)
         )
         if (doPrivileged1.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged1, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged1, runMethod, p)
 
         val doPrivileged2 = declaredMethods(
             accessControllerType,
@@ -199,7 +204,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             )
         )
         if (doPrivileged2.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged2, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged2, runMethod, p)
 
         val doPrivileged3 = declaredMethods(
             accessControllerType,
@@ -212,7 +217,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             )
         )
         if (doPrivileged3.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged3, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged3, runMethod, p)
 
         val doPrivileged4 = declaredMethods(
             accessControllerType,
@@ -222,7 +227,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             MethodDescriptor(privilegedExceptionActionType, ObjectType.Object)
         )
         if (doPrivileged4.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged4, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged4, runMethod, p)
 
         val doPrivileged5 = declaredMethods(
             accessControllerType,
@@ -235,7 +240,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             )
         )
         if (doPrivileged5.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged5, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged5, runMethod, p)
 
         val doPrivileged6 = declaredMethods(
             accessControllerType,
@@ -248,7 +253,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             )
         )
         if (doPrivileged6.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged6, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivileged6, runMethod, p)
 
         val doPrivilegedWithCombiner1 = declaredMethods(
             accessControllerType,
@@ -258,7 +263,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             MethodDescriptor(privilegedActionType, ObjectType.Object)
         )
         if (doPrivilegedWithCombiner1.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner1, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner1, runMethod, p)
 
         val doPrivilegedWithCombiner2 = declaredMethods(
             accessControllerType,
@@ -271,7 +276,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner2.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner2, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner2, runMethod, p)
 
         val doPrivilegedWithCombiner3 = declaredMethods(
             accessControllerType,
@@ -284,7 +289,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner3.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner3, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner3, runMethod, p)
 
         val doPrivilegedWithCombiner4 = declaredMethods(
             accessControllerType,
@@ -297,7 +302,7 @@ class DoPrivilegedCGAnalysis private[cg] (
             )
         )
         if (doPrivilegedWithCombiner4.hasSingleDefinedMethod)
-            analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner4, runMethod, p, typeProvider)
+            analyses ::= new DoPrivilegedMethodAnalysis(doPrivilegedWithCombiner4, runMethod, p)
 
         Results(analyses.iterator.map(_.registerAPIMethod())) //analyze()))
     }
@@ -306,9 +311,9 @@ class DoPrivilegedCGAnalysis private[cg] (
 object DoPrivilegedAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey)
+        Seq(DeclaredMethodsKey, VirtualFormalParametersKey, DefinitionSitesKey, TypeProviderKey)
 
-    override def uses: Set[PropertyBounds] = CallGraphKey.typeProvider.usedPropertyKinds
+    override def uses: Set[PropertyBounds] = Set.empty
 
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees)
 
@@ -317,7 +322,7 @@ object DoPrivilegedAnalysisScheduler extends BasicFPCFEagerAnalysisScheduler {
     override def start(
         p: SomeProject, ps: PropertyStore, unused: Null
     ): DoPrivilegedCGAnalysis = {
-        val analysis = new DoPrivilegedCGAnalysis(p, CallGraphKey.typeProvider)
+        val analysis = new DoPrivilegedCGAnalysis(p)
         ps.scheduleEagerComputationForEntity(p)(analysis.analyze)
         analysis
     }

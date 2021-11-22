@@ -10,11 +10,10 @@ import scala.collection.mutable
 import org.opalj.fpcf.EOptionP
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
- * TODO: That state object is currently copy&paste and should be refactored.
- *
  * @author Florian Kuebler
  */
 class CGState[ContextType <: Context](

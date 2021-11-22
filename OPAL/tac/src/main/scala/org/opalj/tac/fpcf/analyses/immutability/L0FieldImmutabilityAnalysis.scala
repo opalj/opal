@@ -60,6 +60,8 @@ import org.opalj.tac.fpcf.analyses.cg.TypeProviderState
 import org.opalj.br.fpcf.properties.DependentlyImmutableType
 import org.opalj.br.fpcf.properties.NonTransitivelyImmutableType
 import org.opalj.br.ReferenceType
+import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
 
 /**
  * Analysis that determines the immutability of org.opalj.br.Field
@@ -94,12 +96,12 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
             var dependentImmutability:      DependentImmutabilityTypes      = OnlyTransitivelyImmutable,
             var fieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = Set.empty,
             var genericTypeParameters:      Set[String]                     = Set.empty
-    ) extends TypeProviderState {
+    ) extends BaseAnalysisState with TypeProviderState {
         def hasFieldImmutabilityDependees: Boolean = fieldImmutabilityDependees.nonEmpty
         def getFieldImmutabilityDependees: Set[EOptionP[Entity, Property]] = fieldImmutabilityDependees
     }
 
-    var considerGenericity =
+    var considerGenericity: Boolean =
         project.config.getBoolean(
             "org.opalj.fpcf.analyses.L0FieldImmutabilityAnalysis.considerGenericity"
         )
@@ -113,10 +115,9 @@ class L0FieldImmutabilityAnalysis private[analyses] (val project: SomeProject)
     private[analyses] def determineFieldImmutability(
         field: Field
     ): ProperPropertyComputationResult = {
-        import org.opalj.tac.cg.CallGraphKey
 
         implicit val state: State = State(field)
-        implicit val typeProvider: TypeProvider = CallGraphKey.typeProvider
+        implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
         /**
          * Returns the formal type parameters from the class' and outer classes' signature
@@ -439,7 +440,7 @@ trait L0FieldImmutabilityAnalysisScheduler extends FPCFAnalysisScheduler {
         PropertyBounds.lub(FieldImmutability)
     )
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
 
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(FieldImmutability)
 }

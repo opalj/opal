@@ -23,9 +23,9 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
-import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.tac.fpcf.properties.cg.NoCallers
 import org.opalj.br.ReferenceType
 
 /**

@@ -63,7 +63,7 @@ class PurityTests extends PropertiesTest {
                 )
             )
         as.propertyStore.shutdown()
-        validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
+        validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L1PurityAnalysis is executed") {
@@ -79,7 +79,7 @@ class PurityTests extends PropertiesTest {
         )
 
         as.propertyStore.shutdown()
-        validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
+        validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe("the org.opalj.fpcf.analyses.L2PurityAnalysis is executed") {
@@ -99,7 +99,7 @@ class PurityTests extends PropertiesTest {
         ))
 
         as.propertyStore.shutdown()
-        validateProperties(as, declaredMethodsWithAnnotations(as.project), Set("Purity"))
+        validateProperties(as, contextsWithAnnotations(as.project), Set("Purity"))
     }
 
     describe(

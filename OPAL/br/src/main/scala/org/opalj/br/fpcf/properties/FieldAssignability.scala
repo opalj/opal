@@ -49,7 +49,10 @@ object FieldAssignability extends FieldAssignabilityPropertyMetaInformation {
         )
     }
 }
-case object NonAssignable extends FieldAssignability {
+
+sealed trait NonAssignableField extends FieldAssignability
+
+case object NonAssignable extends NonAssignableField {
 
     override def isImmutable = true
 
@@ -58,7 +61,7 @@ case object NonAssignable extends FieldAssignability {
     def meet(that: FieldAssignability): FieldAssignability = that
 }
 
-case object EffectivelyNonAssignable extends FieldAssignability {
+case object EffectivelyNonAssignable extends NonAssignableField {
 
     override def isImmutable = true
 
@@ -76,7 +79,7 @@ case object EffectivelyNonAssignable extends FieldAssignability {
         }
 }
 
-case object LazilyInitialized extends FieldAssignability {
+case object LazilyInitialized extends NonAssignableField {
 
     override def checkIsEqualOrBetterThan(e: Entity, other: Self): Unit = other match {
         case EffectivelyNonAssignable | NonAssignable ⇒

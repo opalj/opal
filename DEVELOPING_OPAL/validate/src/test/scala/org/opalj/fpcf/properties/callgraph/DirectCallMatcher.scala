@@ -16,11 +16,11 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.StringValue
 import org.opalj.br.VoidType
-import org.opalj.br.analyses.DeclaredMethods
-import org.opalj.br.analyses.DeclaredMethodsKey
 import org.opalj.br.analyses.Project
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.properties.cg.Callees
 
 class DirectCallMatcher extends AbstractPropertyMatcher {
 
@@ -83,7 +83,7 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
             return None;
 
         implicit val ps: PropertyStore = p.get(PropertyStoreKey)
-        implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
+        implicit val typeProvider: TypeProvider = p.get(TypeProviderKey)
 
         val calleesP = {
             properties.find(_.isInstanceOf[Callees]) match {
@@ -99,10 +99,12 @@ class DirectCallMatcher extends AbstractPropertyMatcher {
 
         // Retrieve all calls resolved by the call graph algorithm.
         val callees = for {
-            pc ← calleesP.callSitePCs
-            callee ← calleesP.callees(pc)
+            callerContext ← calleesP.callerContexts
+            pc ← calleesP.callSitePCs(callerContext)
+            calleeContext ← calleesP.callees(callerContext, pc)
             lineNr = callsiteCode.lineNumber(pc)
         } yield {
+            val callee = calleeContext.method
             (
                 lineNr.getOrElse(-1),
                 callee.declaringClassType.toJVMTypeName,

@@ -1,19 +1,17 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
-package org.opalj
-package tac
-package cg
+package org.opalj.tac.cg
 
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.analyses.VirtualFormalParametersKey
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
-import org.opalj.br.fpcf.properties.SimpleContextsKey
+import org.opalj.br.fpcf.properties.CallStringContextsKey
 import org.opalj.tac.common.DefinitionSitesKey
-import org.opalj.tac.fpcf.analyses.cg.TypesPointsToTypeProvider
+import org.opalj.tac.fpcf.analyses.cg.CFA_k_0_TypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedArraycopyPointsToAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedConfiguredMethodsPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedNewInstanceAnalysisScheduler
+import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedTamiFlexPointsToAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisScheduler
 
@@ -23,12 +21,12 @@ import org.opalj.tac.fpcf.analyses.pointsto.TypeBasedUnsafePointsToAnalysisSched
  *
  * @see [[CallGraphKey]] for further details.
  *
- * @author Florian Kuebler
+ * @author DominikHelm
  */
-object TypeBasedPointsToCallGraphKey extends CallGraphKey {
+object CFA_1_0_CallGraphKey extends CallGraphKey {
 
     override def requirements(project: SomeProject): ProjectInformationKeys = {
-        Seq(DefinitionSitesKey, VirtualFormalParametersKey, SimpleContextsKey) ++:
+        Seq(DefinitionSitesKey, VirtualFormalParametersKey, CallStringContextsKey) ++:
             super.requirements(project)
     }
 
@@ -45,6 +43,6 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
         )
     }
 
-    override def getTypeProvider(project: SomeProject) = new TypesPointsToTypeProvider(project)
+    override def getTypeProvider(project: SomeProject) = new CFA_k_0_TypeProvider(project, 1)
 
 }

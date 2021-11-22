@@ -5,6 +5,8 @@ package fpcf
 package analyses
 package cg
 
+import org.opalj.br.fpcf.properties.Context
+
 trait ContextualAnalysis {
     type ContextType <: Context
 }

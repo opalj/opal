@@ -10,7 +10,6 @@ import scala.collection.JavaConverters.asScalaIteratorConverter
 
 import org.opalj.br.Code
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -19,9 +18,9 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.instructions.CHECKCAST
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.collection.mutable.RefArrayBuffer
@@ -37,6 +36,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.fpcf.SomeEPS
 import org.opalj.fpcf.SomePartialResult
+import org.opalj.br.DefinedMethod
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -140,7 +141,7 @@ final class TypePropagationAnalysis private[analyses] (
                 assert(e == state.callContext.method)
                 _trace.traceCalleesUpdate(e)
             }
-            handleUpdateOfCallees(eps.asInstanceOf[EPS[DefinedMethod, Callees]])(state)
+            handleUpdateOfCallees(eps.asInstanceOf[EPS[DeclaredMethod, Callees]])(state)
 
         case EUBP(e: TypeSetEntity, t: InstantiatedTypes) if e == state.typeSetEntity ⇒
             if (debug) _trace.traceTypeUpdate(state.callContext.method, e, t.types)
@@ -155,7 +156,7 @@ final class TypePropagationAnalysis private[analyses] (
     }
 
     private def handleUpdateOfCallees(
-        eps: EPS[DefinedMethod, Callees]
+        eps: EPS[DeclaredMethod, Callees]
     )(
         implicit
         state: State
@@ -241,8 +242,9 @@ final class TypePropagationAnalysis private[analyses] (
     ): Unit = {
         val bytecode = state.callContext.method.definedMethod.body.get
         for {
-            pc ← callees.callSitePCs
-            callee ← callees.callees(pc)
+            pc ← callees.callSitePCs(state.callContext)
+            calleeContext ← callees.callees(state.callContext, pc)
+            callee = calleeContext.method
             if !state.isSeenCallee(pc, callee) && !isIgnoredCallee(callee)
         } {
             // Some sanity checks ...
@@ -485,7 +487,7 @@ final class TypePropagationAnalysisScheduler(
         val selectSetEntity: TypeSetEntitySelector
 ) extends BasicFPCFTriggeredAnalysisScheduler {
 
-    override def requiredProjectInformation: ProjectInformationKeys = Seq.empty
+    override def requiredProjectInformation: ProjectInformationKeys = Seq(TypeProviderKey)
 
     override type InitializationData = Null
 

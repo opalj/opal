@@ -10,7 +10,6 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ValueReader
 
-import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.Field
 import org.opalj.br.FieldType
@@ -18,6 +17,7 @@ import org.opalj.br.MethodDescriptor
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.analyses.VirtualFormalParameters
 
 case class ConfiguredMethods(nativeMethods: Array[ConfiguredMethodData])

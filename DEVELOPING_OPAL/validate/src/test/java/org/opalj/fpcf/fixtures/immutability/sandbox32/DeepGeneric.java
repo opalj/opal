@@ -10,7 +10,7 @@ import org.opalj.fpcf.properties.immutability.fields.DependentlyImmutableField;
 import org.opalj.fpcf.properties.immutability.fields.MutableField;
 import org.opalj.fpcf.properties.immutability.fields.NonTransitivelyImmutableField;
 import org.opalj.fpcf.properties.immutability.field_assignability.EffectivelyNonAssignableField;
-import org.opalj.fpcf.properties.immutability.types.DependentImmutableType;
+import org.opalj.fpcf.properties.immutability.types.DependentlyImmutableType;
 import org.opalj.fpcf.properties.immutability.types.NonTransitivelyImmutableType;
 import org.opalj.tac.fpcf.analyses.L1FieldAssignabilityAnalysis;
 import org.opalj.tac.fpcf.analyses.L2FieldAssignabilityAnalysis;
@@ -36,7 +36,7 @@ final class DeepGeneric {
 
 @NonTransitivelyImmutableType(value = "class is not extensible", analyses = L0TypeImmutabilityAnalysis.class)
 @NonTransitivelyImmutableClass(value = "can not handle generics", analyses = L0ClassImmutabilityAnalysis.class)
-@DependentImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
+@DependentlyImmutableType(value = "class is not extensible", analyses = L1TypeImmutabilityAnalysis.class)
 @DependentlyImmutableClass(value = "has only dependent immutable fields", analyses = L1ClassImmutabilityAnalysis.class)
 final class GenericBaseClass<T1,T2,T3> {
 

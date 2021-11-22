@@ -11,6 +11,7 @@ import org.opalj.br.instructions.MethodInvocationInstruction
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.fpcf.properties.Context
 
 /**
  * Provides the functionality to serialize a [[CallGraph]] into a .json file according to the format
@@ -35,7 +36,7 @@ object CallGraphSerializer {
         var firstRM = true
         for {
             rm ← cg.reachableMethods()
-            callees = cg.calleesOf(rm)
+            callees = cg.calleesOf(rm.method)
         } {
             if (firstRM) {
                 firstRM = false
@@ -43,10 +44,10 @@ object CallGraphSerializer {
                 writer.write(",")
             }
             writer.write("{\"method\":")
-            writeMethodObject(rm, writer)
+            writeMethodObject(rm.method, writer)
             writer.write(",\"callSites\":[")
 
-            writeCallSites(rm, callees, writer)
+            writeCallSites(rm.method, callees, writer)
 
             writer.write("]}")
         }
@@ -57,7 +58,7 @@ object CallGraphSerializer {
 
     private def writeCallSites(
         method:  DeclaredMethod,
-        callees: Iterator[(Int, Iterator[DeclaredMethod])],
+        callees: Iterator[(Int, Iterator[Context])],
         out:     Writer
     )(implicit declaredMethods: DeclaredMethods): Unit = {
         val bodyO = if (method.hasSingleDefinedMethod) method.definedMethod.body else None
@@ -68,7 +69,7 @@ object CallGraphSerializer {
                     for (tgt ← targets) {
                         if (first) first = false
                         else out.write(",")
-                        writeCallSite(tgt, -1, pc, Iterator(tgt), out)
+                        writeCallSite(tgt.method, -1, pc, Iterator(tgt), out)
                     }
 
                 case Some(body) ⇒
@@ -92,14 +93,14 @@ object CallGraphSerializer {
                         )
 
                         val (directCallees, indirectCallees) = targets.partition { callee ⇒
-                            callee.name == name && // TODO check descriptor correctly for refinement
-                                callee.descriptor.parametersCount == desc.parametersCount
+                            callee.method.name == name && // TODO check descriptor correctly for refinement
+                                callee.method.descriptor.parametersCount == desc.parametersCount
                         }
 
                         for (tgt ← indirectCallees) {
                             if (first) first = false
                             else out.write(",")
-                            writeCallSite(tgt, line, pc, Iterator(tgt), out)
+                            writeCallSite(tgt.method, line, pc, Iterator(tgt), out)
                         }
                         if (directCallees.nonEmpty) {
                             if (first) first = false
@@ -111,7 +112,7 @@ object CallGraphSerializer {
                         for (tgt ← targets) {
                             if (first) first = false
                             else out.write(",")
-                            writeCallSite(tgt, line, pc, Iterator(tgt), out)
+                            writeCallSite(tgt.method, line, pc, Iterator(tgt), out)
                         }
                     }
             }
@@ -122,7 +123,7 @@ object CallGraphSerializer {
         declaredTarget: DeclaredMethod,
         line:           Int,
         pc:             Int,
-        targets:        Iterator[DeclaredMethod],
+        targets:        Iterator[Context],
         out:            Writer
     ): Unit = {
         out.write("{\"declaredTarget\":")
@@ -136,7 +137,7 @@ object CallGraphSerializer {
         for (tgt ← targets) {
             if (first) first = false
             else out.write(",")
-            writeMethodObject(tgt, out)
+            writeMethodObject(tgt.method, out)
         }
         out.write("]}")
     }

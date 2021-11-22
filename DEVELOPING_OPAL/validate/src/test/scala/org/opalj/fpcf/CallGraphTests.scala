@@ -14,9 +14,11 @@ import org.opalj.fpcf.properties.callgraph.TypePropagationVariant
 import org.opalj.br.analyses.Project
 import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
+import org.opalj.tac.cg.CTACallGraphKey
 import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
@@ -57,7 +59,24 @@ class CallGraphTests extends PropertiesTest {
     var cgKey: CallGraphKey = null
 
     override def init(p: Project[URL]): Unit = {
-        cgKey.setupTypeProvider(p)
+        p.updateProjectInformationKeyInitializationData(TypeProviderKey) {
+            case Some(_) ⇒ throw new IllegalArgumentException()
+            case None    ⇒ () ⇒ cgKey.getTypeProvider(p)
+        }
+    }
+
+    describe("the CHA call graph analysis is executed") {
+        cgKey = CHACallGraphKey
+
+        val as = executeAnalyses(
+            Set(CallGraphAnalysisScheduler)
+        )
+        as.propertyStore.shutdown()
+        validateProperties(
+            as,
+            declaredMethodsWithAnnotations(as.project),
+            Set("Callees")
+        )
     }
 
     describe("the RTA call graph analysis is executed") {
@@ -68,20 +87,6 @@ class CallGraphTests extends PropertiesTest {
                 InstantiatedTypesAnalysisScheduler,
                 CallGraphAnalysisScheduler
             )
-        )
-        as.propertyStore.shutdown()
-        validateProperties(
-            as,
-            declaredMethodsWithAnnotations(as.project),
-            Set("Callees")
-        )
-    }
-
-    describe("the CHA call graph analysis is executed") {
-        cgKey = CHACallGraphKey
-
-        val as = executeAnalyses(
-            Set(CallGraphAnalysisScheduler)
         )
         as.propertyStore.shutdown()
         validateProperties(
@@ -166,7 +171,7 @@ class CallGraphTests extends PropertiesTest {
     }
 
     describe("the CTA call graph analysis is executed") {
-        cgKey = FTACallGraphKey
+        cgKey = CTACallGraphKey
 
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(CTASetEntitySelector))
 
