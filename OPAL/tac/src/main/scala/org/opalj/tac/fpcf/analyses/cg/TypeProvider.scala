@@ -824,7 +824,7 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
         propertyStore: PropertyStore,
         state:         TypeProviderState
     ): AllocationSitePointsToSet = {
-        if(field.isStatic){
+        if (field.isStatic) {
             currentPointsTo(depender, field)
         } else {
             fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) ⇒
@@ -906,7 +906,10 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
                         pts.forNewestNElements(pts.numElements - seenElements) { oas ⇒
                             state.dependersOf(updatedEPS.toEPK).foreach { depender ⇒
                                 val objects = currentPointsTo(depender, (oas, field))
-                                objects.forNewestNElements(objects.numElements)(handleType)
+                                objects.forNewestNTypes(objects.numTypes) { tpe ⇒
+                                    if(isPossibleType(field, tpe))
+                                        handleNewType(tpe)
+                                }
                             }
                         }
                 }
@@ -925,7 +928,10 @@ class AllocationSitesPointsToTypeProvider(val project: SomeProject)
 
                                 objects.forNewestNElements(objects.numElements) { as ⇒
                                     val pts = currentPointsTo(depender, (as, field))
-                                    pts.forNewestNTypes(pts.numTypes)(handleNewType)
+                                    pts.forNewestNTypes(pts.numTypes) { tpe ⇒
+                                        if(isPossibleType(field, tpe))
+                                            handleNewType(tpe)
+                                    }
                                 }
                             }
                         }
@@ -1157,7 +1163,7 @@ class CFA_k_l_TypeProvider(val project: SomeProject, val k: Int, val l: Int)
         propertyStore: PropertyStore,
         state:         TypeProviderState
     ): AllocationSitePointsToSet = {
-        if(field.isStatic){
+        if (field.isStatic) {
             currentPointsTo(depender, field)
         } else {
             fieldAccesses.writeAccesses(field).foldLeft(emptyPointsToSet) { (result, access) ⇒

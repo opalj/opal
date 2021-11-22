@@ -17,6 +17,9 @@ import org.opalj.br.fpcf.BasicFPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.properties.AtMost
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.DeclaredMethod
+import org.opalj.tac.fpcf.properties.cg.Callers
 //import org.opalj.br.fpcf.properties.EscapeInCallee
 import org.opalj.br.fpcf.properties.EscapeProperty
 import org.opalj.br.fpcf.properties.EscapeViaReturn
@@ -125,9 +128,9 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
         for {
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
-            taCode ← getTACAI(method, pcs) //TODO field accesses via this
+            (taCode, callers) ← getTACAIAndCallers(method, pcs) //TODO field accesses via this
         } {
-            val result = methodUpdatesField(method, taCode, pcs)
+            val result = methodUpdatesField(method, taCode, callers, pcs)
             if (result)
                 return Result(field, Assignable);
         }
@@ -162,18 +165,29 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
         val isNotFinal = eps.pk match {
 
             case EscapeProperty.key ⇒
-                val newEP = eps.asInstanceOf[EOptionP[DefinitionSite, EscapeProperty]]
+                val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
                 state.escapeDependees = state.escapeDependees.iterator.filter(_.e ne newEP.e).toSet
                 handleEscapeProperty(newEP)
 
             case TACAI.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
                 val method = newEP.e
-                val pcs = state.tacDependees(method)._2
-                state.tacDependees -= method
-                if (eps.isRefinable)
-                    state.tacDependees += method -> ((newEP, pcs))
-                methodUpdatesField(method, newEP.ub.tac.get, pcs)
+                val pcs = state.tacPCs(method)
+                state.tacDependees += method → newEP
+                val callersProperty = state.callerDependees(declaredMethods(method))
+                if (callersProperty.hasUBP)
+                    methodUpdatesField(method, newEP.ub.tac.get, callersProperty.ub, pcs)
+                else false
+
+            case Callers.key ⇒
+                val newEP = eps.asInstanceOf[EOptionP[DeclaredMethod, Callers]]
+                val method = newEP.e.definedMethod
+                val pcs = state.tacPCs(method)
+                state.callerDependees += newEP.e → newEP
+                val tacProperty = state.tacDependees(method)
+                if (tacProperty.hasUBP && tacProperty.ub.tac.isDefined)
+                    methodUpdatesField(method, tacProperty.ub.tac.get, newEP.ub, pcs)
+                else false
 
         }
 
@@ -187,9 +201,10 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * effectively final and true otherwise.
      */
     def methodUpdatesField(
-        method: Method,
-        taCode: TACode[TACMethodParameter, V],
-        pcs:    PCs
+        method:  Method,
+        taCode:  TACode[TACMethodParameter, V],
+        callers: Callers,
+        pcs:     PCs
     )(implicit state: State): Boolean = {
         val field = state.field
         val stmts = taCode.stmts
@@ -234,7 +249,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                                             } else
                                                 true
                                         }
-                                } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method)) {
+                                } else if (referenceHasEscaped(stmt.asPutField.objRef.asVar, stmts, method, callers)) {
                                     // Here the clone pattern is determined among others
                                     //
                                     // note that here we assume real three address code (flat hierarchy)
@@ -303,20 +318,27 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * Checks whether the object reference of a PutField does escape (except for being returned).
      */
     def referenceHasEscaped(
-        ref:    V,
-        stmts:  Array[Stmt[V]],
-        method: Method
+        ref:     V,
+        stmts:   Array[Stmt[V]],
+        method:  Method,
+        callers: Callers
     )(implicit state: State): Boolean = {
+        val dm = declaredMethods(method)
         ref.definedBy.forall { defSite ⇒
-            if (defSite < 0) true
-            else { // Must be locally created
+            if (defSite < 0) true // Must be locally created
+            else {
                 val definition = stmts(defSite).asAssignment
                 // Must either be null or freshly allocated
                 if (definition.expr.isNullExpr) false
                 else if (!definition.expr.isNew) true
                 else {
-                    val escapeProperty = propertyStore(definitionSites(method, definition.pc), EscapeProperty.key)
-                    handleEscapeProperty(escapeProperty)
+                    var hasEscaped = false
+                    callers.forNewCalleeContexts(null, dm) { context ⇒
+                        val entity = (context, definitionSites(method, definition.pc))
+                        val escapeProperty = propertyStore(entity, EscapeProperty.key)
+                        hasEscaped ||= handleEscapeProperty(escapeProperty)
+                    }
+                    hasEscaped
                 }
             }
         }
@@ -328,13 +350,13 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
      * @note (Re-)Adds dependees as necessary.
      */
     def handleEscapeProperty(
-        ep: EOptionP[DefinitionSite, EscapeProperty]
+        ep: EOptionP[(Context, DefinitionSite), EscapeProperty]
     )(implicit state: State): Boolean = {
         import org.opalj.br.fpcf.properties.EscapeInCallee
         ep match {
             case FinalP(NoEscape | EscapeViaReturn | EscapeInCallee) ⇒ false //
             case FinalP(AtMost(_))                                   ⇒ true
-            case _: FinalEP[DefinitionSite, EscapeProperty] ⇒
+            case _: FinalEP[(Context, DefinitionSite), EscapeProperty] ⇒
                 true // Escape state is worse than via return
 
             case InterimUBP(NoEscape | EscapeViaReturn | EscapeInCallee) ⇒ //
@@ -342,7 +364,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
                 false
 
             case InterimUBP(AtMost(_)) ⇒ true
-            case _: InterimEP[DefinitionSite, EscapeProperty] ⇒
+            case _: InterimEP[(Context, DefinitionSite), EscapeProperty] ⇒
                 true // Escape state is worse than via return
 
             case _ ⇒

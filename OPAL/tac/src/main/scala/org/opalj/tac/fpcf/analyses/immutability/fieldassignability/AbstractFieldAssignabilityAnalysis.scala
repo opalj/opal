@@ -21,7 +21,6 @@ import org.opalj.br.fpcf.properties.EffectivelyNonAssignable
 import org.opalj.br.fpcf.properties.FieldAssignability
 import org.opalj.fpcf.EOptionP
 import org.opalj.fpcf.Entity
-import org.opalj.fpcf.FinalEP
 import org.opalj.fpcf.Property
 import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.common.DefinitionSitesKey
@@ -37,6 +36,11 @@ import org.opalj.br.LongType
 import org.opalj.br.ObjectType
 import org.opalj.br.ReferenceType
 import org.opalj.br.ShortType
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.DeclaredMethod
+import org.opalj.tac.cg.TypeProviderKey
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
+import org.opalj.tac.fpcf.properties.cg.Callers
 
 /**
  *
@@ -55,34 +59,48 @@ trait AbstractFieldAssignabilityAnalysis extends FPCFAnalysis {
     final val fieldAccessInformation = project.get(FieldAccessInformationKey)
     final val definitionSites = project.get(DefinitionSitesKey)
     implicit final val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
+    implicit final val typeProvider: TypeProvider = project.get(TypeProviderKey)
 
     case class State(
             field:                       Field,
-            var fieldAssignability:      FieldAssignability                            = EffectivelyNonAssignable,
-            var prematurelyReadDependee: Option[EOptionP[Field, FieldPrematurelyRead]] = None,
-            var escapeDependees:         Set[EOptionP[DefinitionSite, EscapeProperty]] = Set.empty,
-            var tacDependees:            Map[Method, (EOptionP[Method, TACAI], PCs)]   = Map.empty
+            var fieldAssignability:      FieldAssignability                                       = EffectivelyNonAssignable,
+            var prematurelyReadDependee: Option[EOptionP[Field, FieldPrematurelyRead]]            = None,
+            var escapeDependees:         Set[EOptionP[(Context, DefinitionSite), EscapeProperty]] = Set.empty,
+            var tacDependees:            Map[Method, EOptionP[Method, TACAI]]                     = Map.empty,
+            var callerDependees:         Map[DeclaredMethod, EOptionP[DeclaredMethod, Callers]]   = Map.empty,
+            var tacPCs:                  Map[Method, PCs]                                         = Map.empty
     ) {
         def hasDependees: Boolean =
-            prematurelyReadDependee.isDefined || escapeDependees.nonEmpty || tacDependees.nonEmpty
+            prematurelyReadDependee.isDefined || escapeDependees.nonEmpty ||
+                tacDependees.valuesIterator.exists(_.isRefinable) ||
+                callerDependees.valuesIterator.exists(_.isRefinable)
 
         def dependees: Set[EOptionP[Entity, Property]] =
-            (prematurelyReadDependee ++ escapeDependees ++ tacDependees.valuesIterator.map(_._1)).toSet
+            (prematurelyReadDependee ++ escapeDependees ++
+                tacDependees.valuesIterator.filter(_.isRefinable) ++
+                callerDependees.valuesIterator.filter(_.isRefinable)).toSet
     }
 
     /**
-     * Returns the TACode for a method if available and registers dependencies if necessary.
+     * Returns TACode and Callers for a method if available, registering dependencies as necessary.
      */
-    def getTACAI(
+    def getTACAIAndCallers(
         method: Method,
         pcs:    PCs
-    )(implicit state: State): Option[TACode[TACMethodParameter, V]] = propertyStore(method, TACAI.key) match {
+    )(implicit state: State): Option[(TACode[TACMethodParameter, V], Callers)] = {
+        val tacEOptP = propertyStore(method, TACAI.key)
+        val tac = if (tacEOptP.hasUBP) tacEOptP.ub.tac else None
+        state.tacDependees += method → tacEOptP
+        state.tacPCs += method → pcs
 
-        case finalEP: FinalEP[Method, TACAI] ⇒ finalEP.ub.tac
+        val declaredMethod: DeclaredMethod = declaredMethods(method)
+        val callersEOptP = propertyStore(declaredMethod, Callers.key)
+        val callers = if (callersEOptP.hasUBP) Some(callersEOptP.ub) else None
+        state.callerDependees += declaredMethod -> callersEOptP
 
-        case epk ⇒
-            state.tacDependees += method -> ((epk, pcs))
-            None
+        if (tac.isDefined && callers.isDefined) {
+            Some((tac.get, callers.get))
+        } else None
     }
 
     /**

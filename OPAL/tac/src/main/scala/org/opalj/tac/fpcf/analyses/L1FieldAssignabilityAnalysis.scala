@@ -167,7 +167,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
             (method, pcs) ← fieldAccessInformation.writeAccesses(field)
             (taCode, callers) ← getTACAIAndCallers(method, pcs)
         } {
-            if (methodUpdatesField(method, taCode, callers ,pcs))
+            if (methodUpdatesField(method, taCode, callers, pcs))
                 return Result(field, Assignable);
         }
 

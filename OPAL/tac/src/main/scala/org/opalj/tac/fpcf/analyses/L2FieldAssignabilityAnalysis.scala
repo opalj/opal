@@ -427,7 +427,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         code:         Array[Stmt[V]],
         cfg:          CFG[Stmt[V], TACStmts[V]],
         pcToIndex:    Array[Int],
-    callers:      Callers
+        callers:      Callers
     )(implicit state: State): Boolean = {
         val write = code(writeIndex).asFieldWriteAccessStmt
 
