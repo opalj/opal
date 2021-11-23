@@ -51,7 +51,7 @@ case object NoContext extends Context {
 /**
  * A simple context that provides the bare minumum for context-insensitive analyses.
  */
-class SimpleContext private[properties] (val method: DeclaredMethod) extends Context {
+case class SimpleContext private[properties] (method: DeclaredMethod) extends Context {
     override def id: Int = method.id
 }
 
@@ -80,7 +80,7 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
                     context = id2Context(id)
                     if (context ne null) context
                     else {
-                        val newContext = new SimpleContext(method)
+                        val newContext = SimpleContext(method)
                         id2Context(id) = newContext
                         newContext
                     }
@@ -92,12 +92,12 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
                     val context = id2Context(id)
                     if (context ne null) context
                     else {
-                        val newContext = new SimpleContext(method)
+                        val newContext = SimpleContext(method)
                         id2Context(id) = newContext
                         newContext
                     }
                 } else {
-                    val newContext = new SimpleContext(method)
+                    val newContext = SimpleContext(method)
                     val newMap = java.util.Arrays.copyOf(id2Context, declaredMethods.size)
                     newMap(id) = newContext
                     id2Context = newMap
@@ -115,7 +115,11 @@ class CallStringContext private[properties] (
         val id:         Int,
         val method:     DeclaredMethod,
         val callString: List[(DeclaredMethod, Int)]
-) extends Context
+) extends Context {
+    override def toString: String = {
+        s"CallStringContext($method, $callString)"
+    }
+}
 
 object CallStringContextsKey extends ProjectInformationKey[CallStringContexts, Nothing] {
 

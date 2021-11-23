@@ -204,15 +204,17 @@ sealed class ConcreteCallees(
 ) extends Callees {
 
     override def incompleteCallSites(callerContext: Context)(implicit propertyStore: PropertyStore): IntIterator = {
-        _incompleteCallSites(callerContext.id).iterator
+        _incompleteCallSites.getOrElse(callerContext.id, IntTrieSet.empty).iterator
     }
 
     override def isIncompleteCallSite(callerContext: Context, pc: Int)(implicit propertyStore: PropertyStore): Boolean = {
-        _incompleteCallSites(callerContext.id).contains(pc)
+        val cId = callerContext.id
+        _incompleteCallSites.contains(cId) && _incompleteCallSites(cId).contains(pc)
     }
 
     override def hasIncompleteCallSites(callerContext: Context): Boolean = {
-        _incompleteCallSites(callerContext.id).nonEmpty
+        val cId = callerContext.id
+        _incompleteCallSites.contains(cId) && _incompleteCallSites(cId).nonEmpty
     }
 
     override def callees(

@@ -8,6 +8,7 @@ import org.opalj.log.OPALLogger
 import org.opalj.br.analyses.ProjectInformationKey
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
+import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 
 object TypeProviderKey
@@ -21,11 +22,11 @@ object TypeProviderKey
                 init()
             case None ⇒
                 implicit val logContext: LogContext = project.logContext
-                OPALLogger.error(
+                OPALLogger.warn(
                     "analysis configuration",
-                    s"must configure type provider first"
+                    s"no type provider configured, using CHA as a fallback"
                 )
-                throw new IllegalArgumentException()
+                new CHATypeProvider(project)
         }
     }
 }

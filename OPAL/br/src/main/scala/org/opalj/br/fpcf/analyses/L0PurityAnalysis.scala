@@ -365,7 +365,7 @@ object EagerL0PurityAnalysis
         val analysis = new L0PurityAnalysis(p)
         val dms = p.get(DeclaredMethodsKey).declaredMethods
         val simpleContexts = p.get(SimpleContextsKey)
-        val methodsWithBody = dms.toIterator.collect {
+        val methodsWithBody = dms.collect {
             case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined ⇒
                 simpleContexts(dm)
         }
