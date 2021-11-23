@@ -368,7 +368,7 @@ class L2FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         val isNotFinal = eps.pk match {
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
-                state.escapeDependees = state.escapeDependees.filter(_.e ne newEP.e)
+                state.escapeDependees = state.escapeDependees.filter(_.e != newEP.e)
                 handleEscapeProperty(newEP)
             case TACAI.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]

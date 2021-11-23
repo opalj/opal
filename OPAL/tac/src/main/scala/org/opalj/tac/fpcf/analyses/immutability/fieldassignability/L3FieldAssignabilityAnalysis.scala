@@ -166,7 +166,7 @@ class L3FieldAssignabilityAnalysis private[analyses] (val project: SomeProject)
 
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
-                state.escapeDependees = state.escapeDependees.iterator.filter(_.e ne newEP.e).toSet
+                state.escapeDependees = state.escapeDependees.iterator.filter(_.e != newEP.e).toSet
                 handleEscapeProperty(newEP)
 
             case TACAI.key ⇒

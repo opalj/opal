@@ -266,7 +266,7 @@ class L1FieldAssignabilityAnalysis private[analyses] (val project: SomeProject) 
         val isNonFinal = eps.pk match {
             case EscapeProperty.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[(Context, DefinitionSite), EscapeProperty]]
-                state.escapeDependees = state.escapeDependees.filter(_.e ne eps.e)
+                state.escapeDependees = state.escapeDependees.filter(_.e != eps.e)
                 handleEscapeProperty(newEP)
             case TACAI.key ⇒
                 val newEP = eps.asInstanceOf[EOptionP[Method, TACAI]]
