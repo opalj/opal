@@ -11,6 +11,11 @@ import org.opalj.br.analyses.SomeProject
 import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider
 import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 
+/**
+ *  An [[org.opalj.br.analyses.ProjectInformationKey]] to get the [[TypeProvider]] used to compute
+ *  the current project's call graph.
+ *  This key is intended to be set up by a corresponding [[org.opalj.tac.cg.CallGraphKey]].
+ */
 object TypeProviderKey
     extends ProjectInformationKey[TypeProvider, () ⇒ TypeProvider] {
 

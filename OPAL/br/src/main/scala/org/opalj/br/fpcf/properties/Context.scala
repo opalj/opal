@@ -68,7 +68,7 @@ object SimpleContextsKey extends ProjectInformationKey[SimpleContexts, Nothing] 
 
 class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
 
-    @volatile private var id2Context = new Array[SimpleContext](declaredMethods.size)
+    @volatile private var id2Context = new Array[SimpleContext](declaredMethods._UNSAFE_size)
 
     def apply(method: DeclaredMethod): SimpleContext = {
         val id = method.id
@@ -98,7 +98,9 @@ class SimpleContexts private[properties] (declaredMethods: DeclaredMethods) {
                     }
                 } else {
                     val newContext = SimpleContext(method)
-                    val newMap = java.util.Arrays.copyOf(id2Context, declaredMethods.size)
+                    val newMap = java.util.Arrays.copyOf(
+                        id2Context, Math.max(declaredMethods._UNSAFE_size, id + 1)
+                    )
                     newMap(id) = newContext
                     id2Context = newMap
                     newContext

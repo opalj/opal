@@ -31,6 +31,7 @@ import org.opalj.tac.fpcf.analyses.cg.TypeProvider
  * "org.opalj.tac.cg.CallGraphKey.modules".
  *
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 trait CallGraphKey extends ProjectInformationKey[CallGraph, Nothing] {
 

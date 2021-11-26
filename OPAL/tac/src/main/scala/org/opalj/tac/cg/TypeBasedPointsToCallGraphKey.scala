@@ -32,7 +32,7 @@ object TypeBasedPointsToCallGraphKey extends CallGraphKey {
             super.requirements(project)
     }
 
-    override protected def callGraphSchedulers(
+    override protected[cg] def callGraphSchedulers(
         project: SomeProject
     ): Traversable[FPCFAnalysisScheduler] = {
         List(
