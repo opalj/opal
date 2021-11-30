@@ -1,7 +1,8 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.da
 
-import scala.xml.{Node, NodeBuffer}
+import scala.xml.Node
+import scala.xml.NodeBuffer
 
 /**
  * Represents the ''PermittedSubclasses'' attribute (Java 17).

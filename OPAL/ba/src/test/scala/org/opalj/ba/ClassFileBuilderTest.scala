@@ -15,7 +15,8 @@ import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.ACC_SYNTHETIC
 import org.opalj.bi.isCurrentJREAtLeastJava16
 import org.opalj.bi.isCurrentJREAtLeastJava17
-import org.opalj.br.{IntegerType, MethodDescriptor}
+import org.opalj.br.IntegerType
+import org.opalj.br.MethodDescriptor
 import org.opalj.br.reader.Java17Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.bc.Assembler
 import org.opalj.collection.immutable.RefArray
