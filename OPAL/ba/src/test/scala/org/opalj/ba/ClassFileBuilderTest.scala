@@ -3,25 +3,23 @@ package org.opalj
 package ba
 
 import scala.language.postfixOps
-
 import java.io.ByteArrayInputStream
-
 import org.scalatestplus.junit.JUnitRunner
 import org.scalatest.flatspec.AnyFlatSpec
 import org.junit.runner.RunWith
-
 import org.opalj.collection.immutable.UShortPair
 import org.opalj.util.InMemoryClassLoader
-import org.opalj.bi.ACC_FINAL
-import org.opalj.bi.ACC_SYNTHETIC
-import org.opalj.bi.ACC_SUPER
 import org.opalj.bi.ACC_PUBLIC
+import org.opalj.bi.ACC_FINAL
+import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.ACC_SYNTHETIC
+import org.opalj.bi.isCurrentJREAtLeastJava16
+import org.opalj.bi.isCurrentJREAtLeastJava17
+import org.opalj.br.IntegerType
 import org.opalj.br.MethodDescriptor
-import org.opalj.br.reader.Java16Framework.{ClassFile ⇒ ClassFileReader}
+import org.opalj.br.reader.Java17Framework.{ClassFile ⇒ ClassFileReader}
 import org.opalj.bc.Assembler
 import org.opalj.collection.immutable.RefArray
-import org.opalj.bi.isCurrentJREAtLeastJava16
-import org.opalj.br.IntegerType
 
 /**
  * Tests general properties of a classes build with the BytecodeAssembler DSL by loading and
@@ -29,6 +27,7 @@ import org.opalj.br.IntegerType
  * `Serialized Class File` -> `BRClassFile`.
  *
  * @author Malte Limmeroth
+ * @author Julius Naeumann
  */
 @RunWith(classOf[JUnitRunner])
 class ClassFileBuilderTest extends AnyFlatSpec {
@@ -69,12 +68,39 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             attributes = RefArray(recordAttribute, br.Synthetic)
         ).toDA()
 
+    val (sealedClassSubclass, _) =
+        CLASS[Nothing](
+            version = UShortPair(0, 61),
+            accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
+            thisType = "SealedClassSubclass",
+            superclassType = Some("SealedClass")
+        ).toDA()
+
+    val sealedClassSubclassType = br.ObjectType("SealedClassSubclass")
+
+    val permittedSubclassesAttribute = br.PermittedSubclasses(RefArray(sealedClassSubclassType))
+
+    val (sealedClass, _) =
+        CLASS[Nothing](
+            version = UShortPair(0, 61),
+            accessModifiers = PUBLIC.SUPER.SYNTHETIC,
+            thisType = "SealedClass",
+            superclassType = Some("java/lang/Object"),
+            attributes = RefArray(permittedSubclassesAttribute, br.Synthetic)
+        ).toDA()
+
     val abstractAsm = Assembler(abstractClass)
     val concreteAsm = Assembler(simpleConcreteClass)
     val recordAsm = Assembler(recordClass)
+
+    val sealedClassAsm = Assembler(sealedClass)
+    val sealedClassSubclassAsm = Assembler(sealedClassSubclass)
+
     val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
     val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
     val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
+    val sealedClassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassAsm)).head
+    val sealedClassSubclassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassSubclassAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
@@ -82,10 +108,13 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             "MarkerInterface2" → Assembler(markerInterface2),
             "org.opalj.bc.AbstractClass" → abstractAsm,
             "ConcreteClass" → concreteAsm,
-            "RecordClass" → recordAsm
+            "RecordClass" → recordAsm,
+            "SealedClass" → sealedClassAsm,
+            "SealedClassSubclass" → sealedClassSubclassAsm
         ),
         this.getClass.getClassLoader
     )
+
     import loader.loadClass
 
     "the generated classes" should "load correctly" in {
@@ -95,15 +124,20 @@ class ClassFileBuilderTest extends AnyFlatSpec {
         assert("ConcreteClass" == loadClass("ConcreteClass").getSimpleName)
         if (isCurrentJREAtLeastJava16)
             assert("RecordClass" == loadClass("RecordClass").getSimpleName)
+        if (isCurrentJREAtLeastJava17)
+            assert("SealedClass" == loadClass("SealedClass").getSimpleName)
     }
 
-    "the generated classes" should "have they're attributes preserved" in {
+    "the generated classes" should "have their attributes preserved" in {
         assert(concreteBRClassFile.attributes.length == 2)
         assert(concreteBRClassFile.attributes.contains(br.SourceFile("ClassFileBuilderTest.scala")))
         assert(concreteBRClassFile.attributes.contains(br.Synthetic))
         assert(recordBRClassFile.attributes.length == 2)
         assert(recordBRClassFile.attributes.contains(recordAttribute))
         assert(recordBRClassFile.attributes.contains(br.Synthetic))
+        assert(sealedClassBRClassFile.attributes.length == 2)
+        assert(sealedClassBRClassFile.attributes.contains(permittedSubclassesAttribute))
+        assert(sealedClassBRClassFile.attributes.contains(br.Synthetic))
     }
 
     "the generated class 'ConcreteClass'" should "have only the generated default Constructor" in {
