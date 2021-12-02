@@ -3,7 +3,6 @@ package org.opalj
 package tac
 package fpcf
 package analyses
-package pointsto
 
 import scala.collection.JavaConverters._
 

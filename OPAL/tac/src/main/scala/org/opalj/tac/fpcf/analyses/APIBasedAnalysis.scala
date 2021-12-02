@@ -12,10 +12,11 @@ import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.UBP
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethodsKey
-import org.opalj.br.DefinedMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.analyses.cg.ContextualAnalysis
+import org.opalj.tac.fpcf.analyses.cg.SimpleContext
 
 /**
  * A trait for analyses that model the result of the invocation of a specific
@@ -32,13 +33,13 @@ import org.opalj.br.fpcf.properties.cg.Callers
  *
  * @author Florian Kuebler
  */
-trait APIBasedAnalysis extends FPCFAnalysis {
+trait APIBasedAnalysis extends FPCFAnalysis with ContextualAnalysis {
     val apiMethod: DeclaredMethod
 
     implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
     def handleNewCaller(
-        caller: DefinedMethod, pc: Int, isDirect: Boolean
+        callContext: ContextType, pc: Int, isDirect: Boolean
     ): ProperPropertyComputationResult
 
     final def registerAPIMethod(): ProperPropertyComputationResult = {
@@ -65,7 +66,8 @@ trait APIBasedAnalysis extends FPCFAnalysis {
                             caller.hasSingleDefinedMethod) {
                             newSeenCallers += ((caller, pc, isDirect))
 
-                            results ::= handleNewCaller(caller.asDefinedMethod, pc, isDirect)
+                            // FIXME The asInstanceOf obviously won't work once different context types are possible
+                            results ::= handleNewCaller(new SimpleContext(caller).asInstanceOf[ContextType], pc, isDirect)
                         }
                     }
                 }

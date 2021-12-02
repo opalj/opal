@@ -6,16 +6,23 @@ package analyses
 package cg
 
 import scala.annotation.tailrec
+
+import org.opalj.collection.immutable.IntTrieSet
+import org.opalj.fpcf.Entity
+import org.opalj.fpcf.EPS
+import org.opalj.fpcf.FinalEP
+import org.opalj.fpcf.InterimPartialResult
 import org.opalj.fpcf.ProperPropertyComputationResult
 import org.opalj.fpcf.PropertyBounds
 import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
+import org.opalj.fpcf.SomeEPS
+import org.opalj.value.ValueInformation
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFEagerAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.ElementReferenceType
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.MethodDescriptor.JustReturnsObject
@@ -28,17 +35,22 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.Method
+import org.opalj.br.ReferenceType
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.TheTACAI
 
 /**
  * Analysis handling the specifics of java.io.ObjectOutputStream.writeObject.
  * This method may invoke writeObject, writeReplace or writeExternal on its parameter.
  *
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 class OOSWriteObjectAnalysis private[analyses] (
-        final val project: SomeProject
-) extends TACAIBasedAPIBasedAnalysis {
+        override val project:      SomeProject,
+        override val typeProvider: TypeProvider
+) extends TACAIBasedAPIBasedAnalysis with TypeConsumerAnalysis {
 
     override val apiMethod: DeclaredMethod = declaredMethods(
         ObjectOutputStreamType,
@@ -53,7 +65,7 @@ class OOSWriteObjectAnalysis private[analyses] (
     final val WriteObjectDescriptor = MethodDescriptor.JustTakes(ObjectOutputStreamType)
 
     override def processNewCaller(
-        caller:         DefinedMethod,
+        callContext:    ContextType,
         pc:             Int,
         tac:            TACode[TACMethodParameter, V],
         receiverOption: Option[Expr[V]],
@@ -61,117 +73,162 @@ class OOSWriteObjectAnalysis private[analyses] (
         tgtVarOption:   Option[V],
         isDirect:       Boolean
     ): ProperPropertyComputationResult = {
-        implicit val stmts: Array[Stmt[V]] = tac.stmts
-
-        val calleesAndCallers = new IndirectCalls()
+        val indirectCalls = new IndirectCalls()
 
         if (params.nonEmpty && params.head.isDefined) {
-            handleOOSWriteObject(
-                caller,
-                receiverOption,
-                params.head.get.asVar,
-                pc,
-                calleesAndCallers
+            implicit val stmts: Array[Stmt[V]] = tac.stmts
+            val param = params.head.get.asVar
+
+            val receiver = persistentUVar(param)
+            val parameters = Seq(receiverOption.flatMap(os ⇒ persistentUVar(os.asVar)))
+
+            implicit val state: CGState[ContextType] = new CGState[ContextType](
+                callContext, FinalEP(callContext.method.definedMethod, TheTACAI(tac)),
             )
 
+            handleOOSWriteObject(callContext, param, pc, receiver, parameters, indirectCalls)
+
+            returnResult(param, receiver, parameters, indirectCalls)(state)
         } else {
-            calleesAndCallers.addIncompleteCallSite(pc)
+            indirectCalls.addIncompleteCallSite(pc)
+            Results(indirectCalls.partialResults(callContext.method))
         }
-        Results(calleesAndCallers.partialResults(caller))
+    }
+
+    def c(
+        receiverVar: V,
+        receiver:    Option[(ValueInformation, IntTrieSet)],
+        parameters:  Seq[Option[(ValueInformation, IntTrieSet)]],
+        state:       CGState[ContextType]
+    )(eps: SomeEPS): ProperPropertyComputationResult = {
+        val pc = state.dependersOf(eps.toEPK).head.asInstanceOf[Int]
+
+        // ensures, that we only add new vm reachable methods
+        val indirectCalls = new IndirectCalls()
+
+        typeProvider.continuation(receiverVar, eps.asInstanceOf[EPS[Entity, PropertyType]]) {
+            newType ⇒
+                handleType(newType, state.callContext, pc, receiver, parameters, indirectCalls)
+        }(state)
+
+        if (eps.isFinal) {
+            state.removeDependee(eps.toEPK)
+        } else {
+            state.updateDependency(eps)
+        }
+
+        returnResult(receiverVar, receiver, parameters, indirectCalls)(state)
+    }
+
+    def returnResult(
+        receiverVar:   V,
+        receiver:      Option[(ValueInformation, IntTrieSet)],
+        parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
+        indirectCalls: IndirectCalls
+    )(implicit state: CGState[ContextType]): ProperPropertyComputationResult = {
+        val results = indirectCalls.partialResults(state.callContext.method)
+        if (state.hasOpenDependencies)
+            Results(
+                InterimPartialResult(state.dependees, c(receiverVar, receiver, parameters, state)),
+                results
+            )
+        else
+            Results(results)
     }
 
     private[this] def handleOOSWriteObject(
-        definedMethod:     DefinedMethod,
-        outputStream:      Option[Expr[V]],
-        param:             V,
-        pc:                Int,
-        calleesAndCallers: IndirectCalls
-    )(
-        implicit
-        stmts: Array[Stmt[V]]
+        callContext:   ContextType,
+        param:         V,
+        callPC:        Int,
+        receiver:      Option[(ValueInformation, IntTrieSet)],
+        parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
+        indirectCalls: IndirectCalls
+    )(implicit state: CGState[ContextType]): Unit = {
+        typeProvider.foreachType(
+            param,
+            typeProvider.typesProperty(
+                param, callContext, callPC.asInstanceOf[Entity], state.tac.stmts
+            )
+        ) { tpe ⇒ handleType(tpe, callContext, callPC, receiver, parameters, indirectCalls) }
+    }
+
+    private[this] def handleType(
+        tpe:           ReferenceType,
+        callContext:   ContextType,
+        callPC:        Int,
+        receiver:      Option[(ValueInformation, IntTrieSet)],
+        parameters:    Seq[Option[(ValueInformation, IntTrieSet)]],
+        indirectCalls: IndirectCalls
     ): Unit = {
-        val receiver = persistentUVar(param)
-        val parameterList = Seq(
-            outputStream.flatMap(os ⇒ persistentUVar(os.asVar))
+        if (tpe.isArrayType && !tpe.asArrayType.elementType.isObjectType) {
+            indirectCalls.addIncompleteCallSite(callPC)
+            return ;
+        }
+
+        val paramType =
+            if (tpe.isArrayType)
+                tpe.asArrayType.elementType.asObjectType
+            else tpe.asObjectType
+
+        if (classHierarchy.isSubtypeOf(paramType, ObjectType.Externalizable)) {
+            val writeExternalMethod = project.instanceCall(
+                paramType,
+                paramType,
+                "writeExternal",
+                WriteExternalDescriptor
+            )
+
+            indirectCalls.addCallOrFallback(
+                callContext,
+                callPC,
+                writeExternalMethod,
+                ObjectType.Externalizable.packageName,
+                ObjectType.Externalizable,
+                "writeExternal",
+                WriteExternalDescriptor,
+                parameters,
+                receiver
+            )
+        } else {
+            val writeObjectMethod = project.specialCall(
+                paramType,
+                paramType,
+                isInterface = false,
+                "writeObject",
+                WriteObjectDescriptor
+            )
+            indirectCalls.addCallOrFallback(
+                callContext,
+                callPC,
+                writeObjectMethod,
+                ObjectType.Object.packageName,
+                ObjectType.Object,
+                "writeObject",
+                WriteObjectDescriptor,
+                parameters,
+                receiver
+            )
+        }
+
+        val writeReplaceMethod = project.specialCall(
+            paramType,
+            paramType,
+            isInterface = false,
+            "writeReplace",
+            WriteObjectDescriptor
         )
 
-        for (rv ← param.value.asReferenceValue.allValues) {
-            if (rv.isPrecise && rv.isNull.isNo) {
-                val rt = rv.leastUpperType.get
-                if (rt.isObjectType || rt.asArrayType.elementType.isObjectType) {
-                    val paramType =
-                        if (rt.isArrayType)
-                            rt.asArrayType.elementType.asObjectType
-                        else rt.asObjectType
-
-                    if (classHierarchy.isSubtypeOf(paramType, ObjectType.Serializable)) {
-                        if (classHierarchy.isSubtypeOf(paramType, ObjectType.Externalizable)) {
-                            val writeExternalMethod = project.instanceCall(
-                                paramType,
-                                paramType,
-                                "writeExternal",
-                                WriteExternalDescriptor
-                            )
-
-                            calleesAndCallers.addCallOrFallback(
-                                definedMethod,
-                                writeExternalMethod,
-                                pc,
-                                ObjectType.Externalizable.packageName,
-                                ObjectType.Externalizable,
-                                "writeExternal",
-                                WriteExternalDescriptor,
-                                parameterList,
-                                receiver
-                            )
-                        } else {
-                            val writeObjectMethod = project.specialCall(
-                                paramType,
-                                paramType,
-                                isInterface = false,
-                                "writeObject",
-                                WriteObjectDescriptor
-                            )
-                            calleesAndCallers.addCallOrFallback(
-                                definedMethod,
-                                writeObjectMethod,
-                                pc,
-                                ObjectType.Object.packageName,
-                                ObjectType.Object,
-                                "writeObject",
-                                WriteObjectDescriptor,
-                                parameterList,
-                                receiver
-                            )
-                        }
-
-                        val writeReplaceMethod = project.specialCall(
-                            paramType,
-                            paramType,
-                            isInterface = false,
-                            "writeReplace",
-                            WriteObjectDescriptor
-                        )
-
-                        calleesAndCallers.addCallOrFallback(
-                            definedMethod,
-                            writeReplaceMethod,
-                            pc,
-                            ObjectType.Object.packageName,
-                            ObjectType.Object,
-                            "writeReplace",
-                            WriteObjectDescriptor,
-                            parameterList,
-                            receiver
-                        )
-                    }
-                } else {
-                    calleesAndCallers.addIncompleteCallSite(pc)
-                }
-            } else {
-                calleesAndCallers.addIncompleteCallSite(pc)
-            }
-        }
+        indirectCalls.addCallOrFallback(
+            callContext,
+            callPC,
+            writeReplaceMethod,
+            ObjectType.Object.packageName,
+            ObjectType.Object,
+            "writeReplace",
+            WriteObjectDescriptor,
+            parameters,
+            receiver
+        )
     }
 
 }
@@ -204,7 +261,7 @@ class OISReadObjectAnalysis private[analyses] (
     )
 
     override def processNewCaller(
-        caller:         DefinedMethod,
+        callContext:    ContextType,
         pc:             Int,
         tac:            TACode[TACMethodParameter, V],
         receiverOption: Option[Expr[V]],
@@ -218,18 +275,18 @@ class OISReadObjectAnalysis private[analyses] (
 
         if (tgtVarOption.isDefined) {
             handleOISReadObject(
-                caller, tgtVarOption.get, receiverOption, pc, calleesAndCallers
+                callContext, tgtVarOption.get, receiverOption, pc, calleesAndCallers
             )
 
         } else {
             calleesAndCallers.addIncompleteCallSite(pc)
         }
 
-        Results(calleesAndCallers.partialResults(caller))
+        Results(calleesAndCallers.partialResults(callContext.method))
     }
 
     private[this] def handleOISReadObject(
-        definedMethod:     DefinedMethod,
+        context:           ContextType,
         targetVar:         V,
         inputStream:       Option[Expr[V]],
         pc:                Int,
@@ -256,9 +313,9 @@ class OISReadObjectAnalysis private[analyses] (
                     val readExternal = p.instanceCall(t, t, "readExternal", ReadExternalDescriptor)
 
                     calleesAndCallers.addCallOrFallback(
-                        definedMethod,
-                        readExternal,
+                        context,
                         pc,
+                        readExternal,
                         ObjectType.Externalizable.packageName,
                         ObjectType.Externalizable,
                         "readExternal",
@@ -270,7 +327,7 @@ class OISReadObjectAnalysis private[analyses] (
                     // call to no-arg constructor
                     cf.findMethod("<init>", NoArgsAndReturnVoid) foreach { c ⇒
                         calleesAndCallers.addCall(
-                            definedMethod, declaredMethods(c), pc, UnknownParam, None
+                            context, pc, declaredMethods(c), UnknownParam, None
                         )
                     }
                 } else {
@@ -279,7 +336,7 @@ class OISReadObjectAnalysis private[analyses] (
                     val readObjectMethod =
                         p.specialCall(t, t, isInterface = false, "readObject", ReadObjectDescriptor)
                     calleesAndCallers.addCallOrFallback(
-                        definedMethod, readObjectMethod, pc,
+                        context, pc, readObjectMethod,
                         ObjectType.Object.packageName,
                         ObjectType.Object,
                         "readObject",
@@ -297,9 +354,9 @@ class OISReadObjectAnalysis private[analyses] (
                         // otherwise an exception will thrown at runtime
                         if (constructor.isDefined) {
                             calleesAndCallers.addCall(
-                                definedMethod,
-                                declaredMethods(constructor.get),
+                                context,
                                 pc,
+                                declaredMethods(constructor.get),
                                 UnknownParam,
                                 None
                             )
@@ -317,7 +374,7 @@ class OISReadObjectAnalysis private[analyses] (
                     }.minBy(t ⇒ t._1)._2
 
                     calleesAndCallers.addCall(
-                        definedMethod, declaredMethods(constructor), pc, UnknownParam, None
+                        context, pc, declaredMethods(constructor), UnknownParam, None
                     )
                 }
 
@@ -325,7 +382,7 @@ class OISReadObjectAnalysis private[analyses] (
                 val readResolve =
                     p.specialCall(t, t, isInterface = false, "readResolve", JustReturnsObject)
                 calleesAndCallers.addCallOrFallback(
-                    definedMethod, readResolve, pc,
+                    context, pc, readResolve,
                     ObjectType.Object.packageName,
                     ObjectType.Object,
                     "readResolve",
@@ -339,7 +396,7 @@ class OISReadObjectAnalysis private[analyses] (
                     val validateObject =
                         p.instanceCall(t, t, "validateObject", JustReturnsObject)
                     calleesAndCallers.addCallOrFallback(
-                        definedMethod, validateObject, pc,
+                        context, pc, validateObject,
                         ObjectType.Object.packageName,
                         ObjectType.Object,
                         "validateObject",
@@ -378,13 +435,13 @@ class OISReadObjectAnalysis private[analyses] (
  * @author Dominik Helm
  */
 class SerializationRelatedCallsAnalysis private[analyses] (
-        final val project: SomeProject
+        final val project: SomeProject, typeProvider: TypeProvider
 ) extends FPCFAnalysis {
 
     def process(p: SomeProject): PropertyComputationResult = {
         val readObjectAnalysis = new OISReadObjectAnalysis(project)
         val readObjectResult = readObjectAnalysis.registerAPIMethod()
-        val writeObjectAnalysis = new OOSWriteObjectAnalysis(project)
+        val writeObjectAnalysis = new OOSWriteObjectAnalysis(project, typeProvider)
         val writeObjectResult = writeObjectAnalysis.registerAPIMethod()
         Results(readObjectResult, writeObjectResult)
     }
@@ -394,21 +451,15 @@ object SerializationRelatedCallsAnalysisScheduler extends BasicFPCFEagerAnalysis
 
     override def requiredProjectInformation: ProjectInformationKeys = Seq(DeclaredMethodsKey)
 
-    override def uses: Set[PropertyBounds] = PropertyBounds.ubs(
-        Callers,
-        Callees,
-        TACAI
-    )
+    override def uses: Set[PropertyBounds] =
+        PropertyBounds.ubs(Callers, Callees, TACAI) ++ CallGraphKey.typeProvider.usedPropertyKinds
 
-    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(
-        Callers, Callees
-    )
+    override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callers, Callees)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
 
     override def start(p: SomeProject, ps: PropertyStore, i: Null): FPCFAnalysis = {
-
-        val analysis = new SerializationRelatedCallsAnalysis(p)
+        val analysis = new SerializationRelatedCallsAnalysis(p, CallGraphKey.typeProvider)
         ps.scheduleEagerComputationForEntity(p)(analysis.process)
         analysis
     }

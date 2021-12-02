@@ -14,10 +14,11 @@ import org.opalj.log.Warn
 import org.opalj.collection.immutable.IntTrieSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.EOptionP
+import org.opalj.fpcf.EPK
+import org.opalj.fpcf.Property
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEOptionP
 import org.opalj.fpcf.SomeEPK
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.pointsto.PointsToSetLike
@@ -27,6 +28,8 @@ import org.opalj.br.ArrayType
 import org.opalj.br.Field
 import org.opalj.br.ReferenceType
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.cg.BaseAnalysisState
+import org.opalj.tac.fpcf.analyses.cg.Context
 import org.opalj.tac.fpcf.properties.TACAI
 
 /**
@@ -35,10 +38,10 @@ import org.opalj.tac.fpcf.properties.TACAI
  *
  * @author Florian Kuebler
  */
-class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet]](
-        override val method:                       DefinedMethod,
+class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementType, _, PointsToSet], ContextType <: Context](
+        override val callContext:                  ContextType,
         override protected[this] var _tacDependee: EOptionP[Method, TACAI]
-) extends TACAIBasedAnalysisState {
+) extends BaseAnalysisState with TACAIBasedAnalysisState[ContextType] {
 
     private[this] val getFields: ArrayBuffer[(DefinitionSite, Option[Field], ReferenceType ⇒ Boolean)] =
         ArrayBuffer.empty
@@ -122,6 +125,10 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         _sharedPointsToSets.iterator
     }
 
+    private[this] val _dependees: mutable.Map[EPK[Entity, Property], EOptionP[Entity, Property]] = {
+        mutable.Map.empty
+    }
+
     // TODO: should include PointsTo and Callees dependencies
     private[this] val _dependerToDependees: mutable.Map[Entity, mutable.Set[(SomeEOptionP, ReferenceType ⇒ Boolean)]] = {
         mutable.Map.empty
@@ -137,15 +144,29 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
         dependee:   SomeEOptionP,
         typeFilter: ReferenceType ⇒ Boolean
     ): Unit = {
+        val dependeeEPK = dependee.toEPK
+
         assert(
             !_dependerToDependees.contains(depender) ||
                 !_dependerToDependees(depender).exists(other ⇒ other._1.e == dependee.e && other._1.pk.id == dependee.pk.id)
         )
+        assert(!_dependees.contains(dependeeEPK) || _dependees(dependeeEPK) == dependee)
         if (_dependerToDependees.contains(depender)) {
             _dependerToDependees(depender) += ((dependee, typeFilter))
         } else {
             _dependerToDependees += (depender → mutable.Set((dependee, typeFilter)))
         }
+
+        if (!_dependees.contains(dependeeEPK))
+            _dependees(dependeeEPK) = dependee
+    }
+
+    final def hasDependee(dependee: EPK[Entity, Property]): Boolean = {
+        _dependees.contains(dependee)
+    }
+
+    final def getProperty[E <: Entity, P <: Property](dependee: EPK[E, P]): EOptionP[E, P] = {
+        _dependees(dependee).asInstanceOf[EOptionP[E, P]]
     }
 
     // IMPROVE: potentially inefficient exists check
@@ -167,7 +188,7 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
 
             _calleesDependee.get
         } else {
-            val calleesProperty = ps(method, Callees.key)
+            val calleesProperty = ps(callContext.method, Callees.key)
             _calleesDependee = Some(calleesProperty)
             calleesProperty
         }
@@ -186,6 +207,18 @@ class PointsToAnalysisState[ElementType, PointsToSet <: PointsToSetLike[ElementT
     }
 
     def calleesDependee: EOptionP[DeclaredMethod, Callees] = _calleesDependee.get
+
+    override def hasOpenDependencies: Boolean = {
+        hasCalleesDepenedee || super.hasOpenDependencies
+    }
+
+    override def dependees: Set[SomeEOptionP] = {
+        val otherDependees = super.dependees
+        if (hasCalleesDepenedee)
+            otherDependees + _calleesDependee.get
+        else
+            otherDependees
+    }
 
     def addIncompletePointsToInfo(pc: Int)(implicit logContext: LogContext): Unit = {
         OPALLogger.logOnce(Warn(

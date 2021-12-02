@@ -123,14 +123,14 @@ To specify exception handlers use `TRY`, `TRYEND` and `CATCH` in combination wit
                     'tryEnd,
                     TRYEND('Try1),
                     GOTO('finally),
-                    CATCH('Try1, "java/lang/Exception"),
+                    CATCH('Try1, 0, "java/lang/Exception"),
                     POP,
                     ICONST_0,
                     ISTORE_2,
                     TRYEND('FinallyTry2),
                     GOTO('finally),
-                    CATCH('FinallyTry2),
-                    CATCH('LastPCTry3),
+                    CATCH('FinallyTry2, 1),
+                    CATCH('LastPCTry3, 2),
                     POP,
                     'finally,
                     ILOAD_1,
@@ -178,10 +178,10 @@ The DSL interacts seamlessly with the bytecode representation and all attibutes 
             METHOD(
                 FINAL.SYNTHETIC.PUBLIC, "testMethod", "(Ljava/lang/String;)Ljava/lang/String;",
                 CODE(ACONST_NULL, ARETURN),
-                Seq(EXCEPTIONS("java/lang/Exception"), Deprecated)
+                RefArray(EXCEPTIONS("java/lang/Exception"), Deprecated)
             )
         ),
-        attributes = Seq(SourceFile("ClassFileBuilderTest.scala"), Synthetic)
+        attributes = RefArray(SourceFile("ClassFileBuilderTest.scala"), Synthetic)
     )
 
 

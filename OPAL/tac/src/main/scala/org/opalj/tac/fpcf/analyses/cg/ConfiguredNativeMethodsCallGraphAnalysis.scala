@@ -15,7 +15,6 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.FPCFTriggeredAnalysisScheduler
 import org.opalj.br.DeclaredMethod
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -23,8 +22,7 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.fpcf.properties.cg.Callees
 import org.opalj.br.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.tac.fpcf.analyses.pointsto.ConfiguredMethods
-import org.opalj.tac.fpcf.analyses.pointsto.MethodDescription
+import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 
 /**
  * Add calls from configured native methods to the call graph.
@@ -50,7 +48,6 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
 
     private[this] implicit val declaredMethods: DeclaredMethods = p.get(DeclaredMethodsKey)
 
-    // TODO remove dependency to classes in pointsto package
     private[this] val nativeMethodData: Map[DeclaredMethod, Option[Array[MethodDescription]]] = {
         ConfiguredMethods.reader.read(
             p.config, configKey
@@ -58,6 +55,8 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
     }
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
+        // FIXME Use full context once possible
+        val callContext = new SimpleContext(dm)
         (propertyStore(dm, Callers.key): @unchecked) match {
             case FinalP(NoCallers) ⇒
                 // nothing to do, since there is no caller
@@ -89,16 +88,14 @@ class ConfiguredNativeMethodsCallGraphAnalysis private[analyses] (
         val directCalls = new DirectCalls()
         for (tgt ← tgtsOpt.get) {
             val tgtMethod = tgt.method(declaredMethods)
-            directCalls.addCall(dm, tgtMethod, 0)
+            directCalls.addCall(callContext, 0, tgtMethod)
         }
 
         Results(directCalls.partialResults(dm))
     }
 }
 
-object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends FPCFTriggeredAnalysisScheduler {
-    override type InitializationData = Null
-
+object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends BasicFPCFTriggeredAnalysisScheduler {
     override def requiredProjectInformation: ProjectInformationKeys =
         Seq(DeclaredMethodsKey)
 
@@ -107,12 +104,6 @@ object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends FPCFTriggeredAn
     override def derivesCollaboratively: Set[PropertyBounds] = PropertyBounds.ubs(Callees)
 
     override def derivesEagerly: Set[PropertyBounds] = Set.empty
-
-    override def init(p: SomeProject, ps: PropertyStore): Null = {
-        null
-    }
-
-    override def beforeSchedule(p: SomeProject, ps: PropertyStore): Unit = {}
 
     override def register(
         p: SomeProject, ps: PropertyStore, unused: Null
@@ -123,16 +114,5 @@ object ConfiguredNativeMethodsCallGraphAnalysisScheduler extends FPCFTriggeredAn
         analysis
     }
 
-    override def afterPhaseScheduling(ps: PropertyStore, analysis: FPCFAnalysis): Unit = {}
-
-    override def afterPhaseCompletion(
-        p:        SomeProject,
-        ps:       PropertyStore,
-        analysis: FPCFAnalysis
-    ): Unit = {}
-
-    /**
-     * Specifies the kind of the properties that will trigger the analysis to be registered.
-     */
     override def triggeredBy: PropertyKind = Callers
 }

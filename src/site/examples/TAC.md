@@ -26,7 +26,7 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
 
 *Step 2* - Tell the project that it should make the 3-address code of the method available, when required:
 
-    val tac = p.get(SimpleTACAIKey)
+    val tac = p.get(ComputeACAIKey)
 
 *Step 3* - To get the TAC of a specific method with a body just look it up:
 
@@ -34,10 +34,13 @@ A very straight forward way to get a method's TAC is to use the respective `Proj
     val m = cf.findMethod("someSwitch").head
     val taCode = tac(m)
 
- In some cases it is desirable to exchange the underlying data-flow analysis that is used as a foundation for creating the TAC. This can easily be done by updating `SimpleTACAIKey`'s `domain factory`. The latter is used when computing the TAC and can be changed ***before*** the key (`SimpleTACAIKey`) is passed to the project (`<Project>.get(SimpleTACAIKey)`).
+ In some cases it is desirable to exchange the underlying data-flow analysis that is used as a foundation for creating the TAC. This can easily be done by updating the project's `AIDomainFactoryKey`. The latter is used when computing the TAC and can be changed ***before*** the key (`ComputeTACAIKey`) is passed to the project (`<Project>.get(ComputeTACAIKey)`).
  E.g., to set the domain to the simplest/most basic supported domain, you can use:
 
-    SimpleTACAIKey.domainFactory = (p :SomeProject, cf : ClassFile,m : Method) => new domain.l0.BaseDomainWithDefUse(p,cf,m)
+    p.updateProjectInformationKeyInitializationData(AIDomainFactoryKey) {
+      case None               ⇒ Set(classOf[domain.l0.BaseDomainWithDefUse[_]])
+      case Some(requirements) ⇒ requirements + classOf[domain.l0.BaseDomainWithDefUse[_]]
+    }
 
  For example, creating the TAC using the simplest domain – and a production build of OPAL – takes roughly one third of the time of using the default domain. However, the default domain provides much more information and is therefore the recommended base analysis. To be more precise, on a Core i7 (4 Cores - Sandy Bridge, 2011) generating the standard TAC for the rt.jar of the JDK 8u121 using the simplest possible domain takes 13 seconds and for the default domain 33 seconds.
 
@@ -145,7 +148,7 @@ We can get the 3-address code (using, e.g., the `sbt console`) as follows (the m
 
     import org.opalj._
     val p = br.analyses.Project(new java.io.File("OPAL/bi/target/scala-2.12/resource_managed/test/ai.jar"))
-    val tacAIKey = p.get(tac.DefaultTACAIKey)
+    val tacAIKey = p.get(tac.ComputeTACAIKey)
     val code = tacAIKey(p.classFile(br.ObjectType("ai/MethodsWithTypeChecks")).get.findMethod("requiredCast").head)
 
 The 3-address code of the above method is shown next:

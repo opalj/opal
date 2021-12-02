@@ -31,7 +31,7 @@ class BRArchitectureConsistencyTest extends AnyFlatSpec with Matchers with Befor
 
                 ensemble('Br) {
                     "org.opalj.br.*" except
-                        classes("""org\.opalj\.bi\..+Test.*""".r)
+                        classes("""org\.opalj\.br\..+Test.*""".r)
                 }
 
                 ensemble('Reader) {

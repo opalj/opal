@@ -1293,6 +1293,9 @@ object ObjectType {
     final val ScalaSymbol = ObjectType("scala/Symbol")
     final val ScalaStructuralCallSite = ObjectType("scala/runtime/StructuralCallSite")
     final val Method = ObjectType("java/lang/reflect/Method")
+    final val Constructor = ObjectType("java/lang/reflect/Constructor")
+    final val Array = ObjectType("java/lang/reflect/Array")
+    final val Field = ObjectType("java/lang/reflect/Field")
 
     // Types related to dynamic constants
     final val ConstantBootstraps = ObjectType("java/lang/invoke/ConstantBootstraps")
