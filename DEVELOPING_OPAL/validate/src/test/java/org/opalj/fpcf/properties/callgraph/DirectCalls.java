@@ -1,9 +1,9 @@
 /* BSD 2-Clause License - see OPAL/LICENSE for details. */
 package org.opalj.fpcf.properties.callgraph;
 
-import org.opalj.br.fpcf.FPCFAnalysis;
 import org.opalj.fpcf.properties.PropertyValidator;
-import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysis;
+import org.opalj.tac.fpcf.analyses.cg.CHATypeProvider;
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider;
 
 import java.lang.annotation.*;
 
@@ -27,5 +27,5 @@ public @interface DirectCalls {
      * If the list is empty, we assume the annotation applies to any call graph
      * algorithm.
      */
-    Class<? extends FPCFAnalysis>[] analyses() default {CHACallGraphAnalysis.class};
+    Class<? extends TypeProvider>[] analyses() default { CHATypeProvider.class};
 }

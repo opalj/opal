@@ -7,7 +7,6 @@ package cg
 package xta
 
 import org.opalj.br.ArrayType
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Method
 import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
@@ -45,12 +44,12 @@ final class ArrayInstantiationsAnalysis(
 ) extends ReachableMethodAnalysis {
 
     override def processMethod(
-        definedMethod: DefinedMethod,
-        tacEP:         EPS[Method, TACAI]
+        callContext: ContextType,
+        tacEP:       EPS[Method, TACAI]
     ): ProperPropertyComputationResult = {
-        val code = definedMethod.definedMethod.body.get
+        val code = callContext.method.definedMethod.body.get
 
-        val targetSetEntity = selectSetEntity(definedMethod)
+        val targetSetEntity = selectSetEntity(callContext.method)
 
         // We only care about arrays of reference types.
         val instantiatedArrays = code.instructions.collect {

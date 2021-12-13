@@ -2,25 +2,34 @@
 package org.opalj
 package fpcf
 
+import java.net.URL
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory
+
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
 import org.opalj.br.analyses.cg.InitialInstantiatedTypesKey
 import org.opalj.br.fpcf.FPCFAnalysis
 import org.opalj.fpcf.properties.callgraph.TypePropagationVariant
-import org.opalj.tac.fpcf.analyses.cg.CHACallGraphAnalysisScheduler
+import org.opalj.br.analyses.Project
+import org.opalj.tac.cg.CallGraphKey
+import org.opalj.tac.cg.CHACallGraphKey
+import org.opalj.tac.cg.CTACallGraphKey
+import org.opalj.tac.cg.FTACallGraphKey
+import org.opalj.tac.cg.MTACallGraphKey
+import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.fpcf.analyses.cg.reflection.ReflectionRelatedCallsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.rta.InstantiatedTypesAnalysisScheduler
-import org.opalj.tac.fpcf.analyses.cg.rta.RTACallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.CTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.FTASetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.InstantiatedTypesAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.MTASetEntitySelector
-import org.opalj.tac.fpcf.analyses.cg.xta.PropagationBasedCallGraphAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypeSetEntitySelector
 import org.opalj.tac.fpcf.analyses.cg.xta.ArrayInstantiationsAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationAnalysisScheduler
 import org.opalj.tac.fpcf.analyses.cg.xta.XTASetEntitySelector
+import org.opalj.tac.fpcf.analyses.cg.CallGraphAnalysisScheduler
 
 /**
  * Tests if the computed call graph contains (at least!) the expected call edges.
@@ -46,11 +55,19 @@ class CallGraphTests extends PropertiesTest {
         List("org/opalj/fpcf/fixtures/callgraph/")
     }
 
+    var cgKey: CallGraphKey = null
+
+    override def init(p: Project[URL]): Unit = {
+        cgKey.setupTypeProvider(p)
+    }
+
     describe("the RTA call graph analysis is executed") {
+        cgKey = RTACallGraphKey
+
         val as = executeAnalyses(
             Set(
                 InstantiatedTypesAnalysisScheduler,
-                RTACallGraphAnalysisScheduler
+                CallGraphAnalysisScheduler
             )
         )
         as.propertyStore.shutdown()
@@ -62,8 +79,10 @@ class CallGraphTests extends PropertiesTest {
     }
 
     describe("the CHA call graph analysis is executed") {
+        cgKey = CHACallGraphKey
+
         val as = executeAnalyses(
-            Set(CHACallGraphAnalysisScheduler)
+            Set(CallGraphAnalysisScheduler)
         )
         as.propertyStore.shutdown()
         validateProperties(
@@ -80,7 +99,7 @@ class CallGraphTests extends PropertiesTest {
             // Handles type instantiations.
             new InstantiatedTypesAnalysisScheduler(selector),
             // Creates callers/callees based on locally available types.
-            new PropagationBasedCallGraphAnalysisScheduler(selector),
+            CallGraphAnalysisScheduler,
             // Handles type propagation.
             new TypePropagationAnalysisScheduler(selector),
             // Handles reflection based calls (especially: instantiations).
@@ -90,6 +109,8 @@ class CallGraphTests extends PropertiesTest {
 
     // TODO: also add tests for Callees and callers
     describe("the XTA call graph analysis is executed") {
+        cgKey = XTACallGraphKey
+
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(XTASetEntitySelector))
         as.propertyStore.shutdown()
         // We need to manually store which variant was executed. Otherwise, there is no good way
@@ -108,6 +129,8 @@ class CallGraphTests extends PropertiesTest {
     }
 
     describe("the MTA call graph analysis is executed") {
+        cgKey = MTACallGraphKey
+
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(MTASetEntitySelector))
 
         as.propertyStore.shutdown()
@@ -125,6 +148,8 @@ class CallGraphTests extends PropertiesTest {
     }
 
     describe("the FTA call graph analysis is executed") {
+        cgKey = FTACallGraphKey
+
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(FTASetEntitySelector))
 
         as.propertyStore.shutdown()
@@ -142,6 +167,8 @@ class CallGraphTests extends PropertiesTest {
     }
 
     describe("the CTA call graph analysis is executed") {
+        cgKey = CTACallGraphKey
+
         val as = executeAnalyses(schedulersForPropagationBasedAlgorithms(CTASetEntitySelector))
 
         as.propertyStore.shutdown()

@@ -32,4 +32,4 @@ ThisBuild / scalacOptions ++= Seq(
 )
 
 // The version of Eclipse JDT compiler library needs to stay fixed for use within OPAL!
-libraryDependencies ++= Seq("org.eclipse.jdt" % "ecj" % "3.26.0.v20210317-0507")
+libraryDependencies ++= Seq("org.eclipse.jdt" % "ecj" % "3.28.0.v20211021-2009")

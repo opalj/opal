@@ -76,8 +76,7 @@ ThisBuild / javaOptions ++= Seq(
   "-Xnoclassgc",
   "-XX:NewRatio=1",
   "-XX:SurvivorRatio=8",
-  "-XX:+UseParallelGC",
-  "-XX:+AggressiveOpts"
+  "-XX:+UseParallelGC"
 )
 
 addCommandAlias(

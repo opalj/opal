@@ -144,7 +144,8 @@ object CallGraph extends ProjectAnalysisApplication {
             PropertyStoreKey,
             (context: List[PropertyStoreContext[AnyRef]]) ⇒ {
                 implicit val lg: LogContext = project.logContext
-                val threads = numThreads.getOrElse(0) // We chose the sequential store as default
+                val threads =
+                    numThreads.getOrElse(org.opalj.concurrent.NumberOfThreadsForCPUBoundTasks)
                 if (threads == 0) {
                     org.opalj.fpcf.seq.PKESequentialPropertyStore(context: _*)
                 } else {

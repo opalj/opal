@@ -85,6 +85,7 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
             checkBidirectionCallerCallee(rtaPS)(declaredMethods)
         }
+
         it should s"have RTA more precise than CHA" in {
             checkMorePrecise(cha, rta, chaPS, declaredMethods)
         }
@@ -101,8 +102,8 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
 
             checkBidirectionCallerCallee(pointsToPS)(declaredMethods)
         }
-        // FIXME This is currently not the case, e.g. we don't have a non-pointsTo DoPrivileged analysis
-        ignore should s"have PointsTo more precise than RTA" in {
+
+        it should s"have PointsTo more precise than RTA" in {
             checkMorePrecise(rta, pointsTo, rtaPS, declaredMethods)
         }
     }
@@ -117,10 +118,16 @@ class CallGraphIntegrationTest extends AnyFlatSpec with Matchers {
         morePreciseCG.reachableMethods().foreach { method ⇒
             val callersLPCG = lessPreciseCG.callersPropertyOf(method)
             val callersMPCG = morePreciseCG.callersPropertyOf(method)
-            if ((callersLPCG eq NoCallers) ||
-                callersMPCG.hasVMLevelCallers && !callersLPCG.hasVMLevelCallers)
-                unexpectedCalls ::= UnexpectedCallTarget(method, null, -1)
-            val allCalleesMPCG = morePreciseCG.calleesOf(method)
+            if ((callersLPCG eq NoCallers) && !callersMPCG.callers(declaredMethods).forall {
+                callSite ⇒
+                    val callees = lessPreciseCG.calleesPropertyOf(callSite._1)
+                    !callSite._3 && callees.isIncompleteCallSite(callSite._2)(lessPreciseCGPS)
+            }) {
+                unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
+            } else if (callersMPCG.hasVMLevelCallers && !callersLPCG.hasVMLevelCallers) {
+                unexpectedCalls ::= UnexpectedCallTarget(null, method, -1)
+            }
+            val allCalleesMPCG = morePreciseCG.calleesOf(method).toSet
             for {
                 (pc, calleesMPCG) ← allCalleesMPCG
                 calleesLPCG = lessPreciseCG.calleesPropertyOf(method)
