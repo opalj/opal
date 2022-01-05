@@ -11,9 +11,9 @@ sbtPlugin := true
 
 publishMavenStyle := false
 
-resolvers in ThisBuild += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
+ThisBuild / resolvers += "Eclipse Staging" at "https://repo.eclipse.org/content/repositories/eclipse-staging/"
 
-scalacOptions in ThisBuild ++= Seq(
+ThisBuild / scalacOptions ++= Seq(
   "-deprecation",
   "-feature",
   "-unchecked",
@@ -27,7 +27,8 @@ scalacOptions in ThisBuild ++= Seq(
   // 2.12.4 enable: "-Ywarn-infer-any",
   "-Ywarn-dead-code",
   "-Ywarn-inaccessible",
-  "-Ywarn-adapted-args"
+  "-Ywarn-adapted-args",
+  "-Wconf:cat=unused-nowarn:s" // necessary with sbt > 1.5 https://github.com/sbt/sbt/issues/6398
 )
 
 // The version of Eclipse JDT compiler library needs to stay fixed for use within OPAL!
