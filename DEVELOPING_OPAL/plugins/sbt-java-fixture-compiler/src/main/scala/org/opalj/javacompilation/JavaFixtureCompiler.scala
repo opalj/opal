@@ -62,13 +62,13 @@ object JavaFixtureCompiler extends AutoPlugin {
   import autoImport._
 
   lazy val baseJavaFixtureSettings: Seq[Def.Setting[_]] = Seq(
-    javaFixtureProjectsDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "projects",
-    javaFixtureSupportDir in javaFixtureDiscovery := sourceDirectory.value / "fixtures-java" / "support",
-    javaFixtureTargetDir in javaFixtureDiscovery := resourceManaged.value,
-    javaFixtureTaskDefs in javaFixtureCompile := Seq(), // default: no manually defined tasks
+    javaFixtureDiscovery / javaFixtureProjectsDir := sourceDirectory.value / "fixtures-java" / "projects",
+    javaFixtureDiscovery / javaFixtureSupportDir := sourceDirectory.value / "fixtures-java" / "support",
+    javaFixtureDiscovery / javaFixtureTargetDir := resourceManaged.value,
+    javaFixtureDiscovery / javaFixtureTaskDefs := Seq(), // default: no manually defined tasks
     javaFixtureCompile := {
       Javacompilation.compileRunner(
-        javaFixtureDiscovery.value ++ (javaFixtureTaskDefs in javaFixtureCompile).value,
+        javaFixtureDiscovery.value ++ (javaFixtureDiscovery / javaFixtureTaskDefs).value,
         streams.value
       )
     },
@@ -77,9 +77,9 @@ object JavaFixtureCompiler extends AutoPlugin {
     },
     javaFixtureDiscovery := {
       Javacompilation.discoveryRunner(
-        (javaFixtureProjectsDir in javaFixtureDiscovery).value,
-        (javaFixtureSupportDir in javaFixtureDiscovery).value,
-        (javaFixtureTargetDir in javaFixtureDiscovery).value,
+        (javaFixtureDiscovery / javaFixtureProjectsDir).value,
+        (javaFixtureDiscovery / javaFixtureSupportDir).value,
+        (javaFixtureDiscovery / javaFixtureTargetDir).value,
         streams.value
       )
     }
