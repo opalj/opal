@@ -26,8 +26,8 @@ import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.ProjectAnalysisApplication
 import org.opalj.br.analyses.VirtualFormalParameter
 import org.opalj.br.fpcf.PropertyStoreKey
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.fpcf.properties.pointsto.AllocationSitePointsToSet
 import org.opalj.br.Field
 import org.opalj.br.analyses.cg.InitialEntryPointsKey
@@ -39,14 +39,18 @@ import org.opalj.ai.domain.RecordDefUse
 import org.opalj.fpcf.seq.PKESequentialPropertyStore
 import org.opalj.tac.cg.AllocationSiteBasedPointsToCallGraphKey
 import org.opalj.tac.cg.CallGraphSerializer
+import org.opalj.tac.cg.CFA_1_0_CallGraphKey
+import org.opalj.tac.cg.CFA_1_1_CallGraphKey
 import org.opalj.tac.cg.CHACallGraphKey
 import org.opalj.tac.cg.CTACallGraphKey
 import org.opalj.tac.cg.FTACallGraphKey
 import org.opalj.tac.cg.MTACallGraphKey
 import org.opalj.tac.cg.RTACallGraphKey
 import org.opalj.tac.cg.TypeBasedPointsToCallGraphKey
+import org.opalj.tac.cg.TypeProviderKey
 import org.opalj.tac.cg.XTACallGraphKey
 import org.opalj.tac.common.DefinitionSite
+import org.opalj.tac.fpcf.analyses.cg.TypeProvider
 import org.opalj.tac.fpcf.analyses.pointsto.ArrayEntity
 import org.opalj.tac.fpcf.analyses.pointsto.CallExceptions
 import org.opalj.tac.fpcf.analyses.pointsto.MethodExceptions
@@ -70,6 +74,7 @@ import org.opalj.tac.fpcf.analyses.pointsto.TamiFlexKey
  * (for callees use -callees=m).
  *
  * @author Florian Kuebler
+ * @author Dominik Helm
  */
 object CallGraph extends ProjectAnalysisApplication {
 
@@ -82,7 +87,7 @@ object CallGraph extends ProjectAnalysisApplication {
     }
 
     override def analysisSpecificParametersDescription: String = {
-        "[-algorithm=CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo]"+
+        "[-algorithm=CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo|1-0-CFA|1-1-CFA]"+
             "[-domain=domain]"+
             "[-callers=method]"+
             "[-callees=method]"+
@@ -102,7 +107,8 @@ object CallGraph extends ProjectAnalysisApplication {
             "[-configuredNativeMethodsAnalysis=<yes|no|default>]"
     }
 
-    private val algorithmRegex = "-algorithm=(CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo)".r
+    private val algorithmRegex =
+        "-algorithm=(CHA|RTA|MTA|FTA|CTA|XTA|TypeBasedPointsTo|PointsTo|1-0-CFA|1-1-CFA)".r
 
     override def checkAnalysisSpecificParameters(parameters: Seq[String]): Traversable[String] = {
         val remainingParameters =
@@ -178,6 +184,8 @@ object CallGraph extends ProjectAnalysisApplication {
                 case "XTA"               ⇒ project.get(XTACallGraphKey)
                 case "TypeBasedPointsTo" ⇒ project.get(TypeBasedPointsToCallGraphKey)
                 case "PointsTo"          ⇒ project.get(AllocationSiteBasedPointsToCallGraphKey)
+                case "1-0-CFA"           ⇒ project.get(CFA_1_0_CallGraphKey)
+                case "1-1-CFA"           ⇒ project.get(CFA_1_1_CallGraphKey)
             }
         } { t ⇒ callGraphTime = t.toSeconds }
 
@@ -224,7 +232,8 @@ object CallGraph extends ProjectAnalysisApplication {
             println(s"CallException PTS entries: ${getEntries(classOf[CallExceptions])}")
         }
 
-        val reachableMethods = cg.reachableMethods().toTraversable
+        val reachableContexts = cg.reachableMethods().toTraversable
+        val reachableMethods = reachableContexts.map(_.method).toSet
 
         val numEdges = cg.numEdges
 
@@ -233,21 +242,26 @@ object CallGraph extends ProjectAnalysisApplication {
         println(calleesSigs.mkString("\n"))
         println(callersSigs.mkString("\n"))
 
+        implicit val typeProvider: TypeProvider = project.get(TypeProviderKey)
+
         for (m ← allMethods) {
             val mSig = m.descriptor.toJava(m.name)
 
             for (methodSignature ← calleesSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callees of ${m.toJava}:")
-                    println(ps(m, Callees.key).ub.callSites().map {
-                        case (pc, callees) ⇒ pc → callees.map(_.toJava).mkString(", ")
-                    }.mkString("\t", "\n\t", "\n"))
+                    val calleesProperty = ps(m, Callees.key).ub
+                    println(calleesProperty.callerContexts.flatMap { context ⇒
+                        calleesProperty.callSites(context).map {
+                            case (pc, callees) ⇒ pc → callees.map(_.method.toJava).mkString(", ")
+                        }.toSet.mkString("\t", "\n\t", "\n")
+                    })
                 }
             }
             for (methodSignature ← callersSigs) {
                 if (mSig.contains(methodSignature)) {
                     println(s"Callers of ${m.toJava}:")
-                    println(ps(m, Callers.key).ub.callers.map {
+                    println(ps(m, Callers.key).ub.callers(m).map {
                         case (caller, pc, isDirect) ⇒
                             s"${caller.toJava}, $pc${if (!isDirect) ", indirect" else ""}"
                     }.mkString("\t", "\n\t", "\n"))
@@ -288,6 +302,7 @@ object CallGraph extends ProjectAnalysisApplication {
 
         val message =
             s"""|# of methods: ${allMethods.size}
+                |# of reachable contexts: ${reachableContexts.size}
                 |# of reachable methods: ${reachableMethods.size}
                 |# of call edges: $numEdges
                 |"""

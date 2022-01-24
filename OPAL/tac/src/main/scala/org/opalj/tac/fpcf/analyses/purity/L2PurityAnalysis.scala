@@ -30,7 +30,6 @@ import org.opalj.fpcf.UBP
 import org.opalj.value.ASObjectValue
 import org.opalj.br.ComputationalTypeReference
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.DefinedMethod
 import org.opalj.br.Field
 import org.opalj.br.Method
 import org.opalj.br.ObjectType
@@ -69,12 +68,16 @@ import org.opalj.br.fpcf.FPCFLazyAnalysisScheduler
 import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.FPCFAnalysisScheduler
 import org.opalj.br.fpcf.analyses.ConfiguredPurityKey
-import org.opalj.br.fpcf.properties.cg.Callees
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
+import org.opalj.tac.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callers
 import org.opalj.br.MethodDescriptor
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.SimpleContext
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.isImmediateVMException
+import org.opalj.tac.cg.CallGraphKey
 import org.opalj.tac.fpcf.properties.TACAI
+import org.opalj.tac.fpcf.properties.cg.NoCallers
 
 /**
  * An inter-procedural analysis to determine a method's purity.
@@ -104,17 +107,17 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @param ubPurity The current maximum purity level for the method that will be assigned by
      *                  checkPurityOfX methods to aggregrate the purity
      * @param method The currently analyzed method
-     * @param definedMethod The corresponding DefinedMethod we report results for
+     * @param context The corresponding Context we report results for
      * @param declClass The declaring class of the currently analyzed method
      * @param code The code of the currently analyzed method
      */
     class State(
-            val method:        Method,
-            val definedMethod: DeclaredMethod,
-            val declClass:     ObjectType,
-            var tac:           TACode[TACMethodParameter, V] = null,
-            var lbPurity:      Purity                        = CompileTimePure,
-            var ubPurity:      Purity                        = CompileTimePure
+            val method:    Method,
+            val context:   Context,
+            val declClass: ObjectType,
+            var tac:       TACode[TACMethodParameter, V] = null,
+            var lbPurity:  Purity                        = CompileTimePure,
+            var ubPurity:  Purity                        = CompileTimePure
     ) extends AnalysisState {
         var fieldLocalityDependees: Map[Field, (EOptionP[Field, FieldLocality], Set[(Expr[V], Purity)])] = Map.empty
 
@@ -123,12 +126,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         var classImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, ClassImmutability], Set[Expr[V]])] = Map.empty
         var typeImmutabilityDependees: Map[ObjectType, (EOptionP[ObjectType, TypeImmutability], Set[Expr[V]])] = Map.empty
 
-        var purityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
+        var purityDependees: Map[Context, (EOptionP[Context, Purity], Set[Seq[Expr[V]]])] = Map.empty
 
         var calleesDependee: Option[EOptionP[DeclaredMethod, Callees]] = None
         var callees: Option[Callees] = None
 
-        var rvfDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
+        var rvfDependees: Map[Context, (EOptionP[Context, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         var rvfCallSites: IntMap[(Option[Expr[V]], Purity)] = IntMap.empty
 
         var staticDataUsage: Option[EOptionP[DeclaredMethod, StaticDataUsage]] = None
@@ -199,15 +202,15 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         def addPurityDependee(
-            dm:     DeclaredMethod,
-            eop:    EOptionP[DeclaredMethod, Purity],
-            params: Seq[Expr[V]]
+            context: Context,
+            eop:     EOptionP[Context, Purity],
+            params:  Seq[Expr[V]]
         ): Unit = {
-            if (purityDependees.contains(dm)) {
-                val (_, oldParams) = purityDependees(dm)
-                purityDependees += ((dm, (eop, oldParams + params)))
+            if (purityDependees.contains(context)) {
+                val (_, oldParams) = purityDependees(context)
+                purityDependees += ((context, (eop, oldParams + params)))
             } else {
-                purityDependees += ((dm, (eop, Set(params))))
+                purityDependees += ((context, (eop, Set(params))))
             }
         }
 
@@ -219,15 +222,15 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         def addRVFDependee(
-            dm:   DeclaredMethod,
-            eop:  EOptionP[DeclaredMethod, ReturnValueFreshness],
-            data: (Option[Expr[V]], Purity)
+            context: Context,
+            eop:     EOptionP[Context, ReturnValueFreshness],
+            data:    (Option[Expr[V]], Purity)
         ): Unit = {
-            if (rvfDependees.contains(dm)) {
-                val (_, oldValues) = rvfDependees(dm)
-                rvfDependees += ((dm, (eop, oldValues + data)))
+            if (rvfDependees.contains(context)) {
+                val (_, oldValues) = rvfDependees(context)
+                rvfDependees += ((context, (eop, oldValues + data)))
             } else {
-                rvfDependees += ((dm, (eop, Set(data))))
+                rvfDependees += ((context, (eop, Set(data))))
             }
         }
 
@@ -235,8 +238,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         def removeFieldMutabilityDependee(f: Field): Unit = fieldMutabilityDependees -= f
         def removeClassImmutabilityDependee(t: ObjectType): Unit = classImmutabilityDependees -= t
         def removeTypeImmutabilityDependee(t: ObjectType): Unit = typeImmutabilityDependees -= t
-        def removePurityDependee(dm: DeclaredMethod): Unit = purityDependees -= dm
-        def removeRVFDependee(dm: DeclaredMethod): Unit = rvfDependees -= dm
+        def removePurityDependee(context: Context): Unit = purityDependees -= context
+        def removeRVFDependee(context: Context): Unit = rvfDependees -= context
 
         def updateStaticDataUsage(eps: Option[EOptionP[DeclaredMethod, StaticDataUsage]]): Unit = {
             staticDataUsage = eps
@@ -447,7 +450,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
     }
 
     def checkLocalityOfReturn(
-        ep:   EOptionP[DeclaredMethod, Property],
+        ep:   EOptionP[Context, Property],
         data: (Option[Expr[V]], Purity)
     )(implicit state: State): Unit = {
         import project.classHierarchy.isSubtypeOf
@@ -475,7 +478,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                 if (data._2 meet state.ubPurity ne state.ubPurity) {
                     state.addRVFDependee(
                         ep.e,
-                        ep.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
+                        ep.asInstanceOf[EOptionP[Context, ReturnValueFreshness]],
                         data
                     )
                 }
@@ -487,8 +490,8 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         data:    (Option[Expr[V]], Purity),
         callees: Callees
     )(implicit state: State): Unit = {
-        callees.callees(pc).foreach { callee ⇒
-            if (callee.descriptor.returnType.isReferenceType)
+        callees.callees(state.context, pc).foreach { callee ⇒
+            if (callee.method.descriptor.returnType.isReferenceType)
                 checkLocalityOfReturn(propertyStore(callee, ReturnValueFreshness.key), data)
         }
     }
@@ -536,7 +539,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
      * @note Adds dependendees when necessary.
      */
     def checkMethodPurity(
-        ep:     EOptionP[DeclaredMethod, Purity],
+        ep:     EOptionP[Context, Purity],
         params: Seq[Expr[V]]
     )(implicit state: State): Boolean = ep match {
         case UBP(_: ClassifiedImpure) ⇒
@@ -658,14 +661,14 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
         state.rvfCallSites = newRVFCallsites
 
-        var newRVFDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
+        var newRVFDependees: Map[Context, (EOptionP[Context, ReturnValueFreshness], Set[(Option[Expr[V]], Purity)])] = Map.empty
         for ((dependee, (eop, data)) ← state.rvfDependees) {
             val newData = data.filter(_._2 meet state.ubPurity ne state.ubPurity)
             if (newData.nonEmpty) newRVFDependees += ((dependee, (eop, newData)))
         }
         state.rvfDependees = newRVFDependees
 
-        var newPurityDependees: Map[DeclaredMethod, (EOptionP[DeclaredMethod, Purity], Set[Seq[Expr[V]]])] = Map.empty
+        var newPurityDependees: Map[Context, (EOptionP[Context, Purity], Set[Seq[Expr[V]]])] = Map.empty
         for ((dependee, eAndD) ← state.purityDependees) {
             if (eAndD._1.isEPK || (eAndD._1.lb meet state.ubPurity ne state.ubPurity))
                 newPurityDependees += ((dependee, eAndD))
@@ -734,11 +737,11 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         val oldPurity = state.ubPurity
         eps.ub.key match {
             case Purity.key ⇒
-                val e = eps.e.asInstanceOf[DeclaredMethod]
+                val e = eps.e.asInstanceOf[Context]
                 val dependees = state.purityDependees(e)
                 state.removePurityDependee(e)
                 dependees._2.foreach { e ⇒
-                    checkMethodPurity(eps.asInstanceOf[EOptionP[DeclaredMethod, Purity]], e)
+                    checkMethodPurity(eps.asInstanceOf[EOptionP[Context, Purity]], e)
                 }
             case FieldMutability.key ⇒
                 val e = eps.e.asInstanceOf[Field]
@@ -765,12 +768,12 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
                     checkTypeMutability(eps.asInstanceOf[EOptionP[ObjectType, TypeImmutability]], e)
                 }
             case ReturnValueFreshness.key ⇒
-                val e = eps.e.asInstanceOf[DeclaredMethod]
+                val e = eps.e.asInstanceOf[Context]
                 val dependees = state.rvfDependees(e)
                 state.removeRVFDependee(e)
                 dependees._2.foreach { e ⇒
                     checkLocalityOfReturn(
-                        eps.asInstanceOf[EOptionP[DeclaredMethod, ReturnValueFreshness]],
+                        eps.asInstanceOf[EOptionP[Context, ReturnValueFreshness]],
                         e
                     )
                 }
@@ -794,7 +797,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         if (state.ubPurity eq ImpureByAnalysis)
-            return Result(state.definedMethod, ImpureByAnalysis);
+            return Result(state.context, ImpureByAnalysis);
 
         if (state.ubPurity ne oldPurity)
             cleanupDependees() // Remove dependees that we don't need anymore.
@@ -802,10 +805,10 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
 
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
-            Result(state.definedMethod, state.ubPurity)
+            Result(state.context, state.ubPurity)
         } else {
             InterimResult(
-                state.definedMethod,
+                state.context,
                 state.lbPurity,
                 state.ubPurity,
                 dependees,
@@ -831,14 +834,16 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
             }
             candidate foreach { mdc ⇒
                 if (mdc.method.classFile.thisType != ObjectType.Throwable) {
-                    val fISTPurity = propertyStore(declaredMethods(mdc.method), Purity.key)
+                    val fISTMethod = declaredMethods(mdc.method)
+                    val fISTContext = typeProvider.expandContext(state.context, fISTMethod, 0)
+                    val fISTPurity = propertyStore(fISTContext, Purity.key)
                     val self = UVar(
                         ASObjectValue(isNull = No, isPrecise = false, state.declClass),
                         SelfReferenceParameter
                     )
                     if (!checkMethodPurity(fISTPurity, Seq(self)))
                         // Early return for impure fillInStackTrace
-                        return Result(state.definedMethod, state.ubPurity);
+                        return Result(state.context, state.ubPurity);
                 }
             }
         }
@@ -846,7 +851,7 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         // Synchronized methods have a visible side effect on the receiver
         // Static synchronized methods lock the class which is potentially globally visible
         if (state.method.isSynchronized)
-            if (state.method.isStatic) return Result(state.definedMethod, ImpureByAnalysis);
+            if (state.method.isStatic) return Result(state.context, ImpureByAnalysis);
             else atMost(ContextuallyPure(IntTrieSet(0)))
 
         val stmtCount = state.tac.stmts.length
@@ -854,15 +859,15 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         while (s < stmtCount) {
             if (!checkPurityOfStmt(state.tac.stmts(s))) { // Early return for impure statements
                 assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
-                return Result(state.definedMethod, state.ubPurity);
+                return Result(state.context, state.ubPurity);
             }
             s += 1
         }
 
-        val callees = propertyStore(state.definedMethod, Callees.key)
+        val callees = propertyStore(state.context.method, Callees.key)
         if (!checkPurityOfCallees(callees)) {
             assert(state.ubPurity.isInstanceOf[ClassifiedImpure])
-            return Result(state.definedMethod, state.ubPurity)
+            return Result(state.context, state.ubPurity)
         }
 
         if (callees.hasUBP)
@@ -887,40 +892,41 @@ class L2PurityAnalysis private[analyses] (val project: SomeProject) extends Abst
         }
 
         if (state.ubPurity eq CompileTimePure) // Check static data usage only if necessary
-            checkStaticDataUsage(propertyStore(state.definedMethod, StaticDataUsage.key))
+            checkStaticDataUsage(propertyStore(state.context.method, StaticDataUsage.key))
         else
             cleanupDependees() // Remove dependees we already know we won't need
 
         val dependees = state.dependees
         if (dependees.isEmpty || (state.lbPurity == state.ubPurity)) {
-            Result(state.definedMethod, state.ubPurity)
+            Result(state.context, state.ubPurity)
         } else {
-            org.opalj.fpcf.InterimResult(state.definedMethod, state.lbPurity, state.ubPurity, dependees, c)
+            InterimResult(state.context, state.lbPurity, state.ubPurity, dependees, c)
         }
     }
 
     /**
      * Determines the purity of the given method.
      *
-     * @param definedMethod A defined method with a body.
+     * @param context A method call context
      */
-    def determinePurity(definedMethod: DefinedMethod): ProperPropertyComputationResult = {
+    def determinePurity(context: Context): ProperPropertyComputationResult = {
+        val definedMethod = context.method
         val method = definedMethod.definedMethod
         val declClass = method.classFile.thisType
 
         // If this is not the method's declaration, but a non-overwritten method in a subtype,
         // don't re-analyze the code
-        if (declClass ne definedMethod.declaringClassType)
-            return baseMethodPurity(definedMethod.asDefinedMethod);
+        if ((declClass ne definedMethod.declaringClassType) && context.isInstanceOf[SimpleContext])
+            return baseMethodPurity(context);
 
         implicit val state: State =
-            new State(method, definedMethod, declClass)
+            new State(method, context, declClass)
 
         val tacaiO = getTACAI(method)
 
         if (tacaiO.isEmpty)
             return InterimResult(
-                definedMethod,
+                context,
                 ImpureByAnalysis,
                 CompileTimePure,
                 state.dependees,
@@ -950,7 +956,7 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
     final def derivedProperty: PropertyBounds = PropertyBounds.lub(Purity)
 
     override def requiredProjectInformation: ProjectInformationKeys =
-        Seq(DeclaredMethodsKey, ConfiguredPurityKey)
+        Seq(DeclaredMethodsKey, SimpleContextsKey, ConfiguredPurityKey)
 
     override def uses: Set[PropertyBounds] = {
         Set(
@@ -985,18 +991,22 @@ trait L2PurityAnalysisScheduler extends FPCFAnalysisScheduler {
 
 object EagerL2PurityAnalysis extends L2PurityAnalysisScheduler with FPCFEagerAnalysisScheduler {
 
+    override def requiredProjectInformation: ProjectInformationKeys =
+        super.requiredProjectInformation :+ CallGraphKey
+
     override def start(
         p: SomeProject, ps: PropertyStore, analysis: InitializationData
     ): FPCFAnalysis = {
-        val dms = p.get(DeclaredMethodsKey).declaredMethods
-        val methods = dms.collect {
-            // todo querying ps is quite expensive
-            case dm if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
-                dm.asDefinedMethod
+        val cg = p.get(CallGraphKey)
+        val methods = cg.reachableMethods().collect {
+            case c @ Context(dm) if dm.hasSingleDefinedMethod && dm.definedMethod.body.isDefined && !analysis.configuredPurity.wasSet(dm) && ps(dm, Callers.key).ub != NoCallers ⇒
+                c
         }
+
         ps.scheduleEagerComputationsForEntities(methods)(
             analysis.determinePurity
         )
+
         analysis
     }
 

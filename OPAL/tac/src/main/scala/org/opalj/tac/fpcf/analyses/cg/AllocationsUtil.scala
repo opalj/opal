@@ -12,6 +12,8 @@ import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.SomeEPS
 import org.opalj.br.Method
 import org.opalj.br.ReferenceType
+import org.opalj.br.fpcf.properties.Context
+import org.opalj.br.fpcf.properties.NoContext
 import org.opalj.tac.fpcf.properties.TACAI
 
 object AllocationsUtil {
@@ -78,7 +80,7 @@ object AllocationsUtil {
      * provides further allocation sites.
      */
     def handleAllocations[ContextType <: Context](
-        value:      Expr[V],
+        value:      V,
         context:    ContextType,
         depender:   Entity,
         stmts:      Array[Stmt[V]],
@@ -92,9 +94,9 @@ object AllocationsUtil {
     ): Unit = {
         if (typeProvider.providesAllocations) {
             val allocations = typeProvider.typesProperty(
-                value.asVar, context.asInstanceOf[typeProvider.ContextType], depender, stmts
+                value, context.asInstanceOf[typeProvider.ContextType], depender, stmts
             )
-            typeProvider.foreachAllocation(value.asVar, allocations) { (tpe, allocationContext, pc) ⇒
+            typeProvider.foreachAllocation(value, allocations) { (tpe, allocationContext, pc) ⇒
                 if (typeFilter(tpe)) {
                     handleAllocation(
                         context,
@@ -108,7 +110,7 @@ object AllocationsUtil {
                 }
             }
         } else {
-            value.asVar.definedBy.foreach { index ⇒
+            value.definedBy.foreach { index ⇒
                 if (index >= 0) {
                     process(context, index, stmts)
                 } else {
@@ -120,7 +122,7 @@ object AllocationsUtil {
 
     private def handleAllocation[ContextType <: Context](
         context:           ContextType,
-        value:             Expr[V],
+        value:             V,
         stmts:             Array[Stmt[V]],
         allocationContext: ContextType,
         allocationPC:      Int,
@@ -133,7 +135,7 @@ object AllocationsUtil {
     ): Unit = {
         if (allocationContext eq NoContext) {
             failure()
-            value.asVar.definedBy.foreach { index ⇒
+            value.definedBy.foreach { index ⇒
                 if (index >= 0) {
                     process(context, index, stmts)
                 } else {
@@ -155,7 +157,7 @@ object AllocationsUtil {
     def continuationForAllocation[DataType, ContextType <: Context](
         eps:      SomeEPS,
         context:  ContextType,
-        value:    DataType ⇒ (Expr[V], Array[Stmt[V]]),
+        value:    DataType ⇒ (V, Array[Stmt[V]]),
         dataType: Entity ⇒ Boolean,
         failure:  DataType ⇒ Unit
     )(process: (DataType, ContextType, Int, Array[Stmt[V]]) ⇒ Unit)(
@@ -194,29 +196,23 @@ object AllocationsUtil {
                         case data: Entity if dataType(data) ⇒
                             val (expr, stmts) = value(data.asInstanceOf[DataType])
                             typeProvider.continuationForAllocations(
-                                expr.asVar, eps.asInstanceOf[EPS[Entity, typeProvider.PropertyType]]
+                                expr, eps.asInstanceOf[EPS[Entity, typeProvider.PropertyType]]
                             ) { (_, allocationContext, allocationPC) ⇒
-                                    handleAllocation(
-                                        context, expr, stmts,
-                                        allocationContext, allocationPC, data,
-                                        () ⇒ failure(data.asInstanceOf[DataType])
-                                    ) { (_allocationContext, allocationIndex, _stmts) ⇒
-                                            process(
-                                                data.asInstanceOf[DataType],
-                                                _allocationContext.asInstanceOf[ContextType],
-                                                allocationIndex,
-                                                _stmts
-                                            )
-                                        }
-                                }
+                                handleAllocation(
+                                    context, expr, stmts,
+                                    allocationContext, allocationPC, data,
+                                    () ⇒ failure(data.asInstanceOf[DataType])
+                                ) { (_allocationContext, allocationIndex, _stmts) ⇒
+                                        process(
+                                            data.asInstanceOf[DataType],
+                                            _allocationContext.asInstanceOf[ContextType],
+                                            allocationIndex,
+                                            _stmts
+                                        )
+                                    }
+                            }
                         case _ ⇒
                     }
-            }
-
-            if (eps.isFinal) {
-                state.removeDependee(epk)
-            } else {
-                state.updateDependency(eps)
             }
         }
     }

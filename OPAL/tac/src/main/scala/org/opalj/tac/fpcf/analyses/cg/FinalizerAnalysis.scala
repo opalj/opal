@@ -17,7 +17,6 @@ import org.opalj.fpcf.PropertyComputationResult
 import org.opalj.fpcf.PropertyKind
 import org.opalj.fpcf.PropertyStore
 import org.opalj.fpcf.Results
-import org.opalj.br.DeclaredMethod
 import org.opalj.br.MethodDescriptor
 import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.analyses.DeclaredMethodsKey
@@ -25,9 +24,10 @@ import org.opalj.br.analyses.ProjectInformationKeys
 import org.opalj.br.analyses.SomeProject
 import org.opalj.br.fpcf.BasicFPCFTriggeredAnalysisScheduler
 import org.opalj.br.fpcf.FPCFAnalysis
-import org.opalj.br.fpcf.properties.cg.Callers
-import org.opalj.br.fpcf.properties.cg.NoCallers
-import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
+import org.opalj.br.DeclaredMethod
+import org.opalj.tac.fpcf.properties.cg.Callers
+import org.opalj.tac.fpcf.properties.cg.NoCallers
+import org.opalj.tac.fpcf.properties.cg.OnlyVMLevelCallers
 
 /**
  * Computes the set of finalize methods that are being called by the VM during the execution of the
@@ -37,14 +37,11 @@ import org.opalj.br.fpcf.properties.cg.OnlyVMLevelCallers
  *
  * @author Florian Kuebler
  */
-class FinalizerAnalysis private[analyses] (
-        final val project: SomeProject
-) extends FPCFAnalysis {
+class FinalizerAnalysis private[analyses] ( final val project: SomeProject) extends FPCFAnalysis {
 
     implicit val declaredMethods: DeclaredMethods = project.get(DeclaredMethodsKey)
 
     def analyze(dm: DeclaredMethod): PropertyComputationResult = {
-
         // the method is a constructor?
         if (dm.name != "<init>")
             return NoResult;

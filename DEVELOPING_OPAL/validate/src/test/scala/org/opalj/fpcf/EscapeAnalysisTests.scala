@@ -4,9 +4,14 @@ package org.opalj.fpcf
 import java.net.URL
 
 import org.opalj.br.analyses.Project
+import org.opalj.br.AnnotationLike
+import org.opalj.br.analyses.DeclaredMethodsKey
+import org.opalj.br.analyses.VirtualFormalParameter
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 import org.opalj.ai.domain.l2.DefaultPerformInvocationsDomainWithCFGAndDefUse
 import org.opalj.ai.fpcf.properties.AIDomainFactoryKey
 import org.opalj.tac.cg.RTACallGraphKey
+import org.opalj.tac.common.DefinitionSite
 import org.opalj.tac.fpcf.analyses.escape.EagerInterProceduralEscapeAnalysis
 import org.opalj.tac.fpcf.analyses.escape.EagerSimpleEscapeAnalysis
 
@@ -34,13 +39,33 @@ class EscapeAnalysisTests extends PropertiesTest {
         p.get(RTACallGraphKey)
     }
 
+    private[this] def mapEntities(
+        p: Project[URL], es: Traversable[(Entity, String ⇒ String, Traversable[AnnotationLike])]
+    ): Traversable[(Entity, String ⇒ String, Traversable[AnnotationLike])] = {
+        val declaredMethods = p.get(DeclaredMethodsKey)
+        val simpleContexts = p.get(SimpleContextsKey)
+        es.map { tuple ⇒
+            (
+                tuple._1 match {
+                    case ds: DefinitionSite         ⇒ (simpleContexts(declaredMethods(ds.method)), ds)
+                    case fp: VirtualFormalParameter ⇒ (simpleContexts(fp.method), fp)
+                },
+                tuple._2,
+                tuple._3
+            )
+        }
+    }
+
     describe("no analysis is scheduled") {
         val as = executeAnalyses(Set.empty)
         as.propertyStore.shutdown()
         validateProperties(
             as,
-            allocationSitesWithAnnotations(as.project) ++
-                explicitFormalParametersWithAnnotations(as.project),
+            mapEntities(
+                as.project,
+                allocationSitesWithAnnotations(as.project) ++
+                    explicitFormalParametersWithAnnotations(as.project)
+            ),
             Set("EscapeProperty")
         )
     }
@@ -50,8 +75,11 @@ class EscapeAnalysisTests extends PropertiesTest {
         as.propertyStore.shutdown()
         validateProperties(
             as,
-            allocationSitesWithAnnotations(as.project) ++
-                explicitFormalParametersWithAnnotations(as.project),
+            mapEntities(
+                as.project,
+                allocationSitesWithAnnotations(as.project) ++
+                    explicitFormalParametersWithAnnotations(as.project)
+            ),
             Set("EscapeProperty")
         )
     }
@@ -62,8 +90,11 @@ class EscapeAnalysisTests extends PropertiesTest {
         as.propertyStore.shutdown()
         validateProperties(
             as,
-            allocationSitesWithAnnotations(as.project) ++
-                explicitFormalParametersWithAnnotations(as.project),
+            mapEntities(
+                as.project,
+                allocationSitesWithAnnotations(as.project) ++
+                    explicitFormalParametersWithAnnotations(as.project)
+            ),
             Set("EscapeProperty")
         )
     }

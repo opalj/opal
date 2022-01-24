@@ -23,10 +23,10 @@ import org.opalj.bytecode.JRELibraryFolder
 import org.opalj.br.fpcf.FPCFAnalysesManagerKey
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.DeclaredMethod
-import org.opalj.br.Method
 import org.opalj.br.ObjectType
 import org.opalj.br.analyses.Project
 import org.opalj.br.analyses.SomeProject
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.ai.domain.l0.PrimitiveTACAIDomain
 import org.opalj.ai.domain.l1
 import org.opalj.ai.domain.l2
@@ -42,7 +42,7 @@ case class Variable(index: Int) extends Fact
 //case class ArrayElement(index: Int, element: Int) extends Fact
 case class StaticField(classType: ObjectType, fieldName: String) extends Fact
 case class InstanceField(index: Int, classType: ObjectType, fieldName: String) extends Fact
-case class FlowFact(flow: ListSet[Method]) extends Fact {
+case class FlowFact(flow: ListSet[Context]) extends Fact {
     // ListSet is only meant for VERY SMALL sets, but this seems to be ok here!
 
     override val hashCode: Int = {
@@ -210,10 +210,11 @@ class BasicIFDSTaintAnalysis private (
         }
 
     override def callFlow(
-        stmt:   Statement,
-        callee: DeclaredMethod,
-        in:     Set[Fact]
+        stmt:          Statement,
+        calleeContext: Context,
+        in:            Set[Fact]
     ): Set[Fact] = {
+        val callee = calleeContext.method
         val call = asCall(stmt.stmt)
         val allParams = call.allParams
         if (callee.name == "sink") {
@@ -272,12 +273,13 @@ class BasicIFDSTaintAnalysis private (
     }
 
     override def returnFlow(
-        stmt:   Statement,
-        callee: DeclaredMethod,
-        exit:   Statement,
-        succ:   Statement,
-        in:     Set[Fact]
+        stmt:          Statement,
+        calleeContext: Context,
+        exit:          Statement,
+        succ:          Statement,
+        in:            Set[Fact]
     ): Set[Fact] = {
+        val callee = calleeContext.method
         if (callee.name == "source" && stmt.stmt.astID == Assignment.ASTID)
             Set(Variable(stmt.index))
         else if (callee.name == "sanitize")
@@ -304,8 +306,8 @@ class BasicIFDSTaintAnalysis private (
                     flows += sf
 
                 case FlowFact(flow) ⇒
-                    val newFlow = flow + stmt.method
-                    if (entryPoints.contains(declaredMethods(exit.method))) {
+                    val newFlow = flow + stmt.context
+                    if (entryPoints.contains(exit.context.method)) {
                         //println(s"flow: "+newFlow.map(_.toJava).mkString(", "))
                     } else {
                         flows += FlowFact(newFlow)
@@ -361,7 +363,7 @@ class BasicIFDSTaintAnalysis private (
                     println(s"flow: "+stmt.method.toJava)
                     in
                 } else*/
-                in + FlowFact(ListSet(stmt.method))
+                in + FlowFact(ListSet(stmt.context))
             } else {
                 in
             }
@@ -373,7 +375,9 @@ class BasicIFDSTaintAnalysis private (
     /**
      * If forName is called, we add a FlowFact.
      */
-    override def nativeCall(statement: Statement, callee: DeclaredMethod, successor: Statement, in: Set[Fact]): Set[Fact] = {
+    override def nativeCall(
+        statement: Statement, calleeContext: Context, successor: Statement, in: Set[Fact]
+    ): Set[Fact] = {
         /* val allParams = asCall(statement.stmt).allParams
          if (statement.stmt.astID == Assignment.ASTID && in.exists {
              case Variable(index) ⇒
@@ -497,8 +501,9 @@ object BasicIFDSTaintAnalysisRunner {
                 fact ← flows.ub.asInstanceOf[IFDSProperty[Fact]].flows.values.flatten.toSet[Fact]
             } {
                 fact match {
-                    case FlowFact(flow) ⇒ println(s"flow: "+flow.map(_.toJava).mkString(", "))
-                    case _              ⇒
+                    case FlowFact(flow) ⇒
+                        println(s"flow: "+flow.map(_.method.toJava).mkString(", "))
+                    case _ ⇒
                 }
             }
             println(s"The analysis took $analysisTime.")

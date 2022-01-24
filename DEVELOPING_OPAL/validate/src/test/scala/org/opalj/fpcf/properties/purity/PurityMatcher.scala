@@ -19,6 +19,7 @@ import org.opalj.br.fpcf.properties.Purity
 import org.opalj.br.fpcf.properties.ReturnValueFreshness
 import org.opalj.br.fpcf.PropertyStoreKey
 import org.opalj.br.fpcf.properties.ClassifiedImpure
+import org.opalj.br.fpcf.properties.SimpleContextsKey
 
 /**
  * Base trait for matchers that match a method's `Purity` property.
@@ -103,10 +104,11 @@ sealed abstract class PurityMatcher(val property: Purity) extends AbstractProper
             val methodName = method.substring(0, descriptorIndex)
             val descriptor = MethodDescriptor(method.substring(descriptorIndex))
             val cfo = project.classFile(classType)
+            val simpleContexts = project.get(SimpleContextsKey)
 
             cfo exists { cf ⇒
                 cf findMethod (methodName, descriptor) exists { method ⇒
-                    checkProperty(propertyStore(declaredMethods(method), pk))
+                    checkProperty(propertyStore(simpleContexts(declaredMethods(method)), pk))
                 }
             }
         } else {

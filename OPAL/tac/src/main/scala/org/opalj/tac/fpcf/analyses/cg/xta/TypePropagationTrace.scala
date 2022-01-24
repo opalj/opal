@@ -18,12 +18,12 @@ import scala.collection.mutable
 import org.opalj.collection.immutable.UIDSet
 import org.opalj.fpcf.Entity
 import org.opalj.fpcf.PropertyStore
-import org.opalj.br.fpcf.properties.cg.InstantiatedTypes
+import org.opalj.tac.fpcf.properties.cg.InstantiatedTypes
 import org.opalj.br.DefinedMethod
-import org.opalj.br.analyses.DeclaredMethods
 import org.opalj.br.ReferenceType
-import org.opalj.br.fpcf.properties.cg.Callees
+import org.opalj.tac.fpcf.properties.cg.Callees
 import org.opalj.br.DeclaredMethod
+import org.opalj.br.fpcf.properties.Context
 import org.opalj.tac.fpcf.analyses.cg.xta.TypePropagationTrace.Trace
 
 /**
@@ -65,7 +65,9 @@ private[xta] class TypePropagationTrace {
     }
 
     @elidable(elidable.ASSERTION)
-    def traceInit(method: DefinedMethod)(implicit ps: PropertyStore, dm: DeclaredMethods): Unit = {
+    def traceInit(
+        method: DefinedMethod
+    )(implicit ps: PropertyStore, typeProvider: TypeProvider): Unit = {
         val initialTypes = {
             val typeEOptP = ps(method, InstantiatedTypes.key)
             if (typeEOptP.hasUBP) typeEOptP.ub.types
@@ -73,7 +75,8 @@ private[xta] class TypePropagationTrace {
         }
         val initialCallees = {
             val calleesEOptP = ps(method, Callees.key)
-            if (calleesEOptP.hasUBP) calleesEOptP.ub.callSites.flatMap(_._2)
+            if (calleesEOptP.hasUBP)
+                calleesEOptP.ub.callSites(typeProvider.newContext(method)).flatMap(_._2)
             else Iterator.empty
         }
         traceMsg(s"init: ${simplifiedName(method)} (initial types: {${initialTypes.map(simplifiedName).mkString(", ")}}, initial callees: {${initialCallees.map(simplifiedName).mkString(", ")}})")
@@ -105,7 +108,7 @@ object TypePropagationTrace {
     trait Event {
         val typePropagations: mutable.ArrayBuffer[TypePropagation] = new mutable.ArrayBuffer[TypePropagation]()
     }
-    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[DeclaredMethod]) extends Event
+    case class Init(method: DefinedMethod, initialTypes: UIDSet[ReferenceType], initialCallees: Set[Context]) extends Event
     trait UpdateEvent extends Event
     case class TypeSetUpdate(receiver: Entity, source: Entity, sourceTypes: UIDSet[ReferenceType]) extends UpdateEvent
     case class CalleesUpdate(receiver: Entity) extends UpdateEvent
