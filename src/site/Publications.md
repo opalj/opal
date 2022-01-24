@@ -96,6 +96,19 @@ There are also links to [related presentations](#related-presentations) below.
 
 ## Research Using OPAL
 
+> [**CiFi: Versatile Analysis of Class and Field Immutability**](https://ieeexplore.ieee.org/document/9678903)  
+> ASE 2021  
+> *Tobias Roth, Dominik Helm, Michael Reif, Mira Mezini*  
+> <details><summary>Abstract</summary>
+> Reasoning about immutability is important for pre-venting bugs, e.g., in multi-threaded software.
+> So far, static analysis to infer immutability properties has mostly focused on individual objects and references.
+> Reasoning about fields and entire classes, while significantly simpler, has gained less attention.
+> Even a consistently used terminology is missing, which makes it difficult to implement analyses that rely on immutability information.
+> We propose a model for class and field immutability that unifies terminology for immutability flavors considered by previous work and covers new levels of immutability to handle lazy initialization and immutability dependent on generic type parameters.
+> Using the OPAL static analysis framework, we implement CiFi, a set of modular, collaborating analyses for different flavors of immutability, inferring the properties defined in our model.
+> Additionally, we propose a benchmark of representative test cases for class and field immutability.
+> We use the benchmark to showcase CiFi’s precision and recall in comparison to state of the art and use CiFi to study the prevalence of immutability in real-world libraries, showcasing the practical quality and relevance of our model.</details>
+
 > [**Hidden in Plain Sight: Obfuscated Strings Threatening Your Privacy**](https://dl.acm.org/doi/10.1145/3320269.3384745)  
 > ASIA-CCS 2020  
 > *Leonid Glanz, Patrick Müller, Lars Baumgärtner, Michael Reif, Sven Amann, Pauline Anthonysamy, Mira Mezini*  
