@@ -89,6 +89,27 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             attributes = RefArray(permittedSubclassesAttribute, br.Synthetic)
         ).toDA()
 
+    val (nestedClassInner, _) =
+        CLASS[Nothing](
+            version = UShortPair(0, 49),
+            accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
+            thisType = "NestedClassInner",
+            superclassType = Some("java/lang/Object")
+        ).toDA()
+
+    val nestedClassInnerType = br.ObjectType("NestedClassInner")
+
+    val nestedClassesAttribute = br.NestMembers(RefArray(nestedClassInnerType))
+
+    val (nestedClassOuter, _) =
+        CLASS[Nothing](
+            version = UShortPair(0, 49),
+            accessModifiers = PUBLIC.FINAL.SUPER.SYNTHETIC,
+            thisType = "NestedClassOuter",
+            superclassType = Some("java/lang/Object"),
+            attributes = RefArray(nestedClassesAttribute, br.Synthetic)
+        ).toDA()
+
     val abstractAsm = Assembler(abstractClass)
     val concreteAsm = Assembler(simpleConcreteClass)
     val recordAsm = Assembler(recordClass)
@@ -96,11 +117,17 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     val sealedClassAsm = Assembler(sealedClass)
     val sealedClassSubclassAsm = Assembler(sealedClassSubclass)
 
+    val nestedClassInnerAsm = Assembler(nestedClassInner)
+    val nestedClassOuterAsm = Assembler(nestedClassOuter)
+
     val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
     val concreteBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(concreteAsm)).head
     val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
     val sealedClassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassAsm)).head
     val sealedClassSubclassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassSubclassAsm)).head
+
+    val nestedClassInnerBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassInnerAsm)).head
+    val nestedClassOuterBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassOuterAsm)).head
 
     val loader = new InMemoryClassLoader(
         Map(
@@ -110,7 +137,9 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             "ConcreteClass" → concreteAsm,
             "RecordClass" → recordAsm,
             "SealedClass" → sealedClassAsm,
-            "SealedClassSubclass" → sealedClassSubclassAsm
+            "SealedClassSubclass" → sealedClassSubclassAsm,
+            "NestedClassOuter" → nestedClassOuterAsm,
+            "NestedClassInner" → nestedClassInnerAsm
         ),
         this.getClass.getClassLoader
     )
@@ -126,6 +155,8 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             assert("RecordClass" == loadClass("RecordClass").getSimpleName)
         if (isCurrentJREAtLeastJava17)
             assert("SealedClass" == loadClass("SealedClass").getSimpleName)
+        assert("NestedClassOuter" == loadClass("NestedClassOuter").getSimpleName)
+
     }
 
     "the generated classes" should "have their attributes preserved" in {
@@ -138,6 +169,10 @@ class ClassFileBuilderTest extends AnyFlatSpec {
         assert(sealedClassBRClassFile.attributes.length == 2)
         assert(sealedClassBRClassFile.attributes.contains(permittedSubclassesAttribute))
         assert(sealedClassBRClassFile.attributes.contains(br.Synthetic))
+        assert(nestedClassOuterBRClassFile.attributes.length == 2)
+        assert(nestedClassOuterBRClassFile.attributes.contains(nestedClassesAttribute))
+        assert(nestedClassOuterBRClassFile.attributes.contains(br.Synthetic))
+
     }
 
     "the generated class 'ConcreteClass'" should "have only the generated default Constructor" in {
