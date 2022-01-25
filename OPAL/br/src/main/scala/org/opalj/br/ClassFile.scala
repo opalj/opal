@@ -17,6 +17,7 @@ import org.opalj.bi.ACC_INTERFACE
 import org.opalj.bi.ACC_MODULE
 import org.opalj.bi.ACC_PUBLIC
 import org.opalj.bi.ACC_SUPER
+import org.opalj.bi.ACC_STRICT
 import org.opalj.bi.AccessFlags
 import org.opalj.bi.AccessFlagsContexts
 import org.opalj.bi.AccessFlagsMatcher
@@ -326,6 +327,16 @@ final class ClassFile private (
     def isAbstract: Boolean = (ACC_ABSTRACT.mask & accessFlags) != 0
 
     def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
+
+    /**
+     *
+     * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
+     */
+    def isStrict: Boolean =
+        if (this.version.major > bi.Java17MajorVersion)
+            true
+        else
+            (ACC_STRICT.mask & accessFlags) != 0
 
     /**
      * Returns `true` if the class is final or if it only defines private constructors and it
