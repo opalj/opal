@@ -333,7 +333,7 @@ final class ClassFile private (
      * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
      */
     def isStrict: Boolean =
-        if (this.version.major > bi.Java17MajorVersion)
+        if (this.version.major >= bi.Java17MajorVersion)
             true
         else
             (ACC_STRICT.mask & accessFlags) != 0
