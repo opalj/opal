@@ -329,8 +329,8 @@ final class ClassFile private (
     def isFinal: Boolean = (ACC_FINAL.mask & accessFlags) != 0
 
     /**
-     *
-     * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
+     * Return `true` if all computations should be performed with high precision.
+     * Starting from Java 17, this is true by default. Otherwise, this is defined with the `strictfp` modifier.
      */
     def isStrict: Boolean =
         if (this.version.major >= bi.Java17MajorVersion)
