@@ -473,7 +473,7 @@ final class Method private[br] (
      * @return wether this class is defined as strict. Starting from Java 17, this is true by default.
      */
     override def isStrict: Boolean =
-        if (this.classFile.version.major > bi.Java17MajorVersion)
+        if (this.classFile.version.major >= bi.Java17MajorVersion)
             true
         else
             (ACC_STRICT.mask & accessFlags) != 0
