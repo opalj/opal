@@ -110,8 +110,6 @@ class ClassFileBuilderTest extends AnyFlatSpec {
             attributes = RefArray(permittedSubclassesAttribute, br.Synthetic)
         ).toDA()
 
-
-
     val nestedClassInnerAsm = Assembler(nestedClassInner)
     val nestedClassOuterAsm = Assembler(nestedClassOuter)
     val abstractAsm = Assembler(abstractClass)
@@ -120,7 +118,6 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     val sealedClassAsm = Assembler(sealedClass)
     val sealedClassSubclassAsm = Assembler(sealedClassSubclass)
 
-
     val nestedClassInnerBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassInnerAsm)).head
     val nestedClassOuterBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(nestedClassOuterAsm)).head
     val abstractBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(abstractAsm)).head
@@ -128,7 +125,6 @@ class ClassFileBuilderTest extends AnyFlatSpec {
     val recordBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(recordAsm)).head
     val sealedClassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassAsm)).head
     val sealedClassSubclassBRClassFile = ClassFileReader(() ⇒ new ByteArrayInputStream(sealedClassSubclassAsm)).head
-
 
     val loader = new InMemoryClassLoader(
         Map(
